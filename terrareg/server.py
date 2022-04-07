@@ -1,5 +1,8 @@
 
 import os
+import tempfile
+import magic
+import mimetypes
 
 from werkzeug.utils import secure_filename
 from flask import Flask, request
@@ -9,6 +12,12 @@ DATA_DIRECTORY = os.path.join(os.environ.get('DATA_DIRECTORY', '.'), 'data')
 
 class ModuleFactory(object):
     pass
+
+class UnknownFiletypeError(Exception):
+    """Uploaded filetype is unknown."""
+
+    pass
+
 
 class Namespace(object):
 
@@ -55,12 +64,22 @@ class ModuleVersion(object):
     @property
     def base_directory(self):
         """Return base directory."""
-        return os.path.join(self._module_provider.base_directory, self._name)
+        return os.path.join(self._module_provider.base_directory, self._version)
 
 
     def handle_file_upload(self, file):
         """Handle file upload of module source."""
-        pass
+        with tempfile.TemporaryDirectory() as upload_d:
+            filename = secure_filename(file.filename)
+            source_file = os.path.join(upload_d, filename)
+            file.save(source_file)
+
+            with tempfile.TemporaryDirectory() as extract_d:
+                file_type = magic.from_file(source_file, mime=True)
+                if file_type == 'application/zip':
+                    pass
+                else:
+                    raise UnknownFiletypeError('Upload file is of unknown filetype. Must by zip, tar.gz')
 
 
 class Server(object):
@@ -127,7 +146,7 @@ class Server(object):
             module_version.handle_file_upload(file)
             return 'Upload sucessful'
 
-        return 'Error occurred'
+        return 'Error occurred - unknown file extension'
 
     def _module_versions(self, namespace, name, provider):
         """Return list of version."""

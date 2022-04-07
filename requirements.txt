@@ -1,0 +1,2 @@
+python-magic
+flask
