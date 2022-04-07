@@ -17,7 +17,6 @@ fi
 
 curl -X POST \
     "${base_url}/v1/${namespace}/${name}/${provider}/${version}/upload" \
-    -H 'content-type: application/x-www-form-urlencoded' \
-    --data-binary "@${file}"
+    -F file="@${file}" -vvvv
 
 

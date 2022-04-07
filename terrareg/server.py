@@ -16,16 +16,26 @@ class Server(object):
         self.port = 5000
         self.debug = True
 
+        if not os.path.isdir(self._get_data_directory()):
+            os.mkdir(self._get_data_directory())
+        if not os.path.isdir(self._get_upload_directory()):
+            os.mkdir(self._get_upload_directory())
+
+        self._app.config['UPLOAD_FOLDER'] = self._get_upload_directory()
+
         self._register_routes()
 
     def _get_data_directory(self):
-        pass
+        return os.path.join(os.environ.get('DATA_DIRECTORY', '.'), 'data')
+
+    def _get_upload_directory(self):
+        return os.path.join(self._get_data_directory(), 'upload')
 
     def _register_routes(self):
         """Register routes with flask."""
 
         # Upload module
-        self._app.route('/v1/<string:namespace>/<string:name><string:provider>/<string:version>/upload')(self._upload_module_version)
+        self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload', methods=['POST'])(self._upload_module_version)
 
         # Terraform registry routes
         self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>/versions')(self._module_versions)
@@ -41,6 +51,7 @@ class Server(object):
 
 
     def _upload_module_version(self, namespace, name, provider, version):
+        return 'adgadg'
         if len(request.files) != 1:
             return 'One file can be uploaded'
 
