@@ -5,8 +5,62 @@ from werkzeug.utils import secure_filename
 from flask import Flask, request
 
 
+DATA_DIRECTORY = os.path.join(os.environ.get('DATA_DIRECTORY', '.'), 'data')
+
 class ModuleFactory(object):
     pass
+
+class Namespace(object):
+
+    def __init__(self, name: str):
+        self._name = name
+
+    @property
+    def base_directory(self):
+        """Return base directory."""
+        return os.path.join(DATA_DIRECTORY, 'modules', self._name)
+
+class Module(object):
+    
+    def __init__(self, namespace: Namespace, name: str):
+        self._namespace = namespace
+        self._name = name
+
+    @property
+    def base_directory(self):
+        """Return base directory."""
+        return os.path.join(self._namespace.base_directory, self._name)
+
+class ModuleProvider(object):
+
+    def __init__(self, module: Module, name: str):
+        self._module = module
+        self._name = name
+
+    @property
+    def base_directory(self):
+        """Return base directory."""
+        return os.path.join(self._module.base_directory, self._name)
+
+    def get_versions(self):
+        """Return all module provider versions."""
+        return []
+
+class ModuleVersion(object):
+
+    def __init__(self, module_provider: ModuleProvider, version: str):
+        self._module_provider = module_provider
+        self._version = version
+
+    @property
+    def base_directory(self):
+        """Return base directory."""
+        return os.path.join(self._module_provider.base_directory, self._name)
+
+
+    def handle_file_upload(self, file):
+        """Handle file upload of module source."""
+        pass
 
 
 class Server(object):
@@ -21,8 +75,8 @@ class Server(object):
         self.port = 5000
         self.debug = True
 
-        if not os.path.isdir(self._get_data_directory()):
-            os.mkdir(self._get_data_directory())
+        if not os.path.isdir(DATA_DIRECTORY):
+            os.mkdir(DATA_DIRECTORY)
         if not os.path.isdir(self._get_upload_directory()):
             os.mkdir(self._get_upload_directory())
 
@@ -30,11 +84,8 @@ class Server(object):
 
         self._register_routes()
 
-    def _get_data_directory(self):
-        return os.path.join(os.environ.get('DATA_DIRECTORY', '.'), 'data')
-
     def _get_upload_directory(self):
-        return os.path.join(self._get_data_directory(), 'upload')
+        return os.path.join(DATA_DIRECTORY, 'upload')
 
     def _register_routes(self):
         """Register routes with flask."""
@@ -56,6 +107,13 @@ class Server(object):
 
 
     def _upload_module_version(self, namespace, name, provider, version):
+        """Handle module version upload."""
+
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        module_version = ModuleVersion(module_provider=module_provider, version=version)
+
         if len(request.files) != 1:
             return 'One file can be uploaded'
 
@@ -66,18 +124,18 @@ class Server(object):
         if file.filename == '':
             return 'No selected file'
         if file and self.allowed_file(file.filename):
-            self._handle_file_upload(file)
+            module_version.handle_file_upload(file)
             return 'Upload sucessful'
 
         return 'Error occurred'
 
-    def _handle_file_upload(self, namespace, name, provider, version, file):
-        """Handle file upload."""
-        pass
-
     def _module_versions(self, namespace, name, provider):
         """Return list of version."""
-        return 'blah'
+
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        return [v for v in module_provider.get_versions()]
 
     def _module_version_download(self, namespace, name, provider, version):
         return ''
