@@ -4,6 +4,11 @@ import os
 from werkzeug.utils import secure_filename
 from flask import Flask, request
 
+
+class ModuleFactory(object):
+    pass
+
+
 class Server(object):
     """Manage web server and route requests"""
 
@@ -51,20 +56,24 @@ class Server(object):
 
 
     def _upload_module_version(self, namespace, name, provider, version):
-        return 'adgadg'
         if len(request.files) != 1:
             return 'One file can be uploaded'
 
-        file = request.files[request.files.keys[0]]
+        file = request.files[[f for f in request.files.keys()][0]]
 
         # If the user does not select a file, the browser submits an
         # empty file without a filename.
         if file.filename == '':
             return 'No selected file'
         if file and self.allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(self._app.config['UPLOAD_FOLDER'], filename))
-        return ''
+            self._handle_file_upload(file)
+            return 'Upload sucessful'
+
+        return 'Error occurred'
+
+    def _handle_file_upload(self, namespace, name, provider, version, file):
+        """Handle file upload."""
+        pass
 
     def _module_versions(self, namespace, name, provider):
         """Return list of version."""

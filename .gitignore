@@ -1,3 +1,4 @@
 example/*
 *.pyc
 venv
+data
