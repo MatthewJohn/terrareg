@@ -4,9 +4,9 @@ base_url=$1
 
 namespace=$2
 name=$3
-provider=$3
-version=$4
-file=$5
+provider=$4
+version=$5
+file=$6
 
 # Ensure source file exists
 if ! test -f $file
