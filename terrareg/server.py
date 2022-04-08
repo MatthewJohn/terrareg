@@ -1,11 +1,11 @@
 
 import os
 import tempfile
-import mimetypes
 import zipfile
 import subprocess
 import json
 import tarfile
+import sqlalchemy
 
 import magic
 
@@ -24,6 +24,53 @@ class UnknownFiletypeError(Exception):
     pass
 
 
+class Database(object):
+
+    _META = None
+    _ENGINE = None
+    _INSTANCE = None
+
+    def __init__(self):
+        pass
+
+    @classmethod
+    def get(cls):
+        if cls._INSTANCE is None:
+            cls._INSTANCE = Database()
+        return cls._INSTANCE
+
+    @classmethod
+    def get_meta(cls):
+        """Return meta object"""
+        if cls._META is None:
+            cls._META = sqlalchemy.MetaData()
+        return cls._META
+
+    @classmethod
+    def get_engine(cls):
+        if cls._ENGINE is None:
+            cls._ENGINE = sqlalchemy.create_engine('sqlite:///modules.db', echo = True)
+        return cls._ENGINE
+
+    def initialise(self):
+        """Initialise database schema"""
+        meta = self.get_meta()
+        engine = self.get_engine()
+
+        self.module_version = sqlalchemy.Table(
+            'module_version', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column('namespace', sqlalchemy.String),
+            sqlalchemy.Column('module', sqlalchemy.String),
+            sqlalchemy.Column('provider', sqlalchemy.String),
+            sqlalchemy.Column('version', sqlalchemy.String),
+            sqlalchemy.Column('readme_content', sqlalchemy.String),
+            sqlalchemy.Column('module_details', sqlalchemy.String)
+        )
+
+        meta.create_all(engine)
+
+
 class Namespace(object):
 
     def __init__(self, name: str):
@@ -33,6 +80,11 @@ class Namespace(object):
     def base_directory(self):
         """Return base directory."""
         return os.path.join(DATA_DIRECTORY, 'modules', self._name)
+
+    @property
+    def name(self):
+        """Return name."""
+        return self._name
 
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
@@ -45,6 +97,11 @@ class Module(object):
     def __init__(self, namespace: Namespace, name: str):
         self._namespace = namespace
         self._name = name
+
+    @property
+    def name(self):
+        """Return name."""
+        return self._name
 
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
@@ -65,6 +122,11 @@ class ModuleProvider(object):
     def __init__(self, module: Module, name: str):
         self._module = module
         self._name = name
+
+    @property
+    def name(self):
+        """Return name."""
+        return self._name
 
     @property
     def base_directory(self):
@@ -89,6 +151,11 @@ class ModuleVersion(object):
     def __init__(self, module_provider: ModuleProvider, version: str):
         self._module_provider = module_provider
         self._version = version
+
+    @property
+    def version(self):
+        """Return version."""
+        return self._version
 
     @property
     def base_directory(self):
@@ -153,6 +220,30 @@ class ModuleVersion(object):
             print(module_details)
             print(readme_content)
 
+            # Insert module into DB, overwrite any pre-existing
+            db = Database.get()
+            delete_statement = db.module_version.delete().where(
+                db.module_version.c.namespace == self._module_provider._module._namespace.name
+            ).where(
+                db.module_version.c.module == self._module_provider._module.name
+            ).where(
+                db.module_version.c.provider == self._module_provider.name
+            ).where(
+                db.module_version.c.version == self.version
+            )
+            conn = db.get_engine().connect()
+            conn.execute(delete_statement)
+
+            insert_statement = db.module_version.insert().values(
+                namespace=self._module_provider._module._namespace.name,
+                module=self._module_provider._module.name,
+                provider=self._module_provider.name,
+                version=self.version,
+                readme_content=''.join(readme_content),
+                module_details=terradocs_output
+            )
+            result = conn.execute(insert_statement)
+
 class Server(object):
     """Manage web server and route requests"""
 
@@ -173,6 +264,9 @@ class Server(object):
             os.mkdir(os.path.join(DATA_DIRECTORY, 'modules'))
 
         self._app.config['UPLOAD_FOLDER'] = self._get_upload_directory()
+
+        # Initialise database
+        Database.get().initialise()
 
         self._register_routes()
 

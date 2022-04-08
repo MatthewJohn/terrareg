@@ -2,3 +2,4 @@ example/*
 *.pyc
 venv
 data
+modules.db
