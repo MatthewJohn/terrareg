@@ -5,12 +5,12 @@ import zipfile
 import subprocess
 import json
 import tarfile
+from distutils.version import StrictVersion
+
 import sqlalchemy
-
 import magic
-
 from werkzeug.utils import secure_filename
-from flask import Flask, request
+from flask import Flask, request, jsonify
 
 
 DATA_DIRECTORY = os.path.join(os.environ.get('DATA_DIRECTORY', '.'), 'data')
@@ -20,6 +20,11 @@ class ModuleFactory(object):
 
 class UnknownFiletypeError(Exception):
     """Uploaded filetype is unknown."""
+
+    pass
+
+class NoModuleVersionAvailableError(Exception):
+    """No version of this module available."""
 
     pass
 
@@ -133,6 +138,32 @@ class ModuleProvider(object):
         """Return base directory."""
         return os.path.join(self._module.base_directory, self._name)
 
+    def get_latest_version(self):
+        """Get latest version of module."""
+        db = Database.get()
+        select = db.module_version.select().where(
+            db.module_version.c.namespace == self._module._namespace.name
+        ).where(
+            db.module_version.c.module == self._module.name
+        ).where(
+            db.module_version.c.provider == self.name
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+
+        # Convert to list
+        rows = [r for r in res]
+
+        # Sort rows by semantec versioning
+        rows.sort(key=lambda x: StrictVersion(x['version']))
+
+        # Ensure at least one row
+        if not rows:
+            raise NoModuleVersionAvailableError('No module version available.')
+
+        # Obtain latest row
+        return ModuleVersion(module_provider=self, version=rows[0]['version'])
+
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
         # Check if parent exists
@@ -172,6 +203,16 @@ class ModuleVersion(object):
         """Return full path of the archive file."""
         return os.path.join(self.base_directory, self.archive_name)
 
+    @property
+    def id(self):
+        """Return ID in form of namespace/name/provider/version"""
+        return "{namespace}/{name}/{provider}/{version}".format(
+            namespace=self._module_provider._module._namespace.name,
+            name=self._module_provider._module.name,
+            provider=self._module_provider.name,
+            version=self.version
+        )
+
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
         # Check if parent exists
@@ -180,6 +221,23 @@ class ModuleVersion(object):
         # Check if data directory exists
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
+
+    def get_extended_details(self):
+        return {
+            "id": self.id,
+            "owner": "",
+            "namespace": self._module_provider._module._namespace.name,
+            "name": self._module_provider._module.name,
+            "version": self.version,
+            "provider": self._module_provider.name,
+            "description": "",
+            "source": "",
+            "published_at": "",
+            "downloads": 0,
+            "verified": False,
+            "root": {},
+            "submodules": {}
+        }
 
     def handle_file_upload(self, file):
         """Handle file upload of module source."""
@@ -242,7 +300,7 @@ class ModuleVersion(object):
                 readme_content=''.join(readme_content),
                 module_details=terradocs_output
             )
-            result = conn.execute(insert_statement)
+            conn.execute(insert_statement)
 
 class Server(object):
     """Manage web server and route requests"""
@@ -280,7 +338,8 @@ class Server(object):
         self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload', methods=['POST'])(self._upload_module_version)
 
         # Terraform registry routes
-        self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>/versions')(self._module_versions)
+        self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>')(self._module_provider_details)
+        self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>/versions')(self._module_provider_versions)
         self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/download')(self._module_version_download)
 
     def run(self):
@@ -315,13 +374,38 @@ class Server(object):
 
         return 'Error occurred - unknown file extension'
 
-    def _module_versions(self, namespace, name, provider):
+    def _module_details(self, namespace, name):
+        """Return latest version for each module provider."""
+
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        return jsonify({
+            "meta": {
+                "limit": 5,
+                "offset": 0
+            },
+            "modules": [
+                module_provider.get_latest_version().get_basic_details()
+                for module_provider in module.get_all_module_providers()
+            ]
+        })
+
+    def _module_provider_details(self, namespace, name, provider):
         """Return list of version."""
 
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
-        return [v for v in module_provider.get_versions()]
+        module_version = module_provider.get_latest_version()
+        return jsonify(module_version.get_extended_details())
+
+    def _module_provider_versions(self, namespace, name, provider):
+        """Return list of version."""
+
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        return jsonify([v for v in module_provider.get_versions()])
 
     def _module_version_download(self, namespace, name, provider, version):
         return ''
