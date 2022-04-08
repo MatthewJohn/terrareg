@@ -12,28 +12,23 @@
     </ul>
 </nav>
 
-<section class="level" style="background-color: #f9f9f9; padding-top: 30px; padding-bottom: 30px;">
-    <div class="level-item has-text">
-        <section class="hero">
-            <div class="hero-body">
-                <p class="title">
-                    {{ module.name }}
-                </p>
-                <p class="subtitle">
-                    {{ module_provider.name }}
-                </p>
-                <p class="subtitle">
-                    {{ module.description }}
-                </p>
-            </div>
-
-            <p>Published {{ module_version.publish_date_display }} by <a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></p>
-            <p>Module managed by {{ module.owner }}</p>
-            <p>Source Code: <a href="{{ module_version.source_code_url }}">{{ module_version.source_code_url }}</a></p>
-        </section>
+<div class="columns" style="background-color: #f9f9f9; padding-top: 30px; padding-bottom: 30px;">
+    <div class="column is-two-fifths is-offset-one-fifth">
+        <p class="title">
+            {{ module.name }}
+        </p>
+        <p class="subtitle">
+            Provider: {{ module_provider.name }}
+        </p>
+        <p class="subtitle">
+            {{ module.description }}
+        </p>
+        <p>Published {{ module_version.publish_date_display }} by <a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></p>
+        <p>Module managed by {{ module.owner }}</p>
+        <p>Source Code: <a href="{{ module_version.source_code_url }}">{{ module_version.source_code_url }}</a></p>
     </div>
 
-    <div class="level-item">
+    <div class="column is-one-fifth">
         <div class="box">
             <table class="table">
                 <thead>
@@ -66,8 +61,9 @@
                         <td>10000</td>
                     </tr>
                 </tbody>
+            </table>
         </div>
     </div>
-</section>
+</div>
 
 {% endblock %}
