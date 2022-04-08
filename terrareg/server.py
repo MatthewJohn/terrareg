@@ -82,7 +82,6 @@ class Namespace(object):
     @staticmethod
     def get_all():
         """Return all namespaces."""
-        """Return module providers for module."""
         db = Database.get()
         select = db.module_version.select().group_by(
             db.module_version.c.namespace
