@@ -95,21 +95,25 @@
         <li class="module-tab-link"><a onclick="selectModuleTab(event, 'resources')">Resources</a></li>
     </ul>
 </div>
-<div id="module-tab-readme" class="module-tabs">
-    {{ module_version.get_readme_html()|safe }}
-</div>
-<div id="module-tab-inputs" class="module-tabs" style="display: none;">
-    INPUTS
-</div>
-<div id="module-tab-outputs" class="module-tabs" style="display: none;">
-    OUTPUTS
-</div>
-<div id="module-tab-depedencies" class="module-tabs" style="display: none;">
-    DEPENDENCIES
-</div>
-<div id="module-tab-resources" class="module-tabs" style="display: none;">
-    RESOURCES
-</div>
+<div class="columns">
+    <div class="column is-three-fifths is-offset-one-fifth">
 
+        <div id="module-tab-readme" class="module-tabs">
+            {{ module_version.get_readme_html()|safe }}
+        </div>
+        <div id="module-tab-inputs" class="module-tabs" style="display: none;">
+            INPUTS
+        </div>
+        <div id="module-tab-outputs" class="module-tabs" style="display: none;">
+            OUTPUTS
+        </div>
+        <div id="module-tab-depedencies" class="module-tabs" style="display: none;">
+            DEPENDENCIES
+        </div>
+        <div id="module-tab-resources" class="module-tabs" style="display: none;">
+            RESOURCES
+        </div>
+    </div>
+</div>
 
 {% endblock %}
