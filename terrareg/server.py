@@ -79,6 +79,23 @@ class Database(object):
 
 class Namespace(object):
 
+    @staticmethod
+    def get_all():
+        """Return all namespaces."""
+        """Return module providers for module."""
+        db = Database.get()
+        select = db.module_version.select().group_by(
+            db.module_version.c.namespace
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+
+        namespaces = [r['namespace'] for r in res]
+        return [
+            Namespace(name=namespace)
+            for namespace in namespaces
+        ]
+
     def __init__(self, name: str):
         self._name = name
 
@@ -139,7 +156,6 @@ class Module(object):
             ModuleProvider(module=self, name=provider)
             for provider in providers
         ]
-
 
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
@@ -451,6 +467,12 @@ class Server(object):
         # Views
         self._app.route('/')(self._serve_static_index)
         self._app.route(
+            '/modules'
+        )(self._serve_namespace_list)
+        self._app.route(
+            '/modules/'
+        )(self._serve_namespace_list)
+        self._app.route(
             '/modules/<string:namespace>/<string:name>'
         )(self._serve_module_view)
         self._app.route(
@@ -528,6 +550,19 @@ class Server(object):
     def _serve_static_index(self):
         """Serve static index"""
         return render_template('index.html')
+
+    def _serve_namespace_list(self):
+        """Render view for display module."""
+        namespaces = Namespace.get_all()
+
+        # If only one provider for module, redirect to it.
+        if len(namespaces) == 1:
+            return redirect(namespaces[0].get_view_url())
+        else:
+            return render_template(
+                'namespace_list.html',
+                namespaces=namespaces
+            )
 
     def _serve_module_view(self, namespace, name):
         """Render view for display module."""
