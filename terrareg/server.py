@@ -7,6 +7,7 @@ import json
 import tarfile
 from distutils.version import StrictVersion
 
+import markdown
 import sqlalchemy
 import magic
 from werkzeug.utils import secure_filename
@@ -239,6 +240,26 @@ class ModuleVersion(object):
             "submodules": {}
         }
 
+    def _get_db_row(self):
+        """Get object from database"""
+        db = Database.get()
+        select = db.module_version.select().where(
+            db.module_version.c.namespace == self._module_provider._module._namespace.name
+        ).where(
+            db.module_version.c.module == self._module_provider._module.name
+        ).where(
+            db.module_version.c.provider == self._module_provider.name
+        ).where(
+            db.module_version.c.version == self.version
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+        return res.fetchone()
+
+    def get_readme_content(self):
+        """Get readme contents"""
+        return self._get_db_row()['readme_content']
+
     def handle_file_upload(self, file):
         """Handle file upload of module source."""
         with tempfile.TemporaryDirectory() as upload_d:
@@ -342,6 +363,10 @@ class Server(object):
         self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>/versions')(self._module_provider_versions)
         self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/download')(self._module_version_download)
 
+        # View module details
+        self._app.route('/<string:namespace>/<string:name>/<string:provider>')(self._view_module_provider)
+        self._app.route('/<string:namespace>/<string:name>/<string:provider>/<string:version>')(self._view_module_provider)
+
     def run(self):
         """Run flask server."""
         self._app.run(host=self.host, port=self.port, debug=self.debug)
@@ -409,3 +434,17 @@ class Server(object):
 
     def _module_version_download(self, namespace, name, provider, version):
         return ''
+
+    def _view_module_provider(self, namespace, name, provider, version=None):
+        """User-view module details"""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        if version is None:
+            module_version = module_provider.get_latest_version()
+        else:
+            module_version = ModuleVersion(module_provider=module_provider, version=version)
+
+        return '<h1>README</h1>{0}'.format(
+            markdown.markdown(module_version.get_readme_content())
+        )

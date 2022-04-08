@@ -1,3 +1,4 @@
 python-magic
 flask
 sqlalchemy
+markdown==3.3.6
