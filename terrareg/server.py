@@ -11,7 +11,7 @@ import markdown
 import sqlalchemy
 import magic
 from werkzeug.utils import secure_filename
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 
 
 DATA_DIRECTORY = os.path.join(os.environ.get('DATA_DIRECTORY', '.'), 'data')
@@ -260,6 +260,10 @@ class ModuleVersion(object):
         """Get readme contents"""
         return self._get_db_row()['readme_content']
 
+    def get_readme_html(self):
+        """Convert readme markdown to HTML"""
+        return markdown.markdown(self.get_readme_content())
+
     def handle_file_upload(self, file):
         """Handle file upload of module source."""
         with tempfile.TemporaryDirectory() as upload_d:
@@ -330,7 +334,12 @@ class Server(object):
 
     def __init__(self):
         """Create flask app and store member variables"""
-        self._app = Flask(__name__)
+        self._app = Flask(
+            __name__,
+            static_folder='static',
+            template_folder='templates'
+        )
+
         self.host = '127.0.0.1'
         self.port = 5000
         self.debug = True
@@ -364,8 +373,8 @@ class Server(object):
         self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/download')(self._module_version_download)
 
         # View module details
-        self._app.route('/<string:namespace>/<string:name>/<string:provider>')(self._view_module_provider)
-        self._app.route('/<string:namespace>/<string:name>/<string:provider>/<string:version>')(self._view_module_provider)
+        self._app.route('/')(self._serve_static_index)
+        self._app.route('/modules/<string:namespace>/<string:name>/<string:provider>')(self._serve_module_view)
 
     def run(self):
         """Run flask server."""
@@ -435,8 +444,12 @@ class Server(object):
     def _module_version_download(self, namespace, name, provider, version):
         return ''
 
-    def _view_module_provider(self, namespace, name, provider, version=None):
-        """User-view module details"""
+    def _serve_static_index(self):
+        """Serve static index"""
+        return render_template('index.html')
+
+    def _serve_module_view(self, namespace, name, provider, version=None):
+        """Render view for displaying module information"""
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
@@ -445,6 +458,10 @@ class Server(object):
         else:
             module_version = ModuleVersion(module_provider=module_provider, version=version)
 
-        return '<h1>README</h1>{0}'.format(
-            markdown.markdown(module_version.get_readme_content())
+        return render_template(
+            'module.html',
+            namespace=namespace,
+            module=module,
+            module_provider=module_provider,
+            module_version=module_version
         )

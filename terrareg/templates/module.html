@@ -1,0 +1,58 @@
+{% extends 'template.html' %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li><a href="/modules">Modules</a></li>
+        <li><a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></li>
+        <li><a href="#">{{ module.name }}</a></li>
+        <li><a href="/modules/{{ namespace.name }}/{{ module.name }}">{{ module.name }}</a></li>
+        <li class="is-active"><a href="/modules/{{ namespace.name }}/{{ module.name }}/{{ module_provider.name }}">{{ module_provider.name }}</a></li>
+    </ul>
+</nav>
+
+<section class="level">
+    <div class="level-item has-text">
+        <h1 class="title">{{ module.name }}</h1>
+        <h2 class="subtitle">{{ module.description }}</h2>
+    </div>
+
+    <div class="level-item">
+        <div class="box">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Module Downloads</th>
+                        <th>
+                            <div class="select is-small">
+                                <select>
+                                    <option>All version</option>
+                                </select>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Downloads this week</td>
+                        <td>2000</td>
+                    </tr>
+                    <tr>
+                        <td>Downloads this month</td>
+                        <td>4000</td>
+                    </tr>
+                    <tr>
+                        <td>Downloads this year</td>
+                        <td>6000</td>
+                    </tr>
+                    <tr>
+                        <td>Downloads over all time</td>
+                        <td>10000</td>
+                    </tr>
+                </tbody>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
