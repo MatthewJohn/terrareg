@@ -11,7 +11,7 @@ import markdown
 import sqlalchemy
 import magic
 from werkzeug.utils import secure_filename
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect
 
 
 DATA_DIRECTORY = os.path.join(os.environ.get('DATA_DIRECTORY', '.'), 'data')
@@ -87,6 +87,10 @@ class Namespace(object):
         """Return base directory."""
         return os.path.join(DATA_DIRECTORY, 'modules', self._name)
 
+    def get_view_url(self):
+        """Return view URL"""
+        return '/modules/{namespace}'.format(namespace=self.name)
+
     @property
     def name(self):
         """Return name."""
@@ -108,6 +112,34 @@ class Module(object):
     def name(self):
         """Return name."""
         return self._name
+
+    def get_view_url(self):
+        """Return view URL"""
+        return '{namespace_url}/{module}'.format(
+            namespace_url=self._namespace.get_view_url(),
+            module=self.name
+        )
+
+    def get_providers(self):
+        """Return module providers for module."""
+        db = Database.get()
+        select = db.module_version.select(
+        ).where(
+            db.module_version.c.namespace == self._namespace.name
+        ).where(
+            db.module_version.c.module == self.name
+        ).group_by(
+            db.module_version.c.provider
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+
+        providers = [r['provider'] for r in res]
+        return [
+            ModuleProvider(module=self, name=provider)
+            for provider in providers
+        ]
+
 
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
@@ -133,6 +165,13 @@ class ModuleProvider(object):
     def name(self):
         """Return name."""
         return self._name
+
+    def get_view_url(self):
+        """Return view URL"""
+        return '{module_url}/{module}'.format(
+            module_url=self._module.get_view_url(),
+            module=self.name
+        )
 
     @property
     def base_directory(self):
@@ -185,6 +224,13 @@ class ModuleVersion(object):
         self._module_provider = module_provider
         self._version = version
         self._module_specs = None
+
+    def get_view_url(self):
+        """Return view URL"""
+        return '{module_provider_url}/{version}'.format(
+            module_provider_url=self._module_provider.get_view_url(),
+            version=self.version
+        )
 
     @property
     def version(self):
@@ -386,16 +432,30 @@ class Server(object):
         """Register routes with flask."""
 
         # Upload module
-        self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload', methods=['POST'])(self._upload_module_version)
+        self._app.route(
+            '/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload',
+            methods=['POST']
+        )(self._upload_module_version)
 
         # Terraform registry routes
-        self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>')(self._module_provider_details)
-        self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>/versions')(self._module_provider_versions)
-        self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/download')(self._module_version_download)
+        self._app.route(
+            '/v1/<string:namespace>/<string:name>/<string:provider>'
+        )(self._module_provider_details)
+        self._app.route(
+            '/v1/<string:namespace>/<string:name>/<string:provider>/versions'
+        )(self._module_provider_versions)
+        self._app.route(
+            '/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/download'
+        )(self._module_version_download)
 
-        # View module details
+        # Views
         self._app.route('/')(self._serve_static_index)
-        self._app.route('/modules/<string:namespace>/<string:name>/<string:provider>')(self._serve_module_view)
+        self._app.route(
+            '/modules/<string:namespace>/<string:name>'
+        )(self._serve_module_view)
+        self._app.route(
+            '/modules/<string:namespace>/<string:name>/<string:provider>'
+        )(self._serve_module_provider_view)
 
     def run(self):
         """Run flask server."""
@@ -469,8 +529,25 @@ class Server(object):
         """Serve static index"""
         return render_template('index.html')
 
-    def _serve_module_view(self, namespace, name, provider, version=None):
-        """Render view for displaying module information"""
+    def _serve_module_view(self, namespace, name):
+        """Render view for display module."""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_providers = module.get_providers()
+
+        # If only one provider for module, redirect to it.
+        if len(module_providers) == 1:
+            return redirect(module_providers[0].get_view_url())
+        else:
+            return render_template(
+                'module.html',
+                namespace=namespace,
+                module=module,
+                module_providers=module_providers
+            )
+
+    def _serve_module_provider_view(self, namespace, name, provider, version=None):
+        """Render view for displaying module provider information"""
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
@@ -480,7 +557,7 @@ class Server(object):
             module_version = ModuleVersion(module_provider=module_provider, version=version)
 
         return render_template(
-            'module.html',
+            'module_provider.html',
             namespace=namespace,
             module=module,
             module_provider=module_provider,
