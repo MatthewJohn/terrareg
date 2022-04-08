@@ -1,0 +1,40 @@
+{% extends 'template.html' %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li class="is-active"><a href="/modules">Modules</a></li>
+    </ul>
+</nav>
+
+
+<nav class="level">
+    <div class="level-item">
+
+    {% if namespaces %}
+
+        <table class="table">
+            <thead>
+                <th>Namespace</th>
+            </thead>
+            <tbody>
+                {% for namespace in namespaces %}
+                <tr>
+                    <td>
+                        <a href="{{ namespace.get_view_url() }}">{{ namespace.name }}</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    {% else %}
+
+    No namespaces/modules have been uploaded yet :(
+
+    {% endif %}
+    </div>
+</nav>
+
+{% endblock %}

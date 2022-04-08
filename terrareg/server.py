@@ -108,6 +108,24 @@ class Namespace(object):
         """Return view URL"""
         return '/modules/{namespace}'.format(namespace=self.name)
 
+    def get_all_modules(self):
+        """Return all modules for namespace."""
+        db = Database.get()
+        select = db.module_version.select(
+        ).where(
+            db.module_version.c.namespace == self.name
+        ).group_by(
+            db.module_version.c.module
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+
+        modules = [r['module'] for r in res]
+        return [
+            Module(namespace=self, name=module)
+            for module in modules
+        ]
+
     @property
     def name(self):
         """Return name."""
@@ -473,6 +491,12 @@ class Server(object):
             '/modules/'
         )(self._serve_namespace_list)
         self._app.route(
+            '/modules/<string:namespace>'
+        )(self._serve_namespace_view)
+        self._app.route(
+            '/modules/<string:namespace>/'
+        )(self._serve_namespace_view)
+        self._app.route(
             '/modules/<string:namespace>/<string:name>'
         )(self._serve_module_view)
         self._app.route(
@@ -569,6 +593,18 @@ class Server(object):
                 'namespace_list.html',
                 namespaces=namespaces
             )
+
+    def _serve_namespace_view(self, namespace):
+        """Render view for namespace."""
+        namespace = Namespace(namespace)
+        modules = namespace.get_all_modules()
+
+        return render_template(
+            'namespace.html',
+            namespace=namespace,
+            modules=modules
+        )
+
 
     def _serve_module_view(self, namespace, name):
         """Render view for display module."""
