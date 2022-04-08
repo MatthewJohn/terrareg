@@ -102,16 +102,101 @@
             {{ module_version.get_readme_html()|safe }}
         </div>
         <div id="module-tab-inputs" class="module-tabs" style="display: none;">
-            INPUTS
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th>Default value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for input in module_version.get_terraform_inputs() %}
+                    <tr>
+                        <td>
+                            {{ input['name'] }}
+                        </td>
+                        <td>
+                            {{ input['description'] }}
+                        </td>
+                        <td>
+                            {{ input['type'] }}
+                        </td>
+                        <td>
+                            {{ input['default'] if not input['required'] else 'Required' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
         <div id="module-tab-outputs" class="module-tabs" style="display: none;">
-            OUTPUTS
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for output in module_version.get_terraform_outputs() %}
+                    <tr>
+                        <td>
+                            {{ output['name'] }}
+                        </td>
+                        <td>
+                            {{ output['description'] }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
         <div id="module-tab-depedencies" class="module-tabs" style="display: none;">
             DEPENDENCIES
         </div>
         <div id="module-tab-resources" class="module-tabs" style="display: none;">
-            RESOURCES
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Name</th>
+                        <th>Provider</th>
+                        <th>Source</th>
+                        <th>Mode</th>
+                        <th>Version</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for resource in module_version.get_terraform_resources() %}
+                    <tr>
+                        <td>
+                            {{ resource['type'] }}
+                        </td>
+                        <td>
+                            {{ resource['name'] }}
+                        </td>
+                        <td>
+                            {{ resource['provider'] }}
+                        </td>
+                        <td>
+                            {{ resource['source'] }}
+                        </td>
+                        <td>
+                            {{ resource['mode'] }}
+                        </td>
+                        <td>
+                            {{ resource['version'] }}
+                        </td>
+                        <td>
+                            {{ resource['description'] }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

@@ -181,8 +181,10 @@ class ModuleProvider(object):
 class ModuleVersion(object):
 
     def __init__(self, module_provider: ModuleProvider, version: str):
+        """Setup member variables."""
         self._module_provider = module_provider
         self._version = version
+        self._module_specs = None
 
     @property
     def version(self):
@@ -264,6 +266,24 @@ class ModuleVersion(object):
         """Convert readme markdown to HTML"""
         return markdown.markdown(self.get_readme_content(), extensions=['fenced_code'])
 
+    def get_module_specs(self):
+        """Return module specs"""
+        if self._module_specs is None:
+            self._module_specs = json.loads(self._get_db_row()['module_details'])
+        return self._module_specs
+
+    def get_terraform_inputs(self):
+        """Obtain module inputs"""
+        return self.get_module_specs()['inputs']
+
+    def get_terraform_outputs(self):
+        """Obtain module inputs"""
+        return self.get_module_specs()['outputs']
+
+    def get_terraform_resources(self):
+        """Obtain module resources."""
+        return self.get_module_specs()['resources']
+
     def handle_file_upload(self, file):
         """Handle file upload of module source."""
         with tempfile.TemporaryDirectory() as upload_d:
@@ -300,8 +320,9 @@ class ModuleVersion(object):
                 with tarfile.open(self.archive_path, "w:gz") as tar:
                     tar.add(extract_d, arcname='', recursive=True)
 
-            print(module_details)
-            print(readme_content)
+            # print(module_details)
+            print(json.dumps(module_details, sort_keys=False, indent=4))
+            # print(readme_content)
 
             # Insert module into DB, overwrite any pre-existing
             db = Database.get()
