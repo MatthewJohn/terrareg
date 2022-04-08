@@ -1,0 +1,42 @@
+{% extends 'template.html' %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li><a href="/modules">Modules</a></li>
+        <li><a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></li>
+        <li class="is-active"><a href="/modules/{{ namespace.name }}/{{ module.name }}">{{ module.name }}</a></li>
+    </ul>
+</nav>
+
+
+<nav class="level">
+    <div class="level-item">
+
+    {% if module_providers %}
+
+        <table class="table">
+            <thead>
+                <th>Provider name</th>
+            </thead>
+            <tbody>
+                {% for provider in module_providers %}
+                <tr>
+                    <td>
+                        <a href="{{ provider.get_view_url() }}">{{ provider.name }}</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    {% else %}
+
+    This module has no providers.
+
+    {% endif %}
+    </div>
+</nav>
+
+{% endblock %}

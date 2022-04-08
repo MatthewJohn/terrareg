@@ -11,18 +11,17 @@ import markdown
 import sqlalchemy
 import magic
 from werkzeug.utils import secure_filename
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template, redirect
 
 
 DATA_DIRECTORY = os.path.join(os.environ.get('DATA_DIRECTORY', '.'), 'data')
 
-class ModuleFactory(object):
-    pass
 
 class UnknownFiletypeError(Exception):
     """Uploaded filetype is unknown."""
 
     pass
+
 
 class NoModuleVersionAvailableError(Exception):
     """No version of this module available."""
@@ -79,6 +78,22 @@ class Database(object):
 
 class Namespace(object):
 
+    @staticmethod
+    def get_all():
+        """Return all namespaces."""
+        db = Database.get()
+        select = db.module_version.select().group_by(
+            db.module_version.c.namespace
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+
+        namespaces = [r['namespace'] for r in res]
+        return [
+            Namespace(name=namespace)
+            for namespace in namespaces
+        ]
+
     def __init__(self, name: str):
         self._name = name
 
@@ -86,6 +101,28 @@ class Namespace(object):
     def base_directory(self):
         """Return base directory."""
         return os.path.join(DATA_DIRECTORY, 'modules', self._name)
+
+    def get_view_url(self):
+        """Return view URL"""
+        return '/modules/{namespace}'.format(namespace=self.name)
+
+    def get_all_modules(self):
+        """Return all modules for namespace."""
+        db = Database.get()
+        select = db.module_version.select(
+        ).where(
+            db.module_version.c.namespace == self.name
+        ).group_by(
+            db.module_version.c.module
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+
+        modules = [r['module'] for r in res]
+        return [
+            Module(namespace=self, name=module)
+            for module in modules
+        ]
 
     @property
     def name(self):
@@ -108,6 +145,33 @@ class Module(object):
     def name(self):
         """Return name."""
         return self._name
+
+    def get_view_url(self):
+        """Return view URL"""
+        return '{namespace_url}/{module}'.format(
+            namespace_url=self._namespace.get_view_url(),
+            module=self.name
+        )
+
+    def get_providers(self):
+        """Return module providers for module."""
+        db = Database.get()
+        select = db.module_version.select(
+        ).where(
+            db.module_version.c.namespace == self._namespace.name
+        ).where(
+            db.module_version.c.module == self.name
+        ).group_by(
+            db.module_version.c.provider
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+
+        providers = [r['provider'] for r in res]
+        return [
+            ModuleProvider(module=self, name=provider)
+            for provider in providers
+        ]
 
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
@@ -133,6 +197,13 @@ class ModuleProvider(object):
     def name(self):
         """Return name."""
         return self._name
+
+    def get_view_url(self):
+        """Return view URL"""
+        return '{module_url}/{module}'.format(
+            module_url=self._module.get_view_url(),
+            module=self.name
+        )
 
     @property
     def base_directory(self):
@@ -181,8 +252,17 @@ class ModuleProvider(object):
 class ModuleVersion(object):
 
     def __init__(self, module_provider: ModuleProvider, version: str):
+        """Setup member variables."""
         self._module_provider = module_provider
         self._version = version
+        self._module_specs = None
+
+    def get_view_url(self):
+        """Return view URL"""
+        return '{module_provider_url}/{version}'.format(
+            module_provider_url=self._module_provider.get_view_url(),
+            version=self.version
+        )
 
     @property
     def version(self):
@@ -260,6 +340,28 @@ class ModuleVersion(object):
         """Get readme contents"""
         return self._get_db_row()['readme_content']
 
+    def get_readme_html(self):
+        """Convert readme markdown to HTML"""
+        return markdown.markdown(self.get_readme_content(), extensions=['fenced_code'])
+
+    def get_module_specs(self):
+        """Return module specs"""
+        if self._module_specs is None:
+            self._module_specs = json.loads(self._get_db_row()['module_details'])
+        return self._module_specs
+
+    def get_terraform_inputs(self):
+        """Obtain module inputs"""
+        return self.get_module_specs()['inputs']
+
+    def get_terraform_outputs(self):
+        """Obtain module inputs"""
+        return self.get_module_specs()['outputs']
+
+    def get_terraform_resources(self):
+        """Obtain module resources."""
+        return self.get_module_specs()['resources']
+
     def handle_file_upload(self, file):
         """Handle file upload of module source."""
         with tempfile.TemporaryDirectory() as upload_d:
@@ -296,8 +398,9 @@ class ModuleVersion(object):
                 with tarfile.open(self.archive_path, "w:gz") as tar:
                     tar.add(extract_d, arcname='', recursive=True)
 
-            print(module_details)
-            print(readme_content)
+            # print(module_details)
+            print(json.dumps(module_details, sort_keys=False, indent=4))
+            # print(readme_content)
 
             # Insert module into DB, overwrite any pre-existing
             db = Database.get()
@@ -330,7 +433,12 @@ class Server(object):
 
     def __init__(self):
         """Create flask app and store member variables"""
-        self._app = Flask(__name__)
+        self._app = Flask(
+            __name__,
+            static_folder='static',
+            template_folder='templates'
+        )
+
         self.host = '127.0.0.1'
         self.port = 5000
         self.debug = True
@@ -356,16 +464,48 @@ class Server(object):
         """Register routes with flask."""
 
         # Upload module
-        self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload', methods=['POST'])(self._upload_module_version)
+        self._app.route(
+            '/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload',
+            methods=['POST']
+        )(self._upload_module_version)
 
         # Terraform registry routes
-        self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>')(self._module_provider_details)
-        self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>/versions')(self._module_provider_versions)
-        self._app.route('/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/download')(self._module_version_download)
+        self._app.route(
+            '/v1/<string:namespace>/<string:name>/<string:provider>'
+        )(self._module_provider_details)
+        self._app.route(
+            '/v1/<string:namespace>/<string:name>/<string:provider>/versions'
+        )(self._module_provider_versions)
+        self._app.route(
+            '/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/download'
+        )(self._module_version_download)
 
-        # View module details
-        self._app.route('/<string:namespace>/<string:name>/<string:provider>')(self._view_module_provider)
-        self._app.route('/<string:namespace>/<string:name>/<string:provider>/<string:version>')(self._view_module_provider)
+        # Views
+        self._app.route('/')(self._serve_static_index)
+        self._app.route(
+            '/modules'
+        )(self._serve_namespace_list)
+        self._app.route(
+            '/modules/'
+        )(self._serve_namespace_list)
+        self._app.route(
+            '/modules/<string:namespace>'
+        )(self._serve_namespace_view)
+        self._app.route(
+            '/modules/<string:namespace>/'
+        )(self._serve_namespace_view)
+        self._app.route(
+            '/modules/<string:namespace>/<string:name>'
+        )(self._serve_module_view)
+        self._app.route(
+            '/modules/<string:namespace>/<string:name>/'
+        )(self._serve_module_view)
+        self._app.route(
+            '/modules/<string:namespace>/<string:name>/<string:provider>'
+        )(self._serve_module_provider_view)
+        self._app.route(
+            '/modules/<string:namespace>/<string:name>/<string:provider>/'
+        )(self._serve_module_provider_view)
 
     def run(self):
         """Run flask server."""
@@ -435,8 +575,54 @@ class Server(object):
     def _module_version_download(self, namespace, name, provider, version):
         return ''
 
-    def _view_module_provider(self, namespace, name, provider, version=None):
-        """User-view module details"""
+    def _serve_static_index(self):
+        """Serve static index"""
+        return render_template('index.html')
+
+    def _serve_namespace_list(self):
+        """Render view for display module."""
+        namespaces = Namespace.get_all()
+
+        # If only one provider for module, redirect to it.
+        if len(namespaces) == 1:
+            return redirect(namespaces[0].get_view_url())
+        else:
+            return render_template(
+                'namespace_list.html',
+                namespaces=namespaces
+            )
+
+    def _serve_namespace_view(self, namespace):
+        """Render view for namespace."""
+        namespace = Namespace(namespace)
+        modules = namespace.get_all_modules()
+
+        return render_template(
+            'namespace.html',
+            namespace=namespace,
+            modules=modules
+        )
+
+
+    def _serve_module_view(self, namespace, name):
+        """Render view for display module."""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_providers = module.get_providers()
+
+        # If only one provider for module, redirect to it.
+        if len(module_providers) == 1:
+            return redirect(module_providers[0].get_view_url())
+        else:
+            return render_template(
+                'module.html',
+                namespace=namespace,
+                module=module,
+                module_providers=module_providers
+            )
+
+    def _serve_module_provider_view(self, namespace, name, provider, version=None):
+        """Render view for displaying module provider information"""
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
@@ -445,6 +631,10 @@ class Server(object):
         else:
             module_version = ModuleVersion(module_provider=module_provider, version=version)
 
-        return '<h1>README</h1>{0}'.format(
-            markdown.markdown(module_version.get_readme_content())
+        return render_template(
+            'module_provider.html',
+            namespace=namespace,
+            module=module,
+            module_provider=module_provider,
+            module_version=module_version
         )
