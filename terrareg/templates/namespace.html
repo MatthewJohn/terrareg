@@ -1,0 +1,41 @@
+{% extends 'template.html' %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li><a href="/modules">Modules</a></li>
+        <li class="is-active"><a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></li>
+    </ul>
+</nav>
+
+
+<nav class="level">
+    <div class="level-item">
+
+    {% if modules %}
+
+        <table class="table">
+            <thead>
+                <th>Module name</th>
+            </thead>
+            <tbody>
+                {% for module in modules %}
+                <tr>
+                    <td>
+                        <a href="{{ module.get_view_url() }}">{{ module.name }}</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    {% else %}
+
+    This namespace has no modules.
+
+    {% endif %}
+    </div>
+</nav>
+
+{% endblock %}
