@@ -16,13 +16,12 @@ from flask import Flask, request, jsonify, render_template, redirect
 
 DATA_DIRECTORY = os.path.join(os.environ.get('DATA_DIRECTORY', '.'), 'data')
 
-class ModuleFactory(object):
-    pass
 
 class UnknownFiletypeError(Exception):
     """Uploaded filetype is unknown."""
 
     pass
+
 
 class NoModuleVersionAvailableError(Exception):
     """No version of this module available."""
