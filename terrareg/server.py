@@ -476,7 +476,13 @@ class Server(object):
             '/modules/<string:namespace>/<string:name>'
         )(self._serve_module_view)
         self._app.route(
+            '/modules/<string:namespace>/<string:name>/'
+        )(self._serve_module_view)
+        self._app.route(
             '/modules/<string:namespace>/<string:name>/<string:provider>'
+        )(self._serve_module_provider_view)
+        self._app.route(
+            '/modules/<string:namespace>/<string:name>/<string:provider>/'
         )(self._serve_module_provider_view)
 
     def run(self):
