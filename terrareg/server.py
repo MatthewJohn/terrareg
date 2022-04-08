@@ -262,7 +262,7 @@ class ModuleVersion(object):
 
     def get_readme_html(self):
         """Convert readme markdown to HTML"""
-        return markdown.markdown(self.get_readme_content())
+        return markdown.markdown(self.get_readme_content(), extensions=['fenced_code'])
 
     def handle_file_upload(self, file):
         """Handle file upload of module source."""
