@@ -427,6 +427,7 @@ class TerraformSpecsObject(object):
             "resources": self.get_terraform_resources(),
         }
 
+
 class ModuleVersion(TerraformSpecsObject):
 
     def __init__(self, module_provider: ModuleProvider, version: str):
@@ -834,6 +835,11 @@ class Server(object):
             '/v1/modules/search/'
         )
         self._api.add_resource(
+            ApiModuleDetails,
+            '/v1/modules/<string:namespace>/<string:name>',
+            '/v1/modules/<string:namespace>/<string:name>/'
+        )
+        self._api.add_resource(
             ApiModuleProviderDetails,
             '/v1/modules/<string:namespace>/<string:name>/<string:provider>',
             '/v1/modules/<string:namespace>/<string:name>/<string:provider>/')
@@ -1088,8 +1094,8 @@ class ApiModuleDetails(Resource):
                 "offset": 0
             },
             "modules": [
-                module_provider.get_latest_version().get_basic_details()
-                for module_provider in module.get_all_module_providers()
+                module_provider.get_latest_version().get_api_outline()
+                for module_provider in module.get_providers()
             ]
         }
 
