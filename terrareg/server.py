@@ -13,7 +13,7 @@ import sqlalchemy
 import magic
 from werkzeug.utils import secure_filename
 from flask import Flask, request, jsonify, render_template, redirect
-from flask_restful import Resource, Api
+from flask_restful import Resource, Api, reqparse
 
 
 DATA_DIRECTORY = os.path.join(os.environ.get('DATA_DIRECTORY', '.'), 'data')
@@ -86,6 +86,47 @@ class Database(object):
         )
 
         meta.create_all(engine)
+
+
+class ModuleSearch(object):
+
+    @staticmethod
+    def search_module_providers(
+        offset: int,
+        limit: int,
+        provider=None,
+        verified: bool=False):
+
+        db = Database.get()
+        select = db.module_version.select()
+        
+        # If provider has been supplied, select by that
+        if provider:
+            select = select.where(
+                db.module_version.c.provider == provider
+            )
+        
+        # Group by and order by namespace, module and provider
+        select = select.group_by(
+            db.module_version.c.namespace,
+            db.module_version.c.module,
+            db.module_version.c.provider
+        ).order_by(
+            db.module_version.c.namespace.asc(),
+            db.module_version.c.module.asc(),
+            db.module_version.c.provider.asc()
+        ).limit(limit).offset(offset)
+
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+
+        module_providers = []
+        for r in res:
+            namespace = Namespace(name=r['namespace'])
+            module = Module(namespace=namespace, name=r['module'])
+            module_providers.append(ModuleProvider(module=module, name=r['provider']))
+
+        return module_providers
 
 
 class Namespace(object):
@@ -563,6 +604,11 @@ class Server(object):
 
         # Terraform registry routes
         self._api.add_resource(
+            ApiModuleList,
+            '/v1/modules',
+            '/v1/modules/'
+        )
+        self._api.add_resource(
             ApiModuleProviderDetails,
             '/v1/<string:namespace>/<string:name>/<string:provider>',
             '/v1/<string:namespace>/<string:name>/<string:provider>/')
@@ -697,6 +743,53 @@ class Server(object):
             module_provider=module_provider,
             module_version=module_version
         )
+
+class ApiModuleList(Resource):
+    def get(self):
+        """Return list of modules."""
+        parser = reqparse.RequestParser()
+        parser.add_argument(
+            'offset', type=int,
+            default=0, help='Pagination offset')
+        parser.add_argument(
+            'limit', type=int,
+            default=10, help='Pagination limit'
+        )
+        parser.add_argument(
+            'provider', type=str,
+            default=None, help='Limits modules to a specific provider.'
+        )
+        parser.add_argument(
+            'verified', type=bool,
+            default=False, help='Limits modules to only verified modules.'
+        )
+
+        args = parser.parse_args()
+
+        # Limit the limits
+        limit = 50 if args.limit > 50 else args.limit
+        limit = 1 if limit < 1 else limit
+        current_offset = 0 if args.offset < 0 else args.offset
+
+        module_providers = ModuleSearch.search_module_providers(
+            provider=args.provider,
+            verified=args.verified,
+            offset=current_offset,
+            limit=limit
+        )
+
+        return {
+            "meta": {
+                "limit": limit,
+                "current_offset": current_offset,
+                "next_offset": (current_offset + limit),
+                "prev_offset": (current_offset - limit) if (current_offset >= limit) else 0
+            },
+            "modules": [
+                module_provider.get_latest_version().get_api_outline()
+                for module_provider in module_providers
+            ]
+        }
 
 class ApiModuleDetails(Resource):
     def get(self, namespace, name):
