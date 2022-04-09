@@ -1,3 +1,4 @@
+"""Provide extraction method of modules."""
 
 import os
 import tempfile
@@ -18,7 +19,8 @@ from terrareg.errors import (
 )
 
 
-class ModuleExtractor(object):
+class ModuleExtractor():
+    """Provide extraction method of moduls."""
 
     TERRAREG_METADATA_FILES = ['terrareg.json', '.terrareg.json']
 
@@ -26,8 +28,8 @@ class ModuleExtractor(object):
         """Create temporary directories and store member variables."""
         self._upload_file = upload_file
         self._module_version = module_version
-        self._extract_directory = tempfile.TemporaryDirectory()
-        self._upload_directory = tempfile.TemporaryDirectory()
+        self._extract_directory = tempfile.TemporaryDirectory()  # noqa: R1732
+        self._upload_directory = tempfile.TemporaryDirectory()  # noqa: R1732
         self._source_file = None
 
     @property
@@ -78,12 +80,14 @@ class ModuleExtractor(object):
         with zipfile.ZipFile(self.source_file, 'r') as zip_ref:
             zip_ref.extractall(self.extract_directory)
 
-    def _run_terraform_docs(self, module_path):
+    @staticmethod
+    def _run_terraform_docs(module_path):
         """Run terraform docs and return output."""
         terradocs_output = subprocess.check_output(['terraform-docs', 'json', module_path])
         return json.loads(terradocs_output)
 
-    def _get_readme_content(self, module_path):
+    @staticmethod
+    def _get_readme_content(module_path):
         """Obtain README contents for given module."""
         readme_path = os.path.join(module_path, 'README.md')
         if os.path.isfile(readme_path):
@@ -93,7 +97,8 @@ class ModuleExtractor(object):
         # If no README found, return None
         return None
 
-    def _get_terrareg_metadata(self, module_path):
+    @staticmethod
+    def _get_terrareg_metadata(module_path):
         """Obtain terrareg metadata for module, if it exists."""
         terrareg_metadata = {}
         for terrareg_file in self.TERRAREG_METADATA_FILES:
@@ -109,7 +114,7 @@ class ModuleExtractor(object):
 
                 # Remove the meta-data file, so it is not added to the archive
                 os.unlink(path)
-        
+
         return terrareg_metadata
 
     def _generate_archive(self):
@@ -117,15 +122,21 @@ class ModuleExtractor(object):
         with tarfile.open(self._module_version.archive_path, "w:gz") as tar:
             tar.add(self.extract_directory, arcname='', recursive=True)
 
-    def _insert_database(self, readme_content: str, terraform_docs_output: dict, terrareg_metadata: dict) -> int:
+    def _insert_database(
+        self,
+        readme_content: str,
+        terraform_docs_output: dict,
+        terrareg_metadata: dict) -> int:
         """Insert module into DB, overwrite any pre-existing"""
         db = Database.get()
 
         # Delete module from module_version table
         delete_statement = db.module_version.delete().where(
-            db.module_version.c.namespace == self._module_version._module_provider._module._namespace.name
+            db.module_version.c.namespace ==
+            self._module_version._module_provider._module._namespace.name
         ).where(
-            db.module_version.c.module == self._module_version._module_provider._module.name
+            db.module_version.c.module ==
+            self._module_version._module_provider._module.name
         ).where(
             db.module_version.c.provider == self._module_version._module_provider.name
         ).where(
@@ -204,4 +215,3 @@ class ModuleExtractor(object):
 
         for submodule in module_details['modules']:
             self._process_submodule(module_pk, submodule)
-
