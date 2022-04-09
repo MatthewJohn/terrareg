@@ -69,6 +69,10 @@ class Database(object):
             sqlalchemy.Column('module', sqlalchemy.String),
             sqlalchemy.Column('provider', sqlalchemy.String),
             sqlalchemy.Column('version', sqlalchemy.String),
+            sqlalchemy.Column('owner', sqlalchemy.String),
+            sqlalchemy.Column('description', sqlalchemy.String),
+            sqlalchemy.Column('source', sqlalchemy.String),
+            sqlalchemy.Column('published_at', sqlalchemy.String),
             sqlalchemy.Column('readme_content', sqlalchemy.String),
             sqlalchemy.Column('module_details', sqlalchemy.String)
         )
@@ -303,7 +307,7 @@ class ModuleVersion(object):
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
 
-    def get_extended_details(self):
+    def get_api_details(self):
         return {
             "id": self.id,
             "owner": "",
@@ -315,7 +319,7 @@ class ModuleVersion(object):
             "source": "",
             "published_at": "",
             "downloads": 0,
-            "verified": False,
+            "verified": True,
             "root": {},
             "submodules": {}
         }
@@ -562,7 +566,7 @@ class Server(object):
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
         module_version = module_provider.get_latest_version()
-        return jsonify(module_version.get_extended_details())
+        return jsonify(module_version.get_api_details())
 
     def _module_provider_versions(self, namespace, name, provider):
         """Return list of version."""
