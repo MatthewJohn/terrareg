@@ -90,7 +90,10 @@ class Database(object):
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
             sqlalchemy.Column(
                 'parent_module_version',
-                sqlalchemy.ForeignKey('module_version.id'),
+                sqlalchemy.ForeignKey(
+                    'module_version.id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
                 nullable=False
             ),
             sqlalchemy.Column('path', sqlalchemy.String),
@@ -617,6 +620,8 @@ class ModuleExtractor(object):
     def _insert_database(self, readme_content, terraform_docs_output, terrareg_metadata):
         """Insert module into DB, overwrite any pre-existing"""
         db = Database.get()
+
+        # Delete module from module_version table
         delete_statement = db.module_version.delete().where(
             db.module_version.c.namespace == self._module_version._module_provider._module._namespace.name
         ).where(
@@ -629,6 +634,7 @@ class ModuleExtractor(object):
         conn = db.get_engine().connect()
         conn.execute(delete_statement)
 
+        # Insert new module into table
         insert_statement = db.module_version.insert().values(
             namespace=self._module_version._module_provider._module._namespace.name,
             module=self._module_version._module_provider._module.name,
