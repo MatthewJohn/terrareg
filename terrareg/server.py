@@ -75,8 +75,6 @@ class Database(object):
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
             sqlalchemy.Column('namespace', sqlalchemy.String),
             sqlalchemy.Column('module', sqlalchemy.String),
-            # sub_module is set to . for root module
-            sqlalchemy.Column('sub_module', sqlalchemy.String),
             sqlalchemy.Column('provider', sqlalchemy.String),
             sqlalchemy.Column('version', sqlalchemy.String),
             sqlalchemy.Column('owner', sqlalchemy.String),
@@ -280,17 +278,6 @@ class ModuleProvider(object):
         """Return name."""
         return self._name
 
-    @property
-    def submodule_name(self):
-        """Return static submodule for DB query"""
-        # In a lot of terraform information, the 'root'
-        # module is defined as such.
-        # However, this could cause issues if a submodule
-        # existed in a directory call 'root'.
-        # As a reuslt, for the purposes of the database,
-        # it will be defined as a full stop
-        return '.'
-
     def get_view_url(self):
         """Return view URL"""
         return '{module_url}/{module}'.format(
@@ -307,8 +294,6 @@ class ModuleProvider(object):
         """Get latest version of module."""
         db = Database.get()
         select = db.module_version.select().where(
-            db.module_version.c.submodule == self.submodule_name
-        ).where(
             db.module_version.c.namespace == self._module._namespace.name
         ).where(
             db.module_version.c.module == self._module.name
@@ -345,8 +330,6 @@ class ModuleProvider(object):
         db = Database.get()
 
         select = db.module_version.select().where(
-            db.module_version.c.submodule == self.submodule_name
-        ).where(
             db.module_version.c.namespace == self._module._namespace.name
         ).where(
             db.module_version.c.module == self._module.name
@@ -462,8 +445,6 @@ class ModuleVersion(object):
         """Get object from database"""
         db = Database.get()
         select = db.module_version.select().where(
-            db.module_version.c.submodule == self.submodule_name
-        ).where(
             db.module_version.c.namespace == self._module_provider._module._namespace.name
         ).where(
             db.module_version.c.module == self._module_provider._module.name
@@ -589,7 +570,6 @@ class ModuleVersion(object):
                 namespace=self._module_provider._module._namespace.name,
                 module=self._module_provider._module.name,
                 provider=self._module_provider.name,
-                submodule='.',
                 version=self.version,
                 readme_content=''.join(readme_content),
                 module_details=terradocs_output,
