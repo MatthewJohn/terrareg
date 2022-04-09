@@ -17,7 +17,6 @@ from flask_restful import Resource, Api, reqparse
 
 
 DATA_DIRECTORY = os.path.join(os.environ.get('DATA_DIRECTORY', '.'), 'data')
-ROOT_MODULE_SUBMODULE_NAME = '.'
 
 
 class UnknownFiletypeError(Exception):
@@ -103,9 +102,7 @@ class ModuleSearch(object):
         verified: bool=False):
 
         db = Database.get()
-        select = db.module_version.select().where(
-            db.module_version.c.submodule == ROOT_MODULE_SUBMODULE_NAME
-        )
+        select = db.module_version.select()
 
         if query:
             for query_part in query.split():
@@ -220,7 +217,6 @@ class Namespace(object):
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
 
-
 class Module(object):
     
     def __init__(self, namespace: Namespace, name: str):
@@ -242,8 +238,7 @@ class Module(object):
     def get_providers(self):
         """Return module providers for module."""
         db = Database.get()
-        select = db.module_version.select().where(
-            db.module_version.c.submodule == ROOT_MODULE_SUBMODULE_NAME
+        select = db.module_version.select(
         ).where(
             db.module_version.c.namespace == self._namespace.name
         ).where(
@@ -274,7 +269,6 @@ class Module(object):
         """Return base directory."""
         return os.path.join(self._namespace.base_directory, self._name)
 
-
 class ModuleProvider(object):
 
     def __init__(self, module: Module, name: str):
@@ -285,6 +279,17 @@ class ModuleProvider(object):
     def name(self):
         """Return name."""
         return self._name
+
+    @property
+    def submodule_name(self):
+        """Return static submodule for DB query"""
+        # In a lot of terraform information, the 'root'
+        # module is defined as such.
+        # However, this could cause issues if a submodule
+        # existed in a directory call 'root'.
+        # As a reuslt, for the purposes of the database,
+        # it will be defined as a full stop
+        return '.'
 
     def get_view_url(self):
         """Return view URL"""
@@ -302,7 +307,7 @@ class ModuleProvider(object):
         """Get latest version of module."""
         db = Database.get()
         select = db.module_version.select().where(
-            db.module_version.c.submodule == ROOT_MODULE_SUBMODULE_NAME
+            db.module_version.c.submodule == self.submodule_name
         ).where(
             db.module_version.c.namespace == self._module._namespace.name
         ).where(
@@ -340,7 +345,7 @@ class ModuleProvider(object):
         db = Database.get()
 
         select = db.module_version.select().where(
-            db.module_version.c.submodule == ROOT_MODULE_SUBMODULE_NAME
+            db.module_version.c.submodule == self.submodule_name
         ).where(
             db.module_version.c.namespace == self._module._namespace.name
         ).where(
@@ -365,17 +370,6 @@ class ModuleVersion(object):
         self._module_provider = module_provider
         self._version = version
         self._module_specs = None
-
-    @property
-    def submodule_name(self):
-        """Return static submodule for DB query"""
-        # In a lot of terraform information, the 'root'
-        # module is defined as such.
-        # However, this could cause issues if a submodule
-        # existed in a directory call 'root'.
-        # As a reuslt, for the purposes of the database,
-        # it will be defined as a full stop
-        return ROOT_MODULE_SUBMODULE_NAME
 
     def get_view_url(self):
         """Return view URL"""
