@@ -13,6 +13,15 @@
             let search_string = document.getElementById('navBarSearchInput').value;
             window.location.href = '/modules/search?q=' + search_string;
           }
+          function navbar_search_keyup(event) {
+            // If enter
+            if (event.keyCode === 13) {
+              // Cancel default action
+              event.preventDefault();
+              // Trigger search
+              navbar_search_modules();
+            }
+          }
         </script>
     </head>
 
@@ -44,7 +53,7 @@
                 <div class="navbar-item" id="navbarSearch">
                   <div class="field has-addons">
                     <div class="control">
-                      <input id="navBarSearchInput" class="input" type="text" placeholder="Search modules">
+                      <input id="navBarSearchInput" onkeyup="navbar_search_keyup(event);" class="input" type="text" placeholder="Search modules">
                     </div>
                     <div class="control">
                       <a onclick="navbar_search_modules();" class="button is-info">
