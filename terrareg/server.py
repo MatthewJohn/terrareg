@@ -534,6 +534,16 @@ class ModuleVersion(object):
                 terradocs_output = subprocess.check_output(['terraform-docs', 'json', extract_d])
                 module_details = json.loads(terradocs_output)
 
+                for submodule in module_details['modules']:
+                    submodule_dir = os.path.join(extract_d, submodule['source'])
+                    if os.path.isdir(submodule_dir):
+                        subomdule_terraform_docs_output = subprocess.check_output(
+                            ['terraform-docs', 'json', os.path.join(extract_d, submodule['source'])])
+                        print(json.loads(subomdule_terraform_docs_output))
+                    else:
+                        print('Submodule does not appear to be local: {0}'.format(submodule['source']))
+
+
                 # Read readme file
                 readme_content = None
                 if os.path.isfile(os.path.join(extract_d, 'README.md')):
