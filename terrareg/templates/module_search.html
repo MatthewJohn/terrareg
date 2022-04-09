@@ -10,16 +10,11 @@
 </nav>
 
 
-<nav class="level">
-    <div class="level-item">
+<div class="columns">
+    <div class="column is-three-fifths is-offset-one-fifth">
 
-        <table class="table" style="display: none;">
-            <thead>
-                <th>Namespace</th>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
+        <section id="results" style="display: none;">
+        </section>
 
         <div id="noSearchQuery" style="display: none;">
             No search query has been performed.
@@ -28,12 +23,12 @@
         </div>
 
     </div>
-</nav>
+</div>
 
 <script>
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
-    const searchQuery = urlParams.get('query');
+    const searchQuery = urlParams.get('q');
 
     if (searchQuery) {
         console.log('Search query provided');
@@ -42,6 +37,53 @@
         // Update link and text in search query breadcrumb
         document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search' + queryString);
         document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
+
+        // Perform AJAX query to obtain results
+        $.get("/v1/modules/search" + window.location.search, function(data, status){
+            if (data.modules.length == 0) {
+                console.log('No results');
+            } else {
+                document.getElementById('results').style.display = "block";
+            }
+
+            // Iterate through modules
+            data.modules.forEach((module) => {
+                console.log(module);
+                // Add module to search results
+                $('#results').append(
+                    `
+                    <a href="/modules/${module.id}">
+                        <div class="card">
+                            <header class="card-header">
+                                <p class="card-header-title">
+                                    ${module.namespace} / ${module.name}
+                                </p>
+                                <button class="card-header-icon" aria-label="more options">
+                                <span class="icon">
+                                    <i class="fas fa-external-link" aria-hidden="true"></i>
+                                </span>
+                                </button>
+                            </header>
+                            <div class="card-content">
+                                <div class="content">
+                                    Description<br />${module.description}
+                                    <br />
+                                    <br />
+                                    Owner: ${module.owner}
+                                </div>
+                            </div>
+                            <footer class="card-footer">
+                                <p class="card-footer-item">Source: ${module.source}</p>
+                                <br />
+                                <p class="card-footer-item">Last updated: ${module.published_at}</p>
+                            </footer>
+                        </div>
+                    </a>
+                    <br />
+                    `
+                );
+            });
+        });
 
     } else {
         console.log('No search query provided');
