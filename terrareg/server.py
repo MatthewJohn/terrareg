@@ -932,9 +932,11 @@ class ApiModuleVersions(Resource):
                         {
                             "version": v.version,
                             "root": {
+                                # @TODO: Add providers/depdencies
                                 "providers": [],
                                 "dependencies": []
                             },
+                            # @TODO: Add submodule information
                             "submodules": []
                         }
                         for v in module_provider.get_versions()
