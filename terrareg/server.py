@@ -122,14 +122,15 @@ class ModuleSearch(object):
 
         if query:
             for query_part in query.split():
+                wildcarded_query_part = '%{0}%'.format(query_part)
                 select = select.where(
                     sqlalchemy.or_(
                         db.module_version.c.namespace.like(query_part),
                         db.module_version.c.module.like(query_part),
                         db.module_version.c.provider.like(query_part),
                         db.module_version.c.version.like(query_part),
-                        db.module_version.c.description.like(query_part),
-                        db.module_version.c.owner.like(query_part)
+                        db.module_version.c.description.like(wildcarded_query_part),
+                        db.module_version.c.owner.like(wildcarded_query_part)
                     )
                 )
 
@@ -867,6 +868,12 @@ class Server(object):
             '/modules/'
         )(self._view_serve_namespace_list)
         self._app.route(
+            '/modules/search'
+        )(self._view_serve_module_search)
+        self._app.route(
+            '/modules/search/'
+        )(self._view_serve_module_search)
+        self._app.route(
             '/modules/<string:namespace>'
         )(self._view_serve_namespace)
         self._app.route(
@@ -883,6 +890,12 @@ class Server(object):
         )(self._view_serve_module_provider)
         self._app.route(
             '/modules/<string:namespace>/<string:name>/<string:provider>/'
+        )(self._view_serve_module_provider)
+        self._app.route(
+            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>'
+        )(self._view_serve_module_provider)
+        self._app.route(
+            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/'
         )(self._view_serve_module_provider)
 
     def run(self):
@@ -979,6 +992,10 @@ class Server(object):
             module_provider=module_provider,
             module_version=module_version
         )
+
+    def _view_serve_module_search(self):
+        """Search modules based on input."""
+        return render_template('module_search.html')
 
 class ApiModuleList(Resource):
     def get(self):

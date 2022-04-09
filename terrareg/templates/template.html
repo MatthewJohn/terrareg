@@ -5,7 +5,24 @@
         <meta charset="utf-8">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
         <script defer src="https://use.fontawesome.com/releases/v6.0.0/js/all.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+        <script>
+          function navbar_search_modules() {
+            let search_string = document.getElementById('navBarSearchInput').value;
+            window.location.href = '/modules/search?q=' + search_string;
+          }
+          function navbar_search_keyup(event) {
+            // If enter
+            if (event.keyCode === 13) {
+              // Cancel default action
+              event.preventDefault();
+              // Trigger search
+              navbar_search_modules();
+            }
+          }
+        </script>
     </head>
 
 
@@ -13,27 +30,40 @@
 
         <nav class="navbar is-transparent">
             <div class="navbar-brand">
-              <a class="navbar-item" href="https://bulma.io">
+              <a class="navbar-item" href="/">
               <img src="/static/images/logo.png" alt="Terrareg" width="112" height="28">
             </a>
-              <div class="navbar-burger burger" data-target="navbarExampleTransparentExample">
+              <div class="navbar-burger burger" data-target="navbarRegistryDropdown">
                 <span></span>
                 <span></span>
                 <span></span>
               </div>
             </div>
         
-            <div id="navbarExampleTransparentExample" class="navbar-menu">
+            <div  class="navbar-menu">
               <div class="navbar-start">
                 <a class="navbar-item" href="#">Home</a>
-                <div class="navbar-item has-dropdown is-hoverable">
+                <div id="navbarRegistryDropdown" class="navbar-item has-dropdown is-hoverable">
                   <a class="navbar-link" href="#">Registry</a>
                   <div class="navbar-dropdown is-boxed">
                     <a class="navbar-item" href="/modules">Modules</a>
                   </div>
                 </div>
+
+                <div class="navbar-item" id="navbarSearch">
+                  <div class="field has-addons">
+                    <div class="control">
+                      <input id="navBarSearchInput" onkeyup="navbar_search_keyup(event);" class="input" type="text" placeholder="Search modules">
+                    </div>
+                    <div class="control">
+                      <a onclick="navbar_search_modules();" class="button is-info">
+                        Search
+                      </a>
+                    </div>
+                  </div>
+                </div>
               </div>
-        
+
               <div class="navbar-end">
                 <div class="navbar-item">
                   <div class="field is-grouped">
