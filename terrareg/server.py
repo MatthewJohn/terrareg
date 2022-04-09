@@ -6,6 +6,7 @@ import subprocess
 import json
 import tarfile
 from distutils.version import StrictVersion
+import datetime
 
 import markdown
 import sqlalchemy
@@ -25,6 +26,12 @@ class UnknownFiletypeError(Exception):
 
 class NoModuleVersionAvailableError(Exception):
     """No version of this module available."""
+
+    pass
+
+
+class InvalidTerraregMetadataFileError(Exception):
+    """Error whilst reading terrareg metadata file."""
 
     pass
 
@@ -72,7 +79,7 @@ class Database(object):
             sqlalchemy.Column('owner', sqlalchemy.String),
             sqlalchemy.Column('description', sqlalchemy.String),
             sqlalchemy.Column('source', sqlalchemy.String),
-            sqlalchemy.Column('published_at', sqlalchemy.String),
+            sqlalchemy.Column('published_at', sqlalchemy.DateTime),
             sqlalchemy.Column('readme_content', sqlalchemy.String),
             sqlalchemy.Column('module_details', sqlalchemy.String)
         )
@@ -255,6 +262,8 @@ class ModuleProvider(object):
 
 class ModuleVersion(object):
 
+    TERRAREG_METADATA_FILES = ['terrareg.json', '.terrareg.json']
+
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
         self._module_provider = module_provider
@@ -308,16 +317,18 @@ class ModuleVersion(object):
             os.mkdir(self.base_directory)
 
     def get_api_details(self):
+        """Return dict of version details for API response."""
+        row = self._get_db_row()
         return {
             "id": self.id,
-            "owner": "",
+            "owner": row['owner'],
             "namespace": self._module_provider._module._namespace.name,
             "name": self._module_provider._module.name,
             "version": self.version,
             "provider": self._module_provider.name,
-            "description": "",
-            "source": "",
-            "published_at": "",
+            "description": row['description'],
+            "source": row['source'],
+            "published_at": row['published_at'],
             "downloads": 0,
             "verified": True,
             "root": {},
@@ -396,6 +407,22 @@ class ModuleVersion(object):
                     with open(os.path.join(extract_d, 'README.md'), 'r') as readme_fd:
                         readme_content = readme_fd.readlines()
 
+                # Check for any terrareg metadata files
+                terrareg_metadata = {}
+                for terrareg_file in self.TERRAREG_METADATA_FILES:
+                    path = os.path.join(extract_d, terrareg_file)
+                    if os.path.isfile(path):
+                        with open(path, 'r') as terrareg_fh:
+                            try:
+                                terrareg_metadata = json.loads(''.join(terrareg_fh.readlines()))
+                            except:
+                                raise InvalidTerraregMetadataFileError(
+                                    'An error occured whilst processing the terrareg metadata file.'
+                                )
+
+                        # Remove the meta-data file, so it is not added to the archive
+                        os.unlink(path)
+
                 # Generate various archive formats for downloads
                 ## Generate zip file
                 self.create_data_directory()
@@ -426,7 +453,14 @@ class ModuleVersion(object):
                 provider=self._module_provider.name,
                 version=self.version,
                 readme_content=''.join(readme_content),
-                module_details=terradocs_output
+                module_details=terradocs_output,
+
+                published_at=datetime.datetime.now(),
+
+                # Terrareg meta-data
+                owner=terrareg_metadata.get('owner', None),
+                description=terrareg_metadata.get('description', None),
+                source=terrareg_metadata.get('source', None)
             )
             conn.execute(insert_statement)
 
