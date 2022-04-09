@@ -332,8 +332,8 @@ class ModuleVersion(object):
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
 
-    def get_api_details(self):
-        """Return dict of version details for API response."""
+    def get_api_outline(self):
+        """Return dict of basic version details for API response."""
         row = self._get_db_row()
         return {
             "id": self.id,
@@ -347,11 +347,18 @@ class ModuleVersion(object):
             "published_at": row['published_at'].isoformat(),
             "downloads": 0,
             "verified": True,
+        }
+
+    def get_api_details(self):
+        """Return dict of version details for API response."""
+        api_details = self.get_api_outline()
+        api_details.update({
             "root": self.get_api_module_specs(),
             "submodules": {},
             "providers": [p.name for p in self._module_provider._module.get_providers()],
             "versions": [v.version for v in self._module_provider.get_versions()]
-        }
+        })
+        return api_details
 
     def get_api_module_specs(self):
         """Return module specs for API."""
