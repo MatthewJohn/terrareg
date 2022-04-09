@@ -258,7 +258,22 @@ class ModuleProvider(object):
 
     def get_versions(self):
         """Return all module provider versions."""
-        return []
+        db = Database.get()
+
+        select = db.module_version.select().where(
+            db.module_version.c.namespace == self._module._namespace.name
+        ).where(
+            db.module_version.c.module == self._module.name
+        ).where(
+            db.module_version.c.provider == self.name
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+
+        return [
+            ModuleVersion(module_provider=self, version=r['version'])
+            for r in res
+        ]
 
 class ModuleVersion(object):
 
