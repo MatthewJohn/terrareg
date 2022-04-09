@@ -552,40 +552,40 @@ class Server(object):
         # Terraform registry routes
         self._app.route(
             '/v1/<string:namespace>/<string:name>/<string:provider>'
-        )(self._module_provider_details)
+        )(self._api_module_provider_details)
         self._app.route(
             '/v1/<string:namespace>/<string:name>/<string:provider>/versions'
-        )(self._module_provider_versions)
+        )(self._api_module_provider_versions)
         self._app.route(
             '/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/download'
-        )(self._module_version_download)
+        )(self._api_module_version_download)
 
         # Views
-        self._app.route('/')(self._serve_static_index)
+        self._app.route('/')(self._view_serve_static_index)
         self._app.route(
             '/modules'
-        )(self._serve_namespace_list)
+        )(self._view_serve_namespace_list)
         self._app.route(
             '/modules/'
-        )(self._serve_namespace_list)
+        )(self._view_serve_namespace_list)
         self._app.route(
             '/modules/<string:namespace>'
-        )(self._serve_namespace_view)
+        )(self._view_serve_namespace)
         self._app.route(
             '/modules/<string:namespace>/'
-        )(self._serve_namespace_view)
+        )(self._view_serve_namespace)
         self._app.route(
             '/modules/<string:namespace>/<string:name>'
-        )(self._serve_module_view)
+        )(self._view_serve_module)
         self._app.route(
             '/modules/<string:namespace>/<string:name>/'
-        )(self._serve_module_view)
+        )(self._view_serve_module)
         self._app.route(
             '/modules/<string:namespace>/<string:name>/<string:provider>'
-        )(self._serve_module_provider_view)
+        )(self._view_serve_module_provider)
         self._app.route(
             '/modules/<string:namespace>/<string:name>/<string:provider>/'
-        )(self._serve_module_provider_view)
+        )(self._view_serve_module_provider)
 
     def run(self):
         """Run flask server."""
@@ -619,7 +619,7 @@ class Server(object):
 
         return 'Error occurred - unknown file extension'
 
-    def _module_details(self, namespace, name):
+    def _api_module_details(self, namespace, name):
         """Return latest version for each module provider."""
 
         namespace = Namespace(namespace)
@@ -635,7 +635,7 @@ class Server(object):
             ]
         })
 
-    def _module_provider_details(self, namespace, name, provider):
+    def _api_module_provider_details(self, namespace, name, provider):
         """Return list of version."""
 
         namespace = Namespace(namespace)
@@ -644,7 +644,7 @@ class Server(object):
         module_version = module_provider.get_latest_version()
         return jsonify(module_version.get_api_details())
 
-    def _module_provider_versions(self, namespace, name, provider):
+    def _api_module_provider_versions(self, namespace, name, provider):
         """Return list of version."""
 
         namespace = Namespace(namespace)
@@ -652,14 +652,14 @@ class Server(object):
         module_provider = ModuleProvider(module=module, name=provider)
         return jsonify([v for v in module_provider.get_versions()])
 
-    def _module_version_download(self, namespace, name, provider, version):
+    def _api_module_version_download(self, namespace, name, provider, version):
         return ''
 
-    def _serve_static_index(self):
+    def _view_serve_static_index(self):
         """Serve static index"""
         return render_template('index.html')
 
-    def _serve_namespace_list(self):
+    def _view_serve_namespace_list(self):
         """Render view for display module."""
         namespaces = Namespace.get_all()
 
@@ -672,7 +672,7 @@ class Server(object):
                 namespaces=namespaces
             )
 
-    def _serve_namespace_view(self, namespace):
+    def _view_serve_namespace(self, namespace):
         """Render view for namespace."""
         namespace = Namespace(namespace)
         modules = namespace.get_all_modules()
@@ -683,8 +683,7 @@ class Server(object):
             modules=modules
         )
 
-
-    def _serve_module_view(self, namespace, name):
+    def _view_serve_module(self, namespace, name):
         """Render view for display module."""
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
@@ -701,7 +700,7 @@ class Server(object):
                 module_providers=module_providers
             )
 
-    def _serve_module_provider_view(self, namespace, name, provider, version=None):
+    def _view_serve_module_provider(self, namespace, name, provider, version=None):
         """Render view for displaying module provider information"""
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
