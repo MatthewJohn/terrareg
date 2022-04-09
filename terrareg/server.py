@@ -867,6 +867,12 @@ class Server(object):
             '/modules/'
         )(self._view_serve_namespace_list)
         self._app.route(
+            '/modules/search'
+        )(self._view_serve_module_search)
+        self._app.route(
+            '/modules/search/'
+        )(self._view_serve_module_search)
+        self._app.route(
             '/modules/<string:namespace>'
         )(self._view_serve_namespace)
         self._app.route(
@@ -979,6 +985,10 @@ class Server(object):
             module_provider=module_provider,
             module_version=module_version
         )
+
+    def _view_serve_module_search(self):
+        """Search modules based on input."""
+        return render_template('module_search.html')
 
 class ApiModuleList(Resource):
     def get(self):

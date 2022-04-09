@@ -1,0 +1,58 @@
+{% extends 'template.html' %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li id="searchBreadcrumb"><a href="/search">Search</a></li>
+        <li id="searchQueryBreadcrumbParent"><a id="searchQueryBreadcrumb" href=""></a></li>
+    </ul>
+</nav>
+
+
+<nav class="level">
+    <div class="level-item">
+
+        <table class="table" style="display: none;">
+            <thead>
+                <th>Namespace</th>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <div id="noSearchQuery" style="display: none;">
+            No search query has been performed.
+
+            Use the search bar above to search for module.
+        </div>
+
+    </div>
+</nav>
+
+<script>
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const searchQuery = urlParams.get('query');
+
+    if (searchQuery) {
+        console.log('Search query provided');
+        // Mark search query breadcrumb as active
+        document.getElementById('searchQueryBreadcrumbParent').className = "is-active";
+        // Update link and text in search query breadcrumb
+        document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search' + queryString);
+        document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
+
+    } else {
+        console.log('No search query provided');
+        // Set 'search' breadcrumb as active
+        document.getElementById('searchBreadcrumb').className = "is-active";
+        // Remove search query breadcrumb
+        document.getElementById('searchQueryBreadcrumbParent').remove();
+
+        // Show no query provided
+        document.getElementById('noSearchQuery').style.display = "block";
+    }
+</script>
+
+{% endblock %}
