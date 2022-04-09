@@ -331,8 +331,22 @@ class ModuleVersion(object):
             "published_at": row['published_at'].isoformat(),
             "downloads": 0,
             "verified": True,
-            "root": {},
-            "submodules": {}
+            "root": self.get_api_module_specs(),
+            "submodules": {},
+            "providers": [p.name for p in self._module_provider._module.get_providers()],
+            "versions": [v.version for v in self._module_provider.get_versions()]
+        }
+
+    def get_api_module_specs(self):
+        """Return module specs for API."""
+        return {
+            "path": "",
+            "readme": self.get_readme_content(),
+            "empty": False,
+            "inputs": self.get_terraform_inputs(),
+            "outputs": self.get_terraform_outputs(),
+            "dependencies": [],
+            "resources": self.get_terraform_resources(),
         }
 
     def _get_db_row(self):
