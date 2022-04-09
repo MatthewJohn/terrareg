@@ -1,18 +1,39 @@
+"""Provide database class."""
 
 import sqlalchemy
 
+from terrareg.errors import DatabaseMustBeIniistalisedError
 
-class Database(object):
+
+class Database():
+    """Handle database connection and settng up database schema"""
 
     _META = None
     _ENGINE = None
     _INSTANCE = None
 
     def __init__(self):
-        pass
+        """Setup member variables."""
+        self._module_version = None
+        self._sub_module = None
+
+    @property
+    def module_version(self):
+        """Return submodule table."""
+        if self._module_version is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._module_version
+
+    @property
+    def sub_module(self):
+        """Return submodule table."""
+        if self._sub_module is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._sub_module
 
     @classmethod
     def get(cls):
+        """Get singleton instance of class."""
         if cls._INSTANCE is None:
             cls._INSTANCE = Database()
         return cls._INSTANCE
@@ -26,16 +47,17 @@ class Database(object):
 
     @classmethod
     def get_engine(cls):
+        """Get singleton instance of engine."""
         if cls._ENGINE is None:
             cls._ENGINE = sqlalchemy.create_engine('sqlite:///modules.db', echo = True)
         return cls._ENGINE
 
     def initialise(self):
-        """Initialise database schema"""
+        """Initialise database schema."""
         meta = self.get_meta()
         engine = self.get_engine()
 
-        self.module_version = sqlalchemy.Table(
+        self._module_version = sqlalchemy.Table(
             'module_version', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
             sqlalchemy.Column('namespace', sqlalchemy.String),
@@ -50,7 +72,7 @@ class Database(object):
             sqlalchemy.Column('module_details', sqlalchemy.String)
         )
 
-        self.sub_module = sqlalchemy.Table(
+        self._sub_module = sqlalchemy.Table(
             'submodule', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
             sqlalchemy.Column(
@@ -68,4 +90,3 @@ class Database(object):
         )
 
         meta.create_all(engine)
-

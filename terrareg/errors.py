@@ -16,3 +16,9 @@ class InvalidTerraregMetadataFileError(Exception):
     """Error whilst reading terrareg metadata file."""
 
     pass
+
+
+class DatabaseMustBeIniistalisedError(Exception):
+    """Database object must be initialised before accessing tables."""
+
+    pass
