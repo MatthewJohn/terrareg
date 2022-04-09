@@ -2,3 +2,4 @@ python-magic
 flask
 sqlalchemy
 markdown==3.3.6
+flask-restful==0.3.9

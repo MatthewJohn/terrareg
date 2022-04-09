@@ -13,6 +13,7 @@ import sqlalchemy
 import magic
 from werkzeug.utils import secure_filename
 from flask import Flask, request, jsonify, render_template, redirect
+from flask_restful import Resource, Api
 
 
 DATA_DIRECTORY = os.path.join(os.environ.get('DATA_DIRECTORY', '.'), 'data')
@@ -518,6 +519,10 @@ class Server(object):
             static_folder='static',
             template_folder='templates'
         )
+        self._api = Api(
+            self._app,
+            #prefix='v1'
+        )
 
         self.host = '127.0.0.1'
         self.port = 5000
@@ -550,15 +555,19 @@ class Server(object):
         )(self._upload_module_version)
 
         # Terraform registry routes
-        self._app.route(
-            '/v1/<string:namespace>/<string:name>/<string:provider>'
-        )(self._api_module_provider_details)
-        self._app.route(
-            '/v1/<string:namespace>/<string:name>/<string:provider>/versions'
-        )(self._api_module_provider_versions)
-        self._app.route(
+        self._api.add_resource(
+            ApiModuleProviderDetails,
+            '/v1/<string:namespace>/<string:name>/<string:provider>',
+            '/v1/<string:namespace>/<string:name>/<string:provider>/')
+        self._api.add_resource(
+            ApiModuleVersions,
+            '/v1/<string:namespace>/<string:name>/<string:provider>/versions',
+            '/v1/<string:namespace>/<string:name>/<string:provider>/versions/'
+        )
+        self._api.add_resource(
+            ApiModuleVersionDownload,
             '/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/download'
-        )(self._api_module_version_download)
+        )
 
         # Views
         self._app.route('/')(self._view_serve_static_index)
@@ -618,42 +627,6 @@ class Server(object):
             return 'Upload sucessful'
 
         return 'Error occurred - unknown file extension'
-
-    def _api_module_details(self, namespace, name):
-        """Return latest version for each module provider."""
-
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        return jsonify({
-            "meta": {
-                "limit": 5,
-                "offset": 0
-            },
-            "modules": [
-                module_provider.get_latest_version().get_basic_details()
-                for module_provider in module.get_all_module_providers()
-            ]
-        })
-
-    def _api_module_provider_details(self, namespace, name, provider):
-        """Return list of version."""
-
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
-        module_version = module_provider.get_latest_version()
-        return jsonify(module_version.get_api_details())
-
-    def _api_module_provider_versions(self, namespace, name, provider):
-        """Return list of version."""
-
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
-        return jsonify([v for v in module_provider.get_versions()])
-
-    def _api_module_version_download(self, namespace, name, provider, version):
-        return ''
 
     def _view_serve_static_index(self):
         """Serve static index"""
@@ -717,3 +690,46 @@ class Server(object):
             module_provider=module_provider,
             module_version=module_version
         )
+
+class ApiModuleDetails(Resource):
+    def get(self, namespace, name):
+        """Return latest version for each module provider."""
+
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        return jsonify({
+            "meta": {
+                "limit": 5,
+                "offset": 0
+            },
+            "modules": [
+                module_provider.get_latest_version().get_basic_details()
+                for module_provider in module.get_all_module_providers()
+            ]
+        })
+
+class ApiModuleProviderDetails(Resource):
+
+    def get(self, namespace, name, provider):
+        """Return list of version."""
+
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        module_version = module_provider.get_latest_version()
+        return jsonify(module_version.get_api_details())
+
+
+class ApiModuleVersions(Resource):
+
+    def get(self, namespace, name, provider):
+        """Return list of version."""
+
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        return jsonify([v for v in module_provider.get_versions()])
+
+class ApiModuleVersionDownload(Resource):
+    def get(self, namespace, name, provider, version):
+        return ''
