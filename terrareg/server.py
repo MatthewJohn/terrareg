@@ -122,14 +122,15 @@ class ModuleSearch(object):
 
         if query:
             for query_part in query.split():
+                wildcarded_query_part = '%{0}%'.format(query_part)
                 select = select.where(
                     sqlalchemy.or_(
                         db.module_version.c.namespace.like(query_part),
                         db.module_version.c.module.like(query_part),
                         db.module_version.c.provider.like(query_part),
                         db.module_version.c.version.like(query_part),
-                        db.module_version.c.description.like(query_part),
-                        db.module_version.c.owner.like(query_part)
+                        db.module_version.c.description.like(wildcarded_query_part),
+                        db.module_version.c.owner.like(wildcarded_query_part)
                     )
                 )
 
