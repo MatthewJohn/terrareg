@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
-from pip.req import parse_requirements
 
-install_reqs = parse_requirements('requirements.txt', session='hack')
+with open('requirements.txt') as f:
+    required = f.read().splitlines()
 
 setup(name='terrareg',
       version='0.1.0',
@@ -12,5 +12,5 @@ setup(name='terrareg',
       author_email='matthew@dockstudios.co.uk',
       url='https://gitlab.dockstudios.co.uk/pub/terrareg',
       packages=['terrareg'],
-      install_requires=reqs
+      install_requires=required
 )
