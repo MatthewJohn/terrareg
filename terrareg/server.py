@@ -889,7 +889,7 @@ class ApiModuleDetails(Resource):
 
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
-        return jsonify({
+        return {
             "meta": {
                 "limit": 5,
                 "offset": 0
@@ -898,7 +898,7 @@ class ApiModuleDetails(Resource):
                 module_provider.get_latest_version().get_basic_details()
                 for module_provider in module.get_all_module_providers()
             ]
-        })
+        }
 
 class ApiModuleProviderDetails(Resource):
 
@@ -909,7 +909,7 @@ class ApiModuleProviderDetails(Resource):
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
         module_version = module_provider.get_latest_version()
-        return jsonify(module_version.get_api_details())
+        return module_version.get_api_details()
 
 
 class ApiModuleVersions(Resource):
@@ -920,7 +920,28 @@ class ApiModuleVersions(Resource):
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
-        return jsonify([v for v in module_provider.get_versions()])
+        return {
+            "modules": [
+                {
+                    "source": "{namespace}/{module}/{provider}".format(
+                        namespace=namespace.name,
+                        module=module.name,
+                        provider=module_provider.name
+                    ),
+                    "versions": [
+                        {
+                            "version": v.version,
+                            "root": {
+                                "providers": [],
+                                "dependencies": []
+                            },
+                            "submodules": []
+                        }
+                        for v in module_provider.get_versions()
+                    ]
+                }
+            ]
+        }
 
 class ApiModuleVersionDownload(Resource):
     def get(self, namespace, name, provider, version):
