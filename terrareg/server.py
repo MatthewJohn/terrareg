@@ -890,6 +890,12 @@ class Server(object):
         self._app.route(
             '/modules/<string:namespace>/<string:name>/<string:provider>/'
         )(self._view_serve_module_provider)
+        self._app.route(
+            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>'
+        )(self._view_serve_module_provider)
+        self._app.route(
+            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/'
+        )(self._view_serve_module_provider)
 
     def run(self):
         """Run flask server."""
