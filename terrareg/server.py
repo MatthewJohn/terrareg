@@ -849,6 +849,11 @@ class Server(object):
             '/v1/modules/<string:namespace>/<string:name>/<string:provider>/versions/'
         )
         self._api.add_resource(
+            ApiModuleVersionDetails,
+            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>',
+            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/'
+        )
+        self._api.add_resource(
             ApiModuleVersionDownload,
             '/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/download'
         )
@@ -1108,6 +1113,18 @@ class ApiModuleProviderDetails(Resource):
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
         module_version = module_provider.get_latest_version()
+        return module_version.get_api_details()
+
+
+class ApiModuleVersionDetails(Resource):
+
+    def get(self, namespace, name, provider, version):
+        """Return list of version."""
+
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        module_version = ModuleVersion(module_provider=module_provider, version=version)
         return module_version.get_api_details()
 
 
