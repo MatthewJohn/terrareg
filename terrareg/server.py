@@ -85,6 +85,20 @@ class Database(object):
             sqlalchemy.Column('module_details', sqlalchemy.String)
         )
 
+        self.sub_module = sqlalchemy.Table(
+            'submodule', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column(
+                'parent_module_version',
+                sqlalchemy.ForeignKey('module_version.id'),
+                nullable=False
+            ),
+            sqlalchemy.Column('path', sqlalchemy.String),
+            sqlalchemy.Column('name', sqlalchemy.String),
+            sqlalchemy.Column('readme_content', sqlalchemy.String),
+            sqlalchemy.Column('module_details', sqlalchemy.String)
+        )
+
         meta.create_all(engine)
 
 
