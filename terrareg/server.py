@@ -360,8 +360,6 @@ class ModuleProvider(object):
 
 class ModuleVersion(object):
 
-    TERRAREG_METADATA_FILES = ['terrareg.json', '.terrareg.json']
-
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
         self._module_provider = module_provider
@@ -511,101 +509,182 @@ class ModuleVersion(object):
         return []
 
     def handle_file_upload(self, file):
+        """Handle file upload of module version."""
+        self.create_data_directory()
+        with ModuleExtractor(upload_file=file, module_version=self) as me:
+            me.process_upload()
+
+
+class ModuleExtractor(object):
+
+    TERRAREG_METADATA_FILES = ['terrareg.json', '.terrareg.json']
+
+    def __init__(self, upload_file, module_version: ModuleVersion):
+        """Create temporary directories and store member variables."""
+        self._upload_file = upload_file
+        self._module_version = module_version
+        self._extract_directory = tempfile.TemporaryDirectory()
+        self._upload_directory = tempfile.TemporaryDirectory()
+        self._source_file = None
+
+    @property
+    def source_file(self):
+        """Generate/return source filename."""
+        if self._source_file is None:
+            filename = secure_filename(self._upload_file.filename)
+            self._source_file = os.path.join(self.upload_directory, filename)
+        return self._source_file
+
+    @property
+    def extract_directory(self):
+        """Return path of extract directory."""
+        return self._extract_directory.name
+
+    @property
+    def upload_directory(self):
+        """Return path of extract directory."""
+        return self._upload_directory.name
+
+    def __enter__(self):
+        """Run enter of upstream context managers."""
+        self._extract_directory.__enter__()
+        self._upload_directory.__enter__()
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        """Run exit of upstream context managers."""
+        self._extract_directory.__exit__(*args, **kwargs)
+        self._upload_directory.__exit__(*args, **kwargs)
+
+    def _save_upload_file(self):
+        """Save uploaded file to uploads directory."""
+        filename = secure_filename(self._upload_file.filename)
+        source_file = os.path.join(self.upload_directory, filename)
+        self._upload_file.save(source_file)
+
+    def _check_file_type(self):
+        """Check filetype"""
+        file_type = magic.from_file(self.source_file, mime=True)
+        if file_type == 'application/zip':
+            pass
+        else:
+            raise UnknownFiletypeError('Upload file is of unknown filetype. Must by zip, tar.gz')
+
+    def _extract_archive(self):
+        """Extract uploaded archive into extract directory."""
+        with zipfile.ZipFile(self.source_file, 'r') as zip_ref:
+            zip_ref.extractall(self.extract_directory)
+
+    def _run_terraform_docs(self, module_path):
+        """Run terraform docs and return output."""
+        terradocs_output = subprocess.check_output(['terraform-docs', 'json', module_path])
+        return json.loads(terradocs_output)
+
+    def _get_readme_content(self, module_path):
+        """Obtain README contents for given module."""
+        readme_path = os.path.join(module_path, 'README.md')
+        if os.path.isfile(readme_path):
+            with open(readme_path, 'r') as readme_fd:
+                return ''.join(readme_fd.readlines())
+
+        # If no README found, return None
+        return None
+
+    def _get_terrareg_metadata(self, module_path):
+        """Obtain terrareg metadata for module, if it exists."""
+        terrareg_metadata = {}
+        for terrareg_file in self.TERRAREG_METADATA_FILES:
+            path = os.path.join(module_path, terrareg_file)
+            if os.path.isfile(path):
+                with open(path, 'r') as terrareg_fh:
+                    try:
+                        terrareg_metadata = json.loads(''.join(terrareg_fh.readlines()))
+                    except:
+                        raise InvalidTerraregMetadataFileError(
+                            'An error occured whilst processing the terrareg metadata file.'
+                        )
+
+                # Remove the meta-data file, so it is not added to the archive
+                os.unlink(path)
+        
+        return terrareg_metadata
+
+    def _generate_archive(self):
+        """Generate archive of extracted module"""
+        with tarfile.open(self._module_version.archive_path, "w:gz") as tar:
+            tar.add(self.extract_directory, arcname='', recursive=True)
+
+    def _insert_database(self, readme_content, terraform_docs_output, terrareg_metadata):
+        """Insert module into DB, overwrite any pre-existing"""
+        db = Database.get()
+        delete_statement = db.module_version.delete().where(
+            db.module_version.c.namespace == self._module_version._module_provider._module._namespace.name
+        ).where(
+            db.module_version.c.module == self._module_version._module_provider._module.name
+        ).where(
+            db.module_version.c.provider == self._module_version._module_provider.name
+        ).where(
+            db.module_version.c.version == self._module_version.version
+        )
+        conn = db.get_engine().connect()
+        conn.execute(delete_statement)
+
+        insert_statement = db.module_version.insert().values(
+            namespace=self._module_version._module_provider._module._namespace.name,
+            module=self._module_version._module_provider._module.name,
+            provider=self._module_version._module_provider.name,
+            version=self._module_version.version,
+            readme_content=readme_content,
+            module_details=json.dumps(terraform_docs_output),
+
+            published_at=datetime.datetime.now(),
+
+            # Terrareg meta-data
+            owner=terrareg_metadata.get('owner', None),
+            description=terrareg_metadata.get('description', None),
+            source=terrareg_metadata.get('source', None)
+        )
+        conn.execute(insert_statement)
+
+    def _process_submodule(self, submodule):
+        """Process submodule."""
+        submodule_dir = os.path.join(self.extract_directory, submodule['source'])
+        if os.path.isdir(submodule_dir):
+            subomdule_terraform_docs_output = subprocess.check_output(
+                ['terraform-docs', 'json', os.path.join(self.extract_directory, submodule['source'])])
+            print(json.loads(subomdule_terraform_docs_output))
+        else:
+            print('Submodule does not appear to be local: {0}'.format(submodule['source']))
+
+    def process_upload(self):
         """Handle file upload of module source."""
-        with tempfile.TemporaryDirectory() as upload_d:
-            # Save uploaded file to uploads directory
-            filename = secure_filename(file.filename)
-            source_file = os.path.join(upload_d, filename)
-            file.save(source_file)
+        self._save_upload_file()
+        self._check_file_type()
+        self._extract_archive()
 
-            # Check filetype and extract archive
-            file_type = magic.from_file(source_file, mime=True)
-            if file_type == 'application/zip':
-                pass
-            else:
-                raise UnknownFiletypeError('Upload file is of unknown filetype. Must by zip, tar.gz')
+        # Run terraform-docs on module content and obtain README
+        module_details = self._run_terraform_docs(self.extract_directory)
+        readme_content = self._get_readme_content(self.extract_directory)
 
-            with tempfile.TemporaryDirectory() as extract_d:
-                # Extract archive into temporary directory
-                with zipfile.ZipFile(source_file, 'r') as zip_ref:
-                    zip_ref.extractall(extract_d)
+        # Check for any terrareg metadata files
+        terrareg_metadata = self._get_terrareg_metadata(self.extract_directory)
 
-                # Run terraform-docs on module content
-                terradocs_output = subprocess.check_output(['terraform-docs', 'json', extract_d])
-                module_details = json.loads(terradocs_output)
+        self._generate_archive()
 
-                for submodule in module_details['modules']:
-                    submodule_dir = os.path.join(extract_d, submodule['source'])
-                    if os.path.isdir(submodule_dir):
-                        subomdule_terraform_docs_output = subprocess.check_output(
-                            ['terraform-docs', 'json', os.path.join(extract_d, submodule['source'])])
-                        print(json.loads(subomdule_terraform_docs_output))
-                    else:
-                        print('Submodule does not appear to be local: {0}'.format(submodule['source']))
+        # Debug
+        # print(module_details)
+        print(json.dumps(module_details, sort_keys=False, indent=4))
+        # print(readme_content)
 
+        self._insert_database(
+            readme_content=readme_content,
+            terraform_docs_output=module_details,
+            terrareg_metadata=terrareg_metadata
+        )
 
-                # Read readme file
-                readme_content = None
-                if os.path.isfile(os.path.join(extract_d, 'README.md')):
-                    with open(os.path.join(extract_d, 'README.md'), 'r') as readme_fd:
-                        readme_content = readme_fd.readlines()
+        for submodule in module_details['modules']:
+            self._process_submodule(submodule)
 
-                # Check for any terrareg metadata files
-                terrareg_metadata = {}
-                for terrareg_file in self.TERRAREG_METADATA_FILES:
-                    path = os.path.join(extract_d, terrareg_file)
-                    if os.path.isfile(path):
-                        with open(path, 'r') as terrareg_fh:
-                            try:
-                                terrareg_metadata = json.loads(''.join(terrareg_fh.readlines()))
-                            except:
-                                raise InvalidTerraregMetadataFileError(
-                                    'An error occured whilst processing the terrareg metadata file.'
-                                )
-
-                        # Remove the meta-data file, so it is not added to the archive
-                        os.unlink(path)
-
-                # Generate various archive formats for downloads
-                ## Generate zip file
-                self.create_data_directory()
-                with tarfile.open(self.archive_path, "w:gz") as tar:
-                    tar.add(extract_d, arcname='', recursive=True)
-
-            # print(module_details)
-            print(json.dumps(module_details, sort_keys=False, indent=4))
-            # print(readme_content)
-
-            # Insert module into DB, overwrite any pre-existing
-            db = Database.get()
-            delete_statement = db.module_version.delete().where(
-                db.module_version.c.namespace == self._module_provider._module._namespace.name
-            ).where(
-                db.module_version.c.module == self._module_provider._module.name
-            ).where(
-                db.module_version.c.provider == self._module_provider.name
-            ).where(
-                db.module_version.c.version == self.version
-            )
-            conn = db.get_engine().connect()
-            conn.execute(delete_statement)
-
-            insert_statement = db.module_version.insert().values(
-                namespace=self._module_provider._module._namespace.name,
-                module=self._module_provider._module.name,
-                provider=self._module_provider.name,
-                version=self.version,
-                readme_content=''.join(readme_content),
-                module_details=terradocs_output,
-
-                published_at=datetime.datetime.now(),
-
-                # Terrareg meta-data
-                owner=terrareg_metadata.get('owner', None),
-                description=terrareg_metadata.get('description', None),
-                source=terrareg_metadata.get('source', None)
-            )
-            conn.execute(insert_statement)
 
 class Server(object):
     """Manage web server and route requests"""
