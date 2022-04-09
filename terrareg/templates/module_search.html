@@ -97,6 +97,9 @@
         document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search' + queryString);
         document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
 
+        // Set search input value to search string
+        $('#navBarSearchInput').val(searchQuery);
+
         // Perform AJAX query to obtain results
         $.get("/v1/modules/search" + window.location.search, function(data, status){
             if (data.modules.length == 0) {
