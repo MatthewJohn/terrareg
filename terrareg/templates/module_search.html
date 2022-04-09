@@ -16,9 +16,15 @@
         <section id="results" style="display: none;">
         </section>
 
+        <div id="noResults" style="display: none;">
+            No modules match your search criteria.
+            <br />
+            Please check for spelling errors and try again.
+        </div>
+
         <div id="noSearchQuery" style="display: none;">
             No search query has been performed.
-
+            <br />
             Use the search bar above to search for module.
         </div>
 
@@ -104,6 +110,7 @@
         $.get("/v1/modules/search" + window.location.search, function(data, status){
             if (data.modules.length == 0) {
                 console.log('No results');
+                document.getElementById('noResults').style.display = "block";
             } else {
                 document.getElementById('results').style.display = "block";
             }
