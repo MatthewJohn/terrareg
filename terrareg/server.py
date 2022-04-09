@@ -328,7 +328,7 @@ class ModuleVersion(object):
             "provider": self._module_provider.name,
             "description": row['description'],
             "source": row['source'],
-            "published_at": row['published_at'],
+            "published_at": row['published_at'].isoformat(),
             "downloads": 0,
             "verified": True,
             "root": {},
