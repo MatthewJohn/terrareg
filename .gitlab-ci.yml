@@ -27,7 +27,6 @@ before_script:
   - pip install --proxy=$http_proxy virtualenv
   - virtualenv venv
   - source venv/bin/activate
-  - pip install --proxy=$http_proxy -r requirements.txt
 
 test:
   script:
