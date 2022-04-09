@@ -1,0 +1,163 @@
+{% extends 'template.html' %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li id="searchBreadcrumb"><a href="/modules/search">Search</a></li>
+        <li id="searchQueryBreadcrumbParent"><a id="searchQueryBreadcrumb" href=""></a></li>
+    </ul>
+</nav>
+
+
+<div class="columns">
+    <div class="column is-three-fifths is-offset-one-fifth">
+
+        <section id="results" style="display: none;">
+        </section>
+
+        <div id="noSearchQuery" style="display: none;">
+            No search query has been performed.
+
+            Use the search bar above to search for module.
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const searchQuery = urlParams.get('q');
+
+    function timeDifference(previous) {
+        var msPerMinute = 60 * 1000;
+        var msPerHour = msPerMinute * 60;
+        var msPerDay = msPerHour * 24;
+        var msPerMonth = msPerDay * 30;
+        var msPerYear = msPerDay * 365;
+
+        var current = new Date();
+        var elapsed = current - previous;
+
+        if (elapsed < msPerMinute) {
+            let cnt = Math.round(elapsed / 1000);
+            if (cnt == 1) {
+                return cnt + ' second ago';
+            }
+            return cnt + ' seconds ago';
+        }
+
+        else if (elapsed < msPerHour) {
+            let cnt = Math.round(elapsed / msPerMinute);
+            if (cnt == 1) {
+                return cnt + ' minute ago';
+            }
+            return cnt + ' minutes ago';
+        }
+
+        else if (elapsed < msPerDay ) {
+            let cnt = Math.round(elapsed / msPerHour);
+            if (cnt == 1) {
+                return cnt + ' hour ago';
+            }
+            return cnt + ' hours ago';
+        }
+
+        else if (elapsed < msPerMonth) {
+            let cnt = Math.round(elapsed / msPerDay);
+            if (cnt == 1) {
+                return 'approximately ' + cnt + ' day ago'
+            }
+            return 'approximately ' + cnt + ' days ago';
+        }
+
+        else if (elapsed < msPerYear) {
+            let cnt = Math.round(elapsed / msPerMonth);
+            if (cnt == 1) {
+                return 'approximately ' + cnt + ' month ago';
+            }
+            return 'approximately ' + cnt + ' months ago';
+        }
+
+        else {
+            let cnt = Math.round(elapsed / msPerYear);
+            if (cnt == 1) {
+                return 'approximately ' + cnt + ' year ago';
+            }
+            return 'approximately ' + cnt + ' years ago';   
+        }
+    }
+
+    if (searchQuery) {
+        console.log('Search query provided');
+        // Mark search query breadcrumb as active
+        document.getElementById('searchQueryBreadcrumbParent').className = "is-active";
+        // Update link and text in search query breadcrumb
+        document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search' + queryString);
+        document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
+
+        // Set search input value to search string
+        $('#navBarSearchInput').val(searchQuery);
+
+        // Perform AJAX query to obtain results
+        $.get("/v1/modules/search" + window.location.search, function(data, status){
+            if (data.modules.length == 0) {
+                console.log('No results');
+            } else {
+                document.getElementById('results').style.display = "block";
+            }
+
+            // Iterate through modules
+            data.modules.forEach((module) => {
+                console.log(module);
+                let display_published = timeDifference(new Date(module.published_at));
+                // Add module to search results
+                $('#results').append(
+                    `
+                    <a href="/modules/${module.id}">
+                        <div class="card">
+                            <header class="card-header">
+                                <p class="card-header-title">
+                                    ${module.namespace} / ${module.name}
+                                </p>
+                                <button class="card-header-icon" aria-label="more options">
+                                <span class="icon">
+                                    <i class="fas fa-external-link" aria-hidden="true"></i>
+                                </span>
+                                </button>
+                            </header>
+                            <div class="card-content">
+                                <div class="content">
+                                    Description<br />${module.description}
+                                    <br />
+                                    <br />
+                                    Owner: ${module.owner}
+                                </div>
+                            </div>
+                            <footer class="card-footer">
+                                <p class="card-footer-item">Source: ${module.source}</p>
+                                <br />
+                                <p class="card-footer-item">Last updated: ${display_published}</p>
+                            </footer>
+                        </div>
+                    </a>
+                    <br />
+                    `
+                );
+            });
+        });
+
+    } else {
+        console.log('No search query provided');
+        // Set 'search' breadcrumb as active
+        document.getElementById('searchBreadcrumb').className = "is-active";
+        // Remove search query breadcrumb
+        document.getElementById('searchQueryBreadcrumbParent').remove();
+
+        // Show no query provided
+        document.getElementById('noSearchQuery').style.display = "block";
+    }
+</script>
+
+{% endblock %}
