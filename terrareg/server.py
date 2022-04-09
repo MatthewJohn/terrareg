@@ -94,18 +94,24 @@ class ModuleSearch(object):
     def search_module_providers(
         offset: int,
         limit: int,
-        provider=None,
+        provider: str=None,
         verified: bool=False):
 
         db = Database.get()
         select = db.module_version.select()
-        
+
         # If provider has been supplied, select by that
         if provider:
             select = select.where(
                 db.module_version.c.provider == provider
             )
-        
+
+        # Filter by verified modules, if requested
+        if verified:
+            select = select.where(
+                db.module_version.c.verified == True
+            )
+
         # Group by and order by namespace, module and provider
         select = select.group_by(
             db.module_version.c.namespace,
