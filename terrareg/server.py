@@ -1,4 +1,5 @@
 
+from ast import Sub
 import os
 import tempfile
 import zipfile
@@ -361,13 +362,78 @@ class ModuleProvider(object):
             for r in res
         ]
 
-class ModuleVersion(object):
+
+class TerraformSpecsObject(object):
+    """Base terraform object, that has terraform-docs available."""
+
+    def __init__(self):
+        """Setup member variables."""
+        self._module_specs = None
+
+    @property
+    def path(self):
+        """Return module path"""
+        raise NotImplementedError
+
+    def _get_db_row(self):
+        """Must be implemented by object. Return row from DB."""
+        raise NotImplementedError
+
+    def get_module_specs(self):
+        """Return module specs"""
+        if self._module_specs is None:
+            self._module_specs = json.loads(self._get_db_row()['module_details'])
+        return self._module_specs
+
+    def get_readme_content(self):
+        """Get readme contents"""
+        return self._get_db_row()['readme_content']
+
+    def get_terraform_inputs(self):
+        """Obtain module inputs"""
+        return self.get_module_specs()['inputs']
+
+    def get_terraform_outputs(self):
+        """Obtain module inputs"""
+        return self.get_module_specs()['outputs']
+
+    def get_terraform_resources(self):
+        """Obtain module resources."""
+        return self.get_module_specs()['resources']
+
+    def get_terraform_dependencies(self):
+        """Obtain module dependencies."""
+        #return self.get_module_specs()['requirements']
+        # @TODO Verify what this should be - terraform example is empty and real-world examples appears to
+        # be empty, but do have an undocumented 'provider_dependencies'
+        return []
+
+    def get_terraform_provider_dependencies(self):
+        """Obtain module dependencies."""
+        # @TODO See Above
+        #return self.get_module_specs()['providers']
+        return []
+
+    def get_api_module_specs(self):
+        """Return module specs for API."""
+        return {
+            "path": self.path,
+            "readme": self.get_readme_content(),
+            "empty": False,
+            "inputs": self.get_terraform_inputs(),
+            "outputs": self.get_terraform_outputs(),
+            "dependencies": self.get_terraform_dependencies(),
+            "provider_dependencies": self.get_terraform_provider_dependencies(),
+            "resources": self.get_terraform_resources(),
+        }
+
+class ModuleVersion(TerraformSpecsObject):
 
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
         self._module_provider = module_provider
         self._version = version
-        self._module_specs = None
+        super(ModuleVersion, self).__init__()
 
     def get_view_url(self):
         """Return view URL"""
@@ -395,6 +461,17 @@ class ModuleVersion(object):
     def archive_path(self):
         """Return full path of the archive file."""
         return os.path.join(self.base_directory, self.archive_name)
+
+    @property
+    def pk(self):
+        """Return database ID of module version."""
+        return self._get_db_row()['id']
+
+    @property
+    def path(self):
+        """Return module path"""
+        # Root module is always empty
+        return ''
 
     @property
     def id(self):
@@ -437,24 +514,11 @@ class ModuleVersion(object):
         api_details = self.get_api_outline()
         api_details.update({
             "root": self.get_api_module_specs(),
-            "submodules": {},
+            "submodules": [sm.get_api_module_specs() for sm in self.get_submodules()],
             "providers": [p.name for p in self._module_provider._module.get_providers()],
             "versions": [v.version for v in self._module_provider.get_versions()]
         })
         return api_details
-
-    def get_api_module_specs(self):
-        """Return module specs for API."""
-        return {
-            "path": "",
-            "readme": self.get_readme_content(),
-            "empty": False,
-            "inputs": self.get_terraform_inputs(),
-            "outputs": self.get_terraform_outputs(),
-            "dependencies": self.get_terraform_dependencies(),
-            "provider_dependencies": self.get_terraform_provider_dependencies(),
-            "resources": self.get_terraform_resources(),
-        }
 
     def _get_db_row(self):
         """Get object from database"""
@@ -472,50 +536,55 @@ class ModuleVersion(object):
         res = conn.execute(select)
         return res.fetchone()
 
-    def get_readme_content(self):
-        """Get readme contents"""
-        return self._get_db_row()['readme_content']
-
     def get_readme_html(self):
         """Convert readme markdown to HTML"""
         return markdown.markdown(self.get_readme_content(), extensions=['fenced_code'])
-
-    def get_module_specs(self):
-        """Return module specs"""
-        if self._module_specs is None:
-            self._module_specs = json.loads(self._get_db_row()['module_details'])
-        return self._module_specs
-
-    def get_terraform_inputs(self):
-        """Obtain module inputs"""
-        return self.get_module_specs()['inputs']
-
-    def get_terraform_outputs(self):
-        """Obtain module inputs"""
-        return self.get_module_specs()['outputs']
-
-    def get_terraform_resources(self):
-        """Obtain module resources."""
-        return self.get_module_specs()['resources']
-
-    def get_terraform_dependencies(self):
-        """Obtain module dependencies."""
-        #return self.get_module_specs()['requirements']
-        # @TODO Verify what this should be - terraform example is empty and real-world examples appears to
-        # be empty, but do have an undocumented 'provider_dependencies'
-        return []
-
-    def get_terraform_provider_dependencies(self):
-        """Obtain module dependencies."""
-        # @TODO See Above
-        #return self.get_module_specs()['providers']
-        return []
 
     def handle_file_upload(self, file):
         """Handle file upload of module version."""
         self.create_data_directory()
         with ModuleExtractor(upload_file=file, module_version=self) as me:
             me.process_upload()
+
+    def get_submodules(self):
+        """Return list of submodules."""
+        db = Database.get()
+        select = db.sub_module.select(
+        ).join(db.module_version, db.module_version.c.id == db.sub_module.c.parent_module_version).where(
+            db.module_version.c.id == self.pk,
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+
+        return [
+            Submodule(module_version=self, module_path=r['path'])
+            for r in res
+        ]
+
+
+class Submodule(TerraformSpecsObject):
+    """Sub module from a module version."""
+
+    def __init__(self, module_version: ModuleVersion, module_path: str):
+        self._module_version = module_version
+        self._module_path = module_path
+        super(Submodule, self).__init__()
+
+    @property
+    def path(self):
+        """Return module path"""
+        return self._module_path
+
+    def _get_db_row(self):
+        """Get object from database"""
+        db = Database.get()
+        select = db.sub_module.select().where(
+            db.sub_module.c.parent_module_version == self._module_version.pk,
+            db.sub_module.c.path == self._module_path
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+        return res.fetchone()
 
 
 class ModuleExtractor(object):
