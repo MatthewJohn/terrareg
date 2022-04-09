@@ -394,12 +394,15 @@ class ModuleVersion(object):
 
     def get_terraform_dependencies(self):
         """Obtain module dependencies."""
-        print(self.get_module_specs().keys())
-        return self.get_module_specs()['requirements']
+        #return self.get_module_specs()['requirements']
+        # @TODO Verify what this should be - terraform example is empty and real-world examples appears to
+        # be empty, but do have an undocumented 'provider_dependencies'
+        return []
 
     def get_terraform_provider_dependencies(self):
         """Obtain module dependencies."""
-        return self.get_module_specs()['providers']
+        # @TODO See Above
+        #return self.get_module_specs()['providers']
 
     def handle_file_upload(self, file):
         """Handle file upload of module source."""
