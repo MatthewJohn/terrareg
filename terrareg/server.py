@@ -94,16 +94,37 @@ class ModuleSearch(object):
     def search_module_providers(
         offset: int,
         limit: int,
+        query: str=None,
+        namespace: str=None,
         provider: str=None,
         verified: bool=False):
 
         db = Database.get()
         select = db.module_version.select()
 
+        if query:
+            for query_part in query.split():
+                select = select.where(
+                    sqlalchemy.or_(
+                        db.module_version.c.namespace.like(query_part),
+                        db.module_version.c.module.like(query_part),
+                        db.module_version.c.provider.like(query_part),
+                        db.module_version.c.version.like(query_part),
+                        db.module_version.c.description.like(query_part),
+                        db.module_version.c.owner.like(query_part)
+                    )
+                )
+
         # If provider has been supplied, select by that
         if provider:
             select = select.where(
                 db.module_version.c.provider == provider
+            )
+
+        # If namespace has been supplied, select by that
+        if namespace:
+            select = select.where(
+                db.module_version.c.namespace == namespace
             )
 
         # Filter by verified modules, if requested
@@ -615,6 +636,11 @@ class Server(object):
             '/v1/modules/'
         )
         self._api.add_resource(
+            ApiModuleSearch,
+            '/v1/modules/search',
+            '/v1/modules/search/'
+        )
+        self._api.add_resource(
             ApiModuleProviderDetails,
             '/v1/modules/<string:namespace>/<string:name>/<string:provider>',
             '/v1/modules/<string:namespace>/<string:name>/<string:provider>/')
@@ -778,6 +804,66 @@ class ApiModuleList(Resource):
         current_offset = 0 if args.offset < 0 else args.offset
 
         module_providers = ModuleSearch.search_module_providers(
+            provider=args.provider,
+            verified=args.verified,
+            offset=current_offset,
+            limit=limit
+        )
+
+        return {
+            "meta": {
+                "limit": limit,
+                "current_offset": current_offset,
+                "next_offset": (current_offset + limit),
+                "prev_offset": (current_offset - limit) if (current_offset >= limit) else 0
+            },
+            "modules": [
+                module_provider.get_latest_version().get_api_outline()
+                for module_provider in module_providers
+            ]
+        }
+
+
+class ApiModuleSearch(Resource):
+
+    def get(self):
+        """Search for modules, given query string, namespace or provider."""
+        parser = reqparse.RequestParser()
+        parser.add_argument(
+            'q', type=str,
+            required=True,
+            help='The search string.'
+        )
+        parser.add_argument(
+            'offset', type=int,
+            default=0, help='Pagination offset')
+        parser.add_argument(
+            'limit', type=int,
+            default=10, help='Pagination limit'
+        )
+        parser.add_argument(
+            'provider', type=str,
+            default=None, help='Limits modules to a specific provider.'
+        )
+        parser.add_argument(
+            'namespace', type=str,
+            default=None, help='Limits modules to a specific namespace.'
+        )
+        parser.add_argument(
+            'verified', type=bool,
+            default=False, help='Limits modules to only verified modules.'
+        )
+
+        args = parser.parse_args()
+
+        # Limit the limits
+        limit = 50 if args.limit > 50 else args.limit
+        limit = 1 if limit < 1 else limit
+        current_offset = 0 if args.offset < 0 else args.offset
+
+        module_providers = ModuleSearch.search_module_providers(
+            query=args.q,
+            namespace=args.namespace,
             provider=args.provider,
             verified=args.verified,
             offset=current_offset,
