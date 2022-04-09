@@ -617,7 +617,7 @@ class ModuleExtractor(object):
         with tarfile.open(self._module_version.archive_path, "w:gz") as tar:
             tar.add(self.extract_directory, arcname='', recursive=True)
 
-    def _insert_database(self, readme_content, terraform_docs_output, terrareg_metadata):
+    def _insert_database(self, readme_content: str, terraform_docs_output: dict, terrareg_metadata: dict) -> int:
         """Insert module into DB, overwrite any pre-existing"""
         db = Database.get()
 
@@ -650,17 +650,31 @@ class ModuleExtractor(object):
             description=terrareg_metadata.get('description', None),
             source=terrareg_metadata.get('source', None)
         )
-        conn.execute(insert_statement)
+        res = conn.execute(insert_statement)
 
-    def _process_submodule(self, submodule):
+        # Return primary key
+        return res.inserted_primary_key[0]
+
+    def _process_submodule(self, module_pk: int, submodule: str):
         """Process submodule."""
         submodule_dir = os.path.join(self.extract_directory, submodule['source'])
-        if os.path.isdir(submodule_dir):
-            subomdule_terraform_docs_output = subprocess.check_output(
-                ['terraform-docs', 'json', os.path.join(self.extract_directory, submodule['source'])])
-            print(json.loads(subomdule_terraform_docs_output))
-        else:
+
+        if not os.path.isdir(submodule_dir):
             print('Submodule does not appear to be local: {0}'.format(submodule['source']))
+            return
+
+        tf_docs = self._run_terraform_docs(submodule_dir)
+        readme_content = self._get_readme_content(submodule_dir)
+
+        db = Database.get()
+        conn = db.get_engine().connect()
+        insert_statement = db.sub_module.insert().values(
+            parent_module_version=module_pk,
+            path=submodule['source'],
+            readme_content=readme_content,
+            module_details=json.dumps(tf_docs),
+        )
+        conn.execute(insert_statement)
 
     def process_upload(self):
         """Handle file upload of module source."""
@@ -682,14 +696,14 @@ class ModuleExtractor(object):
         print(json.dumps(module_details, sort_keys=False, indent=4))
         # print(readme_content)
 
-        self._insert_database(
+        module_pk = self._insert_database(
             readme_content=readme_content,
             terraform_docs_output=module_details,
             terrareg_metadata=terrareg_metadata
         )
 
         for submodule in module_details['modules']:
-            self._process_submodule(submodule)
+            self._process_submodule(module_pk, submodule)
 
 
 class Server(object):
