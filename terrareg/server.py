@@ -75,8 +75,8 @@ class Database(object):
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
             sqlalchemy.Column('namespace', sqlalchemy.String),
             sqlalchemy.Column('module', sqlalchemy.String),
-            # sub_module is set to . for root module
-            sqlalchemy.Column('sub_module', sqlalchemy.String),
+            # submodule is set to . for root module
+            sqlalchemy.Column('submodule', sqlalchemy.String),
             sqlalchemy.Column('provider', sqlalchemy.String),
             sqlalchemy.Column('version', sqlalchemy.String),
             sqlalchemy.Column('owner', sqlalchemy.String),
@@ -602,6 +602,12 @@ class ModuleVersion(object):
                 source=terrareg_metadata.get('source', None)
             )
             conn.execute(insert_statement)
+
+
+class Submodule(ModuleVersion):
+
+    pass
+
 
 class Server(object):
     """Manage web server and route requests"""
