@@ -325,7 +325,7 @@ class ModuleProvider(object):
         rows = [r for r in res]
 
         # Sort rows by semantec versioning
-        rows.sort(key=lambda x: StrictVersion(x['version']))
+        rows.sort(key=lambda x: StrictVersion(x['version']), reverse=True)
 
         # Ensure at least one row
         if not rows:
