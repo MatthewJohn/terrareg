@@ -513,6 +513,7 @@ class ModuleVersion(object):
         """Obtain module dependencies."""
         # @TODO See Above
         #return self.get_module_specs()['providers']
+        return []
 
     def handle_file_upload(self, file):
         """Handle file upload of module source."""
