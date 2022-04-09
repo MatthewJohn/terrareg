@@ -616,16 +616,16 @@ class Server(object):
         )
         self._api.add_resource(
             ApiModuleProviderDetails,
-            '/v1/<string:namespace>/<string:name>/<string:provider>',
-            '/v1/<string:namespace>/<string:name>/<string:provider>/')
+            '/v1/modules/<string:namespace>/<string:name>/<string:provider>',
+            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/')
         self._api.add_resource(
             ApiModuleVersions,
-            '/v1/<string:namespace>/<string:name>/<string:provider>/versions',
-            '/v1/<string:namespace>/<string:name>/<string:provider>/versions/'
+            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/versions',
+            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/versions/'
         )
         self._api.add_resource(
             ApiModuleVersionDownload,
-            '/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/download'
+            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/download'
         )
 
         # Views
