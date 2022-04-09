@@ -345,7 +345,8 @@ class ModuleVersion(object):
             "empty": False,
             "inputs": self.get_terraform_inputs(),
             "outputs": self.get_terraform_outputs(),
-            "dependencies": [],
+            "dependencies": self.get_terraform_dependencies(),
+            "provider_dependencies": self.get_terraform_provider_dependencies(),
             "resources": self.get_terraform_resources(),
         }
 
@@ -390,6 +391,15 @@ class ModuleVersion(object):
     def get_terraform_resources(self):
         """Obtain module resources."""
         return self.get_module_specs()['resources']
+
+    def get_terraform_dependencies(self):
+        """Obtain module dependencies."""
+        print(self.get_module_specs().keys())
+        return self.get_module_specs()['requirements']
+
+    def get_terraform_provider_dependencies(self):
+        """Obtain module dependencies."""
+        return self.get_module_specs()['providers']
 
     def handle_file_upload(self, file):
         """Handle file upload of module source."""
