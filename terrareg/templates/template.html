@@ -6,6 +6,13 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
         <script defer src="https://use.fontawesome.com/releases/v6.0.0/js/all.js"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+        <script>
+          function navbar_search_modules() {
+            let search_string = document.getElementById('navBarSearchInput').value;
+            window.location.href = '/modules/search/' + search_string;
+          }
+        </script>
     </head>
 
 
@@ -23,17 +30,30 @@
               </div>
             </div>
         
-            <div id="navbarRegistryDropdown" class="navbar-menu">
+            <div  class="navbar-menu">
               <div class="navbar-start">
                 <a class="navbar-item" href="#">Home</a>
-                <div class="navbar-item has-dropdown is-hoverable">
+                <div id="navbarRegistryDropdown" class="navbar-item has-dropdown is-hoverable">
                   <a class="navbar-link" href="#">Registry</a>
                   <div class="navbar-dropdown is-boxed">
                     <a class="navbar-item" href="/modules">Modules</a>
                   </div>
                 </div>
+
+                <div class="navbar-item" id="navbarSearch">
+                  <div class="field has-addons">
+                    <div class="control">
+                      <input id="navBarSearchInput" class="input" type="text" placeholder="Search modules">
+                    </div>
+                    <div class="control">
+                      <a onclick="navbar_search_modules();" class="button is-info">
+                        Search
+                      </a>
+                    </div>
+                  </div>
+                </div>
               </div>
-        
+
               <div class="navbar-end">
                 <div class="navbar-item">
                   <div class="field is-grouped">
