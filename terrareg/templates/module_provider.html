@@ -99,7 +99,10 @@
                         ${token}
                     </td>
                     <td>
-                        ${data[token]}
+                        ${data[token].module_version}
+                    </td>
+                    <td>
+                        ${data[token].terraform_version}
                     </td>
                 </tr>
             `);
@@ -225,6 +228,7 @@
                     <tr>
                         <th>Token</th>
                         <th>Module Version</th>
+                        <th>Terraform Version</th>
                     </tr>
                 </thead>
                 <tbody id="analyticsVersionByTokenTable">

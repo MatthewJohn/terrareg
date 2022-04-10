@@ -97,7 +97,11 @@ class AnalyticsEngine:
         conn = db.get_engine().connect()
 
         select = sqlalchemy.select(
-            [db.analytics.c.analytics_token, db.module_version.c.version]
+            [
+                db.analytics.c.analytics_token,
+                db.module_version.c.version,
+                db.analytics.c.terraform_version
+            ]
         ).select_from(
             db.analytics
         ).join(
@@ -109,7 +113,8 @@ class AnalyticsEngine:
             db.module_version.c.provider == module_provider.name
         ).group_by(
             db.analytics.c.analytics_token,
-            db.module_version.c.version
+            db.module_version.c.version,
+            db.analytics.c.terraform_version
         )
 
         res = conn.execute(select)
@@ -117,8 +122,17 @@ class AnalyticsEngine:
         token_version_mapping = {}
         for row in res:
             token = row[0] if row[0] else 'No token provided'
-            if (token not in token_version_mapping or
-                    StrictVersion(row[1]) > StrictVersion(token_version_mapping[token])):
-                token_version_mapping[token] = row[1]
+            if token not in token_version_mapping:
+                token_version_mapping[token] = {
+                    'terraform_version': None,
+                    'module_version': None
+                }
+            terraform_version = row[2] if row[2] else '0.0.0'
+            if (not token_version_mapping[token]['module_version'] or
+                    StrictVersion(row[1]) > StrictVersion(token_version_mapping[token]['module_version'])):
+                token_version_mapping[token]['module_version'] = row[1]
+            if (not token_version_mapping[token]['terraform_version'] or
+                    StrictVersion(terraform_version) > StrictVersion(token_version_mapping[token]['terraform_version'])):
+                token_version_mapping[token]['terraform_version'] = terraform_version
 
         return token_version_mapping
