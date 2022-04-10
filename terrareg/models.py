@@ -26,7 +26,7 @@ class Namespace(object):
 
         # If there were not two element (more or less),
         # return original value
-        return namespace
+        return namespace, None
 
     @staticmethod
     def get_all():
