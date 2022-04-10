@@ -330,6 +330,21 @@ class ModuleVersion(TerraformSpecsObject):
         return '/static/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
 
     @property
+    def publish_date_display(self):
+        """Return display view of date of module published."""
+        return self._get_db_row()['published_at'].strftime('%B %d, %Y')
+
+    @property
+    def owner(self):
+        """Return owner of module."""
+        return self._get_db_row()['owner']
+
+    @property
+    def source_code_url(self):
+        """Return source code URL."""
+        return self._get_db_row()['source']
+
+    @property
     def version(self):
         """Return version."""
         return self._version
