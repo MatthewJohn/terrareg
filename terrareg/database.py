@@ -16,6 +16,7 @@ class Database():
         """Setup member variables."""
         self._module_version = None
         self._sub_module = None
+        self._analytics = None
 
     @property
     def module_version(self):
@@ -30,6 +31,13 @@ class Database():
         if self._sub_module is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._sub_module
+
+    @property
+    def analytics(self):
+        """Return analytics table."""
+        if self._analytics is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._analytics
 
     @classmethod
     def get(cls):
@@ -87,6 +95,22 @@ class Database():
             sqlalchemy.Column('name', sqlalchemy.String),
             sqlalchemy.Column('readme_content', sqlalchemy.String),
             sqlalchemy.Column('module_details', sqlalchemy.String)
+        )
+
+        self._analytics = sqlalchemy.Table(
+            'analytics', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column(
+                'parent_module_version',
+                sqlalchemy.ForeignKey(
+                    'module_version.id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            ),
+            sqlalchemy.Column('timestamp', sqlalchemy.String),
+            sqlalchemy.Column('terraform_version', sqlalchemy.String),
+            sqlalchemy.Column('analytics_token', sqlalchemy.String)
         )
 
         meta.create_all(engine)
