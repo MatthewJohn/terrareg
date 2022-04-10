@@ -108,6 +108,10 @@
             `);
         });
     });
+
+    $(document).ready(function() {
+        $('#analytics-table').DataTable();
+    });
 </script>
 <div class="tabs">
     <ul>
@@ -223,7 +227,7 @@
             </table>
         </div>
         <div id="module-tab-analytics" class="module-tabs" style="display: none;">
-            <table class="table">
+            <table id="analytics-table" class="table" style="width: 100%">
                 <thead>
                     <tr>
                         <th>Token</th>
