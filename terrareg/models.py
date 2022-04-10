@@ -266,7 +266,7 @@ class TerraformSpecsObject(object):
                 'name': name,
                 'namespace': namespace,
                 'source': '',  # This data is not available
-                'version': provider['version']
+                'version': provider['version'] if provider['version'] else ''
             })
         return providers
 
