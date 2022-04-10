@@ -2,7 +2,7 @@
 
 import os
 
-from flask import Flask, request, render_template, redirect
+from flask import Flask, request, render_template, redirect, make_response
 from flask_restful import Resource, Api, reqparse
 
 from terrareg.config import DATA_DIRECTORY
@@ -442,5 +442,15 @@ class ApiModuleVersions(Resource):
         }
 
 class ApiModuleVersionDownload(Resource):
+    """Provide download endpoint."""
+
     def get(self, namespace, name, provider, version):
-        return ''
+        """Provide download header for location to download source."""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        module_version = ModuleVersion(module_provider=module_provider, version=version)
+
+        resp = make_response('', 204)
+        resp.headers['X-Terraform-Get'] = module_version.get_source_download_url()
+        return resp

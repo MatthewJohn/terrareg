@@ -281,6 +281,10 @@ class ModuleVersion(TerraformSpecsObject):
             version=self.version
         )
 
+    def get_source_download_url(self):
+        """Return URL to download source file."""
+        return '/static/modules/{0}/source.tar.gz'.format(self.id)
+
     @property
     def version(self):
         """Return version."""
