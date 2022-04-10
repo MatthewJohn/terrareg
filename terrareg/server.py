@@ -471,5 +471,4 @@ class ApiModuleVersionSourceDownload(Resource):
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
         module_version = ModuleVersion(module_provider=module_provider, version=version)
-        print('SENDING: {0}/{1}'.format(module_version.base_directory, module_version.archive_name))
         return send_from_directory(module_version.base_directory, module_version.archive_name)
