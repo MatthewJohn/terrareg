@@ -2,6 +2,7 @@
 import os
 from distutils.version import StrictVersion
 import json
+import re
 
 import markdown
 
@@ -11,6 +12,21 @@ from terrareg.errors import (NoModuleVersionAvailableError)
 
 
 class Namespace(object):
+
+    @staticmethod
+    def extract_analytics_token(namespace: str):
+        """Extract analytics token from start of namespace."""
+        namespace_split = re.split(r'__', namespace)
+
+        # If there are two values in the split,
+        # return first as analytics token and
+        # second as namespace
+        if len(namespace_split) == 2:
+            return namespace_split[1], namespace_split[0]
+
+        # If there were not two element (more or less),
+        # return original value
+        return namespace
 
     @staticmethod
     def get_all():

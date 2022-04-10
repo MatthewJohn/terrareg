@@ -377,6 +377,7 @@ class ApiModuleDetails(Resource):
     def get(self, namespace, name):
         """Return latest version for each module provider."""
 
+        namespace, _ = Namespace.extract_analytics_token(namespace)
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         return {
@@ -395,6 +396,7 @@ class ApiModuleProviderDetails(Resource):
     def get(self, namespace, name, provider):
         """Return list of version."""
 
+        namespace, _ = Namespace.extract_analytics_token(namespace)
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
@@ -407,6 +409,7 @@ class ApiModuleVersionDetails(Resource):
     def get(self, namespace, name, provider, version):
         """Return list of version."""
 
+        namespace, _ = Namespace.extract_analytics_token(namespace)
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
@@ -419,9 +422,11 @@ class ApiModuleVersions(Resource):
     def get(self, namespace, name, provider):
         """Return list of version."""
 
+        namespace, _ = Namespace.extract_analytics_token(namespace)
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
+        print(request.headers)
         return {
             "modules": [
                 {
@@ -452,12 +457,14 @@ class ApiModuleVersionDownload(Resource):
 
     def get(self, namespace, name, provider, version):
         """Provide download header for location to download source."""
+        namespace, _ = Namespace.extract_analytics_token(namespace)
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
         module_version = ModuleVersion(module_provider=module_provider, version=version)
 
         resp = make_response('', 204)
+        print(request.headers)
         resp.headers['X-Terraform-Get'] = module_version.get_source_download_url()
         return resp
 
