@@ -156,6 +156,13 @@ class Server(object):
             '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/'
         )(self._view_serve_module_provider)
 
+        # Terrareg APIs
+        self._api.add_resource(
+            ApiTerraregModuleProviderAnalyticsUsersByVersion,
+            '/v1/terrareg/analytics/<string:namespace>/<string:name>/<string:provider>/users_by_version'
+        )
+
+
     def run(self):
         """Run flask server."""
         kwargs = {
@@ -531,3 +538,14 @@ class ApiModuleProviderDownloadsSummary(Resource):
                 "attributes": AnalyticsEngine.get_module_provider_download_stats(module_provider)
             }
         }
+
+
+class ApiTerraregModuleProviderAnalyticsUsersByVersion(Resource):
+    """Provide download summary for module provider."""
+
+    def get(self, namespace, name, provider):
+        """Return list of download counts for module provider."""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        return AnalyticsEngine.get_module_provider_users_by_version(module_provider)

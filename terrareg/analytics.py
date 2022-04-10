@@ -1,6 +1,8 @@
 
 import re
 import datetime
+from distutils.version import StrictVersion
+
 
 import sqlalchemy
 
@@ -86,3 +88,37 @@ class AnalyticsEngine:
             stats[i[1]] = res.scalar()
 
         return stats
+
+
+    @staticmethod
+    def get_module_provider_users_by_version(module_provider):
+        """Return list of users for module provider."""
+        db = Database.get()
+        conn = db.get_engine().connect()
+
+        select = sqlalchemy.select(
+            [db.analytics.c.analytics_token, db.module_version.c.version]
+        ).select_from(
+            db.analytics
+        ).join(
+            db.module_version,
+            db.module_version.c.id == db.analytics.c.parent_module_version
+        ).where(
+            db.module_version.c.namespace == module_provider._module._namespace.name,
+            db.module_version.c.module == module_provider._module.name,
+            db.module_version.c.provider == module_provider.name
+        ).group_by(
+            db.analytics.c.analytics_token,
+            db.module_version.c.version
+        )
+
+        res = conn.execute(select)
+
+        token_version_mapping = {}
+        for row in res:
+            token = row[0] if row[0] else 'No token provided'
+            if (token not in token_version_mapping or
+                    StrictVersion(row[1]) > StrictVersion(token_version_mapping[token])):
+                token_version_mapping[token] = row[1]
+
+        return token_version_mapping
