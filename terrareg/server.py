@@ -2,7 +2,7 @@
 
 import os
 
-from flask import Flask, request, render_template, redirect
+from flask import Flask, request, render_template, redirect, make_response, send_from_directory
 from flask_restful import Resource, Api, reqparse
 
 from terrareg.config import DATA_DIRECTORY
@@ -17,7 +17,7 @@ class Server(object):
 
     ALLOWED_EXTENSIONS = {'zip'}
 
-    def __init__(self):
+    def __init__(self, ssl_public_key=None, ssl_private_key=None):
         """Create flask app and store member variables"""
         self._app = Flask(
             __name__,
@@ -29,9 +29,11 @@ class Server(object):
             #prefix='v1'
         )
 
-        self.host = '127.0.0.1'
+        self.host = '0.0.0.0'
         self.port = 5000
         self.debug = True
+        self.ssl_public_key = ssl_public_key
+        self.ssl_private_key = ssl_private_key
 
         if not os.path.isdir(DATA_DIRECTORY):
             os.mkdir(DATA_DIRECTORY)
@@ -59,7 +61,18 @@ class Server(object):
             methods=['POST']
         )(self._upload_module_version)
 
+        # Download module tar
+        self._api.add_resource(
+            ApiModuleVersionSourceDownload,
+            '/static/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/source.zip'
+        )
+
         # Terraform registry routes
+        self._api.add_resource(
+            ApiTerraformWellKnown,
+            '/.well-known/terraform.json'
+        )
+
         self._api.add_resource(
             ApiModuleList,
             '/v1/modules',
@@ -135,7 +148,15 @@ class Server(object):
 
     def run(self):
         """Run flask server."""
-        self._app.run(host=self.host, port=self.port, debug=self.debug)
+        kwargs = {
+            'host': self.host,
+            'port': self.port,
+            'debug': self.debug
+        }
+        if self.ssl_public_key and self.ssl_private_key:
+            kwargs['ssl_context'] = (self.ssl_public_key, self.ssl_private_key)
+
+        self._app.run(**kwargs)
 
     def allowed_file(self, filename):
         return '.' in filename and \
@@ -233,6 +254,17 @@ class Server(object):
     def _view_serve_module_search(self):
         """Search modules based on input."""
         return render_template('module_search.html')
+
+
+class ApiTerraformWellKnown(Resource):
+    """Terraform .well-known discovery"""
+
+    def get(self):
+        """Return wellknown JSON"""
+        return {
+            "modules.v1": "/v1/modules/"
+        }
+
 
 class ApiModuleList(Resource):
     def get(self):
@@ -416,5 +448,27 @@ class ApiModuleVersions(Resource):
         }
 
 class ApiModuleVersionDownload(Resource):
+    """Provide download endpoint."""
+
     def get(self, namespace, name, provider, version):
-        return ''
+        """Provide download header for location to download source."""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        module_version = ModuleVersion(module_provider=module_provider, version=version)
+
+        resp = make_response('', 204)
+        resp.headers['X-Terraform-Get'] = module_version.get_source_download_url()
+        return resp
+
+
+class ApiModuleVersionSourceDownload(Resource):
+    """Return source package of module version"""
+
+    def get(self, namespace, name, provider, version):
+        """Return static file."""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        module_version = ModuleVersion(module_provider=module_provider, version=version)
+        return send_from_directory(module_version.base_directory, module_version.archive_name_zip)

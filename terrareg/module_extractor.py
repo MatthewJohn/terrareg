@@ -7,6 +7,8 @@ import tarfile
 import subprocess
 import json
 import datetime
+import shutil
+import re
 
 from werkzeug.utils import secure_filename
 import magic
@@ -118,8 +120,14 @@ class ModuleExtractor():
 
     def _generate_archive(self):
         """Generate archive of extracted module"""
-        with tarfile.open(self._module_version.archive_path, "w:gz") as tar:
+        # Create tar.gz
+        with tarfile.open(self._module_version.archive_path_tar_gz, "w:gz") as tar:
             tar.add(self.extract_directory, arcname='', recursive=True)
+        # Create zip
+        shutil.make_archive(
+            re.sub('\.zip$', '', self._module_version.archive_path_zip),
+            'zip',
+            self.extract_directory)
 
     def _insert_database(
         self,
