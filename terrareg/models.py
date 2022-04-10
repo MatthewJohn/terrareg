@@ -248,9 +248,15 @@ class TerraformSpecsObject(object):
 
     def get_terraform_provider_dependencies(self):
         """Obtain module dependencies."""
-        # @TODO See Above
-        #return self.get_module_specs()['providers']
-        return []
+        return [
+            {
+                'name': provider['name'],
+                'namespace': '',  # This data is not available
+                'source': '',  # This data is not available
+                'version': provider['version']
+            }
+            for provider in self.get_module_specs()['providers']
+        ]
 
     def get_api_module_specs(self):
         """Return module specs for API."""
