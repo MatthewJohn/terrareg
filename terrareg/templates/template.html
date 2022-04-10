@@ -11,7 +11,7 @@
         <script>
           function navbar_search_modules() {
             let search_string = document.getElementById('navBarSearchInput').value;
-            window.location.href = '/modules/search?q=' + search_string;
+            window.location.href = '/modules/search?q=' + encodeURIComponent(search_string);
           }
           function navbar_search_keyup(event) {
             // If enter
