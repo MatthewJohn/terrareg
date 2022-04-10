@@ -2,15 +2,32 @@
 import os
 from distutils.version import StrictVersion
 import json
+import re
 
 import markdown
 
+import terrareg.analytics
 from terrareg.database import Database
 from terrareg.config import DATA_DIRECTORY
 from terrareg.errors import (NoModuleVersionAvailableError)
 
 
 class Namespace(object):
+
+    @staticmethod
+    def extract_analytics_token(namespace: str):
+        """Extract analytics token from start of namespace."""
+        namespace_split = re.split(r'__', namespace)
+
+        # If there are two values in the split,
+        # return first as analytics token and
+        # second as namespace
+        if len(namespace_split) == 2:
+            return namespace_split[1], namespace_split[0]
+
+        # If there were not two element (more or less),
+        # return original value
+        return namespace, None
 
     @staticmethod
     def get_all():
@@ -133,6 +150,15 @@ class ModuleProvider(object):
     def name(self):
         """Return name."""
         return self._name
+
+    @property
+    def id(self):
+        """Return ID in form of namespace/name/provider/version"""
+        return '{namespace}/{name}/{provider}'.format(
+            namespace=self._module._namespace.name,
+            name=self._module.name,
+            provider=self.name
+        )
 
     def get_view_url(self):
         """Return view URL"""
@@ -304,6 +330,21 @@ class ModuleVersion(TerraformSpecsObject):
         return '/static/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
 
     @property
+    def publish_date_display(self):
+        """Return display view of date of module published."""
+        return self._get_db_row()['published_at'].strftime('%B %d, %Y')
+
+    @property
+    def owner(self):
+        """Return owner of module."""
+        return self._get_db_row()['owner']
+
+    @property
+    def source_code_url(self):
+        """Return source code URL."""
+        return self._get_db_row()['source']
+
+    @property
     def version(self):
         """Return version."""
         return self._version
@@ -352,10 +393,8 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def id(self):
         """Return ID in form of namespace/name/provider/version"""
-        return "{namespace}/{name}/{provider}/{version}".format(
-            namespace=self._module_provider._module._namespace.name,
-            name=self._module_provider._module.name,
-            provider=self._module_provider.name,
+        return '{provider_id}/{version}'.format(
+            provider_id=self._module_provider.id,
             version=self.version
         )
 
@@ -381,9 +420,15 @@ class ModuleVersion(TerraformSpecsObject):
             "description": row['description'],
             "source": row['source'],
             "published_at": row['published_at'].isoformat(),
-            "downloads": 0,
+            "downloads": self.get_total_downloads(),
             "verified": True,
         }
+
+    def get_total_downloads(self):
+        """Obtain total number of downloads for module version."""
+        return terrareg.analytics.AnalyticsEngine.get_module_version_total_downloads(
+            module_version=self
+        )
 
     def get_api_details(self):
         """Return dict of version details for API response."""
