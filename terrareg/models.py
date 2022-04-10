@@ -283,7 +283,7 @@ class ModuleVersion(TerraformSpecsObject):
 
     def get_source_download_url(self):
         """Return URL to download source file."""
-        return '/static/modules/{0}/source.tar.gz'.format(self.id)
+        return '/static/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
 
     @property
     def version(self):
@@ -296,14 +296,29 @@ class ModuleVersion(TerraformSpecsObject):
         return os.path.join(self._module_provider.base_directory, self._version)
 
     @property
-    def archive_name(self):
-        """Return name of the archive file"""
-        return "source.tar.gz"
+    def source_file_prefix(self):
+        """Prefix of source file"""
+        return 'source'
 
     @property
-    def archive_path(self):
+    def archive_name_tar_gz(self):
+        """Return name of the archive file"""
+        return '{0}.tar.gz'.format(self.source_file_prefix)
+
+    @property
+    def archive_name_zip(self):
+        """Return name of the archive file"""
+        return '{0}.zip'.format(self.source_file_prefix)
+
+    @property
+    def archive_path_tar_gz(self):
         """Return full path of the archive file."""
-        return os.path.join(self.base_directory, self.archive_name)
+        return os.path.join(self.base_directory, self.archive_name_tar_gz)
+
+    @property
+    def archive_path_zip(self):
+        """Return full path of the archive file."""
+        return os.path.join(self.base_directory, self.archive_name_zip)
 
     @property
     def pk(self):

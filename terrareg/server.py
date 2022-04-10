@@ -64,7 +64,7 @@ class Server(object):
         # Download module tar
         self._api.add_resource(
             ApiModuleVersionSourceDownload,
-            '/static/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/source.tar.gz'
+            '/static/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/source.zip'
         )
 
         # Terraform registry routes
@@ -471,4 +471,4 @@ class ApiModuleVersionSourceDownload(Resource):
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
         module_version = ModuleVersion(module_provider=module_provider, version=version)
-        return send_from_directory(module_version.base_directory, module_version.archive_name)
+        return send_from_directory(module_version.base_directory, module_version.archive_name_zip)
