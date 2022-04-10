@@ -2,14 +2,15 @@
 import re
 import datetime
 
-from terrareg.models import ModuleVersion
+import sqlalchemy
+
 from terrareg.database import Database
 
 
 class AnalyticsEngine:
 
     def record_module_version_download(
-        module_version: ModuleVersion,
+        module_version,
         analytics_token: str,
         terraform_version: str,
         user_agent: str):
@@ -35,3 +36,20 @@ class AnalyticsEngine:
             analytics_token=analytics_token
         )
         conn.execute(insert_statement)
+
+    def get_module_version_total_downloads(module_version):
+        """Return number of downloads for a given module version."""
+        db = Database.get()
+        conn = db.get_engine().connect()
+        select = sqlalchemy.select(
+            [sqlalchemy.func.count()]
+        ).select_from(
+            db.analytics
+        ).join(
+            db.module_version,
+            db.module_version.c.id == db.analytics.c.parent_module_version
+        ).where(
+            db.module_version.c.id == module_version.pk
+        )
+        res = conn.execute(select)
+        return res.scalar()

@@ -6,6 +6,7 @@ import re
 
 import markdown
 
+import terrareg.analytics
 from terrareg.database import Database
 from terrareg.config import DATA_DIRECTORY
 from terrareg.errors import (NoModuleVersionAvailableError)
@@ -397,9 +398,15 @@ class ModuleVersion(TerraformSpecsObject):
             "description": row['description'],
             "source": row['source'],
             "published_at": row['published_at'].isoformat(),
-            "downloads": 0,
+            "downloads": self.get_total_downloads(),
             "verified": True,
         }
+
+    def get_total_downloads(self):
+        """Obtain total number of downloads for module version."""
+        return terrareg.analytics.AnalyticsEngine.get_module_version_total_downloads(
+            module_version=self
+        )
 
     def get_api_details(self):
         """Return dict of version details for API response."""
