@@ -29,7 +29,7 @@ class Server(object):
             #prefix='v1'
         )
 
-        self.host = '127.0.0.1'
+        self.host = '0.0.0.0'
         self.port = 5000
         self.debug = True
 
