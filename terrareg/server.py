@@ -5,11 +5,18 @@ import os
 from flask import Flask, request, render_template, redirect, make_response, send_from_directory
 from flask_restful import Resource, Api, reqparse
 
-from terrareg.config import DATA_DIRECTORY
+from terrareg.config import (
+    DATA_DIRECTORY,
+    DEBUG,
+    ALLOW_UNIDENTIFIED_DOWNLOADS,
+    ANALYTICS_TOKEN_PHRASE,
+    EXAMPLE_ANALYTICS_TOKEN
+)
 from terrareg.database import Database
 from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion
 from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ModuleExtractor
+from terrareg.analytics import AnalyticsEngine
 
 
 class Server(object):
@@ -31,7 +38,6 @@ class Server(object):
 
         self.host = '0.0.0.0'
         self.port = 5000
-        self.debug = True
         self.ssl_public_key = ssl_public_key
         self.ssl_private_key = ssl_private_key
 
@@ -106,6 +112,10 @@ class Server(object):
             ApiModuleVersionDownload,
             '/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/download'
         )
+        self._api.add_resource(
+            ApiModuleProviderDownloadsSummary,
+            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/downloads/summary'
+        )
 
         # Views
         self._app.route('/')(self._view_serve_static_index)
@@ -146,12 +156,19 @@ class Server(object):
             '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/'
         )(self._view_serve_module_provider)
 
+        # Terrareg APIs
+        self._api.add_resource(
+            ApiTerraregModuleProviderAnalyticsTokenVersions,
+            '/v1/terrareg/analytics/<string:namespace>/<string:name>/<string:provider>/token_versions'
+        )
+
+
     def run(self):
         """Run flask server."""
         kwargs = {
             'host': self.host,
             'port': self.port,
-            'debug': self.debug
+            'debug': DEBUG
         }
         if self.ssl_public_key and self.ssl_private_key:
             kwargs['ssl_context'] = (self.ssl_public_key, self.ssl_private_key)
@@ -377,6 +394,7 @@ class ApiModuleDetails(Resource):
     def get(self, namespace, name):
         """Return latest version for each module provider."""
 
+        namespace, _ = Namespace.extract_analytics_token(namespace)
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         return {
@@ -395,6 +413,7 @@ class ApiModuleProviderDetails(Resource):
     def get(self, namespace, name, provider):
         """Return list of version."""
 
+        namespace, _ = Namespace.extract_analytics_token(namespace)
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
@@ -407,6 +426,7 @@ class ApiModuleVersionDetails(Resource):
     def get(self, namespace, name, provider, version):
         """Return list of version."""
 
+        namespace, _ = Namespace.extract_analytics_token(namespace)
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
@@ -419,9 +439,11 @@ class ApiModuleVersions(Resource):
     def get(self, namespace, name, provider):
         """Return list of version."""
 
+        namespace, _ = Namespace.extract_analytics_token(namespace)
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
+        print(request.headers)
         return {
             "modules": [
                 {
@@ -447,15 +469,42 @@ class ApiModuleVersions(Resource):
             ]
         }
 
+
 class ApiModuleVersionDownload(Resource):
     """Provide download endpoint."""
 
     def get(self, namespace, name, provider, version):
         """Provide download header for location to download source."""
+        namespace, analytics_token = Namespace.extract_analytics_token(namespace)
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
         module_version = ModuleVersion(module_provider=module_provider, version=version)
+
+        # Record download
+        AnalyticsEngine.record_module_version_download(
+            module_version=module_version,
+            analytics_token=analytics_token,
+            terraform_version=request.headers.get('X-Terraform-Version', None),
+            user_agent=request.headers.get('User-Agent', None)
+        )
+
+        # Determine if module download should be rejected due to
+        # non-existent analytics token
+        if not analytics_token and not ALLOW_UNIDENTIFIED_DOWNLOADS:
+            return make_response(
+                ("\nAn {analytics_token_phrase} must be provided.\n"
+                 "Please update module source to include {analytics_token_phrase}.\n"
+                 "\nFor example:\n  source = \"{host}/{example_analytics_token}__{namespace}/{module_name}/{provider}\"").format(
+                    analytics_token_phrase=ANALYTICS_TOKEN_PHRASE,
+                    host=request.host,
+                    example_analytics_token=EXAMPLE_ANALYTICS_TOKEN,
+                    namespace=namespace.name,
+                    module_name=module.name,
+                    provider=module_provider.name
+                ),
+                401
+            )
 
         resp = make_response('', 204)
         resp.headers['X-Terraform-Get'] = module_version.get_source_download_url()
@@ -472,3 +521,31 @@ class ApiModuleVersionSourceDownload(Resource):
         module_provider = ModuleProvider(module=module, name=provider)
         module_version = ModuleVersion(module_provider=module_provider, version=version)
         return send_from_directory(module_version.base_directory, module_version.archive_name_zip)
+
+
+class ApiModuleProviderDownloadsSummary(Resource):
+    """Provide download summary for module provider."""
+
+    def get(self, namespace, name, provider):
+        """Return list of download counts for module provider."""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        return {
+            "data": {
+                "type": "module-downloads-summary",
+                "id": module_provider.id,
+                "attributes": AnalyticsEngine.get_module_provider_download_stats(module_provider)
+            }
+        }
+
+
+class ApiTerraregModuleProviderAnalyticsTokenVersions(Resource):
+    """Provide download summary for module provider."""
+
+    def get(self, namespace, name, provider):
+        """Return list of download counts for module provider."""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        return AnalyticsEngine.get_module_provider_token_versions(module_provider)
