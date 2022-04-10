@@ -70,6 +70,8 @@ class AnalyticsEngine:
                 db.module_version,
                 db.module_version.c.id == db.analytics.c.parent_module_version
             ).where(
+                db.module_version.c.namespace == module_provider._module._namespace.name,
+                db.module_version.c.module == module_provider._module.name,
                 db.module_version.c.provider == module_provider.name
             )
 
