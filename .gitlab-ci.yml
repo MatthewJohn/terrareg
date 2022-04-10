@@ -1,10 +1,3 @@
-# To contribute improvements to CI/CD templates, please follow the Development guide at:
-# https://docs.gitlab.com/ee/development/cicd/templates.html
-# This specific template is located at:
-# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Python.gitlab-ci.yml
-
-# Official language image. Look for the different tagged releases at:
-# https://hub.docker.com/r/library/python/tags/
 image: python:latest
 
 # Change pip's cache directory to be inside the project directory since we can
@@ -28,12 +21,6 @@ before_script:
   - virtualenv venv
   - source venv/bin/activate
 
-test:
-  script:
-    - python setup.py test
-    - pip install --proxy=$http_proxy tox flake8  # you can also use tox
-    - tox -e py36,flake8
-
 run:
   script:
     - python setup.py bdist_wheel
@@ -44,14 +31,3 @@ run:
     paths:
       - dist/*.whl
 
-pages:
-  script:
-    - pip install --proxy=$http_proxy sphinx sphinx-rtd-theme
-    - cd doc
-    - make html
-    - mv build/html/ ../public/
-  artifacts:
-    paths:
-      - public
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
