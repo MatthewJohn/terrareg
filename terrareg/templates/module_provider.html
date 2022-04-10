@@ -90,6 +90,21 @@
             $(`#downloads-${key}`).html(data.data.attributes[key]);
         });
     });
+
+    $.get("/v1/terrareg/analytics/{{ module_provider.id }}/token_versions", (data, status) => {
+        Object.keys(data).forEach((token) => {
+            $('#analyticsVersionByTokenTable').append(`
+                <tr>
+                    <td>
+                        ${token}
+                    </td>
+                    <td>
+                        ${data[token]}
+                    </td>
+                </tr>
+            `);
+        });
+    });
 </script>
 <div class="tabs">
     <ul>
@@ -98,6 +113,7 @@
         <li class="module-tab-link"><a onclick="selectModuleTab(event, 'outputs')">Outputs</a></li>
         <li class="module-tab-link"><a onclick="selectModuleTab(event, 'dependencies')">Dependencies</a></li>
         <li class="module-tab-link"><a onclick="selectModuleTab(event, 'resources')">Resources</a></li>
+        <li class="module-tab-link"><a onclick="selectModuleTab(event, 'analytics')">Analytics</a></li>
     </ul>
 </div>
 <div class="columns">
@@ -158,7 +174,7 @@
                 </tbody>
             </table>
         </div>
-        <div id="module-tab-depedencies" class="module-tabs" style="display: none;">
+        <div id="module-tab-dependencies" class="module-tabs" style="display: none;">
             DEPENDENCIES
         </div>
         <div id="module-tab-resources" class="module-tabs" style="display: none;">
@@ -203,7 +219,20 @@
                 </tbody>
             </table>
         </div>
+        <div id="module-tab-analytics" class="module-tabs" style="display: none;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Token</th>
+                        <th>Module Version</th>
+                    </tr>
+                </thead>
+                <tbody id="analyticsVersionByTokenTable">
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
+
 
 {% endblock %}

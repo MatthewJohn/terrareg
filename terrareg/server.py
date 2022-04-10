@@ -158,8 +158,8 @@ class Server(object):
 
         # Terrareg APIs
         self._api.add_resource(
-            ApiTerraregModuleProviderAnalyticsUsersByVersion,
-            '/v1/terrareg/analytics/<string:namespace>/<string:name>/<string:provider>/users_by_version'
+            ApiTerraregModuleProviderAnalyticsTokenVersions,
+            '/v1/terrareg/analytics/<string:namespace>/<string:name>/<string:provider>/token_versions'
         )
 
 
@@ -540,7 +540,7 @@ class ApiModuleProviderDownloadsSummary(Resource):
         }
 
 
-class ApiTerraregModuleProviderAnalyticsUsersByVersion(Resource):
+class ApiTerraregModuleProviderAnalyticsTokenVersions(Resource):
     """Provide download summary for module provider."""
 
     def get(self, namespace, name, provider):
@@ -548,4 +548,4 @@ class ApiTerraregModuleProviderAnalyticsUsersByVersion(Resource):
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
-        return AnalyticsEngine.get_module_provider_users_by_version(module_provider)
+        return AnalyticsEngine.get_module_provider_token_versions(module_provider)

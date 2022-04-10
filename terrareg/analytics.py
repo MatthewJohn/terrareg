@@ -91,7 +91,7 @@ class AnalyticsEngine:
 
 
     @staticmethod
-    def get_module_provider_users_by_version(module_provider):
+    def get_module_provider_token_versions(module_provider):
         """Return list of users for module provider."""
         db = Database.get()
         conn = db.get_engine().connect()
