@@ -35,22 +35,4 @@ Navigate to http://localhost:5000 to get started, or http://localhost/modules/me
 
 Since terraform requires HTTPS with a valid SSL cert, this must be provided in local development
 
-### Without a valid SSL cert:
-
-    docker run --rm -it \
-      -e "UPSTREAM_DOMAIN=local-dev" \
-      --add-host=laptop-ext:<local IP> \
-      -e "UPSTREAM_PORT=5000" \
-      -e "PROXY_DOMAIN=localdev.example.com" \
-      -l "com.dnsdock.name=proxy" \
-      -p 443:443 \
-      -v $(pwd)/ca:/etc/nginx/ca \
-      outrigger/https-proxy:1.0
-    
-    # Add CA cert to local trusted certificates (I know! :( )
-    sudo cp ca/rootCA.crt /usr/local/share/ca-certificates/
-    sudo update-ca-certificates
-
-@TODO Move running terraform in local development to a docker container
-
 

@@ -17,7 +17,7 @@ class Server(object):
 
     ALLOWED_EXTENSIONS = {'zip'}
 
-    def __init__(self):
+    def __init__(self, ssl_public_key=None, ssl_private_key=None):
         """Create flask app and store member variables"""
         self._app = Flask(
             __name__,
@@ -32,6 +32,8 @@ class Server(object):
         self.host = '0.0.0.0'
         self.port = 5000
         self.debug = True
+        self.ssl_public_key = ssl_public_key
+        self.ssl_private_key = ssl_private_key
 
         if not os.path.isdir(DATA_DIRECTORY):
             os.mkdir(DATA_DIRECTORY)
@@ -140,7 +142,15 @@ class Server(object):
 
     def run(self):
         """Run flask server."""
-        self._app.run(host=self.host, port=self.port, debug=self.debug)
+        kwargs = {
+            'host': self.host,
+            'port': self.port,
+            'debug': self.debug
+        }
+        if self.ssl_public_key and self.ssl_private_key:
+            kwargs['ssl_context'] = (self.ssl_public_key, self.ssl_private_key)
+
+        self._app.run(**kwargs)
 
     def allowed_file(self, filename):
         return '.' in filename and \
