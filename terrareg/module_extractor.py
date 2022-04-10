@@ -97,8 +97,7 @@ class ModuleExtractor():
         # If no README found, return None
         return None
 
-    @staticmethod
-    def _get_terrareg_metadata(module_path):
+    def _get_terrareg_metadata(self, module_path):
         """Obtain terrareg metadata for module, if it exists."""
         terrareg_metadata = {}
         for terrareg_file in self.TERRAREG_METADATA_FILES:
