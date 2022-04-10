@@ -10,6 +10,7 @@ from terrareg.database import Database
 from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion
 from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ModuleExtractor
+from terrareg.analytics import AnalyticsEngine
 
 
 class Server(object):
@@ -457,11 +458,19 @@ class ApiModuleVersionDownload(Resource):
 
     def get(self, namespace, name, provider, version):
         """Provide download header for location to download source."""
-        namespace, _ = Namespace.extract_analytics_token(namespace)
+        namespace, analytics_token = Namespace.extract_analytics_token(namespace)
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
         module_version = ModuleVersion(module_provider=module_provider, version=version)
+
+        # Record download
+        AnalyticsEngine.record_module_version_download(
+            module_version=module_version,
+            analytics_token=analytics_token,
+            terraform_version=request.headers.get('X-Terraform-Version', None),
+            user_agent=request.headers.get('User-Agent', None)
+        )
 
         resp = make_response('', 204)
         print(request.headers)
