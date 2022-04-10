@@ -5,7 +5,13 @@ import os
 from flask import Flask, request, render_template, redirect, make_response, send_from_directory
 from flask_restful import Resource, Api, reqparse
 
-from terrareg.config import DATA_DIRECTORY, DEBUG
+from terrareg.config import (
+    DATA_DIRECTORY,
+    DEBUG,
+    ALLOW_UNIDENTIFIED_DOWNLOADS,
+    ANALYTICS_TOKEN_PHRASE,
+    EXAMPLE_ANALYTICS_TOKEN
+)
 from terrareg.database import Database
 from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion
 from terrareg.module_search import ModuleSearch
@@ -452,6 +458,7 @@ class ApiModuleVersions(Resource):
             ]
         }
 
+
 class ApiModuleVersionDownload(Resource):
     """Provide download endpoint."""
 
@@ -471,8 +478,24 @@ class ApiModuleVersionDownload(Resource):
             user_agent=request.headers.get('User-Agent', None)
         )
 
+        # Determine if module download should be rejected due to
+        # non-existent analytics token
+        if not analytics_token and not ALLOW_UNIDENTIFIED_DOWNLOADS:
+            return make_response(
+                ("An {analytics_token_phrase} must be provided.\n"
+                 "Please update module source to include {analytics_token_phrase}.\n"
+                 "\nFor example:\n  source = \"{host}/{example_analytics_token}__{namespace}/{module_name}/{provider}\"").format(
+                    analytics_token_phrase=ANALYTICS_TOKEN_PHRASE,
+                    host=request.host,
+                    example_analytics_token=EXAMPLE_ANALYTICS_TOKEN,
+                    namespace=namespace.name,
+                    module_name=module.name,
+                    provider=module_provider.name
+                ),
+                401
+            )
+
         resp = make_response('', 204)
-        print(request.headers)
         resp.headers['X-Terraform-Get'] = module_version.get_source_download_url()
         return resp
 
