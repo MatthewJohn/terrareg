@@ -31,4 +31,8 @@ Upload a terraform module:
 
 Navigate to http://localhost:5000 to get started, or http://localhost/modules/me/my-tf-module to see the uploaded example!
 
+## Local development
+
+Since terraform requires HTTPS with a valid SSL cert, this must be provided in local development
+
 
