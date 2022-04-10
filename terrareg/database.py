@@ -2,6 +2,7 @@
 
 import sqlalchemy
 
+from terrareg.config import DEBUG
 from terrareg.errors import DatabaseMustBeIniistalisedError
 
 
@@ -57,7 +58,7 @@ class Database():
     def get_engine(cls):
         """Get singleton instance of engine."""
         if cls._ENGINE is None:
-            cls._ENGINE = sqlalchemy.create_engine('sqlite:///modules.db', echo = True)
+            cls._ENGINE = sqlalchemy.create_engine('sqlite:///modules.db', echo=DEBUG)
         return cls._ENGINE
 
     def initialise(self):

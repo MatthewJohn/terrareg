@@ -5,7 +5,7 @@ import os
 from flask import Flask, request, render_template, redirect, make_response, send_from_directory
 from flask_restful import Resource, Api, reqparse
 
-from terrareg.config import DATA_DIRECTORY
+from terrareg.config import DATA_DIRECTORY, DEBUG
 from terrareg.database import Database
 from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion
 from terrareg.module_search import ModuleSearch
@@ -32,7 +32,6 @@ class Server(object):
 
         self.host = '0.0.0.0'
         self.port = 5000
-        self.debug = True
         self.ssl_public_key = ssl_public_key
         self.ssl_private_key = ssl_private_key
 
@@ -152,7 +151,7 @@ class Server(object):
         kwargs = {
             'host': self.host,
             'port': self.port,
-            'debug': self.debug
+            'debug': DEBUG
         }
         if self.ssl_public_key and self.ssl_private_key:
             kwargs['ssl_context'] = (self.ssl_public_key, self.ssl_private_key)

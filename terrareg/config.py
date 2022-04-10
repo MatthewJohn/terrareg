@@ -9,3 +9,6 @@ without specifying an identification string in
 the namespace
 """
 ALLOW_UNIDENTIFIED_DOWNLOADS = False
+
+"""Whether flask and sqlalchemy is setup in debug mode."""
+DEBUG = bool(os.environ.get('DEBUG', False))
