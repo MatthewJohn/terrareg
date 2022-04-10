@@ -53,3 +53,34 @@ class AnalyticsEngine:
         )
         res = conn.execute(select)
         return res.scalar()
+
+    @staticmethod
+    def get_module_provider_download_stats(module_provider):
+        """Return number of downloads for intervals."""
+        db = Database.get()
+        conn = db.get_engine().connect()
+        stats = {}
+        for i in [(7, 'week'), (31, 'month'), (365, 'year'), (None, 'total')]:
+
+            select = sqlalchemy.select(
+                [sqlalchemy.func.count()]
+            ).select_from(
+                db.analytics
+            ).join(
+                db.module_version,
+                db.module_version.c.id == db.analytics.c.parent_module_version
+            ).where(
+                db.module_version.c.provider == module_provider.name
+            )
+
+            # If a checking a given time frame, limit by number of days
+            if i[0]:
+                from_timestamp = datetime.datetime.now() - datetime.timedelta(days=i[0])
+                select = select.where(
+                    db.analytics.c.timestamp >= from_timestamp
+                )
+
+            res = conn.execute(select)
+            stats[i[1]] = res.scalar()
+
+        return stats

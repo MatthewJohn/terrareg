@@ -151,6 +151,15 @@ class ModuleProvider(object):
         """Return name."""
         return self._name
 
+    @property
+    def id(self):
+        """Return ID in form of namespace/name/provider/version"""
+        return '{namespace}/{name}/{provider}'.format(
+            namespace=self._module._namespace.name,
+            name=self._module.name,
+            provider=self.name
+        )
+
     def get_view_url(self):
         """Return view URL"""
         return '{module_url}/{module}'.format(
@@ -369,10 +378,8 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def id(self):
         """Return ID in form of namespace/name/provider/version"""
-        return "{namespace}/{name}/{provider}/{version}".format(
-            namespace=self._module_provider._module._namespace.name,
-            name=self._module_provider._module.name,
-            provider=self._module_provider.name,
+        return '{provider_id}/{version}'.format(
+            provider_id=self._module_provider.id,
             version=self.version
         )
 

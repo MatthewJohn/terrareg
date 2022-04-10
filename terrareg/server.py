@@ -112,6 +112,10 @@ class Server(object):
             ApiModuleVersionDownload,
             '/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/download'
         )
+        self._api.add_resource(
+            ApiModuleProviderDownloadsSummary,
+            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/downloads/summary'
+        )
 
         # Views
         self._app.route('/')(self._view_serve_static_index)
@@ -510,3 +514,20 @@ class ApiModuleVersionSourceDownload(Resource):
         module_provider = ModuleProvider(module=module, name=provider)
         module_version = ModuleVersion(module_provider=module_provider, version=version)
         return send_from_directory(module_version.base_directory, module_version.archive_name_zip)
+
+
+class ApiModuleProviderDownloadsSummary(Resource):
+    """Provide download summary for module provider."""
+
+    def get(self, namespace, name, provider):
+        """Return list of download counts for module provider."""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        return {
+            "data": {
+                "type": "module-downloads-summary",
+                "id": module_provider.id,
+                "attributes": AnalyticsEngine.get_module_provider_download_stats(module_provider)
+            }
+        }
