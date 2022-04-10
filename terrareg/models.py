@@ -248,9 +248,27 @@ class TerraformSpecsObject(object):
 
     def get_terraform_provider_dependencies(self):
         """Obtain module dependencies."""
-        # @TODO See Above
-        #return self.get_module_specs()['providers']
-        return []
+        providers = []
+        for provider in self.get_module_specs()['providers']:
+
+            name_split = provider['name'].split('/')
+            # Default to name being the name and hashicorp
+            # as the namespace
+            name = provider['name']
+            namespace = 'hashicorp'
+            if len(name_split) > 1:
+                # If name contains slash, assume
+                # namespace is the first element
+                namespace = name_split[0]
+                name = '/'.join(name_split[1:])
+
+            providers.append(            {
+                'name': name,
+                'namespace': namespace,
+                'source': '',  # This data is not available
+                'version': provider['version'] if provider['version'] else ''
+            })
+        return providers
 
     def get_api_module_specs(self):
         """Return module specs for API."""
