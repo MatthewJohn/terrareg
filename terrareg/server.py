@@ -482,7 +482,7 @@ class ApiModuleVersionDownload(Resource):
         # non-existent analytics token
         if not analytics_token and not ALLOW_UNIDENTIFIED_DOWNLOADS:
             return make_response(
-                ("An {analytics_token_phrase} must be provided.\n"
+                ("\nAn {analytics_token_phrase} must be provided.\n"
                  "Please update module source to include {analytics_token_phrase}.\n"
                  "\nFor example:\n  source = \"{host}/{example_analytics_token}__{namespace}/{module_name}/{provider}\"").format(
                     analytics_token_phrase=ANALYTICS_TOKEN_PHRASE,
