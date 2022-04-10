@@ -61,6 +61,11 @@ class Server(object):
 
         # Terraform registry routes
         self._api.add_resource(
+            ApiTerraformWellKnown,
+            '/.well-known/terraform.json'
+        )
+
+        self._api.add_resource(
             ApiModuleList,
             '/v1/modules',
             '/v1/modules/'
@@ -233,6 +238,17 @@ class Server(object):
     def _view_serve_module_search(self):
         """Search modules based on input."""
         return render_template('module_search.html')
+
+
+class ApiTerraformWellKnown(Resource):
+    """Terraform .well-known discovery"""
+
+    def get(self):
+        """Return wellknown JSON"""
+        return {
+            "modules.v1": "/v1/modules/"
+        }
+
 
 class ApiModuleList(Resource):
     def get(self):
