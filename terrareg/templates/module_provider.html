@@ -302,7 +302,7 @@ module "{{ module.name }}" {
             }
             else if (input_variable.type == 'text')
             {
-                var_input = usageBuilderQuoteString($(input_id)[0].value);
+                var_input = $(input_id)[0].value;
             }
             else if (input_variable.type == 'boolean')
             {
@@ -314,16 +314,12 @@ module "{{ module.name }}" {
                 let custom_input_id = `${input_id}-customValue`;
 
                 // Check if custom type
-                console.log($(custom_input_id));
                 if (select_index == 'custom') {
                     // Display custom text input
                     $(custom_input_id)[0].style.display ='block';
 
                     // Use value of custom input as output
                     var_input = $(custom_input_id)[0].value
-                    if (input_variable.quote_custom) {
-                        var_input = usageBuilderQuoteString(var_input);
-                    }
                 }
                 else
                 {
@@ -345,6 +341,10 @@ module "{{ module.name }}" {
                     }
                 }
                 
+            }
+
+            if (input_variable.quote_value) {
+                var_input = usageBuilderQuoteString(var_input);
             }
 
             output_tf += `\n    ${input_variable.name} = ${var_input}`;
