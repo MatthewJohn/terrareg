@@ -72,3 +72,23 @@ class ModuleSearch(object):
             module_providers.append(terrareg.models.ModuleProvider(module=module, name=r['provider']))
 
         return module_providers
+
+    @staticmethod
+    def get_most_recently_published():
+        """Return module with most recent published date."""
+        db = Database.get()
+        select = db.module_version.select().where(
+        ).order_by(db.module_version.c.published_at.desc(), 
+        ).limit(1)
+
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+
+        row = res.fetchone()
+        namespace = terrareg.models.Namespace(name=row['namespace'])
+        module = terrareg.models.Module(namespace=namespace,
+                                        name=row['module'])
+        module_provider = terrareg.models.ModuleProvider(module=module,
+                                                         name=row['provider'])
+        return terrareg.models.ModuleVersion(module_provider=module_provider,
+                                             version=row['version'])

@@ -162,6 +162,10 @@ class Server(object):
             '/v1/terrareg/analytics/global/stats_summary'
         )
         self._api.add_resource(
+            ApiTerraregMostRecentlyPublishedModuleVersion,
+            '/v1/terrareg/analytics/global/most_recently_published_module_version'
+        )
+        self._api.add_resource(
             ApiTerraregModuleProviderAnalyticsTokenVersions,
             '/v1/terrareg/analytics/<string:namespace>/<string:name>/<string:provider>/token_versions'
         )
@@ -555,6 +559,14 @@ class ApiTerraregGlobalStatsSummary(Resource):
             'module_versions': ModuleVersion.get_total_count(),
             'downloads': AnalyticsEngine.get_total_downloads()
         }
+
+
+class ApiTerraregMostRecentlyPublishedModuleVersion(Resource):
+    """Return data for most recently published module version."""
+
+    def get(self):
+        """Return number of namespaces, modules, module versions and downloads"""
+        return ModuleSearch.get_most_recently_published().get_api_outline()
 
 
 class ApiTerraregModuleProviderAnalyticsTokenVersions(Resource):

@@ -2,12 +2,17 @@
 
 {% block content %}
 
+<script src="/static/js/terrareg/search_result_card.js"></script>
+
 <script>
     $.get("/v1/terrareg/analytics/global/stats_summary", function(data, status) {
         $('#namespace-count').html(data.namespaces);
         $('#module-count').html(data.modules);
         $('#version-count').html(data.module_versions);
         $('#download-count').html(data.downloads);
+    });
+    $.get("/v1/terrareg/analytics/global/most_recently_published_module_version", function(data, status) {
+        createSearchResultCard('most-recent-module-version', data);
     });
 </script>
 
@@ -40,4 +45,10 @@
         </div>
     </div>
 </nav>
+
+<div class="columns">
+    <div id="most-recent-module-version" class="column is-one-quarter is-offset-one-quarter">
+        <h4 class="title is-4">Most recently published</h4>
+    </div>
+</div>
 {% endblock %}
