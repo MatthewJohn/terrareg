@@ -356,7 +356,6 @@ ${additional_content}
 module "{{ module.name }}" {
     source  = "{{ server_hostname }}/{{ module_provider.id }}"
     version = "{{ module_version.version }}"
-
 ${output_tf}
 }
 `);
