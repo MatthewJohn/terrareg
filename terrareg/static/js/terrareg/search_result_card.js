@@ -78,14 +78,14 @@ function createSearchResultCard(parent_id, module) {
                 </header>
                 <div class="card-content">
                     <div class="content">
-                        Description<br />${module.description}
+                        ${module.description ? "Description<br />" + module.description : "No description provided"}
                         <br />
                         <br />
-                        Owner: ${module.owner}
+                        ${module.owner ? "Owner: " + module.owner : ""}
                     </div>
                 </div>
                 <footer class="card-footer">
-                    <p class="card-footer-item">Source: ${module.source}</p>
+                    <p class="card-footer-item">${module.source? "Source: " + module.source : "No source provided"}</p>
                     <br />
                     <p class="card-footer-item">Last updated: ${display_published}</p>
                 </footer>
