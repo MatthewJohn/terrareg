@@ -421,6 +421,7 @@ class ApiModuleDetails(Resource):
             ]
         }
 
+
 class ApiModuleProviderDetails(Resource):
 
     def get(self, namespace, name, provider):
@@ -494,14 +495,6 @@ class ApiModuleVersionDownload(Resource):
         module_provider = ModuleProvider(module=module, name=provider)
         module_version = ModuleVersion(module_provider=module_provider, version=version)
 
-        # Record download
-        AnalyticsEngine.record_module_version_download(
-            module_version=module_version,
-            analytics_token=analytics_token,
-            terraform_version=request.headers.get('X-Terraform-Version', None),
-            user_agent=request.headers.get('User-Agent', None)
-        )
-
         # Determine if module download should be rejected due to
         # non-existent analytics token
         if not analytics_token and not ALLOW_UNIDENTIFIED_DOWNLOADS:
@@ -518,6 +511,14 @@ class ApiModuleVersionDownload(Resource):
                 ),
                 401
             )
+
+        # Record download
+        AnalyticsEngine.record_module_version_download(
+            module_version=module_version,
+            analytics_token=analytics_token,
+            terraform_version=request.headers.get('X-Terraform-Version', None),
+            user_agent=request.headers.get('User-Agent', None)
+        )
 
         resp = make_response('', 204)
         resp.headers['X-Terraform-Get'] = module_version.get_source_download_url()
