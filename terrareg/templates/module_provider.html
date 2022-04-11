@@ -58,6 +58,19 @@
                 </tbody>
             </table>
         </div>
+
+
+        <div class="box">
+            <h5 class="title is-5">Usage</h4>
+            <pre>
+module "{{ module.name }}" {
+    source  = "{{ server_hostname }}/{{ module_provider.id }}"
+    version = "{{ module_version.version }}"
+
+    # Provide variables here
+    # example = "value"
+}</pre>
+        </div>
     </div>
 </div>
 

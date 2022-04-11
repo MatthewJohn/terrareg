@@ -277,7 +277,8 @@ class Server(object):
             namespace=namespace,
             module=module,
             module_provider=module_provider,
-            module_version=module_version
+            module_version=module_version,
+            server_hostname=request.host
         )
 
     def _view_serve_module_search(self):
