@@ -20,11 +20,11 @@
             Provider: {{ module_provider.name }}
         </p>
         <p class="subtitle">
-            {{ module.description }}
+            {% if module.description %}{{ module.description }}{% else %}No description provided{% endif %}
         </p>
         <p>Published {{ module_version.publish_date_display }} by <a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></p>
-        <p>Module managed by {{ module_version.owner }}</p>
-        <p>Source Code: <a href="{{ module_version.source_code_url }}">{{ module_version.source_code_url }}</a></p>
+        <p>{% if module_version.owner %}Module managed by {{ module_version.owner }}{% endif %}</p>
+        <p>{% if module_version.source_code_url %}Source Code: <a href="{{ module_version.source_code_url }}">{{ module_version.source_code_url }}</a>{% endif %}</p>
     </div>
 
     <div class="column is-one-fifth">
