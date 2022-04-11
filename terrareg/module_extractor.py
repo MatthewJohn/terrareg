@@ -166,7 +166,8 @@ class ModuleExtractor():
             # Terrareg meta-data
             owner=terrareg_metadata.get('owner', None),
             description=terrareg_metadata.get('description', None),
-            source=terrareg_metadata.get('source', None)
+            source=terrareg_metadata.get('source', None),
+            variable_template=json.dumps(terrareg_metadata.get('variable_template', {}))
         )
         res = conn.execute(insert_statement)
 
