@@ -1,4 +1,6 @@
 
+import datetime
+
 import sqlalchemy
 
 from terrareg.database import Database
@@ -72,3 +74,65 @@ class ModuleSearch(object):
             module_providers.append(terrareg.models.ModuleProvider(module=module, name=r['provider']))
 
         return module_providers
+
+    @staticmethod
+    def get_most_recently_published():
+        """Return module with most recent published date."""
+        db = Database.get()
+        select = db.module_version.select().where(
+        ).order_by(db.module_version.c.published_at.desc(), 
+        ).limit(1)
+
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+
+        row = res.fetchone()
+        namespace = terrareg.models.Namespace(name=row['namespace'])
+        module = terrareg.models.Module(namespace=namespace,
+                                        name=row['module'])
+        module_provider = terrareg.models.ModuleProvider(module=module,
+                                                         name=row['provider'])
+        return terrareg.models.ModuleVersion(module_provider=module_provider,
+                                             version=row['version'])
+
+    @staticmethod
+    def get_most_downloaded_module_provider_this_Week():
+        """Obtain module provider with most downloads this week."""
+        db = Database.get()
+        conn = db.get_engine().connect()
+        counts = sqlalchemy.select(
+            [
+                sqlalchemy.func.count().label('download_count'),
+                db.module_version.c.namespace,
+                db.module_version.c.module,
+                db.module_version.c.provider
+            ]
+        ).select_from(
+            db.analytics
+        ).join(
+            db.module_version,
+            db.module_version.c.id == db.analytics.c.parent_module_version
+        ).where(
+            db.analytics.c.timestamp >= (
+                datetime.datetime.now() -
+                datetime.timedelta(days=7)
+            )
+        ).group_by(
+            db.module_version.c.namespace,
+            db.module_version.c.module,
+            db.module_version.c.provider
+        ).subquery()
+
+        select = counts.select(
+        ).order_by(counts.c.download_count.desc()
+        ).limit(1)
+
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+
+        row = res.fetchone()
+        namespace = terrareg.models.Namespace(name=row['namespace'])
+        module = terrareg.models.Module(namespace=namespace,
+                                        name=row['module'])
+        return terrareg.models.ModuleProvider(module=module,
+                                              name=row['provider'])
