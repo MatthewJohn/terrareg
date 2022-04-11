@@ -135,6 +135,12 @@ module "{{ module.name }}" {
                 <span class="tag is-warning is-light">Terrareg Exclusive</span>
             </a>
         </li>
+        <li class="module-tab-link">
+            <a onclick="selectModuleTab(event, 'usage-builder')">
+                Usage Builder
+                <span class="tag is-warning is-light">Terrareg Exclusive</span>
+            </a>
+        </li>
     </ul>
 </div>
 <div class="columns">
@@ -253,8 +259,67 @@ module "{{ module.name }}" {
                 </tbody>
             </table>
         </div>
+
+        <div id="module-tab-usage-builder" class="module-tabs" style="display: none;">
+            <table id="analytics-table" class="table" style="width: 100%">
+                <thead>
+                    <tr>
+                        <th>Variable</th>
+                        <th>Description</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody id="usageBuilderTable">
+                </tbody>
+                <pre id="usageBuilderOutput">
+                </pre>
+            </table>
+        </div>
     </div>
 </div>
+
+<script>
+    var input_variables;
+
+    function updateUsageBuilderOutput() {
+
+    }
+
+    $.get("/v1/terrareg/{{ module_version.id }}/variable_template", (data, status) => {
+        // Populate input_variables from response
+        input_variables = data;
+
+        // Build input table
+        input_variables.forEach((input_variable) => {
+            let input_html = '';
+            let input_id = `usageBuilderInput-${input_variable.name}`;
+
+            if (input_variable.type == 'text') {
+                input_html = `<input class="input" type="text" id="${input_id}" />`;
+            } else if (input_variable.type == 'boolean') {
+                input_html = `<input class="input" type="checkbox" id="${input_id}" value="true">`;
+            } else if (input_variable.type == 'select') {
+                console.log(input_variable);
+                input_html = `<div class="select"><select id="${input_id}">`;
+                input_variable.choices.forEach((input_choice, itx) => {
+                    // If choices is list of strings, use the string as the name,
+                    // otherwise, use name attribute of object.
+                    let input_name = typeof input_choice === 'string' ? input_choice : input_choice.name;
+                    input_html += `<option value="${itx}">${input_name}</option>`;
+                });
+                input_html += '</select></div>';
+            }
+
+            $('#usageBuilderTable').append(`
+                <tr>
+                    <td>${input_variable.name}</td>
+                    <td>${input_variable.additional_help === undefined ? '' : input_variable.additional_help}</td>
+                    <td>${input_html}</td>
+                </tr>
+            `);
+        });
+    });
+</script>
 
 
 {% endblock %}

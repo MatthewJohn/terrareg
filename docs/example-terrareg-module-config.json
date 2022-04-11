@@ -16,15 +16,17 @@
         {
             "name": "var_c",
             "type": "select",
-            "choices": {
-                "option_a": {
+            "choices": [
+                {
+                    "name": "option_a",
                     "value": "value for terraform variable",
                     "additional_content": "data \"terraform_remote_state\" \"networking\" {\n\n}"
                 },
-                "option_b": {
+                {
+                    "name": "option_b",
                     "value": "a static value"
                 }
-            }
+	    ]
         },
         {
             "name": "var_d",
