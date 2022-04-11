@@ -2,7 +2,7 @@
     "owner": "matt",
     "source": "https://github.com/aws/stuffs",
     "description": "Upstream module for VPC from AWS",
-    "vars": [
+    "variable_template": [
         {
             "name": "var_a",
             "type": "text"
