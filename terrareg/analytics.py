@@ -39,6 +39,18 @@ class AnalyticsEngine:
         )
         conn.execute(insert_statement)
 
+    def get_total_downloads():
+        """Return number of downloads for a given module version."""
+        db = Database.get()
+        conn = db.get_engine().connect()
+        select = sqlalchemy.select(
+            [sqlalchemy.func.count()]
+        ).select_from(
+            db.analytics
+        )
+        res = conn.execute(select)
+        return res.scalar()
+
     def get_module_version_total_downloads(module_version):
         """Return number of downloads for a given module version."""
         db = Database.get()

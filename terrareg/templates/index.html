@@ -2,6 +2,59 @@
 
 {% block content %}
 
-<h1>Index</h1>
+<script src="/static/js/terrareg/search_result_card.js"></script>
 
+<script>
+    $.get("/v1/terrareg/analytics/global/stats_summary", function(data, status) {
+        $('#namespace-count').html(data.namespaces);
+        $('#module-count').html(data.modules);
+        $('#version-count').html(data.module_versions);
+        $('#download-count').html(data.downloads);
+    });
+    $.get("/v1/terrareg/analytics/global/most_recently_published_module_version", function(data, status) {
+        createSearchResultCard('most-recent-module-version', data);
+    });
+    $.get("/v1/terrareg/analytics/global/most_downloaded_module_provider_this_week", function(data, status) {
+        createSearchResultCard('most-downloaded-this-week', data);
+    });
+    
+</script>
+
+<nav class="level" style="margin-top: 20px; margin-bottom: 80px;">
+    <div class="level-item has-text-centered">
+        <div>
+            <p class="heading">Namespaces</p>
+            <p id="namespace-count" class="title"></p>
+        </div>
+    </div>
+    <div class="level-item has-text-centered">
+        <div>
+            <p class="heading">Modules</p>
+            <p id="module-count" class="title"></p>
+        </div>
+    </div>
+    <p class="level-item has-text-centered">
+        <h1 class="title is-1">Terrareg</h1>
+    </p>
+    <div class="level-item has-text-centered">
+        <div>
+            <p class="heading">Module Versions</p>
+            <p id="version-count" class="title"></p>
+        </div>
+    </div>
+    <div class="level-item has-text-centered">
+        <div>
+            <p class="heading">Downloads</p>
+            <p id="download-count" class="title"></p>
+        </div>
+    </div>
+</nav>
+<div class="columns">
+    <div id="most-recent-module-version" class="column is-one-quarter is-offset-one-quarter">
+        <h4 class="title is-4">Most recently published</h4>
+    </div>
+    <div id="most-downloaded-this-week" class="column is-one-quarter">
+        <h4 class="title is-4">Most downloaded this week</h4>
+    </div>
+</div>
 {% endblock %}

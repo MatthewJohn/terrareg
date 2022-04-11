@@ -158,8 +158,20 @@ class Server(object):
 
         # Terrareg APIs
         self._api.add_resource(
+            ApiTerraregGlobalStatsSummary,
+            '/v1/terrareg/analytics/global/stats_summary'
+        )
+        self._api.add_resource(
+            ApiTerraregMostRecentlyPublishedModuleVersion,
+            '/v1/terrareg/analytics/global/most_recently_published_module_version'
+        )
+        self._api.add_resource(
             ApiTerraregModuleProviderAnalyticsTokenVersions,
             '/v1/terrareg/analytics/<string:namespace>/<string:name>/<string:provider>/token_versions'
+        )
+        self._api.add_resource(
+            ApiTerraregMostDownloadedModuleProviderThisWeek,
+            '/v1/terrareg/analytics/global/most_downloaded_module_provider_this_week'
         )
 
 
@@ -538,6 +550,37 @@ class ApiModuleProviderDownloadsSummary(Resource):
                 "attributes": AnalyticsEngine.get_module_provider_download_stats(module_provider)
             }
         }
+
+
+class ApiTerraregGlobalStatsSummary(Resource):
+    """Provide global download stats for homepage."""
+
+    def get(self):
+        """Return number of namespaces, modules, module versions and downloads"""
+        return {
+            'namespaces': Namespace.get_total_count(),
+            'modules': ModuleProvider.get_total_count(),
+            'module_versions': ModuleVersion.get_total_count(),
+            'downloads': AnalyticsEngine.get_total_downloads()
+        }
+
+
+class ApiTerraregMostRecentlyPublishedModuleVersion(Resource):
+    """Return data for most recently published module version."""
+
+    def get(self):
+        """Return number of namespaces, modules, module versions and downloads"""
+        return ModuleSearch.get_most_recently_published().get_api_outline()
+
+
+class ApiTerraregMostDownloadedModuleProviderThisWeek(Resource):
+    """Return data for most downloaded module provider this week."""
+
+    def get(self):
+        """Return most downloaded module this week"""
+        return ModuleSearch.get_most_downloaded_module_provider_this_Week(
+        ).get_latest_version(
+        ).get_api_outline()
 
 
 class ApiTerraregModuleProviderAnalyticsTokenVersions(Resource):
