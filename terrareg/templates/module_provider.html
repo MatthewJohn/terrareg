@@ -371,9 +371,11 @@ ${output_tf}
             let input_id = `usageBuilderInput-${input_variable.name}`;
 
             if (input_variable.type == 'text') {
-                input_html = `<input onchange="updateUsageBuilderOutput();" class="input" type="text" id="${input_id}" />`;
+                input_html = `<input onkeyup="updateUsageBuilderOutput();" class="input" type="text" id="${input_id}" />`;
+
             } else if (input_variable.type == 'boolean') {
                 input_html = `<input onchange="updateUsageBuilderOutput();" class="checkbox" type="checkbox" id="${input_id}" value="true">`;
+
             } else if (input_variable.type == 'select') {
                 input_html = `<div class="select"><select onchange="updateUsageBuilderOutput();" id="${input_id}">`;
                 input_variable.choices.forEach((input_choice, itx) => {
@@ -389,7 +391,8 @@ ${output_tf}
                 input_html += '</select></div>';
 
                 // If custom input is available, add hidden input for custom input
-                input_html += `<input class="input" type="text" id="${input_id}-customValue" onchange="updateUsageBuilderOutput();" style="display: none;">`;
+                input_html += `<input class="input" type="text" id="${input_id}-customValue" onkeyup="updateUsageBuilderOutput();" style="display: none;">`;
+
             } else {
                 // Skip displaying other types of variables in input
                 return;
