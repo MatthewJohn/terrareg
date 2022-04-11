@@ -399,6 +399,11 @@ class ModuleVersion(TerraformSpecsObject):
         return self._get_db_row()['source']
 
     @property
+    def description(self):
+        """Return description."""
+        return self._get_db_row()['description']
+
+    @property
     def version(self):
         """Return version."""
         return self._version

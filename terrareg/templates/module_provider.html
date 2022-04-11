@@ -20,7 +20,7 @@
             Provider: {{ module_provider.name }}
         </p>
         <p class="subtitle">
-            {% if module.description %}{{ module.description }}{% else %}No description provided{% endif %}
+            {% if module_version.description %}{{ module_version.description }}{% else %}No description provided{% endif %}
         </p>
         <p>Published {{ module_version.publish_date_display }} by <a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></p>
         <p>{% if module_version.owner %}Module managed by {{ module_version.owner }}{% endif %}</p>
