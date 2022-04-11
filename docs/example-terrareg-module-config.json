@@ -38,8 +38,8 @@
         },
         {
             "name": "var_e",
-            "type": "passthrough",
-            "source_variable": "a_variable_present_in_parent_terraform"
+            "type": "static",
+            "value": "var.a_variable_present_in_parent_terraform"
         }
     ]
 }

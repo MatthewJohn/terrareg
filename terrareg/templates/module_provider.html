@@ -296,9 +296,9 @@ module "{{ module.name }}" {
             let var_input = '';
 
             // Get value from
-            if (input_variable.type == 'passthrough')
+            if (input_variable.type == 'static')
             {
-                var_input = `var.${input_variable.source_variable}`;
+                var_input = input_variable.value;
             }
             else if (input_variable.type == 'text')
             {
