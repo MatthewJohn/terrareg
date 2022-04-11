@@ -169,6 +169,10 @@ class Server(object):
             ApiTerraregModuleProviderAnalyticsTokenVersions,
             '/v1/terrareg/analytics/<string:namespace>/<string:name>/<string:provider>/token_versions'
         )
+        self._api.add_resource(
+            ApiTerraregMostDownloadedModuleProviderThisWeek,
+            '/v1/terrareg/analytics/global/most_downloaded_module_provider_this_week'
+        )
 
 
     def run(self):
@@ -567,6 +571,16 @@ class ApiTerraregMostRecentlyPublishedModuleVersion(Resource):
     def get(self):
         """Return number of namespaces, modules, module versions and downloads"""
         return ModuleSearch.get_most_recently_published().get_api_outline()
+
+
+class ApiTerraregMostDownloadedModuleProviderThisWeek(Resource):
+    """Return data for most downloaded module provider this week."""
+
+    def get(self):
+        """Return most downloaded module this week"""
+        return ModuleSearch.get_most_downloaded_module_provider_this_Week(
+        ).get_latest_version(
+        ).get_api_outline()
 
 
 class ApiTerraregModuleProviderAnalyticsTokenVersions(Resource):
