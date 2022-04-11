@@ -457,6 +457,11 @@ class ModuleVersion(TerraformSpecsObject):
             version=self.version
         )
 
+    @property
+    def variable_template(self):
+        """Return variable template for module version."""
+        return json.loads(self._get_db_row()['variable_template'])
+
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
         # Check if parent exists

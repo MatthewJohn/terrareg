@@ -1,0 +1,45 @@
+{
+    "owner": "matt",
+    "source": "https://github.com/aws/stuffs",
+    "description": "Upstream module for VPC from AWS",
+    "variable_template": [
+        {
+            "name": "var_a",
+            "type": "text",
+	    "quote_value": "true"
+        },
+        {
+            "name": "this_or_that",
+            "type": "select",
+            "choices": ["var.this", "var.that"],
+            "allow_custom": true,
+	    "quote_value": false
+        },
+        {
+            "name": "subnets",
+            "type": "select",
+            "choices": [
+                {
+                    "name": "hard_coded",
+                    "value": "[\"a static value\"]"
+                },
+                {
+                    "name": "from_common_tf",
+                    "value": "data.terraform_remote_state.networking.blah",
+                    "additional_content": "data \"terraform_remote_state\" \"networking\" {\n\n}"
+                }
+	    ],
+	    "quote_value": false
+        },
+        {
+            "name": "var_d",
+            "type": "boolean",
+            "additional_help": "Some text that will provided, as well as the variable description"
+        },
+        {
+            "name": "var_e",
+            "type": "static",
+            "value": "var.a_variable_present_in_parent_terraform"
+        }
+    ]
+}

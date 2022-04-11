@@ -173,6 +173,10 @@ class Server(object):
             ApiTerraregMostDownloadedModuleProviderThisWeek,
             '/v1/terrareg/analytics/global/most_downloaded_module_provider_this_week'
         )
+        self._api.add_resource(
+            ApiTerraregModuleVersionVariableTemplate,
+            '/v1/terrareg/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
+        )
 
 
     def run(self):
@@ -594,3 +598,15 @@ class ApiTerraregModuleProviderAnalyticsTokenVersions(Resource):
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
         return AnalyticsEngine.get_module_provider_token_versions(module_provider)
+
+
+class ApiTerraregModuleVersionVariableTemplate(Resource):
+    """Provide variable template for module version."""
+
+    def get(self, namespace, name, provider, version):
+        """Return variable template."""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        module_version = ModuleVersion(module_provider=module_provider, version=version)
+        return module_version.variable_template
