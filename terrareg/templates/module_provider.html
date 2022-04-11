@@ -271,9 +271,9 @@ module "{{ module.name }}" {
                 </thead>
                 <tbody id="usageBuilderTable">
                 </tbody>
-                <pre id="usageBuilderOutput">
-                </pre>
             </table>
+            <pre id="usageBuilderOutput">
+            </pre>
         </div>
     </div>
 </div>
@@ -282,7 +282,61 @@ module "{{ module.name }}" {
     var input_variables;
 
     function updateUsageBuilderOutput() {
+        let output_tf = '';
+        let additional_content = '';
 
+        input_variables.forEach((input_variable) => {
+            let input_id = `#usageBuilderInput-${input_variable.name}`;
+            let var_input = '';
+
+            // Get value from
+            if (input_variable.type == 'passthrough')
+            {
+                var_input = `var.${input_variable.source_variable}`;
+            }
+            else if (input_variable.type == 'text')
+            {
+                // Place input value directly into double quotes.
+                // Escape backslashes and then escape double quotes.
+                let escaped_input = $(input_id)[0].value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                var_input = `"${escaped_input}"`;
+            }
+            else if (input_variable.type == 'boolean')
+            {
+                var_input = $(input_id).is(':checked') ? 'true' : 'false';
+            }
+            else if (input_variable.type == 'select')
+            {
+                let select_index = $(input_id)[0].value;
+
+                // If choice is a string, add the choice name to as the value
+                if (typeof input_variable.choices[select_index] === 'string') {
+                    var_input = input_variable.choices[select_index];
+                } else {
+                    // Otherwise, use the attribute for the value
+                    var_input = input_variable.choices[select_index].value;
+
+                    // If object has additional_content, add it to the TF output
+                    if (input_variable.choices[select_index].additional_content) {
+                        additional_content += input_variable.choices[select_index].additional_content + '\n\n';
+                    }
+                }
+                
+            }
+
+            output_tf += `\n    ${input_variable.name} = ${var_input}`;
+        });
+
+
+        $('#usageBuilderOutput').html(`
+${additional_content}
+module "{{ module.name }}" {
+    source  = "{{ server_hostname }}/{{ module_provider.id }}"
+    version = "{{ module_version.version }}"
+
+${output_tf}
+}
+`);
     }
 
     $.get("/v1/terrareg/{{ module_version.id }}/variable_template", (data, status) => {
@@ -295,12 +349,12 @@ module "{{ module.name }}" {
             let input_id = `usageBuilderInput-${input_variable.name}`;
 
             if (input_variable.type == 'text') {
-                input_html = `<input class="input" type="text" id="${input_id}" />`;
+                input_html = `<input onchange="updateUsageBuilderOutput();" class="input" type="text" id="${input_id}" />`;
             } else if (input_variable.type == 'boolean') {
-                input_html = `<input class="input" type="checkbox" id="${input_id}" value="true">`;
+                input_html = `<input onchange="updateUsageBuilderOutput();" class="checkbox" type="checkbox" id="${input_id}" value="true">`;
             } else if (input_variable.type == 'select') {
                 console.log(input_variable);
-                input_html = `<div class="select"><select id="${input_id}">`;
+                input_html = `<div class="select"><select onchange="updateUsageBuilderOutput();" id="${input_id}">`;
                 input_variable.choices.forEach((input_choice, itx) => {
                     // If choices is list of strings, use the string as the name,
                     // otherwise, use name attribute of object.
@@ -308,6 +362,9 @@ module "{{ module.name }}" {
                     input_html += `<option value="${itx}">${input_name}</option>`;
                 });
                 input_html += '</select></div>';
+            } else {
+                // Skip displaying other types of variables in input
+                return;
             }
 
             $('#usageBuilderTable').append(`
