@@ -1,5 +1,40 @@
 {
     "owner": "matt",
     "source": "https://github.com/aws/stuffs",
-    "description": "Upstream module for VPC from AWS"
+    "description": "Upstream module for VPC from AWS",
+    "vars": [
+        {
+            "name": "var_a",
+            "type": "text"
+        },
+        {
+            "name": "var_b",
+            "type": "select",
+            "choices": ["option_a", "option_b"],
+            "allow_custom": true
+        },
+        {
+            "name": "var_c",
+            "type": "select",
+            "choices": {
+                "option_a": {
+                    "value": "value for terraform variable",
+                    "additional_content": "data \"terraform_remote_state\" \"networking\" {\n\n}"
+                },
+                "option_b": {
+                    "value": "a static value"
+                }
+            }
+        },
+        {
+            "name": "var_d",
+            "type": "boolean",
+            "additional_help": "Some text that will provided, as well as the variable description"
+        },
+        {
+            "name": "var_e",
+            "type": "passthrough",
+            "source_variable": "a_variable_present_in_parent_terraform"
+        }
+    ]
 }
