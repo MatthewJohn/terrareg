@@ -281,6 +281,12 @@ module "{{ module.name }}" {
 <script>
     var input_variables;
 
+    function usageBuilderQuoteString(input) {
+        // Place input value directly into double quotes.
+        // Escape backslashes and then escape double quotes.
+        return '"' + input.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+    }
+
     function updateUsageBuilderOutput() {
         let output_tf = '';
         let additional_content = '';
@@ -296,10 +302,7 @@ module "{{ module.name }}" {
             }
             else if (input_variable.type == 'text')
             {
-                // Place input value directly into double quotes.
-                // Escape backslashes and then escape double quotes.
-                let escaped_input = $(input_id)[0].value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-                var_input = `"${escaped_input}"`;
+                var_input = usageBuilderQuoteString($(input_id)[0].value);
             }
             else if (input_variable.type == 'boolean')
             {
@@ -308,17 +311,37 @@ module "{{ module.name }}" {
             else if (input_variable.type == 'select')
             {
                 let select_index = $(input_id)[0].value;
+                let custom_input_id = `${input_id}-customValue`;
 
-                // If choice is a string, add the choice name to as the value
-                if (typeof input_variable.choices[select_index] === 'string') {
-                    var_input = input_variable.choices[select_index];
-                } else {
-                    // Otherwise, use the attribute for the value
-                    var_input = input_variable.choices[select_index].value;
+                // Check if custom type
+                console.log($(custom_input_id));
+                if (select_index == 'custom') {
+                    // Display custom text input
+                    $(custom_input_id)[0].style.display ='block';
 
-                    // If object has additional_content, add it to the TF output
-                    if (input_variable.choices[select_index].additional_content) {
-                        additional_content += input_variable.choices[select_index].additional_content + '\n\n';
+                    // Use value of custom input as output
+                    var_input = $(custom_input_id)[0].value
+                    if (input_variable.quote_custom) {
+                        var_input = usageBuilderQuoteString(var_input);
+                    }
+                }
+                else
+                {
+                    // Hide custom input and clear value
+                    $(custom_input_id)[0].style.display = 'none';
+                    $(custom_input_id)[0].value = '';
+
+                    // If choice is a string, add the choice name to as the value
+                    if (typeof input_variable.choices[select_index] === 'string') {
+                        var_input = input_variable.choices[select_index];
+                    } else {
+                        // Otherwise, use the attribute for the value
+                        var_input = input_variable.choices[select_index].value;
+
+                        // If object has additional_content, add it to the TF output
+                        if (input_variable.choices[select_index].additional_content) {
+                            additional_content += input_variable.choices[select_index].additional_content + '\n\n';
+                        }
                     }
                 }
                 
@@ -353,7 +376,6 @@ ${output_tf}
             } else if (input_variable.type == 'boolean') {
                 input_html = `<input onchange="updateUsageBuilderOutput();" class="checkbox" type="checkbox" id="${input_id}" value="true">`;
             } else if (input_variable.type == 'select') {
-                console.log(input_variable);
                 input_html = `<div class="select"><select onchange="updateUsageBuilderOutput();" id="${input_id}">`;
                 input_variable.choices.forEach((input_choice, itx) => {
                     // If choices is list of strings, use the string as the name,
@@ -361,7 +383,14 @@ ${output_tf}
                     let input_name = typeof input_choice === 'string' ? input_choice : input_choice.name;
                     input_html += `<option value="${itx}">${input_name}</option>`;
                 });
+                // If custom input is available, add to select
+                if (input_variable.allow_custom) {
+                    input_html += `<option value="custom">Custom Value</option>`;
+                }
                 input_html += '</select></div>';
+
+                // If custom input is available, add hidden input for custom input
+                input_html += `<input class="input" type="text" id="${input_id}-customValue" onchange="updateUsageBuilderOutput();" style="display: none;">`;
             } else {
                 // Skip displaying other types of variables in input
                 return;
