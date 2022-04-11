@@ -20,13 +20,13 @@
             "type": "select",
             "choices": [
                 {
+                    "name": "hard_coded",
+                    "value": "[\"a static value\"]"
+                },
+                {
                     "name": "from_common_tf",
                     "value": "data.terraform_remote_state.networking.blah",
                     "additional_content": "data \"terraform_remote_state\" \"networking\" {\n\n}"
-                },
-                {
-                    "name": "hard_coded",
-                    "value": "[\"a static value\"]"
                 }
 	    ],
 	    "quote_value": false
