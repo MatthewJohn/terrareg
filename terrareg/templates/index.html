@@ -2,6 +2,15 @@
 
 {% block content %}
 
+<script>
+    $.get("/v1/terrareg/analytics/global/stats_summary", function(data, status) {
+        $('#namespace-count').html(data.namespaces);
+        $('#module-count').html(data.modules);
+        $('#version-count').html(data.module_versions);
+        $('#download-count').html(data.downloads);
+    });
+</script>
+
 <nav class="level">
     <div class="level-item has-text-centered">
         <div>
@@ -21,13 +30,13 @@
     <div class="level-item has-text-centered">
         <div>
             <p class="heading">Module Versions</p>
-            <p id="module-versions" class="title"></p>
+            <p id="version-count" class="title"></p>
         </div>
     </div>
     <div class="level-item has-text-centered">
         <div>
             <p class="heading">Downloads</p>
-            <p id="module-downloads" class="title"></p>
+            <p id="download-count" class="title"></p>
         </div>
     </div>
 </nav>

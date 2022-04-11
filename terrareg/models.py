@@ -3,6 +3,7 @@ import os
 from distutils.version import StrictVersion
 import json
 import re
+import sqlalchemy
 
 import markdown
 
@@ -13,6 +14,22 @@ from terrareg.errors import (NoModuleVersionAvailableError)
 
 
 class Namespace(object):
+
+    @staticmethod
+    def get_total_count():
+        """Get total number of namespaces."""
+        db = Database.get()
+        select = sqlalchemy.select(
+            [sqlalchemy.func.count()]
+        ).select_from(
+            db.module_version
+        ).group_by(
+            db.module_version.c.namespace
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+
+        return res.scalar()
 
     @staticmethod
     def extract_analytics_token(namespace: str):
@@ -141,6 +158,24 @@ class Module(object):
 
 
 class ModuleProvider(object):
+
+    @staticmethod
+    def get_total_count():
+        """Get total number of namespaces."""
+        db = Database.get()
+        select = sqlalchemy.select(
+            [sqlalchemy.func.count()]
+        ).select_from(
+            db.module_version
+        ).group_by(
+            db.module_version.c.namespace,
+            db.module_version.c.module,
+            db.module_version.c.provider
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+
+        return res.scalar()
 
     def __init__(self, module: Module, name: str):
         self._module = module
@@ -311,6 +346,25 @@ class TerraformSpecsObject(object):
 
 
 class ModuleVersion(TerraformSpecsObject):
+
+    @staticmethod
+    def get_total_count():
+        """Get total number of namespaces."""
+        db = Database.get()
+        select = sqlalchemy.select(
+            [sqlalchemy.func.count()]
+        ).select_from(
+            db.module_version
+        ).group_by(
+            db.module_version.c.namespace,
+            db.module_version.c.module,
+            db.module_version.c.provider,
+            db.module_version.c.version
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+
+        return res.scalar()
 
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""

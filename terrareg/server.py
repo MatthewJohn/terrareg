@@ -158,6 +158,10 @@ class Server(object):
 
         # Terrareg APIs
         self._api.add_resource(
+            ApiTerraregGlobalStatsSummary,
+            '/v1/terrareg/analytics/global/stats_summary'
+        )
+        self._api.add_resource(
             ApiTerraregModuleProviderAnalyticsTokenVersions,
             '/v1/terrareg/analytics/<string:namespace>/<string:name>/<string:provider>/token_versions'
         )
@@ -537,6 +541,19 @@ class ApiModuleProviderDownloadsSummary(Resource):
                 "id": module_provider.id,
                 "attributes": AnalyticsEngine.get_module_provider_download_stats(module_provider)
             }
+        }
+
+
+class ApiTerraregGlobalStatsSummary(Resource):
+    """Provide global download stats for homepage."""
+
+    def get(self):
+        """Return number of namespaces, modules, module versions and downloads"""
+        return {
+            'namespaces': Namespace.get_total_count(),
+            'modules': ModuleProvider.get_total_count(),
+            'module_versions': ModuleVersion.get_total_count(),
+            'downloads': AnalyticsEngine.get_total_downloads()
         }
 
 
