@@ -27,7 +27,7 @@ class ModuleSearch(object):
                 select = select.where(
                     sqlalchemy.or_(
                         db.module_version.c.namespace.like(query_part),
-                        db.module_version.c.module.like(query_part),
+                        db.module_version.c.module.like(wildcarded_query_part),
                         db.module_version.c.provider.like(query_part),
                         db.module_version.c.version.like(query_part),
                         db.module_version.c.description.like(wildcarded_query_part),
