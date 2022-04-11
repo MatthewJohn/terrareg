@@ -5,28 +5,31 @@
     "variable_template": [
         {
             "name": "var_a",
-            "type": "text"
+            "type": "text",
+	    "quote_value": "true"
         },
         {
-            "name": "var_b",
+            "name": "this_or_that",
             "type": "select",
-            "choices": ["option_a", "option_b"],
-            "allow_custom": true
+            "choices": ["var.this", "var.that"],
+            "allow_custom": true,
+	    "quote_value": false
         },
         {
-            "name": "var_c",
+            "name": "subnets",
             "type": "select",
             "choices": [
                 {
-                    "name": "option_a",
-                    "value": "value for terraform variable",
+                    "name": "from_common_tf",
+                    "value": "data.terraform_remote_state.networking.blah",
                     "additional_content": "data \"terraform_remote_state\" \"networking\" {\n\n}"
                 },
                 {
-                    "name": "option_b",
-                    "value": "a static value"
+                    "name": "hard_coded",
+                    "value": "[\"a static value\"]"
                 }
-	    ]
+	    ],
+	    "quote_value": false
         },
         {
             "name": "var_d",
