@@ -19,13 +19,13 @@ class Namespace(object):
     def get_total_count():
         """Get total number of namespaces."""
         db = Database.get()
-        select = sqlalchemy.select(
-            [sqlalchemy.func.count()]
-        ).select_from(
-            db.module_version
+        counts = db.module_version.select(
         ).group_by(
             db.module_version.c.namespace
-        )
+        ).subquery()
+
+        select = sqlalchemy.select([sqlalchemy.func.count()]).select_from(counts)
+
         conn = db.get_engine().connect()
         res = conn.execute(select)
 
@@ -161,17 +161,17 @@ class ModuleProvider(object):
 
     @staticmethod
     def get_total_count():
-        """Get total number of namespaces."""
+        """Get total number of module providers."""
         db = Database.get()
-        select = sqlalchemy.select(
-            [sqlalchemy.func.count()]
-        ).select_from(
-            db.module_version
+        counts = db.module_version.select(
         ).group_by(
             db.module_version.c.namespace,
             db.module_version.c.module,
             db.module_version.c.provider
-        )
+        ).subquery()
+
+        select = sqlalchemy.select([sqlalchemy.func.count()]).select_from(counts)
+
         conn = db.get_engine().connect()
         res = conn.execute(select)
 
@@ -349,18 +349,18 @@ class ModuleVersion(TerraformSpecsObject):
 
     @staticmethod
     def get_total_count():
-        """Get total number of namespaces."""
+        """Get total number of module versions."""
         db = Database.get()
-        select = sqlalchemy.select(
-            [sqlalchemy.func.count()]
-        ).select_from(
-            db.module_version
+        counts = db.module_version.select(
         ).group_by(
             db.module_version.c.namespace,
             db.module_version.c.module,
             db.module_version.c.provider,
             db.module_version.c.version
-        )
+        ).subquery()
+
+        select = sqlalchemy.select([sqlalchemy.func.count()]).select_from(counts)
+
         conn = db.get_engine().connect()
         res = conn.execute(select)
 
