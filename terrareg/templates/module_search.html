@@ -13,68 +13,114 @@
 
 
 <div class="columns">
-    <div class="column is-three-fifths is-offset-one-fifth">
+    <div class="column is-one-fifth">
+        <nav class="panel">
+            <p class="panel-heading">
+              Filters
+            </p>
 
-        <section id="results" style="display: none;">
+            <a class="panel-block is-active" onclick="toggleChildCheckbox(event);">
+                <input id="search-verified" onchange="performSearch();" type="checkbox" />
+                <span class="panel-icon">
+                    <i class="fas fa-thumbs-up" aria-hidden="true"></i>
+                </span>
+                Verified
+            </a>
+            <a class="panel-block is-active" onclick="toggleChildCheckbox(event);">
+                <input id="search-trusted-namespaces" onchange="performSearch();" type="checkbox" checked="checked" />
+                <span class="panel-icon">
+                    <i class="fas fa-check-circle" aria-hidden="true"></i>
+                </span>
+                Trusted Namepsaces
+            </a>
+            <a class="panel-block" onclick="toggleChildCheckbox(event);">
+                <input id="search-contributed" onchange="performSearch();" type="checkbox" />
+                Contributed
+            </a>
+        </nav>
+    </div>
+    <div class="column is-three-fifths">
+
+        <section id="results">
         </section>
-
-        <div id="noResults" style="display: none;">
-            No modules match your search criteria.
-            <br />
-            Please check for spelling errors and try again.
-        </div>
-
-        <div id="noSearchQuery" style="display: none;">
-            No search query has been performed.
-            <br />
-            Use the search bar above to search for module.
-        </div>
 
     </div>
 </div>
 
 <script>
+
+    function toggleChildCheckbox(event)
+    {
+        let checkbox = $(event.target).find("input")[0];
+        checkbox.checked = !checkbox.checked;
+        performSearch();
+    }
+
+    function performSearch() {
+
+        let searchQuery = $('#navBarSearchInput')[0].value;
+
+        if (searchQuery) {
+            // Mark search query breadcrumb as active
+            document.getElementById('searchQueryBreadcrumbParent').className = "is-active";
+            document.getElementById('searchBreadcrumb').className = "";
+
+            // Display search breadcrumb
+            $('#searchQueryBreadcrumbParent')[0].style.display = 'flex';
+
+            // Update link and text in search query breadcrumb
+            document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search' + queryString);
+            document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
+
+            // Perform AJAX query to obtain results
+            $.get(`/v1/modules/search?` +
+                  `q=${encodeURIComponent(searchQuery)}&` +
+                  `verified=${$('#search-verified').is(':checked')}&` +
+                  `trusted_namespaces=${$('#search-trusted-namespaces').is(':checked')}&` +
+                  `contributed=${$('#search-contributed').is(':checked')}`,
+                  function(data, status){
+                if (data.modules.length == 0) {
+                    $('#results').html(`
+                        No modules match your search criteria.
+                        <br />
+                        Please check for spelling errors and try again.
+                    `);
+                } else {
+                    // Clear reuslts panel before adding results
+                    $('#results').html('');
+
+                    // Iterate through modules
+                    data.modules.forEach((module) => {
+                        createSearchResultCard('results', module);
+                    });
+                }
+            });
+    
+        } else {
+            // Set 'search' breadcrumb as active
+            document.getElementById('searchBreadcrumb').className = "is-active";
+            // Hide search query breadcrumb
+            $('#searchQueryBreadcrumbParent')[0].style.display = 'none';
+
+            // Show no query provided
+            $('#results').html(`
+                No search query has been performed.
+                <br />
+                Use the search bar above to search for module.
+            `);
+        }
+    }
+
+    navbar_search_modules = performSearch;
+
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
     const searchQuery = urlParams.get('q');
 
     if (searchQuery) {
-        console.log('Search query provided');
-        // Mark search query breadcrumb as active
-        document.getElementById('searchQueryBreadcrumbParent').className = "is-active";
-        // Update link and text in search query breadcrumb
-        document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search' + queryString);
-        document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
-
-        // Set search input value to search string
         $('#navBarSearchInput').val(searchQuery);
-
-        // Perform AJAX query to obtain results
-        $.get("/v1/modules/search" + window.location.search, function(data, status){
-            if (data.modules.length == 0) {
-                console.log('No results');
-                document.getElementById('noResults').style.display = "block";
-            } else {
-                document.getElementById('results').style.display = "block";
-            }
-
-            // Iterate through modules
-            data.modules.forEach((module) => {
-                console.log(module);
-                createSearchResultCard('results', module);
-            });
-        });
-
-    } else {
-        console.log('No search query provided');
-        // Set 'search' breadcrumb as active
-        document.getElementById('searchBreadcrumb').className = "is-active";
-        // Remove search query breadcrumb
-        document.getElementById('searchQueryBreadcrumbParent').remove();
-
-        // Show no query provided
-        document.getElementById('noSearchQuery').style.display = "block";
     }
+    performSearch();
 </script>
 
 {% endblock %}

@@ -2,9 +2,11 @@
 import datetime
 
 import sqlalchemy
+from terrareg.config import TRUSTED_NAMESPACES
 
 from terrareg.database import Database
 import terrareg.models
+from terrareg.filters import NamespaceTrustFilter
 
 
 class ModuleSearch(object):
@@ -16,7 +18,8 @@ class ModuleSearch(object):
         query: str=None,
         namespace: str=None,
         provider: str=None,
-        verified: bool=False):
+        verified: bool=False,
+        namespace_trust_filters: list=NamespaceTrustFilter.UNSPECIFIED):
 
         db = Database.get()
         select = db.module_version.select()
@@ -52,6 +55,15 @@ class ModuleSearch(object):
             select = select.where(
                 db.module_version.c.verified == True
             )
+
+        if namespace_trust_filters is not NamespaceTrustFilter.UNSPECIFIED:
+            or_query = []
+            if NamespaceTrustFilter.TRUSTED_NAMESPACES in namespace_trust_filters:
+                or_query.append(db.module_version.c.namespace.in_(tuple(TRUSTED_NAMESPACES)))
+            if NamespaceTrustFilter.CONTRIBUTED in namespace_trust_filters:
+                or_query.append(~db.module_version.c.namespace.in_(tuple(TRUSTED_NAMESPACES)))
+            select = select.where(sqlalchemy.or_(*or_query))
+
 
         # Group by and order by namespace, module and provider
         select = select.group_by(
