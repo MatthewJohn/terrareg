@@ -11,19 +11,11 @@ from terrareg.filters import NamespaceTrustFilter
 
 class ModuleSearch(object):
 
-    @staticmethod
-    def search_module_providers(
-        offset: int,
-        limit: int,
-        query: str=None,
-        namespace: str=None,
-        provider: str=None,
-        verified: bool=False,
-        namespace_trust_filters: list=NamespaceTrustFilter.UNSPECIFIED):
+    @classmethod
+    def _get_search_query_filter(cls, select: sqlalchemy.sql.selectable.Select, query: str):
+        """Filter query based on wildcarded match of fields."""
 
         db = Database.get()
-        select = db.module_version.select()
-
         if query:
             for query_part in query.split():
                 wildcarded_query_part = '%{0}%'.format(query_part)
@@ -37,6 +29,23 @@ class ModuleSearch(object):
                         db.module_version.c.owner.like(wildcarded_query_part)
                     )
                 )
+        return select
+
+    @classmethod
+    def search_module_providers(
+        cls,
+        offset: int,
+        limit: int,
+        query: str=None,
+        namespace: str=None,
+        provider: str=None,
+        verified: bool=False,
+        namespace_trust_filters: list=NamespaceTrustFilter.UNSPECIFIED):
+
+        db = Database.get()
+        select = db.module_version.select()
+
+        select = cls._get_search_query_filter(select, query)
 
         # If provider has been supplied, select by that
         if provider:
@@ -86,6 +95,78 @@ class ModuleSearch(object):
             module_providers.append(terrareg.models.ModuleProvider(module=module, name=r['provider']))
 
         return module_providers
+
+    @classmethod
+    def get_search_filters(cls, query):
+        """Get list of search filters and filter counts."""
+        db = Database.get()
+        conn = db.get_engine().connect()
+        select = db.module_version.select()
+
+        main_select = cls._get_search_query_filter(select, query)
+
+        verified_count = conn.execute(
+            sqlalchemy.select(
+                [sqlalchemy.func.count().label('count')]
+            ).select_from(
+                main_select.where(
+                    db.module_version.c.verified==True
+                ).subquery()
+            )
+        ).fetchone()['count']
+
+        trusted_count = conn.execute(
+            sqlalchemy.select(
+                [sqlalchemy.func.count().label('count')]
+            ).select_from(
+                main_select.where(
+                    db.module_version.c.namespace.in_(tuple(TRUSTED_NAMESPACES))
+                ).subquery()
+            )
+        ).fetchone()['count']
+
+        contributed_count = conn.execute(
+            sqlalchemy.select(
+                [sqlalchemy.func.count().label('count')]
+            ).select_from(
+                main_select.where(
+                    ~db.module_version.c.namespace.in_(tuple(TRUSTED_NAMESPACES))
+                ).subquery()
+            )
+        ).fetchone()['count']
+
+        provider_res = conn.execute(
+            sqlalchemy.select(
+                [sqlalchemy.func.count().label('count'), db.module_version.c.provider]
+            ).select_from(
+                main_select.group_by(
+                    db.module_version.c.namespace,
+                    db.module_version.c.module,
+                    db.module_version.c.provider
+                ).subquery()
+            ).group_by(db.module_version.c.provider)
+        )
+
+        print("########################################################")
+        print(sqlalchemy.select(
+                [sqlalchemy.func.count().label('count'), db.module_version.c.provider]
+            ).select_from(
+                main_select.group_by(
+                    db.module_version.c.namespace,
+                    db.module_version.c.module,
+                    db.module_version.c.provider
+                ).subquery()
+            ).group_by(db.module_version.c.provider))
+
+        return {
+            'verified': verified_count,
+            'trusted_namespaces': trusted_count,
+            'contributed': contributed_count,
+            'providers': {
+                r['provider']: r['count']
+                for r in provider_res
+            }
+        }
 
     @staticmethod
     def get_most_recently_published():

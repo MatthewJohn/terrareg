@@ -179,6 +179,10 @@ class Server(object):
             ApiTerraregModuleVersionVariableTemplate,
             '/v1/terrareg/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
         )
+        self._api.add_resource(
+            ApiTerraregModuleSearchFilters,
+            '/v1/terrareg/search_filters'
+        )
 
 
     def run(self):
@@ -431,6 +435,7 @@ class ApiModuleSearch(Resource):
             ]
         }
 
+
 class ApiModuleDetails(Resource):
     def get(self, namespace, name):
         """Return latest version for each module provider."""
@@ -634,3 +639,19 @@ class ApiTerraregModuleVersionVariableTemplate(Resource):
         module_provider = ModuleProvider(module=module, name=provider)
         module_version = ModuleVersion(module_provider=module_provider, version=version)
         return module_version.variable_template
+
+
+class ApiTerraregModuleSearchFilters(Resource):
+    """Return list of filters availabe for search."""
+
+    def get(self):
+        """Return list of available filters and filter counts for search query."""
+        parser = reqparse.RequestParser()
+        parser.add_argument(
+            'q', type=str,
+            required=True,
+            help='The search string.'
+        )
+        args = parser.parse_args()
+
+        return ModuleSearch.get_search_filters(query=args.q)
