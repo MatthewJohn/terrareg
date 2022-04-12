@@ -25,17 +25,20 @@
                     <i class="fas fa-thumbs-up" aria-hidden="true"></i>
                 </span>
                 Verified
+                <span id="search-verified-count" class="tag"></span>
             </a>
             <a class="panel-block is-active" onclick="toggleChildCheckbox(event);">
                 <input id="search-trusted-namespaces" onchange="performSearch();" type="checkbox" checked="checked" />
                 <span class="panel-icon">
                     <i class="fas fa-check-circle" aria-hidden="true"></i>
                 </span>
-                Trusted Namepsaces
+                Trusted
+                <span id="search-trusted-namespaces-count" class="tag"></span>
             </a>
             <a class="panel-block" onclick="toggleChildCheckbox(event);">
                 <input id="search-contributed" onchange="performSearch();" type="checkbox" />
                 Contributed
+                <span id="search-contributed-count" class="tag"></span>
             </a>
         </nav>
     </div>
@@ -101,7 +104,9 @@
 
                 // Update list of search filters
                 $.get(`/v1/terrareg/search_filters?q=${encodeURIComponent(searchQuery)}`, (data, status) => {
-
+                    $('#search-verified-count').html(data.verified);
+                    $('#search-trusted-namespaces-count').html(data.trusted_namespaces);
+                    $('#search-contributed-count').html(data.contributed);
                 });
 
                 previousSearchString = searchQuery;
