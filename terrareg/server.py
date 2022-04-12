@@ -408,9 +408,6 @@ class ApiModuleSearch(Resource):
         if args.contributed:
             namespace_trust_filters.append(NamespaceTrustFilter.CONTRIBUTED)
 
-        print("###############################################")
-        print(namespace_trust_filters)
-
         module_providers = ModuleSearch.search_module_providers(
             query=args.q,
             namespace=args.namespace,
