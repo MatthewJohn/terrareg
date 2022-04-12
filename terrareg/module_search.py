@@ -135,28 +135,18 @@ class ModuleSearch(object):
             )
         ).fetchone()['count']
 
+        provider_subquery = main_select.group_by(
+            db.module_version.c.namespace,
+            db.module_version.c.module,
+            db.module_version.c.provider
+        ).subquery()
         provider_res = conn.execute(
             sqlalchemy.select(
-                [sqlalchemy.func.count().label('count'), db.module_version.c.provider]
+                [sqlalchemy.func.count().label('count'), provider_subquery.c.provider]
             ).select_from(
-                main_select.group_by(
-                    db.module_version.c.namespace,
-                    db.module_version.c.module,
-                    db.module_version.c.provider
-                ).subquery()
-            ).group_by(db.module_version.c.provider)
+                provider_subquery
+            ).group_by(provider_subquery.c.provider)
         )
-
-        print("########################################################")
-        print(sqlalchemy.select(
-                [sqlalchemy.func.count().label('count'), db.module_version.c.provider]
-            ).select_from(
-                main_select.group_by(
-                    db.module_version.c.namespace,
-                    db.module_version.c.module,
-                    db.module_version.c.provider
-                ).subquery()
-            ).group_by(db.module_version.c.provider))
 
         return {
             'verified': verified_count,
