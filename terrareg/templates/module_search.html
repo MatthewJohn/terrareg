@@ -19,21 +19,21 @@
               Filters
             </p>
 
-            <a class="panel-block is-active">
+            <a class="panel-block is-active" onclick="toggleChildCheckbox(event);">
                 <input id="search-verified" type="checkbox" />
                 <span class="panel-icon">
                     <i class="fas fa-thumbs-up" aria-hidden="true"></i>
                 </span>
                 Verified
             </a>
-            <a class="panel-block is-active">
+            <a class="panel-block is-active" onclick="toggleChildCheckbox(event);">
                 <input id="search-trusted-namespaces" type="checkbox" checked="checked" />
                 <span class="panel-icon">
                     <i class="fas fa-check-circle" aria-hidden="true"></i>
                 </span>
                 Trusted Namepsaces
             </a>
-            <a class="panel-block">
+            <a class="panel-block" onclick="toggleChildCheckbox(event);">
                 <input id="search-contributed" type="checkbox" />
                 Contributed
             </a>
@@ -48,6 +48,12 @@
 </div>
 
 <script>
+
+    function toggleChildCheckbox(event)
+    {
+        let checkbox = $(event.target).find("input")[0];
+        checkbox.checked = !checkbox.checked;
+    }
 
     function performSearch() {
 
