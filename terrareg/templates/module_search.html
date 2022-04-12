@@ -63,7 +63,11 @@
             document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
 
             // Perform AJAX query to obtain results
-            $.get("/v1/modules/search" + window.location.search, function(data, status){
+            $.get(`/v1/modules/search?` +
+                  `q=${encodeURIComponent(searchQuery)}&` +
+                  `verified=${$('#search-verified').is(':checked')}` +
+                  `trusted_namespace=${$('#search-trusted-namespace').is(':checked')}`,
+                  function(data, status){
                 if (data.modules.length == 0) {
                     $('#results').html(`
                         No modules match your search criteria.
