@@ -20,21 +20,21 @@
             </p>
 
             <a class="panel-block is-active">
-                <input type="checkbox" checked="checked" />
+                <input id="search-verified" type="checkbox" checked="checked" />
                 <span class="panel-icon">
                     <i class="fas fa-thumbs-up" aria-hidden="true"></i>
                 </span>
                 Verified
             </a>
             <a class="panel-block is-active">
-                <input type="checkbox" checked="checked" />
+                <input id="search-trusted-namespaces" type="checkbox" checked="checked" />
                 <span class="panel-icon">
                     <i class="fas fa-check-circle" aria-hidden="true"></i>
                 </span>
                 Trusted Namepsaces
             </a>
             <a class="panel-block">
-                <input type="checkbox" />
+                <input id="contributed" type="checkbox" />
                 Contributed
             </a>
         </nav>
@@ -48,54 +48,63 @@
 </div>
 
 <script>
+
+    function performSearch() {
+
+        let searchQuery = $('#navBarSearchInput')[0].value;
+
+        if (searchQuery) {
+            console.log('Search query provided');
+
+            // Mark search query breadcrumb as active
+            document.getElementById('searchQueryBreadcrumbParent').className = "is-active";
+            // Update link and text in search query breadcrumb
+            document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search' + queryString);
+            document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
+
+            // Perform AJAX query to obtain results
+            $.get("/v1/modules/search" + window.location.search, function(data, status){
+                if (data.modules.length == 0) {
+                    $('#results').html(`
+                        No modules match your search criteria.
+                        <br />
+                        Please check for spelling errors and try again.
+                    `);
+                } else {
+                    document.getElementById('results').style.display = "block";
+                }
+
+                // Iterate through modules
+                data.modules.forEach((module) => {
+                    console.log(module);
+                    createSearchResultCard('results', module);
+                });
+            });
+    
+        } else {
+            console.log('No search query provided');
+            // Set 'search' breadcrumb as active
+            document.getElementById('searchBreadcrumb').className = "is-active";
+            // Remove search query breadcrumb
+            document.getElementById('searchQueryBreadcrumbParent').remove();
+
+            // Show no query provided
+            $('#results').html(`
+                No search query has been performed.
+                <br />
+                Use the search bar above to search for module.
+            `);
+        }
+    }
+
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
     const searchQuery = urlParams.get('q');
 
     if (searchQuery) {
-        console.log('Search query provided');
-        // Mark search query breadcrumb as active
-        document.getElementById('searchQueryBreadcrumbParent').className = "is-active";
-        // Update link and text in search query breadcrumb
-        document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search' + queryString);
-        document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
-
-        // Set search input value to search string
         $('#navBarSearchInput').val(searchQuery);
-
-        // Perform AJAX query to obtain results
-        $.get("/v1/modules/search" + window.location.search, function(data, status){
-            if (data.modules.length == 0) {
-                $('#results').html(`
-                    No modules match your search criteria.
-                    <br />
-                    Please check for spelling errors and try again.
-                `);
-            } else {
-                document.getElementById('results').style.display = "block";
-            }
-
-            // Iterate through modules
-            data.modules.forEach((module) => {
-                console.log(module);
-                createSearchResultCard('results', module);
-            });
-        });
-
-    } else {
-        console.log('No search query provided');
-        // Set 'search' breadcrumb as active
-        document.getElementById('searchBreadcrumb').className = "is-active";
-        // Remove search query breadcrumb
-        document.getElementById('searchQueryBreadcrumbParent').remove();
-
-        // Show no query provided
-        $('#results').html(`
-            No search query has been performed.
-            <br />
-            Use the search bar above to search for module.
-        `);
     }
+    performSearch();
 </script>
 
 {% endblock %}
