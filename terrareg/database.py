@@ -79,7 +79,8 @@ class Database():
             sqlalchemy.Column('published_at', sqlalchemy.DateTime),
             sqlalchemy.Column('readme_content', sqlalchemy.String),
             sqlalchemy.Column('module_details', sqlalchemy.String),
-            sqlalchemy.Column('variable_template', sqlalchemy.String)
+            sqlalchemy.Column('variable_template', sqlalchemy.String),
+            sqlalchemy.Column('verified', sqlalchemy.Boolean)
         )
 
         self._sub_module = sqlalchemy.Table(
