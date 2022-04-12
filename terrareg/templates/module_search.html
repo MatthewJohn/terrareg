@@ -63,6 +63,11 @@
         if (searchQuery) {
             // Mark search query breadcrumb as active
             document.getElementById('searchQueryBreadcrumbParent').className = "is-active";
+            document.getElementById('searchBreadcrumb').className = "";
+
+            // Display search breadcrumb
+            $('#searchQueryBreadcrumbParent')[0].style.display = 'flex';
+
             // Update link and text in search query breadcrumb
             document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search' + queryString);
             document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
@@ -94,8 +99,8 @@
         } else {
             // Set 'search' breadcrumb as active
             document.getElementById('searchBreadcrumb').className = "is-active";
-            // Remove search query breadcrumb
-            document.getElementById('searchQueryBreadcrumbParent').remove();
+            // Hide search query breadcrumb
+            $('#searchQueryBreadcrumbParent')[0].style.display = 'none';
 
             // Show no query provided
             $('#results').html(`
