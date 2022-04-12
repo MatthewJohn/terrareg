@@ -1,6 +1,7 @@
 
 
 import os
+from tokenize import Name
 
 from flask import Flask, request, render_template, redirect, make_response, send_from_directory
 from flask_restful import Resource, Api, reqparse, inputs
@@ -17,6 +18,7 @@ from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion
 from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ModuleExtractor
 from terrareg.analytics import AnalyticsEngine
+from terrareg.filters import NamespaceTrustFilter
 
 
 class Server(object):
@@ -377,13 +379,14 @@ class ApiModuleSearch(Resource):
             'verified', type=inputs.boolean,
             default=False, help='Limits modules to only verified modules.'
         )
+
         parser.add_argument(
             'trusted_namespaces', type=inputs.boolean,
-            default=False, help='Limits modules to include trusted namespaces.'
+            default=None, help='Limits modules to include trusted namespaces.'
         )
         parser.add_argument(
             'contributed', type=inputs.boolean,
-            default=False, help='Limits modules to include contributed modules.'
+            default=None, help='Limits modules to include contributed modules.'
         )
 
         args = parser.parse_args()
@@ -393,11 +396,27 @@ class ApiModuleSearch(Resource):
         limit = 1 if limit < 1 else limit
         current_offset = 0 if args.offset < 0 else args.offset
 
+        namespace_trust_filters = NamespaceTrustFilter.UNSPECIFIED
+        # If either trusted namepsaces or contributed have been provided
+        # (irrelevant of whether they are set to true or false),
+        # setup the filter to no longer be unspecified.
+        if args.trusted_namespaces is not None or args.contributed is not None:
+            namespace_trust_filters = []
+
+        if args.trusted_namespaces:
+            namespace_trust_filters.append(NamespaceTrustFilter.TRUSTED_NAMESPACES)
+        if args.contributed:
+            namespace_trust_filters.append(NamespaceTrustFilter.CONTRIBUTED)
+
+        print("###############################################")
+        print(namespace_trust_filters)
+
         module_providers = ModuleSearch.search_module_providers(
             query=args.q,
             namespace=args.namespace,
             provider=args.provider,
             verified=args.verified,
+            namespace_trust_filters=namespace_trust_filters,
             offset=current_offset,
             limit=limit
         )
