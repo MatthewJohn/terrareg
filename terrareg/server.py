@@ -3,7 +3,7 @@
 import os
 
 from flask import Flask, request, render_template, redirect, make_response, send_from_directory
-from flask_restful import Resource, Api, reqparse
+from flask_restful import Resource, Api, reqparse, inputs
 
 from terrareg.config import (
     DATA_DIRECTORY,
@@ -316,7 +316,7 @@ class ApiModuleList(Resource):
             default=None, help='Limits modules to a specific provider.'
         )
         parser.add_argument(
-            'verified', type=bool,
+            'verified', type=inputs.boolean,
             default=False, help='Limits modules to only verified modules.'
         )
 
@@ -374,8 +374,16 @@ class ApiModuleSearch(Resource):
             default=None, help='Limits modules to a specific namespace.'
         )
         parser.add_argument(
-            'verified', type=bool,
+            'verified', type=inputs.boolean,
             default=False, help='Limits modules to only verified modules.'
+        )
+        parser.add_argument(
+            'trusted_namespaces', type=inputs.boolean,
+            default=False, help='Limits modules to include trusted namespaces.'
+        )
+        parser.add_argument(
+            'contributed', type=inputs.boolean,
+            default=False, help='Limits modules to include contributed modules.'
         )
 
         args = parser.parse_args()
