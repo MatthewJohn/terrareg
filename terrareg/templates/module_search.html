@@ -34,7 +34,7 @@
                 Trusted Namepsaces
             </a>
             <a class="panel-block">
-                <input id="contributed" type="checkbox" />
+                <input id="search-contributed" type="checkbox" />
                 Contributed
             </a>
         </nav>
@@ -65,8 +65,9 @@
             // Perform AJAX query to obtain results
             $.get(`/v1/modules/search?` +
                   `q=${encodeURIComponent(searchQuery)}&` +
-                  `verified=${$('#search-verified').is(':checked')}` +
-                  `trusted_namespace=${$('#search-trusted-namespace').is(':checked')}`,
+                  `verified=${$('#search-verified').is(':checked')}&` +
+                  `trusted_namespace=${$('#search-trusted-namespace').is(':checked')}&` +
+                  `contributed=${$('#search-contributed').is(':checked')}`,
                   function(data, status){
                 if (data.modules.length == 0) {
                     $('#results').html(`
