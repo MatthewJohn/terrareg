@@ -76,14 +76,15 @@
                         Please check for spelling errors and try again.
                     `);
                 } else {
-                    document.getElementById('results').style.display = "block";
-                }
+                    // Clear reuslts panel before adding results
+                    $('#results').html('');
 
-                // Iterate through modules
-                data.modules.forEach((module) => {
-                    console.log(module);
-                    createSearchResultCard('results', module);
-                });
+                    // Iterate through modules
+                    data.modules.forEach((module) => {
+                        console.log(module);
+                        createSearchResultCard('results', module);
+                    });
+                }
             });
     
         } else {
