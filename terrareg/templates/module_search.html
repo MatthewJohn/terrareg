@@ -61,8 +61,6 @@
         let searchQuery = $('#navBarSearchInput')[0].value;
 
         if (searchQuery) {
-            console.log('Search query provided');
-
             // Mark search query breadcrumb as active
             document.getElementById('searchQueryBreadcrumbParent').className = "is-active";
             // Update link and text in search query breadcrumb
@@ -88,14 +86,12 @@
 
                     // Iterate through modules
                     data.modules.forEach((module) => {
-                        console.log(module);
                         createSearchResultCard('results', module);
                     });
                 }
             });
     
         } else {
-            console.log('No search query provided');
             // Set 'search' breadcrumb as active
             document.getElementById('searchBreadcrumb').className = "is-active";
             // Remove search query breadcrumb
