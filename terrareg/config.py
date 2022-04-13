@@ -32,4 +32,6 @@ DELETE_EXTERNALLY_HOSTED_ARTIFACTS = os.environ.get('DELETE_EXTERNALLY_HOSTED_AR
 """
 Comma-seperated list of metadata attributes that each uploaded module _must_ contain, otherwise the upload is aborted.
 """
-REQUIRED_MODULE_METADATA_ATTRIBUTES = os.environ.get('REQUIRED_MODULE_METADATA_ATTRIBUTES', '').split(',')
+REQUIRED_MODULE_METADATA_ATTRIBUTES = [
+    attr for attr in os.environ.get('REQUIRED_MODULE_METADATA_ATTRIBUTES', '').split(',') if attr
+]
