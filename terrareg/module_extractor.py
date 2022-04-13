@@ -17,9 +17,13 @@ from terrareg.models import ModuleVersion
 from terrareg.database import Database
 from terrareg.errors import (
     UnknownFiletypeError,
-    InvalidTerraregMetadataFileError
+    InvalidTerraregMetadataFileError,
+    MetadataDoesNotContainRequiredAttributeError
 )
-from terrareg.config import DELETE_EXTERNALLY_HOSTED_ARTIFACTS
+from terrareg.config import (
+    DELETE_EXTERNALLY_HOSTED_ARTIFACTS,
+    REQUIRED_MODULE_METADATA_ATTRIBUTES
+)
 
 
 class ModuleExtractor():
@@ -116,6 +120,12 @@ class ModuleExtractor():
 
                 # Remove the meta-data file, so it is not added to the archive
                 os.unlink(path)
+
+        for required_attr in REQUIRED_MODULE_METADATA_ATTRIBUTES:
+            if not terrareg_metadata.get(required_attr, None):
+                raise MetadataDoesNotContainRequiredAttributeError(
+                    'terrareg metadata file does not contain required attribute: {}'.format(required_attr)
+                )
 
         return terrareg_metadata
 

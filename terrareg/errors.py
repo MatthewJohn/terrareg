@@ -22,3 +22,7 @@ class DatabaseMustBeIniistalisedError(Exception):
     """Database object must be initialised before accessing tables."""
 
     pass
+
+
+class MetadataDoesNotContainRequiredAttributeError(Exception):
+    """Module metadata does not contain required metadata attribute."""
