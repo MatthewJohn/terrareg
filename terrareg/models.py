@@ -528,7 +528,10 @@ class ModuleVersion(TerraformSpecsObject):
     def get_readme_html(self):
         """Convert readme markdown to HTML"""
         if self.get_readme_content():
-            return markdown.markdown(self.get_readme_content(), extensions=['fenced_code'])
+            return markdown.markdown(
+                self.get_readme_content(),
+                extensions=['fenced_code', 'tables']
+            )
         
         # Return string when no readme is present
         return '<h5 class="title is-5">No README present in the module</h3>'
