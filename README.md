@@ -54,12 +54,14 @@ In the following the 'config input' refers to the HTML inputs that provide the u
 
 There are common attributes that can be added to each of variable objects, which include:
 
-|Attribute|Description|Default|
---- | --- |
+|Attribute |Description |Default|
+--- | --- | ---|
 |name|The name of the 'config input'. This is also used as the module variable in the 'terraform input'.|Required|
 |type|The type of the input variable, see table below.|Required|
 |quote_value|Boolean flag to determine whether the value generated is quoted for the 'terraform input'.|false|
 |additional_help|A description that is provided, along with the terraform variable description in the usage builder|Empty|
+
+
 
 |Variable type|Description|Type specific attributes|
 --- | --- | ---|
