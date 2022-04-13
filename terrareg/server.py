@@ -20,6 +20,7 @@ from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ModuleExtractor
 from terrareg.analytics import AnalyticsEngine
 from terrareg.filters import NamespaceTrustFilter
+from terrareg.config import APPLICATION_NAME, LOGO_URL
 
 
 class Server(object):
@@ -183,6 +184,14 @@ class Server(object):
             '/v1/terrareg/search_filters'
         )
 
+    def _render_template(self, *args, **kwargs):
+        """Override render_template, passing in base variables."""
+        return render_template(
+            *args, **kwargs,
+            terrareg_application_name=APPLICATION_NAME,
+            terrareg_logo_url=LOGO_URL
+        )
+
 
     def run(self):
         """Run flask server."""
@@ -198,7 +207,7 @@ class Server(object):
 
     def _view_serve_static_index(self):
         """Serve static index"""
-        return render_template('index.html')
+        return self._render_template('index.html')
 
     def _view_serve_namespace_list(self):
         """Render view for display module."""
@@ -208,7 +217,7 @@ class Server(object):
         if len(namespaces) == 1:
             return redirect(namespaces[0].get_view_url())
         else:
-            return render_template(
+            return self._render_template(
                 'namespace_list.html',
                 namespaces=namespaces
             )
@@ -218,7 +227,7 @@ class Server(object):
         namespace = Namespace(namespace)
         modules = namespace.get_all_modules()
 
-        return render_template(
+        return self._render_template(
             'namespace.html',
             namespace=namespace,
             modules=modules
@@ -234,7 +243,7 @@ class Server(object):
         if len(module_providers) == 1:
             return redirect(module_providers[0].get_view_url())
         else:
-            return render_template(
+            return self._render_template(
                 'module.html',
                 namespace=namespace,
                 module=module,
@@ -251,7 +260,7 @@ class Server(object):
         else:
             module_version = ModuleVersion(module_provider=module_provider, version=version)
 
-        return render_template(
+        return self._render_template(
             'module_provider.html',
             namespace=namespace,
             module=module,
@@ -262,7 +271,7 @@ class Server(object):
 
     def _view_serve_module_search(self):
         """Search modules based on input."""
-        return render_template('module_search.html')
+        return self._render_template('module_search.html')
 
 
 class ApiTerraformWellKnown(Resource):

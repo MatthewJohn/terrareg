@@ -33,11 +33,10 @@
 
 
     <body>
-
         <nav class="navbar is-transparent">
             <div class="navbar-brand">
               <a class="navbar-item" href="/">
-              <img src="/static/images/logo.png" alt="Terrareg" width="112" height="28">
+              <img src="{{ terrareg_logo_url }}" alt="{{ terrareg_application_name }}" width="80">
             </a>
               <div class="navbar-burger burger" data-target="navbarRegistryDropdown">
                 <span></span>
@@ -93,6 +92,14 @@
             {% block content %}{% endblock %}
 
         </section>
+
+        <footer class="footer">
+          <div class="content has-text-centered">
+            <p>
+              Made with <span class="icon"><i class="far fa-heart"></i></span> - <a href="https://gitlab.dockstudios.co.uk/pub/terrareg">Terrareg</a>
+            </p>
+          </div>
+        </footer>
 
     </body>
 </html>
