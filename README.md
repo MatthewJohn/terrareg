@@ -45,6 +45,7 @@ The following attributes are available at the root of the JSON object:
 |source|Link to the original source code (used for links on the module page)|
 |description|Description of the module|
 |variable_template|Structure holding required input variables for module, used for 'Usage Builder'. See table below|
+|artifact_location|Optional variable to use an external URL as source of terraform module. Add {{ module_version }} as placeholder for the module version. If not provided, the module will be hosted by terrareg.|
 
 ### Usage builder configuration
 
