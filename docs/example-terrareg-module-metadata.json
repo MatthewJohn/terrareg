@@ -41,5 +41,6 @@
             "type": "static",
             "value": "var.a_variable_present_in_parent_terraform"
         }
-    ]
+    ],
+    "artifact_location": "git::https://github.com/namespace/module-name?ref=v{module_version}"
 }

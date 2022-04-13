@@ -14,6 +14,7 @@ from terrareg.config import (
     EXAMPLE_ANALYTICS_TOKEN
 )
 from terrareg.database import Database
+from terrareg.errors import TerraregError, UploadError
 from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion
 from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ModuleExtractor
@@ -23,8 +24,6 @@ from terrareg.filters import NamespaceTrustFilter
 
 class Server(object):
     """Manage web server and route requests"""
-
-    ALLOWED_EXTENSIONS = {'zip'}
 
     def __init__(self, ssl_public_key=None, ssl_private_key=None):
         """Create flask app and store member variables"""
@@ -64,10 +63,10 @@ class Server(object):
         """Register routes with flask."""
 
         # Upload module
-        self._app.route(
-            '/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload',
-            methods=['POST']
-        )(self._upload_module_version)
+        self._api.add_resource(
+            ApiUploadModule,
+            '/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload'
+        )
 
         # Download module tar
         self._api.add_resource(
@@ -197,36 +196,6 @@ class Server(object):
 
         self._app.run(**kwargs)
 
-    def allowed_file(self, filename):
-        return '.' in filename and \
-               filename.rsplit('.', 1)[1].lower() in self.ALLOWED_EXTENSIONS
-
-
-    def _upload_module_version(self, namespace, name, provider, version):
-        """Handle module version upload."""
-
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
-        module_version = ModuleVersion(module_provider=module_provider, version=version)
-
-        if len(request.files) != 1:
-            return 'One file can be uploaded'
-
-        file = request.files[[f for f in request.files.keys()][0]]
-
-        # If the user does not select a file, the browser submits an
-        # empty file without a filename.
-        if file.filename == '':
-            return 'No selected file'
-        if file and self.allowed_file(file.filename):
-            module_version.prepare_module()
-            with ModuleExtractor(upload_file=file, module_version=module_version) as me:
-                me.process_upload()
-            return 'Upload sucessful'
-
-        return 'Error occurred - unknown file extension'
-
     def _view_serve_static_index(self):
         """Serve static index"""
         return render_template('index.html')
@@ -306,8 +275,79 @@ class ApiTerraformWellKnown(Resource):
         }
 
 
-class ApiModuleList(Resource):
-    def get(self):
+class ErrorCatchingResource(Resource):
+    """Provide resource that catches terrareg errors."""
+
+    def _get(self, *args, **kwargs):
+        """Placeholder for overridable get method."""
+        raise NotImplementedError
+
+    def get(self, *args, **kwargs):
+        """Run subclasses get in error handling fashion."""
+        try:
+            return self._get(*args, **kwargs)
+        except TerraregError as exc:
+            return {
+                "status": "Error",
+                "message": str(exc)
+            }
+
+    def _post(self, *args, **kwargs):
+        """Placeholder for overridable post method."""
+        raise NotImplementedError
+
+    def post(self, *args, **kwargs):
+        """Run subclasses post in error handling fashion."""
+        try:
+            return self._post(*args, **kwargs)
+        except TerraregError as exc:
+            return {
+                "status": "Error",
+                "message": str(exc)
+            }
+
+
+class ApiUploadModule(ErrorCatchingResource):
+
+    ALLOWED_EXTENSIONS = ['zip']
+
+    def allowed_file(self, filename):
+        """Check if file has allowed file-extension"""
+        return '.' in filename and \
+               filename.rsplit('.', 1)[1].lower() in self.ALLOWED_EXTENSIONS
+
+    def _post(self, namespace, name, provider, version):
+        """Handle module version upload."""
+
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        module_version = ModuleVersion(module_provider=module_provider, version=version)
+
+        if len(request.files) != 1:
+            raise UploadError('One file can be uploaded')
+
+        file = request.files[[f for f in request.files.keys()][0]]
+
+        # If the user does not select a file, the browser submits an
+        # empty file without a filename.
+        if file.filename == '':
+            raise UploadError('No selected file')
+
+        if not file or not self.allowed_file(file.filename):
+            raise UploadError('Error occurred - unknown file extension')
+
+        module_version.prepare_module()
+        with ModuleExtractor(upload_file=file, module_version=module_version) as me:
+            me.process_upload()
+
+        return {
+            'status': 'Success'
+        }
+
+
+class ApiModuleList(ErrorCatchingResource):
+    def _get(self):
         """Return list of modules."""
         parser = reqparse.RequestParser()
         parser.add_argument(
@@ -354,9 +394,9 @@ class ApiModuleList(Resource):
         }
 
 
-class ApiModuleSearch(Resource):
+class ApiModuleSearch(ErrorCatchingResource):
 
-    def get(self):
+    def _get(self):
         """Search for modules, given query string, namespace or provider."""
         parser = reqparse.RequestParser()
         parser.add_argument(
@@ -436,8 +476,8 @@ class ApiModuleSearch(Resource):
         }
 
 
-class ApiModuleDetails(Resource):
-    def get(self, namespace, name):
+class ApiModuleDetails(ErrorCatchingResource):
+    def _get(self, namespace, name):
         """Return latest version for each module provider."""
 
         namespace, _ = Namespace.extract_analytics_token(namespace)
@@ -455,9 +495,9 @@ class ApiModuleDetails(Resource):
         }
 
 
-class ApiModuleProviderDetails(Resource):
+class ApiModuleProviderDetails(ErrorCatchingResource):
 
-    def get(self, namespace, name, provider):
+    def _get(self, namespace, name, provider):
         """Return list of version."""
 
         namespace, _ = Namespace.extract_analytics_token(namespace)
@@ -468,9 +508,9 @@ class ApiModuleProviderDetails(Resource):
         return module_version.get_api_details()
 
 
-class ApiModuleVersionDetails(Resource):
+class ApiModuleVersionDetails(ErrorCatchingResource):
 
-    def get(self, namespace, name, provider, version):
+    def _get(self, namespace, name, provider, version):
         """Return list of version."""
 
         namespace, _ = Namespace.extract_analytics_token(namespace)
@@ -481,9 +521,9 @@ class ApiModuleVersionDetails(Resource):
         return module_version.get_api_details()
 
 
-class ApiModuleVersions(Resource):
+class ApiModuleVersions(ErrorCatchingResource):
 
-    def get(self, namespace, name, provider):
+    def _get(self, namespace, name, provider):
         """Return list of version."""
 
         namespace, _ = Namespace.extract_analytics_token(namespace)
@@ -517,10 +557,10 @@ class ApiModuleVersions(Resource):
         }
 
 
-class ApiModuleVersionDownload(Resource):
+class ApiModuleVersionDownload(ErrorCatchingResource):
     """Provide download endpoint."""
 
-    def get(self, namespace, name, provider, version):
+    def _get(self, namespace, name, provider, version):
         """Provide download header for location to download source."""
         namespace, analytics_token = Namespace.extract_analytics_token(namespace)
         namespace = Namespace(namespace)
@@ -558,10 +598,10 @@ class ApiModuleVersionDownload(Resource):
         return resp
 
 
-class ApiModuleVersionSourceDownload(Resource):
+class ApiModuleVersionSourceDownload(ErrorCatchingResource):
     """Return source package of module version"""
 
-    def get(self, namespace, name, provider, version):
+    def _get(self, namespace, name, provider, version):
         """Return static file."""
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
@@ -570,10 +610,10 @@ class ApiModuleVersionSourceDownload(Resource):
         return send_from_directory(module_version.base_directory, module_version.archive_name_zip)
 
 
-class ApiModuleProviderDownloadsSummary(Resource):
+class ApiModuleProviderDownloadsSummary(ErrorCatchingResource):
     """Provide download summary for module provider."""
 
-    def get(self, namespace, name, provider):
+    def _get(self, namespace, name, provider):
         """Return list of download counts for module provider."""
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
@@ -587,10 +627,10 @@ class ApiModuleProviderDownloadsSummary(Resource):
         }
 
 
-class ApiTerraregGlobalStatsSummary(Resource):
+class ApiTerraregGlobalStatsSummary(ErrorCatchingResource):
     """Provide global download stats for homepage."""
 
-    def get(self):
+    def _get(self):
         """Return number of namespaces, modules, module versions and downloads"""
         return {
             'namespaces': Namespace.get_total_count(),
@@ -600,28 +640,28 @@ class ApiTerraregGlobalStatsSummary(Resource):
         }
 
 
-class ApiTerraregMostRecentlyPublishedModuleVersion(Resource):
+class ApiTerraregMostRecentlyPublishedModuleVersion(ErrorCatchingResource):
     """Return data for most recently published module version."""
 
-    def get(self):
+    def _get(self):
         """Return number of namespaces, modules, module versions and downloads"""
         return ModuleSearch.get_most_recently_published().get_api_outline()
 
 
-class ApiTerraregMostDownloadedModuleProviderThisWeek(Resource):
+class ApiTerraregMostDownloadedModuleProviderThisWeek(ErrorCatchingResource):
     """Return data for most downloaded module provider this week."""
 
-    def get(self):
+    def _get(self):
         """Return most downloaded module this week"""
         return ModuleSearch.get_most_downloaded_module_provider_this_Week(
         ).get_latest_version(
         ).get_api_outline()
 
 
-class ApiTerraregModuleProviderAnalyticsTokenVersions(Resource):
+class ApiTerraregModuleProviderAnalyticsTokenVersions(ErrorCatchingResource):
     """Provide download summary for module provider."""
 
-    def get(self, namespace, name, provider):
+    def _get(self, namespace, name, provider):
         """Return list of download counts for module provider."""
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
@@ -629,10 +669,10 @@ class ApiTerraregModuleProviderAnalyticsTokenVersions(Resource):
         return AnalyticsEngine.get_module_provider_token_versions(module_provider)
 
 
-class ApiTerraregModuleVersionVariableTemplate(Resource):
+class ApiTerraregModuleVersionVariableTemplate(ErrorCatchingResource):
     """Provide variable template for module version."""
 
-    def get(self, namespace, name, provider, version):
+    def _get(self, namespace, name, provider, version):
         """Return variable template."""
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
@@ -641,10 +681,10 @@ class ApiTerraregModuleVersionVariableTemplate(Resource):
         return module_version.variable_template
 
 
-class ApiTerraregModuleSearchFilters(Resource):
+class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
     """Return list of filters availabe for search."""
 
-    def get(self):
+    def _get(self):
         """Return list of available filters and filter counts for search query."""
         parser = reqparse.RequestParser()
         parser.add_argument(
