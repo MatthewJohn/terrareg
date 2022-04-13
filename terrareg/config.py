@@ -35,3 +35,9 @@ Comma-seperated list of metadata attributes that each uploaded module _must_ con
 REQUIRED_MODULE_METADATA_ATTRIBUTES = [
     attr for attr in os.environ.get('REQUIRED_MODULE_METADATA_ATTRIBUTES', '').split(',') if attr
 ]
+
+"""Name of application to be displayed in web interface."""
+APPLICATION_NAME = os.environ.get('APPLICATION_NAME', 'Terrareg')
+
+"""URL of logo to be used in web interface."""
+LOGO_URL = os.environ.get('LOGO_URL', '/static/images/logo.png')
