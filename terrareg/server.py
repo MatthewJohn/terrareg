@@ -14,7 +14,7 @@ from terrareg.config import (
     EXAMPLE_ANALYTICS_TOKEN
 )
 from terrareg.database import Database
-from terrareg.errors import TerraregError
+from terrareg.errors import TerraregError, UploadError
 from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion
 from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ModuleExtractor
@@ -24,8 +24,6 @@ from terrareg.filters import NamespaceTrustFilter
 
 class Server(object):
     """Manage web server and route requests"""
-
-    ALLOWED_EXTENSIONS = {'zip'}
 
     def __init__(self, ssl_public_key=None, ssl_private_key=None):
         """Create flask app and store member variables"""
@@ -65,10 +63,10 @@ class Server(object):
         """Register routes with flask."""
 
         # Upload module
-        self._app.route(
-            '/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload',
-            methods=['POST']
-        )(self._upload_module_version)
+        self._api.add_resource(
+            ApiUploadModule,
+            '/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload'
+        )
 
         # Download module tar
         self._api.add_resource(
@@ -198,36 +196,6 @@ class Server(object):
 
         self._app.run(**kwargs)
 
-    def allowed_file(self, filename):
-        return '.' in filename and \
-               filename.rsplit('.', 1)[1].lower() in self.ALLOWED_EXTENSIONS
-
-
-    def _upload_module_version(self, namespace, name, provider, version):
-        """Handle module version upload."""
-
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
-        module_version = ModuleVersion(module_provider=module_provider, version=version)
-
-        if len(request.files) != 1:
-            return 'One file can be uploaded'
-
-        file = request.files[[f for f in request.files.keys()][0]]
-
-        # If the user does not select a file, the browser submits an
-        # empty file without a filename.
-        if file.filename == '':
-            return 'No selected file'
-        if file and self.allowed_file(file.filename):
-            module_version.prepare_module()
-            with ModuleExtractor(upload_file=file, module_version=module_version) as me:
-                me.process_upload()
-            return 'Upload sucessful'
-
-        return 'Error occurred - unknown file extension'
-
     def _view_serve_static_index(self):
         """Serve static index"""
         return render_template('index.html')
@@ -323,6 +291,59 @@ class ErrorCatchingResource(Resource):
                 "status": "Error",
                 "message": str(exc)
             }
+
+    def _post(self, *args, **kwargs):
+        """Placeholder for overridable post method."""
+        raise NotImplementedError
+
+    def post(self, *args, **kwargs):
+        """Run subclasses post in error handling fashion."""
+        try:
+            return self._post(*args, **kwargs)
+        except TerraregError as exc:
+            return {
+                "status": "Error",
+                "message": str(exc)
+            }
+
+
+class ApiUploadModule(ErrorCatchingResource):
+
+    ALLOWED_EXTENSIONS = ['zip']
+
+    def allowed_file(self, filename):
+        """Check if file has allowed file-extension"""
+        return '.' in filename and \
+               filename.rsplit('.', 1)[1].lower() in self.ALLOWED_EXTENSIONS
+
+    def _post(self, namespace, name, provider, version):
+        """Handle module version upload."""
+
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        module_version = ModuleVersion(module_provider=module_provider, version=version)
+
+        if len(request.files) != 1:
+            raise UploadError('One file can be uploaded')
+
+        file = request.files[[f for f in request.files.keys()][0]]
+
+        # If the user does not select a file, the browser submits an
+        # empty file without a filename.
+        if file.filename == '':
+            raise UploadError('No selected file')
+
+        if not file or not self.allowed_file(file.filename):
+            raise UploadError('Error occurred - unknown file extension')
+
+        module_version.prepare_module()
+        with ModuleExtractor(upload_file=file, module_version=module_version) as me:
+            me.process_upload()
+
+        return {
+            'status': 'Success'
+        }
 
 
 class ApiModuleList(ErrorCatchingResource):

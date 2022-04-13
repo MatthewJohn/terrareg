@@ -34,3 +34,9 @@ class MetadataDoesNotContainRequiredAttributeError(TerraregError):
     """Module metadata does not contain required metadata attribute."""
 
     pass
+
+
+class UploadError(TerraregError):
+    """Error with file upload."""
+
+    pass
