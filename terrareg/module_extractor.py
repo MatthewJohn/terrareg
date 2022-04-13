@@ -19,6 +19,7 @@ from terrareg.errors import (
     UnknownFiletypeError,
     InvalidTerraregMetadataFileError
 )
+from terrareg.config import DELETE_EXTERNALLY_HOSTED_ARTIFACTS
 
 
 class ModuleExtractor():
@@ -209,7 +210,10 @@ class ModuleExtractor():
         # Check for any terrareg metadata files
         terrareg_metadata = self._get_terrareg_metadata(self.extract_directory)
 
-        self._generate_archive()
+        # Generate the archive, unless the module is externally hosted and
+        # the config for deleting externally hosted artifacts is enabled.
+        if not (terrareg_metadata.get('artifact_location', None) and DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
+            self._generate_archive()
 
         # Debug
         # print(module_details)
