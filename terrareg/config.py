@@ -21,3 +21,15 @@ EXAMPLE_ANALYTICS_TOKEN = os.environ.get('EXAMPLE_ANALYTICS_TOKEN', 'my-tf-appli
 
 """Comma-separated list of trusted namespaces."""
 TRUSTED_NAMESPACES = os.environ.get('TRUSTED_NAMESPACES', '').split(',')
+
+"""
+Whether uploaded modules, that provide an external URL for the artifact,
+should be removed after analysis.
+If enabled, module versions with externally hosted artifacts cannot be re-analysed after upload. 
+"""
+DELETE_EXTERNALLY_HOSTED_ARTIFACTS = os.environ.get('DELETE_EXTERNALLY_HOSTED_ARTIFACTS', 'False') == 'True'
+
+"""
+Comma-seperated list of metadata attributes that each uploaded module _must_ contain, otherwise the upload is aborted.
+"""
+REQUIRED_MODULE_METADATA_ATTRIBUTES = os.environ.get('REQUIRED_MODULE_METADATA_ATTRIBUTES', '').split(',')

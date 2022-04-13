@@ -17,7 +17,12 @@ from terrareg.models import ModuleVersion
 from terrareg.database import Database
 from terrareg.errors import (
     UnknownFiletypeError,
-    InvalidTerraregMetadataFileError
+    InvalidTerraregMetadataFileError,
+    MetadataDoesNotContainRequiredAttributeError
+)
+from terrareg.config import (
+    DELETE_EXTERNALLY_HOSTED_ARTIFACTS,
+    REQUIRED_MODULE_METADATA_ATTRIBUTES
 )
 
 
@@ -116,6 +121,12 @@ class ModuleExtractor():
                 # Remove the meta-data file, so it is not added to the archive
                 os.unlink(path)
 
+        for required_attr in REQUIRED_MODULE_METADATA_ATTRIBUTES:
+            if not terrareg_metadata.get(required_attr, None):
+                raise MetadataDoesNotContainRequiredAttributeError(
+                    'terrareg metadata file does not contain required attribute: {}'.format(required_attr)
+                )
+
         return terrareg_metadata
 
     def _generate_archive(self):
@@ -168,7 +179,8 @@ class ModuleExtractor():
             description=terrareg_metadata.get('description', None),
             source=terrareg_metadata.get('source', None),
             variable_template=json.dumps(terrareg_metadata.get('variable_template', {})),
-            verified=terrareg_metadata.get('verified', False)
+            verified=terrareg_metadata.get('verified', False),
+            artifact_location=terrareg_metadata.get('artifact_location', None)
         )
         res = conn.execute(insert_statement)
 
@@ -209,7 +221,10 @@ class ModuleExtractor():
         # Check for any terrareg metadata files
         terrareg_metadata = self._get_terrareg_metadata(self.extract_directory)
 
-        self._generate_archive()
+        # Generate the archive, unless the module is externally hosted and
+        # the config for deleting externally hosted artifacts is enabled.
+        if not (terrareg_metadata.get('artifact_location', None) and DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
+            self._generate_archive()
 
         # Debug
         # print(module_details)

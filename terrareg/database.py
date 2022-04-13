@@ -80,7 +80,8 @@ class Database():
             sqlalchemy.Column('readme_content', sqlalchemy.String),
             sqlalchemy.Column('module_details', sqlalchemy.String),
             sqlalchemy.Column('variable_template', sqlalchemy.String),
-            sqlalchemy.Column('verified', sqlalchemy.Boolean)
+            sqlalchemy.Column('verified', sqlalchemy.Boolean),
+            sqlalchemy.Column('artifact_location', sqlalchemy.String)
         )
 
         self._sub_module = sqlalchemy.Table(
