@@ -382,8 +382,8 @@ class ModuleVersion(TerraformSpecsObject):
 
     def get_source_download_url(self):
         """Return URL to download source file."""
-        if self._get_db_row['artifact_location']:
-            return self._get_db_row['artifact_location'].format(module_version=self.version)
+        if self._get_db_row()['artifact_location']:
+            return self._get_db_row()['artifact_location'].format(module_version=self.version)
 
         return '/static/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
 
