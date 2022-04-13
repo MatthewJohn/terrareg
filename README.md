@@ -62,7 +62,7 @@ There are common attributes that can be added to each of variable objects, which
 |additional_help|A description that is provided, along with the terraform variable description in the usage builder|Empty|
 
 |Variable type|Description|Type specific attributes|
---- | --- |
+--- | --- | ---|
 |text|A plain input text box for users to provide a value that it directly used as the 'terraform input'||
 |boolean|Provides a checkbox that results in a true/false value as the 'terraform input'||
 |static|This does not appear in the 'Usage Builder' 'config input' table, but provides a static value in the 'terraform input'||
