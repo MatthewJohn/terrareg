@@ -87,7 +87,7 @@ class Database():
             'module_version', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
             sqlalchemy.Column(
-                'module_provider',
+                'module_provider_id',
                 sqlalchemy.ForeignKey(
                     'module_provider.id',
                     onupdate='CASCADE',
