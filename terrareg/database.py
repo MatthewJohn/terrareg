@@ -15,13 +15,21 @@ class Database():
 
     def __init__(self):
         """Setup member variables."""
+        self._module_provider = None
         self._module_version = None
         self._sub_module = None
         self._analytics = None
 
     @property
+    def module_provider(self):
+        """Return module_provider table."""
+        if self._module_provider is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._module_provider
+
+    @property
     def module_version(self):
-        """Return submodule table."""
+        """Return module_version table."""
         if self._module_version is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._module_version
@@ -66,12 +74,26 @@ class Database():
         meta = self.get_meta()
         engine = self.get_engine()
 
-        self._module_version = sqlalchemy.Table(
-            'module_version', meta,
+        self._module_provider = sqlalchemy.Table(
+            'module_provider', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
             sqlalchemy.Column('namespace', sqlalchemy.String),
             sqlalchemy.Column('module', sqlalchemy.String),
             sqlalchemy.Column('provider', sqlalchemy.String),
+            sqlalchemy.Column('repository_url', sqlalchemy.String)
+        )
+
+        self._module_version = sqlalchemy.Table(
+            'module_version', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column(
+                'module_provider',
+                sqlalchemy.ForeignKey(
+                    'module_provider.id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            ),
             sqlalchemy.Column('version', sqlalchemy.String),
             sqlalchemy.Column('owner', sqlalchemy.String),
             sqlalchemy.Column('description', sqlalchemy.String),
