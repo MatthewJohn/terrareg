@@ -654,7 +654,10 @@ class ApiTerraregMostRecentlyPublishedModuleVersion(ErrorCatchingResource):
 
     def _get(self):
         """Return number of namespaces, modules, module versions and downloads"""
-        return ModuleSearch.get_most_recently_published().get_api_outline()
+        module_version = ModuleSearch.get_most_recently_published()
+        if not module_version:
+            return {}, 404
+        return module_version.get_api_outline()
 
 
 class ApiTerraregMostDownloadedModuleProviderThisWeek(ErrorCatchingResource):
@@ -662,9 +665,11 @@ class ApiTerraregMostDownloadedModuleProviderThisWeek(ErrorCatchingResource):
 
     def _get(self):
         """Return most downloaded module this week"""
-        return ModuleSearch.get_most_downloaded_module_provider_this_Week(
-        ).get_latest_version(
-        ).get_api_outline()
+        module_provider = ModuleSearch.get_most_downloaded_module_provider_this_Week()
+        if not module_provider:
+            return {}, 404
+
+        return module_provider.get_latest_version().get_api_outline()
 
 
 class ApiTerraregModuleProviderAnalyticsTokenVersions(ErrorCatchingResource):
