@@ -140,3 +140,9 @@ class Database():
         )
 
         meta.create_all(engine)
+
+    def get_module_version_joined_to_module_provider(self, statement):
+        """Join module_version statement to module_provider table."""
+        return statement.join(
+            self.module_provider, self.module_version.c.module_provider_id == self.module_provider.c.id
+        )

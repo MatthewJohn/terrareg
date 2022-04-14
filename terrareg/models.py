@@ -20,9 +20,9 @@ class Namespace(object):
     def get_total_count():
         """Get total number of namespaces."""
         db = Database.get()
-        counts = db.module_version.select(
+        counts = db.module_provider.select(
         ).group_by(
-            db.module_version.c.namespace
+            db.module_provider.c.namespace
         ).subquery()
 
         select = sqlalchemy.select([sqlalchemy.func.count()]).select_from(counts)
@@ -51,8 +51,8 @@ class Namespace(object):
     def get_all():
         """Return all namespaces."""
         db = Database.get()
-        select = db.module_version.select().group_by(
-            db.module_version.c.namespace
+        select = db.module_provider.select().group_by(
+            db.module_provider.c.namespace
         )
         conn = db.get_engine().connect()
         res = conn.execute(select)
@@ -78,11 +78,11 @@ class Namespace(object):
     def get_all_modules(self):
         """Return all modules for namespace."""
         db = Database.get()
-        select = db.module_version.select(
+        select = db.module_provider.select(
         ).where(
-            db.module_version.c.namespace == self.name
+            db.module_provider.c.namespace == self.name
         ).group_by(
-            db.module_version.c.module
+            db.module_provider.c.module
         )
         conn = db.get_engine().connect()
         res = conn.execute(select)
@@ -126,13 +126,13 @@ class Module(object):
     def get_providers(self):
         """Return module providers for module."""
         db = Database.get()
-        select = db.module_version.select(
+        select = db.module_provider.select(
         ).where(
-            db.module_version.c.namespace == self._namespace.name
+            db.module_provider.c.namespace == self._namespace.name
         ).where(
-            db.module_version.c.module == self.name
+            db.module_provider.c.module == self.name
         ).group_by(
-            db.module_version.c.provider
+            db.module_provider.c.provider
         )
         conn = db.get_engine().connect()
         res = conn.execute(select)
@@ -164,11 +164,11 @@ class ModuleProvider(object):
     def get_total_count():
         """Get total number of module providers."""
         db = Database.get()
-        counts = db.module_version.select(
+        counts = db.module_provider.select(
         ).group_by(
-            db.module_version.c.namespace,
-            db.module_version.c.module,
-            db.module_version.c.provider
+            db.module_provider.c.namespace,
+            db.module_provider.c.module,
+            db.module_provider.c.provider
         ).subquery()
 
         select = sqlalchemy.select([sqlalchemy.func.count()]).select_from(counts)
@@ -211,12 +211,14 @@ class ModuleProvider(object):
     def get_latest_version(self):
         """Get latest version of module."""
         db = Database.get()
-        select = db.module_version.select().where(
-            db.module_version.c.namespace == self._module._namespace.name
+        select = db.get_module_version_joined_to_module_provider(
+            db.module_version.select()
         ).where(
-            db.module_version.c.module == self._module.name
+            db.module_provider.c.namespace == self._module._namespace.name
         ).where(
-            db.module_version.c.provider == self.name
+            db.module_provider.c.module == self._module.name
+        ).where(
+            db.module_provider.c.provider == self.name
         )
         conn = db.get_engine().connect()
         res = conn.execute(select)
@@ -247,12 +249,14 @@ class ModuleProvider(object):
         """Return all module provider versions."""
         db = Database.get()
 
-        select = db.module_version.select().where(
-            db.module_version.c.namespace == self._module._namespace.name
+        select = db.get_module_version_joined_to_module_provider(
+            db.module_version.select()
         ).where(
-            db.module_version.c.module == self._module.name
+            db.module_provider.c.namespace == self._module._namespace.name
         ).where(
-            db.module_version.c.provider == self.name
+            db.module_provider.c.module == self._module.name
+        ).where(
+            db.module_provider.c.provider == self.name
         )
         conn = db.get_engine().connect()
         res = conn.execute(select)
@@ -352,11 +356,12 @@ class ModuleVersion(TerraformSpecsObject):
     def get_total_count():
         """Get total number of module versions."""
         db = Database.get()
-        counts = db.module_version.select(
+        counts = db.get_module_version_joined_to_module_provider(
+            db.module_version.select()
         ).group_by(
-            db.module_version.c.namespace,
-            db.module_version.c.module,
-            db.module_version.c.provider,
+            db.module_provider.c.namespace,
+            db.module_provider.c.module,
+            db.module_provider.c.provider,
             db.module_version.c.version
         ).subquery()
 
@@ -512,13 +517,12 @@ class ModuleVersion(TerraformSpecsObject):
     def _get_db_row(self):
         """Get object from database"""
         db = Database.get()
-        select = db.module_version.select().where(
-            db.module_version.c.namespace == self._module_provider._module._namespace.name
+        select = db.module_version.select().join(
+            db.module_provider, db.module_version.c.module_provider_id == db.module_provider.c.id
         ).where(
-            db.module_version.c.module == self._module_provider._module.name
-        ).where(
-            db.module_version.c.provider == self._module_provider.name
-        ).where(
+            db.module_provider.c.namespace == self._module_provider._module._namespace.name,
+            db.module_provider.c.module == self._module_provider._module.name,
+            db.module_provider.c.provider == self._module_provider.name,
             db.module_version.c.version == self.version
         )
         conn = db.get_engine().connect()
