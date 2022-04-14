@@ -83,10 +83,13 @@ class AnalyticsEngine:
             ).join(
                 db.module_version,
                 db.module_version.c.id == db.analytics.c.parent_module_version
+            ).join(
+                db.module_provider,
+                db.module_version.c.module_provider_id == db.module_provider.c.id
             ).where(
-                db.module_version.c.namespace == module_provider._module._namespace.name,
-                db.module_version.c.module == module_provider._module.name,
-                db.module_version.c.provider == module_provider.name
+                db.module_provider.c.namespace == module_provider._module._namespace.name,
+                db.module_provider.c.module == module_provider._module.name,
+                db.module_provider.c.provider == module_provider.name
             )
 
             # If a checking a given time frame, limit by number of days
@@ -119,10 +122,13 @@ class AnalyticsEngine:
         ).join(
             db.module_version,
             db.module_version.c.id == db.analytics.c.parent_module_version
+        ).join(
+            db.module_provider,
+            db.module_version.c.module_provider_id == db.module_provider.c.id
         ).where(
-            db.module_version.c.namespace == module_provider._module._namespace.name,
-            db.module_version.c.module == module_provider._module.name,
-            db.module_version.c.provider == module_provider.name
+            db.module_provider.c.namespace == module_provider._module._namespace.name,
+            db.module_provider.c.module == module_provider._module.name,
+            db.module_provider.c.provider == module_provider.name
         ).group_by(
             db.analytics.c.analytics_token,
             db.module_version.c.version,
