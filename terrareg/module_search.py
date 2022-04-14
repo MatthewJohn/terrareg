@@ -170,9 +170,6 @@ class ModuleSearch(object):
         res = conn.execute(select)
 
         row = res.fetchone()
-        print('=========================================================================')
-        print([r for r in dict(row)])
-        print('=========================================================================')
         namespace = terrareg.models.Namespace(name=row['namespace'])
         module = terrareg.models.Module(namespace=namespace,
                                         name=row['module'])
