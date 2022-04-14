@@ -170,6 +170,11 @@ class ModuleSearch(object):
         res = conn.execute(select)
 
         row = res.fetchone()
+
+        # If there are no rows, return None
+        if not row:
+            return None
+
         namespace = terrareg.models.Namespace(name=row['namespace'])
         module = terrareg.models.Module(namespace=namespace,
                                         name=row['module'])
@@ -217,6 +222,11 @@ class ModuleSearch(object):
         res = conn.execute(select)
 
         row = res.fetchone()
+
+        # If there are no rows, return None
+        if not row:
+            return None
+
         namespace = terrareg.models.Namespace(name=row['namespace'])
         module = terrareg.models.Module(namespace=namespace,
                                         name=row['module'])
