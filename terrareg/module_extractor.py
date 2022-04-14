@@ -176,10 +176,16 @@ class ModuleExtractor():
             ).fetchone()
 
         # Delete module from module_version table
-        delete_statement = db.module_version.delete().where(
-            db.module_version.c.module_provider_id ==
-            module_provider_row.id,
+        delete_ids = conn.execute(db.module_version.select(
+            db.module_version.c.id.label('module_version_id')
+        ).join(
+            db.module_provider, db.module_version.c.module_provider_id == db.module_provider.c.id
+        ).where(
+            db.module_provider.c.id == module_provider_row.id,
             db.module_version.c.version == self._module_version.version
+        )).fetchall()
+        delete_statement = db.module_version.delete().where(
+            db.module_version.c.id.in_(tuple(r.module_version_id for r in delete_ids))
         )
         conn.execute(delete_statement)
 
