@@ -11,6 +11,22 @@ from terrareg.database import Database
 
 class AnalyticsEngine:
 
+    @staticmethod
+    def _join_filter_analytics_table_by_module_provider(db, query, module_provider):
+        """Join query to module_version table and filter by module_version."""
+        return query.join(
+            db.module_version,
+            db.module_version.c.id == db.analytics.c.parent_module_version
+        ).join(
+            db.module_provider,
+            db.module_version.c.module_provider_id == db.module_provider.c.id
+        ).where(
+            db.module_provider.c.namespace == module_provider._module._namespace.name,
+            db.module_provider.c.module == module_provider._module.name,
+            db.module_provider.c.provider == module_provider.name
+        )
+
+    @staticmethod
     def record_module_version_download(
         module_version,
         analytics_token: str,
@@ -80,14 +96,9 @@ class AnalyticsEngine:
                 [sqlalchemy.func.count()]
             ).select_from(
                 db.analytics
-            ).join(
-                db.module_version,
-                db.module_version.c.id == db.analytics.c.parent_module_version
-            ).where(
-                db.module_version.c.namespace == module_provider._module._namespace.name,
-                db.module_version.c.module == module_provider._module.name,
-                db.module_version.c.provider == module_provider.name
             )
+            select = AnalyticsEngine._join_filter_analytics_table_by_module_provider(
+                db=db, query=select, module_provider=module_provider)
 
             # If a checking a given time frame, limit by number of days
             if i[0]:
@@ -116,14 +127,10 @@ class AnalyticsEngine:
             ]
         ).select_from(
             db.analytics
-        ).join(
-            db.module_version,
-            db.module_version.c.id == db.analytics.c.parent_module_version
-        ).where(
-            db.module_version.c.namespace == module_provider._module._namespace.name,
-            db.module_version.c.module == module_provider._module.name,
-            db.module_version.c.provider == module_provider.name
-        ).group_by(
+        )
+        select = AnalyticsEngine._join_filter_analytics_table_by_module_provider(
+            db=db, query=select, module_provider=module_provider)
+        select = select.group_by(
             db.analytics.c.analytics_token,
             db.module_version.c.version,
             db.analytics.c.terraform_version
