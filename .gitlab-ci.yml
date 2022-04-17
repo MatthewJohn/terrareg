@@ -21,6 +21,13 @@ before_script:
   - virtualenv venv
   - source venv/bin/activate
 
+test:
+  script:
+    - pip install -r requirements-dev.txt
+    - pytest
+    # - pip install --proxy=$http_proxy tox flake8  # you can also use tox
+    # - tox -e py36,flake8
+
 run:
   script:
     - python setup.py bdist_wheel
