@@ -21,6 +21,23 @@ def mocked_search_module_providers(request):
     ModuleSearch.search_module_providers = MagicMock(return_value=[])
 
 
+class TestTerraformWellKnown:
+    """Test TerraformWellKnown resource."""
+
+    def test_with_no_params(self, client):
+        """Test endpoint without query parameters"""
+        res = client.get('/.well-known/terraform.json')
+        assert res.status_code == 200
+        assert res.json == {
+            'modules.v1': '/v1/modules/'
+        }
+
+    def test_with_post(self, client):
+        """Test invalid post request"""
+        res = client.post('/.well-known/terraform.json')
+        assert res.status_code == 405
+
+
 class TestApiModuleList:
 
     def test_with_no_params(self, client, mocked_search_module_providers):
