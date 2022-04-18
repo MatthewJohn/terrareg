@@ -526,6 +526,10 @@ class ApiModuleProviderDetails(ErrorCatchingResource):
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
         module_version = module_provider.get_latest_version()
+
+        if not module_version:
+            return self._get_404_response()
+
         return module_version.get_api_details()
 
 
