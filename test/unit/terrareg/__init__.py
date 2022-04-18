@@ -69,6 +69,8 @@ class MockModuleProvider(ModuleProvider):
 
     def get_latest_version(self):
         """Return mocked latest version of module"""
+        if self._name == 'unittestproviderdoesnotexist':
+            return None
         return MockModuleVersion(module_provider=self, version=self.MOCK_LATEST_VERSION_NUMBER)
 
 

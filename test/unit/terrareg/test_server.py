@@ -383,3 +383,11 @@ class TestApiModuleProviderDetails:
         }
 
         assert res.status_code == 200
+
+    def test_non_existent_module_provider(self, client, mocked_server_module_fixture):
+        """Test endpoint with non-existent module"""
+
+        res = client.get('/v1/modules/doesnotexist/unittestdoesnotexist/unittestproviderdoesnotexist')
+
+        assert res.json == {'errors': ['Not Found']}
+        assert res.status_code == 404
