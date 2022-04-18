@@ -7,10 +7,11 @@ import pytest
 from terrareg.models import Namespace, Module
 from terrareg.module_search import ModuleSearch
 from terrareg.filters import NamespaceTrustFilter
+from terrareg.analytics import AnalyticsEngine
 from test.unit.terrareg import MockModuleProvider, MockModuleVersion, MockModule, client, mocked_server_module_fixture
 
 
-@pytest.fixture()
+@pytest.fixture
 def mocked_search_module_providers(request):
     """Create mocked instance of search_module_providers method."""
     unmocked_search_module_providers = ModuleSearch.search_module_providers
@@ -19,6 +20,18 @@ def mocked_search_module_providers(request):
     request.addfinalizer(cleanup_mocked_search_provider)
 
     ModuleSearch.search_module_providers = unittest.mock.MagicMock(return_value=[])
+
+
+@pytest.fixture
+def mock_record_module_version_download(request):
+    """Mock record_module_version_download function of AnalyticsEngine class."""
+    magic_mock = unittest.mock.MagicMock(return_value=None)
+    mock = unittest.mock.patch('terrareg.server.AnalyticsEngine.record_module_version_download')
+
+    def cleanup_mocked_record_module_version_download():
+        mock.stop()
+    request.addfinalizer(cleanup_mocked_record_module_version_download)
+    mock.start()
 
 
 class TestTerraformWellKnown:
@@ -466,10 +479,14 @@ class TestApiModuleVersionDownload:
         assert res.json == {'errors': ['Not Found']}
         assert res.status_code == 404
 
-    def test_existing_module_internal_download(self, client, mocked_server_module_fixture):
+    def test_existing_module_internal_download(self, client, mocked_server_module_fixture, mock_record_module_version_download):
         """Test endpoint with analytics token"""
 
-        res = client.get('/v1/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1/download')
+        res = client.get(
+            '/v1/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1/download',
+            headers={'X-Terraform-Version': 'TestTerraformVersion',
+                     'User-Agent': 'TestUserAgent'}
+        )
 
         test_namespace = Namespace(name='testnamespace')
         test_module = MockModule(namespace=test_namespace, name='testmodulename')
@@ -478,4 +495,16 @@ class TestApiModuleVersionDownload:
 
         assert res.headers['X-Terraform-Get'] == '/static/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'
         assert res.status_code == 204
+
+        AnalyticsEngine.record_module_version_download.assert_called_with(
+            module_version=unittest.mock.ANY,
+            analytics_token='test_token-name',
+            terraform_version='TestTerraformVersion',
+            user_agent='TestUserAgent'
+        )
+        assert AnalyticsEngine.record_module_version_download.isinstance(
+            AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'],
+            MockModuleVersion
+        )
+        assert AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'].id == test_module_version.id
 
