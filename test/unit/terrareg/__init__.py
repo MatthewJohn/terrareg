@@ -10,6 +10,7 @@ from terrareg.server import Server
 
 SERVER = Server()
 
+
 @pytest.fixture
 def client():
     """Configures the app for testing
@@ -46,6 +47,10 @@ class MockModuleVersion(ModuleVersion):
 
     def _get_db_row(self):
         """Return mock DB row"""
+        # Return no data for non-existent version
+        if self._version == '0.1.2':
+            return None
+
         return {
             'id': 1,
             'module_provider_id': 1,
@@ -53,9 +58,10 @@ class MockModuleVersion(ModuleVersion):
             'owner': 'Mock Owner',
             'description': 'Mock description',
             'source': 'http://mock.example.com/mockmodule',
-            'published_at': datetime.datetime(year=2020, month=1, day=1, hour=23, minute=18, second=12),
-            'readme_contents': 'Mock module README file',
-            'module_details': '{}',
+            'published_at': datetime.datetime(year=2020, month=1, day=1,
+                                              hour=23, minute=18, second=12),
+            'readme_content': 'Mock module README file',
+            'module_details': '{"inputs": [], "outputs": [], "providers": [], "resources": []}',
             'variable_template': '{}',
             'verified': False,
             'artifact_location': None
@@ -69,6 +75,10 @@ class MockModuleProvider(ModuleProvider):
 
     def get_latest_version(self):
         """Return mocked latest version of module"""
+        # Handle fake non-existent module
+        if self._name == 'unittestproviderdoesnotexist':
+            return None
+
         return MockModuleVersion(module_provider=self, version=self.MOCK_LATEST_VERSION_NUMBER)
 
 

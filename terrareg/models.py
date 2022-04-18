@@ -266,6 +266,17 @@ class ModuleProvider(object):
 class TerraformSpecsObject(object):
     """Base terraform object, that has terraform-docs available."""
 
+    @classmethod
+    def get(cls, *args, **kwargs):
+        """Create object and ensure the object exists."""
+        obj = cls(*args, **kwargs)
+
+        # If there is no row, return None
+        if obj._get_db_row() is None:
+            return None
+        # Otherwise, return object
+        return obj
+
     def __init__(self):
         """Setup member variables."""
         self._module_specs = None
