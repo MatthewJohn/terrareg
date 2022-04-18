@@ -313,6 +313,7 @@ class TestApiModuleSearch:
             ]
         }
 
+
 class TestApiModuleDetails:
     """Test ApiModuleDetails resource."""
 
@@ -331,3 +332,12 @@ class TestApiModuleDetails:
             ]
         }
         assert res.status_code == 200
+
+    def test_non_existent_module(self, client, mocked_server_module_fixture):
+        """Test endpoint with existing module"""
+
+        res = client.get('/v1/modules/doesnotexist/unittestdoesnotexist')
+
+        assert res.json == {'errors': ['Not Found']}
+        assert res.status_code == 404
+

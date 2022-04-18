@@ -32,6 +32,11 @@ class MockModule(Module):
 
     def get_providers(self):
         """Return list of mocked module providers"""
+
+        # Add custom name for non-existent module
+        if self._name == 'unittestdoesnotexist':
+            return []
+
         return [MockModuleProvider(module=self, name=module_provider)
                 for module_provider in self.MOCK_MODULE_PROVIDERS]
 
