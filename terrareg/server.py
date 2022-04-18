@@ -542,7 +542,11 @@ class ApiModuleVersionDetails(ErrorCatchingResource):
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
-        module_version = ModuleVersion(module_provider=module_provider, version=version)
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+
+        if module_version is None:
+            return self._get_404_response()
+
         return module_version.get_api_details()
 
 
