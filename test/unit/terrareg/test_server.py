@@ -1,15 +1,17 @@
 
+import sys
 from unittest.mock import MagicMock
 
 from terrareg.models import Namespace, Module
 from test.unit.terrareg import MockModuleProvider, client
 
 
-def test_api_module_list(client):
+def test_api_module_list_default_values(client):
 
     from terrareg.module_search import ModuleSearch
 
     # Setup for no modules returned
+    unmocked_search_module_providers = ModuleSearch.search_module_providers
     ModuleSearch.search_module_providers = MagicMock(return_value=[])
 
     ## Call with no parameters
@@ -106,3 +108,6 @@ def test_api_module_list(client):
             mock_module_provider.get_latest_version().get_api_outline(),
         ]
     }
+
+    ModuleSearch.search_module_providers = unmocked_search_module_providers
+
