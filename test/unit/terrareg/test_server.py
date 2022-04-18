@@ -448,3 +448,34 @@ class TestApiModuleVersionDetails:
 
         assert res.json == test_module_version.get_api_details()
         assert res.status_code == 200
+
+
+class TestApiModuleVersionDownload:
+    """Test ApiModuleVersionDownload resource."""
+
+    def test_existing_module_version_without_alaytics_token(self, client, mocked_server_module_fixture):
+        res = client.get('/v1/modules/testnamespace/testmodulename/providername/1.0.0/download')
+        assert res.status_code == 401
+        assert res.data == b'\nAn analytics token must be provided.\nPlease update module source to include analytics token.\n\nFor example:\n  source = "localhost/my-tf-application__testnamespace/testmodulename/providername"'
+
+    def test_non_existent_module_version(self, client, mocked_server_module_fixture):
+        """Test endpoint with non-existent module"""
+
+        res = client.get('/v1/modules/namespacename/modulename/providername/0.1.2/download')
+
+        assert res.json == {'errors': ['Not Found']}
+        assert res.status_code == 404
+
+    def test_existing_module_internal_download(self, client, mocked_server_module_fixture):
+        """Test endpoint with analytics token"""
+
+        res = client.get('/v1/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1/download')
+
+        test_namespace = Namespace(name='testnamespace')
+        test_module = MockModule(namespace=test_namespace, name='testmodulename')
+        test_module_provider = MockModuleProvider(module=test_module, name='testprovider')
+        test_module_version = MockModuleVersion(module_provider=test_module_provider, version='2.4.1')
+
+        assert res.headers['X-Terraform-Get'] == '/static/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'
+        assert res.status_code == 204
+
