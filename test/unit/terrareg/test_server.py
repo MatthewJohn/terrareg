@@ -1,21 +1,27 @@
 
-import sys
 from unittest.mock import MagicMock
+import sys
+
+import pytest
 
 from terrareg.models import Namespace, Module
+from terrareg.module_search import ModuleSearch
 from terrareg.filters import NamespaceTrustFilter
 from test.unit.terrareg import MockModuleProvider, client
 
 
-def test_api_module_list(client):
-
-    from terrareg.module_search import ModuleSearch
-
-    # Setup for no modules returned
+@pytest.fixture()
+def mocked_search_module_providers(request):
+    """Create mocked instance of search_module_providers method."""
     unmocked_search_module_providers = ModuleSearch.search_module_providers
+    def cleanup_mocked_search_provider():
+        ModuleSearch.search_module_providers = unmocked_search_module_providers
+    request.addfinalizer(cleanup_mocked_search_provider)
+
     ModuleSearch.search_module_providers = MagicMock(return_value=[])
 
-    ## Call with no parameters
+def test_api_module_list_with_no_params(client, mocked_search_module_providers):
+    """Call with no parameters"""
     res = client.get('/v1/modules')
 
     assert res.status_code == 200
@@ -25,7 +31,8 @@ def test_api_module_list(client):
 
     ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=False, offset=0, limit=10)
 
-    ## Call with limit and offset
+def test_api_module_list_with_limit_offset(client, mocked_search_module_providers):
+    """Call with limit and offset"""
     res = client.get('/v1/modules?offset=23&limit=12')
 
     assert res.status_code == 200
@@ -35,7 +42,8 @@ def test_api_module_list(client):
 
     ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=False, offset=23, limit=12)
 
-    ## Call with limit higher than max
+def test_api_module_list_with_max_limit(client, mocked_search_module_providers):
+    """Call with limit higher than max"""
     res = client.get('/v1/modules?offset=65&limit=55')
 
     assert res.status_code == 200
@@ -45,7 +53,8 @@ def test_api_module_list(client):
 
     ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=False, offset=65, limit=50)
 
-    ## Call with provider limit
+def test_api_module_list_with_provider_filter(client, mocked_search_module_providers):
+    """Call with provider limit"""
     res = client.get('/v1/modules?provider=testprovider')
 
     assert res.status_code == 200
@@ -55,7 +64,8 @@ def test_api_module_list(client):
 
     ModuleSearch.search_module_providers.assert_called_with(provider='testprovider', verified=False, offset=0, limit=10)
 
-    ## Call with verified flag
+def test_api_module_list_with_verified_false(client, mocked_search_module_providers):
+    """Call with verified flag as false"""
     res = client.get('/v1/modules?verified=false')
 
     assert res.status_code == 200
@@ -64,6 +74,9 @@ def test_api_module_list(client):
     }
     ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=False, offset=0, limit=10)
 
+
+def test_api_module_list_with_verified_true(client, mocked_search_module_providers):
+    """Call with verified flag as true"""
     res = client.get('/v1/modules?verified=true')
 
     assert res.status_code == 200
@@ -72,7 +85,8 @@ def test_api_module_list(client):
     }
     ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=True, offset=0, limit=10)
 
-    ## Test return of single module module
+def test_api_module_list_with_module_response(client, mocked_search_module_providers):
+    """Test return of single module module"""
     namespace = Namespace(name='testnamespace')
     module = Module(namespace=namespace, name='mock-module')
     mock_module_provider = MockModuleProvider(module=module, name='testprovider')
@@ -92,8 +106,12 @@ def test_api_module_list(client):
         ]
     }
 
-
-    # Test multiple modules in results
+def test_api_module_list_with_multiple_modules_response(client, mocked_search_module_providers):
+    """Test multiple modules in results"""
+    namespace = Namespace(name='testnamespace')
+    module = Module(namespace=namespace, name='mock-module')
+    mock_module_provider = MockModuleProvider(module=module, name='testprovider')
+    mock_module_provider.MOCK_LATEST_VERSION_NUMBER = '1.2.3'
     mock_namespace_2 = Namespace(name='secondtestnamespace')
     mock_module_2 = Module(namespace=mock_namespace_2, name='mockmodule2')
     mock_module_provider_2 = MockModuleProvider(module=mock_module_2, name='secondprovider')
@@ -110,24 +128,14 @@ def test_api_module_list(client):
         ]
     }
 
-    ModuleSearch.search_module_providers = unmocked_search_module_providers
-
-
-def test_api_module_search(client):
-    """Test ApiModuleSearch"""
-
-    from terrareg.module_search import ModuleSearch
-
-    # Setup for no modules returned
-    unmocked_search_module_providers = ModuleSearch.search_module_providers
-    ModuleSearch.search_module_providers = MagicMock(return_value=[])
-
-    ## Call with no parameters
+def test_api_module_search_with_no_params(client, mocked_search_module_providers):
+    """Test ApiModuleSearch with no params"""
     res = client.get('/v1/modules/search')
     assert res.status_code == 400
     ModuleSearch.search_module_providers.assert_not_called()
 
-    ## Call with query param
+def test_api_module_search_with_query_string(client, mocked_search_module_providers):
+    """Call with query param"""
     res = client.get('/v1/modules/search?q=unittestteststring')
 
     assert res.status_code == 200
@@ -139,7 +147,8 @@ def test_api_module_search(client):
         namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
         offset=0, limit=10)
 
-    ## Call with limit and offset
+def test_api_module_search_with_limit_offset(client, mocked_search_module_providers):
+    """Call with limit and offset"""
     res = client.get('/v1/modules/search?q=test&offset=23&limit=12')
 
     assert res.status_code == 200
@@ -151,7 +160,8 @@ def test_api_module_search(client):
         namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
         offset=23, limit=12)
 
-    ## Call with limit higher than max
+def test_api_module_search_with_max_limit(client, mocked_search_module_providers):
+    """Call with limit higher than max"""
     res = client.get('/v1/modules/search?q=test&offset=65&limit=55')
 
     assert res.status_code == 200
@@ -163,7 +173,8 @@ def test_api_module_search(client):
         namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
         offset=65, limit=50)
 
-    ## Call with provider filter
+def test_api_module_search_with_provider(client, mocked_search_module_providers):
+    """Call with provider filter"""
     res = client.get('/v1/modules/search?q=test&provider=testprovider')
 
     assert res.status_code == 200
@@ -175,7 +186,8 @@ def test_api_module_search(client):
         namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
         offset=0, limit=10)
 
-    ## Call with namespace filter
+def test_api_module_search_with_namespace(client, mocked_search_module_providers):
+    """Call with namespace filter"""
     res = client.get('/v1/modules/search?q=test&namespace=testnamespace')
 
     assert res.status_code == 200
@@ -187,7 +199,8 @@ def test_api_module_search(client):
         namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
         offset=0, limit=10)
 
-    ## Call with trusted namespace/contributed filters
+def test_api_module_search_with_namespace_trust_filters(client, mocked_search_module_providers):
+    """Call with trusted namespace/contributed filters"""
     for namespace_filter in [['&trusted_namespaces=false', []],
                              ['&trusted_namespaces=true', [NamespaceTrustFilter.TRUSTED_NAMESPACES]],
                              ['&contributed=false', []],
@@ -208,7 +221,8 @@ def test_api_module_search(client):
             namespace_trust_filters=namespace_filter[1],
             offset=0, limit=10)
 
-    ## Call with verified flag
+def test_api_module_search_with_verified_false(client, mocked_search_module_providers):
+    """Call with verified flag as false"""
     res = client.get('/v1/modules/search?q=test&verified=false')
 
     assert res.status_code == 200
@@ -220,6 +234,8 @@ def test_api_module_search(client):
         namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
         offset=0, limit=10)
 
+def test_api_module_search_with_verified_true(client, mocked_search_module_providers):
+    """Test call with verified as true"""
     res = client.get('/v1/modules/search?q=test&verified=true')
 
     assert res.status_code == 200
@@ -231,7 +247,8 @@ def test_api_module_search(client):
         namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
         offset=0, limit=10)
 
-    ## Test return of single module module
+def test_api_module_search_with_single_module_response(client, mocked_search_module_providers):
+    """Test return of single module module"""
     namespace = Namespace(name='testnamespace')
     module = Module(namespace=namespace, name='mock-module')
     mock_module_provider = MockModuleProvider(module=module, name='testprovider')
@@ -251,7 +268,12 @@ def test_api_module_search(client):
         ]
     }
 
-    # Test multiple modules in results
+def test_api_module_search_with_multiple_module_response(client, mocked_search_module_providers):
+    """Test multiple modules in results"""
+    namespace = Namespace(name='testnamespace')
+    module = Module(namespace=namespace, name='mock-module')
+    mock_module_provider = MockModuleProvider(module=module, name='testprovider')
+    mock_module_provider.MOCK_LATEST_VERSION_NUMBER = '1.2.3'
     mock_namespace_2 = Namespace(name='secondtestnamespace')
     mock_module_2 = Module(namespace=mock_namespace_2, name='mockmodule2')
     mock_module_provider_2 = MockModuleProvider(module=mock_module_2, name='secondprovider')
@@ -267,5 +289,3 @@ def test_api_module_search(client):
             mock_module_provider.get_latest_version().get_api_outline(),
         ]
     }
-
-    ModuleSearch.search_module_providers = unmocked_search_module_providers
