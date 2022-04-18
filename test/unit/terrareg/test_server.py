@@ -391,3 +391,15 @@ class TestApiModuleProviderDetails:
 
         assert res.json == {'errors': ['Not Found']}
         assert res.status_code == 404
+
+    def test_analytics_token(self, client, mocked_server_module_fixture):
+        """Test endpoint with analytics token"""
+
+        res = client.get('/v1/modules/test_token-name__testnamespace/testmodulename/testprovider')
+
+        test_namespace = Namespace(name='testnamespace')
+        test_module = MockModule(namespace=test_namespace, name='testmodulename')
+        test_module_provider = MockModuleProvider(module=test_module, name='testprovider')
+
+        assert res.json == test_module_provider.get_latest_version().get_api_details()
+        assert res.status_code == 200
