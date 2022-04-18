@@ -136,7 +136,7 @@ class ModuleExtractor():
             tar.add(self.extract_directory, arcname='', recursive=True)
         # Create zip
         shutil.make_archive(
-            re.sub('\.zip$', '', self._module_version.archive_path_zip),
+            re.sub(r'\.zip$', '', self._module_version.archive_path_zip),
             'zip',
             self.extract_directory)
 

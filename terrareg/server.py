@@ -315,6 +315,10 @@ class ErrorCatchingResource(Resource):
                 "message": str(exc)
             }
 
+    def _get_404_response(self):
+        """Return common 404 error"""
+        return {'errors': ['Not Found']}, 404
+
 
 class ApiUploadModule(ErrorCatchingResource):
 
@@ -492,6 +496,14 @@ class ApiModuleDetails(ErrorCatchingResource):
         namespace, _ = Namespace.extract_analytics_token(namespace)
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
+        modules = [
+            module_provider.get_latest_version().get_api_outline()
+            for module_provider in module.get_providers()
+        ]
+
+        if not modules:
+            return self._get_404_response()
+
         return {
             "meta": {
                 "limit": 5,
