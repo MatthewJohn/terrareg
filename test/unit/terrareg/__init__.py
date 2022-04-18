@@ -10,6 +10,7 @@ from terrareg.server import Server
 
 SERVER = Server()
 
+
 @pytest.fixture
 def client():
     """Configures the app for testing
@@ -57,7 +58,8 @@ class MockModuleVersion(ModuleVersion):
             'owner': 'Mock Owner',
             'description': 'Mock description',
             'source': 'http://mock.example.com/mockmodule',
-            'published_at': datetime.datetime(year=2020, month=1, day=1, hour=23, minute=18, second=12),
+            'published_at': datetime.datetime(year=2020, month=1, day=1,
+                                              hour=23, minute=18, second=12),
             'readme_content': 'Mock module README file',
             'module_details': '{"inputs": [], "outputs": [], "providers": [], "resources": []}',
             'variable_template': '{}',

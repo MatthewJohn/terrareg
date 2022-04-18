@@ -26,13 +26,29 @@ def mocked_search_module_providers(request):
 def mock_record_module_version_download(request):
     """Mock record_module_version_download function of AnalyticsEngine class."""
     magic_mock = unittest.mock.MagicMock(return_value=None)
-    mock = unittest.mock.patch('terrareg.server.AnalyticsEngine.record_module_version_download')
+    mock = unittest.mock.patch('terrareg.server.AnalyticsEngine.record_module_version_download', magic_mock)
 
     def cleanup_mocked_record_module_version_download():
         mock.stop()
     request.addfinalizer(cleanup_mocked_record_module_version_download)
     mock.start()
 
+
+@pytest.fixture
+def mock_server_get_module_provider_download_stats(request):
+    """Mock get_module_provider_download_stats function of AnalyticsEngine class."""
+    magic_mock = unittest.mock.MagicMock(return_value={
+        'week': 10,
+        'month': 58,
+        'year': 127,
+        'total': 226
+    })
+    mock = unittest.mock.patch('terrareg.server.AnalyticsEngine.get_module_provider_download_stats', magic_mock)
+
+    def cleanup_mocked_record_module_version_download():
+        mock.stop()
+    request.addfinalizer(cleanup_mocked_record_module_version_download)
+    mock.start()
 
 class TestTerraformWellKnown:
     """Test TerraformWellKnown resource."""
@@ -508,3 +524,18 @@ class TestApiModuleVersionDownload:
         )
         assert AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'].id == test_module_version.id
 
+
+class TestApiModuleProviderDownloadsSummary:
+ 
+    def test_existing_module(self, client, mocked_server_module_fixture, mock_server_get_module_provider_download_stats):
+        """Test endpoint with existing module"""
+        res = client.get('/v1/modules/testnamespace/testmodule/testprovider/downloads/summary')
+        print(res.json)
+        assert res.status_code == 200
+        assert res.json == {
+            'data': {
+                'attributes': {'month': 58, 'total': 226, 'week': 10, 'year': 127},
+                'id': 'testnamespace/testmodule/testprovider',
+                'type': 'module-downloads-summary'
+            }
+        }
