@@ -595,7 +595,10 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
-        module_version = ModuleVersion(module_provider=module_provider, version=version)
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+
+        if module_version is None:
+            return self._get_404_response()
 
         # Determine if module download should be rejected due to
         # non-existent analytics token
