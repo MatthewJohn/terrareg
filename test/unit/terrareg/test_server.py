@@ -365,7 +365,6 @@ class TestApiModuleProviderDetails:
     def test_existing_module_provider(self, client, mocked_server_module_fixture):
         res = client.get('/v1/modules/testnamespace/testmodulename/providername')
 
-        print(res.json)
         assert res.json == {
             'id': 'testnamespace/testmodulename/providername/1.0.0', 'owner': 'Mock Owner',
             'namespace': 'testnamespace', 'name': 'testmodulename',
