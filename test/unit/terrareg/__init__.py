@@ -1,9 +1,10 @@
 
 import datetime
+import unittest.mock
 
 import pytest
 
-from terrareg.models import ModuleProvider, ModuleVersion
+from terrareg.models import Module, ModuleProvider, ModuleVersion
 from terrareg.server import Server
 
 
@@ -22,6 +23,17 @@ def client():
     client = SERVER._app.test_client()
 
     yield client
+
+
+class MockModule(Module):
+    """Mocked module."""
+
+    MOCK_MODULE_PROVIDERS = ['testprovider']
+
+    def get_providers(self):
+        """Return list of mocked module providers"""
+        return [MockModuleProvider(module=self, name=module_provider)
+                for module_provider in self.MOCK_MODULE_PROVIDERS]
 
 
 class MockModuleVersion(ModuleVersion):
@@ -48,8 +60,59 @@ class MockModuleVersion(ModuleVersion):
 class MockModuleProvider(ModuleProvider):
     """Mocked module provider."""
 
-    MOCK_LATEST_VERSION_NUMBER = None
+    MOCK_LATEST_VERSION_NUMBER = '1.0.0'
 
     def get_latest_version(self):
         """Return mocked latest version of module"""
         return MockModuleVersion(module_provider=self, version=self.MOCK_LATEST_VERSION_NUMBER)
+
+
+def mocked_server_module_version(request):
+    """Mock server ModuleVersion class."""
+    patch = unittest.mock.patch('terrareg.server.ModuleVersion', MockModuleVersion)
+
+    def cleanup_mock():
+        patch.stop()
+    request.addfinalizer(cleanup_mock)
+    patch.start()
+
+
+@pytest.fixture()
+def mocked_server_module_version_fixture(request):
+    """Mock module version as fixture."""
+    mocked_server_module_version(request)
+
+
+def mocked_server_module_provider(request):
+    """Mock server ModuleProvider class."""
+    patch = unittest.mock.patch('terrareg.server.ModuleProvider', MockModuleProvider)
+
+    def cleanup_mock():
+        patch.stop()
+    request.addfinalizer(cleanup_mock)
+    patch.start()
+    mocked_server_module_version(request)
+
+
+@pytest.fixture()
+def mocked_server_module_provider_fixture(request):
+    """Mock module provider as fixture."""
+    mocked_server_module_provider(request)
+
+
+def mocked_server_module(request):
+    """Mock server Module class."""
+    patch = unittest.mock.patch('terrareg.server.Module', MockModule)
+
+    def cleanup_mock():
+        patch.stop()
+    request.addfinalizer(cleanup_mock)
+    patch.start()
+
+    mocked_server_module_provider(request)
+
+
+@pytest.fixture()
+def mocked_server_module_fixture(request):
+    """Mock module as fixture."""
+    mocked_server_module(request)

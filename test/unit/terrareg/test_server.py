@@ -1,5 +1,5 @@
 
-from unittest.mock import MagicMock
+import unittest.mock
 import sys
 
 import pytest
@@ -7,7 +7,7 @@ import pytest
 from terrareg.models import Namespace, Module
 from terrareg.module_search import ModuleSearch
 from terrareg.filters import NamespaceTrustFilter
-from test.unit.terrareg import MockModuleProvider, client
+from test.unit.terrareg import MockModuleProvider, MockModuleVersion, MockModule, client, mocked_server_module_fixture
 
 
 @pytest.fixture()
@@ -18,7 +18,7 @@ def mocked_search_module_providers(request):
         ModuleSearch.search_module_providers = unmocked_search_module_providers
     request.addfinalizer(cleanup_mocked_search_provider)
 
-    ModuleSearch.search_module_providers = MagicMock(return_value=[])
+    ModuleSearch.search_module_providers = unittest.mock.MagicMock(return_value=[])
 
 
 class TestTerraformWellKnown:
@@ -312,3 +312,22 @@ class TestApiModuleSearch:
                 mock_module_provider.get_latest_version().get_api_outline(),
             ]
         }
+
+class TestApiModuleDetails:
+    """Test ApiModuleDetails resource."""
+
+    def test_existing_module(self, client, mocked_server_module_fixture):
+        """Test endpoint with existing module"""
+
+        res = client.get('/v1/modules/testnamespace/testmodulename')
+
+        assert res.json == {
+            'meta': {'limit': 5, 'offset': 0}, 'modules': [
+                {'id': 'testnamespace/testmodulename/testprovider/1.0.0', 'owner': 'Mock Owner',
+                'namespace': 'testnamespace', 'name': 'testmodulename', 'version': '1.0.0',
+                'provider': 'testprovider', 'description': 'Mock description',
+                'source': 'http://mock.example.com/mockmodule',
+                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True}
+            ]
+        }
+        assert res.status_code == 200
