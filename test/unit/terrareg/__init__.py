@@ -54,8 +54,8 @@ class MockModuleVersion(ModuleVersion):
             'description': 'Mock description',
             'source': 'http://mock.example.com/mockmodule',
             'published_at': datetime.datetime(year=2020, month=1, day=1, hour=23, minute=18, second=12),
-            'readme_contents': 'Mock module README file',
-            'module_details': '{}',
+            'readme_content': 'Mock module README file',
+            'module_details': '{"inputs": [], "outputs": [], "providers": [], "resources": []}',
             'variable_template': '{}',
             'verified': False,
             'artifact_location': None

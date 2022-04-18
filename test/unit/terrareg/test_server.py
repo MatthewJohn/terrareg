@@ -357,3 +357,29 @@ class TestApiModuleDetails:
             ]
         }
         assert res.status_code == 200
+
+
+class TestApiModuleProviderDetails:
+    """Test ApiModuleProviderDetails resource."""
+
+    def test_existing_module_provider(self, client, mocked_server_module_fixture):
+        res = client.get('/v1/modules/testnamespace/testmodulename/providername')
+
+        print(res.json)
+        assert res.json == {
+            'id': 'testnamespace/testmodulename/providername/1.0.0', 'owner': 'Mock Owner',
+            'namespace': 'testnamespace', 'name': 'testmodulename',
+            'version': '1.0.0', 'provider': 'providername',
+            'description': 'Mock description',
+            'source': 'http://mock.example.com/mockmodule',
+            'published_at': '2020-01-01T23:18:12',
+            'downloads': 0, 'verified': True,
+            'root': {
+                'path': '', 'readme': 'Mock module README file',
+                'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],
+                'provider_dependencies': [], 'resources': []
+            },
+            'submodules': [], 'providers': ['testprovider'], 'versions': []
+        }
+
+        assert res.status_code == 200
