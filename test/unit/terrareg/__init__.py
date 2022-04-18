@@ -46,6 +46,10 @@ class MockModuleVersion(ModuleVersion):
 
     def _get_db_row(self):
         """Return mock DB row"""
+        # Return no data for non-existent version
+        if self._version == '0.1.2':
+            return None
+
         return {
             'id': 1,
             'module_provider_id': 1,
@@ -69,8 +73,10 @@ class MockModuleProvider(ModuleProvider):
 
     def get_latest_version(self):
         """Return mocked latest version of module"""
+        # Handle fake non-existent module
         if self._name == 'unittestproviderdoesnotexist':
             return None
+
         return MockModuleVersion(module_provider=self, version=self.MOCK_LATEST_VERSION_NUMBER)
 
 
