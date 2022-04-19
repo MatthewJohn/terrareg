@@ -42,4 +42,6 @@ class TestGitModuleExtractor:
             '--single-branch',
             '--branch', 'v4.3.2',
             'ssh://example.com/repo.git',
-            module_extractor.extract_directory])
+            module_extractor.extract_directory],
+            env=unittest.mock.ANY)
+        assert check_call_mock.call_args.kwargs['env']['GIT_SSH_COMMAND'] == 'ssh -o StrictHostKeyChecking=accept-new'

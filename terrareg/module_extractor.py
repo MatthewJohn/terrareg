@@ -284,11 +284,16 @@ class GitModuleExtractor(ModuleExtractor):
 
     def _clone_repository(self):
         """Extract uploaded archive into extract directory."""
+        # Copy current environment variables to add GIT SSH option
+        env = os.environ.copy()
+        # Set SSH to autoaccept new host keys
+        env['GIT_SSH_COMMAND'] = 'ssh -o StrictHostKeyChecking=accept-new'
+
         subprocess.check_call([
             'git', 'clone', '--single-branch',
             '--branch', self._tag_name,
             self._git_url, self.extract_directory
-        ])
+        ], env=env)
 
     def process_upload(self):
         """Extract archive and perform data extraction from module source."""
