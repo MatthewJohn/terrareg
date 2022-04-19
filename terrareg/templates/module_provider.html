@@ -135,7 +135,7 @@ module "{{ module.name }}" {
                 <span class="tag is-warning is-light">Terrareg Exclusive</span>
             </a>
         </li>
-        <li class="module-tab-link">
+        <li id="usageBuilderTabButton" class="module-tab-link">
             <a onclick="selectModuleTab(event, 'usage-builder')">
                 Usage Builder
                 <span class="tag is-warning is-light">Terrareg Exclusive</span>
@@ -364,6 +364,11 @@ ${output_tf}
     $.get("/v1/terrareg/{{ module_version.id }}/variable_template", (data, status) => {
         // Populate input_variables from response
         input_variables = data;
+
+        if (! input_variables.length) {
+            $('#usageBuilderTabButton').remove();
+            return;
+        }
 
         // Build input table
         input_variables.forEach((input_variable) => {
