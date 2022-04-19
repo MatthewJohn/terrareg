@@ -17,7 +17,7 @@ from terrareg.database import Database
 from terrareg.errors import TerraregError, UploadError
 from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion
 from terrareg.module_search import ModuleSearch
-from terrareg.module_extractor import ModuleExtractor
+from terrareg.module_extractor import ApiUploadModuleExtractor
 from terrareg.analytics import AnalyticsEngine
 from terrareg.filters import NamespaceTrustFilter
 from terrareg.config import APPLICATION_NAME, LOGO_URL
@@ -351,7 +351,7 @@ class ApiUploadModule(ErrorCatchingResource):
             raise UploadError('Error occurred - unknown file extension')
 
         module_version.prepare_module()
-        with ModuleExtractor(upload_file=file, module_version=module_version) as me:
+        with ApiUploadModuleExtractor(upload_file=file, module_version=module_version) as me:
             me.process_upload()
 
         return {

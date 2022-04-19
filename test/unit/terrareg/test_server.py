@@ -1,6 +1,5 @@
 
 import unittest.mock
-import sys
 
 import pytest
 
