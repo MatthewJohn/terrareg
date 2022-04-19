@@ -26,14 +26,13 @@ from terrareg.config import (
 )
 
 
-class ModuleExtractor():
+class ModuleExtractor:
     """Provide extraction method of moduls."""
 
     TERRAREG_METADATA_FILES = ['terrareg.json', '.terrareg.json']
 
-    def __init__(self, upload_file, module_version: ModuleVersion):
+    def __init__(self, module_version: ModuleVersion):
         """Create temporary directories and store member variables."""
-        self._upload_file = upload_file
         self._module_version = module_version
         self._extract_directory = tempfile.TemporaryDirectory()  # noqa: R1732
         self._upload_directory = tempfile.TemporaryDirectory()  # noqa: R1732
@@ -67,25 +66,6 @@ class ModuleExtractor():
         """Run exit of upstream context managers."""
         self._extract_directory.__exit__(*args, **kwargs)
         self._upload_directory.__exit__(*args, **kwargs)
-
-    def _save_upload_file(self):
-        """Save uploaded file to uploads directory."""
-        filename = secure_filename(self._upload_file.filename)
-        source_file = os.path.join(self.upload_directory, filename)
-        self._upload_file.save(source_file)
-
-    def _check_file_type(self):
-        """Check filetype"""
-        file_type = magic.from_file(self.source_file, mime=True)
-        if file_type == 'application/zip':
-            pass
-        else:
-            raise UnknownFiletypeError('Upload file is of unknown filetype. Must by zip, tar.gz')
-
-    def _extract_archive(self):
-        """Extract uploaded archive into extract directory."""
-        with zipfile.ZipFile(self.source_file, 'r') as zip_ref:
-            zip_ref.extractall(self.extract_directory)
 
     @staticmethod
     def _run_terraform_docs(module_path):
@@ -227,7 +207,7 @@ class ModuleExtractor():
         conn.execute(insert_statement)
 
     def process_upload(self):
-        """Handle file upload of module source."""
+        """Handle data extraction from module source."""
         self._save_upload_file()
         self._check_file_type()
         self._extract_archive()
@@ -257,3 +237,39 @@ class ModuleExtractor():
 
         for submodule in module_details['modules']:
             self._process_submodule(module_pk, submodule)
+
+
+class ApiUploadModuleExtractor(ModuleExtractor):
+    """Extraction of module uploaded via API."""
+
+    def __init__(self, upload_file, *args, **kwargs):
+        """Store member variables."""
+        super(ApiUploadModuleExtractor, self).__init__(*args, **kwargs)
+        self._upload_file = upload_file
+
+    def _save_upload_file(self):
+        """Save uploaded file to uploads directory."""
+        filename = secure_filename(self._upload_file.filename)
+        source_file = os.path.join(self.upload_directory, filename)
+        self._upload_file.save(source_file)
+
+    def _check_file_type(self):
+        """Check filetype"""
+        file_type = magic.from_file(self.source_file, mime=True)
+        if file_type == 'application/zip':
+            pass
+        else:
+            raise UnknownFiletypeError('Upload file is of unknown filetype. Must by zip, tar.gz')
+
+    def _extract_archive(self):
+        """Extract uploaded archive into extract directory."""
+        with zipfile.ZipFile(self.source_file, 'r') as zip_ref:
+            zip_ref.extractall(self.extract_directory)
+
+    def process_upload(self):
+        """Extract archive and perform data extraction from module source."""
+        self._save_upload_file()
+        self._check_file_type()
+        self._extract_archive()
+
+        super(ApiUploadModuleExtractor, self).process_upload()
