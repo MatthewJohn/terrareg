@@ -281,7 +281,7 @@ class GitModuleExtractor(ModuleExtractor):
 
     def __init__(self, git_url, tag_name, *args, **kwargs):
         """Store member variables."""
-        super(ApiUploadModuleExtractor, self).__init__(*args, **kwargs)
+        super(GitModuleExtractor, self).__init__(*args, **kwargs)
         # Sanitise URL and tag name
         self._git_url = urllib.parse.quote(git_url, safe='/:@%')
         self._tag_name = urllib.parse.quote(tag_name, safe='/')
@@ -298,4 +298,4 @@ class GitModuleExtractor(ModuleExtractor):
         """Extract archive and perform data extraction from module source."""
         self._clone_repository()
 
-        super(ApiUploadModuleExtractor, self).process_upload()
+        super(GitModuleExtractor, self).process_upload()
