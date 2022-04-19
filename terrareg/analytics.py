@@ -2,11 +2,13 @@
 import re
 import datetime
 from distutils.version import StrictVersion
+from telnetlib import AUTHENTICATION
 
 
 import sqlalchemy
 
 from terrareg.database import Database
+from terrareg.config import ANALYTICS_AUTH_KEYS
 
 
 class AnalyticsEngine:
@@ -27,11 +29,34 @@ class AnalyticsEngine:
         )
 
     @staticmethod
+    def check_auth_token(auth_token):
+        """Check if auth token matches required environment analaytics tokens."""
+        # If no analytics tokens have been defined, always return to be recorded with empty environment
+        if not ANALYTICS_AUTH_KEYS:
+            return True, None
+
+        # If there is one auth token provided and does not contain an environment name
+        # check and return empty environment
+        if len(ANALYTICS_AUTH_KEYS) == 1 and len(ANALYTICS_AUTH_KEYS[0].split(':')) == 1:
+            # Check if token matches provided token
+            return (ANALYTICS_AUTH_KEYS[0] == auth_token), None
+
+        # Otherwise compile list of environment and return appropriate environment
+        for analytics_auth_key in ANALYTICS_AUTH_KEYS:
+            analytics_auth_key_split = analytics_auth_key.split(':')
+            if analytics_auth_key_split.split(':')[0] == auth_token:
+                return True, analytics_auth_key_split[1]
+
+        # Default to returning to not authenticate
+        return False, None
+
+    @staticmethod
     def record_module_version_download(
         module_version,
         analytics_token: str,
         terraform_version: str,
-        user_agent: str):
+        user_agent: str,
+        auth_token: str):
         """Store information about module version download in database."""
 
         # If terraform version not present from header,
@@ -40,6 +65,12 @@ class AnalyticsEngine:
             user_agent_match = re.match(r'^Terraform/(\d+\.\d+\.\d+)$', user_agent)
             if user_agent_match:
                 terraform_version = user_agent_match.group(1)
+
+        # Check if token is valid and whether it matches a deployment environment to be
+        # recorded.
+        record, environment = AnalyticsEngine.check_auth_token(auth_token)
+        if not record:
+            return
 
         print('Moudule {0} downloaded by {1} using terraform {2}'.format(
             module_version.id, analytics_token, terraform_version))
@@ -51,7 +82,9 @@ class AnalyticsEngine:
             parent_module_version=module_version.pk,
             timestamp=datetime.datetime.now(),
             terraform_version=terraform_version,
-            analytics_token=analytics_token
+            analytics_token=analytics_token,
+            auth_token=auth_token,
+            environment=environment
         )
         conn.execute(insert_statement)
 
