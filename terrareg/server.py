@@ -14,7 +14,7 @@ from terrareg.config import (
     EXAMPLE_ANALYTICS_TOKEN
 )
 from terrareg.database import Database
-from terrareg.errors import TerraregError, UploadError
+from terrareg.errors import TerraregError, UploadError, NoModuleVersionAvailableError
 from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion
 from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ApiUploadModuleExtractor
@@ -256,9 +256,20 @@ class Server(object):
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
         if version is None:
-            module_version = module_provider.get_latest_version()
+            try:
+                module_version = module_provider.get_latest_version()
+            except NoModuleVersionAvailableError:
+                # If no version was provided and no versions were found for the module provider,
+                # redirect to the module
+                return redirect(module.get_view_url())
+
         else:
-            module_version = ModuleVersion(module_provider=module_provider, version=version)
+            module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+
+            if module_version is None:
+                # If a version number was provided and it does not exist,
+                # redirect to the module provider
+                return redirect(module_provider.get_view_url())
 
         return self._render_template(
             'module_provider.html',
