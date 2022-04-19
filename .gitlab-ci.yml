@@ -24,7 +24,7 @@ before_script:
 test:
   script:
     - pip install --proxy=$http_proxy -r requirements-dev.txt
-    - coverage run -m pytest
+    - coverage run -m pytest --verbose
     - coverage report
     - coverage xml
   artifacts:
