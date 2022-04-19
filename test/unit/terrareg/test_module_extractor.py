@@ -8,20 +8,21 @@ from terrareg.models import Module, ModuleProvider, ModuleVersion, Namespace
 from terrareg.module_extractor import GitModuleExtractor
 
 
-class Test:
-    """Test TerraformWellKnown resource."""
+class TestGitModuleExtractor:
+    """Test GitModuleExtractor class."""
 
-    def test_git_url(self):
+    @pytest.mark.parametrize(
+        'git_url,sanitised_url',
+        [
+            ('test://domain.com/example.git', 'test://domain.com/example.git'),
+            ('https://domain.com/example.git?ref=this.that', 'https://domain.com/example.git?ref=this.that'),
+            ('https:// rm -rf /', 'https://%20rm%20-rf%20/'),
+            ('echo this; echo that', 'echo%20this%3B%20echo%20that')
+        ])
+    def test_git_url(self, git_url, sanitised_url):
         """Test escaping of git URL"""
-        test_itx = 0
-        for n in [['test://domain.com/example.git', 'test://domain.com/example.git'],
-                  ['https://domain.com/example.git?ref=this.that', 'https://domain.com/example.git?ref=this.that'],
-                  ['https:// rm -rf /', 'https://%20rm%20-rf%20/'],
-                  ['echo this; echo that', 'echo%20this%3B%20echo%20that']]:
-            module_extractor = GitModuleExtractor(git_url=n[0], tag_name='', module_version=None)
-            assert module_extractor._git_url == n[1]
-            test_itx += 1
-        assert test_itx == 4
+        module_extractor = GitModuleExtractor(git_url=git_url, tag_name='', module_version=None)
+        assert module_extractor._git_url == sanitised_url
 
     def test__clone_repository(self):
         """Test _clone_repository method"""
