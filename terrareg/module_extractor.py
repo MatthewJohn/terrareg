@@ -9,6 +9,7 @@ import json
 import datetime
 import shutil
 import re
+import urllib.parse
 
 from werkzeug.utils import secure_filename
 import magic
@@ -26,14 +27,13 @@ from terrareg.config import (
 )
 
 
-class ModuleExtractor():
+class ModuleExtractor:
     """Provide extraction method of moduls."""
 
     TERRAREG_METADATA_FILES = ['terrareg.json', '.terrareg.json']
 
-    def __init__(self, upload_file, module_version: ModuleVersion):
+    def __init__(self, module_version: ModuleVersion):
         """Create temporary directories and store member variables."""
-        self._upload_file = upload_file
         self._module_version = module_version
         self._extract_directory = tempfile.TemporaryDirectory()  # noqa: R1732
         self._upload_directory = tempfile.TemporaryDirectory()  # noqa: R1732
@@ -67,25 +67,6 @@ class ModuleExtractor():
         """Run exit of upstream context managers."""
         self._extract_directory.__exit__(*args, **kwargs)
         self._upload_directory.__exit__(*args, **kwargs)
-
-    def _save_upload_file(self):
-        """Save uploaded file to uploads directory."""
-        filename = secure_filename(self._upload_file.filename)
-        source_file = os.path.join(self.upload_directory, filename)
-        self._upload_file.save(source_file)
-
-    def _check_file_type(self):
-        """Check filetype"""
-        file_type = magic.from_file(self.source_file, mime=True)
-        if file_type == 'application/zip':
-            pass
-        else:
-            raise UnknownFiletypeError('Upload file is of unknown filetype. Must by zip, tar.gz')
-
-    def _extract_archive(self):
-        """Extract uploaded archive into extract directory."""
-        with zipfile.ZipFile(self.source_file, 'r') as zip_ref:
-            zip_ref.extractall(self.extract_directory)
 
     @staticmethod
     def _run_terraform_docs(module_path):
@@ -227,11 +208,7 @@ class ModuleExtractor():
         conn.execute(insert_statement)
 
     def process_upload(self):
-        """Handle file upload of module source."""
-        self._save_upload_file()
-        self._check_file_type()
-        self._extract_archive()
-
+        """Handle data extraction from module source."""
         # Run terraform-docs on module content and obtain README
         module_details = self._run_terraform_docs(self.extract_directory)
         readme_content = self._get_readme_content(self.extract_directory)
@@ -257,3 +234,69 @@ class ModuleExtractor():
 
         for submodule in module_details['modules']:
             self._process_submodule(module_pk, submodule)
+
+
+class ApiUploadModuleExtractor(ModuleExtractor):
+    """Extraction of module uploaded via API."""
+
+    def __init__(self, upload_file, *args, **kwargs):
+        """Store member variables."""
+        super(ApiUploadModuleExtractor, self).__init__(*args, **kwargs)
+        self._upload_file = upload_file
+
+    def _save_upload_file(self):
+        """Save uploaded file to uploads directory."""
+        filename = secure_filename(self._upload_file.filename)
+        source_file = os.path.join(self.upload_directory, filename)
+        self._upload_file.save(source_file)
+
+    def _check_file_type(self):
+        """Check filetype"""
+        file_type = magic.from_file(self.source_file, mime=True)
+        if file_type == 'application/zip':
+            pass
+        else:
+            raise UnknownFiletypeError('Upload file is of unknown filetype. Must by zip, tar.gz')
+
+    def _extract_archive(self):
+        """Extract uploaded archive into extract directory."""
+        with zipfile.ZipFile(self.source_file, 'r') as zip_ref:
+            zip_ref.extractall(self.extract_directory)
+
+    def process_upload(self):
+        """Extract archive and perform data extraction from module source."""
+        self._save_upload_file()
+        self._check_file_type()
+        self._extract_archive()
+
+        super(ApiUploadModuleExtractor, self).process_upload()
+
+
+class GitModuleExtractor(ModuleExtractor):
+    """Extraction of module via git."""
+
+    def __init__(self, git_url, tag_name, *args, **kwargs):
+        """Store member variables."""
+        super(GitModuleExtractor, self).__init__(*args, **kwargs)
+        # Sanitise URL and tag name
+        self._git_url = urllib.parse.quote(git_url, safe='/:@%?=')
+        self._tag_name = urllib.parse.quote(tag_name, safe='/')
+
+    def _clone_repository(self):
+        """Extract uploaded archive into extract directory."""
+        # Copy current environment variables to add GIT SSH option
+        env = os.environ.copy()
+        # Set SSH to autoaccept new host keys
+        env['GIT_SSH_COMMAND'] = 'ssh -o StrictHostKeyChecking=accept-new'
+
+        subprocess.check_call([
+            'git', 'clone', '--single-branch',
+            '--branch', self._tag_name,
+            self._git_url, self.extract_directory
+        ], env=env)
+
+    def process_upload(self):
+        """Extract archive and perform data extraction from module source."""
+        self._clone_repository()
+
+        super(GitModuleExtractor, self).process_upload()
