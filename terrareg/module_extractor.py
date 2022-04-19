@@ -279,7 +279,7 @@ class GitModuleExtractor(ModuleExtractor):
         """Store member variables."""
         super(GitModuleExtractor, self).__init__(*args, **kwargs)
         # Sanitise URL and tag name
-        self._git_url = urllib.parse.quote(git_url, safe='/:@%')
+        self._git_url = urllib.parse.quote(git_url, safe='/:@%?=')
         self._tag_name = urllib.parse.quote(tag_name, safe='/')
 
     def _clone_repository(self):
