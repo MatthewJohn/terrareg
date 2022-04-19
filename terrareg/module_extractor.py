@@ -209,10 +209,6 @@ class ModuleExtractor:
 
     def process_upload(self):
         """Handle data extraction from module source."""
-        self._save_upload_file()
-        self._check_file_type()
-        self._extract_archive()
-
         # Run terraform-docs on module content and obtain README
         module_details = self._run_terraform_docs(self.extract_directory)
         readme_content = self._get_readme_content(self.extract_directory)
