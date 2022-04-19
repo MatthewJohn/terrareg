@@ -9,6 +9,7 @@ import json
 import datetime
 import shutil
 import re
+import urllib.parse
 
 from werkzeug.utils import secure_filename
 import magic
@@ -271,5 +272,30 @@ class ApiUploadModuleExtractor(ModuleExtractor):
         self._save_upload_file()
         self._check_file_type()
         self._extract_archive()
+
+        super(ApiUploadModuleExtractor, self).process_upload()
+
+
+class GitModuleExtractor(ModuleExtractor):
+    """Extraction of module via git."""
+
+    def __init__(self, git_url, tag_name, *args, **kwargs):
+        """Store member variables."""
+        super(ApiUploadModuleExtractor, self).__init__(*args, **kwargs)
+        # Sanitise URL and tag name
+        self._git_url = urllib.parse.quote(git_url, safe='/:@%')
+        self._tag_name = urllib.parse.quote(tag_name, safe='/')
+
+    def _clone_repository(self):
+        """Extract uploaded archive into extract directory."""
+        subprocess.check_call([
+            'git', 'clone', '--single-branch',
+            '--branch', self._tag_name,
+            self._git_url, self.extract_directory
+        ])
+
+    def process_upload(self):
+        """Extract archive and perform data extraction from module source."""
+        self._clone_repository()
 
         super(ApiUploadModuleExtractor, self).process_upload()
