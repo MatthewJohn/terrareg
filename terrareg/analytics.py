@@ -152,22 +152,38 @@ class AnalyticsEngine:
         db = Database.get()
         conn = db.get_engine().connect()
 
-        select = sqlalchemy.select(
+        left_table = sqlalchemy.select(
             [
+                db.analytics.c.id,
+                db.module_version.c.id.label('parent_id'),
                 db.analytics.c.analytics_token,
-                db.module_version.c.version,
-                db.analytics.c.terraform_version
+                db.analytics.c.timestamp,
+                db.analytics.c.environment
             ]
         ).select_from(
             db.analytics
+        ).alias('left')
+
+        join = db.analytics.join(
+            left_table,
+            sqlalchemy.and_(
+                db.module_version.c.id == left_table.c.parent_id,
+                db.analytics.c.analytics_token == left_table.c.analytics_token,
+                db.analytics.c.environment == left_table.c.environment,
+                db.analytics.c.timestamp > left_table.c.timestamp
+            ),
+            isouter=True
         )
-        select = AnalyticsEngine._join_filter_analytics_table_by_module_provider(
-            db=db, query=select, module_provider=module_provider)
-        select = select.group_by(
+        select = sqlalchemy.select([
+            db.analytics.c.environment,
             db.analytics.c.analytics_token,
             db.module_version.c.version,
-            db.analytics.c.terraform_version
-        )
+            db.analytics.c.terraform_version,
+            db.analytics.c.timestamp
+        ]).select_from(join).where(left_table.c.id == None)
+
+        #select = AnalyticsEngine._join_filter_analytics_table_by_module_provider(
+        #    db=db, query=select, module_provider=module_provider)
 
         res = conn.execute(select)
 
@@ -177,9 +193,12 @@ class AnalyticsEngine:
             if token not in token_version_mapping:
                 token_version_mapping[token] = {
                     'terraform_version': None,
-                    'module_version': None
+                    'module_version': None,
+                    'environment': None
                 }
             terraform_version = row[2] if row[2] else '0.0.0'
+
+            # Check if module version is higher than 
             if (not token_version_mapping[token]['module_version'] or
                     StrictVersion(row[1]) > StrictVersion(token_version_mapping[token]['module_version'])):
                 token_version_mapping[token]['module_version'] = row[1]
