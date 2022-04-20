@@ -44,7 +44,7 @@ class AnalyticsEngine:
         # Otherwise compile list of environment and return appropriate environment
         for analytics_auth_key in ANALYTICS_AUTH_KEYS:
             analytics_auth_key_split = analytics_auth_key.split(':')
-            if analytics_auth_key_split.split(':')[0] == auth_token:
+            if analytics_auth_key_split[0] == auth_token:
                 return True, analytics_auth_key_split[1]
 
         # Default to returning to not authenticate
