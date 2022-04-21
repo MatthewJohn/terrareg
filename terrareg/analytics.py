@@ -221,7 +221,7 @@ class AnalyticsEngine:
         # providing the environment priority (index of the environment
         # in the environment list).
         environment_priorities = {
-            env.split(':')[0]: itx
+            env.split(':')[1]: itx
             for itx, env in enumerate(ANALYTICS_AUTH_KEYS)
         }
 
