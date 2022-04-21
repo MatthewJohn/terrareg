@@ -515,7 +515,8 @@ class TestApiModuleVersionDownload:
             module_version=unittest.mock.ANY,
             analytics_token='test_token-name',
             terraform_version='TestTerraformVersion',
-            user_agent='TestUserAgent'
+            user_agent='TestUserAgent',
+            auth_token=None
         )
         assert AnalyticsEngine.record_module_version_download.isinstance(
             AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'],
