@@ -41,3 +41,18 @@ APPLICATION_NAME = os.environ.get('APPLICATION_NAME', 'Terrareg')
 
 """URL of logo to be used in web interface."""
 LOGO_URL = os.environ.get('LOGO_URL', '/static/images/logo.png')
+
+"""
+List of comma-separated values for terraform auth tokens for deployment environments.
+
+E.g. xxxxxx.deploy1.xxxxxxxxxxxxx:dev,zzzzzz.deploy1.zzzzzzzzzzzzz:prod
+In this example, in the 'dev' environment, the auth token for terraform would be: xxxxxx.deploy1.xxxxxxxxxxxxx
+and the auth token for terraform for prod would be: zzzzzz.deploy1.zzzzzzzzzzzzz.
+
+To disable auth tokens and to report all downloads, leave empty.
+
+To only record downloads in a single environment, specify a single auth token. E.g. 'zzzzzz.deploy1.zzzzzzzzzzzzz'
+"""
+ANALYTICS_AUTH_KEYS = [
+    token for token in os.environ.get('ANALYTICS_AUTH_KEYS', '').split(',') if token
+]
