@@ -152,6 +152,8 @@ class AnalyticsEngine:
         db = Database.get()
         conn = db.get_engine().connect()
 
+        # Obtain a list of the MAX (latest) analytics row IDs,
+        # grouped by analytics token and environment.
         id_subquery = sqlalchemy.select(
             [
                 sqlalchemy.func.max(db.analytics.c.id)
@@ -168,6 +170,8 @@ class AnalyticsEngine:
             db.analytics.c.environment
         ).subquery()
 
+        # Select all required fields for the given IDs
+        # obtained from subquery.
         select = sqlalchemy.select([
             db.analytics.c.environment,
             db.analytics.c.analytics_token,
@@ -183,26 +187,44 @@ class AnalyticsEngine:
 
         res = conn.execute(select)
 
-        for r in res:
-            print(','.join([a for a in r.values() if a]))
-        return {}
         token_version_mapping = {}
+        # Convert list of environments to a map,
+        # providing the environment priority (index of the environment
+        # in the environment list).
+        environment_priorities = {
+            env.split(':')[0]: itx
+            for env, itx in ANALYTICS_AUTH_KEYS
+        }
+
         for row in res:
-            token = row[0] if row[0] else 'No token provided'
+            token = row['analytics_token'] if row['analytics_token'] else 'No token provided'
+
+            # Populate map with empty details for this analytics token,
+            # if it doesn't already exist.
             if token not in token_version_mapping:
                 token_version_mapping[token] = {
                     'terraform_version': None,
                     'module_version': None,
                     'environment': None
                 }
-            terraform_version = row[2] if row[2] else '0.0.0'
+            terraform_version = row['terraform_version'] if row['terraform_version'] else '0.0.0'
 
-            # Check if module version is higher than 
-            if (not token_version_mapping[token]['module_version'] or
-                    StrictVersion(row[1]) > StrictVersion(token_version_mapping[token]['module_version'])):
-                token_version_mapping[token]['module_version'] = row[1]
-            if (not token_version_mapping[token]['terraform_version'] or
-                    StrictVersion(terraform_version) > StrictVersion(token_version_mapping[token]['terraform_version'])):
+            # Check if environment of current download is 'higher than' previous
+            ## Use this row if the current 'highest' value has an empty environment (this will always
+            ## match the first row)
+            if (token_version_mapping[token]['environment'] is None or
+                ## Ignore any future rows with an empty environment. If there aren't
+                ## environments in use, there will only be one row per analytics token
+                (row['environment'] is not None and
+                 ## Ensure that the environment (still) exists
+                 row['environment'] in environment_priorities and
+                 ## Ensure the environment token appears higher in the
+                 ## environment priorities than the current 'highest' row
+                 environment_priorities[row['environment']] >
+                 environment_priorities[token_version_mapping[token]['environment']])):
+
+                token_version_mapping[token]['environment'] = row['environment']
+                token_version_mapping[token]['module_version'] = row['version']
                 token_version_mapping[token]['terraform_version'] = terraform_version
 
         return token_version_mapping
