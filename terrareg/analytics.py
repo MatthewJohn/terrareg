@@ -152,77 +152,34 @@ class AnalyticsEngine:
         db = Database.get()
         conn = db.get_engine().connect()
 
-        left_module_version = db.module_version.alias('left_module_version')
-        left_module_provider = db.module_provider.alias('left_module_provider')
-        left_table = sqlalchemy.select(
+        id_subquery = sqlalchemy.select(
             [
-                db.analytics.c.id,
-                db.module_version.c.id.label('parent_id'),
-                db.analytics.c.analytics_token,
-                db.analytics.c.timestamp,
-                db.analytics.c.environment
+                sqlalchemy.func.max(db.analytics.c.id)
             ]
         ).select_from(
             db.analytics
-        ).join(
-            left_module_version,
-            left_module_version.c.id == db.analytics.c.parent_module_version
-        ).join(
-            left_module_provider,
-            left_module_version.c.module_provider_id == left_module_provider.c.id
-        ).where(
-            left_module_provider.c.namespace == module_provider._module._namespace.name,
-            left_module_provider.c.module == module_provider._module.name,
-            left_module_provider.c.provider == module_provider.name
-        ).alias('left')
-
-        right_module_version = db.module_version.alias('right_module_version')
-        right_module_provider = db.module_provider.alias('right_module_provider')
-        right_table = sqlalchemy.select(
-            [
-                db.analytics.c.id,
-                db.module_version.c.id.label('parent_id'),
-                db.analytics.c.analytics_token,
-                db.analytics.c.timestamp,
-                db.analytics.c.environment,
-                db.analytics.c.terraform_version,
-                db.module_version.c.version
-            ]
-        ).select_from(
-            db.analytics
-        ).join(
-            right_module_version,
-            right_module_version.c.id == db.analytics.c.parent_module_version
-        ).join(
-            right_module_provider,
-            right_module_version.c.module_provider_id == right_module_provider.c.id
-        ).where(
-            right_module_provider.c.namespace == module_provider._module._namespace.name,
-            right_module_provider.c.module == module_provider._module.name,
-            right_module_provider.c.provider == module_provider.name
-        ).alias('right')
-
-        join = right_table.join(
-            left_table,
-            sqlalchemy.and_(
-                right_table.c.parent_id == left_table.c.parent_id,
-                right_table.c.analytics_token == left_table.c.analytics_token,
-                right_table.c.environment == left_table.c.environment,
-                right_table.c.timestamp < left_table.c.timestamp
-            ),
-            isouter=True
         )
-        select = sqlalchemy.select([
-            right_table.c.environment,
-            right_table.c.analytics_token,
-            right_table.c.version,
-            right_table.c.terraform_version,
-            right_table.c.timestamp
-        ]).select_from(join
-        ).where(left_table.c.id == None)
+        id_subquery = AnalyticsEngine._join_filter_analytics_table_by_module_provider(
+            db=db, query=id_subquery,
+            module_provider=module_provider)
 
-        #select = AnalyticsEngine._join_filter_analytics_table_by_module_provider(
-        #    db=db, query=select, module_provider=module_provider)
+        id_subquery = id_subquery.group_by(
+            db.analytics.c.analytics_token,
+            db.analytics.c.environment
+        ).subquery()
+
+        select = sqlalchemy.select([
+            db.analytics.c.environment,
+            db.analytics.c.analytics_token,
+            db.module_version.c.version,
+            db.analytics.c.terraform_version,
+            db.analytics.c.timestamp
+        ]).select_from(
+            db.analytics
+        )
+        select = AnalyticsEngine._join_filter_analytics_table_by_module_provider(
+            db=db, query=select, module_provider=module_provider)
+        select = select.where(db.analytics.c.id.in_(id_subquery))
 
         res = conn.execute(select)
 
