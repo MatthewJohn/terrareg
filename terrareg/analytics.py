@@ -21,7 +21,7 @@ class AnalyticsEngine:
     def are_tokens_enabled(cls):
         """Determine if tokens are enabled."""
         if AnalyticsEngine._ARE_TOKENS_ENABLED is None:
-            AnalyticsEngine._ARE_TOKENS_ENABLED = not ANALYTICS_AUTH_KEYS
+            AnalyticsEngine._ARE_TOKENS_ENABLED = bool(ANALYTICS_AUTH_KEYS)
         return AnalyticsEngine._ARE_TOKENS_ENABLED
 
     @classmethod
