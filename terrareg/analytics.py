@@ -13,6 +13,37 @@ from terrareg.config import ANALYTICS_AUTH_KEYS
 
 class AnalyticsEngine:
 
+    _ARE_TOKENS_ENABLED = None
+    _ARE_ENVIRONMENTS_ENABLED = None
+    _TOKEN_ENVIRONMENT_MAPPING = None
+
+    @classmethod
+    def are_tokens_enabled(cls):
+        """Determine if tokens are enabled."""
+        if AnalyticsEngine._ARE_TOKENS_ENABLED is None:
+            AnalyticsEngine._ARE_TOKENS_ENABLED = not ANALYTICS_AUTH_KEYS
+        return AnalyticsEngine._ARE_TOKENS_ENABLED
+
+    @classmethod
+    def are_environments_enabled(cls):
+        """Determine if token environments are enabled."""
+        if AnalyticsEngine._ARE_ENVIRONMENTS_ENABLED is None:
+            AnalyticsEngine._ARE_ENVIRONMENTS_ENABLED = (
+                AnalyticsEngine.are_tokens_enabled() and
+                not (len(ANALYTICS_AUTH_KEYS) == 1 and len(ANALYTICS_AUTH_KEYS[0].split(':')) == 1)
+            )
+        return AnalyticsEngine._ARE_ENVIRONMENTS_ENABLED
+
+    @classmethod
+    def get_token_environment_mapping(cls):
+        """Determine if token environments are enabled."""
+        if AnalyticsEngine._TOKEN_ENVIRONMENT_MAPPING is None:
+            AnalyticsEngine._TOKEN_ENVIRONMENT_MAPPING = {
+                analytics_auth_key.split(':')[0]: analytics_auth_key.split(':')[1]
+                for analytics_auth_key in ANALYTICS_AUTH_KEYS
+            } if AnalyticsEngine.are_environments_enabled() else {}
+        return AnalyticsEngine._TOKEN_ENVIRONMENT_MAPPING
+
     @staticmethod
     def _join_filter_analytics_table_by_module_provider(db, query, module_provider):
         """Join query to module_version table and filter by module_version."""
@@ -32,20 +63,18 @@ class AnalyticsEngine:
     def check_auth_token(auth_token):
         """Check if auth token matches required environment analaytics tokens."""
         # If no analytics tokens have been defined, always return to be recorded with empty environment
-        if not ANALYTICS_AUTH_KEYS:
+        if not AnalyticsEngine.are_tokens_enabled():
             return True, None
 
         # If there is one auth token provided and does not contain an environment name
         # check and return empty environment
-        if len(ANALYTICS_AUTH_KEYS) == 1 and len(ANALYTICS_AUTH_KEYS[0].split(':')) == 1:
+        if not AnalyticsEngine.are_environments_enabled():
             # Check if token matches provided token
             return (ANALYTICS_AUTH_KEYS[0] == auth_token), None
 
-        # Otherwise compile list of environment and return appropriate environment
-        for analytics_auth_key in ANALYTICS_AUTH_KEYS:
-            analytics_auth_key_split = analytics_auth_key.split(':')
-            if analytics_auth_key_split[0] == auth_token:
-                return True, analytics_auth_key_split[1]
+        # Otherwise check if auth token is for an environment
+        if auth_token in AnalyticsEngine.get_token_environment_mapping():
+            return True, AnalyticsEngine.get_token_environment_mapping()[auth_token]
 
         # Default to returning to not authenticate
         return False, None
