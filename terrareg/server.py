@@ -1,7 +1,7 @@
 
 
 import os
-from tokenize import Name
+import re
 
 from flask import Flask, request, render_template, redirect, make_response, send_from_directory
 from flask_restful import Resource, Api, reqparse, inputs
@@ -628,13 +628,20 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
                 401
             )
 
+        auth_token = None
+        auth_token_match = re.match(r'Bearer (.*)', request.headers.get('Authorization', ''))
+        if auth_token_match:
+            auth_token = auth_token_match.group(1)
+
         # Record download
         AnalyticsEngine.record_module_version_download(
             module_version=module_version,
             analytics_token=analytics_token,
             terraform_version=request.headers.get('X-Terraform-Version', None),
-            user_agent=request.headers.get('User-Agent', None)
+            user_agent=request.headers.get('User-Agent', None),
+            auth_token=auth_token
         )
+        print(dict(request.headers))
 
         resp = make_response('', 204)
         resp.headers['X-Terraform-Get'] = module_version.get_source_download_url()

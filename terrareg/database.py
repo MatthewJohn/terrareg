@@ -136,7 +136,9 @@ class Database():
             ),
             sqlalchemy.Column('timestamp', sqlalchemy.String),
             sqlalchemy.Column('terraform_version', sqlalchemy.String),
-            sqlalchemy.Column('analytics_token', sqlalchemy.String)
+            sqlalchemy.Column('analytics_token', sqlalchemy.String),
+            sqlalchemy.Column('auth_token', sqlalchemy.String),
+            sqlalchemy.Column('environment', sqlalchemy.String)
         )
 
         meta.create_all(engine)
