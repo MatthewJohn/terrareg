@@ -222,7 +222,7 @@ class AnalyticsEngine:
         # in the environment list).
         environment_priorities = {
             env.split(':')[0]: itx
-            for env, itx in ANALYTICS_AUTH_KEYS
+            for itx, env in enumerate(ANALYTICS_AUTH_KEYS)
         }
 
         for row in res:
