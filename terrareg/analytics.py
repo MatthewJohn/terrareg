@@ -226,6 +226,15 @@ class AnalyticsEngine:
         }
 
         for row in res:
+
+            # Check if row is usable
+            ## Skip any rows without ananlytics tokens, if they are required.
+            if AnalyticsEngine.are_tokens_enabled() and not row['analytics_token']:
+                continue
+            ## Skip any rows without an environment, if they are required.
+            if AnalyticsEngine.are_environments_enabled() and not row['environment']:
+                continue
+
             token = row['analytics_token'] if row['analytics_token'] else 'No token provided'
 
             # Populate map with empty details for this analytics token,
