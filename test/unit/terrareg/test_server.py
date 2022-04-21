@@ -524,6 +524,72 @@ class TestApiModuleVersionDownload:
         )
         assert AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'].id == test_module_version.id
 
+    def test_existing_module_internal_download_with_auth_token(
+        self, client, mocked_server_module_fixture,
+        mock_record_module_version_download):
+        """Test endpoint with analytics token and auth token"""
+
+        res = client.get(
+            '/v1/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1/download',
+            headers={'X-Terraform-Version': 'TestTerraformVersion',
+                     'User-Agent': 'TestUserAgent',
+                     'Authorization': 'Bearer test123-authorization-token'}
+        )
+
+        test_namespace = Namespace(name='testnamespace')
+        test_module = MockModule(namespace=test_namespace, name='testmodulename')
+        test_module_provider = MockModuleProvider(module=test_module, name='testprovider')
+        test_module_version = MockModuleVersion(module_provider=test_module_provider, version='2.4.1')
+
+        assert res.headers['X-Terraform-Get'] == '/static/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'
+        assert res.status_code == 204
+
+        AnalyticsEngine.record_module_version_download.assert_called_with(
+            module_version=unittest.mock.ANY,
+            analytics_token='test_token-name',
+            terraform_version='TestTerraformVersion',
+            user_agent='TestUserAgent',
+            auth_token='test123-authorization-token'
+        )
+        assert AnalyticsEngine.record_module_version_download.isinstance(
+            AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'],
+            MockModuleVersion
+        )
+        assert AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'].id == test_module_version.id
+
+    def test_existing_module_internal_download_with_invalid_auth_token_header(
+        self, client, mocked_server_module_fixture,
+        mock_record_module_version_download):
+        """Test endpoint with analytics token and auth token"""
+
+        res = client.get(
+            '/v1/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1/download',
+            headers={'X-Terraform-Version': 'TestTerraformVersion',
+                     'User-Agent': 'TestUserAgent',
+                     'Authorization': 'This is invalid'}
+        )
+
+        test_namespace = Namespace(name='testnamespace')
+        test_module = MockModule(namespace=test_namespace, name='testmodulename')
+        test_module_provider = MockModuleProvider(module=test_module, name='testprovider')
+        test_module_version = MockModuleVersion(module_provider=test_module_provider, version='2.4.1')
+
+        assert res.headers['X-Terraform-Get'] == '/static/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'
+        assert res.status_code == 204
+
+        AnalyticsEngine.record_module_version_download.assert_called_with(
+            module_version=unittest.mock.ANY,
+            analytics_token='test_token-name',
+            terraform_version='TestTerraformVersion',
+            user_agent='TestUserAgent',
+            auth_token=None
+        )
+        assert AnalyticsEngine.record_module_version_download.isinstance(
+            AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'],
+            MockModuleVersion
+        )
+        assert AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'].id == test_module_version.id
+
 
 class TestApiModuleProviderDownloadsSummary:
  
