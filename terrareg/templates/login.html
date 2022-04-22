@@ -13,8 +13,6 @@
         let ajaxRes = $.ajax({
             url: '/v1/terrareg/auth/admin/login',
             contentType: 'application/json',
-            // Use 'text' datatype to ensure
-            // 401s still call the error function
             dataType: 'json',
             method: 'post',
             headers: {
