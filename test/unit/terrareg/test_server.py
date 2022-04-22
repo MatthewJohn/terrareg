@@ -2,12 +2,19 @@
 import unittest.mock
 
 import pytest
+import werkzeug.exceptions
 
 from terrareg.models import Namespace, Module
 from terrareg.module_search import ModuleSearch
 from terrareg.filters import NamespaceTrustFilter
 from terrareg.analytics import AnalyticsEngine
-from test.unit.terrareg import MockModuleProvider, MockModuleVersion, MockModule, client, mocked_server_module_fixture
+from test.unit.terrareg import (
+    MockModuleProvider, MockModuleVersion,
+    MockModule,
+    client, mocked_server_module_fixture,
+    request_context
+)
+from terrareg.server import admin_authentication
 
 
 @pytest.fixture
@@ -596,7 +603,6 @@ class TestApiModuleProviderDownloadsSummary:
     def test_existing_module(self, client, mocked_server_module_fixture, mock_server_get_module_provider_download_stats):
         """Test endpoint with existing module"""
         res = client.get('/v1/modules/testnamespace/testmodule/testprovider/downloads/summary')
-        print(res.json)
         assert res.status_code == 200
         assert res.json == {
             'data': {
@@ -605,3 +611,21 @@ class TestApiModuleProviderDownloadsSummary:
                 'type': 'module-downloads-summary'
             }
         }
+
+
+class TestAdminAuthenticationWrapper:
+
+    def test_unauthenticated(self, client, request_context):
+        with request_context:
+            with unittest.mock.patch('terrareg.config.SECRET_KEY', 'asecrethere'):
+                with unittest.mock.patch('terrareg.config.ADMIN_AUTHENTICATION_TOKEN', 'testpassword'):
+                    def mock_func(x, y):
+                        return x, y
+
+                    # Fake headers and session
+                    request_context.headers = {}
+                    request_context.session = {}
+
+                    wrapped_mock = admin_authentication(mock_func)
+                    with pytest.raises(werkzeug.exceptions.Unauthorized):
+                        wrapped_mock()

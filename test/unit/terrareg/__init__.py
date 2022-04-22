@@ -13,18 +13,18 @@ SERVER = Server()
 
 @pytest.fixture
 def client():
-    """Configures the app for testing
-
-    Sets app config variable ``TESTING`` to ``True``
-
-    :return: App for testing
-    """
+    """Return test client"""
 
     SERVER._app.config['TESTING'] = True
     client = SERVER._app.test_client()
 
     yield client
 
+@pytest.fixture
+def request_context():
+    """Return test request context"""
+    SERVER._app.config['TESTING'] = True
+    return SERVER._app.test_request_context()
 
 class MockModule(Module):
     """Mocked module."""
