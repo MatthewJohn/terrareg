@@ -15,19 +15,23 @@
             contentType: 'application/json',
             // Use 'text' datatype to ensure
             // 401s still call the error function
-            dataType: 'text',
+            dataType: 'json',
             method: 'post',
             headers: {
                 'Accept': 'application/json',
                 'X-Terrareg-ApiKey': $('#admin_token_input').val()
+            },
+            statusCode: {
+                200: () => {
+                    // Redirect to homepage
+                    location.href = '/';
+                },
+                401: () => {
+                    // Show login error
+                    $('#login_error').css('display', 'block');
+                    $('#login_error').html('Incorrect admin token');                    
+                }
             }
-        }).fail(() => {
-            // Show login error
-            $('.login_error').css('display', 'block');
-            $('.login_error').html('Incorrect admin token');
-        }).done(() => {
-            // Redirect to homepage
-            location.href = '/';
         });
     }
 </script>
