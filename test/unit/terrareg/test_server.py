@@ -678,5 +678,3 @@ class TestAdminAuthenticationWrapper:
 
                     wrapped_mock = admin_authentication(self._mock_function)
                     assert wrapped_mock('x-value', y='y-value') == ('x-value', 'y-value')
-
-
