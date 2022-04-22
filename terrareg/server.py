@@ -2,9 +2,11 @@
 
 import os
 import re
+import datetime
+from functools import wraps
 
-from flask import Flask, request, render_template, redirect, make_response, send_from_directory
-from flask_restful import Resource, Api, reqparse, inputs
+from flask import Flask, request, render_template, redirect, make_response, send_from_directory, session
+from flask_restful import Resource, Api, reqparse, inputs, abort
 
 import terrareg.config
 from terrareg.database import Database
@@ -177,6 +179,10 @@ class Server(object):
             ApiTerraregModuleSearchFilters,
             '/v1/terrareg/search_filters'
         )
+        self._api.add_resource(
+            ApiTerraregAdminAuthenticate,
+            '/v1/terrareg/auth/login'
+        )
 
     def _render_template(self, *args, **kwargs):
         """Override render_template, passing in base variables."""
@@ -196,6 +202,8 @@ class Server(object):
         }
         if self.ssl_public_key and self.ssl_private_key:
             kwargs['ssl_context'] = (self.ssl_public_key, self.ssl_private_key)
+
+        self._app.secret_key = terrareg.config.SECRET_KEY
 
         self._app.run(**kwargs)
 
@@ -744,3 +752,47 @@ class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
         args = parser.parse_args()
 
         return ModuleSearch.get_search_filters(query=args.q)
+
+
+def admin_authentication(func):
+    """Check authorization header is present or authenticated session"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+
+        authenticated = False
+        # Check that:
+        # - An admin authentication token has been setup
+        # - A token has neeif valid authorisation header has been passed
+        if (terrareg.config.ADMIN_AUTHENTICATION_TOKEN and
+                request.headers.get('X-Terrareg-ApiKey', '') ==
+                terrareg.config.ADMIN_AUTHENTICATION_TOKEN):
+            authenticated = True
+
+        # Check if authenticated via session
+        # - Ensure session key has been setup
+        if (terrareg.config.SECRET_KEY and
+                session.get('is_admin_authenticated', False) and
+                'expires' in session and
+                session.get('expires') > datetime.datetime.now()):
+            authenticated = True
+
+        if not authenticated:
+            abort(401)
+        else:
+            return func(*args, **kwargs)
+    return wrapper
+
+
+class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
+    """Interface to perform authentication as an admin and set appropriate cookie."""
+
+    method_decorators = [admin_authentication]
+
+    def _post(self):
+        """Handle POST requests to the authentication endpoint."""
+        session['is_admin_authenticated'] = True
+        session['expires'] = (
+            datetime.datetime.now() +
+            datetime.timedelta(minutes=terrareg.config.ADMIN_SESSION_EXPIRY_MINS)
+        )
+        return {'authenticated': True}

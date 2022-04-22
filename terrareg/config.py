@@ -56,3 +56,20 @@ To only record downloads in a single environment, specify a single auth token. E
 ANALYTICS_AUTH_KEYS = [
     token for token in os.environ.get('ANALYTICS_AUTH_KEYS', '').split(',') if token
 ]
+
+"""
+Token to use for authorisation to be able to modify modules in the user interface.
+"""
+ADMIN_AUTHENTICATION_TOKEN = os.environ.get('ADMIN_AUTHENTICATION_TOKEN', None)
+
+"""
+Flask secret key used for encrypting sessions.
+
+Can be generated using: python -c 'import secrets; print(secrets.token_hex())'
+"""
+SECRET_KEY = os.environ.get('SECRET_KEY', None)
+
+"""
+Session timeout for admin cookie sessions
+"""
+ADMIN_SESSION_EXPIRY_MINS = int(os.environ.get('ADMIN_SESSION_EXPIRY_MINS', 5))
