@@ -181,7 +181,11 @@ class Server(object):
         )
         self._api.add_resource(
             ApiTerraregAdminAuthenticate,
-            '/v1/terrareg/auth/login'
+            '/v1/terrareg/auth/admin/login'
+        )
+        self._api.add_resource(
+            ApiTerraregIsAuthenticated,
+            '/v1/terrareg/auth/admin/is_authenticated'
         )
 
     def _render_template(self, *args, **kwargs):
@@ -781,6 +785,15 @@ def admin_authentication(func):
         else:
             return func(*args, **kwargs)
     return wrapper
+
+
+class ApiTerraregIsAuthenticated(ErrorCatchingResource):
+    """Interface to teturn whether user is authenticated as an admin."""
+
+    method_decorators = [admin_authentication]
+
+    def _get(self):
+        return {'authenticated': True}
 
 
 class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
