@@ -6,13 +6,7 @@ import re
 from flask import Flask, request, render_template, redirect, make_response, send_from_directory
 from flask_restful import Resource, Api, reqparse, inputs
 
-from terrareg.config import (
-    DATA_DIRECTORY,
-    DEBUG,
-    ALLOW_UNIDENTIFIED_DOWNLOADS,
-    ANALYTICS_TOKEN_PHRASE,
-    EXAMPLE_ANALYTICS_TOKEN
-)
+import terrareg.config
 from terrareg.database import Database
 from terrareg.errors import TerraregError, UploadError, NoModuleVersionAvailableError
 from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion
@@ -43,12 +37,12 @@ class Server(object):
         self.ssl_public_key = ssl_public_key
         self.ssl_private_key = ssl_private_key
 
-        if not os.path.isdir(DATA_DIRECTORY):
-            os.mkdir(DATA_DIRECTORY)
+        if not os.path.isdir(terrareg.config.DATA_DIRECTORY):
+            os.mkdir(terrareg.config.DATA_DIRECTORY)
         if not os.path.isdir(self._get_upload_directory()):
             os.mkdir(self._get_upload_directory())
-        if not os.path.isdir(os.path.join(DATA_DIRECTORY, 'modules')):
-            os.mkdir(os.path.join(DATA_DIRECTORY, 'modules'))
+        if not os.path.isdir(os.path.join(terrareg.config.DATA_DIRECTORY, 'modules')):
+            os.mkdir(os.path.join(terrareg.config.DATA_DIRECTORY, 'modules'))
 
         self._app.config['UPLOAD_FOLDER'] = self._get_upload_directory()
 
@@ -58,7 +52,7 @@ class Server(object):
         self._register_routes()
 
     def _get_upload_directory(self):
-        return os.path.join(DATA_DIRECTORY, 'upload')
+        return os.path.join(terrareg.config.DATA_DIRECTORY, 'upload')
 
     def _register_routes(self):
         """Register routes with flask."""
@@ -198,7 +192,7 @@ class Server(object):
         kwargs = {
             'host': self.host,
             'port': self.port,
-            'debug': DEBUG
+            'debug': terrareg.config.DEBUG
         }
         if self.ssl_public_key and self.ssl_private_key:
             kwargs['ssl_context'] = (self.ssl_public_key, self.ssl_private_key)
@@ -613,14 +607,14 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
 
         # Determine if module download should be rejected due to
         # non-existent analytics token
-        if not analytics_token and not ALLOW_UNIDENTIFIED_DOWNLOADS:
+        if not analytics_token and not terrareg.config.ALLOW_UNIDENTIFIED_DOWNLOADS:
             return make_response(
                 ("\nAn {analytics_token_phrase} must be provided.\n"
                  "Please update module source to include {analytics_token_phrase}.\n"
                  "\nFor example:\n  source = \"{host}/{example_analytics_token}__{namespace}/{module_name}/{provider}\"").format(
-                    analytics_token_phrase=ANALYTICS_TOKEN_PHRASE,
+                    analytics_token_phrase=terrareg.config.ANALYTICS_TOKEN_PHRASE,
                     host=request.host,
-                    example_analytics_token=EXAMPLE_ANALYTICS_TOKEN,
+                    example_analytics_token=terrareg.config.EXAMPLE_ANALYTICS_TOKEN,
                     namespace=namespace.name,
                     module_name=module.name,
                     provider=module_provider.name
