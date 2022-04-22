@@ -784,7 +784,7 @@ def admin_authentication(func):
         if (terrareg.config.SECRET_KEY and
                 session.get('is_admin_authenticated', False) and
                 'expires' in session and
-                session.get('expires') > datetime.datetime.now()):
+                session.get('expires').timestamp() > datetime.datetime.now().timestamp()):
             authenticated = True
 
         if not authenticated:
