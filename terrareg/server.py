@@ -118,6 +118,9 @@ class Server(object):
         # Views
         self._app.route('/')(self._view_serve_static_index)
         self._app.route(
+            '/login'
+        )(self._view_serve_login)
+        self._app.route(
             '/modules'
         )(self._view_serve_namespace_list)
         self._app.route(
@@ -214,6 +217,10 @@ class Server(object):
     def _view_serve_static_index(self):
         """Serve static index"""
         return self._render_template('index.html')
+
+    def _view_serve_login(self):
+        """Serve static login page."""
+        return self._render_template('login.html')
 
     def _view_serve_namespace_list(self):
         """Render view for display module."""
