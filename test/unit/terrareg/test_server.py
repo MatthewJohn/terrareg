@@ -765,6 +765,33 @@ class TestApiTerraregAdminAuthenticate:
                         )
                         assert session['is_admin_authenticated'] == True
 
+    def test_authenticated_without_secret_key(self, client):
+        """Test endpoint and ensure session is not provided"""
+        with unittest.mock.patch('terrareg.server.check_admin_authentication') as mock_admin_authentication:
+            with unittest.mock.patch('terrareg.config.SECRET_KEY', ''):
+                # Update real app secret key with fake value,
+                # otherwise an error would be received when checking the session.
+                SERVER._app.secret_key = 'test'
+
+                mock_admin_authentication.return_value = True
+
+                res = client.post('/v1/terrareg/auth/admin/login')
+
+                assert res.status_code == 403
+                assert res.json == {'error': 'Sessions not enabled in configuration'}
+                with client.session_transaction() as session:
+                    # Assert that no session cookies were provided
+                    assert 'expires' not in session
+                    assert 'is_admin_authenticated' not in session
+
+                # Update server secret to empty value and ensure a 403 is still received.
+                # The session cannot be checked
+                SERVER._app.secret_key = ''
+                res = client.post('/v1/terrareg/auth/admin/login')
+
+                assert res.status_code == 403
+                assert res.json == {'error': 'Sessions not enabled in configuration'}
+
     def test_unauthenticated(self, client):
         """Test endpoint when user is authenticated."""
         with unittest.mock.patch('terrareg.server.check_admin_authentication') as mock_admin_authentication:
@@ -774,4 +801,3 @@ class TestApiTerraregAdminAuthenticate:
             res = client.post('/v1/terrareg/auth/admin/login')
 
             assert res.status_code == 401
-
