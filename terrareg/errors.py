@@ -58,3 +58,9 @@ class InvalidGitTagFormatError(TerraregError):
     """Invalid git tag format provided."""
 
     pass
+
+
+class ValidationError(TerraregError):
+    """Error during validation of arguments."""
+
+    pass

@@ -18,7 +18,7 @@ import terrareg.config
 from terrareg.database import Database
 from terrareg.errors import (
     TerraregError, UploadError, NoModuleVersionAvailableError,
-    NoSessionSetError, IncorrectCSRFTokenError
+    NoSessionSetError, IncorrectCSRFTokenError, ValidationError
 )
 from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion
 from terrareg.module_search import ModuleSearch
@@ -347,6 +347,11 @@ class ErrorCatchingResource(Resource):
         """Run subclasses get in error handling fashion."""
         try:
             return self._get(*args, **kwargs)
+        except ValidationError as exc:
+            return {
+                "status": "ValidationError",
+                "message": str(exc)
+            }, 400
         except TerraregError as exc:
             return {
                 "status": "Error",
@@ -361,6 +366,11 @@ class ErrorCatchingResource(Resource):
         """Run subclasses post in error handling fashion."""
         try:
             return self._post(*args, **kwargs)
+        except ValidationError as exc:
+            return {
+                "status": "ValidationError",
+                "message": str(exc)
+            }, 400
         except TerraregError as exc:
             return {
                 "status": "Error",
@@ -965,17 +975,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         # Ensure repository URL is parsable
         repository_url = args.repository_url
         if repository_url is not None:
-            if repository_url != '':
-                url = urllib.parse.urlparse(args.repository_url)
-                if not url.scheme:
-                    return {'message': 'Repository URL does not contain a scheme (e.g. ssh://)'}, 400
-                if url.scheme not in ['http', 'https', 'ssh']:
-                    return {'message': 'Repository URL contains an unknown scheme (e.g. https/git/http)'}, 400
-                if not url.hostname:
-                    return {'message': 'Repository URL does not contain a host/domain'}, 400
-                if not url.path:
-                    return {'message': 'Repository URL does not contain a path'}, 400
-            else:
+            if repository_url == '':
                 # If repository URL is empty, set to None
                 repository_url = None
 

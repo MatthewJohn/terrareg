@@ -12,7 +12,8 @@ import terrareg.analytics
 from terrareg.database import Database
 from terrareg.config import DATA_DIRECTORY
 from terrareg.errors import (
-    NoModuleVersionAvailableError, InvalidGitTagFormatError
+    NoModuleVersionAvailableError, InvalidGitTagFormatError,
+    ValidationError
 )
 
 
@@ -299,6 +300,18 @@ class ModuleProvider(object):
 
     def update_repository_url(self, repository_url):
         """Update repository URL for module provider."""
+        if repository_url:
+            url = urllib.parse.urlparse(repository_url)
+            if not url.scheme:
+                raise ValidationError('Repository URL does not contain a scheme (e.g. ssh://)')
+                return {'message': ''}, 400
+            if url.scheme not in ['http', 'https', 'ssh']:
+                raise ValidationError('Repository URL contains an unknown scheme (e.g. https/git/http)')
+            if not url.hostname:
+                raise ValidationError('Repository URL does not contain a host/domain')
+            if not url.path:
+                raise ValidationError('Repository URL does not contain a path')
+
         sanitised_repository_url = urllib.parse.quote(repository_url, safe='/:@%?=')
         self._update_row(repository_url=sanitised_repository_url)
 
