@@ -3,6 +3,7 @@ import os
 import re
 import datetime
 from functools import wraps
+import json
 import urllib.parse
 import hashlib
 from enum import Enum
@@ -451,8 +452,32 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
         module = Module(namespace=namespace, name=name)
         # Get module provider and optionally create, if it doesn't exist
         module_provider = ModuleProvider.get(module=module, name=provider, create=True)
-        print(request.json)
+        print(json.dumps(request.json, indent=4))
         print(dict(request.headers))
+
+        bitbucket_data = request.json
+
+        if 'changes' in bitbucket_data and type(bitbucket_data['changes']) == list:
+            for change in bitbucket_data['changes']:
+                # Check if change type is tag
+                if 'ref' in change and 'type' in change['ref'] and change['ref']['type'] == 'TAG':
+                    # Obtain tag name
+                    tag_ref = change['ref']['id']
+
+                    # Attempt to match version against regex
+                    version = module_provider.get_version_from_tag_ref(tag_ref)
+                    print('Found version!!!!: {0}'.format(version))
+
+                    if not version:
+                        continue
+
+                    # Create module version
+                    module_version = ModuleVersion(module_provider=module_provider, version=version)
+
+                    # Perform import from git
+                    module_version.prepare_module()
+                    with GitModuleExtractor(module_version=module_version) as me:
+                        me.process_upload()
 
 
 class ApiModuleList(ErrorCatchingResource):
