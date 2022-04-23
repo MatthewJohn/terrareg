@@ -1,10 +1,4 @@
 
-test_data_one_module = {
-}
-
-test_data_two_modules = {
-}
-
 test_data_full = {
     'testnamespace': {
         'testmodulename': {'testprovider': {

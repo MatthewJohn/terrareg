@@ -17,11 +17,6 @@ from test.unit.terrareg import (
     test_request_context, app_context,
     setup_test_data, SERVER
 )
-from test.unit.terrareg.test_data import (
-    test_data_one_module,
-    test_data_two_modules,
-    
-)
 from terrareg.server import (
     require_admin_authentication, AuthenticationType,
     get_current_authentication_type,
@@ -413,7 +408,7 @@ class TestApiModuleDetails:
 class TestApiModuleProviderDetails:
     """Test ApiModuleProviderDetails resource."""
 
-    @setup_test_data(test_data_one_module)
+    @setup_test_data()
     def test_existing_module_provider(self, client, mocked_server_namespace_fixture):
         res = client.get('/v1/modules/testnamespace/mock-module/testprovider')
 
