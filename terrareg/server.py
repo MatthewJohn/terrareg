@@ -829,4 +829,5 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
             datetime.datetime.now() +
             datetime.timedelta(minutes=terrareg.config.ADMIN_SESSION_EXPIRY_MINS)
         )
+        session.modified = True
         return {'authenticated': True}
