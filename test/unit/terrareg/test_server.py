@@ -17,6 +17,10 @@ from test.unit.terrareg import (
     test_request_context, app_context,
     setup_test_data, SERVER
 )
+from test.unit.terrareg.test_data import (
+    test_data_one_module,
+    test_data_two_modules
+)
 from terrareg.server import (
     require_admin_authentication, AuthenticationType,
     get_current_authentication_type,
@@ -147,13 +151,7 @@ class TestApiModuleList:
         }
         ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=True, offset=0, limit=10)
 
-    @setup_test_data({
-        'testnamespace': {'mock-module': {'testprovider': {
-            'id': 1,
-            'latest_version': '1.2.3',
-            'versions': { '1.2.3': {}}
-        }}}
-    })
+    @setup_test_data(test_data_one_module)
     def test_with_module_response(self, client, mocked_search_module_providers):
         """Test return of single module module"""
         namespace = MockNamespace(name='testnamespace')
@@ -175,18 +173,7 @@ class TestApiModuleList:
             ]
         }
 
-    @setup_test_data({
-        'testnamespace': {'mock-module': {'testprovider': {
-            'id': 1,
-            'latest_version': '1.2.3',
-            'versions': { '1.2.3': {}}
-        }}},
-        'secondtestnamespace': {'mockmodule2': {'secondprovider': {
-            'id': 2,
-            'latest_version': '3.0.0',
-            'versions': {'3.0.0': {}}
-        }}}
-    })
+    @setup_test_data(test_data_two_modules)
     def test_with_multiple_modules_response(self, client, mocked_search_module_providers):
         """Test multiple modules in results"""
         namespace = MockNamespace(name='testnamespace')
@@ -331,13 +318,7 @@ class TestApiModuleSearch:
             namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
             offset=0, limit=10)
 
-    @setup_test_data({
-        'testnamespace': {'mock-module': {'testprovider': {
-            'id': 1,
-            'latest_version': '1.2.3',
-            'versions': {'1.2.3': {}}
-        }}}
-    })
+    @setup_test_data(test_data_one_module)
     def test_with_single_module_response(self, client, mocked_search_module_providers):
         """Test return of single module module"""
         namespace = MockNamespace(name='testnamespace')
@@ -359,14 +340,15 @@ class TestApiModuleSearch:
             ]
         }
 
+    @setup_test_data(test_data_two_modules)
     def test_with_multiple_module_response(self, client, mocked_search_module_providers):
         """Test multiple modules in results"""
-        namespace = Namespace(name='testnamespace')
-        module = Module(namespace=namespace, name='mock-module')
+        namespace = MockNamespace(name='testnamespace')
+        module = MockModule(namespace=namespace, name='mock-module')
         mock_module_provider = MockModuleProvider(module=module, name='testprovider')
         mock_module_provider.MOCK_LATEST_VERSION_NUMBER = '1.2.3'
-        mock_namespace_2 = Namespace(name='secondtestnamespace')
-        mock_module_2 = Module(namespace=mock_namespace_2, name='mockmodule2')
+        mock_namespace_2 = MockNamespace(name='secondtestnamespace')
+        mock_module_2 = MockModule(namespace=mock_namespace_2, name='mockmodule2')
         mock_module_provider_2 = MockModuleProvider(module=mock_module_2, name='secondprovider')
         mock_module_provider_2.MOCK_LATEST_VERSION_NUMBER = '3.0.0'
         ModuleSearch.search_module_providers.return_value = [mock_module_provider_2, mock_module_provider]
@@ -385,15 +367,16 @@ class TestApiModuleSearch:
 class TestApiModuleDetails:
     """Test ApiModuleDetails resource."""
 
+    @setup_test_data(test_data_one_module)
     def test_existing_module(self, client, mocked_server_namespace_fixture):
         """Test endpoint with existing module"""
 
-        res = client.get('/v1/modules/testnamespace/testmodulename')
+        res = client.get('/v1/modules/testnamespace/mock-module')
 
         assert res.json == {
             'meta': {'limit': 5, 'offset': 0}, 'modules': [
-                {'id': 'testnamespace/testmodulename/testprovider/1.0.0', 'owner': 'Mock Owner',
-                'namespace': 'testnamespace', 'name': 'testmodulename', 'version': '1.0.0',
+                {'id': 'testnamespace/mock-module/testprovider/1.2.3', 'owner': 'Mock Owner',
+                'namespace': 'testnamespace', 'name': 'mock-module', 'version': '1.2.3',
                 'provider': 'testprovider', 'description': 'Mock description',
                 'source': 'http://mock.example.com/mockmodule',
                 'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True}
