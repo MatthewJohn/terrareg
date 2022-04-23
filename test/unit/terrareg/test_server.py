@@ -10,8 +10,7 @@ from terrareg.module_search import ModuleSearch
 from terrareg.filters import NamespaceTrustFilter
 from terrareg.analytics import AnalyticsEngine
 from test.unit.terrareg import (
-    MockModuleProvider, MockModuleVersion,
-    MockModule,
+    MockModuleProvider, MockModuleVersion, MockModule,
     client, mocked_server_module_fixture,
     test_request_context, app_context,
     SERVER
@@ -633,28 +632,28 @@ class TestRequireAdminAuthenticationWrapper:
         mock_headers=None,
         mock_session=None):
         """Perform authentication test."""
-        with test_request_context:
-            with app_context:
-                with unittest.mock.patch('terrareg.config.SECRET_KEY', config_secret_key):
-                    with unittest.mock.patch('terrareg.config.ADMIN_AUTHENTICATION_TOKEN', config_admin_authentication_token):
+        with test_request_context, \
+                app_context, \
+                unittest.mock.patch('terrareg.config.SECRET_KEY', config_secret_key), \
+                unittest.mock.patch('terrareg.config.ADMIN_AUTHENTICATION_TOKEN', config_admin_authentication_token):
 
-                        # Fake mock_headers and mock_session
-                        if mock_headers:
-                            test_request_context.request.headers = mock_headers
-                        if mock_session:
-                            test_request_context.session = mock_session
+            # Fake mock_headers and mock_session
+            if mock_headers:
+                test_request_context.request.headers = mock_headers
+            if mock_session:
+                test_request_context.session = mock_session
 
-                        wrapped_mock = require_admin_authentication(self._mock_function)
+            wrapped_mock = require_admin_authentication(self._mock_function)
 
-                        if expect_fail:
-                            with pytest.raises(werkzeug.exceptions.Unauthorized):
-                                wrapped_mock()
-                        else:
-                            assert wrapped_mock('x-value', y='y-value') == ('x-value', 'y-value')
+            if expect_fail:
+                with pytest.raises(werkzeug.exceptions.Unauthorized):
+                    wrapped_mock()
+            else:
+                assert wrapped_mock('x-value', y='y-value') == ('x-value', 'y-value')
 
-                            # Check authentication_type has been set correctly. 
-                            if expected_authentication_type:
-                                assert app_context.g.authentication_type is expected_authentication_type
+                # Check authentication_type has been set correctly. 
+                if expected_authentication_type:
+                    assert app_context.g.authentication_type is expected_authentication_type
 
     def test_unauthenticated(self, app_context, test_request_context):
         """Ensure 401 without an API key or mock_session."""
