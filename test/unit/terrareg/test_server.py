@@ -778,7 +778,7 @@ class TestApiTerraregAdminAuthenticate:
                 res = client.post('/v1/terrareg/auth/admin/login')
 
                 assert res.status_code == 403
-                assert res.json == {'error': 'Sessions not enabled in configuration'}
+                assert res.json == {'message': 'Sessions not enabled in configuration'}
                 with client.session_transaction() as session:
                     # Assert that no session cookies were provided
                     assert 'expires' not in session
@@ -790,7 +790,7 @@ class TestApiTerraregAdminAuthenticate:
                 res = client.post('/v1/terrareg/auth/admin/login')
 
                 assert res.status_code == 403
-                assert res.json == {'error': 'Sessions not enabled in configuration'}
+                assert res.json == {'message': 'Sessions not enabled in configuration'}
 
     def test_unauthenticated(self, client):
         """Test endpoint when user is authenticated."""

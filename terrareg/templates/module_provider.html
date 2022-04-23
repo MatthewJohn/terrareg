@@ -128,8 +128,8 @@ module "{{ module.name }}" {
         }).done(() => {
             $('#settings-status-success').css('display', 'block');
         }).fail((res) => {
-            if (res.responseJSON && res.responseJSON.error) {
-                $('#settings-status-error').html(res.responseJSON.error);
+            if (res.responseJSON && res.responseJSON.message) {
+                $('#settings-status-error').html(res.responseJSON.message);
             } else {
                 $('#settings-status-error').html('An unexpected error occurred');
             }

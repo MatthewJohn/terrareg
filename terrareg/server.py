@@ -826,7 +826,7 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
         """Handle POST requests to the authentication endpoint."""
 
         if not terrareg.config.SECRET_KEY:
-            return {'error': 'Sessions not enabled in configuration'}, 403
+            return {'message': 'Sessions not enabled in configuration'}, 403
 
         session['is_admin_authenticated'] = True
         session['expires'] = (
@@ -858,13 +858,13 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         if repository_url:
             url = urllib.parse.urlparse(args.repository_url)
             if not url.scheme:
-                return {'error': 'Repository URL does not contain a scheme (e.g. ssh://)'}, 400
+                return {'message': 'Repository URL does not contain a scheme (e.g. ssh://)'}, 400
             if url.scheme not in ['http', 'https', 'ssh']:
-                return {'error': 'Repository URL contains an unknown scheme (e.g. https/git/http)'}, 400
+                return {'message': 'Repository URL contains an unknown scheme (e.g. https/git/http)'}, 400
             if not url.hostname:
-                return {'error': 'Repository URL does not contain a host/domain'}, 400
+                return {'message': 'Repository URL does not contain a host/domain'}, 400
             if not url.path:
-                return {'error': 'Repository URL does not contain a path'}, 400
+                return {'message': 'Repository URL does not contain a path'}, 400
         else:
             # If repository URL is empty, set to None
             repository_url = None
@@ -875,6 +875,6 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         module_provider = ModuleProvider.get(module=module, name=provider)
 
         if not module_provider:
-            return {'error', 'Module provider does not exist'}, 400
+            return {'message', 'Module provider does not exist'}, 400
 
         module_provider.update_repository_url(repository_url=args.repository_url)
