@@ -15,6 +15,17 @@ test_data_full = {
             'id': 3,
             'latest_version': '1.2.3',
             'versions': {'1.2.3': {}}
+        }},
+        'modulenorepourl': {'testprovider': {
+            'id': 5,
+            'latest_version': '2.2.4',
+            'versions': {'2.2.4': {}}
+        }},
+        'modulewithrepourl': {'testprovider': {
+            'id': 6,
+            'latest_version': '2.1.0',
+            'repository_url': 'https://github.com/test/test.git',
+            'versions': {'2.1.0': {}}
         }}
     },
     'secondtestnamespace': {
