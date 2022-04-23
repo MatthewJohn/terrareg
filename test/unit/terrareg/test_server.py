@@ -15,7 +15,10 @@ from test.unit.terrareg import (
     test_request_context, app_context,
     SERVER
 )
-from terrareg.server import require_admin_authentication, AuthenticationType
+from terrareg.server import (
+    require_admin_authentication, AuthenticationType,
+    get_current_authentication_type
+)
 
 
 @pytest.fixture
@@ -645,6 +648,10 @@ class TestRequireAdminAuthenticationWrapper:
 
             wrapped_mock = require_admin_authentication(self._mock_function)
 
+            # Ensure before calling authentication, that current authentication
+            # type is shown as not checked
+            assert get_current_authentication_type() is AuthenticationType.NOT_CHECKED
+
             if expect_fail:
                 with pytest.raises(werkzeug.exceptions.Unauthorized):
                     wrapped_mock()
@@ -653,7 +660,7 @@ class TestRequireAdminAuthenticationWrapper:
 
                 # Check authentication_type has been set correctly. 
                 if expected_authentication_type:
-                    assert app_context.g.authentication_type is expected_authentication_type
+                    assert get_current_authentication_type() is expected_authentication_type
 
     def test_unauthenticated(self, app_context, test_request_context):
         """Ensure 401 without an API key or mock_session."""
