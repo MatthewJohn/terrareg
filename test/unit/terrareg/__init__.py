@@ -77,6 +77,11 @@ class MockModuleProvider(ModuleProvider):
 
     MOCK_LATEST_VERSION_NUMBER = '1.0.0'
 
+    @staticmethod
+    def get(*args, **kwargs):
+        """Mock get method to return an instance of the MockProvider"""
+        return MockModuleProvider(*args, **kwargs)
+
     def get_latest_version(self):
         """Return mocked latest version of module"""
         # Handle fake non-existent module
