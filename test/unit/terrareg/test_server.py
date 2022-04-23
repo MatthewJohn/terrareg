@@ -621,90 +621,103 @@ class TestAdminAuthenticationWrapper:
         """Test method to wrap to check arg/kwargs"""
         return x, y
 
-    def test_unauthenticated(self, request_context):
-        """Ensure 401 without an API key or session."""
+    def _run_authentication_test(
+        self,
+        request_context,
+        config_secret_key,
+        config_admin_authentication_token,
+        expect_fail,
+        headers=None,
+        session=None):
+        """Perform authentication test."""
         with request_context:
-            with unittest.mock.patch('terrareg.config.SECRET_KEY', 'asecrethere'):
-                with unittest.mock.patch('terrareg.config.ADMIN_AUTHENTICATION_TOKEN', 'testpassword'):
+            with unittest.mock.patch('terrareg.config.SECRET_KEY', config_secret_key):
+                with unittest.mock.patch('terrareg.config.ADMIN_AUTHENTICATION_TOKEN', config_admin_authentication_token):
 
                     # Fake headers and session
-                    request_context.headers = {}
-                    request_context.session = {}
+                    if headers:
+                        request_context.request.headers = headers
+                    if session:
+                        request_context.session = session
 
-                    wrapped_mock = admin_authentication(self._mock_function)
-                    with pytest.raises(werkzeug.exceptions.Unauthorized):
-                        wrapped_mock()
+                    if expect_fail:
+                        wrapped_mock = admin_authentication(self._mock_function)
+                        with pytest.raises(werkzeug.exceptions.Unauthorized):
+                            wrapped_mock()
+                    else:
+                        wrapped_mock = admin_authentication(self._mock_function)
+                        assert wrapped_mock('x-value', y='y-value') == ('x-value', 'y-value')
+
+    def test_unauthenticated(self, request_context):
+        """Ensure 401 without an API key or session."""
+        self._run_authentication_test(
+            request_context=request_context,
+            config_secret_key='asecrethere',
+            config_admin_authentication_token='testpassword',
+            expect_fail=True
+        )
 
     def test_session_authentication_with_no_app_secret(self, request_context):
         """Ensure 401 with valid authentication without an APP SECRET."""
-        with request_context:
-            with unittest.mock.patch('terrareg.config.SECRET_KEY', ''):
-                with unittest.mock.patch('terrareg.config.ADMIN_AUTHENTICATION_TOKEN', 'testpassword'):
-
-                    request_context.session = {
-                        'is_admin_authenticated': True,
-                        'expires': datetime.datetime.now() + datetime.timedelta(hours=5)
-                    }
-
-                    wrapped_mock = admin_authentication(self._mock_function)
-                    with pytest.raises(werkzeug.exceptions.Unauthorized):
-                        wrapped_mock()
+        self._run_authentication_test(
+            request_context=request_context,
+            config_secret_key='',
+            config_admin_authentication_token='testpassword',
+            expect_fail=True,
+            session={
+                'is_admin_authenticated': True,
+                'expires': datetime.datetime.now() + datetime.timedelta(hours=5)
+            }
+        )
 
     def test_401_with_expired_session(self, request_context):
         """Ensure resource is called with valid session."""
-        with request_context:
-            with unittest.mock.patch('terrareg.config.SECRET_KEY', 'testsecret'):
-                with unittest.mock.patch('terrareg.config.ADMIN_AUTHENTICATION_TOKEN', 'testpassword'):
-
-                    request_context.session = {
-                        'is_admin_authenticated': True,
-                        'expires': datetime.datetime.now() - datetime.timedelta(minutes=1)
-                    }
-
-                    wrapped_mock = admin_authentication(self._mock_function)
-                    with pytest.raises(werkzeug.exceptions.Unauthorized):
-                        wrapped_mock()
+        self._run_authentication_test(
+            request_context=request_context,
+            config_secret_key='testsecret',
+            config_admin_authentication_token='testpassword',
+            expect_fail=True,
+            session={
+                'is_admin_authenticated': True,
+                'expires': datetime.datetime.now() - datetime.timedelta(minutes=1)
+            }
+        )
 
     def test_invalid_authentication_with_empty_api_key(self, request_context):
         """Ensure resource is called with valid session."""
-        with request_context:
-            with unittest.mock.patch('terrareg.config.SECRET_KEY', 'testsecret'):
-                with unittest.mock.patch('terrareg.config.ADMIN_AUTHENTICATION_TOKEN', ''):
-
-                    request_context.request.headers = {
-                        'Host': 'localhost',
-                        'X-Terrareg-ApiKey': ''
-                    }
-
-                    wrapped_mock = admin_authentication(self._mock_function)
-                    with pytest.raises(werkzeug.exceptions.Unauthorized):
-                        wrapped_mock()
+        self._run_authentication_test(
+            request_context=request_context,
+            config_secret_key='testsecret',
+            config_admin_authentication_token='',
+            expect_fail=True,
+            headers={
+                'Host': 'localhost',
+                'X-Terrareg-ApiKey': ''
+            }
+        )
 
     def test_authentication_with_session(self, request_context):
         """Ensure resource is called with valid session."""
-        with request_context:
-            with unittest.mock.patch('terrareg.config.SECRET_KEY', 'testsecret'):
-                with unittest.mock.patch('terrareg.config.ADMIN_AUTHENTICATION_TOKEN', 'testpassword'):
-
-                    request_context.session = {
-                        'is_admin_authenticated': True,
-                        'expires': datetime.datetime.now() + datetime.timedelta(hours=5)
-                    }
-
-                    wrapped_mock = admin_authentication(self._mock_function)
-                    assert wrapped_mock('x-value', y='y-value') == ('x-value', 'y-value')
+        self._run_authentication_test(
+            request_context=request_context,
+            config_secret_key='testsecret',
+            config_admin_authentication_token='testpassword',
+            expect_fail=False,
+            session={
+                'is_admin_authenticated': True,
+                'expires': datetime.datetime.now() + datetime.timedelta(hours=5)
+            }
+        )
 
     def test_authentication_with_api_key(self, request_context):
         """Ensure resource is called with an API key."""
-        with request_context:
-            with unittest.mock.patch('terrareg.config.SECRET_KEY', 'asecrethere'):
-                with unittest.mock.patch('terrareg.config.ADMIN_AUTHENTICATION_TOKEN', 'testpassword'):
-
-                    # Fake headers and session
-                    request_context.request.headers = {
-                        'Host': 'localhost',
-                        'X-Terrareg-ApiKey': 'testpassword'
-                    }
-
-                    wrapped_mock = admin_authentication(self._mock_function)
-                    assert wrapped_mock('x-value', y='y-value') == ('x-value', 'y-value')
+        self._run_authentication_test(
+            request_context=request_context,
+            config_secret_key='testsecret',
+            config_admin_authentication_token='testpassword',
+            expect_fail=False,
+            headers={
+                'Host': 'localhost',
+                'X-Terrareg-ApiKey': 'testpassword'
+            }
+        )
