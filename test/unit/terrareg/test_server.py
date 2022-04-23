@@ -148,7 +148,7 @@ class TestApiModuleList:
         ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=True, offset=0, limit=10)
 
     @setup_test_data({
-        'testnamespace': { 'mock-module': { 'testprovider': {
+        'testnamespace': {'mock-module': {'testprovider': {
             'id': 1,
             'latest_version': '1.2.3',
             'versions': { '1.2.3': {}}
@@ -175,6 +175,18 @@ class TestApiModuleList:
             ]
         }
 
+    @setup_test_data({
+        'testnamespace': {'mock-module': {'testprovider': {
+            'id': 1,
+            'latest_version': '1.2.3',
+            'versions': { '1.2.3': {}}
+        }}},
+        'secondtestnamespace': {'mockmodule2': {'secondprovider': {
+            'id': 2,
+            'latest_version': '3.0.0',
+            'versions': {'3.0.0': {}}
+        }}}
+    })
     def test_with_multiple_modules_response(self, client, mocked_search_module_providers):
         """Test multiple modules in results"""
         namespace = MockNamespace(name='testnamespace')
