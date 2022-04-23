@@ -289,8 +289,9 @@ class ModuleProvider(object):
             # If tag format was provided, ensured it can be passed with 'format'
             try:
                 sanitised_git_tag_format.format(version='1.1.1')
-            except ValueError:
-                raise InvalidGitTagFormatError('Invalid git tag format. Must contain {version}.')
+                assert '{version}' in sanitised_git_tag_format
+            except (ValueError, AssertionError):
+                raise InvalidGitTagFormatError('Invalid git tag format. Must contain one placeholder: {version}.')
         else:
             # If not value was provided, default to None
             sanitised_git_tag_format = None
