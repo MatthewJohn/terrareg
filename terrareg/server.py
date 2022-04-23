@@ -840,6 +840,8 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
 class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
     """Provide interface to update module provider settings."""
 
+    method_decorators = [require_admin_authentication]
+
     def _post(self, namespace, name, provider):
         """Handle update to settings."""
         parser = reqparse.RequestParser()
