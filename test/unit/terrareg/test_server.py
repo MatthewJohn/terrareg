@@ -506,19 +506,22 @@ class TestApiModuleVersionDetails:
 class TestApiModuleVersionDownload:
     """Test ApiModuleVersionDownload resource."""
 
+    @setup_test_data(test_data_full)
     def test_existing_module_version_without_alaytics_token(self, client, mocked_server_namespace_fixture):
-        res = client.get('/v1/modules/testnamespace/testmodulename/providername/1.0.0/download')
+        res = client.get('/v1/modules/testnamespace/testmodulename/testprovider/1.0.0/download')
         assert res.status_code == 401
-        assert res.data == b'\nAn analytics token must be provided.\nPlease update module source to include analytics token.\n\nFor example:\n  source = "localhost/my-tf-application__testnamespace/testmodulename/providername"'
+        assert res.data == b'\nAn analytics token must be provided.\nPlease update module source to include analytics token.\n\nFor example:\n  source = "localhost/my-tf-application__testnamespace/testmodulename/testprovider"'
 
+    @setup_test_data(test_data_full)
     def test_non_existent_module_version(self, client, mocked_server_namespace_fixture):
         """Test endpoint with non-existent module"""
 
-        res = client.get('/v1/modules/namespacename/modulename/providername/0.1.2/download')
+        res = client.get('/v1/modules/namespacename/modulename/testprovider/0.1.2/download')
 
         assert res.json == {'errors': ['Not Found']}
         assert res.status_code == 404
 
+    @setup_test_data(test_data_full)
     def test_existing_module_internal_download(self, client, mocked_server_namespace_fixture, mock_record_module_version_download):
         """Test endpoint with analytics token"""
 
@@ -549,6 +552,7 @@ class TestApiModuleVersionDownload:
         )
         assert AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'].id == test_module_version.id
 
+    @setup_test_data(test_data_full)
     def test_existing_module_internal_download_with_auth_token(
         self, client, mocked_server_namespace_fixture,
         mock_record_module_version_download):
@@ -582,6 +586,7 @@ class TestApiModuleVersionDownload:
         )
         assert AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'].id == test_module_version.id
 
+    @setup_test_data(test_data_full)
     def test_existing_module_internal_download_with_invalid_auth_token_header(
         self, client, mocked_server_namespace_fixture,
         mock_record_module_version_download):
