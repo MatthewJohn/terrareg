@@ -331,10 +331,17 @@ class TestApiModuleSearch:
             namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
             offset=0, limit=10)
 
+    @setup_test_data({
+        'testnamespace': {'mock-module': {'testprovider': {
+            'id': 1,
+            'latest_version': '1.2.3',
+            'versions': {'1.2.3': {}}
+        }}}
+    })
     def test_with_single_module_response(self, client, mocked_search_module_providers):
         """Test return of single module module"""
-        namespace = Namespace(name='testnamespace')
-        module = Module(namespace=namespace, name='mock-module')
+        namespace = MockNamespace(name='testnamespace')
+        module = MockModule(namespace=namespace, name='mock-module')
         mock_module_provider = MockModuleProvider(module=module, name='testprovider')
         mock_module_provider.MOCK_LATEST_VERSION_NUMBER = '1.2.3'
         ModuleSearch.search_module_providers.return_value = [mock_module_provider]
