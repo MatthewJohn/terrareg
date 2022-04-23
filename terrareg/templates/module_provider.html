@@ -141,6 +141,11 @@ module "{{ module.name }}" {
                 <span class="tag is-warning is-light">Terrareg Exclusive</span>
             </a>
         </li>
+        <li id="settingsTabButton" class="module-tab-link">
+            <a onclick="selectModuleTab(event, 'settings')">
+                Settings
+            </a>
+        </li>
     </ul>
 </div>
 <div class="columns">
@@ -274,6 +279,20 @@ module "{{ module.name }}" {
             </table>
             <pre id="usageBuilderOutput">
             </pre>
+        </div>
+
+        <div id="module-tab-settings" class="module-tabs" style="display: none;">
+            <table id="settings-table" class="table" style="width: 100%">
+                <tbody>
+                    <tr>
+                        <td>Repository URL</td>
+                        <td><input class="input" type="text" value="{{ module_provider.repository_url or '' }}" name="repository-url"></td>
+                    </tr>
+                    <tr>
+                        <td><button class="button is-warning">Update</button></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

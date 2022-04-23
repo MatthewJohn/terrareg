@@ -196,6 +196,11 @@ class ModuleProvider(object):
             provider=self.name
         )
 
+    @property
+    def repository_url(self):
+        """Return repository URL"""
+        return self._get_db_row()['repository_url']
+
     def get_view_url(self):
         """Return view URL"""
         return '{module_url}/{module}'.format(
@@ -207,6 +212,19 @@ class ModuleProvider(object):
     def base_directory(self):
         """Return base directory."""
         return os.path.join(self._module.base_directory, self._name)
+
+    def _get_db_row(self):
+        """Return database row for module provider."""
+        db = Database.get()
+        select = db.module_provider.select(
+        ).where(
+            db.module_provider.c.namespace == self._module._namespace.name,
+            db.module_provider.c.module == self._module.name,
+            db.module_provider.c.provider == self.name
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+        return res.fetchone()
 
     def get_latest_version(self):
         """Get latest version of module."""
