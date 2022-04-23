@@ -12,10 +12,10 @@ from terrareg.filters import NamespaceTrustFilter
 from terrareg.analytics import AnalyticsEngine
 import terrareg.errors
 from test.unit.terrareg import (
-    MockModuleProvider, MockModuleVersion, MockModule,
-    client, mocked_server_module_fixture,
+    MockModuleProvider, MockModuleVersion, MockModule, MockNamespace,
+    client, mocked_server_namespace_fixture,
     test_request_context, app_context,
-    SERVER
+    setup_test_data, SERVER
 )
 from terrareg.server import (
     require_admin_authentication, AuthenticationType,
@@ -149,8 +149,8 @@ class TestApiModuleList:
 
     def test_with_module_response(self, client, mocked_search_module_providers):
         """Test return of single module module"""
-        namespace = Namespace(name='testnamespace')
-        module = Module(namespace=namespace, name='mock-module')
+        namespace = MockNamespace(name='testnamespace')
+        module = MockModule(namespace=namespace, name='mock-module')
         mock_module_provider = MockModuleProvider(module=module, name='testprovider')
         mock_module_provider.MOCK_LATEST_VERSION_NUMBER = '1.2.3'
         ModuleSearch.search_module_providers.return_value = [mock_module_provider]
@@ -170,12 +170,12 @@ class TestApiModuleList:
 
     def test_with_multiple_modules_response(self, client, mocked_search_module_providers):
         """Test multiple modules in results"""
-        namespace = Namespace(name='testnamespace')
-        module = Module(namespace=namespace, name='mock-module')
+        namespace = MockNamespace(name='testnamespace')
+        module = MockModule(namespace=namespace, name='mock-module')
         mock_module_provider = MockModuleProvider(module=module, name='testprovider')
         mock_module_provider.MOCK_LATEST_VERSION_NUMBER = '1.2.3'
-        mock_namespace_2 = Namespace(name='secondtestnamespace')
-        mock_module_2 = Module(namespace=mock_namespace_2, name='mockmodule2')
+        mock_namespace_2 = MockNamespace(name='secondtestnamespace')
+        mock_module_2 = MockModule(namespace=mock_namespace_2, name='mockmodule2')
         mock_module_provider_2 = MockModuleProvider(module=mock_module_2, name='secondprovider')
         mock_module_provider_2.MOCK_LATEST_VERSION_NUMBER = '3.0.0'
         ModuleSearch.search_module_providers.return_value = [mock_module_provider_2, mock_module_provider]
@@ -359,7 +359,7 @@ class TestApiModuleSearch:
 class TestApiModuleDetails:
     """Test ApiModuleDetails resource."""
 
-    def test_existing_module(self, client, mocked_server_module_fixture):
+    def test_existing_module(self, client, mocked_server_namespace_fixture):
         """Test endpoint with existing module"""
 
         res = client.get('/v1/modules/testnamespace/testmodulename')
@@ -375,7 +375,7 @@ class TestApiModuleDetails:
         }
         assert res.status_code == 200
 
-    def test_non_existent_module(self, client, mocked_server_module_fixture):
+    def test_non_existent_module(self, client, mocked_server_namespace_fixture):
         """Test endpoint with non-existent module"""
 
         res = client.get('/v1/modules/doesnotexist/unittestdoesnotexist')
@@ -384,7 +384,7 @@ class TestApiModuleDetails:
         assert res.status_code == 404
 
 
-    def test_analytics_token(self, client, mocked_server_module_fixture):
+    def test_analytics_token(self, client, mocked_server_namespace_fixture):
         """Test endpoint with analytics token"""
 
         res = client.get('/v1/modules/test_token-name__testnamespace/testmodulename')
@@ -404,7 +404,7 @@ class TestApiModuleDetails:
 class TestApiModuleProviderDetails:
     """Test ApiModuleProviderDetails resource."""
 
-    def test_existing_module_provider(self, client, mocked_server_module_fixture):
+    def test_existing_module_provider(self, client, mocked_server_namespace_fixture):
         res = client.get('/v1/modules/testnamespace/testmodulename/providername')
 
         assert res.json == {
@@ -425,7 +425,7 @@ class TestApiModuleProviderDetails:
 
         assert res.status_code == 200
 
-    def test_non_existent_module_provider(self, client, mocked_server_module_fixture):
+    def test_non_existent_module_provider(self, client, mocked_server_namespace_fixture):
         """Test endpoint with non-existent module"""
 
         res = client.get('/v1/modules/doesnotexist/unittestdoesnotexist/unittestproviderdoesnotexist')
@@ -433,7 +433,7 @@ class TestApiModuleProviderDetails:
         assert res.json == {'errors': ['Not Found']}
         assert res.status_code == 404
 
-    def test_analytics_token(self, client, mocked_server_module_fixture):
+    def test_analytics_token(self, client, mocked_server_namespace_fixture):
         """Test endpoint with analytics token"""
 
         res = client.get('/v1/modules/test_token-name__testnamespace/testmodulename/testprovider')
@@ -449,7 +449,7 @@ class TestApiModuleProviderDetails:
 class TestApiModuleVersionDetails:
     """Test ApiModuleVersionDetails resource."""
 
-    def test_existing_module_version(self, client, mocked_server_module_fixture):
+    def test_existing_module_version(self, client, mocked_server_namespace_fixture):
         res = client.get('/v1/modules/testnamespace/testmodulename/providername/1.0.0')
 
         assert res.json == {
@@ -470,7 +470,7 @@ class TestApiModuleVersionDetails:
 
         assert res.status_code == 200
 
-    def test_non_existent_module_version(self, client, mocked_server_module_fixture):
+    def test_non_existent_module_version(self, client, mocked_server_namespace_fixture):
         """Test endpoint with non-existent module"""
 
         res = client.get('/v1/modules/namespacename/modulename/providername/0.1.2')
@@ -478,7 +478,7 @@ class TestApiModuleVersionDetails:
         assert res.json == {'errors': ['Not Found']}
         assert res.status_code == 404
 
-    def test_analytics_token(self, client, mocked_server_module_fixture):
+    def test_analytics_token(self, client, mocked_server_namespace_fixture):
         """Test endpoint with analytics token"""
 
         res = client.get('/v1/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1')
@@ -495,12 +495,12 @@ class TestApiModuleVersionDetails:
 class TestApiModuleVersionDownload:
     """Test ApiModuleVersionDownload resource."""
 
-    def test_existing_module_version_without_alaytics_token(self, client, mocked_server_module_fixture):
+    def test_existing_module_version_without_alaytics_token(self, client, mocked_server_namespace_fixture):
         res = client.get('/v1/modules/testnamespace/testmodulename/providername/1.0.0/download')
         assert res.status_code == 401
         assert res.data == b'\nAn analytics token must be provided.\nPlease update module source to include analytics token.\n\nFor example:\n  source = "localhost/my-tf-application__testnamespace/testmodulename/providername"'
 
-    def test_non_existent_module_version(self, client, mocked_server_module_fixture):
+    def test_non_existent_module_version(self, client, mocked_server_namespace_fixture):
         """Test endpoint with non-existent module"""
 
         res = client.get('/v1/modules/namespacename/modulename/providername/0.1.2/download')
@@ -508,7 +508,7 @@ class TestApiModuleVersionDownload:
         assert res.json == {'errors': ['Not Found']}
         assert res.status_code == 404
 
-    def test_existing_module_internal_download(self, client, mocked_server_module_fixture, mock_record_module_version_download):
+    def test_existing_module_internal_download(self, client, mocked_server_namespace_fixture, mock_record_module_version_download):
         """Test endpoint with analytics token"""
 
         res = client.get(
@@ -539,7 +539,7 @@ class TestApiModuleVersionDownload:
         assert AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'].id == test_module_version.id
 
     def test_existing_module_internal_download_with_auth_token(
-        self, client, mocked_server_module_fixture,
+        self, client, mocked_server_namespace_fixture,
         mock_record_module_version_download):
         """Test endpoint with analytics token and auth token"""
 
@@ -572,7 +572,7 @@ class TestApiModuleVersionDownload:
         assert AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'].id == test_module_version.id
 
     def test_existing_module_internal_download_with_invalid_auth_token_header(
-        self, client, mocked_server_module_fixture,
+        self, client, mocked_server_namespace_fixture,
         mock_record_module_version_download):
         """Test endpoint with analytics token and auth token"""
 
@@ -607,7 +607,7 @@ class TestApiModuleVersionDownload:
 
 class TestApiModuleProviderDownloadsSummary:
  
-    def test_existing_module(self, client, mocked_server_module_fixture, mock_server_get_module_provider_download_stats):
+    def test_existing_module(self, client, mocked_server_namespace_fixture, mock_server_get_module_provider_download_stats):
         """Test endpoint with existing module"""
         res = client.get('/v1/modules/testnamespace/testmodule/testprovider/downloads/summary')
         assert res.status_code == 200
@@ -746,6 +746,7 @@ class TestRequireAdminAuthenticationWrapper:
                 'X-Terrareg-ApiKey': 'testpassword'
             }
         )
+
 
 class TestApiTerraregIsAuthenticated:
 
@@ -933,7 +934,7 @@ class TestApiTerraregModuleProviderSettings:
     ])
     def test_update_repository_url(
             self, repository_url, app_context,
-            test_request_context, mocked_server_module_fixture,
+            test_request_context, mocked_server_namespace_fixture,
             client
         ):
         """Test update of repository URL."""
@@ -959,7 +960,7 @@ class TestApiTerraregModuleProviderSettings:
             mock_update_repository_url.assert_called_once_with(
                 repository_url=repository_url)
 
-    def test_update_repository_url_invalid_protocol(self, app_context, test_request_context, mocked_server_module_fixture, client):
+    def test_update_repository_url_invalid_protocol(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
         """Test update of repository URL with invalid protocol."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
@@ -981,7 +982,7 @@ class TestApiTerraregModuleProviderSettings:
             mocked_check_admin_authentication.assert_called()
             mock_update_repository_url.assert_not_called()
 
-    def test_update_repository_url_invalid_domain(self, app_context, test_request_context, mocked_server_module_fixture, client):
+    def test_update_repository_url_invalid_domain(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
         """Test update of repository URL with an invalid domain."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
@@ -1003,7 +1004,7 @@ class TestApiTerraregModuleProviderSettings:
             mocked_check_admin_authentication.assert_called()
             mock_update_repository_url.assert_not_called()
 
-    def test_update_repository_url_without_path(self, app_context, test_request_context, mocked_server_module_fixture, client):
+    def test_update_repository_url_without_path(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
         """Test update of repository URL without a path."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
@@ -1025,7 +1026,7 @@ class TestApiTerraregModuleProviderSettings:
             mocked_check_admin_authentication.assert_called()
             mock_update_repository_url.assert_not_called()
 
-    def test_update_repository_without_csrf(self, app_context, test_request_context, mocked_server_module_fixture, client):
+    def test_update_repository_without_csrf(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
         """Test update of repository URL without a CSRF token."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
