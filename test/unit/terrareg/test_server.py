@@ -899,6 +899,7 @@ class TestCSRFFunctions:
         """Test that all authentication types throw errors when CSRF is not passed."""
         SERVER._app.secret_key = 'averysecretkey'
 
+        # Test that no session is thrown when no session is present
         with app_context, test_request_context:
 
             app_context.g.authentication_type = authentication_type
@@ -906,6 +907,7 @@ class TestCSRFFunctions:
             with pytest.raises(terrareg.errors.NoSessionSetError):
                 check_csrf_token(None)
 
+        # Test that incorrect CSRF token is thrown, when incorrect token is provided
         with app_context, test_request_context:
 
             app_context.g.authentication_type = authentication_type
