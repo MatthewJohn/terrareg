@@ -522,7 +522,7 @@ class TestApiModuleVersionDownload:
         test_module_provider = MockModuleProvider(module=test_module, name='testprovider')
         test_module_version = MockModuleVersion(module_provider=test_module_provider, version='2.4.1')
 
-        assert res.headers['X-Terraform-Get'] == '/static/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'
+        assert res.headers['X-Terraform-Get'] == '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'
         assert res.status_code == 204
 
         AnalyticsEngine.record_module_version_download.assert_called_with(
@@ -555,7 +555,7 @@ class TestApiModuleVersionDownload:
         test_module_provider = MockModuleProvider(module=test_module, name='testprovider')
         test_module_version = MockModuleVersion(module_provider=test_module_provider, version='2.4.1')
 
-        assert res.headers['X-Terraform-Get'] == '/static/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'
+        assert res.headers['X-Terraform-Get'] == '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'
         assert res.status_code == 204
 
         AnalyticsEngine.record_module_version_download.assert_called_with(
@@ -588,7 +588,7 @@ class TestApiModuleVersionDownload:
         test_module_provider = MockModuleProvider(module=test_module, name='testprovider')
         test_module_version = MockModuleVersion(module_provider=test_module_provider, version='2.4.1')
 
-        assert res.headers['X-Terraform-Get'] == '/static/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'
+        assert res.headers['X-Terraform-Get'] == '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'
         assert res.status_code == 204
 
         AnalyticsEngine.record_module_version_download.assert_called_with(
@@ -944,7 +944,7 @@ class TestApiTerraregModuleProviderSettings:
 
             print(repository_url)
             res = client.post(
-                '/v1/terrareg/fakenamespace/fakemodule/fakeprovider/settings',
+                '/v1/terrareg/modules/fakenamespace/fakemodule/fakeprovider/settings',
                 json={
                     'repository_url': repository_url,
                     'csrf_token': 'unittestcsrf'
@@ -967,7 +967,7 @@ class TestApiTerraregModuleProviderSettings:
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url:
 
             res = client.post(
-                '/v1/terrareg/fakenamespace/fakemodule/fakeprovider/settings',
+                '/v1/terrareg/modules/fakenamespace/fakemodule/fakeprovider/settings',
                 json={
                     'repository_url': 'nope://unittest.com/module.git',
                     'csrf_token': 'unittestcsrf'
@@ -989,7 +989,7 @@ class TestApiTerraregModuleProviderSettings:
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url:
 
             res = client.post(
-                '/v1/terrareg/fakenamespace/fakemodule/fakeprovider/settings',
+                '/v1/terrareg/modules/fakenamespace/fakemodule/fakeprovider/settings',
                 json={
                     'repository_url': 'https:///module.git',
                     'csrf_token': 'unittestcsrf'
@@ -1011,7 +1011,7 @@ class TestApiTerraregModuleProviderSettings:
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url:
 
             res = client.post(
-                '/v1/terrareg/fakenamespace/fakemodule/fakeprovider/settings',
+                '/v1/terrareg/modules/fakenamespace/fakemodule/fakeprovider/settings',
                 json={
                     'repository_url': 'https://example.com',
                     'csrf_token': 'unittestcsrf'
@@ -1033,7 +1033,7 @@ class TestApiTerraregModuleProviderSettings:
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url:
 
             res = client.post(
-                '/v1/terrareg/fakenamespace/fakemodule/fakeprovider/settings',
+                '/v1/terrareg/modules/fakenamespace/fakemodule/fakeprovider/settings',
                 json={
                     'repository_url': 'https://example.com/test.git'
                 }

@@ -535,7 +535,7 @@ class ModuleVersion(TerraformSpecsObject):
         if self._get_db_row()['artifact_location']:
             return self._get_db_row()['artifact_location'].format(module_version=self.version)
 
-        return '/static/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
+        return '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
 
     def create_data_directory(self):
         """Create data directory and data directories of parents."""

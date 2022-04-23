@@ -68,18 +68,6 @@ class Server(object):
     def _register_routes(self):
         """Register routes with flask."""
 
-        # Upload module
-        self._api.add_resource(
-            ApiUploadModule,
-            '/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload'
-        )
-
-        # Download module tar
-        self._api.add_resource(
-            ApiModuleVersionSourceDownload,
-            '/static/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/source.zip'
-        )
-
         # Terraform registry routes
         self._api.add_resource(
             ApiTerraformWellKnown,
@@ -170,6 +158,7 @@ class Server(object):
         )(self._view_serve_module_provider)
 
         # Terrareg APIs
+        ## Analytics URLs /v1/terrareg/analytics
         self._api.add_resource(
             ApiTerraregGlobalStatsSummary,
             '/v1/terrareg/analytics/global/stats_summary'
@@ -186,18 +175,31 @@ class Server(object):
             ApiTerraregMostDownloadedModuleProviderThisWeek,
             '/v1/terrareg/analytics/global/most_downloaded_module_provider_this_week'
         )
+
+        ## Module endpoints /v1/terreg/modules
         self._api.add_resource(
             ApiTerraregModuleVersionVariableTemplate,
-            '/v1/terrareg/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
         )
         self._api.add_resource(
             ApiTerraregModuleProviderSettings,
-            '/v1/terrareg/<string:namespace>/<string:name>/<string:provider>/settings'
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/settings'
         )
+        self._api.add_resource(
+            ApiUploadModule,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload'
+        )
+        self._api.add_resource(
+            ApiModuleVersionSourceDownload,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/source.zip'
+        )
+
         self._api.add_resource(
             ApiTerraregModuleSearchFilters,
             '/v1/terrareg/search_filters'
         )
+
+        ## Auth endpoints /v1/terrareg/auth
         self._api.add_resource(
             ApiTerraregAdminAuthenticate,
             '/v1/terrareg/auth/admin/login'

@@ -123,7 +123,7 @@ module "{{ module.name }}" {
         $('#settings-status-success').css('display', 'none');
         $('#settings-status-error').css('display', 'none');
         $.post({
-            url: '/v1/terrareg/{{ module_provider.id }}/settings',
+            url: '/v1/terrareg/modules/{{ module_provider.id }}/settings',
             data: {
                 repository_url: $('#settings-repository-url').val(),
                 csrf_token: '{{ csrf_token }}'
@@ -412,7 +412,7 @@ ${output_tf}
 `);
     }
 
-    $.get("/v1/terrareg/{{ module_version.id }}/variable_template", (data, status) => {
+    $.get("/v1/terrareg/modules/{{ module_version.id }}/variable_template", (data, status) => {
         // Populate input_variables from response
         input_variables = data;
 
