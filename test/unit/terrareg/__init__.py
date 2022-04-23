@@ -31,28 +31,14 @@ def app_context():
     """Return test request context"""
     return SERVER._app.app_context()
 
-TEST_MODULE_DATA = {
-    'testnamespace': {
-        'test_module': {
-            'test_provider': {
-                'id': 1,
-                'repository_url': '',
-                'latest_version': '',
-                'versions': {
-                    '1.2.3': {
-                        'id': 1
-                    }
-                }
-            }
-        }
-    }
-}
+TEST_MODULE_DATA = {}
 
 def setup_test_data(test_data):
     """Provide decorator to setup test data to be used for mocked objects."""
     def deco(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
+            global TEST_MODULE_DATA
             TEST_MODULE_DATA = test_data
             res = func(*args, **kwargs)
             TEST_MODULE_DATA = {}
