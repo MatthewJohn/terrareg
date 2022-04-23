@@ -895,18 +895,19 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
 
     def _post(self, namespace, name, provider):
         """Handle update to settings."""
+        print(request.json)
         parser = reqparse.RequestParser()
         parser.add_argument(
             'repository_url', type=str,
             required=True,
             help='Module provider repository URL.',
-            location='form'
+            location='json'
         )
         parser.add_argument(
             'csrf_token', type=str,
             required=False,
             help='CSRF token',
-            location='form',
+            location='json',
             default=None
         )
 
@@ -934,8 +935,9 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         namespace = Namespace(name=namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider.get(module=module, name=provider)
-
+    
         if not module_provider:
-            return {'message', 'Module provider does not exist'}, 400
+            return {'message': 'Module provider does not exist'}, 400
 
         module_provider.update_repository_url(repository_url=args.repository_url)
+        return {}

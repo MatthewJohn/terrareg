@@ -1,6 +1,7 @@
 
 import unittest.mock
 import datetime
+import json
 
 import pytest
 import werkzeug.exceptions
@@ -914,9 +915,33 @@ class TestCSRFFunctions:
 
             # Create fake session
             test_request_context.session['csrf_token'] = 'iscorrect'
-            test_request_context.session['is_authenticated'] = True
+            test_request_context.session['is_admin_authenticated'] = True
             test_request_context.session['expires'] = datetime.datetime.now() + datetime.timedelta(minutes=1)
             test_request_context.session.modified = True
 
             with pytest.raises(terrareg.errors.IncorrectCSRFTokenError):
                 check_csrf_token(None)
+
+
+class TestApiTerraregModuleProviderSettings:
+    """Test module provider settings endpoint"""
+
+    def test_update_repository_url(self, app_context, test_request_context, mocked_server_module_fixture, client):
+        """Test update of repository URL."""
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
+                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf:
+
+            res = client.post(
+                '/v1/terrareg/fakenamespace/fakemodule/fakeprovider/settings',
+                json={
+                    'repository_url': 'https://unittest.com/module.git',
+                    'csrf_token': 'unittestcsrf'
+                }
+            )
+            assert res.json == {}
+            assert res.status_code == 200
+
+            # Ensure required checks are called
+            mock_check_csrf.assert_called_once_with('unittestcsrf')
+            mocked_check_admin_authentication.assert_called()
