@@ -443,12 +443,13 @@ class TestApiModuleProviderDetails:
         assert res.json == {'errors': ['Not Found']}
         assert res.status_code == 404
 
+    @setup_test_data()
     def test_analytics_token(self, client, mocked_server_namespace_fixture):
         """Test endpoint with analytics token"""
 
         res = client.get('/v1/modules/test_token-name__testnamespace/testmodulename/testprovider')
 
-        test_namespace = Namespace(name='testnamespace')
+        test_namespace = MockNamespace(name='testnamespace')
         test_module = MockModule(namespace=test_namespace, name='testmodulename')
         test_module_provider = MockModuleProvider(module=test_module, name='testprovider')
 
