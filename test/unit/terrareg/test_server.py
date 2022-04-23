@@ -785,6 +785,7 @@ class TestApiTerraregAdminAuthenticate:
                             (expected_cookie_expiry.timestamp() - session['expires'].timestamp()) < 2
                         )
                         assert session['is_admin_authenticated'] == True
+                        assert len(session['csrf_token']) == 40
 
     def test_authenticated_without_secret_key(self, client):
         """Test endpoint and ensure session is not provided"""
@@ -804,6 +805,7 @@ class TestApiTerraregAdminAuthenticate:
                     # Assert that no session cookies were provided
                     assert 'expires' not in session
                     assert 'is_admin_authenticated' not in session
+                    assert 'csrf_token' not in session
 
                 # Update server secret to empty value and ensure a 403 is still received.
                 # The session cannot be checked
