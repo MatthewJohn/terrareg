@@ -71,14 +71,16 @@ class MockModuleVersion(ModuleVersion):
             self._module_provider._unittest_data['versions'][self._version]
             if ('versions' in self._module_provider._unittest_data and
                 self._version in self._module_provider._unittest_data['versions']) else
-            {}
+            None
         )
 
     def _get_db_row(self):
         """Return mock DB row"""
+        if self._unittest_data is None:
+            return None
         return {
             'id': self._unittest_data.get('id'),
-            'module_provider_id': self._module_provider.pk,
+            'module_provider_id': self._module_provider._unittest_data['id'],
             'version': self._version,
             'owner': self._unittest_data.get('owner', 'Mock Owner'),
             'description': self._unittest_data.get('description', 'Mock description'),
