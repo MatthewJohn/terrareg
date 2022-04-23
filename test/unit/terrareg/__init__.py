@@ -25,6 +25,11 @@ def test_request_context():
     """Return test request context"""
     return SERVER._app.test_request_context()
 
+@pytest.fixture
+def app_context():
+    """Return test request context"""
+    return SERVER._app.app_context()
+
 class MockModule(Module):
     """Mocked module."""
 

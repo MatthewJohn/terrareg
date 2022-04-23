@@ -13,10 +13,10 @@ from test.unit.terrareg import (
     MockModuleProvider, MockModuleVersion,
     MockModule,
     client, mocked_server_module_fixture,
-    test_request_context,
+    test_request_context, app_context,
     SERVER
 )
-from terrareg.server import require_admin_authentication
+from terrareg.server import require_admin_authentication, AuthenticationType
 
 
 @pytest.fixture
@@ -624,43 +624,52 @@ class TestRequireAdminAuthenticationWrapper:
 
     def _run_authentication_test(
         self,
+        app_context,
         test_request_context,
         config_secret_key,
         config_admin_authentication_token,
         expect_fail,
+        expected_authentication_type=None,
         mock_headers=None,
         mock_session=None):
         """Perform authentication test."""
         with test_request_context:
-            with unittest.mock.patch('terrareg.config.SECRET_KEY', config_secret_key):
-                with unittest.mock.patch('terrareg.config.ADMIN_AUTHENTICATION_TOKEN', config_admin_authentication_token):
+            with app_context:
+                with unittest.mock.patch('terrareg.config.SECRET_KEY', config_secret_key):
+                    with unittest.mock.patch('terrareg.config.ADMIN_AUTHENTICATION_TOKEN', config_admin_authentication_token):
 
-                    # Fake mock_headers and mock_session
-                    if mock_headers:
-                        test_request_context.request.headers = mock_headers
-                    if mock_session:
-                        test_request_context.session = mock_session
+                        # Fake mock_headers and mock_session
+                        if mock_headers:
+                            test_request_context.request.headers = mock_headers
+                        if mock_session:
+                            test_request_context.session = mock_session
 
-                    wrapped_mock = require_admin_authentication(self._mock_function)
+                        wrapped_mock = require_admin_authentication(self._mock_function)
 
-                    if expect_fail:
-                        with pytest.raises(werkzeug.exceptions.Unauthorized):
-                            wrapped_mock()
-                    else:
-                        assert wrapped_mock('x-value', y='y-value') == ('x-value', 'y-value')
+                        if expect_fail:
+                            with pytest.raises(werkzeug.exceptions.Unauthorized):
+                                wrapped_mock()
+                        else:
+                            assert wrapped_mock('x-value', y='y-value') == ('x-value', 'y-value')
 
-    def test_unauthenticated(self, test_request_context):
+                            # Check authentication_type has been set correctly. 
+                            if expected_authentication_type:
+                                assert app_context.g.authentication_type is expected_authentication_type
+
+    def test_unauthenticated(self, app_context, test_request_context):
         """Ensure 401 without an API key or mock_session."""
         self._run_authentication_test(
+            app_context=app_context,
             test_request_context=test_request_context,
             config_secret_key='asecrethere',
             config_admin_authentication_token='testpassword',
             expect_fail=True
         )
 
-    def test_mock_session_authentication_with_no_app_secret(self, test_request_context):
+    def test_mock_session_authentication_with_no_app_secret(self, app_context, test_request_context):
         """Ensure 401 with valid authentication without an APP SECRET."""
         self._run_authentication_test(
+            app_context=app_context,
             test_request_context=test_request_context,
             config_secret_key='',
             config_admin_authentication_token='testpassword',
@@ -671,9 +680,10 @@ class TestRequireAdminAuthenticationWrapper:
             }
         )
 
-    def test_401_with_expired_mock_session(self, test_request_context):
+    def test_401_with_expired_mock_session(self, app_context, test_request_context):
         """Ensure resource is called with valid mock_session."""
         self._run_authentication_test(
+            app_context=app_context,
             test_request_context=test_request_context,
             config_secret_key='testsecret',
             config_admin_authentication_token='testpassword',
@@ -684,9 +694,10 @@ class TestRequireAdminAuthenticationWrapper:
             }
         )
 
-    def test_invalid_authentication_with_empty_api_key(self, test_request_context):
+    def test_invalid_authentication_with_empty_api_key(self, app_context, test_request_context):
         """Ensure resource is called with valid mock_session."""
         self._run_authentication_test(
+            app_context=app_context,
             test_request_context=test_request_context,
             config_secret_key='testsecret',
             config_admin_authentication_token='',
@@ -697,26 +708,30 @@ class TestRequireAdminAuthenticationWrapper:
             }
         )
 
-    def test_authentication_with_mock_session(self, test_request_context):
+    def test_authentication_with_mock_session(self, app_context, test_request_context):
         """Ensure resource is called with valid mock_session."""
         self._run_authentication_test(
+            app_context=app_context,
             test_request_context=test_request_context,
             config_secret_key='testsecret',
             config_admin_authentication_token='testpassword',
             expect_fail=False,
+            expected_authentication_type=AuthenticationType.SESSION,
             mock_session={
                 'is_admin_authenticated': True,
                 'expires': datetime.datetime.now() + datetime.timedelta(hours=5)
             }
         )
 
-    def test_authentication_with_api_key(self, test_request_context):
+    def test_authentication_with_api_key(self, app_context, test_request_context):
         """Ensure resource is called with an API key."""
         self._run_authentication_test(
+            app_context=app_context,
             test_request_context=test_request_context,
             config_secret_key='testsecret',
             config_admin_authentication_token='testpassword',
             expect_fail=False,
+            expected_authentication_type=AuthenticationType.AUTHENTICATION_TOKEN,
             mock_headers={
                 'Host': 'localhost',
                 'X-Terrareg-ApiKey': 'testpassword'
