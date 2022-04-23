@@ -818,6 +818,10 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
 
     def _post(self):
         """Handle POST requests to the authentication endpoint."""
+
+        if not terrareg.config.SECRET_KEY:
+            return {'error': 'Sessions not enabled in configuration'}, 403
+
         session['is_admin_authenticated'] = True
         session['expires'] = (
             datetime.datetime.now() +
