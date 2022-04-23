@@ -20,7 +20,7 @@ from test.unit.terrareg import (
 from test.unit.terrareg.test_data import (
     test_data_one_module,
     test_data_two_modules,
-    test_data_full
+    
 )
 from terrareg.server import (
     require_admin_authentication, AuthenticationType,
@@ -152,7 +152,7 @@ class TestApiModuleList:
         }
         ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=True, offset=0, limit=10)
 
-    @setup_test_data(test_data_full)
+    @setup_test_data()
     def test_with_module_response(self, client, mocked_search_module_providers):
         """Test return of single module module"""
         namespace = MockNamespace(name='testnamespace')
@@ -173,7 +173,7 @@ class TestApiModuleList:
             ]
         }
 
-    @setup_test_data(test_data_full)
+    @setup_test_data()
     def test_with_multiple_modules_response(self, client, mocked_search_module_providers):
         """Test multiple modules in results"""
         namespace = MockNamespace(name='testnamespace')
@@ -318,7 +318,7 @@ class TestApiModuleSearch:
             namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
             offset=0, limit=10)
 
-    @setup_test_data(test_data_one_module)
+    @setup_test_data()
     def test_with_single_module_response(self, client, mocked_search_module_providers):
         """Test return of single module module"""
         namespace = MockNamespace(name='testnamespace')
@@ -340,7 +340,7 @@ class TestApiModuleSearch:
             ]
         }
 
-    @setup_test_data(test_data_two_modules)
+    @setup_test_data()
     def test_with_multiple_module_response(self, client, mocked_search_module_providers):
         """Test multiple modules in results"""
         namespace = MockNamespace(name='testnamespace')
@@ -367,7 +367,7 @@ class TestApiModuleSearch:
 class TestApiModuleDetails:
     """Test ApiModuleDetails resource."""
 
-    @setup_test_data(test_data_full)
+    @setup_test_data()
     def test_existing_module(self, client, mocked_server_namespace_fixture):
         """Test endpoint with existing module"""
 
@@ -392,7 +392,7 @@ class TestApiModuleDetails:
         assert res.json == {'errors': ['Not Found']}
         assert res.status_code == 404
 
-    @setup_test_data(test_data_full)
+    @setup_test_data()
     def test_analytics_token(self, client, mocked_server_namespace_fixture):
         """Test endpoint with analytics token"""
 
@@ -508,13 +508,13 @@ class TestApiModuleVersionDetails:
 class TestApiModuleVersionDownload:
     """Test ApiModuleVersionDownload resource."""
 
-    @setup_test_data(test_data_full)
+    @setup_test_data()
     def test_existing_module_version_without_alaytics_token(self, client, mocked_server_namespace_fixture):
         res = client.get('/v1/modules/testnamespace/testmodulename/testprovider/1.0.0/download')
         assert res.status_code == 401
         assert res.data == b'\nAn analytics token must be provided.\nPlease update module source to include analytics token.\n\nFor example:\n  source = "localhost/my-tf-application__testnamespace/testmodulename/testprovider"'
 
-    @setup_test_data(test_data_full)
+    @setup_test_data()
     def test_non_existent_module_version(self, client, mocked_server_namespace_fixture):
         """Test endpoint with non-existent module"""
 
@@ -523,7 +523,7 @@ class TestApiModuleVersionDownload:
         assert res.json == {'errors': ['Not Found']}
         assert res.status_code == 404
 
-    @setup_test_data(test_data_full)
+    @setup_test_data()
     def test_existing_module_internal_download(self, client, mocked_server_namespace_fixture, mock_record_module_version_download):
         """Test endpoint with analytics token"""
 
@@ -554,7 +554,7 @@ class TestApiModuleVersionDownload:
         )
         assert AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'].id == test_module_version.id
 
-    @setup_test_data(test_data_full)
+    @setup_test_data()
     def test_existing_module_internal_download_with_auth_token(
         self, client, mocked_server_namespace_fixture,
         mock_record_module_version_download):
@@ -588,7 +588,7 @@ class TestApiModuleVersionDownload:
         )
         assert AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'].id == test_module_version.id
 
-    @setup_test_data(test_data_full)
+    @setup_test_data()
     def test_existing_module_internal_download_with_invalid_auth_token_header(
         self, client, mocked_server_namespace_fixture,
         mock_record_module_version_download):
@@ -950,7 +950,7 @@ class TestApiTerraregModuleProviderSettings:
         'http://unittest.com/module.git',
         'ssh://unittest.com/module.git'
     ])
-    @setup_test_data(test_data_full)
+    @setup_test_data()
     def test_update_repository_url(
             self, repository_url, app_context,
             test_request_context, mocked_server_namespace_fixture,
@@ -979,7 +979,7 @@ class TestApiTerraregModuleProviderSettings:
             mock_update_repository_url.assert_called_once_with(
                 repository_url=repository_url)
 
-    @setup_test_data(test_data_full)
+    @setup_test_data()
     def test_update_repository_url_invalid_protocol(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
         """Test update of repository URL with invalid protocol."""
         with app_context, test_request_context, client, \
@@ -1002,7 +1002,7 @@ class TestApiTerraregModuleProviderSettings:
             mocked_check_admin_authentication.assert_called()
             mock_update_repository_url.assert_not_called()
 
-    @setup_test_data(test_data_full)
+    @setup_test_data()
     def test_update_repository_url_invalid_domain(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
         """Test update of repository URL with an invalid domain."""
         with app_context, test_request_context, client, \
@@ -1025,7 +1025,7 @@ class TestApiTerraregModuleProviderSettings:
             mocked_check_admin_authentication.assert_called()
             mock_update_repository_url.assert_not_called()
 
-    @setup_test_data(test_data_full)
+    @setup_test_data()
     def test_update_repository_url_without_path(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
         """Test update of repository URL without a path."""
         with app_context, test_request_context, client, \
@@ -1048,7 +1048,7 @@ class TestApiTerraregModuleProviderSettings:
             mocked_check_admin_authentication.assert_called()
             mock_update_repository_url.assert_not_called()
 
-    @setup_test_data(test_data_full)
+    @setup_test_data()
     def test_update_repository_without_csrf(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
         """Test update of repository URL without a CSRF token."""
         with app_context, test_request_context, client, \
