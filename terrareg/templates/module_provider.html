@@ -124,7 +124,10 @@ module "{{ module.name }}" {
         $('#settings-status-error').css('display', 'none');
         $.post({
             url: '/v1/terrareg/{{ module_provider.id }}/settings',
-            data: { repository_url: $('#settings-repository-url').val() }
+            data: {
+                repository_url: $('#settings-repository-url').val(),
+                csrf_token: '{{ csrf_token }}'
+            }
         }).done(() => {
             $('#settings-status-success').css('display', 'block');
         }).fail((res) => {
