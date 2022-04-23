@@ -459,13 +459,14 @@ class TestApiModuleProviderDetails:
 class TestApiModuleVersionDetails:
     """Test ApiModuleVersionDetails resource."""
 
+    @setup_test_data()
     def test_existing_module_version(self, client, mocked_server_namespace_fixture):
-        res = client.get('/v1/modules/testnamespace/testmodulename/providername/1.0.0')
+        res = client.get('/v1/modules/testnamespace/testmodulename/testprovider/1.0.0')
 
         assert res.json == {
-            'id': 'testnamespace/testmodulename/providername/1.0.0', 'owner': 'Mock Owner',
+            'id': 'testnamespace/testmodulename/testprovider/1.0.0', 'owner': 'Mock Owner',
             'namespace': 'testnamespace', 'name': 'testmodulename',
-            'version': '1.0.0', 'provider': 'providername',
+            'version': '1.0.0', 'provider': 'testprovider',
             'description': 'Mock description',
             'source': 'http://mock.example.com/mockmodule',
             'published_at': '2020-01-01T23:18:12',
@@ -480,6 +481,7 @@ class TestApiModuleVersionDetails:
 
         assert res.status_code == 200
 
+    @setup_test_data()
     def test_non_existent_module_version(self, client, mocked_server_namespace_fixture):
         """Test endpoint with non-existent module"""
 
@@ -488,7 +490,7 @@ class TestApiModuleVersionDetails:
         assert res.json == {'errors': ['Not Found']}
         assert res.status_code == 404
 
-    @setup_test_data(test_data_full)
+    @setup_test_data()
     def test_analytics_token(self, client, mocked_server_namespace_fixture):
         """Test endpoint with analytics token"""
 

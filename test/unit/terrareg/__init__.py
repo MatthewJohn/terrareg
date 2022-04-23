@@ -8,6 +8,7 @@ import pytest
 from terrareg.database import Database
 from terrareg.models import Module, ModuleProvider, ModuleVersion, Namespace
 from terrareg.server import Server
+from .test_data import test_data_full
 
 Database.SQLITE_DB_PATH = 'temp-unittest.db'
 SERVER = Server()
@@ -33,13 +34,13 @@ def app_context():
 
 TEST_MODULE_DATA = {}
 
-def setup_test_data(test_data):
+def setup_test_data(test_data=None):
     """Provide decorator to setup test data to be used for mocked objects."""
     def deco(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             global TEST_MODULE_DATA
-            TEST_MODULE_DATA = test_data
+            TEST_MODULE_DATA = test_data if test_data else test_data_full
             res = func(*args, **kwargs)
             TEST_MODULE_DATA = {}
             return res
