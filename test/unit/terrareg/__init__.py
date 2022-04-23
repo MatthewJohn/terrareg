@@ -4,10 +4,11 @@ import unittest.mock
 
 import pytest
 
+from terrareg.database import Database
 from terrareg.models import Module, ModuleProvider, ModuleVersion
 from terrareg.server import Server
 
-
+Database.SQLITE_DB_PATH = 'temp-unittest.db'
 SERVER = Server()
 SERVER._app.config['TESTING'] = True
 

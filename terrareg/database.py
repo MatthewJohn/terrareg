@@ -13,6 +13,8 @@ class Database():
     _ENGINE = None
     _INSTANCE = None
 
+    SQLITE_DB_PATH = 'modules.db'
+
     def __init__(self):
         """Setup member variables."""
         self._module_provider = None
@@ -66,7 +68,7 @@ class Database():
     def get_engine(cls):
         """Get singleton instance of engine."""
         if cls._ENGINE is None:
-            cls._ENGINE = sqlalchemy.create_engine('sqlite:///modules.db', echo=DEBUG)
+            cls._ENGINE = sqlalchemy.create_engine('sqlite:///{}'.format(cls.SQLITE_DB_PATH), echo=DEBUG)
         return cls._ENGINE
 
     def initialise(self):
