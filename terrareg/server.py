@@ -22,7 +22,7 @@ from terrareg.errors import (
 )
 from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion
 from terrareg.module_search import ModuleSearch
-from terrareg.module_extractor import ApiUploadModuleExtractor
+from terrareg.module_extractor import ApiUploadModuleExtractor, GitModuleExtractor
 from terrareg.analytics import AnalyticsEngine
 from terrareg.filters import NamespaceTrustFilter
 from terrareg.config import APPLICATION_NAME, LOGO_URL
@@ -186,8 +186,12 @@ class Server(object):
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/settings'
         )
         self._api.add_resource(
-            ApiUploadModule,
+            ApiModuleVersionUpload,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload'
+        )
+        self._api.add_resource(
+            ApiModuleVersionCreate,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/create'
         )
         self._api.add_resource(
             ApiModuleVersionSourceDownload,
@@ -368,7 +372,7 @@ class ErrorCatchingResource(Resource):
         return {'errors': ['Not Found']}, 404
 
 
-class ApiUploadModule(ErrorCatchingResource):
+class ApiModuleVersionUpload(ErrorCatchingResource):
 
     ALLOWED_EXTENSIONS = ['zip']
 
@@ -401,6 +405,31 @@ class ApiUploadModule(ErrorCatchingResource):
 
         module_version.prepare_module()
         with ApiUploadModuleExtractor(upload_file=file, module_version=module_version) as me:
+            me.process_upload()
+
+        return {
+            'status': 'Success'
+        }
+
+
+class ApiModuleVersionCreate(ErrorCatchingResource):
+    """Provide interface to create release for git-backed modules."""
+
+    def _post(self, namespace, name, provider, version):
+        """Handle creation of module version."""
+        namespace = Namespace(name=namespace)
+        module = Module(namespace=namespace, name=name)
+        # Get module provider and optionally create, if it doesn't exist
+        module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+
+        # Ensure that the module provider has a repository url configured.
+        if not module_provider.repository_url:
+            return {'message': 'Module provider is not configured with a repository'}, 400
+
+        module_version = ModuleVersion(module_provider=module_provider, version=version)
+
+        module_version.prepare_module()
+        with GitModuleExtractor(module_version=module_version) as me:
             me.process_upload()
 
         return {
