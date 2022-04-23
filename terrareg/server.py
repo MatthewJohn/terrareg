@@ -2,17 +2,13 @@
 
 import os
 import re
+import datetime
+from functools import wraps
 
-from flask import Flask, request, render_template, redirect, make_response, send_from_directory
-from flask_restful import Resource, Api, reqparse, inputs
+from flask import Flask, request, render_template, redirect, make_response, send_from_directory, session
+from flask_restful import Resource, Api, reqparse, inputs, abort
 
-from terrareg.config import (
-    DATA_DIRECTORY,
-    DEBUG,
-    ALLOW_UNIDENTIFIED_DOWNLOADS,
-    ANALYTICS_TOKEN_PHRASE,
-    EXAMPLE_ANALYTICS_TOKEN
-)
+import terrareg.config
 from terrareg.database import Database
 from terrareg.errors import TerraregError, UploadError, NoModuleVersionAvailableError
 from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion
@@ -43,12 +39,12 @@ class Server(object):
         self.ssl_public_key = ssl_public_key
         self.ssl_private_key = ssl_private_key
 
-        if not os.path.isdir(DATA_DIRECTORY):
-            os.mkdir(DATA_DIRECTORY)
+        if not os.path.isdir(terrareg.config.DATA_DIRECTORY):
+            os.mkdir(terrareg.config.DATA_DIRECTORY)
         if not os.path.isdir(self._get_upload_directory()):
             os.mkdir(self._get_upload_directory())
-        if not os.path.isdir(os.path.join(DATA_DIRECTORY, 'modules')):
-            os.mkdir(os.path.join(DATA_DIRECTORY, 'modules'))
+        if not os.path.isdir(os.path.join(terrareg.config.DATA_DIRECTORY, 'modules')):
+            os.mkdir(os.path.join(terrareg.config.DATA_DIRECTORY, 'modules'))
 
         self._app.config['UPLOAD_FOLDER'] = self._get_upload_directory()
 
@@ -58,7 +54,7 @@ class Server(object):
         self._register_routes()
 
     def _get_upload_directory(self):
-        return os.path.join(DATA_DIRECTORY, 'upload')
+        return os.path.join(terrareg.config.DATA_DIRECTORY, 'upload')
 
     def _register_routes(self):
         """Register routes with flask."""
@@ -122,6 +118,12 @@ class Server(object):
         # Views
         self._app.route('/')(self._view_serve_static_index)
         self._app.route(
+            '/login'
+        )(self._view_serve_login)
+        self._app.route(
+            '/logout'
+        )(self._logout)
+        self._app.route(
             '/modules'
         )(self._view_serve_namespace_list)
         self._app.route(
@@ -183,6 +185,14 @@ class Server(object):
             ApiTerraregModuleSearchFilters,
             '/v1/terrareg/search_filters'
         )
+        self._api.add_resource(
+            ApiTerraregAdminAuthenticate,
+            '/v1/terrareg/auth/admin/login'
+        )
+        self._api.add_resource(
+            ApiTerraregIsAuthenticated,
+            '/v1/terrareg/auth/admin/is_authenticated'
+        )
 
     def _render_template(self, *args, **kwargs):
         """Override render_template, passing in base variables."""
@@ -198,16 +208,27 @@ class Server(object):
         kwargs = {
             'host': self.host,
             'port': self.port,
-            'debug': DEBUG
+            'debug': terrareg.config.DEBUG
         }
         if self.ssl_public_key and self.ssl_private_key:
             kwargs['ssl_context'] = (self.ssl_public_key, self.ssl_private_key)
+
+        self._app.secret_key = terrareg.config.SECRET_KEY
 
         self._app.run(**kwargs)
 
     def _view_serve_static_index(self):
         """Serve static index"""
         return self._render_template('index.html')
+
+    def _view_serve_login(self):
+        """Serve static login page."""
+        return self._render_template('login.html')
+
+    def _logout(self):
+        """Remove cookie and redirect."""
+        session['is_admin_authenticated'] = False
+        return redirect('/')
 
     def _view_serve_namespace_list(self):
         """Render view for display module."""
@@ -613,14 +634,14 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
 
         # Determine if module download should be rejected due to
         # non-existent analytics token
-        if not analytics_token and not ALLOW_UNIDENTIFIED_DOWNLOADS:
+        if not analytics_token and not terrareg.config.ALLOW_UNIDENTIFIED_DOWNLOADS:
             return make_response(
                 ("\nAn {analytics_token_phrase} must be provided.\n"
                  "Please update module source to include {analytics_token_phrase}.\n"
                  "\nFor example:\n  source = \"{host}/{example_analytics_token}__{namespace}/{module_name}/{provider}\"").format(
-                    analytics_token_phrase=ANALYTICS_TOKEN_PHRASE,
+                    analytics_token_phrase=terrareg.config.ANALYTICS_TOKEN_PHRASE,
                     host=request.host,
-                    example_analytics_token=EXAMPLE_ANALYTICS_TOKEN,
+                    example_analytics_token=terrareg.config.EXAMPLE_ANALYTICS_TOKEN,
                     namespace=namespace.name,
                     module_name=module.name,
                     provider=module_provider.name
@@ -750,3 +771,63 @@ class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
         args = parser.parse_args()
 
         return ModuleSearch.get_search_filters(query=args.q)
+
+
+def check_admin_authentication():
+    """Check authorization header is present or authenticated session"""
+    authenticated = False
+    # Check that:
+    # - An admin authentication token has been setup
+    # - A token has neeif valid authorisation header has been passed
+    if (terrareg.config.ADMIN_AUTHENTICATION_TOKEN and
+            request.headers.get('X-Terrareg-ApiKey', '') ==
+            terrareg.config.ADMIN_AUTHENTICATION_TOKEN):
+        authenticated = True
+
+    # Check if authenticated via session
+    # - Ensure session key has been setup
+    if (terrareg.config.SECRET_KEY and
+            session.get('is_admin_authenticated', False) and
+            'expires' in session and
+            session.get('expires').timestamp() > datetime.datetime.now().timestamp()):
+        authenticated = True
+    return authenticated
+
+def require_admin_authentication(func):
+    """Check user is authenticated as admin and either call function or return 401, if not."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not check_admin_authentication():
+            abort(401)
+        else:
+            return func(*args, **kwargs)
+    return wrapper
+
+
+class ApiTerraregIsAuthenticated(ErrorCatchingResource):
+    """Interface to teturn whether user is authenticated as an admin."""
+
+    method_decorators = [require_admin_authentication]
+
+    def _get(self):
+        return {'authenticated': True}
+
+
+class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
+    """Interface to perform authentication as an admin and set appropriate cookie."""
+
+    method_decorators = [require_admin_authentication]
+
+    def _post(self):
+        """Handle POST requests to the authentication endpoint."""
+
+        if not terrareg.config.SECRET_KEY:
+            return {'error': 'Sessions not enabled in configuration'}, 403
+
+        session['is_admin_authenticated'] = True
+        session['expires'] = (
+            datetime.datetime.now() +
+            datetime.timedelta(minutes=terrareg.config.ADMIN_SESSION_EXPIRY_MINS)
+        )
+        session.modified = True
+        return {'authenticated': True}
