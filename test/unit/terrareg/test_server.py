@@ -147,6 +147,13 @@ class TestApiModuleList:
         }
         ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=True, offset=0, limit=10)
 
+    @setup_test_data({
+        'testnamespace': { 'mock-module': { 'testprovider': {
+            'id': 1,
+            'latest_version': '1.2.3',
+            'versions': { '1.2.3': {}}
+        }}}
+    })
     def test_with_module_response(self, client, mocked_search_module_providers):
         """Test return of single module module"""
         namespace = MockNamespace(name='testnamespace')
