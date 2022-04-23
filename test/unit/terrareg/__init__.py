@@ -53,7 +53,7 @@ class MockModule(Module):
     @property
     def _unittest_data(self):
         """Return unit test data structure for namespace."""
-        return self._namespace._unittest_data[self._name]
+        return self._namespace._unittest_data[self._name] if self._name in self._namespace._unittest_data else {}
 
     def get_providers(self):
         """Return list of mocked module providers"""
@@ -67,7 +67,12 @@ class MockModuleVersion(ModuleVersion):
     @property
     def _unittest_data(self):
         """Return unit test data structure for namespace."""
-        return self._module_provider._unittest_data['versions'][self._version]
+        return (
+            self._module_provider._unittest_data['versions'][self._version]
+            if ('versions' in self._module_provider._unittest_data and
+                self._version in self._module_provider._unittest_data['versions']) else
+            {}
+        )
 
     def _get_db_row(self):
         """Return mock DB row"""
@@ -100,7 +105,7 @@ class MockModuleProvider(ModuleProvider):
     @property
     def _unittest_data(self):
         """Return unit test data structure for namespace."""
-        return self._module._unittest_data[self._name]
+        return self._module._unittest_data[self._name] if self._name in self._module._unittest_data else {}
 
     def _get_db_row(self):
         """Return fake data in DB row."""
@@ -143,7 +148,7 @@ class MockNamespace(Namespace):
     @property
     def _unittest_data(self):
         """Return unit test data structure for namespace."""
-        return TEST_MODULE_DATA[self._name]
+        return TEST_MODULE_DATA[self._name] if self._name in TEST_MODULE_DATA else {}
 
 
 def mocked_server_module_version(request):
