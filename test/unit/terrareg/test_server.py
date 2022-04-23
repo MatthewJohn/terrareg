@@ -943,6 +943,7 @@ class TestApiTerraregModuleProviderSettings:
         'http://unittest.com/module.git',
         'ssh://unittest.com/module.git'
     ])
+    @setup_test_data(test_data_full)
     def test_update_repository_url(
             self, repository_url, app_context,
             test_request_context, mocked_server_namespace_fixture,
@@ -956,7 +957,7 @@ class TestApiTerraregModuleProviderSettings:
 
             print(repository_url)
             res = client.post(
-                '/v1/terrareg/modules/fakenamespace/fakemodule/fakeprovider/settings',
+                '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/settings',
                 json={
                     'repository_url': repository_url,
                     'csrf_token': 'unittestcsrf'
@@ -971,6 +972,7 @@ class TestApiTerraregModuleProviderSettings:
             mock_update_repository_url.assert_called_once_with(
                 repository_url=repository_url)
 
+    @setup_test_data(test_data_full)
     def test_update_repository_url_invalid_protocol(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
         """Test update of repository URL with invalid protocol."""
         with app_context, test_request_context, client, \
@@ -979,7 +981,7 @@ class TestApiTerraregModuleProviderSettings:
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url:
 
             res = client.post(
-                '/v1/terrareg/modules/fakenamespace/fakemodule/fakeprovider/settings',
+                '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/settings',
                 json={
                     'repository_url': 'nope://unittest.com/module.git',
                     'csrf_token': 'unittestcsrf'
@@ -993,6 +995,7 @@ class TestApiTerraregModuleProviderSettings:
             mocked_check_admin_authentication.assert_called()
             mock_update_repository_url.assert_not_called()
 
+    @setup_test_data(test_data_full)
     def test_update_repository_url_invalid_domain(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
         """Test update of repository URL with an invalid domain."""
         with app_context, test_request_context, client, \
@@ -1001,7 +1004,7 @@ class TestApiTerraregModuleProviderSettings:
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url:
 
             res = client.post(
-                '/v1/terrareg/modules/fakenamespace/fakemodule/fakeprovider/settings',
+                '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/settings',
                 json={
                     'repository_url': 'https:///module.git',
                     'csrf_token': 'unittestcsrf'
@@ -1015,6 +1018,7 @@ class TestApiTerraregModuleProviderSettings:
             mocked_check_admin_authentication.assert_called()
             mock_update_repository_url.assert_not_called()
 
+    @setup_test_data(test_data_full)
     def test_update_repository_url_without_path(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
         """Test update of repository URL without a path."""
         with app_context, test_request_context, client, \
@@ -1023,7 +1027,7 @@ class TestApiTerraregModuleProviderSettings:
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url:
 
             res = client.post(
-                '/v1/terrareg/modules/fakenamespace/fakemodule/fakeprovider/settings',
+                '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/settings',
                 json={
                     'repository_url': 'https://example.com',
                     'csrf_token': 'unittestcsrf'
@@ -1037,6 +1041,7 @@ class TestApiTerraregModuleProviderSettings:
             mocked_check_admin_authentication.assert_called()
             mock_update_repository_url.assert_not_called()
 
+    @setup_test_data(test_data_full)
     def test_update_repository_without_csrf(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
         """Test update of repository URL without a CSRF token."""
         with app_context, test_request_context, client, \
@@ -1045,7 +1050,7 @@ class TestApiTerraregModuleProviderSettings:
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url:
 
             res = client.post(
-                '/v1/terrareg/modules/fakenamespace/fakemodule/fakeprovider/settings',
+                '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/settings',
                 json={
                     'repository_url': 'https://example.com/test.git'
                 }
