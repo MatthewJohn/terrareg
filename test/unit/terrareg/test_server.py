@@ -15,7 +15,7 @@ from test.unit.terrareg import (
     client, mocked_server_module_fixture,
     request_context
 )
-from terrareg.server import admin_authentication
+from terrareg.server import require_admin_authentication
 
 
 @pytest.fixture
@@ -614,8 +614,8 @@ class TestApiModuleProviderDownloadsSummary:
         }
 
 
-class TestAdminAuthenticationWrapper:
-    """Test admin_authentication wrapper"""
+class TestRequireAdminAuthenticationWrapper:
+    """Test require_admin_authentication wrapper"""
 
     def _mock_function(self, x, y):
         """Test method to wrap to check arg/kwargs"""
@@ -640,7 +640,7 @@ class TestAdminAuthenticationWrapper:
                     if session:
                         request_context.session = session
 
-                    wrapped_mock = admin_authentication(self._mock_function)
+                    wrapped_mock = require_admin_authentication(self._mock_function)
 
                     if expect_fail:
                         with pytest.raises(werkzeug.exceptions.Unauthorized):

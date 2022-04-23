@@ -773,29 +773,31 @@ class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
         return ModuleSearch.get_search_filters(query=args.q)
 
 
-def admin_authentication(func):
+def check_admin_authentication():
     """Check authorization header is present or authenticated session"""
+    authenticated = False
+    # Check that:
+    # - An admin authentication token has been setup
+    # - A token has neeif valid authorisation header has been passed
+    if (terrareg.config.ADMIN_AUTHENTICATION_TOKEN and
+            request.headers.get('X-Terrareg-ApiKey', '') ==
+            terrareg.config.ADMIN_AUTHENTICATION_TOKEN):
+        authenticated = True
+
+    # Check if authenticated via session
+    # - Ensure session key has been setup
+    if (terrareg.config.SECRET_KEY and
+            session.get('is_admin_authenticated', False) and
+            'expires' in session and
+            session.get('expires').timestamp() > datetime.datetime.now().timestamp()):
+        authenticated = True
+    return authenticated
+
+def require_admin_authentication(func):
+    """Check user is authenticated as admin and either call function or return 401, if not."""
     @wraps(func)
     def wrapper(*args, **kwargs):
-
-        authenticated = False
-        # Check that:
-        # - An admin authentication token has been setup
-        # - A token has neeif valid authorisation header has been passed
-        if (terrareg.config.ADMIN_AUTHENTICATION_TOKEN and
-                request.headers.get('X-Terrareg-ApiKey', '') ==
-                terrareg.config.ADMIN_AUTHENTICATION_TOKEN):
-            authenticated = True
-
-        # Check if authenticated via session
-        # - Ensure session key has been setup
-        if (terrareg.config.SECRET_KEY and
-                session.get('is_admin_authenticated', False) and
-                'expires' in session and
-                session.get('expires').timestamp() > datetime.datetime.now().timestamp()):
-            authenticated = True
-
-        if not authenticated:
+        if not check_admin_authentication():
             abort(401)
         else:
             return func(*args, **kwargs)
@@ -805,7 +807,7 @@ def admin_authentication(func):
 class ApiTerraregIsAuthenticated(ErrorCatchingResource):
     """Interface to teturn whether user is authenticated as an admin."""
 
-    method_decorators = [admin_authentication]
+    method_decorators = [require_admin_authentication]
 
     def _get(self):
         return {'authenticated': True}
@@ -814,7 +816,7 @@ class ApiTerraregIsAuthenticated(ErrorCatchingResource):
 class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
     """Interface to perform authentication as an admin and set appropriate cookie."""
 
-    method_decorators = [admin_authentication]
+    method_decorators = [require_admin_authentication]
 
     def _post(self):
         """Handle POST requests to the authentication endpoint."""
