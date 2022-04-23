@@ -413,13 +413,14 @@ class TestApiModuleDetails:
 class TestApiModuleProviderDetails:
     """Test ApiModuleProviderDetails resource."""
 
+    @setup_test_data(test_data_one_module)
     def test_existing_module_provider(self, client, mocked_server_namespace_fixture):
-        res = client.get('/v1/modules/testnamespace/testmodulename/providername')
+        res = client.get('/v1/modules/testnamespace/mock-module/testprovider')
 
         assert res.json == {
-            'id': 'testnamespace/testmodulename/providername/1.0.0', 'owner': 'Mock Owner',
-            'namespace': 'testnamespace', 'name': 'testmodulename',
-            'version': '1.0.0', 'provider': 'providername',
+            'id': 'testnamespace/mock-module/testprovider/1.2.3', 'owner': 'Mock Owner',
+            'namespace': 'testnamespace', 'name': 'mock-module',
+            'version': '1.2.3', 'provider': 'testprovider',
             'description': 'Mock description',
             'source': 'http://mock.example.com/mockmodule',
             'published_at': '2020-01-01T23:18:12',
