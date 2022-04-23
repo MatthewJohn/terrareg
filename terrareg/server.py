@@ -178,12 +178,17 @@ class Server(object):
 
         ## Module endpoints /v1/terreg/modules
         self._api.add_resource(
-            ApiTerraregModuleVersionVariableTemplate,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
-        )
-        self._api.add_resource(
             ApiTerraregModuleProviderSettings,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/settings'
+        )
+        self._api.add_resource(
+            ApiModuleVersionCreateBitBucketHook,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/hooks/bitbucket'
+        )
+
+        self._api.add_resource(
+            ApiTerraregModuleVersionVariableTemplate,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
         )
         self._api.add_resource(
             ApiModuleVersionUpload,
@@ -191,7 +196,7 @@ class Server(object):
         )
         self._api.add_resource(
             ApiModuleVersionCreate,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/create'
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/hooks/manual'
         )
         self._api.add_resource(
             ApiModuleVersionSourceDownload,
@@ -435,6 +440,19 @@ class ApiModuleVersionCreate(ErrorCatchingResource):
         return {
             'status': 'Success'
         }
+
+
+class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
+    """Provide interface for bitbucket hook to detect pushes of new tags."""
+
+    def _post(self, namespace, name, provider):
+        """Create new version based on bitbucket hooks."""
+        namespace = Namespace(name=namespace)
+        module = Module(namespace=namespace, name=name)
+        # Get module provider and optionally create, if it doesn't exist
+        module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+        print(request.json)
+        print(dict(request.headers))
 
 
 class ApiModuleList(ErrorCatchingResource):
