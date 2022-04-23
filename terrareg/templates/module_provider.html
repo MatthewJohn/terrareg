@@ -119,6 +119,24 @@ module "{{ module.name }}" {
         $('#analytics-table').DataTable();
     });
 
+    function update_module_provider_settings(ev) {
+        $('#settings-status-success').css('display', 'none');
+        $('#settings-status-error').css('display', 'none');
+        $.post({
+            url: '/v1/terrareg/{{ module_provider.id }}/settings',
+            data: { repository_url: $('#settings-repository-url').val() }
+        }).done(() => {
+            $('#settings-status-success').css('display', 'block');
+        }).fail((res) => {
+            if (res.responseJSON && res.responseJSON.error) {
+                $('#settings-status-error').html(res.responseJSON.error);
+            } else {
+                $('#settings-status-error').html('An unexpected error occurred');
+            }
+            $('#settings-status-error').css('display', 'block');
+        });
+    }
+
 </script>
 <div class="tabs">
     <ul>
@@ -284,13 +302,16 @@ module "{{ module.name }}" {
         <!-- Module settings tab -->
         <div id="module-tab-settings" class="module-tabs" style="display: none;">
             <div class="field is-vertical">
-                <div id="login_error" style="display: none" class="notification is-danger">
+                <div id="settings-status-success" style="display: none" class="notification is-success">
+                    Settings Updated
                 </div>
-                <form onsubmit="login(); event.preventDefault();">
+                <div id="settings-status-error" style="display: none" class="notification is-danger">
+                </div>
+                <form onsubmit="update_module_provider_settings(event); event.preventDefault();">
                     <div class="field">
                         <label class="label">Repository URL</label>
                         <div class="control">
-                            <input placeholder="ssh://git@github.com/{{ namespace.name }}/{{ module.name }}" class="input" type="text" value="{{ module_provider.repository_url or '' }}" name="repository-url">
+                            <input placeholder="ssh://git@github.com/{{ namespace.name }}/{{ module.name }}" class="input" type="text" value="{{ module_provider.repository_url or '' }}" id="settings-repository-url">
                         </div>
                     </div>
     

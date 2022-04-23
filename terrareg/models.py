@@ -178,6 +178,17 @@ class ModuleProvider(object):
 
         return res.scalar()
 
+    @classmethod
+    def get(cls, *args, **kwargs):
+        """Create object and ensure the object exists."""
+        obj = cls(*args, **kwargs)
+
+        # If there is no row, return None
+        if obj._get_db_row() is None:
+            return None
+        # Otherwise, return object
+        return obj
+
     def __init__(self, module: Module, name: str):
         self._module = module
         self._name = name
@@ -200,6 +211,23 @@ class ModuleProvider(object):
     def repository_url(self):
         """Return repository URL"""
         return self._get_db_row()['repository_url']
+
+    def _get_db_where(self, db, statement):
+        """Filter DB query by where for current object."""
+        return statement.where(
+            db.module_provider.c.namespace == self._module._namespace.name,
+            db.module_provider.c.module == self._module.name,
+            db.module_provider.c.provider == self.name
+        )
+
+    def update_repository_url(self, repository_url):
+        """Update repository URL for module provider."""
+        db = Database.get()
+        update = self._get_db_where(
+            db=db, statement=db.module_provider.update()
+        ).values(repository_url=repository_url)
+        conn = db.get_engine().connect()
+        conn.execute(update)
 
     def get_view_url(self):
         """Return view URL"""

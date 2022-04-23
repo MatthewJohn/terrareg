@@ -1,9 +1,9 @@
 
-
 import os
 import re
 import datetime
 from functools import wraps
+import urllib.parse
 
 from flask import Flask, request, render_template, redirect, make_response, send_from_directory, session
 from flask_restful import Resource, Api, reqparse, inputs, abort
@@ -180,6 +180,10 @@ class Server(object):
         self._api.add_resource(
             ApiTerraregModuleVersionVariableTemplate,
             '/v1/terrareg/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
+        )
+        self._api.add_resource(
+            ApiTerraregModuleProviderSettings,
+            '/v1/terrareg/<string:namespace>/<string:name>/<string:provider>/settings'
         )
         self._api.add_resource(
             ApiTerraregModuleSearchFilters,
@@ -831,3 +835,44 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
         )
         session.modified = True
         return {'authenticated': True}
+
+
+class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
+    """Provide interface to update module provider settings."""
+
+    def _post(self, namespace, name, provider):
+        """Handle update to settings."""
+        parser = reqparse.RequestParser()
+        parser.add_argument(
+            'repository_url', type=str,
+            required=True,
+            help='Module provider repository URL.',
+            location='form'
+        )
+        args = parser.parse_args()
+
+        # Ensure repository URL is parsable
+        repository_url = args.repository_url
+        if repository_url:
+            url = urllib.parse.urlparse(args.repository_url)
+            if not url.scheme:
+                return {'error': 'Repository URL does not contain a scheme (e.g. ssh://)'}, 400
+            if url.scheme not in ['http', 'https', 'ssh']:
+                return {'error': 'Repository URL contains an unknown scheme (e.g. https/git/http)'}, 400
+            if not url.hostname:
+                return {'error': 'Repository URL does not contain a host/domain'}, 400
+            if not url.path:
+                return {'error': 'Repository URL does not contain a path'}, 400
+        else:
+            # If repository URL is empty, set to None
+            repository_url = None
+
+        # Update repository URL of module version
+        namespace = Namespace(name=namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider.get(module=module, name=provider)
+
+        if not module_provider:
+            return {'error', 'Module provider does not exist'}, 400
+
+        module_provider.update_repository_url(repository_url=args.repository_url)
