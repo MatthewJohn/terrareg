@@ -75,21 +75,21 @@ class MockModuleVersion(ModuleVersion):
             'id': self._unittest_data.get('id'),
             'module_provider_id': self._module_provider.pk,
             'version': self._version,
-            'owner': self._unittest_data.get('owner', None),
-            'description': self._unittest_data.get('description', None),
-            'source': self._unittest_data.get('source', None),
+            'owner': self._unittest_data.get('owner', 'Mock Owner'),
+            'description': self._unittest_data.get('description', 'Mock description'),
+            'source': self._unittest_data.get('source', 'http://mock.example.com/mockmodule'),
             'published_at': self._unittest_data.get(
                 'published_at',
                 datetime.datetime(year=2020, month=1, day=1,
                                   hour=23, minute=18, second=12)
             ),
-            'readme_content': self._unittest_data.get('readme_content', None),
+            'readme_content': self._unittest_data.get('readme_content', 'Mock module README file'),
             'module_details': self._unittest_data.get(
                 'module_details',
                 '{"inputs": [], "outputs": [], "providers": [], "resources": []}'
             ),
             'variable_template': self._unittest_data.get('variable_template', '{}'),
-            'verified': self._unittest_data.get('verified', False),
+            'verified': self._unittest_data.get('verified', True),
             'artifact_location': self._unittest_data.get('artifact_location', None)
         }
 
