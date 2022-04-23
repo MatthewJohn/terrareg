@@ -34,5 +34,11 @@ test_data_full = {
             'latest_version': '3.0.0',
             'versions': {'3.0.0': {}}
         }}
+    },
+    'moduleextraction': {
+        'test-module': { 'testprovider': {
+            'id': 7,
+            'repository_url': 'ssh://example.com/repo.git'
+        }}
     }
 }

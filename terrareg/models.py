@@ -475,6 +475,11 @@ class ModuleVersion(TerraformSpecsObject):
         return self._version
 
     @property
+    def source_git_tag(self):
+        """Return git tag used for extraction clone"""
+        return self._version
+
+    @property
     def base_directory(self):
         """Return base directory."""
         return os.path.join(self._module_provider.base_directory, self._version)

@@ -250,12 +250,12 @@ class ApiUploadModuleExtractor(ModuleExtractor):
 class GitModuleExtractor(ModuleExtractor):
     """Extraction of module via git."""
 
-    def __init__(self, git_url, tag_name, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Store member variables."""
         super(GitModuleExtractor, self).__init__(*args, **kwargs)
-        # Sanitise URL and tag name
-        self._git_url = urllib.parse.quote(git_url, safe='/:@%?=')
-        self._tag_name = urllib.parse.quote(tag_name, safe='/')
+        # # Sanitise URL and tag name
+        # self._git_url = urllib.parse.quote(git_url, safe='/:@%?=')
+        # self._tag_name = urllib.parse.quote(tag_name, safe='/')
 
     def _clone_repository(self):
         """Extract uploaded archive into extract directory."""
@@ -266,8 +266,9 @@ class GitModuleExtractor(ModuleExtractor):
 
         subprocess.check_call([
             'git', 'clone', '--single-branch',
-            '--branch', self._tag_name,
-            self._git_url, self.extract_directory
+            '--branch', self._module_version.source_git_tag,
+            self._module_version._module_provider.repository_url,
+            self.extract_directory
         ], env=env)
 
     def process_upload(self):
