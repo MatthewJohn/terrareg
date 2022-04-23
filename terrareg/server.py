@@ -840,7 +840,6 @@ def check_csrf_token(csrf_token):
         return False
 
     session_token = get_csrf_token()
-
     if not session_token:
         raise NoSessionSetError('No session is presesnt to check CSRF token')
     elif session_token != csrf_token:

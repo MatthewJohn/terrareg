@@ -126,6 +126,7 @@ module "{{ module.name }}" {
             url: '/v1/terrareg/modules/{{ module_provider.id }}/settings',
             data: JSON.stringify({
                 repository_url: $('#settings-repository-url').val(),
+                git_tag_format: $('#settings-git-tag-format').val(),
                 csrf_token: '{{ csrf_token }}'
             }),
             contentType: 'application/json'
@@ -317,6 +318,16 @@ module "{{ module.name }}" {
                         <div class="control">
                             <input placeholder="ssh://git@github.com/{{ namespace.name }}/{{ module.name }}" class="input" type="text" value="{{ module_provider.repository_url or '' }}" id="settings-repository-url">
                         </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Git tag format</label>
+                        <div class="control">
+                            <input placeholder="v{version}" class="input" type="text" value="{{ module_provider.git_tag_format or '' }}" id="settings-git-tag-format">
+                        </div>
+                        This value will be converted to the expected git tag for a module version.<br />
+                        {version} will be replaced by the actual module version.<br />
+                        For example 'v{version}' will translate to a git tag v1.1.1 for module version 1.1.1
                     </div>
     
                     <div class="field">
