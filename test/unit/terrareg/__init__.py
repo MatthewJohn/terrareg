@@ -9,22 +9,20 @@ from terrareg.server import Server
 
 
 SERVER = Server()
+SERVER._app.config['TESTING'] = True
 
 
 @pytest.fixture
 def client():
-    """Configures the app for testing
-
-    Sets app config variable ``TESTING`` to ``True``
-
-    :return: App for testing
-    """
-
-    SERVER._app.config['TESTING'] = True
+    """Return test client"""
     client = SERVER._app.test_client()
 
     yield client
 
+@pytest.fixture
+def test_request_context():
+    """Return test request context"""
+    return SERVER._app.test_request_context()
 
 class MockModule(Module):
     """Mocked module."""
