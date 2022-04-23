@@ -141,7 +141,7 @@ module "{{ module.name }}" {
                 <span class="tag is-warning is-light">Terrareg Exclusive</span>
             </a>
         </li>
-        <li id="settingsTabButton" class="module-tab-link">
+        <li style="display: none" id="settingsTabButton" class="module-tab-link">
             <a onclick="selectModuleTab(event, 'settings')">
                 Settings
             </a>
@@ -438,6 +438,13 @@ ${output_tf}
                 </tr>
             `);
         });
+    });
+
+    // Check if user is authenticated and display settings tab
+    is_logged_in((logged_in) => {
+        if (logged_in) {
+            $('#settingsTabButton').css('display', 'block');
+        }
     });
 </script>
 
