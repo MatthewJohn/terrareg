@@ -808,8 +808,6 @@ def check_csrf_token(csrf_token):
         return False
 
     session_token = get_csrf_token()
-    print(csrf_token)
-    print(session_token)
 
     if not session_token:
         raise NoSessionSetError('No session is presesnt to check CSRF token')
