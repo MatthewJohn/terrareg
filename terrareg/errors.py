@@ -52,3 +52,9 @@ class IncorrectCSRFTokenError(TerraregError):
     """CSRF token is not correct."""
 
     pass
+
+
+class InvalidGitTagFormatError(TerraregError):
+    """Invalid git tag format provided."""
+
+    pass

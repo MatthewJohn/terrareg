@@ -76,4 +76,9 @@ There are common attributes that can be added to each of variable objects, which
 
 Since terraform requires HTTPS with a valid SSL cert, this must be provided in local development
 
+On linux, by default, non-privileged users cannot listen on privileged ports, so the following can be used to route requests locally to port 5000:
+
+```
+sudo iptables -t nat -I OUTPUT -p tcp -d 127.0.0.1 --dport 443 -j REDIRECT --to-ports 5000
+```
 
