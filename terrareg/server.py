@@ -22,7 +22,7 @@ from terrareg.errors import (
 )
 from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion
 from terrareg.module_search import ModuleSearch
-from terrareg.module_extractor import ApiUploadModuleExtractor
+from terrareg.module_extractor import ApiUploadModuleExtractor, GitModuleExtractor
 from terrareg.analytics import AnalyticsEngine
 from terrareg.filters import NamespaceTrustFilter
 from terrareg.config import APPLICATION_NAME, LOGO_URL
@@ -67,18 +67,6 @@ class Server(object):
 
     def _register_routes(self):
         """Register routes with flask."""
-
-        # Upload module
-        self._api.add_resource(
-            ApiUploadModule,
-            '/v1/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload'
-        )
-
-        # Download module tar
-        self._api.add_resource(
-            ApiModuleVersionSourceDownload,
-            '/static/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/source.zip'
-        )
 
         # Terraform registry routes
         self._api.add_resource(
@@ -170,6 +158,7 @@ class Server(object):
         )(self._view_serve_module_provider)
 
         # Terrareg APIs
+        ## Analytics URLs /v1/terrareg/analytics
         self._api.add_resource(
             ApiTerraregGlobalStatsSummary,
             '/v1/terrareg/analytics/global/stats_summary'
@@ -186,18 +175,35 @@ class Server(object):
             ApiTerraregMostDownloadedModuleProviderThisWeek,
             '/v1/terrareg/analytics/global/most_downloaded_module_provider_this_week'
         )
+
+        ## Module endpoints /v1/terreg/modules
         self._api.add_resource(
             ApiTerraregModuleVersionVariableTemplate,
-            '/v1/terrareg/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
         )
         self._api.add_resource(
             ApiTerraregModuleProviderSettings,
-            '/v1/terrareg/<string:namespace>/<string:name>/<string:provider>/settings'
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/settings'
         )
+        self._api.add_resource(
+            ApiModuleVersionUpload,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload'
+        )
+        self._api.add_resource(
+            ApiModuleVersionCreate,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/create'
+        )
+        self._api.add_resource(
+            ApiModuleVersionSourceDownload,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/source.zip'
+        )
+
         self._api.add_resource(
             ApiTerraregModuleSearchFilters,
             '/v1/terrareg/search_filters'
         )
+
+        ## Auth endpoints /v1/terrareg/auth
         self._api.add_resource(
             ApiTerraregAdminAuthenticate,
             '/v1/terrareg/auth/admin/login'
@@ -366,7 +372,7 @@ class ErrorCatchingResource(Resource):
         return {'errors': ['Not Found']}, 404
 
 
-class ApiUploadModule(ErrorCatchingResource):
+class ApiModuleVersionUpload(ErrorCatchingResource):
 
     ALLOWED_EXTENSIONS = ['zip']
 
@@ -380,7 +386,8 @@ class ApiUploadModule(ErrorCatchingResource):
 
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
+        # Get module provider and, optionally create, if it doesn't exist
+        module_provider = ModuleProvider.get(module=module, name=provider, create=True)
         module_version = ModuleVersion(module_provider=module_provider, version=version)
 
         if len(request.files) != 1:
@@ -398,6 +405,31 @@ class ApiUploadModule(ErrorCatchingResource):
 
         module_version.prepare_module()
         with ApiUploadModuleExtractor(upload_file=file, module_version=module_version) as me:
+            me.process_upload()
+
+        return {
+            'status': 'Success'
+        }
+
+
+class ApiModuleVersionCreate(ErrorCatchingResource):
+    """Provide interface to create release for git-backed modules."""
+
+    def _post(self, namespace, name, provider, version):
+        """Handle creation of module version."""
+        namespace = Namespace(name=namespace)
+        module = Module(namespace=namespace, name=name)
+        # Get module provider and optionally create, if it doesn't exist
+        module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+
+        # Ensure that the module provider has a repository url configured.
+        if not module_provider.repository_url:
+            return {'message': 'Module provider is not configured with a repository'}, 400
+
+        module_version = ModuleVersion(module_provider=module_provider, version=version)
+
+        module_version.prepare_module()
+        with GitModuleExtractor(module_version=module_version) as me:
             me.process_upload()
 
         return {
@@ -808,7 +840,6 @@ def check_csrf_token(csrf_token):
         return False
 
     session_token = get_csrf_token()
-
     if not session_token:
         raise NoSessionSetError('No session is presesnt to check CSRF token')
     elif session_token != csrf_token:
@@ -899,7 +930,15 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         parser = reqparse.RequestParser()
         parser.add_argument(
             'repository_url', type=str,
-            required=True,
+            required=False,
+            default=None,
+            help='Module provider repository URL.',
+            location='json'
+        )
+        parser.add_argument(
+            'git_tag_format', type=str,
+            required=False,
+            default=None,
             help='Module provider repository URL.',
             location='json'
         )
@@ -915,22 +954,6 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
 
         check_csrf_token(args.csrf_token)
 
-        # Ensure repository URL is parsable
-        repository_url = args.repository_url
-        if repository_url:
-            url = urllib.parse.urlparse(args.repository_url)
-            if not url.scheme:
-                return {'message': 'Repository URL does not contain a scheme (e.g. ssh://)'}, 400
-            if url.scheme not in ['http', 'https', 'ssh']:
-                return {'message': 'Repository URL contains an unknown scheme (e.g. https/git/http)'}, 400
-            if not url.hostname:
-                return {'message': 'Repository URL does not contain a host/domain'}, 400
-            if not url.path:
-                return {'message': 'Repository URL does not contain a path'}, 400
-        else:
-            # If repository URL is empty, set to None
-            repository_url = None
-
         # Update repository URL of module version
         namespace = Namespace(name=namespace)
         module = Module(namespace=namespace, name=name)
@@ -939,5 +962,27 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         if not module_provider:
             return {'message': 'Module provider does not exist'}, 400
 
-        module_provider.update_repository_url(repository_url=args.repository_url)
+        # Ensure repository URL is parsable
+        repository_url = args.repository_url
+        if repository_url is not None:
+            if repository_url != '':
+                url = urllib.parse.urlparse(args.repository_url)
+                if not url.scheme:
+                    return {'message': 'Repository URL does not contain a scheme (e.g. ssh://)'}, 400
+                if url.scheme not in ['http', 'https', 'ssh']:
+                    return {'message': 'Repository URL contains an unknown scheme (e.g. https/git/http)'}, 400
+                if not url.hostname:
+                    return {'message': 'Repository URL does not contain a host/domain'}, 400
+                if not url.path:
+                    return {'message': 'Repository URL does not contain a path'}, 400
+            else:
+                # If repository URL is empty, set to None
+                repository_url = None
+
+            module_provider.update_repository_url(repository_url=args.repository_url)
+
+        git_tag_format = args.git_tag_format
+        if git_tag_format is not None:
+            module_provider.update_git_tag_format(git_tag_format)
+
         return {}

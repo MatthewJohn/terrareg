@@ -82,7 +82,8 @@ class Database():
             sqlalchemy.Column('namespace', sqlalchemy.String),
             sqlalchemy.Column('module', sqlalchemy.String),
             sqlalchemy.Column('provider', sqlalchemy.String),
-            sqlalchemy.Column('repository_url', sqlalchemy.String)
+            sqlalchemy.Column('repository_url', sqlalchemy.String),
+            sqlalchemy.Column('git_tag_format', sqlalchemy.String)
         )
 
         self._module_version = sqlalchemy.Table(

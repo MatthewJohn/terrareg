@@ -9,7 +9,6 @@ import json
 import datetime
 import shutil
 import re
-import urllib.parse
 
 from werkzeug.utils import secure_filename
 import magic
@@ -131,42 +130,17 @@ class ModuleExtractor:
 
         conn = db.get_engine().connect()
 
-        # Get module_provider row
-        provider_select = db.module_provider.select().where(
-            db.module_provider.c.namespace ==
-            self._module_version._module_provider._module._namespace.name,
-            db.module_provider.c.module ==
-            self._module_version._module_provider._module.name,
-            db.module_provider.c.provider == self._module_version._module_provider.name
-        )
-        module_provider_row = conn.execute(provider_select).fetchone()
-
-        # Create module_provider if it does not exist
-        if not module_provider_row:
-            module_provider_insert = db.module_provider.insert().values(
-                namespace=self._module_version._module_provider._module._namespace.name,
-                module=self._module_version._module_provider._module.name,
-                provider=self._module_version._module_provider.name
-            )
-            res = conn.execute(module_provider_insert)
-            # Obtain newly inserted module_provider
-            module_provider_row = conn.execute(
-                db.module_provider.select().where(
-                    db.module_provider.c.id == res.inserted_primary_key[0]
-                )
-            ).fetchone()
-
         # Delete module from module_version table
         delete_statement = db.module_version.delete().where(
             db.module_version.c.module_provider_id ==
-            module_provider_row.id,
+            self._module_version._module_provider.pk,
             db.module_version.c.version == self._module_version.version
         )
         conn.execute(delete_statement)
 
         # Insert new module into table
         insert_statement = db.module_version.insert().values(
-            module_provider_id=module_provider_row.id,
+            module_provider_id=self._module_version._module_provider.pk,
             version=self._module_version.version,
             readme_content=readme_content,
             module_details=json.dumps(terraform_docs_output),
@@ -275,12 +249,12 @@ class ApiUploadModuleExtractor(ModuleExtractor):
 class GitModuleExtractor(ModuleExtractor):
     """Extraction of module via git."""
 
-    def __init__(self, git_url, tag_name, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """Store member variables."""
         super(GitModuleExtractor, self).__init__(*args, **kwargs)
-        # Sanitise URL and tag name
-        self._git_url = urllib.parse.quote(git_url, safe='/:@%?=')
-        self._tag_name = urllib.parse.quote(tag_name, safe='/')
+        # # Sanitise URL and tag name
+        # self._git_url = urllib.parse.quote(git_url, safe='/:@%?=')
+        # self._tag_name = urllib.parse.quote(tag_name, safe='/')
 
     def _clone_repository(self):
         """Extract uploaded archive into extract directory."""
@@ -291,8 +265,9 @@ class GitModuleExtractor(ModuleExtractor):
 
         subprocess.check_call([
             'git', 'clone', '--single-branch',
-            '--branch', self._tag_name,
-            self._git_url, self.extract_directory
+            '--branch', self._module_version.source_git_tag,
+            self._module_version._module_provider.repository_url,
+            self.extract_directory
         ], env=env)
 
     def process_upload(self):

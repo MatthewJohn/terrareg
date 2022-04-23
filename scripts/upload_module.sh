@@ -16,7 +16,7 @@ then
 fi
 
 curl -X POST \
-    "${base_url}/v1/${namespace}/${name}/${provider}/${version}/upload" \
+    "${base_url}/v1/terrareg/modules/${namespace}/${name}/${provider}/${version}/upload" \
     -F file="@${file}" -vvvv
 
 

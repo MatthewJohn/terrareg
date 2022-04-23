@@ -123,11 +123,13 @@ module "{{ module.name }}" {
         $('#settings-status-success').css('display', 'none');
         $('#settings-status-error').css('display', 'none');
         $.post({
-            url: '/v1/terrareg/{{ module_provider.id }}/settings',
-            data: {
+            url: '/v1/terrareg/modules/{{ module_provider.id }}/settings',
+            data: JSON.stringify({
                 repository_url: $('#settings-repository-url').val(),
+                git_tag_format: $('#settings-git-tag-format').val(),
                 csrf_token: '{{ csrf_token }}'
-            }
+            }),
+            contentType: 'application/json'
         }).done(() => {
             $('#settings-status-success').css('display', 'block');
         }).fail((res) => {
@@ -317,6 +319,16 @@ module "{{ module.name }}" {
                             <input placeholder="ssh://git@github.com/{{ namespace.name }}/{{ module.name }}" class="input" type="text" value="{{ module_provider.repository_url or '' }}" id="settings-repository-url">
                         </div>
                     </div>
+
+                    <div class="field">
+                        <label class="label">Git tag format</label>
+                        <div class="control">
+                            <input placeholder="v{version}" class="input" type="text" value="{{ module_provider.git_tag_format or '' }}" id="settings-git-tag-format">
+                        </div>
+                        This value will be converted to the expected git tag for a module version.<br />
+                        {version} will be replaced by the actual module version.<br />
+                        For example 'v{version}' will translate to a git tag v1.1.1 for module version 1.1.1
+                    </div>
     
                     <div class="field">
                         <div class="control">
@@ -412,7 +424,7 @@ ${output_tf}
 `);
     }
 
-    $.get("/v1/terrareg/{{ module_version.id }}/variable_template", (data, status) => {
+    $.get("/v1/terrareg/modules/{{ module_version.id }}/variable_template", (data, status) => {
         // Populate input_variables from response
         input_variables = data;
 
