@@ -281,18 +281,26 @@ module "{{ module.name }}" {
             </pre>
         </div>
 
+        <!-- Module settings tab -->
         <div id="module-tab-settings" class="module-tabs" style="display: none;">
-            <table id="settings-table" class="table" style="width: 100%">
-                <tbody>
-                    <tr>
-                        <td>Repository URL</td>
-                        <td><input class="input" type="text" value="{{ module_provider.repository_url or '' }}" name="repository-url"></td>
-                    </tr>
-                    <tr>
-                        <td><button class="button is-warning">Update</button></td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="field is-vertical">
+                <div id="login_error" style="display: none" class="notification is-danger">
+                </div>
+                <form onsubmit="login(); event.preventDefault();">
+                    <div class="field">
+                        <label class="label">Repository URL</label>
+                        <div class="control">
+                            <input class="input" type="text" value="{{ module_provider.repository_url or '' }}" name="repository-url">
+                        </div>
+                    </div>
+    
+                    <div class="field">
+                        <div class="control">
+                        <button class="button is-link">Update</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
