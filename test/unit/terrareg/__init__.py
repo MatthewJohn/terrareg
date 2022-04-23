@@ -133,7 +133,8 @@ class MockModuleProvider(ModuleProvider):
             'namespace': self._module._namespace.name,
             'module': self._module.name,
             'provider': self.name,
-            'repository_url': self._unittest_data.get('repository_url', None)
+            'repository_url': self._unittest_data.get('repository_url', None),
+            'git_tag_format': self._unittest_data.get('git_tag_format', None)
         }
 
     def get_latest_version(self):

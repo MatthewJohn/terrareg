@@ -4,13 +4,16 @@ from distutils.version import StrictVersion
 import json
 import re
 import sqlalchemy
+import urllib.parse
 
 import markdown
 
 import terrareg.analytics
 from terrareg.database import Database
 from terrareg.config import DATA_DIRECTORY
-from terrareg.errors import (NoModuleVersionAvailableError)
+from terrareg.errors import (
+    NoModuleVersionAvailableError, InvalidGitTagFormatError
+)
 
 
 class Namespace(object):
@@ -234,6 +237,11 @@ class ModuleProvider(object):
         return self._get_db_row()['repository_url']
 
     @property
+    def git_tag_format(self):
+        """Return git tag format"""
+        return self._get_db_row()['git_tag_format']
+
+    @property
     def base_directory(self):
         """Return base directory."""
         return os.path.join(self._module.base_directory, self._name)
@@ -264,14 +272,34 @@ class ModuleProvider(object):
         res = conn.execute(select)
         return res.fetchone()
 
-    def update_repository_url(self, repository_url):
-        """Update repository URL for module provider."""
+    def _update_row(self, **kwargs):
+        """Update DB row."""
         db = Database.get()
         update = self._get_db_where(
             db=db, statement=db.module_provider.update()
-        ).values(repository_url=repository_url)
+        ).values(**kwargs)
         conn = db.get_engine().connect()
         conn.execute(update)
+
+    def update_git_tag_format(self, git_tag_format):
+        """Update git_tag_format."""
+        sanitised_git_tag_format = urllib.parse.quote(git_tag_format, safe='/{}')
+
+        if git_tag_format:
+            # If tag format was provided, ensured it can be passed with 'format'
+            try:
+                sanitised_git_tag_format.format(version='1.1.1')
+            except ValueError:
+                raise InvalidGitTagFormatError('Invalid git tag format. Must contain {version}.')
+        else:
+            # If not value was provided, default to None
+            sanitised_git_tag_format = None
+        self._update_row(git_tag_format=sanitised_git_tag_format)
+
+    def update_repository_url(self, repository_url):
+        """Update repository URL for module provider."""
+        sanitised_repository_url = urllib.parse.quote(repository_url, safe='/:@%?=')
+        self._update_row(repository_url=sanitised_repository_url)
 
     def get_view_url(self):
         """Return view URL"""
@@ -477,6 +505,8 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def source_git_tag(self):
         """Return git tag used for extraction clone"""
+        if self._module_provider.git_tag_format:
+            return self._module_provider.git_tag_format.format(version=self._version)
         return self._version
 
     @property

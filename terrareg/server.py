@@ -931,7 +931,15 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         parser = reqparse.RequestParser()
         parser.add_argument(
             'repository_url', type=str,
-            required=True,
+            required=False,
+            default=None,
+            help='Module provider repository URL.',
+            location='json'
+        )
+        parser.add_argument(
+            'git_tag_format', type=str,
+            required=False,
+            default=None,
             help='Module provider repository URL.',
             location='json'
         )
@@ -947,22 +955,6 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
 
         check_csrf_token(args.csrf_token)
 
-        # Ensure repository URL is parsable
-        repository_url = args.repository_url
-        if repository_url:
-            url = urllib.parse.urlparse(args.repository_url)
-            if not url.scheme:
-                return {'message': 'Repository URL does not contain a scheme (e.g. ssh://)'}, 400
-            if url.scheme not in ['http', 'https', 'ssh']:
-                return {'message': 'Repository URL contains an unknown scheme (e.g. https/git/http)'}, 400
-            if not url.hostname:
-                return {'message': 'Repository URL does not contain a host/domain'}, 400
-            if not url.path:
-                return {'message': 'Repository URL does not contain a path'}, 400
-        else:
-            # If repository URL is empty, set to None
-            repository_url = None
-
         # Update repository URL of module version
         namespace = Namespace(name=namespace)
         module = Module(namespace=namespace, name=name)
@@ -971,5 +963,27 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         if not module_provider:
             return {'message': 'Module provider does not exist'}, 400
 
-        module_provider.update_repository_url(repository_url=args.repository_url)
+        # Ensure repository URL is parsable
+        repository_url = args.repository_url
+        if repository_url is not None:
+            if repository_url != '':
+                url = urllib.parse.urlparse(args.repository_url)
+                if not url.scheme:
+                    return {'message': 'Repository URL does not contain a scheme (e.g. ssh://)'}, 400
+                if url.scheme not in ['http', 'https', 'ssh']:
+                    return {'message': 'Repository URL contains an unknown scheme (e.g. https/git/http)'}, 400
+                if not url.hostname:
+                    return {'message': 'Repository URL does not contain a host/domain'}, 400
+                if not url.path:
+                    return {'message': 'Repository URL does not contain a path'}, 400
+            else:
+                # If repository URL is empty, set to None
+                repository_url = None
+
+            module_provider.update_repository_url(repository_url=args.repository_url)
+
+        git_tag_format = args.git_tag_format
+        if git_tag_format is not None:
+            module_provider.update_git_tag_format(git_tag_format)
+
         return {}

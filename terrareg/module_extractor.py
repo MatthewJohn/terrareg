@@ -9,7 +9,6 @@ import json
 import datetime
 import shutil
 import re
-import urllib.parse
 
 from werkzeug.utils import secure_filename
 import magic
