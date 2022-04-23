@@ -382,7 +382,8 @@ class ApiUploadModule(ErrorCatchingResource):
 
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
+        # Get module provider and, optionally create, if it doesn't exist
+        module_provider = ModuleProvider.get(module=module, name=provider, create=True)
         module_version = ModuleVersion(module_provider=module_provider, version=version)
 
         if len(request.files) != 1:

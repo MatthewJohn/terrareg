@@ -178,13 +178,29 @@ class ModuleProvider(object):
         return res.scalar()
 
     @classmethod
-    def get(cls, *args, **kwargs):
+    def get(cls, module, name, create=False):
         """Create object and ensure the object exists."""
-        obj = cls(*args, **kwargs)
+        obj = cls(module=module, name=name)
 
         # If there is no row, return None
         if obj._get_db_row() is None:
+
+            if create:
+                # Create module version, if it doesn't exist
+                db = Database.get()
+                module_provider_insert = db.module_provider.insert().values(
+                    namespace=module._namespace.name,
+                    module=module.name,
+                    provider=name
+                )
+                conn = db.get_engine().connect()
+                conn.execute(module_provider_insert)
+
+                return obj
+
+            # If not creating, return None
             return None
+
         # Otherwise, return object
         return obj
 
@@ -201,6 +217,11 @@ class ModuleProvider(object):
             name=self._module.name,
             provider=self.name
         )
+
+    @property
+    def pk(self):
+        """Return database ID of module provider."""
+        return self._get_db_row()['id']
 
     @property
     def repository_url(self):
