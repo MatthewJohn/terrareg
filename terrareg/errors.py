@@ -40,3 +40,15 @@ class UploadError(TerraregError):
     """Error with file upload."""
 
     pass
+
+
+class NoSessionSetError(TerraregError):
+    """No session has been setup and required."""
+
+    pass
+
+
+class IncorrectCSRFTokenError(TerraregError):
+    """CSRF token is not correct."""
+
+    pass

@@ -3,7 +3,6 @@ import os
 from distutils.version import StrictVersion
 import json
 import re
-import jinja2
 import sqlalchemy
 
 import markdown
@@ -63,13 +62,18 @@ class Namespace(object):
             for namespace in namespaces
         ]
 
-    def __init__(self, name: str):
-        self._name = name
-
     @property
     def base_directory(self):
         """Return base directory."""
         return os.path.join(DATA_DIRECTORY, 'modules', self._name)
+
+    @property
+    def name(self):
+        """Return name."""
+        return self._name
+
+    def __init__(self, name: str):
+        self._name = name
 
     def get_view_url(self):
         """Return view URL"""
@@ -93,11 +97,6 @@ class Namespace(object):
             for module in modules
         ]
 
-    @property
-    def name(self):
-        """Return name."""
-        return self._name
-
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
         # Check if data directory exists
@@ -106,15 +105,20 @@ class Namespace(object):
 
 
 class Module(object):
-    
-    def __init__(self, namespace: Namespace, name: str):
-        self._namespace = namespace
-        self._name = name
 
     @property
     def name(self):
         """Return name."""
         return self._name
+
+    @property
+    def base_directory(self):
+        """Return base directory."""
+        return os.path.join(self._namespace.base_directory, self._name)
+
+    def __init__(self, namespace: Namespace, name: str):
+        self._namespace = namespace
+        self._name = name
 
     def get_view_url(self):
         """Return view URL"""
@@ -152,11 +156,6 @@ class Module(object):
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
 
-    @property
-    def base_directory(self):
-        """Return base directory."""
-        return os.path.join(self._namespace.base_directory, self._name)
-
 
 class ModuleProvider(object):
 
@@ -178,9 +177,16 @@ class ModuleProvider(object):
 
         return res.scalar()
 
-    def __init__(self, module: Module, name: str):
-        self._module = module
-        self._name = name
+    @classmethod
+    def get(cls, *args, **kwargs):
+        """Create object and ensure the object exists."""
+        obj = cls(*args, **kwargs)
+
+        # If there is no row, return None
+        if obj._get_db_row() is None:
+            return None
+        # Otherwise, return object
+        return obj
 
     @property
     def name(self):
@@ -196,17 +202,57 @@ class ModuleProvider(object):
             provider=self.name
         )
 
+    @property
+    def repository_url(self):
+        """Return repository URL"""
+        return self._get_db_row()['repository_url']
+
+    @property
+    def base_directory(self):
+        """Return base directory."""
+        return os.path.join(self._module.base_directory, self._name)
+
+    def __init__(self, module: Module, name: str):
+        self._module = module
+        self._name = name
+
+
+    def _get_db_where(self, db, statement):
+        """Filter DB query by where for current object."""
+        return statement.where(
+            db.module_provider.c.namespace == self._module._namespace.name,
+            db.module_provider.c.module == self._module.name,
+            db.module_provider.c.provider == self.name
+        )
+
+    def _get_db_row(self):
+        """Return database row for module provider."""
+        db = Database.get()
+        select = db.module_provider.select(
+        ).where(
+            db.module_provider.c.namespace == self._module._namespace.name,
+            db.module_provider.c.module == self._module.name,
+            db.module_provider.c.provider == self.name
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+        return res.fetchone()
+
+    def update_repository_url(self, repository_url):
+        """Update repository URL for module provider."""
+        db = Database.get()
+        update = self._get_db_where(
+            db=db, statement=db.module_provider.update()
+        ).values(repository_url=repository_url)
+        conn = db.get_engine().connect()
+        conn.execute(update)
+
     def get_view_url(self):
         """Return view URL"""
         return '{module_url}/{module}'.format(
             module_url=self._module.get_view_url(),
             module=self.name
         )
-
-    @property
-    def base_directory(self):
-        """Return base directory."""
-        return os.path.join(self._module.base_directory, self._name)
 
     def get_latest_version(self):
         """Get latest version of module."""
@@ -377,26 +423,6 @@ class ModuleVersion(TerraformSpecsObject):
 
         return res.scalar()
 
-    def __init__(self, module_provider: ModuleProvider, version: str):
-        """Setup member variables."""
-        self._module_provider = module_provider
-        self._version = version
-        super(ModuleVersion, self).__init__()
-
-    def get_view_url(self):
-        """Return view URL"""
-        return '{module_provider_url}/{version}'.format(
-            module_provider_url=self._module_provider.get_view_url(),
-            version=self.version
-        )
-
-    def get_source_download_url(self):
-        """Return URL to download source file."""
-        if self._get_db_row()['artifact_location']:
-            return self._get_db_row()['artifact_location'].format(module_version=self.version)
-
-        return '/static/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
-
     @property
     def publish_date_display(self):
         """Return display view of date of module published."""
@@ -476,6 +502,41 @@ class ModuleVersion(TerraformSpecsObject):
         """Return variable template for module version."""
         return json.loads(self._get_db_row()['variable_template'])
 
+    def __init__(self, module_provider: ModuleProvider, version: str):
+        """Setup member variables."""
+        self._module_provider = module_provider
+        self._version = version
+        super(ModuleVersion, self).__init__()
+
+    def _get_db_row(self):
+        """Get object from database"""
+        db = Database.get()
+        select = db.module_version.select().join(
+            db.module_provider, db.module_version.c.module_provider_id == db.module_provider.c.id
+        ).where(
+            db.module_provider.c.namespace == self._module_provider._module._namespace.name,
+            db.module_provider.c.module == self._module_provider._module.name,
+            db.module_provider.c.provider == self._module_provider.name,
+            db.module_version.c.version == self.version
+        )
+        conn = db.get_engine().connect()
+        res = conn.execute(select)
+        return res.fetchone()
+
+    def get_view_url(self):
+        """Return view URL"""
+        return '{module_provider_url}/{version}'.format(
+            module_provider_url=self._module_provider.get_view_url(),
+            version=self.version
+        )
+
+    def get_source_download_url(self):
+        """Return URL to download source file."""
+        if self._get_db_row()['artifact_location']:
+            return self._get_db_row()['artifact_location'].format(module_version=self.version)
+
+        return '/static/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
+
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
         # Check if parent exists
@@ -519,21 +580,6 @@ class ModuleVersion(TerraformSpecsObject):
         })
         return api_details
 
-    def _get_db_row(self):
-        """Get object from database"""
-        db = Database.get()
-        select = db.module_version.select().join(
-            db.module_provider, db.module_version.c.module_provider_id == db.module_provider.c.id
-        ).where(
-            db.module_provider.c.namespace == self._module_provider._module._namespace.name,
-            db.module_provider.c.module == self._module_provider._module.name,
-            db.module_provider.c.provider == self._module_provider.name,
-            db.module_version.c.version == self.version
-        )
-        conn = db.get_engine().connect()
-        res = conn.execute(select)
-        return res.fetchone()
-
     def get_readme_html(self):
         """Convert readme markdown to HTML"""
         if self.get_readme_content():
@@ -568,15 +614,15 @@ class ModuleVersion(TerraformSpecsObject):
 class Submodule(TerraformSpecsObject):
     """Sub module from a module version."""
 
-    def __init__(self, module_version: ModuleVersion, module_path: str):
-        self._module_version = module_version
-        self._module_path = module_path
-        super(Submodule, self).__init__()
-
     @property
     def path(self):
         """Return module path"""
         return self._module_path
+
+    def __init__(self, module_version: ModuleVersion, module_path: str):
+        self._module_version = module_version
+        self._module_path = module_path
+        super(Submodule, self).__init__()
 
     def _get_db_row(self):
         """Get object from database"""

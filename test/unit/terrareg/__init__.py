@@ -4,10 +4,11 @@ import unittest.mock
 
 import pytest
 
+from terrareg.database import Database
 from terrareg.models import Module, ModuleProvider, ModuleVersion
 from terrareg.server import Server
 
-
+Database.SQLITE_DB_PATH = 'temp-unittest.db'
 SERVER = Server()
 SERVER._app.config['TESTING'] = True
 
@@ -23,6 +24,11 @@ def client():
 def test_request_context():
     """Return test request context"""
     return SERVER._app.test_request_context()
+
+@pytest.fixture
+def app_context():
+    """Return test request context"""
+    return SERVER._app.app_context()
 
 class MockModule(Module):
     """Mocked module."""
@@ -70,6 +76,11 @@ class MockModuleProvider(ModuleProvider):
     """Mocked module provider."""
 
     MOCK_LATEST_VERSION_NUMBER = '1.0.0'
+
+    @staticmethod
+    def get(*args, **kwargs):
+        """Mock get method to return an instance of the MockProvider"""
+        return MockModuleProvider(*args, **kwargs)
 
     def get_latest_version(self):
         """Return mocked latest version of module"""

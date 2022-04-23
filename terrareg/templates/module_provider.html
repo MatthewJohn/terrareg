@@ -119,6 +119,27 @@ module "{{ module.name }}" {
         $('#analytics-table').DataTable();
     });
 
+    function update_module_provider_settings(ev) {
+        $('#settings-status-success').css('display', 'none');
+        $('#settings-status-error').css('display', 'none');
+        $.post({
+            url: '/v1/terrareg/{{ module_provider.id }}/settings',
+            data: {
+                repository_url: $('#settings-repository-url').val(),
+                csrf_token: '{{ csrf_token }}'
+            }
+        }).done(() => {
+            $('#settings-status-success').css('display', 'block');
+        }).fail((res) => {
+            if (res.responseJSON && res.responseJSON.message) {
+                $('#settings-status-error').html(res.responseJSON.message);
+            } else {
+                $('#settings-status-error').html('An unexpected error occurred');
+            }
+            $('#settings-status-error').css('display', 'block');
+        });
+    }
+
 </script>
 <div class="tabs">
     <ul>
@@ -139,6 +160,11 @@ module "{{ module.name }}" {
             <a onclick="selectModuleTab(event, 'usage-builder')">
                 Usage Builder
                 <span class="tag is-warning is-light">Terrareg Exclusive</span>
+            </a>
+        </li>
+        <li style="display: none" id="settingsTabButton" class="module-tab-link">
+            <a onclick="selectModuleTab(event, 'settings')">
+                Settings
             </a>
         </li>
     </ul>
@@ -274,6 +300,31 @@ module "{{ module.name }}" {
             </table>
             <pre id="usageBuilderOutput">
             </pre>
+        </div>
+
+        <!-- Module settings tab -->
+        <div id="module-tab-settings" class="module-tabs" style="display: none;">
+            <div class="field is-vertical">
+                <div id="settings-status-success" style="display: none" class="notification is-success">
+                    Settings Updated
+                </div>
+                <div id="settings-status-error" style="display: none" class="notification is-danger">
+                </div>
+                <form onsubmit="update_module_provider_settings(event); event.preventDefault();">
+                    <div class="field">
+                        <label class="label">Repository URL</label>
+                        <div class="control">
+                            <input placeholder="ssh://git@github.com/{{ namespace.name }}/{{ module.name }}" class="input" type="text" value="{{ module_provider.repository_url or '' }}" id="settings-repository-url">
+                        </div>
+                    </div>
+    
+                    <div class="field">
+                        <div class="control">
+                        <button class="button is-link">Update</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -411,6 +462,13 @@ ${output_tf}
                 </tr>
             `);
         });
+    });
+
+    // Check if user is authenticated and display settings tab
+    is_logged_in((logged_in) => {
+        if (logged_in) {
+            $('#settingsTabButton').css('display', 'block');
+        }
     });
 </script>
 
