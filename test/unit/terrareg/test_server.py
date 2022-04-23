@@ -1,6 +1,7 @@
 
 import unittest.mock
 import datetime
+import json
 
 import pytest
 import werkzeug.exceptions
@@ -9,14 +10,18 @@ from terrareg.models import Namespace, Module
 from terrareg.module_search import ModuleSearch
 from terrareg.filters import NamespaceTrustFilter
 from terrareg.analytics import AnalyticsEngine
+import terrareg.errors
 from test.unit.terrareg import (
-    MockModuleProvider, MockModuleVersion,
-    MockModule,
+    MockModuleProvider, MockModuleVersion, MockModule,
     client, mocked_server_module_fixture,
-    test_request_context,
+    test_request_context, app_context,
     SERVER
 )
-from terrareg.server import require_admin_authentication
+from terrareg.server import (
+    require_admin_authentication, AuthenticationType,
+    get_current_authentication_type,
+    check_csrf_token
+)
 
 
 @pytest.fixture
@@ -624,43 +629,56 @@ class TestRequireAdminAuthenticationWrapper:
 
     def _run_authentication_test(
         self,
+        app_context,
         test_request_context,
         config_secret_key,
         config_admin_authentication_token,
         expect_fail,
+        expected_authentication_type=None,
         mock_headers=None,
         mock_session=None):
         """Perform authentication test."""
-        with test_request_context:
-            with unittest.mock.patch('terrareg.config.SECRET_KEY', config_secret_key):
-                with unittest.mock.patch('terrareg.config.ADMIN_AUTHENTICATION_TOKEN', config_admin_authentication_token):
+        with test_request_context, \
+                app_context, \
+                unittest.mock.patch('terrareg.config.SECRET_KEY', config_secret_key), \
+                unittest.mock.patch('terrareg.config.ADMIN_AUTHENTICATION_TOKEN', config_admin_authentication_token):
 
-                    # Fake mock_headers and mock_session
-                    if mock_headers:
-                        test_request_context.request.headers = mock_headers
-                    if mock_session:
-                        test_request_context.session = mock_session
+            # Fake mock_headers and mock_session
+            if mock_headers:
+                test_request_context.request.headers = mock_headers
+            if mock_session:
+                test_request_context.session = mock_session
 
-                    wrapped_mock = require_admin_authentication(self._mock_function)
+            wrapped_mock = require_admin_authentication(self._mock_function)
 
-                    if expect_fail:
-                        with pytest.raises(werkzeug.exceptions.Unauthorized):
-                            wrapped_mock()
-                    else:
-                        assert wrapped_mock('x-value', y='y-value') == ('x-value', 'y-value')
+            # Ensure before calling authentication, that current authentication
+            # type is shown as not checked
+            assert get_current_authentication_type() is AuthenticationType.NOT_CHECKED
 
-    def test_unauthenticated(self, test_request_context):
+            if expect_fail:
+                with pytest.raises(werkzeug.exceptions.Unauthorized):
+                    wrapped_mock()
+            else:
+                assert wrapped_mock('x-value', y='y-value') == ('x-value', 'y-value')
+
+                # Check authentication_type has been set correctly. 
+                if expected_authentication_type:
+                    assert get_current_authentication_type() is expected_authentication_type
+
+    def test_unauthenticated(self, app_context, test_request_context):
         """Ensure 401 without an API key or mock_session."""
         self._run_authentication_test(
+            app_context=app_context,
             test_request_context=test_request_context,
             config_secret_key='asecrethere',
             config_admin_authentication_token='testpassword',
             expect_fail=True
         )
 
-    def test_mock_session_authentication_with_no_app_secret(self, test_request_context):
+    def test_mock_session_authentication_with_no_app_secret(self, app_context, test_request_context):
         """Ensure 401 with valid authentication without an APP SECRET."""
         self._run_authentication_test(
+            app_context=app_context,
             test_request_context=test_request_context,
             config_secret_key='',
             config_admin_authentication_token='testpassword',
@@ -671,9 +689,10 @@ class TestRequireAdminAuthenticationWrapper:
             }
         )
 
-    def test_401_with_expired_mock_session(self, test_request_context):
+    def test_401_with_expired_mock_session(self, app_context, test_request_context):
         """Ensure resource is called with valid mock_session."""
         self._run_authentication_test(
+            app_context=app_context,
             test_request_context=test_request_context,
             config_secret_key='testsecret',
             config_admin_authentication_token='testpassword',
@@ -684,9 +703,10 @@ class TestRequireAdminAuthenticationWrapper:
             }
         )
 
-    def test_invalid_authentication_with_empty_api_key(self, test_request_context):
+    def test_invalid_authentication_with_empty_api_key(self, app_context, test_request_context):
         """Ensure resource is called with valid mock_session."""
         self._run_authentication_test(
+            app_context=app_context,
             test_request_context=test_request_context,
             config_secret_key='testsecret',
             config_admin_authentication_token='',
@@ -697,26 +717,30 @@ class TestRequireAdminAuthenticationWrapper:
             }
         )
 
-    def test_authentication_with_mock_session(self, test_request_context):
+    def test_authentication_with_mock_session(self, app_context, test_request_context):
         """Ensure resource is called with valid mock_session."""
         self._run_authentication_test(
+            app_context=app_context,
             test_request_context=test_request_context,
             config_secret_key='testsecret',
             config_admin_authentication_token='testpassword',
             expect_fail=False,
+            expected_authentication_type=AuthenticationType.SESSION,
             mock_session={
                 'is_admin_authenticated': True,
                 'expires': datetime.datetime.now() + datetime.timedelta(hours=5)
             }
         )
 
-    def test_authentication_with_api_key(self, test_request_context):
+    def test_authentication_with_api_key(self, app_context, test_request_context):
         """Ensure resource is called with an API key."""
         self._run_authentication_test(
+            app_context=app_context,
             test_request_context=test_request_context,
             config_secret_key='testsecret',
             config_admin_authentication_token='testpassword',
             expect_fail=False,
+            expected_authentication_type=AuthenticationType.AUTHENTICATION_TOKEN,
             mock_headers={
                 'Host': 'localhost',
                 'X-Terrareg-ApiKey': 'testpassword'
@@ -764,6 +788,7 @@ class TestApiTerraregAdminAuthenticate:
                             (expected_cookie_expiry.timestamp() - session['expires'].timestamp()) < 2
                         )
                         assert session['is_admin_authenticated'] == True
+                        assert len(session['csrf_token']) == 40
 
     def test_authenticated_without_secret_key(self, client):
         """Test endpoint and ensure session is not provided"""
@@ -778,11 +803,12 @@ class TestApiTerraregAdminAuthenticate:
                 res = client.post('/v1/terrareg/auth/admin/login')
 
                 assert res.status_code == 403
-                assert res.json == {'error': 'Sessions not enabled in configuration'}
+                assert res.json == {'message': 'Sessions not enabled in configuration'}
                 with client.session_transaction() as session:
                     # Assert that no session cookies were provided
                     assert 'expires' not in session
                     assert 'is_admin_authenticated' not in session
+                    assert 'csrf_token' not in session
 
                 # Update server secret to empty value and ensure a 403 is still received.
                 # The session cannot be checked
@@ -790,7 +816,7 @@ class TestApiTerraregAdminAuthenticate:
                 res = client.post('/v1/terrareg/auth/admin/login')
 
                 assert res.status_code == 403
-                assert res.json == {'error': 'Sessions not enabled in configuration'}
+                assert res.json == {'message': 'Sessions not enabled in configuration'}
 
     def test_unauthenticated(self, client):
         """Test endpoint when user is authenticated."""
@@ -801,3 +827,223 @@ class TestApiTerraregAdminAuthenticate:
             res = client.post('/v1/terrareg/auth/admin/login')
 
             assert res.status_code == 401
+
+
+class TestCSRFFunctions:
+    """Test CSRF functions."""
+
+    def test_valid_csrf_with_session(self, app_context, test_request_context, client):
+        """Test checking a valid CSRF token with a session."""
+        SERVER._app.secret_key = 'averysecretkey'
+        with app_context, test_request_context:
+
+            # Create fake session
+            test_request_context.session['csrf_token'] = 'testcsrftoken'
+            test_request_context.session['is_authenticated'] = True
+            test_request_context.session['expires'] = datetime.datetime.now() + datetime.timedelta(minutes=1)
+            test_request_context.session.modified = True
+
+            assert check_csrf_token('testcsrftoken') == True
+
+    def test_incorrect_csrf_with_session(self, app_context, test_request_context, client):
+        """Test checking an incorrect CSRF token with a session."""
+        SERVER._app.secret_key = 'averysecretkey'
+        with app_context, test_request_context:
+
+            # Create fake session
+            test_request_context.session['csrf_token'] = 'testcsrftoken'
+            test_request_context.session['is_authenticated'] = True
+            test_request_context.session['expires'] = datetime.datetime.now() + datetime.timedelta(minutes=1)
+            test_request_context.session.modified = True
+
+            with pytest.raises(terrareg.errors.IncorrectCSRFTokenError):
+                check_csrf_token('doesnotmatch')
+
+    def test_empty_csrf_with_session(self, app_context, test_request_context, client):
+        """Test checking an incorrect CSRF token with a session."""
+        SERVER._app.secret_key = 'averysecretkey'
+        with app_context, test_request_context:
+
+            # Create fake session
+            test_request_context.session['csrf_token'] = ''
+            test_request_context.session['is_authenticated'] = True
+            test_request_context.session['expires'] = datetime.datetime.now() + datetime.timedelta(minutes=1)
+            test_request_context.session.modified = True
+
+            with pytest.raises(terrareg.errors.NoSessionSetError):
+                check_csrf_token('')
+
+    def test_invalid_csrf_without_session(self, app_context, test_request_context, client):
+        """Test checking a invalid CSRF token with a session is not established."""
+        SERVER._app.secret_key = 'averysecretkey'
+        with app_context, test_request_context:
+
+            with pytest.raises(terrareg.errors.NoSessionSetError):
+                check_csrf_token('doesnotmatter')
+
+    def test_csrf_ignored_with_authentication_token(self, app_context, test_request_context, client):
+        """Test checking a CSRF token is ignored when using authentication token."""
+        SERVER._app.secret_key = 'averysecretkey'
+        with app_context, test_request_context:
+
+            # Set global context as authentication token
+            app_context.g.authentication_type = AuthenticationType.AUTHENTICATION_TOKEN
+
+            assert check_csrf_token(None) == False
+
+    @pytest.mark.parametrize('authentication_type', [
+        (AuthenticationType.NOT_AUTHENTICATED,),
+        (AuthenticationType.NOT_CHECKED, ),
+        (AuthenticationType.SESSION,)]
+    )
+    def test_csrf_not_ignored_with_non_authentication_token(self, authentication_type, app_context, test_request_context, client):
+        """Test that all authentication types throw errors when CSRF is not passed."""
+        SERVER._app.secret_key = 'averysecretkey'
+
+        # Test that no session is thrown when no session is present
+        with app_context, test_request_context:
+
+            app_context.g.authentication_type = authentication_type
+
+            with pytest.raises(terrareg.errors.NoSessionSetError):
+                check_csrf_token(None)
+
+        # Test that incorrect CSRF token is thrown, when incorrect token is provided
+        with app_context, test_request_context:
+
+            app_context.g.authentication_type = authentication_type
+
+            # Create fake session
+            test_request_context.session['csrf_token'] = 'iscorrect'
+            test_request_context.session['is_admin_authenticated'] = True
+            test_request_context.session['expires'] = datetime.datetime.now() + datetime.timedelta(minutes=1)
+            test_request_context.session.modified = True
+
+            with pytest.raises(terrareg.errors.IncorrectCSRFTokenError):
+                check_csrf_token(None)
+
+
+class TestApiTerraregModuleProviderSettings:
+    """Test module provider settings endpoint"""
+
+    @pytest.mark.parametrize('repository_url', [
+        'https://unittest.com/module.git',
+        'http://unittest.com/module.git',
+        'ssh://unittest.com/module.git'
+    ])
+    def test_update_repository_url(
+            self, repository_url, app_context,
+            test_request_context, mocked_server_module_fixture,
+            client
+        ):
+        """Test update of repository URL."""
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
+                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url:
+
+            print(repository_url)
+            res = client.post(
+                '/v1/terrareg/fakenamespace/fakemodule/fakeprovider/settings',
+                json={
+                    'repository_url': repository_url,
+                    'csrf_token': 'unittestcsrf'
+                }
+            )
+            assert res.json == {}
+            assert res.status_code == 200
+
+            # Ensure required checks are called
+            mock_check_csrf.assert_called_once_with('unittestcsrf')
+            mocked_check_admin_authentication.assert_called()
+            mock_update_repository_url.assert_called_once_with(
+                repository_url=repository_url)
+
+    def test_update_repository_url_invalid_protocol(self, app_context, test_request_context, mocked_server_module_fixture, client):
+        """Test update of repository URL with invalid protocol."""
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
+                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url:
+
+            res = client.post(
+                '/v1/terrareg/fakenamespace/fakemodule/fakeprovider/settings',
+                json={
+                    'repository_url': 'nope://unittest.com/module.git',
+                    'csrf_token': 'unittestcsrf'
+                }
+            )
+            assert res.json == {'message': 'Repository URL contains an unknown scheme (e.g. https/git/http)'}
+            assert res.status_code == 400
+
+            # Ensure required checks are called
+            mock_check_csrf.assert_called_once_with('unittestcsrf')
+            mocked_check_admin_authentication.assert_called()
+            mock_update_repository_url.assert_not_called()
+
+    def test_update_repository_url_invalid_domain(self, app_context, test_request_context, mocked_server_module_fixture, client):
+        """Test update of repository URL with an invalid domain."""
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
+                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url:
+
+            res = client.post(
+                '/v1/terrareg/fakenamespace/fakemodule/fakeprovider/settings',
+                json={
+                    'repository_url': 'https:///module.git',
+                    'csrf_token': 'unittestcsrf'
+                }
+            )
+            assert res.json == {'message': 'Repository URL does not contain a host/domain'}
+            assert res.status_code == 400
+
+            # Ensure required checks are called
+            mock_check_csrf.assert_called_once_with('unittestcsrf')
+            mocked_check_admin_authentication.assert_called()
+            mock_update_repository_url.assert_not_called()
+
+    def test_update_repository_url_without_path(self, app_context, test_request_context, mocked_server_module_fixture, client):
+        """Test update of repository URL without a path."""
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
+                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url:
+
+            res = client.post(
+                '/v1/terrareg/fakenamespace/fakemodule/fakeprovider/settings',
+                json={
+                    'repository_url': 'https://example.com',
+                    'csrf_token': 'unittestcsrf'
+                }
+            )
+            assert res.json == {'message': 'Repository URL does not contain a path'}
+            assert res.status_code == 400
+
+            # Ensure required checks are called
+            mock_check_csrf.assert_called_once_with('unittestcsrf')
+            mocked_check_admin_authentication.assert_called()
+            mock_update_repository_url.assert_not_called()
+
+    def test_update_repository_without_csrf(self, app_context, test_request_context, mocked_server_module_fixture, client):
+        """Test update of repository URL without a CSRF token."""
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
+                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url:
+
+            res = client.post(
+                '/v1/terrareg/fakenamespace/fakemodule/fakeprovider/settings',
+                json={
+                    'repository_url': 'https://example.com/test.git'
+                }
+            )
+            assert res.json == {}
+            assert res.status_code == 200
+
+            # Ensure required checks are called
+            mock_check_csrf.assert_called_once_with(None)
+            mocked_check_admin_authentication.assert_called()
+            mock_update_repository_url.assert_called_once_with(
+                repository_url='https://example.com/test.git')
+

@@ -1,16 +1,25 @@
 
-
 import os
 import re
 import datetime
 from functools import wraps
+import urllib.parse
+import hashlib
+from enum import Enum
 
-from flask import Flask, request, render_template, redirect, make_response, send_from_directory, session
+from flask import (
+    Flask, request, render_template,
+    redirect, make_response, send_from_directory,
+    session, g
+)
 from flask_restful import Resource, Api, reqparse, inputs, abort
 
 import terrareg.config
 from terrareg.database import Database
-from terrareg.errors import TerraregError, UploadError, NoModuleVersionAvailableError
+from terrareg.errors import (
+    TerraregError, UploadError, NoModuleVersionAvailableError,
+    NoSessionSetError, IncorrectCSRFTokenError
+)
 from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion
 from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ApiUploadModuleExtractor
@@ -182,6 +191,10 @@ class Server(object):
             '/v1/terrareg/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
         )
         self._api.add_resource(
+            ApiTerraregModuleProviderSettings,
+            '/v1/terrareg/<string:namespace>/<string:name>/<string:provider>/settings'
+        )
+        self._api.add_resource(
             ApiTerraregModuleSearchFilters,
             '/v1/terrareg/search_filters'
         )
@@ -199,7 +212,8 @@ class Server(object):
         return render_template(
             *args, **kwargs,
             terrareg_application_name=APPLICATION_NAME,
-            terrareg_logo_url=LOGO_URL
+            terrareg_logo_url=LOGO_URL,
+            csrf_token=get_csrf_token()
         )
 
 
@@ -331,7 +345,7 @@ class ErrorCatchingResource(Resource):
             return {
                 "status": "Error",
                 "message": str(exc)
-            }
+            }, 500
 
     def _post(self, *args, **kwargs):
         """Placeholder for overridable post method."""
@@ -345,7 +359,7 @@ class ErrorCatchingResource(Resource):
             return {
                 "status": "Error",
                 "message": str(exc)
-            }
+            }, 500
 
     def _get_404_response(self):
         """Return common 404 error"""
@@ -773,9 +787,46 @@ class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
         return ModuleSearch.get_search_filters(query=args.q)
 
 
+class AuthenticationType(Enum):
+    """Determine the method of authentication."""
+    NOT_CHECKED = 0
+    NOT_AUTHENTICATED = 1
+    AUTHENTICATION_TOKEN = 2
+    SESSION = 3
+
+
+def get_csrf_token():
+    """Return current session CSRF token."""
+    return session.get('csrf_token', '')
+
+
+def check_csrf_token(csrf_token):
+    """Check CSRF token."""
+    # If user is authenticated using authentication token,
+    # do not required CSRF token
+    if get_current_authentication_type() is AuthenticationType.AUTHENTICATION_TOKEN:
+        return False
+
+    session_token = get_csrf_token()
+
+    if not session_token:
+        raise NoSessionSetError('No session is presesnt to check CSRF token')
+    elif session_token != csrf_token:
+        raise IncorrectCSRFTokenError('CSRF token is incorrect')
+    else:
+        return True
+
+
+def get_current_authentication_type():
+    """Return the current authentication method of the user."""
+    return g.get('authentication_type', AuthenticationType.NOT_CHECKED)
+
+
 def check_admin_authentication():
     """Check authorization header is present or authenticated session"""
     authenticated = False
+    g.authentication_type = AuthenticationType.NOT_AUTHENTICATED
+
     # Check that:
     # - An admin authentication token has been setup
     # - A token has neeif valid authorisation header has been passed
@@ -783,6 +834,7 @@ def check_admin_authentication():
             request.headers.get('X-Terrareg-ApiKey', '') ==
             terrareg.config.ADMIN_AUTHENTICATION_TOKEN):
         authenticated = True
+        g.authentication_type = AuthenticationType.AUTHENTICATION_TOKEN
 
     # Check if authenticated via session
     # - Ensure session key has been setup
@@ -791,6 +843,8 @@ def check_admin_authentication():
             'expires' in session and
             session.get('expires').timestamp() > datetime.datetime.now().timestamp()):
         authenticated = True
+        g.authentication_type = AuthenticationType.SESSION
+
     return authenticated
 
 def require_admin_authentication(func):
@@ -822,12 +876,68 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
         """Handle POST requests to the authentication endpoint."""
 
         if not terrareg.config.SECRET_KEY:
-            return {'error': 'Sessions not enabled in configuration'}, 403
+            return {'message': 'Sessions not enabled in configuration'}, 403
 
         session['is_admin_authenticated'] = True
         session['expires'] = (
             datetime.datetime.now() +
             datetime.timedelta(minutes=terrareg.config.ADMIN_SESSION_EXPIRY_MINS)
         )
+        session['csrf_token'] = hashlib.sha1(os.urandom(64)).hexdigest()
         session.modified = True
         return {'authenticated': True}
+
+
+class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
+    """Provide interface to update module provider settings."""
+
+    method_decorators = [require_admin_authentication]
+
+    def _post(self, namespace, name, provider):
+        """Handle update to settings."""
+        print(request.json)
+        parser = reqparse.RequestParser()
+        parser.add_argument(
+            'repository_url', type=str,
+            required=True,
+            help='Module provider repository URL.',
+            location='json'
+        )
+        parser.add_argument(
+            'csrf_token', type=str,
+            required=False,
+            help='CSRF token',
+            location='json',
+            default=None
+        )
+
+        args = parser.parse_args()
+
+        check_csrf_token(args.csrf_token)
+
+        # Ensure repository URL is parsable
+        repository_url = args.repository_url
+        if repository_url:
+            url = urllib.parse.urlparse(args.repository_url)
+            if not url.scheme:
+                return {'message': 'Repository URL does not contain a scheme (e.g. ssh://)'}, 400
+            if url.scheme not in ['http', 'https', 'ssh']:
+                return {'message': 'Repository URL contains an unknown scheme (e.g. https/git/http)'}, 400
+            if not url.hostname:
+                return {'message': 'Repository URL does not contain a host/domain'}, 400
+            if not url.path:
+                return {'message': 'Repository URL does not contain a path'}, 400
+        else:
+            # If repository URL is empty, set to None
+            repository_url = None
+
+        # Update repository URL of module version
+        namespace = Namespace(name=namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider.get(module=module, name=provider)
+    
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
+
+        module_provider.update_repository_url(repository_url=args.repository_url)
+        return {}
