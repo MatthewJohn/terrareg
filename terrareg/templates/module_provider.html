@@ -290,7 +290,7 @@ module "{{ module.name }}" {
                     <div class="field">
                         <label class="label">Repository URL</label>
                         <div class="control">
-                            <input class="input" type="text" value="{{ module_provider.repository_url or '' }}" name="repository-url">
+                            <input placeholder="ssh://git@github.com/{{ namespace.name }}/{{ module.name }}" class="input" type="text" value="{{ module_provider.repository_url or '' }}" name="repository-url">
                         </div>
                     </div>
     
