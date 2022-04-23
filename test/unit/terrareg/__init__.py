@@ -40,7 +40,7 @@ def setup_test_data(test_data=None):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             global TEST_MODULE_DATA
-            TEST_MODULE_DATA = test_data if test_data else test_data_full
+            TEST_MODULE_DATA = dict(test_data if test_data else test_data_full)
             res = func(*args, **kwargs)
             TEST_MODULE_DATA = {}
             return res
@@ -109,6 +109,20 @@ class MockModuleProvider(ModuleProvider):
     def _unittest_data(self):
         """Return unit test data structure for namespace."""
         return self._module._unittest_data[self._name] if self._name in self._module._unittest_data else {}
+
+    @classmethod
+    def _create(cls, module, name):
+        """Mock version of upstream mock object"""
+        if not module._namespace.name in TEST_MODULE_DATA:
+            TEST_MODULE_DATA[module._namespace.name] = {}
+        if module.name not in TEST_MODULE_DATA[module._namespace.name]:
+            TEST_MODULE_DATA[module._namespace.name][module.name] = {}
+        if name not in TEST_MODULE_DATA[module._namespace.name][module.name]:
+            TEST_MODULE_DATA[module._namespace.name][module.name][name] = {
+                'id': 99,
+                'latest_version': None,
+                'versions': {}
+            }
 
     def _get_db_row(self):
         """Return fake data in DB row."""

@@ -178,6 +178,19 @@ class ModuleProvider(object):
         return res.scalar()
 
     @classmethod
+    def _create(cls, module, name):
+        """Create instance of object in database."""
+        # Create module version, if it doesn't exist
+        db = Database.get()
+        module_provider_insert = db.module_provider.insert().values(
+            namespace=module._namespace.name,
+            module=module.name,
+            provider=name
+        )
+        conn = db.get_engine().connect()
+        conn.execute(module_provider_insert)
+
+    @classmethod
     def get(cls, module, name, create=False):
         """Create object and ensure the object exists."""
         obj = cls(module=module, name=name)
@@ -186,15 +199,7 @@ class ModuleProvider(object):
         if obj._get_db_row() is None:
 
             if create:
-                # Create module version, if it doesn't exist
-                db = Database.get()
-                module_provider_insert = db.module_provider.insert().values(
-                    namespace=module._namespace.name,
-                    module=module.name,
-                    provider=name
-                )
-                conn = db.get_engine().connect()
-                conn.execute(module_provider_insert)
+                cls._create(module=module, name=name)
 
                 return obj
 
