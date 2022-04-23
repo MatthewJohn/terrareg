@@ -640,12 +640,12 @@ class TestAdminAuthenticationWrapper:
                     if session:
                         request_context.session = session
 
+                    wrapped_mock = admin_authentication(self._mock_function)
+
                     if expect_fail:
-                        wrapped_mock = admin_authentication(self._mock_function)
                         with pytest.raises(werkzeug.exceptions.Unauthorized):
                             wrapped_mock()
                     else:
-                        wrapped_mock = admin_authentication(self._mock_function)
                         assert wrapped_mock('x-value', y='y-value') == ('x-value', 'y-value')
 
     def test_unauthenticated(self, request_context):
