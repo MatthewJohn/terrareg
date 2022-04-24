@@ -19,14 +19,19 @@
         <p class="subtitle">
             Provider: {{ module_provider.name }}
         </p>
+        {% if module_version %}
         <p class="subtitle">
             {% if module_version.description %}{{ module_version.description }}{% else %}No description provided{% endif %}
         </p>
         <p>Published {{ module_version.publish_date_display }} by <a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></p>
         <p>{% if module_version.owner %}Module managed by {{ module_version.owner }}{% endif %}</p>
         <p>{% if module_version.source_code_url %}Source Code: <a href="{{ module_version.source_code_url }}">{{ module_version.source_code_url }}</a>{% endif %}</p>
+        {% else %}
+        <p>There are no published versions of this module.</p>
+        {% endif %}
     </div>
 
+{% if module_version %}
     <div class="column is-one-fifth">
         <div class="box">
             <table class="table">
@@ -72,8 +77,11 @@ module "{{ module.name }}" {
 }</pre>
         </div>
     </div>
+    {% endif %}
 </div>
 
+
+{% if module_version %}
 <script>
     function selectModuleTab(event, tab_name) {
         tab_name = "module-tab-" + tab_name;
@@ -483,6 +491,8 @@ ${output_tf}
         }
     });
 </script>
+
+{% endif %}
 
 
 {% endblock %}

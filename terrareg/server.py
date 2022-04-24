@@ -310,9 +310,8 @@ class Server(object):
             try:
                 module_version = module_provider.get_latest_version()
             except NoModuleVersionAvailableError:
-                # If no version was provided and no versions were found for the module provider,
-                # redirect to the module
-                return redirect(module.get_view_url())
+                # If no version was provided, show page anyway
+                module_version = None
 
         else:
             module_version = ModuleVersion.get(module_provider=module_provider, version=version)
