@@ -525,6 +525,11 @@ class ModuleVersion(TerraformSpecsObject):
         return self._get_db_row()['owner']
 
     @property
+    def published(self):
+        """Return whether module is published"""
+        return bool(self._get_db_row()['published'])
+
+    @property
     def source_code_url(self):
         """Return source code URL."""
         return self._get_db_row()['source']

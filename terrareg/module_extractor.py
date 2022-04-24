@@ -22,7 +22,8 @@ from terrareg.errors import (
 )
 from terrareg.config import (
     DELETE_EXTERNALLY_HOSTED_ARTIFACTS,
-    REQUIRED_MODULE_METADATA_ATTRIBUTES
+    REQUIRED_MODULE_METADATA_ATTRIBUTES,
+    AUTO_PUBLISH_MODULE_VERSIONS
 )
 
 
@@ -139,7 +140,8 @@ class ModuleExtractor:
             source=terrareg_metadata.get('source', None),
             variable_template=json.dumps(terrareg_metadata.get('variable_template', {})),
             verified=terrareg_metadata.get('verified', False),
-            artifact_location=terrareg_metadata.get('artifact_location', None)
+            artifact_location=terrareg_metadata.get('artifact_location', None),
+            publsihed=AUTO_PUBLISH_MODULE_VERSIONS
         )
 
     def _process_submodule(self, module_pk: int, submodule: str):
