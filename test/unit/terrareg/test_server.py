@@ -1319,14 +1319,14 @@ class TestApiModuleVersionCreateBitBucketHook:
                         # Change invalid ref
                         {
                             "ref": None,
-                            "refId": "refs/tags/v6.0.0",
+                            "refId": "refs/tags/v6.0.1",
                             "fromHash": "0000000000000000000000000000000000000000",
                             "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
                             "type": "ADD"
                         },
                         # Change without ref
                         {
-                            "refId": "refs/tags/v6.0.0",
+                            "refId": "refs/tags/v6.0.2",
                             "fromHash": "0000000000000000000000000000000000000000",
                             "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
                             "type": "ADD"
@@ -1336,11 +1336,11 @@ class TestApiModuleVersionCreateBitBucketHook:
                         # Change with None refId
                         {
                             "ref": {
-                                "id": "refs/tags/v5.5.2",
-                                "displayId": "v5.5.2",
+                                "id": None,
+                                "displayId": "v5.5.3",
                                 "type": "TAG"
                             },
-                            "refId": None,
+                            "refId": "refs/tags/v5.5.3",
                             "fromHash": "0000000000000000000000000000000000000000",
                             "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
                             "type": "ADD"
@@ -1348,22 +1348,22 @@ class TestApiModuleVersionCreateBitBucketHook:
                         # Change without type:
                         {
                             "ref": {
-                                "id": "refs/tags/v6.0.0",
-                                "displayId": "v6.0.0",
+                                "id": "refs/tags/v6.0.3",
+                                "displayId": "v6.0.3",
                                 "type": "TAG"
                             },
-                            "refId": "refs/tags/v6.0.0",
+                            "refId": "refs/tags/v6.0.3",
                             "fromHash": "0000000000000000000000000000000000000000",
                             "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087"
                         },
                         # Invalid tag format
                         {
                             "ref": {
-                                "id": "refs/tags/aa1.2.3",
-                                "displayId": "aa1.2.3",
+                                "id": "refs/tags/aa1.2.4",
+                                "displayId": "aa1.2.4",
                                 "type": "TAG"
                             },
-                            "refId": "refs/tags/aa1.2.3",
+                            "refId": "refs/tags/aa1.2.4",
                             "fromHash": "0000000000000000000000000000000000000000",
                             "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
                             "type": "ADD"
