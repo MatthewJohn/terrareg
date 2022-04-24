@@ -3,7 +3,6 @@ import os
 from distutils.version import StrictVersion
 import json
 import re
-from cffi import VerificationMissing
 import sqlalchemy
 import urllib.parse
 
