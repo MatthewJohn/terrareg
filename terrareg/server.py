@@ -3,6 +3,7 @@ import os
 import re
 import datetime
 from functools import wraps
+import json
 import urllib.parse
 import hashlib
 from enum import Enum
@@ -178,12 +179,17 @@ class Server(object):
 
         ## Module endpoints /v1/terreg/modules
         self._api.add_resource(
-            ApiTerraregModuleVersionVariableTemplate,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
-        )
-        self._api.add_resource(
             ApiTerraregModuleProviderSettings,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/settings'
+        )
+        self._api.add_resource(
+            ApiModuleVersionCreateBitBucketHook,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/hooks/bitbucket'
+        )
+
+        self._api.add_resource(
+            ApiTerraregModuleVersionVariableTemplate,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
         )
         self._api.add_resource(
             ApiModuleVersionUpload,
@@ -191,7 +197,7 @@ class Server(object):
         )
         self._api.add_resource(
             ApiModuleVersionCreate,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/create'
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/import'
         )
         self._api.add_resource(
             ApiModuleVersionSourceDownload,
@@ -434,6 +440,89 @@ class ApiModuleVersionCreate(ErrorCatchingResource):
 
         return {
             'status': 'Success'
+        }
+
+
+class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
+    """Provide interface for bitbucket hook to detect pushes of new tags."""
+
+    def _post(self, namespace, name, provider):
+        """Create new version based on bitbucket hooks."""
+        namespace = Namespace(name=namespace)
+        module = Module(namespace=namespace, name=name)
+        # Get module provider and optionally create, if it doesn't exist
+        module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+
+        if not module_provider.repository_url:
+            return {'message': 'Module provider is not configured with a repository'}, 400
+
+        bitbucket_data = request.json
+        print(bitbucket_data)
+
+        if not ('changes' in bitbucket_data and type(bitbucket_data['changes']) == list):
+            return {'message': 'List of changes not found in payload'}, 400
+
+        imported_versions = {}
+        error = False
+
+        for change in bitbucket_data['changes']:
+
+            # Check that change is a dict
+            if not type(change) is dict:
+                continue
+
+            # Check if change type is tag
+            if not ('ref' in change and
+                    type(change['ref']) is dict and
+                    'type' in change['ref'] and
+                    type(change['ref']['type']) == str and
+                    change['ref']['type'] == 'TAG'):
+                continue
+
+            # Check type of change is an ADD or UPDATE
+            if not ('type' in change and
+                    type(change['type']) is str and
+                    change['type'] in ['ADD', 'UPDATE']):
+                continue
+
+            # Obtain tag name
+            tag_ref = change['ref']['id'] if 'id' in change['ref'] else None
+
+            # Attempt to match version against regex
+            version = module_provider.get_version_from_tag_ref(tag_ref)
+
+            if not version:
+                continue
+
+            # Create module version
+            module_version = ModuleVersion(module_provider=module_provider, version=version)
+
+            # Perform import from git
+            try:
+                module_version.prepare_module()
+                with GitModuleExtractor(module_version=module_version) as me:
+                    me.process_upload()
+            except TerraregError as exc:
+                imported_versions[version] = {
+                    'status': 'Failed',
+                    'message': str(exc)
+                }
+                continue
+
+            imported_versions[version] = {
+                'status': 'Success'
+            }
+
+        if error:
+            return {
+                'status': 'Error',
+                'message': 'One or more tags failed to import',
+                'tags': imported_versions
+            }, 500
+        return {
+            'status': 'Success',
+            'message': 'Imported all provided tags',
+            'tags': imported_versions
         }
 
 

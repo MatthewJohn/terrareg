@@ -239,7 +239,43 @@ class ModuleProvider(object):
     @property
     def git_tag_format(self):
         """Return git tag format"""
-        return self._get_db_row()['git_tag_format']
+        if self._get_db_row()['git_tag_format']:
+            return self._get_db_row()['git_tag_format']
+        # Return default format template for just version
+        return '{version}'
+
+    @property
+    def git_ref_format(self):
+        return 'refs/tags/{}'.format(self.git_tag_format)
+
+    @property
+    def tag_ref_regex(self):
+        """Return regex match for git ref to match version"""
+        # Hacky method to replace placeholder with temporary string,
+        # escape regex characters and then replace temporary string
+        # with regex for version
+        string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m153'
+        version_re = self.git_ref_format.format(version=string_does_not_exist)
+        version_re = re.escape(version_re)
+        # Add EOL and SOL characters
+        version_re = '^{version_re}$'.format(version_re=version_re)
+        # Replace temporary string with regex for symatec version
+        version_re = version_re.replace(string_does_not_exist, r'(\d+\.\d+.\d+)')
+        print(version_re)
+        # Return copmiled regex
+        return re.compile(version_re)
+
+    def get_version_from_tag_ref(self, tag_ref):
+        """Match tag ref against version number and return actual version number."""
+        # Handle empty/None tag_ref
+        if not tag_ref:
+            return None
+
+        res = self.tag_ref_regex.match(tag_ref)
+        print(tag_ref)
+        if res:
+            return res.group(1)
+        return None
 
     @property
     def base_directory(self):
@@ -506,9 +542,13 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def source_git_tag(self):
         """Return git tag used for extraction clone"""
-        if self._module_provider.git_tag_format:
-            return self._module_provider.git_tag_format.format(version=self._version)
-        return self._version
+        return self._module_provider.git_tag_format.format(version=self._version)
+
+
+    @property
+    def git_tag_ref(self):
+        """Return git tag ref for extraction."""
+        return self._module_provider.git_ref_format.format(version=self._version)
 
     @property
     def base_directory(self):
