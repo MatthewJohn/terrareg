@@ -203,6 +203,10 @@ class Server(object):
             ApiModuleVersionSourceDownload,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/source.zip'
         )
+        self._api.add_resource(
+            ApiTerraregModuleVersionPublish,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/publish'
+        )
 
         self._api.add_resource(
             ApiTerraregModuleSearchFilters,
@@ -1071,3 +1075,25 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             module_provider.update_git_tag_format(git_tag_format)
 
         return {}
+
+
+class ApiTerraregModuleVersionPublish(ErrorCatchingResource):
+    """Provide interface to publish module version."""
+
+    def _post(self, namespace, name, provider, version):
+        """Publish module."""
+        namespace = Namespace(name=namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider.get(module=module, name=provider)
+
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
+
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        if not module_version:
+            return {'message': 'Module version does not exist'}, 400
+
+        module_version.update_attributes(published=True)
+        return {
+            'status': 'Success'
+        }
