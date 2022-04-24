@@ -486,7 +486,7 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
                 continue
 
             # Obtain tag name
-            tag_ref = change['ref']['id']
+            tag_ref = change['ref']['id'] if 'id' in change['ref'] else None
 
             # Attempt to match version against regex
             version = module_provider.get_version_from_tag_ref(tag_ref)
