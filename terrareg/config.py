@@ -79,6 +79,6 @@ Whether new module versions (either via upload, import or hook) are automaticall
 published and available.
 If this is disabled, the publish endpoint must be called before the module version
 is displayed in the list of module versions.
-NOTE: Even whilst in an unpublished state, the module version can still be accessed directly.
+NOTE: Even whilst in an unpublished state, the module version can still be accessed directly, but not used within terraform.
 """
 AUTO_PUBLISH_MODULE_VERSIONS = os.environ.get('AUTO_PUBLISH_MODULE_VERSIONS', 'True') == 'True'
