@@ -106,7 +106,8 @@ class Database():
             sqlalchemy.Column('module_details', sqlalchemy.String),
             sqlalchemy.Column('variable_template', sqlalchemy.String),
             sqlalchemy.Column('verified', sqlalchemy.Boolean),
-            sqlalchemy.Column('artifact_location', sqlalchemy.String)
+            sqlalchemy.Column('artifact_location', sqlalchemy.String),
+            sqlalchemy.Column('published', sqlalchemy.Boolean)
         )
 
         self._sub_module = sqlalchemy.Table(

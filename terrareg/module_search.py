@@ -27,7 +27,8 @@ class ModuleSearch(object):
                         db.module_version.c.version.like(query_part),
                         db.module_version.c.description.like(wildcarded_query_part),
                         db.module_version.c.owner.like(wildcarded_query_part)
-                    )
+                    ),
+                    db.module_version.c.published == True
                 )
         return select
 

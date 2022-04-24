@@ -22,7 +22,8 @@ from terrareg.errors import (
 )
 from terrareg.config import (
     DELETE_EXTERNALLY_HOSTED_ARTIFACTS,
-    REQUIRED_MODULE_METADATA_ATTRIBUTES
+    REQUIRED_MODULE_METADATA_ATTRIBUTES,
+    AUTO_PUBLISH_MODULE_VERSIONS
 )
 
 
@@ -126,22 +127,8 @@ class ModuleExtractor:
         terraform_docs_output: dict,
         terrareg_metadata: dict) -> int:
         """Insert module into DB, overwrite any pre-existing"""
-        db = Database.get()
-
-        conn = db.get_engine().connect()
-
-        # Delete module from module_version table
-        delete_statement = db.module_version.delete().where(
-            db.module_version.c.module_provider_id ==
-            self._module_version._module_provider.pk,
-            db.module_version.c.version == self._module_version.version
-        )
-        conn.execute(delete_statement)
-
-        # Insert new module into table
-        insert_statement = db.module_version.insert().values(
-            module_provider_id=self._module_version._module_provider.pk,
-            version=self._module_version.version,
+        # Update attributes of module_version in database
+        self._module_version.update_attributes(
             readme_content=readme_content,
             module_details=json.dumps(terraform_docs_output),
 
@@ -153,12 +140,9 @@ class ModuleExtractor:
             source=terrareg_metadata.get('source', None),
             variable_template=json.dumps(terrareg_metadata.get('variable_template', {})),
             verified=terrareg_metadata.get('verified', False),
-            artifact_location=terrareg_metadata.get('artifact_location', None)
+            artifact_location=terrareg_metadata.get('artifact_location', None),
+            publsihed=AUTO_PUBLISH_MODULE_VERSIONS
         )
-        res = conn.execute(insert_statement)
-
-        # Return primary key
-        return res.inserted_primary_key[0]
 
     def _process_submodule(self, module_pk: int, submodule: str):
         """Process submodule."""
@@ -195,19 +179,14 @@ class ModuleExtractor:
         if not (terrareg_metadata.get('artifact_location', None) and DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
             self._generate_archive()
 
-        # Debug
-        # print(module_details)
-        print(json.dumps(module_details, sort_keys=False, indent=4))
-        # print(readme_content)
-
-        module_pk = self._insert_database(
+        self._insert_database(
             readme_content=readme_content,
             terraform_docs_output=module_details,
             terrareg_metadata=terrareg_metadata
         )
 
         for submodule in module_details['modules']:
-            self._process_submodule(module_pk, submodule)
+            self._process_submodule(self._module_version.pk, submodule)
 
 
 class ApiUploadModuleExtractor(ModuleExtractor):

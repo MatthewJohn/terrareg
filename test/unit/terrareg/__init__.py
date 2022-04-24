@@ -75,6 +75,10 @@ class MockModuleVersion(ModuleVersion):
             None
         )
 
+    def update_attributes(self, **kwargs):
+        """Mock updating module version attributes"""
+        self._unittest_data.update(kwargs)
+
     def _get_db_row(self):
         """Return mock DB row"""
         if self._unittest_data is None:

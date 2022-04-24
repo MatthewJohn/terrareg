@@ -4,7 +4,7 @@ test_data_full = {
         'testmodulename': {'testprovider': {
             'id': 1,
             'latest_version': '2.4.1',
-            'versions': {'2.4.1': {}, '1.0.0': {}}
+            'versions': {'2.4.1': {'published': True}, '1.0.0': {'published': True}}
         }},
         'lonelymodule': {'testprovider': {
             'id': 2,
@@ -26,6 +26,13 @@ test_data_full = {
             'latest_version': '2.1.0',
             'repository_url': 'https://github.com/test/test.git',
             'versions': {'2.1.0': {}}
+        }},
+        'modulenotpublished': {'testprovider': {
+            'id': 10,
+            'latest_verison': '10.2.1',
+            'versions': {
+                '10.2.1': {'published': False}
+            }
         }}
     },
     'secondtestnamespace': {
