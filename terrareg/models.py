@@ -347,11 +347,10 @@ class ModuleProvider(object):
         """Get latest version of module."""
         db = Database.get()
         select = db.select_module_version_joined_module_provider().where(
-            db.module_provider.c.namespace == self._module._namespace.name
-        ).where(
-            db.module_provider.c.module == self._module.name
-        ).where(
-            db.module_provider.c.provider == self.name
+            db.module_provider.c.namespace == self._module._namespace.name,
+            db.module_provider.c.module == self._module.name,
+            db.module_provider.c.provider == self.name,
+            db.module_version.c.published == True
         )
         conn = db.get_engine().connect()
         res = conn.execute(select)
@@ -383,11 +382,10 @@ class ModuleProvider(object):
         db = Database.get()
 
         select = db.select_module_version_joined_module_provider().where(
-            db.module_provider.c.namespace == self._module._namespace.name
-        ).where(
-            db.module_provider.c.module == self._module.name
-        ).where(
-            db.module_provider.c.provider == self.name
+            db.module_provider.c.namespace == self._module._namespace.name,
+            db.module_provider.c.module == self._module.name,
+            db.module_provider.c.provider == self.name,
+            db.module_version.c.published == True
         )
         conn = db.get_engine().connect()
         res = conn.execute(select)
