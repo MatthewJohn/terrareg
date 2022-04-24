@@ -457,6 +457,7 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
             return {'message': 'Module provider is not configured with a repository'}, 400
 
         bitbucket_data = request.json
+        print(bitbucket_data)
 
         if not ('changes' in bitbucket_data and type(bitbucket_data['changes']) == list):
             return {'message': 'List of changes not found in payload'}, 400
@@ -467,6 +468,10 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
         for change in bitbucket_data['changes']:
             # Check if change type is tag
             if not ('ref' in change and 'type' in change['ref'] and change['ref']['type'] == 'TAG'):
+                continue
+
+            # Check type of change is an ADD or UPDATE
+            if not ('type' in change and change['type'] in ['ADD', 'UPDATE']):
                 continue
 
             # Obtain tag name
