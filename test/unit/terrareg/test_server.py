@@ -1122,7 +1122,7 @@ class TestApiModuleVersionCreateBitBucketHook:
 
     @setup_test_data()
     def test_hook_with_full_payload_single_change(self, client, mocked_server_namespace_fixture):
-        """Test hook call with no changes."""
+        """Test hook call full payload."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
                 unittest.mock.patch(
@@ -1176,3 +1176,148 @@ class TestApiModuleVersionCreateBitBucketHook:
 
             mocked_prepare_module.assert_called_once()
             mocked_process_upload.assert_called_once()
+
+
+    @setup_test_data()
+    def test_hook_with_module_provider_without_repository_url(self, client, mocked_server_namespace_fixture):
+        """Test hook call to module provider with no repository url."""
+        with unittest.mock.patch(
+                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
+                unittest.mock.patch(
+                    'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
+
+            res = client.post(
+                '/v1/terrareg/modules/moduleextraction/bitbucketexample/norepourl/hooks/bitbucket',
+                json={
+                    "changes": [
+                        {
+                            "ref": {
+                                "id": "refs/tags/v4.0.6",
+                                "displayId": "v4.0.6",
+                                "type": "TAG"
+                            },
+                            "refId": "refs/tags/v4.0.6",
+                            "fromHash": "0000000000000000000000000000000000000000",
+                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                            "type": "ADD"
+                        }
+                    ]
+                }
+            )
+
+            assert res.status_code == 400
+            assert res.json == {'message': 'Module provider is not configured with a repository'}
+
+            mocked_prepare_module.assert_not_called()
+            mocked_process_upload.assert_not_called()
+
+    @setup_test_data()
+    def test_hook_with_module_provider_with_multiple_tags(self, client, mocked_server_namespace_fixture):
+        """Test hook call with multiple tag changes."""
+        with unittest.mock.patch(
+                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
+                unittest.mock.patch(
+                    'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
+
+            res = client.post(
+                '/v1/terrareg/modules/moduleextraction/bitbucketexample/norepourl/hooks/bitbucket',
+                json={
+                    "changes": [
+                        {
+                            "ref": {
+                                "id": "refs/tags/v5.1.2",
+                                "displayId": "v5.1.2",
+                                "type": "TAG"
+                            },
+                            "refId": "refs/tags/v5.1.2",
+                            "fromHash": "0000000000000000000000000000000000000000",
+                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                            "type": "ADD"
+                        },
+                        {
+                            "ref": {
+                                "id": "refs/tags/v6.2.0",
+                                "displayId": "v6.2.0",
+                                "type": "TAG"
+                            },
+                            "refId": "refs/tags/v6.2.0",
+                            "fromHash": "0000000000000000000000000000000000000000",
+                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                            "type": "ADD"
+                        }
+                    ]
+                }
+            )
+
+            assert res.status_code == 200
+            assert res.json == {
+                'status': 'Success',
+                'message': 'Imported all provided tags',
+                'tags': {
+                    '5.1.2': {'status': 'Success'},
+                    '6.2.0': {'status': 'Success'}
+                }
+            }
+
+            mocked_prepare_module.assert_called()
+            mocked_process_upload.assert_called()
+
+    @setup_test_data()
+    def test_hook_with_module_provider_with_no_changes(self, client, mocked_server_namespace_fixture):
+        """Test hook call with no changes."""
+        with unittest.mock.patch(
+                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
+                unittest.mock.patch(
+                    'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
+
+            res = client.post(
+                '/v1/terrareg/modules/moduleextraction/bitbucketexample/norepourl/hooks/bitbucket',
+                json={
+                    "changes": [
+                        {
+                            "ref": {
+                                "type": "COMMIT"
+                            },
+                            "fromHash": "0000000000000000000000000000000000000000",
+                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                            "type": "ADD"
+                        },
+                    ]
+                }
+            )
+
+            assert res.status_code == 200
+            assert res.json == {
+                'status': 'Success',
+                'message': 'Imported all provided tags',
+                'tags': {}
+            }
+
+            mocked_prepare_module.assert_not_called()
+            mocked_process_upload.assert_not_called()
+
+    @setup_test_data()
+    def test_hook_with_module_provider_with_nontag_changes(self, client, mocked_server_namespace_fixture):
+        """Test hook call with non tag changes."""
+        with unittest.mock.patch(
+                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
+                unittest.mock.patch(
+                    'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
+
+            res = client.post(
+                '/v1/terrareg/modules/moduleextraction/bitbucketexample/norepourl/hooks/bitbucket',
+                json={
+                    "changes": [
+                    ]
+                }
+            )
+
+            assert res.status_code == 200
+            assert res.json == {
+                'status': 'Success',
+                'message': 'Imported all provided tags',
+                'tags': {}
+            }
+
+            mocked_prepare_module.assert_not_called()
+            mocked_process_upload.assert_not_called()
