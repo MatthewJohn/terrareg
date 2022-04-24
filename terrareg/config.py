@@ -73,3 +73,12 @@ SECRET_KEY = os.environ.get('SECRET_KEY', None)
 Session timeout for admin cookie sessions
 """
 ADMIN_SESSION_EXPIRY_MINS = int(os.environ.get('ADMIN_SESSION_EXPIRY_MINS', 5))
+
+"""
+Whether new module versions (either via upload, import or hook) are automatically
+published and available.
+If this is disabled, the publish endpoint must be called before the module version
+is displayed in the list of module versions.
+NOTE: Even whilst in an unpublished state, the module version can still be accessed directly, but not used within terraform.
+"""
+AUTO_PUBLISH_MODULE_VERSIONS = os.environ.get('AUTO_PUBLISH_MODULE_VERSIONS', 'True') == 'True'
