@@ -645,7 +645,7 @@ class TestApiModuleVersionCreate:
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
             res = client.post(
-                '/v1/terrareg/modules/testnamespace/modulenorepourl/testprovider/5.5.4/create')
+                '/v1/terrareg/modules/testnamespace/modulenorepourl/testprovider/5.5.4/import')
             assert res.status_code == 400
             assert res.json == {'message': 'Module provider is not configured with a repository'}
 
@@ -660,7 +660,7 @@ class TestApiModuleVersionCreate:
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
             res = client.post(
-                '/v1/terrareg/modules/testnamespace/modulewithrepourl/testprovider/5.5.4/create')
+                '/v1/terrareg/modules/testnamespace/modulewithrepourl/testprovider/5.5.4/import')
             assert res.status_code == 200
             assert res.json == {'status': 'Success'}
 
@@ -675,7 +675,7 @@ class TestApiModuleVersionCreate:
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
             res = client.post(
-                '/v1/terrareg/modules/testnamespace/moduledoesnotexist/testprovider/5.5.4/create')
+                '/v1/terrareg/modules/testnamespace/moduledoesnotexist/testprovider/5.5.4/import')
             assert res.status_code == 400
             assert res.json == {'message': 'Module provider is not configured with a repository'}
 

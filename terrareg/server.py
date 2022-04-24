@@ -197,7 +197,7 @@ class Server(object):
         )
         self._api.add_resource(
             ApiModuleVersionCreate,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/hooks/manual'
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/import'
         )
         self._api.add_resource(
             ApiModuleVersionSourceDownload,
