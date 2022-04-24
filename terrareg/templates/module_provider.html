@@ -19,7 +19,15 @@
         <p class="subtitle">
             Provider: {{ module_provider.name }}
         </p>
+
         {% if module_version %}
+
+        {% if not module_version.published %}
+        <p class="subtitle">
+            <b>WARNING:</b> This version of the module is not published.
+        </p>
+        {% endif %}
+
         <p class="subtitle">
             {% if module_version.description %}{{ module_version.description }}{% else %}No description provided{% endif %}
         </p>
