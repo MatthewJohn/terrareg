@@ -261,7 +261,6 @@ class ModuleProvider(object):
         version_re = '^{version_re}$'.format(version_re=version_re)
         # Replace temporary string with regex for symatec version
         version_re = version_re.replace(string_does_not_exist, r'(\d+\.\d+.\d+)')
-        print(version_re)
         # Return copmiled regex
         return re.compile(version_re)
 
@@ -272,7 +271,6 @@ class ModuleProvider(object):
             return None
 
         res = self.tag_ref_regex.match(tag_ref)
-        print(tag_ref)
         if res:
             return res.group(1)
         return None

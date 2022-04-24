@@ -457,7 +457,6 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
             return {'message': 'Module provider is not configured with a repository'}, 400
 
         bitbucket_data = request.json
-        print(bitbucket_data)
 
         if not ('changes' in bitbucket_data and type(bitbucket_data['changes']) == list):
             return {'message': 'List of changes not found in payload'}, 400
@@ -726,7 +725,6 @@ class ApiModuleVersions(ErrorCatchingResource):
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
-        print(request.headers)
         return {
             "modules": [
                 {
@@ -797,7 +795,6 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
             user_agent=request.headers.get('User-Agent', None),
             auth_token=auth_token
         )
-        print(dict(request.headers))
 
         resp = make_response('', 204)
         resp.headers['X-Terraform-Get'] = module_version.get_source_download_url()
@@ -1015,7 +1012,6 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
 
     def _post(self, namespace, name, provider):
         """Handle update to settings."""
-        print(request.json)
         parser = reqparse.RequestParser()
         parser.add_argument(
             'repository_url', type=str,

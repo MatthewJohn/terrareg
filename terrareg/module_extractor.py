@@ -179,11 +179,6 @@ class ModuleExtractor:
         if not (terrareg_metadata.get('artifact_location', None) and DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
             self._generate_archive()
 
-        # Debug
-        # print(module_details)
-        print(json.dumps(module_details, sort_keys=False, indent=4))
-        # print(readme_content)
-
         self._insert_database(
             readme_content=readme_content,
             terraform_docs_output=module_details,
