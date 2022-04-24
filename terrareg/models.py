@@ -287,7 +287,7 @@ class ModuleProvider(object):
         self._name = name
 
 
-    def _get_db_where(self, db, statement):
+    def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
         return statement.where(
             db.module_provider.c.namespace == self._module._namespace.name,
@@ -308,10 +308,10 @@ class ModuleProvider(object):
         res = conn.execute(select)
         return res.fetchone()
 
-    def _update_row(self, **kwargs):
+    def update_attributes(self, **kwargs):
         """Update DB row."""
         db = Database.get()
-        update = self._get_db_where(
+        update = self.get_db_where(
             db=db, statement=db.module_provider.update()
         ).values(**kwargs)
         conn = db.get_engine().connect()
@@ -331,12 +331,12 @@ class ModuleProvider(object):
         else:
             # If not value was provided, default to None
             sanitised_git_tag_format = None
-        self._update_row(git_tag_format=sanitised_git_tag_format)
+        self.update_attributes(git_tag_format=sanitised_git_tag_format)
 
     def update_repository_url(self, repository_url):
         """Update repository URL for module provider."""
         sanitised_repository_url = urllib.parse.quote(repository_url, safe='/:@%?=')
-        self._update_row(repository_url=sanitised_repository_url)
+        self.update_attributes(repository_url=sanitised_repository_url)
 
     def get_view_url(self):
         """Return view URL"""
@@ -696,6 +696,45 @@ class ModuleVersion(TerraformSpecsObject):
     def prepare_module(self):
         """Handle file upload of module version."""
         self.create_data_directory()
+        self._create_db_row()
+
+    def get_db_where(self, db, statement):
+        """Filter DB query by where for current object."""
+        return statement.where(
+            db.module_version.c.module_provider_id == self._module_provider.pk,
+            db.module_version.c.version == self.version
+        )
+
+    def update_attributes(self, **kwargs):
+        """Update attributes of module version in database row."""
+        db = Database.get()
+        update = self.get_db_where(
+            db=db, statement=db.module_version.update()
+        ).values(**kwargs)
+        conn = db.get_engine().connect()
+        conn.execute(update)
+
+    def _create_db_row(self):
+        """Insert into datadabase, removing any existing duplicate versions."""
+        db = Database.get()
+
+        conn = db.get_engine().connect()
+
+        # Delete module from module_version table
+        delete_statement = db.module_version.delete().where(
+            db.module_version.c.module_provider_id ==
+            self._module_provider.pk,
+            db.module_version.c.version == self.version
+        )
+        conn.execute(delete_statement)
+
+        # Insert new module into table
+        insert_statement = db.module_version.insert().values(
+            module_provider_id=self._module_provider.pk,
+            version=self.version,
+            published=False
+        )
+        conn.execute(insert_statement)
 
     def get_submodules(self):
         """Return list of submodules."""
