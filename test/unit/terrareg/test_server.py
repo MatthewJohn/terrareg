@@ -1262,6 +1262,153 @@ class TestApiModuleVersionCreateBitBucketHook:
             mocked_prepare_module.assert_called()
             mocked_process_upload.assert_called()
 
+    @setup_test_data()
+    def test_hook_with_module_provider_with_invalid_changes(self, client, mocked_server_namespace_fixture):
+        """Test hook call with multiple tag changes."""
+        with unittest.mock.patch(
+                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
+                unittest.mock.patch(
+                    'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
+
+            res = client.post(
+                '/v1/terrareg/modules/moduleextraction/bitbucketexample/testprovider/hooks/bitbucket',
+                json={
+                    "changes": [
+                        {
+                            "ref": {
+                                "id": "refs/tags/v5.1.2",
+                                "displayId": "v5.1.2",
+                                "type": "TAG"
+                            },
+                            "refId": "refs/tags/v5.1.2",
+                            "fromHash": "0000000000000000000000000000000000000000",
+                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                            "type": "ADD"
+                        },
+                        # DELETED TAG
+                        {
+                            "ref": {
+                                "id": "refs/tags/v5.5.2",
+                                "displayId": "v5.5.2",
+                                "type": "TAG"
+                            },
+                            "refId": "refs/tags/v5.5.2",
+                            "fromHash": "0000000000000000000000000000000000000000",
+                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                            "type": "DELETE"
+                        },
+                        # Commit
+                        {
+                            'ref': {
+                                'id': 'refs/heads/master', 'displayId': 'master', 'type': 'BRANCH'
+                            },
+                            'refId': 'refs/heads/master', 'fromHash': '1097d939669e3209ff33e6dfe982d84c204f6087',
+                            'toHash': '9f492469219b96c807ad0879763ea076689cc322', 'type': 'UPDATE'
+                        },
+                        # Change without type
+                        {
+                            "ref": {
+                                "id": "refs/tags/v6.0.0",
+                                "displayId": "v6.0.0"
+                            },
+                            "refId": "refs/tags/v6.0.0",
+                            "fromHash": "0000000000000000000000000000000000000000",
+                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                            "type": "ADD"
+                        },
+                        # Change invalid ref
+                        {
+                            "ref": None,
+                            "refId": "refs/tags/v6.0.0",
+                            "fromHash": "0000000000000000000000000000000000000000",
+                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                            "type": "ADD"
+                        },
+                        # Change without ref
+                        {
+                            "refId": "refs/tags/v6.0.0",
+                            "fromHash": "0000000000000000000000000000000000000000",
+                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                            "type": "ADD"
+                        },
+                        # Change that is not a dict
+                        None,
+                        # Change with None refId
+                        {
+                            "ref": {
+                                "id": "refs/tags/v5.5.2",
+                                "displayId": "v5.5.2",
+                                "type": "TAG"
+                            },
+                            "refId": None,
+                            "fromHash": "0000000000000000000000000000000000000000",
+                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                            "type": "ADD"
+                        },
+                        # Change without type:
+                        {
+                            "ref": {
+                                "id": "refs/tags/v6.0.0",
+                                "displayId": "v6.0.0",
+                                "type": "TAG"
+                            },
+                            "refId": "refs/tags/v6.0.0",
+                            "fromHash": "0000000000000000000000000000000000000000",
+                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087"
+                        },
+                        # Invalid tag format
+                        {
+                            "ref": {
+                                "id": "refs/tags/aa1.2.3",
+                                "displayId": "aa1.2.3",
+                                "type": "TAG"
+                            },
+                            "refId": "refs/tags/aa1.2.3",
+                            "fromHash": "0000000000000000000000000000000000000000",
+                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                            "type": "ADD"
+                        },
+                        # Invalid symentic tag version
+                        {
+                            "ref": {
+                                "id": "refs/tags/v1.2.3-pre",
+                                "displayId": "v1.2.3-pre",
+                                "type": "TAG"
+                            },
+                            "refId": "refs/tags/v1.2.3-pre",
+                            "fromHash": "0000000000000000000000000000000000000000",
+                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                            "type": "ADD"
+                        },
+                        # Valid tag
+                        {
+                            "ref": {
+                                "id": "refs/tags/v6.2.0",
+                                "displayId": "v6.2.0",
+                                "type": "TAG"
+                            },
+                            "refId": "refs/tags/v6.2.0",
+                            "fromHash": "0000000000000000000000000000000000000000",
+                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                            "type": "ADD"
+                        }
+                    ]
+                }
+            )
+
+            assert res.status_code == 200
+            assert res.json == {
+                'status': 'Success',
+                'message': 'Imported all provided tags',
+                'tags': {
+                    '5.1.2': {'status': 'Success'},
+                    '6.2.0': {'status': 'Success'}
+                }
+            }
+
+            mocked_prepare_module.assert_called()
+            mocked_process_upload.assert_called()
+
     def _test_bitbucket_with_no_tag_result_expected(self, client, payload):
         """Test bitbucket call expecting no tags found."""
         with unittest.mock.patch(
@@ -1311,6 +1458,41 @@ class TestApiModuleVersionCreateBitBucketHook:
                     {
                         "ref": {
                         },
+                        "fromHash": "0000000000000000000000000000000000000000",
+                        "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                        "type": "ADD"
+                    }
+                ]
+            }
+        )
+
+    @setup_test_data()
+    def test_hook_with_module_provider_with_no_type(self, client, mocked_server_namespace_fixture):
+        """Test hook call with with without type."""
+        self._test_bitbucket_with_no_tag_result_expected(client,
+            {
+                "changes": [
+                    {
+                        "ref": {
+                            "id": "refs/tags/v6.2.0",
+                            "displayId": "v6.2.0",
+                            "type": "TAG"
+                        },
+                        "fromHash": "0000000000000000000000000000000000000000",
+                        "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087"
+                    },
+                ]
+            }
+        )
+
+    @setup_test_data()
+    def test_hook_with_module_provider_with_none_ref(self, client, mocked_server_namespace_fixture):
+        """Test hook call with with without type."""
+        self._test_bitbucket_with_no_tag_result_expected(client,
+            {
+                "changes": [
+                    {
+                        "ref": None,
                         "fromHash": "0000000000000000000000000000000000000000",
                         "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
                         "type": "ADD"
