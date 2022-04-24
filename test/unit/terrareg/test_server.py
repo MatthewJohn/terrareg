@@ -1220,7 +1220,7 @@ class TestApiModuleVersionCreateBitBucketHook:
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
 
             res = client.post(
-                '/v1/terrareg/modules/moduleextraction/bitbucketexample/norepourl/hooks/bitbucket',
+                '/v1/terrareg/modules/moduleextraction/bitbucketexample/testprovider/hooks/bitbucket',
                 json={
                     "changes": [
                         {
@@ -1271,7 +1271,7 @@ class TestApiModuleVersionCreateBitBucketHook:
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
 
             res = client.post(
-                '/v1/terrareg/modules/moduleextraction/bitbucketexample/norepourl/hooks/bitbucket',
+                '/v1/terrareg/modules/moduleextraction/bitbucketexample/testprovider/hooks/bitbucket',
                 json={
                     "changes": [
                         {
@@ -1305,7 +1305,7 @@ class TestApiModuleVersionCreateBitBucketHook:
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
 
             res = client.post(
-                '/v1/terrareg/modules/moduleextraction/bitbucketexample/norepourl/hooks/bitbucket',
+                '/v1/terrareg/modules/moduleextraction/bitbucketexample/testprovider/hooks/bitbucket',
                 json={
                     "changes": [
                     ]
