@@ -39,6 +39,12 @@ test_data_full = {
         'test-module': { 'testprovider': {
             'id': 7,
             'repository_url': 'ssh://example.com/repo.git'
+        }},
+        'bitbucketexample': { 'testprovider': {
+            'id': 8,
+            'repository_url': 'ssh://git@localhost:7999/bla/test-module.git',
+            'git_tag_format': 'v{version}',
+            'versions': []
         }}
     }
 }

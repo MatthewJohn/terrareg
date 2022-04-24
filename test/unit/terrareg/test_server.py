@@ -1116,3 +1116,63 @@ class TestApiTerraregModuleProviderSettings:
             mock_update_repository_url.assert_called_once_with(
                 repository_url='https://example.com/test.git')
 
+
+class TestApiModuleVersionCreateBitBucketHook:
+    """Test TestApiModuleVersionCreateBitBucketHook resource."""
+
+    @setup_test_data()
+    def test_hook_with_full_payload_single_change(self, client, mocked_server_namespace_fixture):
+        """Test hook call with no changes."""
+        with unittest.mock.patch(
+                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
+                unittest.mock.patch(
+                    'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
+
+            res = client.post(
+                '/v1/terrareg/modules/moduleextraction/bitbucketexample/testprovider/hooks/bitbucket',
+                json={
+                    "eventKey": "repo:refs_changed", "date": "2022-04-23T21:21:46+0000",
+                    "actor": {
+                        "name": "admin", "emailAddress": "admin@localhost",
+                        "id": 2, "displayName": "admin", "active": True,
+                        "slug": "admin", "type": "NORMAL",
+                        "links": {"self": [ {"href": "http://localhost:7990/users/admin"}]
+                        }
+                    },
+                    "repository": {
+                        "slug": "test-module", "id": 1, "name": "test-module", "hierarchyId": "34098b9e0f8011fcfb25",
+                        "scmId": "git", "state": "AVAILABLE", "statusMessage": "Available", "forkable": True,
+                        "project": {
+                            "key": "BLA", "id": 1, "name": "bla", "public": True, "type": "NORMAL",
+                            "links": {"self": [{"href": "http://localhost:7990/projects/BLA"}]}
+                        },
+                        "public": True,
+                        "links": {
+                            "clone": [
+                                {"href": "ssh://git@localhost:7999/bla/test-module.git", "name": "ssh"},
+                                {"href": "http://localhost:7990/scm/bla/test-module.git", "name": "http"}
+                            ],
+                            "self": [{"href": "http://localhost:7990/projects/BLA/repos/test-module/browse"}]
+                        }
+                    },
+                    "changes": [
+                        {
+                            "ref": {
+                                "id": "refs/tags/v4.0.6",
+                                "displayId": "v4.0.6",
+                                "type": "TAG"
+                            },
+                            "refId": "refs/tags/v4.0.6",
+                            "fromHash": "0000000000000000000000000000000000000000",
+                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                            "type": "ADD"
+                        }
+                    ]
+                }
+            )
+
+            assert res.status_code == 200
+            assert res.json == {'status': 'Success', 'message': 'Imported all provided tags', 'tags': {'4.0.6': {'status': 'Success'}}}
+
+            mocked_prepare_module.assert_called_once()
+            mocked_process_upload.assert_called_once()

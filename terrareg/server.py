@@ -452,8 +452,6 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
         module = Module(namespace=namespace, name=name)
         # Get module provider and optionally create, if it doesn't exist
         module_provider = ModuleProvider.get(module=module, name=provider, create=True)
-        print(json.dumps(request.json, indent=4))
-        print(dict(request.headers))
 
         bitbucket_data = request.json
 
@@ -486,13 +484,13 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
                 with GitModuleExtractor(module_version=module_version) as me:
                     me.process_upload()
             except TerraregError as exc:
-                imported_versions[module_version] = {
+                imported_versions[version] = {
                     'status': 'Failed',
                     'message': str(exc)
                 }
                 continue
 
-            imported_versions[module_version] = {
+            imported_versions[version] = {
                 'status': 'Success'
             }
 
