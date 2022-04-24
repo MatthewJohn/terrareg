@@ -4,15 +4,18 @@ test_data_full = {
         'testmodulename': {'testprovider': {
             'id': 1,
             'latest_version': '2.4.1',
+            'verified': True,
             'versions': {'2.4.1': {'published': True}, '1.0.0': {'published': True}}
         }},
         'lonelymodule': {'testprovider': {
             'id': 2,
             'latest_version': '1.0.0',
+            'verified': True,
             'versions': {'1.0.0': {}}
         }},
         'mock-module': {'testprovider': {
             'id': 3,
+            'verified': True,
             'latest_version': '1.2.3',
             'versions': {'1.2.3': {}}
         }},
