@@ -457,27 +457,56 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
 
         bitbucket_data = request.json
 
-        if 'changes' in bitbucket_data and type(bitbucket_data['changes']) == list:
-            for change in bitbucket_data['changes']:
-                # Check if change type is tag
-                if 'ref' in change and 'type' in change['ref'] and change['ref']['type'] == 'TAG':
-                    # Obtain tag name
-                    tag_ref = change['ref']['id']
+        if not ('changes' in bitbucket_data and type(bitbucket_data['changes']) == list):
+            return {'message': 'List of changes not found in payload'}, 400
 
-                    # Attempt to match version against regex
-                    version = module_provider.get_version_from_tag_ref(tag_ref)
-                    print('Found version!!!!: {0}'.format(version))
+        imported_versions = {}
+        error = False
 
-                    if not version:
-                        continue
+        for change in bitbucket_data['changes']:
+            # Check if change type is tag
+            if not ('ref' in change and 'type' in change['ref'] and change['ref']['type'] == 'TAG'):
+                continue
 
-                    # Create module version
-                    module_version = ModuleVersion(module_provider=module_provider, version=version)
+            # Obtain tag name
+            tag_ref = change['ref']['id']
 
-                    # Perform import from git
-                    module_version.prepare_module()
-                    with GitModuleExtractor(module_version=module_version) as me:
-                        me.process_upload()
+            # Attempt to match version against regex
+            version = module_provider.get_version_from_tag_ref(tag_ref)
+
+            if not version:
+                continue
+
+            # Create module version
+            module_version = ModuleVersion(module_provider=module_provider, version=version)
+
+            # Perform import from git
+            try:
+                module_version.prepare_module()
+                with GitModuleExtractor(module_version=module_version) as me:
+                    me.process_upload()
+            except TerraregError as exc:
+                imported_versions[module_version] = {
+                    'status': 'Failed',
+                    'message': str(exc)
+                }
+                continue
+
+            imported_versions[module_version] = {
+                'status': 'Success'
+            }
+
+        if error:
+            return {
+                'status': 'Error',
+                'message': 'One or more tags failed to import',
+                'tags': imported_versions
+            }, 500
+        return {
+            'status': 'Success',
+            'message': 'Imported all provided tags',
+            'tags': imported_versions
+        }
 
 
 class ApiModuleList(ErrorCatchingResource):
