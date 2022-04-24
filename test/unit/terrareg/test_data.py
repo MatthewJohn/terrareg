@@ -19,6 +19,12 @@ test_data_full = {
             'latest_version': '1.2.3',
             'versions': {'1.2.3': {}}
         }},
+        'unverifiedmodule': {'testprovider': {
+            'id': 11,
+            'verified': False,
+            'latest_version': '1.2.3',
+            'versions': {'1.2.3': {}}
+        }},
         'modulenorepourl': {'testprovider': {
             'id': 5,
             'latest_version': '2.2.4',
@@ -58,7 +64,7 @@ test_data_full = {
                 'versions': []
             },
             'norepourl': {
-                'id': 8,
+                'id': 9,
                 'git_tag_format': 'v{version}',
                 'versions': []
             }
