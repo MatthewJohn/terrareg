@@ -1262,9 +1262,8 @@ class TestApiModuleVersionCreateBitBucketHook:
             mocked_prepare_module.assert_called()
             mocked_process_upload.assert_called()
 
-    @setup_test_data()
-    def test_hook_with_module_provider_with_no_changes(self, client, mocked_server_namespace_fixture):
-        """Test hook call with no changes."""
+    def _test_bitbucket_with_no_tag_result_expected(self, client, payload):
+        """Test bitbucket call expecting no tags found."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
                 unittest.mock.patch(
@@ -1272,18 +1271,7 @@ class TestApiModuleVersionCreateBitBucketHook:
 
             res = client.post(
                 '/v1/terrareg/modules/moduleextraction/bitbucketexample/testprovider/hooks/bitbucket',
-                json={
-                    "changes": [
-                        {
-                            "ref": {
-                                "type": "COMMIT"
-                            },
-                            "fromHash": "0000000000000000000000000000000000000000",
-                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
-                            "type": "ADD"
-                        },
-                    ]
-                }
+                json=payload
             )
 
             assert res.status_code == 200
@@ -1295,29 +1283,90 @@ class TestApiModuleVersionCreateBitBucketHook:
 
             mocked_prepare_module.assert_not_called()
             mocked_process_upload.assert_not_called()
+
+    @setup_test_data()
+    def test_hook_with_module_provider_with_commit_change(self, client, mocked_server_namespace_fixture):
+        """Test hook call with commit."""
+        self._test_bitbucket_with_no_tag_result_expected(client,
+            {
+                "changes": [
+                    {
+                        "ref": {
+                            "type": "COMMIT"
+                        },
+                        "fromHash": "0000000000000000000000000000000000000000",
+                        "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                        "type": "ADD"
+                    },
+                ]
+            }
+        )
+
+    @setup_test_data()
+    def test_hook_with_module_provider_with_change_without_ref_type(self, client, mocked_server_namespace_fixture):
+        """Test hook call with with without ref type."""
+        self._test_bitbucket_with_no_tag_result_expected(client,
+            {
+                "changes": [
+                    {
+                        "ref": {
+                        },
+                        "fromHash": "0000000000000000000000000000000000000000",
+                        "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                        "type": "ADD"
+                    },
+                ]
+            }
+        )
+
+    @setup_test_data()
+    def test_hook_with_module_provider_with_deleted_tag(self, client, mocked_server_namespace_fixture):
+        """Test hook call with with deleted tag."""
+        self._test_bitbucket_with_no_tag_result_expected(client,
+            {
+                "changes": [
+                    {
+                        "ref": {
+                            "id": "refs/tags/v5.1.2",
+                            "displayId": "v5.1.2",
+                            "type": "TAG"
+                        },
+                        "refId": "refs/tags/v5.1.2",
+                        "fromHash": "0000000000000000000000000000000000000000",
+                        "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                        "type": "DELETE"
+                    }
+                ]
+            }
+        )
+
+    @setup_test_data()
+    def test_hook_with_module_provider_without_change_type(self, client, mocked_server_namespace_fixture):
+        """Test hook call with with deleted tag."""
+        self._test_bitbucket_with_no_tag_result_expected(client,
+            {
+                "changes": [
+                    {
+                        "ref": {
+                            "id": "refs/tags/v5.1.2",
+                            "displayId": "v5.1.2",
+                            "type": "TAG"
+                        },
+                        "refId": "refs/tags/v5.1.2",
+                        "fromHash": "0000000000000000000000000000000000000000",
+                        "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087"
+                    }
+                ]
+            }
+        )
 
     @setup_test_data()
     def test_hook_with_module_provider_with_nontag_changes(self, client, mocked_server_namespace_fixture):
         """Test hook call with non tag changes."""
-        with unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
-                unittest.mock.patch(
-                    'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
-
-            res = client.post(
-                '/v1/terrareg/modules/moduleextraction/bitbucketexample/testprovider/hooks/bitbucket',
-                json={
-                    "changes": [
-                    ]
-                }
-            )
-
-            assert res.status_code == 200
-            assert res.json == {
-                'status': 'Success',
-                'message': 'Imported all provided tags',
-                'tags': {}
+        self._test_bitbucket_with_no_tag_result_expected(
+            client,
+            {
+                "changes": [
+                ]
             }
-
-            mocked_prepare_module.assert_not_called()
-            mocked_process_upload.assert_not_called()
+        )
