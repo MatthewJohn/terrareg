@@ -466,12 +466,23 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
         error = False
 
         for change in bitbucket_data['changes']:
+
+            # Check that change is a dict
+            if not type(change) is dict:
+                continue
+
             # Check if change type is tag
-            if not ('ref' in change and 'type' in change['ref'] and change['ref']['type'] == 'TAG'):
+            if not ('ref' in change and
+                    type(change['ref']) is dict and
+                    'type' in change['ref'] and
+                    type(change['ref']['type']) == str and
+                    change['ref']['type'] == 'TAG'):
                 continue
 
             # Check type of change is an ADD or UPDATE
-            if not ('type' in change and change['type'] in ['ADD', 'UPDATE']):
+            if not ('type' in change and
+                    type(change['type']) is str and
+                    change['type'] in ['ADD', 'UPDATE']):
                 continue
 
             # Obtain tag name
