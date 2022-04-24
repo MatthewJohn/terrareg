@@ -268,6 +268,10 @@ class ModuleProvider(object):
 
     def get_version_from_tag_ref(self, tag_ref):
         """Match tag ref against version number and return actual version number."""
+        # Handle empty/None tag_ref
+        if not tag_ref:
+            return None
+
         res = self.tag_ref_regex.match(tag_ref)
         print(tag_ref)
         if res:
