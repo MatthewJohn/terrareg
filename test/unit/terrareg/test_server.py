@@ -1345,6 +1345,17 @@ class TestApiModuleVersionCreateBitBucketHook:
                             "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
                             "type": "ADD"
                         },
+                        # Change without ref Id
+                        {
+                            "ref": {
+                                "displayId": "v5.5.4",
+                                "type": "TAG"
+                            },
+                            "refId": "refs/tags/v5.5.4",
+                            "fromHash": "0000000000000000000000000000000000000000",
+                            "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                            "type": "ADD"
+                        },
                         # Change without type:
                         {
                             "ref": {
