@@ -63,7 +63,7 @@ class ModuleSearch(object):
         # Filter by verified modules, if requested
         if verified:
             select = select.where(
-                db.module_version.c.verified == True
+                db.module_provider.c.verified == True
             )
 
         if namespace_trust_filters is not NamespaceTrustFilter.UNSPECIFIED:
@@ -111,7 +111,7 @@ class ModuleSearch(object):
                 [sqlalchemy.func.count().label('count')]
             ).select_from(
                 main_select.where(
-                    db.module_version.c.verified==True
+                    db.module_provider.c.verified==True
                 ).subquery()
             )
         ).fetchone()['count']

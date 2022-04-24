@@ -101,7 +101,6 @@ class MockModuleVersion(ModuleVersion):
                 '{"inputs": [], "outputs": [], "providers": [], "resources": []}'
             ),
             'variable_template': self._unittest_data.get('variable_template', '{}'),
-            'verified': self._unittest_data.get('verified', True),
             'artifact_location': self._unittest_data.get('artifact_location', None)
         }
 
@@ -137,6 +136,7 @@ class MockModuleProvider(ModuleProvider):
             'namespace': self._module._namespace.name,
             'module': self._module.name,
             'provider': self.name,
+            'verified': self._unittest_data.get('verified', False),
             'repository_url': self._unittest_data.get('repository_url', None),
             'git_tag_format': self._unittest_data.get('git_tag_format', None)
         }

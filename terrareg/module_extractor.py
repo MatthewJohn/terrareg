@@ -139,7 +139,6 @@ class ModuleExtractor:
             description=terrareg_metadata.get('description', None),
             source=terrareg_metadata.get('source', None),
             variable_template=json.dumps(terrareg_metadata.get('variable_template', {})),
-            verified=terrareg_metadata.get('verified', False),
             artifact_location=terrareg_metadata.get('artifact_location', None),
             publsihed=AUTO_PUBLISH_MODULE_VERSIONS
         )

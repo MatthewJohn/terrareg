@@ -232,6 +232,11 @@ class ModuleProvider(object):
         return self._get_db_row()['id']
 
     @property
+    def verified(self):
+        """Return whether module provider is verified."""
+        return self._get_db_row()['verified']
+
+    @property
     def repository_url(self):
         """Return repository URL"""
         return self._get_db_row()['repository_url']
@@ -663,7 +668,7 @@ class ModuleVersion(TerraformSpecsObject):
             "source": row['source'],
             "published_at": row['published_at'].isoformat(),
             "downloads": self.get_total_downloads(),
-            "verified": True,
+            "verified": self._module_provider.verified,
         }
 
     def get_total_downloads(self):
