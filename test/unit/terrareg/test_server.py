@@ -1535,7 +1535,7 @@ class TestApiModuleVersionCreateBitBucketHook:
 
     @setup_test_data()
     def test_hook_with_module_provider_without_change_type(self, client, mocked_server_namespace_fixture):
-        """Test hook call with with deleted tag."""
+        """Test hook call with without change type."""
         self._test_bitbucket_with_no_tag_result_expected(client,
             {
                 "changes": [
