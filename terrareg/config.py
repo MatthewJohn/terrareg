@@ -23,6 +23,13 @@ EXAMPLE_ANALYTICS_TOKEN = os.environ.get('EXAMPLE_ANALYTICS_TOKEN', 'my-tf-appli
 TRUSTED_NAMESPACES = os.environ.get('TRUSTED_NAMESPACES', '').split(',')
 
 """
+List of namespaces, who's modules will be automatically set to verified.
+"""
+VERIFIED_MODULE_NAMESPACES = [
+    attr for attr in os.environ.get('VERIFIED_MODULE_NAMESPACES', '').split(',') if attr
+]
+
+"""
 Whether uploaded modules, that provide an external URL for the artifact,
 should be removed after analysis.
 If enabled, module versions with externally hosted artifacts cannot be re-analysed after upload. 

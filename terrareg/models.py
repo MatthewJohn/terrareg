@@ -10,7 +10,10 @@ import markdown
 
 import terrareg.analytics
 from terrareg.database import Database
-from terrareg.config import DATA_DIRECTORY
+from terrareg.config import (
+    DATA_DIRECTORY,
+    VERIFIED_MODULE_NAMESPACES
+)
 from terrareg.errors import (
     NoModuleVersionAvailableError, InvalidGitTagFormatError
 )
@@ -188,7 +191,8 @@ class ModuleProvider(object):
         module_provider_insert = db.module_provider.insert().values(
             namespace=module._namespace.name,
             module=module.name,
-            provider=name
+            provider=name,
+            verified=(module._namespace.name in VERIFIED_MODULE_NAMESPACES)
         )
         conn = db.get_engine().connect()
         conn.execute(module_provider_insert)
