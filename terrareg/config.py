@@ -20,7 +20,9 @@ ANALYTICS_TOKEN_PHRASE = os.environ.get('ANALYTICS_TOKEN_PHRASE', 'analytics tok
 EXAMPLE_ANALYTICS_TOKEN = os.environ.get('EXAMPLE_ANALYTICS_TOKEN', 'my-tf-application')
 
 """Comma-separated list of trusted namespaces."""
-TRUSTED_NAMESPACES = os.environ.get('TRUSTED_NAMESPACES', '').split(',')
+TRUSTED_NAMESPACES = [
+    attr for attr in os.environ.get('TRUSTED_NAMESPACES', '').split(',') if attr
+]
 
 """
 List of namespaces, who's modules will be automatically set to verified.
