@@ -78,6 +78,11 @@ class Namespace(object):
         """Return name."""
         return self._name
 
+    @property
+    def is_auto_verified(self):
+        """Whether the namespace is set to verfied in the config."""
+        return self.name in VERIFIED_MODULE_NAMESPACES
+
     def __init__(self, name: str):
         self._name = name
 
@@ -192,7 +197,7 @@ class ModuleProvider(object):
             namespace=module._namespace.name,
             module=module.name,
             provider=name,
-            verified=(module._namespace.name in VERIFIED_MODULE_NAMESPACES)
+            verified=module._namespace.is_auto_verified
         )
         conn = db.get_engine().connect()
         conn.execute(module_provider_insert)

@@ -140,8 +140,9 @@ class ModuleExtractor:
             source=terrareg_metadata.get('source', None),
             variable_template=json.dumps(terrareg_metadata.get('variable_template', {})),
             artifact_location=terrareg_metadata.get('artifact_location', None),
-            publsihed=AUTO_PUBLISH_MODULE_VERSIONS
+            published=AUTO_PUBLISH_MODULE_VERSIONS
         )
+        print(AUTO_PUBLISH_MODULE_VERSIONS)
 
     def _process_submodule(self, module_pk: int, submodule: str):
         """Process submodule."""

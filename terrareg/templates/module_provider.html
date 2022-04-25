@@ -143,6 +143,7 @@ module "{{ module.name }}" {
             data: JSON.stringify({
                 repository_url: $('#settings-repository-url').val(),
                 git_tag_format: $('#settings-git-tag-format').val(),
+                verified: $('#settings-verified').is(':checked'),
                 csrf_token: '{{ csrf_token }}'
             }),
             contentType: 'application/json'
@@ -329,6 +330,17 @@ module "{{ module.name }}" {
                 <div id="settings-status-error" style="display: none" class="notification is-danger">
                 </div>
                 <form onsubmit="update_module_provider_settings(event); event.preventDefault();">
+                    <div class="field">
+                        <label class="label">Verified</label>
+                        <div class="control">
+                            <input class="checkbox" type="checkbox" value="true" id="settings-verified"
+                                {% if module_provider.verified %}checked{% endif %}>
+                        </div>
+                        {% if namespace.is_auto_verified %}
+                        All modules within this namespace are automatically approved on creation.
+                        {% endif %}
+                    </div>
+
                     <div class="field">
                         <label class="label">Repository URL</label>
                         <div class="control">
