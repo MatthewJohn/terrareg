@@ -15,8 +15,18 @@ then
    exit 1
 fi
 
+echo Uploading module
 curl -X POST \
     "${base_url}/v1/terrareg/modules/${namespace}/${name}/${provider}/${version}/upload" \
-    -F file="@${file}" -vvvv
+    -F file="@${file}"
+echo Upload complete
+echo 
+echo "Would you like to 'publish' the module version? (Y/N)"
+read publish
 
+if [ "$publish" == "Y" ]
+then
+  curl -XPOST \
+    "${base_url}/v1/terrareg/modules/${namespace}/${name}/${provider}/${version}/publish"
+fi
 
