@@ -1027,7 +1027,14 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             'git_tag_format', type=str,
             required=False,
             default=None,
-            help='Module provider repository URL.',
+            help='Module provider git tag format.',
+            location='json'
+        )
+        parser.add_argument(
+            'verified', type=inputs.boolean,
+            required=False,
+            default=None,
+            help='Whether module provider is marked as verified.',
             location='json'
         )
         parser.add_argument(
@@ -1072,6 +1079,9 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         git_tag_format = args.git_tag_format
         if git_tag_format is not None:
             module_provider.update_git_tag_format(git_tag_format)
+
+        if args.verified is not None:
+            module_provider.update_attributes(verified=args.verified)
 
         return {}
 

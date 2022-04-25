@@ -10,7 +10,10 @@ import markdown
 
 import terrareg.analytics
 from terrareg.database import Database
-from terrareg.config import DATA_DIRECTORY
+from terrareg.config import (
+    DATA_DIRECTORY,
+    VERIFIED_MODULE_NAMESPACES
+)
 from terrareg.errors import (
     NoModuleVersionAvailableError, InvalidGitTagFormatError
 )
@@ -74,6 +77,11 @@ class Namespace(object):
     def name(self):
         """Return name."""
         return self._name
+
+    @property
+    def is_auto_verified(self):
+        """Whether the namespace is set to verfied in the config."""
+        return self.name in VERIFIED_MODULE_NAMESPACES
 
     def __init__(self, name: str):
         self._name = name
@@ -188,7 +196,8 @@ class ModuleProvider(object):
         module_provider_insert = db.module_provider.insert().values(
             namespace=module._namespace.name,
             module=module.name,
-            provider=name
+            provider=name,
+            verified=module._namespace.is_auto_verified
         )
         conn = db.get_engine().connect()
         conn.execute(module_provider_insert)
@@ -230,6 +239,11 @@ class ModuleProvider(object):
     def pk(self):
         """Return database ID of module provider."""
         return self._get_db_row()['id']
+
+    @property
+    def verified(self):
+        """Return whether module provider is verified."""
+        return self._get_db_row()['verified']
 
     @property
     def repository_url(self):
@@ -663,7 +677,7 @@ class ModuleVersion(TerraformSpecsObject):
             "source": row['source'],
             "published_at": row['published_at'].isoformat(),
             "downloads": self.get_total_downloads(),
-            "verified": True,
+            "verified": self._module_provider.verified,
         }
 
     def get_total_downloads(self):

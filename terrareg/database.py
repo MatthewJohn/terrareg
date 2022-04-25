@@ -83,7 +83,8 @@ class Database():
             sqlalchemy.Column('module', sqlalchemy.String),
             sqlalchemy.Column('provider', sqlalchemy.String),
             sqlalchemy.Column('repository_url', sqlalchemy.String),
-            sqlalchemy.Column('git_tag_format', sqlalchemy.String)
+            sqlalchemy.Column('git_tag_format', sqlalchemy.String),
+            sqlalchemy.Column('verified', sqlalchemy.Boolean),
         )
 
         self._module_version = sqlalchemy.Table(
@@ -105,7 +106,6 @@ class Database():
             sqlalchemy.Column('readme_content', sqlalchemy.String),
             sqlalchemy.Column('module_details', sqlalchemy.String),
             sqlalchemy.Column('variable_template', sqlalchemy.String),
-            sqlalchemy.Column('verified', sqlalchemy.Boolean),
             sqlalchemy.Column('artifact_location', sqlalchemy.String),
             sqlalchemy.Column('published', sqlalchemy.Boolean)
         )

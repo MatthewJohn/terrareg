@@ -25,6 +25,23 @@ class TestApiModuleDetails:
         }
         assert res.status_code == 200
 
+    @setup_test_data()
+    def test_unverified_module(self, client, mocked_server_namespace_fixture):
+        """Test endpoint with existing module"""
+
+        res = client.get('/v1/modules/testnamespace/unverifiedmodule')
+
+        assert res.json == {
+            'meta': {'limit': 5, 'offset': 0}, 'modules': [
+                {'id': 'testnamespace/unverifiedmodule/testprovider/1.2.3', 'owner': 'Mock Owner',
+                'namespace': 'testnamespace', 'name': 'unverifiedmodule', 'version': '1.2.3',
+                'provider': 'testprovider', 'description': 'Mock description',
+                'source': 'http://mock.example.com/mockmodule',
+                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': False}
+            ]
+        }
+        assert res.status_code == 200
+
     def test_non_existent_module(self, client, mocked_server_namespace_fixture):
         """Test endpoint with non-existent module"""
 
