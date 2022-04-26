@@ -804,3 +804,10 @@ class Submodule(TerraformSpecsObject):
         conn = db.get_engine().connect()
         res = conn.execute(select)
         return res.fetchone()
+
+    def get_view_url(self):
+        """Return view URL"""
+        return '{module_version_url}/submodules/{submodule_path}'.format(
+            module_version_url=self._module_version.get_view_url(),
+            submodule_path=self.path
+        )

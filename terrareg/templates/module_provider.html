@@ -73,6 +73,18 @@
         });
     }
 
+    function selectSubmodule(event) {
+        let target_obj = $(event.target)[0].selectedOptions[0];
+        let url = target_obj.value;
+
+        // Ignore selection of 'Select modules' item
+        if (url == 'none') {
+            return;
+        }
+        // Navigate page to submodule
+        window.location.href = url;
+    }
+
 </script>
 
 {% endif %}
@@ -119,9 +131,9 @@
                 {% if module_version.get_submodules() %}
                 <div class="select is-small">
                     <select onchange="selectSubmodule(event);">
-                        <option id="none">Select submodule</option>
+                        <option value="none">Select submodule</option>
                         {% for submodule in module_version.get_submodules() %}
-                        <option id="{{ submodule.path }}">{{ submodule.path }}</option>
+                        <option value="{{ submodule.get_view_url() }}">{{ submodule.path }}</option>
                         {% endfor %}
                     </select>
                 </div>
