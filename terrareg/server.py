@@ -347,7 +347,7 @@ class Server(object):
         submodule = Submodule(module_version=module_version, module_path=submodule_path)
 
         return self._render_template(
-            'module_provider.html',
+            'submodule.html',
             namespace=namespace,
             module=module,
             module_provider=module_provider,
