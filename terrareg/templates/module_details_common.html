@@ -157,7 +157,7 @@ module "{{ module.name }}" {
 </div>
 
 
-{% if module_version %}
+{% if current_module %}
 <div class="tabs">
     <ul>
         <li class="module-tab-link is-active"><a onclick="selectModuleTab(event, 'readme')">Readme</a></li>
@@ -167,6 +167,8 @@ module "{{ module.name }}" {
         <li class="module-tab-link">
             <a onclick="selectModuleTab(event, 'resources')">Resources</a>
         </li>
+
+        {% if not current_module.is_submodule %}
         <li class="module-tab-link">
             <a onclick="selectModuleTab(event, 'analytics')">
                 Analytics
@@ -184,13 +186,15 @@ module "{{ module.name }}" {
                 Settings
             </a>
         </li>
+        {% endif %}
     </ul>
 </div>
+
 <div class="columns">
     <div class="column is-three-fifths is-offset-one-fifth">
 
         <div id="module-tab-readme" class="module-tabs">
-            {{ module_version.get_readme_html()|safe }}
+            {{ current_module.get_readme_html()|safe }}
         </div>
         <div id="module-tab-inputs" class="module-tabs" style="display: none;">
             <table class="table">
@@ -203,7 +207,7 @@ module "{{ module.name }}" {
                     </tr>
                 </thead>
                 <tbody>
-                    {% for input in module_version.get_terraform_inputs() %}
+                    {% for input in current_module.get_terraform_inputs() %}
                     <tr>
                         <td>
                             {{ input['name'] }}
@@ -231,7 +235,7 @@ module "{{ module.name }}" {
                     </tr>
                 </thead>
                 <tbody>
-                    {% for output in module_version.get_terraform_outputs() %}
+                    {% for output in current_module.get_terraform_outputs() %}
                     <tr>
                         <td>
                             {{ output['name'] }}
@@ -261,7 +265,7 @@ module "{{ module.name }}" {
                     </tr>
                 </thead>
                 <tbody>
-                    {% for resource in module_version.get_terraform_resources() %}
+                    {% for resource in current_module.get_terraform_resources() %}
                     <tr>
                         <td>
                             {{ resource['type'] }}
@@ -289,6 +293,7 @@ module "{{ module.name }}" {
                 </tbody>
             </table>
         </div>
+        {% if not current_module.is_submodule %}
         <div id="module-tab-analytics" class="module-tabs" style="display: none;">
             <table id="analytics-table" class="table" style="width: 100%">
                 <thead>
@@ -364,6 +369,7 @@ module "{{ module.name }}" {
                 </form>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 

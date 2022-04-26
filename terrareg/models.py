@@ -447,6 +447,17 @@ class TerraformSpecsObject(object):
             self._module_specs = json.loads(self._get_db_row()['module_details'])
         return self._module_specs
 
+    def get_readme_html(self):
+        """Convert readme markdown to HTML"""
+        if self.get_readme_content():
+            return markdown.markdown(
+                self.get_readme_content(),
+                extensions=['fenced_code', 'tables']
+            )
+        
+        # Return string when no readme is present
+        return '<h5 class="title is-5">No README present in the module</h3>'
+
     def get_readme_content(self):
         """Get readme contents"""
         return self._get_db_row()['readme_content']
@@ -705,17 +716,6 @@ class ModuleVersion(TerraformSpecsObject):
             "versions": [v.version for v in self._module_provider.get_versions()]
         })
         return api_details
-
-    def get_readme_html(self):
-        """Convert readme markdown to HTML"""
-        if self.get_readme_content():
-            return markdown.markdown(
-                self.get_readme_content(),
-                extensions=['fenced_code', 'tables']
-            )
-        
-        # Return string when no readme is present
-        return '<h5 class="title is-5">No README present in the module</h3>'
 
     def prepare_module(self):
         """Handle file upload of module version."""
