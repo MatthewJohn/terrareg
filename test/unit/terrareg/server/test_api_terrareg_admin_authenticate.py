@@ -3,12 +3,12 @@ import unittest.mock
 import datetime
 
 from test.unit.terrareg import (
-    client, SERVER
+    client, TerraregUnitTest
 )
 
 
 
-class TestApiTerraregAdminAuthenticate:
+class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
 
     def test_authenticated(self, client):
         """Test endpoint when user is authenticated."""
@@ -17,7 +17,7 @@ class TestApiTerraregAdminAuthenticate:
             with unittest.mock.patch('terrareg.config.SECRET_KEY', 'averysecretkey'):
                 with unittest.mock.patch('terrareg.config.ADMIN_SESSION_EXPIRY_MINS', cookie_expiry_mins):
                     # Update real app secret key
-                    SERVER._app.secret_key = 'averysecretkey'
+                    self.SERVER._app.secret_key = 'averysecretkey'
 
                     mock_admin_authentication.return_value = True
 
@@ -40,7 +40,7 @@ class TestApiTerraregAdminAuthenticate:
             with unittest.mock.patch('terrareg.config.SECRET_KEY', ''):
                 # Update real app secret key with fake value,
                 # otherwise an error would be received when checking the session.
-                SERVER._app.secret_key = 'test'
+                self.SERVER._app.secret_key = 'test'
 
                 mock_admin_authentication.return_value = True
 
@@ -56,7 +56,7 @@ class TestApiTerraregAdminAuthenticate:
 
                 # Update server secret to empty value and ensure a 403 is still received.
                 # The session cannot be checked
-                SERVER._app.secret_key = ''
+                self.SERVER._app.secret_key = ''
                 res = client.post('/v1/terrareg/auth/admin/login')
 
                 assert res.status_code == 403

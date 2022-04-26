@@ -1,8 +1,8 @@
 
-from test.unit.terrareg import client
+from test.unit.terrareg import client, TerraregUnitTest
 
 
-class TestTerraformWellKnown:
+class TestTerraformWellKnown(TerraregUnitTest):
     """Test TerraformWellKnown resource."""
 
     def test_with_no_params(self, client):
