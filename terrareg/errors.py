@@ -58,3 +58,28 @@ class InvalidGitTagFormatError(TerraregError):
     """Invalid git tag format provided."""
 
     pass
+
+
+class InvalidNamespaceNameError(TerraregError):
+    """Invalid namespace name."""
+
+    pass
+
+
+class InvalidModuleNameError(TerraregError):
+    """Invalid module name."""
+
+    pass
+
+
+class InvalidModuleProviderNameError(TerraregError):
+    """Invalid module provder name."""
+
+    pass
+
+
+class InvalidVersionError(TerraregError):
+    """Invalid version."""
+
+    pass
+
