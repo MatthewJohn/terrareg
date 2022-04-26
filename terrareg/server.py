@@ -21,7 +21,7 @@ from terrareg.errors import (
     TerraregError, UploadError, NoModuleVersionAvailableError,
     NoSessionSetError, IncorrectCSRFTokenError
 )
-from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion
+from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion, Submodule
 from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ApiUploadModuleExtractor, GitModuleExtractor
 from terrareg.analytics import AnalyticsEngine
@@ -157,6 +157,9 @@ class Server(object):
         self._app.route(
             '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/'
         )(self._view_serve_module_provider)
+        self._app.route(
+            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodules/<path:submodule_path>'
+        )(self._view_serve_submodule)
 
         # Terrareg APIs
         ## Analytics URLs /v1/terrareg/analytics
@@ -327,6 +330,30 @@ class Server(object):
             module=module,
             module_provider=module_provider,
             module_version=module_version,
+            current_module=module_version,
+            server_hostname=request.host
+        )
+
+    def _view_serve_submodule(self, namespace, name, provider, version, submodule_path):
+        """Review view for displaying submodule"""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+
+        if module_version is None:
+            return redirect(module_provider.get_view_url())
+
+        submodule = Submodule(module_version=module_version, module_path=submodule_path)
+
+        return self._render_template(
+            'module_provider.html',
+            namespace=namespace,
+            module=module,
+            module_provider=module_provider,
+            module_version=module_version,
+            submodule=submodule,
+            current_module=submodule,
             server_hostname=request.host
         )
 
