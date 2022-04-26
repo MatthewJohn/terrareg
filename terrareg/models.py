@@ -589,7 +589,7 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def base_directory(self):
         """Return base directory."""
-        return os.path.join(self._module_provider.base_directory, self._version)
+        return safe_join_paths(self._module_provider.base_directory, self._version)
 
     @property
     def source_file_prefix(self):
@@ -609,12 +609,12 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def archive_path_tar_gz(self):
         """Return full path of the archive file."""
-        return os.path.join(self.base_directory, self.archive_name_tar_gz)
+        return safe_join_paths(self.base_directory, self.archive_name_tar_gz)
 
     @property
     def archive_path_zip(self):
         """Return full path of the archive file."""
-        return os.path.join(self.base_directory, self.archive_name_zip)
+        return safe_join_paths(self.base_directory, self.archive_name_zip)
 
     @property
     def pk(self):
