@@ -785,6 +785,11 @@ class Submodule(TerraformSpecsObject):
         return self._module_path
 
     @property
+    def id(self):
+        """Return ID for module"""
+        return '{0}//{1}'.format(self._module_version.id, self.path)
+
+    @property
     def is_submodule(self):
         """Whether object is submodule."""
         return True
