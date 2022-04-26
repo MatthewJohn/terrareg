@@ -16,13 +16,13 @@ class PathIsNotWithinBaseDirectoryError(TerraregError):
     pass
 
 
-def safe_join_paths(base_dir, sub_path, is_dir=False, is_file=False):
+def safe_join_paths(base_dir, *sub_paths, is_dir=False, is_file=False):
     """Combine base_dir and sub_path and ensure directory """
 
     if is_dir and is_file:
         raise Exception('Cannot expect object to be file and directory.')
 
-    joined_path = os.path.join(base_dir, sub_path)
+    joined_path = os.path.join(base_dir, *sub_paths)
 
     # Convert to real paths
     ## Since the base directory might not be a real path,
