@@ -9,6 +9,8 @@ import json
 import datetime
 import shutil
 import re
+import glob
+import pathlib
 
 from werkzeug.utils import secure_filename
 import magic
@@ -20,10 +22,12 @@ from terrareg.errors import (
     InvalidTerraregMetadataFileError,
     MetadataDoesNotContainRequiredAttributeError
 )
+from terrareg.utils import PathDoesNotExistError, safe_join_paths
 from terrareg.config import (
     DELETE_EXTERNALLY_HOSTED_ARTIFACTS,
     REQUIRED_MODULE_METADATA_ATTRIBUTES,
-    AUTO_PUBLISH_MODULE_VERSIONS
+    AUTO_PUBLISH_MODULE_VERSIONS,
+    MODULES_DIRECTORY
 )
 
 
@@ -144,13 +148,10 @@ class ModuleExtractor:
         )
         print(AUTO_PUBLISH_MODULE_VERSIONS)
 
-    def _process_submodule(self, module_pk: int, submodule: str):
+    def _process_submodule(self, submodule: str):
         """Process submodule."""
-        submodule_dir = os.path.join(self.extract_directory, submodule['source'])
-
-        if not os.path.isdir(submodule_dir):
-            print('Submodule does not appear to be local: {0}'.format(submodule['source']))
-            return
+        print('Processing submodule: {0}'.format(submodule))
+        submodule_dir = safe_join_paths(self.extract_directory, submodule)
 
         tf_docs = self._run_terraform_docs(submodule_dir)
         readme_content = self._get_readme_content(submodule_dir)
@@ -158,12 +159,52 @@ class ModuleExtractor:
         db = Database.get()
         conn = db.get_engine().connect()
         insert_statement = db.sub_module.insert().values(
-            parent_module_version=module_pk,
-            path=submodule['source'],
+            parent_module_version=self._module_version.pk,
+            path=submodule,
             readme_content=readme_content,
             module_details=json.dumps(tf_docs),
         )
         conn.execute(insert_statement)
+
+    def _scan_submodules(self):
+        """Scan for submodules and extract details."""
+        try:
+            submodule_base_directory = safe_join_paths(self.extract_directory, MODULES_DIRECTORY, is_dir=True)
+        except PathDoesNotExistError:
+            # If the modules directory does not exist,
+            # ignore and return
+            print('No modules directory found')
+            return
+
+        extract_directory_re = re.compile('^{}'.format(
+            re.escape(
+                '{0}/'.format(self.extract_directory)
+            )
+        ))
+
+        submodules = []
+        # Search for all subdirectories containing terraform
+        for terraform_file_path in glob.iglob('{modules_path}/**/*.tf'.format(modules_path=submodule_base_directory), recursive=True):
+            # Get parent directory of terraform file
+            tf_file_path_obj = pathlib.Path(terraform_file_path)
+            submodule_dir = str(tf_file_path_obj.parent)
+
+            # Strip extraction directory base path from submodule directory
+            # to return relative path from base of extracted module
+            submodule_name = extract_directory_re.sub('', submodule_dir)
+
+            # Check submodule is not in the root of the submodules
+            if not submodule_name:
+                print('WARNING: submodule is in root of submodules directory.')
+                continue
+
+            # Add submodule to list if not already there
+            if submodule_name not in submodules:
+                submodules.append(submodule_name)
+
+        # Extract all submodules
+        for submodule in submodules:
+            self._process_submodule(submodule)
 
     def process_upload(self):
         """Handle data extraction from module source."""
@@ -185,8 +226,7 @@ class ModuleExtractor:
             terrareg_metadata=terrareg_metadata
         )
 
-        for submodule in module_details['modules']:
-            self._process_submodule(self._module_version.pk, submodule)
+        self._scan_submodules()
 
 
 class ApiUploadModuleExtractor(ModuleExtractor):
