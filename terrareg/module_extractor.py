@@ -1,5 +1,6 @@
 """Provide extraction method of modules."""
 
+from concurrent.futures.process import _ThreadWakeup
 import os
 import tempfile
 import zipfile
@@ -48,7 +49,7 @@ class ModuleExtractor:
         """Generate/return source filename."""
         if self._source_file is None:
             filename = secure_filename(self._upload_file.filename)
-            self._source_file = os.path.join(self.upload_directory, filename)
+            self._source_file = safe_join_paths(self.upload_directory, filename)
         return self._source_file
 
     @property
@@ -81,30 +82,36 @@ class ModuleExtractor:
     @staticmethod
     def _get_readme_content(module_path):
         """Obtain README contents for given module."""
-        readme_path = os.path.join(module_path, 'README.md')
-        if os.path.isfile(readme_path):
-            with open(readme_path, 'r') as readme_fd:
-                return ''.join(readme_fd.readlines())
+        try:
+            readme_path = safe_join_paths(module_path, 'README.md', is_file=True)
+        except PathDoesNotExistError:
+            # If no README found, return None
+            return None
 
-        # If no README found, return None
-        return None
+        with open(readme_path, 'r') as readme_fd:
+            return ''.join(readme_fd.readlines())
 
     def _get_terrareg_metadata(self, module_path):
         """Obtain terrareg metadata for module, if it exists."""
         terrareg_metadata = {}
         for terrareg_file in self.TERRAREG_METADATA_FILES:
-            path = os.path.join(module_path, terrareg_file)
-            if os.path.isfile(path):
-                with open(path, 'r') as terrareg_fh:
-                    try:
-                        terrareg_metadata = json.loads(''.join(terrareg_fh.readlines()))
-                    except:
-                        raise InvalidTerraregMetadataFileError(
-                            'An error occured whilst processing the terrareg metadata file.'
-                        )
+            try:
+                path = safe_join_paths(module_path, terrareg_file, is_file=True)
+            except PathDoesNotExistError:
+                continue
 
-                # Remove the meta-data file, so it is not added to the archive
-                os.unlink(path)
+            with open(path, 'r') as terrareg_fh:
+                try:
+                    terrareg_metadata = json.loads(''.join(terrareg_fh.readlines()))
+                except:
+                    raise InvalidTerraregMetadataFileError(
+                        'An error occured whilst processing the terrareg metadata file.'
+                    )
+
+            # Remove the meta-data file, so it is not added to the archive
+            os.unlink(path)
+
+            break
 
         for required_attr in REQUIRED_MODULE_METADATA_ATTRIBUTES:
             if not terrareg_metadata.get(required_attr, None):
@@ -240,7 +247,7 @@ class ApiUploadModuleExtractor(ModuleExtractor):
     def _save_upload_file(self):
         """Save uploaded file to uploads directory."""
         filename = secure_filename(self._upload_file.filename)
-        source_file = os.path.join(self.upload_directory, filename)
+        source_file = safe_join_paths(self.upload_directory, filename)
         self._upload_file.save(source_file)
 
     def _check_file_type(self):

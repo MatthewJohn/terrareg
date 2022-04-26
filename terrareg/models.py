@@ -17,6 +17,7 @@ from terrareg.config import (
 from terrareg.errors import (
     NoModuleVersionAvailableError, InvalidGitTagFormatError
 )
+from terrareg.utils import safe_join_paths
 
 
 class Namespace(object):
@@ -71,7 +72,7 @@ class Namespace(object):
     @property
     def base_directory(self):
         """Return base directory."""
-        return os.path.join(DATA_DIRECTORY, 'modules', self._name)
+        return safe_join_paths(DATA_DIRECTORY, 'modules', self._name)
 
     @property
     def name(self):
@@ -125,7 +126,7 @@ class Module(object):
     @property
     def base_directory(self):
         """Return base directory."""
-        return os.path.join(self._namespace.base_directory, self._name)
+        return safe_join_paths(self._namespace.base_directory, self._name)
 
     def __init__(self, namespace: Namespace, name: str):
         self._namespace = namespace
@@ -292,7 +293,7 @@ class ModuleProvider(object):
     @property
     def base_directory(self):
         """Return base directory."""
-        return os.path.join(self._module.base_directory, self._name)
+        return safe_join_paths(self._module.base_directory, self._name)
 
     def __init__(self, module: Module, name: str):
         self._module = module
