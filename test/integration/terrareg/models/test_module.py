@@ -29,6 +29,7 @@ class TestModule(TerraregIntegrationTest):
         'normalname',
         'name2withnumber',
         '2startendiwthnumber2',
+        'contains4number',
         'with-dash',
         'with_underscore',
         'withAcapital',
