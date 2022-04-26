@@ -2,11 +2,11 @@
 from test.unit.terrareg import (
     MockModuleProvider, MockModule, MockNamespace,
     client, mocked_server_namespace_fixture,
-    setup_test_data
+    setup_test_data, TerraregUnitTest
 )
 
 
-class TestApiModuleProviderDetails:
+class TestApiModuleProviderDetails(TerraregUnitTest):
     """Test ApiModuleProviderDetails resource."""
 
     @setup_test_data()

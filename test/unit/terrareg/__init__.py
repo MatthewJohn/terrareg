@@ -10,27 +10,41 @@ from terrareg.models import Module, ModuleProvider, ModuleVersion, Namespace
 from terrareg.server import Server
 from .test_data import test_data_full
 
-Database.SQLITE_DB_PATH = 'temp-unittest.db'
-SERVER = Server()
-SERVER._app.config['TESTING'] = True
+
+class TerraregUnitTest:
+
+    INSTANCE_ = None
+
+    @classmethod
+    def get(cls):
+        """Get instance of class"""
+        return cls.INSTANCE_
+
+    def setup_method(self, method):
+        """Setup database"""
+        TerraregUnitTest.INSTANCE_ = self
+        Database.reset()
+        self.SERVER = Server()
+        Database.SQLITE_DB_PATH = 'temp-unittest.db'
+        self.SERVER._app.config['TESTING'] = True
 
 
 @pytest.fixture
 def client():
     """Return test client"""
-    client = SERVER._app.test_client()
+    client = TerraregUnitTest.get().SERVER._app.test_client()
 
     yield client
 
 @pytest.fixture
 def test_request_context():
     """Return test request context"""
-    return SERVER._app.test_request_context()
+    return TerraregUnitTest.get().SERVER._app.test_request_context()
 
 @pytest.fixture
 def app_context():
     """Return test request context"""
-    return SERVER._app.app_context()
+    return TerraregUnitTest.get().SERVER._app.app_context()
 
 TEST_MODULE_DATA = {}
 

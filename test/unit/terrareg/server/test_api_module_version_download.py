@@ -6,12 +6,12 @@ from terrareg.analytics import AnalyticsEngine
 from test.unit.terrareg import (
     MockModuleProvider, MockModuleVersion, MockModule, MockNamespace,
     client, mocked_server_namespace_fixture,
-    setup_test_data
+    setup_test_data, TerraregUnitTest
 )
 from . import mock_record_module_version_download
 
 
-class TestApiModuleVersionDownload:
+class TestApiModuleVersionDownload(TerraregUnitTest):
     """Test ApiModuleVersionDownload resource."""
 
     @setup_test_data()

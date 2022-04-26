@@ -4,11 +4,11 @@ import unittest.mock
 import terrareg.errors
 from test.unit.terrareg import (
     client, mocked_server_namespace_fixture,
-    setup_test_data
+    setup_test_data, TerraregUnitTest
 )
 
 
-class TestApiModuleVersionBitbucketHook:
+class TestApiModuleVersionBitbucketHook(TerraregUnitTest):
     """Test TestApiModuleVersionCreateBitBucketHook resource."""
 
     @setup_test_data()

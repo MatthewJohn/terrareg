@@ -15,7 +15,8 @@ from terrareg.config import (
     VERIFIED_MODULE_NAMESPACES
 )
 from terrareg.errors import (
-    NoModuleVersionAvailableError, InvalidGitTagFormatError
+    InvalidModuleNameError, InvalidModuleProviderNameError, InvalidVersionError, NoModuleVersionAvailableError, InvalidGitTagFormatError,
+    InvalidNamespaceNameError
 )
 from terrareg.utils import safe_join_paths
 
@@ -84,7 +85,15 @@ class Namespace(object):
         """Whether the namespace is set to verfied in the config."""
         return self.name in VERIFIED_MODULE_NAMESPACES
 
+    @staticmethod
+    def _validate_name(name):
+        """Validate name of namespace"""
+        if not re.match(r'^[0-9a-zA-Z][0-9a-zA-Z-_]+[0-9A-Za-z]$', name):
+            raise InvalidNamespaceNameError('Namespace name is invalid')
+
     def __init__(self, name: str):
+        """Validate name and store member variables"""
+        self._validate_name(name)
         self._name = name
 
     def get_view_url(self):
@@ -118,6 +127,12 @@ class Namespace(object):
 
 class Module(object):
 
+    @staticmethod
+    def _validate_name(name):
+        """Validate name of module"""
+        if not re.match(r'^[0-9a-zA-Z][0-9a-zA-Z-_]+[0-9A-Za-z]$', name):
+            raise InvalidModuleNameError('Module name is invalid')
+
     @property
     def name(self):
         """Return name."""
@@ -129,6 +144,8 @@ class Module(object):
         return safe_join_paths(self._namespace.base_directory, self._name)
 
     def __init__(self, namespace: Namespace, name: str):
+        """Validate name and store member variables."""
+        self._validate_name(name)
         self._namespace = namespace
         self._name = name
 
@@ -170,6 +187,12 @@ class Module(object):
 
 
 class ModuleProvider(object):
+
+    @staticmethod
+    def _validate_name(name):
+        """Validate name of module"""
+        if not re.match(r'^[0-9a-z]+$', name):
+            raise InvalidModuleProviderNameError('Module provider name is invalid')
 
     @staticmethod
     def get_total_count():
@@ -296,6 +319,8 @@ class ModuleProvider(object):
         return safe_join_paths(self._module.base_directory, self._name)
 
     def __init__(self, module: Module, name: str):
+        """Validate name and store member variables."""
+        self._validate_name(name)
         self._module = module
         self._name = name
 
@@ -540,6 +565,12 @@ class ModuleVersion(TerraformSpecsObject):
 
         return res.scalar()
 
+    @staticmethod
+    def _validate_version(version):
+        """Validate version."""
+        if not re.match(r'^[0-9]+\.[0-9]+\.[0-9]+$', version):
+            raise InvalidVersionError('Version is invalid')
+
     @property
     def is_submodule(self):
         """Whether object is submodule."""
@@ -642,6 +673,7 @@ class ModuleVersion(TerraformSpecsObject):
 
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
+        self._validate_version(version)
         self._module_provider = module_provider
         self._version = version
         super(ModuleVersion, self).__init__()

@@ -2,11 +2,11 @@
 from test.unit.terrareg import (
     MockModuleProvider, MockModuleVersion, MockModule, MockNamespace,
     client, mocked_server_namespace_fixture,
-    setup_test_data
+    setup_test_data, TerraregUnitTest
 )
 
 
-class TestApiModuleVersionDetails:
+class TestApiModuleVersionDetails(TerraregUnitTest):
     """Test ApiModuleVersionDetails resource."""
 
     @setup_test_data()

@@ -6,11 +6,11 @@ import pytest
 from test.unit.terrareg import (
     client, mocked_server_namespace_fixture,
     test_request_context, app_context,
-    setup_test_data
+    setup_test_data, TerraregUnitTest
 )
 
 
-class TestApiTerraregModuleProviderSettings:
+class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
     """Test module provider settings endpoint"""
 
     @pytest.mark.parametrize('repository_url', [

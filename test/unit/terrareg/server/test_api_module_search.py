@@ -3,12 +3,12 @@ from terrareg.module_search import ModuleSearch
 from terrareg.filters import NamespaceTrustFilter
 from test.unit.terrareg import (
     MockModuleProvider, MockModule, MockNamespace,
-    client, setup_test_data
+    client, setup_test_data, TerraregUnitTest
 )
 from . import mocked_search_module_providers
 
 
-class TestApiModuleSearch:
+class TestApiModuleSearch(TerraregUnitTest):
 
     def test_with_no_params(self, client, mocked_search_module_providers):
         """Test ApiModuleSearch with no params"""

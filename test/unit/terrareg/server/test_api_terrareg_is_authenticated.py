@@ -1,10 +1,10 @@
 
 import unittest.mock
 
-from test.unit.terrareg import client
+from test.unit.terrareg import client, TerraregUnitTest
 
 
-class TestApiTerraregIsAuthenticated:
+class TestApiTerraregIsAuthenticated(TerraregUnitTest):
 
     def test_authenticated(self, client):
         """Test endpoint when user is authenticated."""
