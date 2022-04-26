@@ -432,6 +432,10 @@ class TerraformSpecsObject(object):
     def path(self):
         """Return module path"""
         raise NotImplementedError
+    @property
+    def is_submodule(self):
+        """Whether object is submodule."""
+        raise NotImplementedError
 
     def _get_db_row(self):
         """Must be implemented by object. Return row from DB."""
@@ -523,6 +527,11 @@ class ModuleVersion(TerraformSpecsObject):
         res = conn.execute(select)
 
         return res.scalar()
+
+    @property
+    def is_submodule(self):
+        """Whether object is submodule."""
+        return False
 
     @property
     def publish_date_display(self):
@@ -774,6 +783,11 @@ class Submodule(TerraformSpecsObject):
     def path(self):
         """Return module path"""
         return self._module_path
+
+    @property
+    def is_submodule(self):
+        """Whether object is submodule."""
+        return True
 
     def __init__(self, module_version: ModuleVersion, module_path: str):
         self._module_version = module_version

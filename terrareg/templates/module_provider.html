@@ -22,18 +22,36 @@
 
         {% if module_version %}
 
-        {% if not module_version.published %}
-        <p class="subtitle">
-            <b>WARNING:</b> This version of the module is not published.
-        </p>
-        {% endif %}
+            {% if not module_version.published %}
+            <p class="subtitle">
+                <b>WARNING:</b> This version of the module is not published.
+            </p>
+            {% endif %}
 
-        <p class="subtitle">
-            {% if module_version.description %}{{ module_version.description }}{% else %}No description provided{% endif %}
-        </p>
-        <p>Published {{ module_version.publish_date_display }} by <a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></p>
-        <p>{% if module_version.owner %}Module managed by {{ module_version.owner }}{% endif %}</p>
-        <p>{% if module_version.source_code_url %}Source Code: <a href="{{ module_version.source_code_url }}">{{ module_version.source_code_url }}</a>{% endif %}</p>
+            <p class="subtitle">
+                {% if module_version.description %}{{ module_version.description }}{% else %}No description provided{% endif %}
+            </p>
+            <p>Published {{ module_version.publish_date_display }} by <a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></p>
+            <p>{% if module_version.owner %}Module managed by {{ module_version.owner }}{% endif %}</p>
+            <p>{% if module_version.source_code_url %}Source Code: <a href="{{ module_version.source_code_url }}">{{ module_version.source_code_url }}</a>{% endif %}</p>
+
+            <br />
+
+            {% if module_version.is_submodule %}
+                <button>Back to parent</button>
+            {% else %}
+                {% if module_version.get_submodules() %}
+                <div class="select is-small">
+                    <select onchange="selectSubmodule(event);">
+                        <option id="none">Select submodule</option>
+                        {% for submodule in module_version.get_submodules() %}
+                        <option id="{{ submodule.path }}">{{ submodule.path }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+            {% endif %}
+
         {% else %}
         <p>There are no published versions of this module.</p>
         {% endif %}
