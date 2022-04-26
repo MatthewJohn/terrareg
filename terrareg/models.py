@@ -319,6 +319,8 @@ class ModuleProvider(object):
         return safe_join_paths(self._module.base_directory, self._name)
 
     def __init__(self, module: Module, name: str):
+        """Validate name and store member variables."""
+        self._validate_name(name)
         self._module = module
         self._name = name
 
