@@ -51,6 +51,13 @@ class Database():
         return self._analytics
 
     @classmethod
+    def reset(cls):
+        """Reset database connections."""
+        cls._INSTANCE = None
+        cls._META = None
+        cls._ENGINE = None
+
+    @classmethod
     def get(cls):
         """Get singleton instance of class."""
         if cls._INSTANCE is None:

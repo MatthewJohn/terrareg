@@ -3,12 +3,13 @@ from terrareg.module_search import ModuleSearch
 
 from . import mocked_search_module_providers
 from test.unit.terrareg import (
+    TerraregUnitTest,
     MockModuleProvider, MockModule, MockNamespace,
     client, setup_test_data
 )
 
 
-class TestApiModuleList:
+class TestApiModuleList(TerraregUnitTest):
 
     def test_with_no_params(self, client, mocked_search_module_providers):
         """Call with no parameters"""

@@ -3,11 +3,11 @@ import unittest.mock
 
 from test.unit.terrareg import (
     client, mocked_server_namespace_fixture,
-    setup_test_data
+    setup_test_data, TerraregUnitTest
 )
 
 
-class TestApiModuleVersionPublish:
+class TestApiModuleVersionPublish(TerraregUnitTest):
     """Test module version publish resource."""
 
     @setup_test_data()

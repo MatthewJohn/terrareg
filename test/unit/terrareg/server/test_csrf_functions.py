@@ -6,19 +6,19 @@ import pytest
 import terrareg.errors
 from test.unit.terrareg import (
     client, test_request_context,
-    app_context, SERVER
+    app_context, TerraregUnitTest
 )
 from terrareg.server import (
     AuthenticationType, check_csrf_token
 )
 
 
-class TestCSRFFunctions:
+class TestCSRFFunctions(TerraregUnitTest):
     """Test CSRF functions."""
 
     def test_valid_csrf_with_session(self, app_context, test_request_context, client):
         """Test checking a valid CSRF token with a session."""
-        SERVER._app.secret_key = 'averysecretkey'
+        self.SERVER._app.secret_key = 'averysecretkey'
         with app_context, test_request_context:
 
             # Create fake session
@@ -31,7 +31,7 @@ class TestCSRFFunctions:
 
     def test_incorrect_csrf_with_session(self, app_context, test_request_context, client):
         """Test checking an incorrect CSRF token with a session."""
-        SERVER._app.secret_key = 'averysecretkey'
+        self.SERVER._app.secret_key = 'averysecretkey'
         with app_context, test_request_context:
 
             # Create fake session
@@ -45,7 +45,7 @@ class TestCSRFFunctions:
 
     def test_empty_csrf_with_session(self, app_context, test_request_context, client):
         """Test checking an incorrect CSRF token with a session."""
-        SERVER._app.secret_key = 'averysecretkey'
+        self.SERVER._app.secret_key = 'averysecretkey'
         with app_context, test_request_context:
 
             # Create fake session
@@ -59,7 +59,7 @@ class TestCSRFFunctions:
 
     def test_invalid_csrf_without_session(self, app_context, test_request_context, client):
         """Test checking a invalid CSRF token with a session is not established."""
-        SERVER._app.secret_key = 'averysecretkey'
+        self.SERVER._app.secret_key = 'averysecretkey'
         with app_context, test_request_context:
 
             with pytest.raises(terrareg.errors.NoSessionSetError):
@@ -67,7 +67,7 @@ class TestCSRFFunctions:
 
     def test_csrf_ignored_with_authentication_token(self, app_context, test_request_context, client):
         """Test checking a CSRF token is ignored when using authentication token."""
-        SERVER._app.secret_key = 'averysecretkey'
+        self.SERVER._app.secret_key = 'averysecretkey'
         with app_context, test_request_context:
 
             # Set global context as authentication token
@@ -82,7 +82,7 @@ class TestCSRFFunctions:
     )
     def test_csrf_not_ignored_with_non_authentication_token(self, authentication_type, app_context, test_request_context, client):
         """Test that all authentication types throw errors when CSRF is not passed."""
-        SERVER._app.secret_key = 'averysecretkey'
+        self.SERVER._app.secret_key = 'averysecretkey'
 
         # Test that no session is thrown when no session is present
         with app_context, test_request_context:

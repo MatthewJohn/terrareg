@@ -1,12 +1,13 @@
 
 from test.unit.terrareg import (
-    client, mocked_server_namespace_fixture
+    client, mocked_server_namespace_fixture,
+    TerraregUnitTest
 )
 from . import mock_server_get_module_provider_download_stats
 
 
 
-class TestApiModuleProviderDownloadsSummary:
+class TestApiModuleProviderDownloadsSummary(TerraregUnitTest):
  
     def test_existing_module(self, client, mocked_server_namespace_fixture, mock_server_get_module_provider_download_stats):
         """Test endpoint with existing module"""

@@ -7,7 +7,7 @@ import werkzeug.exceptions
 
 from test.unit.terrareg import (
     client, test_request_context,
-    app_context
+    app_context, TerraregUnitTest
 )
 from terrareg.server import (
     require_admin_authentication, AuthenticationType,
@@ -15,7 +15,7 @@ from terrareg.server import (
 )
 
 
-class TestRequireAdminAuthenticationWrapper:
+class TestRequireAdminAuthenticationWrapper(TerraregUnitTest):
     """Test require_admin_authentication wrapper"""
 
     def _mock_function(self, x, y):
