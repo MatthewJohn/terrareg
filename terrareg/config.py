@@ -91,3 +91,14 @@ is displayed in the list of module versions.
 NOTE: Even whilst in an unpublished state, the module version can still be accessed directly, but not used within terraform.
 """
 AUTO_PUBLISH_MODULE_VERSIONS = os.environ.get('AUTO_PUBLISH_MODULE_VERSIONS', 'True') == 'True'
+
+"""
+Directory with a module's source that contains sub-modules.
+
+submodules are expected to be within sub-directories of the submodule directory.
+
+E.g. If MODULES_DIRECTORY is set to 'modules', with the root module, the following would be expected for a submodule: 'modules/submodulename/main.tf'.
+
+This can be set to an empty string, to expected submodules to be in the root directory of the parent module.
+"""
+MODULES_DIRECTORY = os.environ.get('MODULES_DIRECTORY', 'modules')

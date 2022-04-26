@@ -432,6 +432,10 @@ class TerraformSpecsObject(object):
     def path(self):
         """Return module path"""
         raise NotImplementedError
+    @property
+    def is_submodule(self):
+        """Whether object is submodule."""
+        raise NotImplementedError
 
     def _get_db_row(self):
         """Must be implemented by object. Return row from DB."""
@@ -442,6 +446,17 @@ class TerraformSpecsObject(object):
         if self._module_specs is None:
             self._module_specs = json.loads(self._get_db_row()['module_details'])
         return self._module_specs
+
+    def get_readme_html(self):
+        """Convert readme markdown to HTML"""
+        if self.get_readme_content():
+            return markdown.markdown(
+                self.get_readme_content(),
+                extensions=['fenced_code', 'tables']
+            )
+        
+        # Return string when no readme is present
+        return '<h5 class="title is-5">No README present in the module</h3>'
 
     def get_readme_content(self):
         """Get readme contents"""
@@ -523,6 +538,11 @@ class ModuleVersion(TerraformSpecsObject):
         res = conn.execute(select)
 
         return res.scalar()
+
+    @property
+    def is_submodule(self):
+        """Whether object is submodule."""
+        return False
 
     @property
     def publish_date_display(self):
@@ -697,17 +717,6 @@ class ModuleVersion(TerraformSpecsObject):
         })
         return api_details
 
-    def get_readme_html(self):
-        """Convert readme markdown to HTML"""
-        if self.get_readme_content():
-            return markdown.markdown(
-                self.get_readme_content(),
-                extensions=['fenced_code', 'tables']
-            )
-        
-        # Return string when no readme is present
-        return '<h5 class="title is-5">No README present in the module</h3>'
-
     def prepare_module(self):
         """Handle file upload of module version."""
         self.create_data_directory()
@@ -775,6 +784,16 @@ class Submodule(TerraformSpecsObject):
         """Return module path"""
         return self._module_path
 
+    @property
+    def id(self):
+        """Return ID for module"""
+        return '{0}//{1}'.format(self._module_version.id, self.path)
+
+    @property
+    def is_submodule(self):
+        """Whether object is submodule."""
+        return True
+
     def __init__(self, module_version: ModuleVersion, module_path: str):
         self._module_version = module_version
         self._module_path = module_path
@@ -790,3 +809,10 @@ class Submodule(TerraformSpecsObject):
         conn = db.get_engine().connect()
         res = conn.execute(select)
         return res.fetchone()
+
+    def get_view_url(self):
+        """Return view URL"""
+        return '{module_version_url}/submodules/{submodule_path}'.format(
+            module_version_url=self._module_version.get_view_url(),
+            submodule_path=self.path
+        )
