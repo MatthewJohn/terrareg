@@ -9,6 +9,25 @@ import terrareg.models
 from terrareg.filters import NamespaceTrustFilter
 
 
+class ModuleSearchResults(object):
+    """Object containing search results."""
+
+    @property
+    def module_providers(self):
+        """Return module providers."""
+        return self._module_providers
+
+    @property
+    def count(self):
+        """Return count."""
+        return self._count
+
+    def __init__(self, module_providers: list, count: str):
+        """Store member variables"""
+        self._module_providers = module_providers
+        self._count = count
+
+
 class ModuleSearch(object):
 
     @classmethod
@@ -84,10 +103,16 @@ class ModuleSearch(object):
             db.module_provider.c.namespace.asc(),
             db.module_provider.c.module.asc(),
             db.module_provider.c.provider.asc()
-        ).limit(limit).offset(offset)
+        )
+
+        limited_search = select.limit(limit).offset(offset)
+        count_search = sqlalchemy.select(sqlalchemy.func.count).select_from(select)
 
         conn = db.get_engine().connect()
-        res = conn.execute(select)
+        res = conn.execute(limited_search)
+
+        count_result = conn.execute(count_search)
+        count = count_result.fetchone()['count']
 
         module_providers = []
         for r in res:
@@ -95,7 +120,10 @@ class ModuleSearch(object):
             module = terrareg.models.Module(namespace=namespace, name=r['module'])
             module_providers.append(terrareg.models.ModuleProvider(module=module, name=r['provider']))
 
-        return module_providers
+        return ModuleSearchResults(
+            module_providers=module_providers,
+            count=count
+        )
 
     @classmethod
     def get_search_filters(cls, query):
