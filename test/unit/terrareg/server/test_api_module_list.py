@@ -153,7 +153,7 @@ class TestApiModuleList(TerraregUnitTest):
 
         assert res.status_code == 200
         assert res.json == {
-            'meta': {'current_offset': 0, 'limit': 2, 'next_offset': 2, 'prev_offset': 0}, 'modules': [
+            'meta': {'current_offset': 0, 'limit': 2, 'next_offset': 2}, 'modules': [
                 mock_module_provider_2.get_latest_version().get_api_outline(),
                 mock_module_provider.get_latest_version().get_api_outline(),
             ]
