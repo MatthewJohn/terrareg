@@ -2,20 +2,37 @@
 import unittest.mock
 
 import pytest
+from terrareg.filters import NamespaceTrustFilter
 
-from terrareg.module_search import ModuleSearch
+from terrareg.module_search import ModuleSearch, ModuleSearchResults
 
 
 
 @pytest.fixture
 def mocked_search_module_providers(request):
     """Create mocked instance of search_module_providers method."""
-    unmocked_search_module_providers = ModuleSearch.search_module_providers
-    def cleanup_mocked_search_provider():
-        ModuleSearch.search_module_providers = unmocked_search_module_providers
-    request.addfinalizer(cleanup_mocked_search_provider)
 
-    ModuleSearch.search_module_providers = unittest.mock.MagicMock(return_value=[])
+    def search_results_func(
+            offset: int,
+            limit: int,
+            query: str=None,
+            namespace: str=None,
+            provider: str=None,
+            verified: bool=False,
+            namespace_trust_filters: list=NamespaceTrustFilter.UNSPECIFIED):
+        return ModuleSearchResults(offset=offset, limit=limit, count=0, module_providers=[])
+
+    magic_mock = unittest.mock.MagicMock(
+        side_effect=search_results_func
+    )
+    mock = unittest.mock.patch('terrareg.server.ModuleSearch.search_module_providers', magic_mock)
+
+    def cleanup_mocked_search_module_providers():
+        mock.stop()
+    request.addfinalizer(cleanup_mocked_search_module_providers)
+    mock.start()
+
+    yield magic_mock
 
 
 @pytest.fixture
