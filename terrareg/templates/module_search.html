@@ -46,11 +46,17 @@
 
         <section id="results">
         </section>
+        <section>
+            <button class="button" id="prevButton" onclick="prevResults();">Prev</button>
+            <button class="button" id="nextButton" onclick="nextResults();">Next</button>
+        </section>
 
     </div>
 </div>
 
 <script>
+
+    let currentSearchMeta = undefined;
 
     function toggleChildCheckbox(event)
     {
@@ -59,8 +65,19 @@
         performSearch();
     }
 
+    function prevResults() {
+        if (currentSearchMeta && currentSearchMeta.prev_offset !== undefined) {
+            performSearch(currentSearchMeta.prev_offset);
+        }
+    }
+    function nextResults() {
+        if (currentSearchMeta && currentSearchMeta.next_offset !== undefined) {
+            performSearch(currentSearchMeta.next_offset);
+        }
+    }
+
     let previousSearchString = '';
-    function performSearch() {
+    function performSearch(new_offset) {
 
         let searchQuery = $('#navBarSearchInput')[0].value;
 
@@ -76,9 +93,14 @@
             document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search' + queryString);
             document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
 
+            if (new_offset === undefined) {
+                new_offset = 0;
+            }
+
             // Perform AJAX query to obtain results
             $.get(`/v1/modules/search?` +
                   `q=${encodeURIComponent(searchQuery)}&` +
+                  `offset=${new_offset}&` +
                   `verified=${$('#search-verified').is(':checked')}&` +
                   `trusted_namespaces=${$('#search-trusted-namespaces').is(':checked')}&` +
                   `contributed=${$('#search-contributed').is(':checked')}`,
@@ -89,9 +111,18 @@
                         <br />
                         Please check for spelling errors and try again.
                     `);
+
+                    // Disable prev/next buttons
+                    $('#prevButton').prop('disabled', true);
+                    $('#nextButton').prop('disabled', true);
+                    currentSearchMeta = undefined;
                 } else {
                     // Clear reuslts panel before adding results
                     $('#results').html('');
+
+                    $('#prevButton').prop('disabled', (data.meta.prev_offset === undefined));
+                    $('#nextButton').prop('disabled', (data.meta.next_offset === undefined));
+                    currentSearchMeta = data.meta;
 
                     // Iterate through modules
                     data.modules.forEach((module) => {

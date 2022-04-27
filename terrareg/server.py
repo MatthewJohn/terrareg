@@ -582,7 +582,7 @@ class ApiModuleList(ErrorCatchingResource):
         limit = 1 if limit < 1 else limit
         current_offset = 0 if args.offset < 0 else args.offset
 
-        module_providers = ModuleSearch.search_module_providers(
+        search_results = ModuleSearch.search_module_providers(
             provider=args.provider,
             verified=args.verified,
             offset=current_offset,
@@ -590,15 +590,10 @@ class ApiModuleList(ErrorCatchingResource):
         )
 
         return {
-            "meta": {
-                "limit": limit,
-                "current_offset": current_offset,
-                "next_offset": (current_offset + limit),
-                "prev_offset": (current_offset - limit) if (current_offset >= limit) else 0
-            },
+            "meta": search_results.meta,
             "modules": [
                 module_provider.get_latest_version().get_api_outline()
-                for module_provider in module_providers
+                for module_provider in search_results.module_providers
             ]
         }
 
@@ -661,7 +656,7 @@ class ApiModuleSearch(ErrorCatchingResource):
         if args.contributed:
             namespace_trust_filters.append(NamespaceTrustFilter.CONTRIBUTED)
 
-        module_providers = ModuleSearch.search_module_providers(
+        search_results = ModuleSearch.search_module_providers(
             query=args.q,
             namespace=args.namespace,
             provider=args.provider,
@@ -672,15 +667,10 @@ class ApiModuleSearch(ErrorCatchingResource):
         )
 
         return {
-            "meta": {
-                "limit": limit,
-                "current_offset": current_offset,
-                "next_offset": (current_offset + limit),
-                "prev_offset": (current_offset - limit) if (current_offset >= limit) else 0
-            },
+            "meta": search_results.meta,
             "modules": [
                 module_provider.get_latest_version().get_api_outline()
-                for module_provider in module_providers
+                for module_provider in search_results.module_providers
             ]
         }
 
