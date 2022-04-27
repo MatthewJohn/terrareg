@@ -378,10 +378,8 @@ class ModuleProvider(object):
 
     def update_repository_url(self, repository_url):
         """Update repository URL for module provider."""
-        sanitised_repository_url = urllib.parse.quote(repository_url, safe='/:@%?=')
-
-        if sanitised_repository_url:
-            url = urllib.parse.urlparse(sanitised_repository_url)
+        if repository_url:
+            url = urllib.parse.urlparse(repository_url)
             if not url.scheme:
                 raise RepositoryUrlDoesNotContainValidSchemeError(
                     'Repository URL does not contain a scheme (e.g. ssh://)'
@@ -398,6 +396,8 @@ class ModuleProvider(object):
                 raise RepositoryDoesNotContainPathError(
                     'Repository URL does not contain a path'
                 )
+
+        sanitised_repository_url = urllib.parse.quote(repository_url, safe='/:@%?=')
 
         self.update_attributes(repository_url=sanitised_repository_url)
 
