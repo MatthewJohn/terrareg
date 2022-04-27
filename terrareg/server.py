@@ -30,7 +30,7 @@ from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ApiUploadModuleExtractor, GitModuleExtractor
 from terrareg.analytics import AnalyticsEngine
 from terrareg.filters import NamespaceTrustFilter
-from terrareg.config import APPLICATION_NAME, LOGO_URL
+from terrareg.config import ALLOW_MODULE_HOSTING, APPLICATION_NAME, LOGO_URL
 
 
 class Server(object):
@@ -842,6 +842,9 @@ class ApiModuleVersionSourceDownload(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version):
         """Return static file."""
+        if not ALLOW_MODULE_HOSTING:
+            return {'message': 'Module hosting is disbaled'}, 500
+
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)

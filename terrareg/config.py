@@ -39,6 +39,12 @@ If enabled, module versions with externally hosted artifacts cannot be re-analys
 DELETE_EXTERNALLY_HOSTED_ARTIFACTS = os.environ.get('DELETE_EXTERNALLY_HOSTED_ARTIFACTS', 'False') == 'True'
 
 """
+Whether uploaded modules can be downloaded directly.
+If disabled, all modules must be configured with a git URL.
+"""
+ALLOW_MODULE_HOSTING = os.environ.get('ALLOW_MODULE_HOSTING', 'True') == 'True'
+
+"""
 Comma-seperated list of metadata attributes that each uploaded module _must_ contain, otherwise the upload is aborted.
 """
 REQUIRED_MODULE_METADATA_ATTRIBUTES = [
