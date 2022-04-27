@@ -34,10 +34,10 @@ class Namespace(object):
 
         select = sqlalchemy.select([sqlalchemy.func.count()]).select_from(counts)
 
-        conn = db.get_engine().connect()
-        res = conn.execute(select)
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
 
-        return res.scalar()
+            return res.scalar()
 
     @staticmethod
     def extract_analytics_token(namespace: str):
@@ -61,14 +61,14 @@ class Namespace(object):
         select = db.module_provider.select().group_by(
             db.module_provider.c.namespace
         )
-        conn = db.get_engine().connect()
-        res = conn.execute(select)
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
 
-        namespaces = [r['namespace'] for r in res]
-        return [
-            Namespace(name=namespace)
-            for namespace in namespaces
-        ]
+            namespaces = [r['namespace'] for r in res]
+            return [
+                Namespace(name=namespace)
+                for namespace in namespaces
+            ]
 
     @property
     def base_directory(self):
@@ -109,10 +109,10 @@ class Namespace(object):
         ).group_by(
             db.module_provider.c.module
         )
-        conn = db.get_engine().connect()
-        res = conn.execute(select)
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+            modules = [r['module'] for r in res]
 
-        modules = [r['module'] for r in res]
         return [
             Module(namespace=self, name=module)
             for module in modules
@@ -167,10 +167,10 @@ class Module(object):
         ).group_by(
             db.module_provider.c.provider
         )
-        conn = db.get_engine().connect()
-        res = conn.execute(select)
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+            providers = [r['provider'] for r in res]
 
-        providers = [r['provider'] for r in res]
         return [
             ModuleProvider(module=self, name=provider)
             for provider in providers
@@ -207,10 +207,10 @@ class ModuleProvider(object):
 
         select = sqlalchemy.select([sqlalchemy.func.count()]).select_from(counts)
 
-        conn = db.get_engine().connect()
-        res = conn.execute(select)
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
 
-        return res.scalar()
+            return res.scalar()
 
     @classmethod
     def _create(cls, module, name):
@@ -223,8 +223,8 @@ class ModuleProvider(object):
             provider=name,
             verified=module._namespace.is_auto_verified
         )
-        conn = db.get_engine().connect()
-        conn.execute(module_provider_insert)
+        with db.get_engine().connect() as conn:
+            conn.execute(module_provider_insert)
 
     @classmethod
     def get(cls, module, name, create=False):
@@ -342,9 +342,9 @@ class ModuleProvider(object):
             db.module_provider.c.module == self._module.name,
             db.module_provider.c.provider == self.name
         )
-        conn = db.get_engine().connect()
-        res = conn.execute(select)
-        return res.fetchone()
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+            return res.fetchone()
 
     def update_attributes(self, **kwargs):
         """Update DB row."""
@@ -352,8 +352,8 @@ class ModuleProvider(object):
         update = self.get_db_where(
             db=db, statement=db.module_provider.update()
         ).values(**kwargs)
-        conn = db.get_engine().connect()
-        conn.execute(update)
+        with db.get_engine().connect() as conn:
+            conn.execute(update)
 
     def update_git_tag_format(self, git_tag_format):
         """Update git_tag_format."""
@@ -392,11 +392,11 @@ class ModuleProvider(object):
             db.module_provider.c.provider == self.name,
             db.module_version.c.published == True
         )
-        conn = db.get_engine().connect()
-        res = conn.execute(select)
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
 
         # Convert to list
-        rows = [r for r in res]
+            rows = [r for r in res]
 
         # Sort rows by semantec versioning
         rows.sort(key=lambda x: StrictVersion(x['version']), reverse=True)
@@ -427,13 +427,13 @@ class ModuleProvider(object):
             db.module_provider.c.provider == self.name,
             db.module_version.c.published == True
         )
-        conn = db.get_engine().connect()
-        res = conn.execute(select)
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
 
-        return [
-            ModuleVersion(module_provider=self, version=r['version'])
-            for r in res
-        ]
+            return [
+                ModuleVersion(module_provider=self, version=r['version'])
+                for r in res
+            ]
 
 
 class TerraformSpecsObject(object):
@@ -560,10 +560,10 @@ class ModuleVersion(TerraformSpecsObject):
 
         select = sqlalchemy.select([sqlalchemy.func.count()]).select_from(counts)
 
-        conn = db.get_engine().connect()
-        res = conn.execute(select)
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
 
-        return res.scalar()
+            return res.scalar()
 
     @staticmethod
     def _validate_version(version):
@@ -689,9 +689,9 @@ class ModuleVersion(TerraformSpecsObject):
             db.module_provider.c.provider == self._module_provider.name,
             db.module_version.c.version == self.version
         )
-        conn = db.get_engine().connect()
-        res = conn.execute(select)
-        return res.fetchone()
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+            return res.fetchone()
 
     def get_view_url(self):
         """Return view URL"""
@@ -768,30 +768,29 @@ class ModuleVersion(TerraformSpecsObject):
         update = self.get_db_where(
             db=db, statement=db.module_version.update()
         ).values(**kwargs)
-        conn = db.get_engine().connect()
-        conn.execute(update)
+        with db.get_engine().connect() as conn:
+            conn.execute(update)
 
     def _create_db_row(self):
         """Insert into datadabase, removing any existing duplicate versions."""
         db = Database.get()
 
-        conn = db.get_engine().connect()
+        with db.get_engine().connect() as conn:
+            # Delete module from module_version table
+            delete_statement = db.module_version.delete().where(
+                db.module_version.c.module_provider_id ==
+                self._module_provider.pk,
+                db.module_version.c.version == self.version
+            )
+            conn.execute(delete_statement)
 
-        # Delete module from module_version table
-        delete_statement = db.module_version.delete().where(
-            db.module_version.c.module_provider_id ==
-            self._module_provider.pk,
-            db.module_version.c.version == self.version
-        )
-        conn.execute(delete_statement)
-
-        # Insert new module into table
-        insert_statement = db.module_version.insert().values(
-            module_provider_id=self._module_provider.pk,
-            version=self.version,
-            published=False
-        )
-        conn.execute(insert_statement)
+            # Insert new module into table
+            insert_statement = db.module_version.insert().values(
+                module_provider_id=self._module_provider.pk,
+                version=self.version,
+                published=False
+            )
+            conn.execute(insert_statement)
 
     def get_submodules(self):
         """Return list of submodules."""
@@ -800,13 +799,13 @@ class ModuleVersion(TerraformSpecsObject):
         ).join(db.module_version, db.module_version.c.id == db.sub_module.c.parent_module_version).where(
             db.module_version.c.id == self.pk,
         )
-        conn = db.get_engine().connect()
-        res = conn.execute(select)
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
 
-        return [
-            Submodule(module_version=self, module_path=r['path'])
-            for r in res
-        ]
+            return [
+                Submodule(module_version=self, module_path=r['path'])
+                for r in res
+            ]
 
 
 class Submodule(TerraformSpecsObject):
@@ -839,9 +838,9 @@ class Submodule(TerraformSpecsObject):
             db.sub_module.c.parent_module_version == self._module_version.pk,
             db.sub_module.c.path == self._module_path
         )
-        conn = db.get_engine().connect()
-        res = conn.execute(select)
-        return res.fetchone()
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+            return res.fetchone()
 
     def get_view_url(self):
         """Return view URL"""

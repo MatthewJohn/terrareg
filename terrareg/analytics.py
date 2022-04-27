@@ -106,7 +106,6 @@ class AnalyticsEngine:
 
         # Insert analytics details into DB
         db = Database.get()
-        conn = db.get_engine().connect()
         insert_statement = db.analytics.insert().values(
             parent_module_version=module_version.pk,
             timestamp=datetime.datetime.now(),
@@ -115,24 +114,24 @@ class AnalyticsEngine:
             auth_token=auth_token,
             environment=environment
         )
-        conn.execute(insert_statement)
+        with db.get_engine().connect() as conn:
+            conn.execute(insert_statement)
 
     def get_total_downloads():
         """Return number of downloads for a given module version."""
         db = Database.get()
-        conn = db.get_engine().connect()
         select = sqlalchemy.select(
             [sqlalchemy.func.count()]
         ).select_from(
             db.analytics
         )
-        res = conn.execute(select)
-        return res.scalar()
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+            return res.scalar()
 
     def get_module_version_total_downloads(module_version):
         """Return number of downloads for a given module version."""
         db = Database.get()
-        conn = db.get_engine().connect()
         select = sqlalchemy.select(
             [sqlalchemy.func.count()]
         ).select_from(
@@ -143,14 +142,14 @@ class AnalyticsEngine:
         ).where(
             db.module_version.c.id == module_version.pk
         )
-        res = conn.execute(select)
-        return res.scalar()
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+            return res.scalar()
 
     @staticmethod
     def get_module_provider_download_stats(module_provider):
         """Return number of downloads for intervals."""
         db = Database.get()
-        conn = db.get_engine().connect()
         stats = {}
         for i in [(7, 'week'), (31, 'month'), (365, 'year'), (None, 'total')]:
 
@@ -169,8 +168,9 @@ class AnalyticsEngine:
                     db.analytics.c.timestamp >= from_timestamp
                 )
 
-            res = conn.execute(select)
-            stats[i[1]] = res.scalar()
+            with db.get_engine().connect() as conn:
+                res = conn.execute(select)
+                stats[i[1]] = res.scalar()
 
         return stats
 
@@ -179,7 +179,6 @@ class AnalyticsEngine:
     def get_module_provider_token_versions(module_provider):
         """Return list of users for module provider."""
         db = Database.get()
-        conn = db.get_engine().connect()
 
         # Obtain a list of the MAX (latest) analytics row IDs,
         # grouped by analytics token and environment.
@@ -214,8 +213,6 @@ class AnalyticsEngine:
             db=db, query=select, module_provider=module_provider)
         select = select.where(db.analytics.c.id.in_(id_subquery))
 
-        res = conn.execute(select)
-
         token_version_mapping = {}
         # Convert list of environments to a map,
         # providing the environment priority (index of the environment
@@ -225,44 +222,47 @@ class AnalyticsEngine:
             for itx, env in enumerate(ANALYTICS_AUTH_KEYS)
         }
 
-        for row in res:
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
 
-            # Check if row is usable
-            ## Skip any rows without ananlytics tokens, if they are required.
-            if AnalyticsEngine.are_tokens_enabled() and not row['analytics_token']:
-                continue
-            ## Skip any rows without an environment, if they are required.
-            if AnalyticsEngine.are_environments_enabled() and not row['environment']:
-                continue
+            for row in res:
 
-            token = row['analytics_token'] if row['analytics_token'] else 'No token provided'
+                # Check if row is usable
+                ## Skip any rows without ananlytics tokens, if they are required.
+                if AnalyticsEngine.are_tokens_enabled() and not row['analytics_token']:
+                    continue
+                ## Skip any rows without an environment, if they are required.
+                if AnalyticsEngine.are_environments_enabled() and not row['environment']:
+                    continue
 
-            # Populate map with empty details for this analytics token,
-            # if it doesn't already exist.
-            if token not in token_version_mapping:
-                token_version_mapping[token] = {
-                    'terraform_version': None,
-                    'module_version': None,
-                    'environment': None
-                }
-            terraform_version = row['terraform_version'] if row['terraform_version'] else '0.0.0'
+                token = row['analytics_token'] if row['analytics_token'] else 'No token provided'
 
-            # Check if environment of current download is 'higher than' previous
-            ## Use this row if the current 'highest' value has an empty environment (this will always
-            ## match the first row)
-            if (token_version_mapping[token]['environment'] is None or
-                ## Ignore any future rows with an empty environment. If there aren't
-                ## environments in use, there will only be one row per analytics token
-                (row['environment'] is not None and
-                 ## Ensure that the environment (still) exists
-                 row['environment'] in environment_priorities and
-                 ## Ensure the environment token appears higher in the
-                 ## environment priorities than the current 'highest' row
-                 environment_priorities[row['environment']] >
-                 environment_priorities[token_version_mapping[token]['environment']])):
+                # Populate map with empty details for this analytics token,
+                # if it doesn't already exist.
+                if token not in token_version_mapping:
+                    token_version_mapping[token] = {
+                        'terraform_version': None,
+                        'module_version': None,
+                        'environment': None
+                    }
+                terraform_version = row['terraform_version'] if row['terraform_version'] else '0.0.0'
 
-                token_version_mapping[token]['environment'] = row['environment']
-                token_version_mapping[token]['module_version'] = row['version']
-                token_version_mapping[token]['terraform_version'] = terraform_version
+                # Check if environment of current download is 'higher than' previous
+                ## Use this row if the current 'highest' value has an empty environment (this will always
+                ## match the first row)
+                if (token_version_mapping[token]['environment'] is None or
+                    ## Ignore any future rows with an empty environment. If there aren't
+                    ## environments in use, there will only be one row per analytics token
+                    (row['environment'] is not None and
+                    ## Ensure that the environment (still) exists
+                    row['environment'] in environment_priorities and
+                    ## Ensure the environment token appears higher in the
+                    ## environment priorities than the current 'highest' row
+                    environment_priorities[row['environment']] >
+                    environment_priorities[token_version_mapping[token]['environment']])):
+
+                    token_version_mapping[token]['environment'] = row['environment']
+                    token_version_mapping[token]['module_version'] = row['version']
+                    token_version_mapping[token]['terraform_version'] = terraform_version
 
         return token_version_mapping
