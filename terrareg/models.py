@@ -12,6 +12,8 @@ import terrareg.analytics
 from terrareg.database import Database
 from terrareg.config import (
     ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+    ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
+    ALLOW_MODULE_HOSTING,
     DATA_DIRECTORY,
     VERIFIED_MODULE_NAMESPACES,
     GIT_PROVIDER_CONFIG
@@ -25,7 +27,8 @@ from terrareg.errors import (
     RepositoryUrlDoesNotContainHostError,
     RepositoryDoesNotContainPathError,
     InvalidGitProviderConfigError,
-    ModuleProviderCustomGitRepositoryUrlNotAllowedError
+    ModuleProviderCustomGitRepositoryUrlNotAllowedError,
+    NoModuleDownloadMethodConfiguredError
 )
 from terrareg.utils import safe_join_paths
 from terrareg.validators import GitUrlValidator
@@ -826,10 +829,35 @@ class ModuleVersion(TerraformSpecsObject):
 
     def get_source_download_url(self):
         """Return URL to download source file."""
-        if self._get_db_row()['artifact_location']:
-            return self._get_db_row()['artifact_location'].format(module_version=self.version)
+        template = None
 
-        return '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
+        # Check if allowed, and module version has custom git URL
+        if ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['clone_url_template']:
+            template = self._get_db_row()['clone_url_template']
+
+        # Otherwise, check if allowed and module provider has custom git URL
+        elif ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._module_provider._get_db_row()['clone_url_template']:
+            template = self._module_provider._get_db_row()['clone_url_template']
+
+        # Otherwise, check if module provider is configured with git provider
+        elif self._module_provider.get_git_provider():
+            template = self._module_provider.get_git_provider().clone_url_template
+
+        # Return rendered version of template
+        if template:
+            return template.render(
+                namespace=self._module_provider._module._namespace.name,
+                module=self._module_provider._module.name,
+                provider=self._module_provider.name,
+                tag=self.source_git_tag
+            )
+
+        if ALLOW_MODULE_HOSTING:
+            return '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
+
+        raise NoModuleDownloadMethodConfiguredError(
+            'Module is not configured with a git URL and direct downloads are disabled'
+        )
 
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
