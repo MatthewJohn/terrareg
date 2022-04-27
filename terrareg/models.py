@@ -721,7 +721,6 @@ class ModuleVersion(TerraformSpecsObject):
         """Return git tag used for extraction clone"""
         return self._module_provider.git_tag_format.format(version=self._version)
 
-
     @property
     def git_tag_ref(self):
         """Return git tag ref for extraction."""
