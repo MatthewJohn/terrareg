@@ -118,3 +118,15 @@ class InvalidGitProviderConfigError(TerraregError):
     """Invalid git provider config has been passed."""
 
     pass
+
+
+class ModuleProviderCustomGitRepositoryUrlNotAllowedError(TerraregError):
+    """Module provider cannot set custom git URL."""
+
+    pass
+
+
+class ModuleVersionCustomGitRepositoryUrlNotAllowedError(TerraregError):
+    """Module provider cannot set custom git URL."""
+
+    pass
