@@ -125,3 +125,13 @@ An example for public repositories might be:
  {"name": "Gitlab", "clone_url": "ssh://git@gitlab.com:{namespace}/{module}-{provider}.git", "browse_url": "https://gitlab.com/{namespace}/{module}-{provider}/-/tree/{version}"}]
 """
 GIT_PROVIDER_CONFIG = os.environ.get('GIT_PROVIDER_CONFIG', '')
+
+"""
+Whether module providers can specify their own git repository source.
+"""
+ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER = os.environ.get('ALLOW_CUSTOM_GIT_SOURCE_MODULE_PROVIDER', 'True') == 'True'
+
+"""
+Whether module versions can specify git repository in terrareg config.
+"""
+ALLOW_CUSTOM_GIT_URL_MODULE_VERSION = os.environ.get('ALLOW_CUSTOM_GIT_SOURCE_MODULE_VERSION', 'True') == 'True'
