@@ -120,8 +120,8 @@ Each item in the list should contain the following attributes:
                    or 'https://bitbucket.org/{namespace}/{module}/src/{version}')
 
 An example for public repositories might be:
-[{'name': 'Github', 'clone_url': 'ssh://git@github.com/{namespace}/{module}-{provider}.git', 'browse_url': 'https://github.com/{namespace}/{module}-{provider}/tree'},
- {'name': 'Bitbucket', 'clone_url': 'ssh://git@bitbucket.org:{namespace}/{module}-{provider}.git', 'browse_url': 'https://bitbucket.org/{namespace}/{module}-{provider}/src/{version}'}
- {'name': 'Gitlab', 'clone_url': 'ssh://git@gitlab.com:mrmattyboy/test-deletion-bug.git', 'browse_url': 'https://gitlab.com/{namespace}/{module}-{provider}/-/tree/{version}'}]
+[{"name": "Github", "clone_url": "ssh://git@github.com/{namespace}/{module}-{provider}.git", "browse_url": "https://github.com/{namespace}/{module}-{provider}/tree"},
+ {"name": "Bitbucket", "clone_url": "ssh://git@bitbucket.org:{namespace}/{module}-{provider}.git", "browse_url": "https://bitbucket.org/{namespace}/{module}-{provider}/src/{version}"},
+ {"name": "Gitlab", "clone_url": "ssh://git@gitlab.com:{namespace}/{module}-{provider}.git", "browse_url": "https://gitlab.com/{namespace}/{module}-{provider}/-/tree/{version}"}]
 """
-GIT_PROVIDER_CONFIG = os.environ.get('GIT_PROVIDER_CONFIG', '[]')
+GIT_PROVIDER_CONFIG = os.environ.get('GIT_PROVIDER_CONFIG', '')
