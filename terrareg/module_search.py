@@ -40,7 +40,7 @@ class ModuleSearchResults(object):
         # If the current count of results is greater than the next offset,
         # provide the next offset in the metadata
         next_offset = (self._offset + self._limit)
-        if self.count >= next_offset:
+        if self.count > next_offset:
             meta_data['next_offset'] = next_offset
 
         return meta_data
