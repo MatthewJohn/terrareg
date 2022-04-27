@@ -1102,7 +1102,7 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
 
         git_tag_format = args.git_tag_format
         if git_tag_format is not None:
-            module_provider.update_git_tag_format(git_tag_format)
+            module_provider.update_git_tag_format(git_tag_format=git_tag_format)
 
         return {
             'id': module_provider.id
