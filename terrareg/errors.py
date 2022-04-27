@@ -112,3 +112,9 @@ class RepositoryDoesNotContainPathError(RepositoryUrlParseError):
     """Repository URL does not contain path."""
 
     pass
+
+
+class InvalidGitProviderConfigError(TerraregError):
+    """Invalid git provider config has been passed."""
+
+    pass

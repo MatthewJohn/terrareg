@@ -21,7 +21,11 @@ from terrareg.errors import (
     RepositoryUrlParseError, TerraregError, UploadError, NoModuleVersionAvailableError,
     NoSessionSetError, IncorrectCSRFTokenError
 )
-from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion, Submodule
+from terrareg.models import (
+    Namespace, Module, ModuleProvider,
+    ModuleVersion, Submodule,
+    GitProvider
+)
 from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ApiUploadModuleExtractor, GitModuleExtractor
 from terrareg.analytics import AnalyticsEngine
@@ -60,6 +64,7 @@ class Server(object):
 
         # Initialise database
         Database.get().initialise()
+        GitProvider.initialise_from_config()
 
         self._register_routes()
 

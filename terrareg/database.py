@@ -94,7 +94,7 @@ class Database():
         self._git_provider = sqlalchemy.Table(
             'git_provider', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
-            sqlalchemy.Column('name', sqlalchemy.String),
+            sqlalchemy.Column('name', sqlalchemy.String, unique=True),
             sqlalchemy.Column('clone_url_template', sqlalchemy.String),
             sqlalchemy.Column('browse_url_template', sqlalchemy.String)
         )

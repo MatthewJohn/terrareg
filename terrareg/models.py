@@ -12,7 +12,8 @@ import terrareg.analytics
 from terrareg.database import Database
 from terrareg.config import (
     DATA_DIRECTORY,
-    VERIFIED_MODULE_NAMESPACES
+    VERIFIED_MODULE_NAMESPACES,
+    GIT_PROVIDER_CONFIG
 )
 from terrareg.errors import (
     InvalidModuleNameError, InvalidModuleProviderNameError,
@@ -21,9 +22,78 @@ from terrareg.errors import (
     RepositoryUrlDoesNotContainValidSchemeError,
     RepositoryUrlContainsInvalidSchemeError,
     RepositoryUrlDoesNotContainHostError,
-    RepositoryDoesNotContainPathError
+    RepositoryDoesNotContainPathError,
+    InvalidGitProviderConfigError
 )
 from terrareg.utils import safe_join_paths
+
+
+class GitProvider:
+    """Interface to specify how modules should interact with known git providers."""
+
+    @staticmethod
+    def initialise_from_config():
+        """Load git providers from config into database."""
+        git_provider_config = json.loads(GIT_PROVIDER_CONFIG)
+        db = Database.get()
+        for git_provider_config in git_provider_config:
+            # Validate provider config
+            for attr in ['name', 'clone_url', 'browse_url']:
+                if attr not in git_provider_config:
+                    raise InvalidGitProviderConfigError(
+                        'Git provider config does not contain required attribute: {}'.format(attr))
+
+            # Check if git provider exists in DB
+            existing_git_provider = GitProvider.get_by_name(name=git_provider_config['name'])
+            if existing_git_provider:
+                # Update existing row
+                update = db.git_provider.update().where(
+                    db.git_provider.c.id == existing_git_provider.pk
+                ).values(
+                    clone_url_template=git_provider_config['clone_url'],
+                    browse_url_template=git_provider_config['browse_url']
+                )
+
+    @staticmethod
+    def get_by_name(name):
+        """Return instance of git provider by name."""
+        db = Database.get()
+        # Obtain row from git providers table where name
+        # matches git provider name
+        select = db.git_provider.select().where(
+            db.git_provider.c.name == name
+        )
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+            row = res.fetchone()
+
+        # If git provider found with name, return instance
+        # of git provider object with ID
+        if row:
+            return GitProvider(id=row['id'])
+
+        # Otherwise return None
+        return None
+
+    @property
+    def pk(self):
+        """Return DB ID for git provider."""
+        return self._get_db_row()['id']
+
+    def __init__(self, id):
+        """Store member variable for ID."""
+        self._id = id
+
+    def _get_db_row(self):
+        """Return DB row for git provider."""
+        db = Database.get()
+        # Obtain row from git providers table for git provider.
+        select = db.git_provider.select().where(
+            db.git_provider.c.id == self._id
+        )
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+            return res.fetchone()
 
 
 class Namespace(object):
