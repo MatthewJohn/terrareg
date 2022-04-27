@@ -25,7 +25,7 @@
             }),
             contentType: 'application/json'
         }).done((res) => {
-            window.location.href = `/modules/${res.responseJSON.id}`
+            window.location.href = `/modules/${res.id}`
         }).fail((res) => {
             if (res.responseJSON && res.responseJSON.message) {
                 $('#create-error').html(res.responseJSON.message);
