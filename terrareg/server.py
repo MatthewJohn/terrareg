@@ -185,6 +185,10 @@ class Server(object):
 
         ## Module endpoints /v1/terreg/modules
         self._api.add_resource(
+            ApiTerraregModuleProviderCreate,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/create'
+        )
+        self._api.add_resource(
             ApiTerraregModuleProviderSettings,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/settings'
         )
@@ -1030,6 +1034,79 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
         session['csrf_token'] = hashlib.sha1(os.urandom(64)).hexdigest()
         session.modified = True
         return {'authenticated': True}
+
+
+class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
+    """Provide interface to create module provider."""
+
+    method_decorators = [require_admin_authentication]
+
+    def _post(self, namespace, name, provider):
+        """Handle update to settings."""
+        parser = reqparse.RequestParser()
+        parser.add_argument(
+            'repository_url', type=str,
+            required=False,
+            default=None,
+            help='Module provider repository URL.',
+            location='json'
+        )
+        parser.add_argument(
+            'git_tag_format', type=str,
+            required=False,
+            default=None,
+            help='Module provider git tag format.',
+            location='json'
+        )
+        parser.add_argument(
+            'csrf_token', type=str,
+            required=False,
+            help='CSRF token',
+            location='json',
+            default=None
+        )
+
+        args = parser.parse_args()
+
+        check_csrf_token(args.csrf_token)
+
+        # Update repository URL of module version
+        namespace = Namespace(name=namespace)
+        module = Module(namespace=namespace, name=name)
+
+        # Check if module provider already exists
+        module_provider = ModuleProvider.get(module=module, name=provider)
+        if module_provider is not None:
+            return {'message': 'Module provider already exists'}, 400
+
+        module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+
+        # Ensure repository URL is parsable
+        repository_url = args.repository_url
+        if repository_url is not None:
+            if repository_url != '':
+                url = urllib.parse.urlparse(args.repository_url)
+                if not url.scheme:
+                    return {'message': 'Repository URL does not contain a scheme (e.g. ssh://)'}, 400
+                if url.scheme not in ['http', 'https', 'ssh']:
+                    return {'message': 'Repository URL contains an unknown scheme (e.g. https/git/http)'}, 400
+                if not url.hostname:
+                    return {'message': 'Repository URL does not contain a host/domain'}, 400
+                if not url.path:
+                    return {'message': 'Repository URL does not contain a path'}, 400
+            else:
+                # If repository URL is empty, set to None
+                repository_url = None
+
+            module_provider.update_repository_url(repository_url=args.repository_url)
+
+        git_tag_format = args.git_tag_format
+        if git_tag_format is not None:
+            module_provider.update_git_tag_format(git_tag_format)
+
+        return {
+            'id': module_provider.id
+        }
 
 
 class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
