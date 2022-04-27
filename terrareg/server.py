@@ -668,7 +668,7 @@ class ApiModuleSearch(ErrorCatchingResource):
         if args.contributed:
             namespace_trust_filters.append(NamespaceTrustFilter.CONTRIBUTED)
 
-        module_providers, total = ModuleSearch.search_module_providers(
+        search_results = ModuleSearch.search_module_providers(
             query=args.q,
             namespace=args.namespace,
             provider=args.provider,
@@ -678,16 +678,23 @@ class ApiModuleSearch(ErrorCatchingResource):
             limit=limit
         )
 
+        meta_data = {
+            "limit": limit,
+            "current_offset": current_offset,
+        }
+
+        if current_offset > 0:
+            meta_data['prev_offset'] = (current_offset - limit) if (current_offset >= limit) else 0
+
+        next_offset = (current_offset + limit)
+        if search_results.count >= next_offset:
+            meta_data['next_offset'] = next_offset
+
         return {
-            "meta": {
-                "limit": limit,
-                "current_offset": current_offset,
-                "next_offset": (current_offset + limit),
-                "prev_offset": (current_offset - limit) if (current_offset >= limit) else 0
-            },
+            "meta": meta_data,
             "modules": [
                 module_provider.get_latest_version().get_api_outline()
-                for module_provider in module_providers
+                for module_provider in search_results.module_providers
             ]
         }
 
