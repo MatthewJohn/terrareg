@@ -11,6 +11,7 @@ import markdown
 import terrareg.analytics
 from terrareg.database import Database
 from terrareg.config import (
+    ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
     DATA_DIRECTORY,
     VERIFIED_MODULE_NAMESPACES,
     GIT_PROVIDER_CONFIG
@@ -23,7 +24,8 @@ from terrareg.errors import (
     RepositoryUrlContainsInvalidSchemeError,
     RepositoryUrlDoesNotContainHostError,
     RepositoryDoesNotContainPathError,
-    InvalidGitProviderConfigError
+    InvalidGitProviderConfigError,
+    ModuleProviderCustomGitRepositoryUrlNotAllowedError
 )
 from terrareg.utils import safe_join_paths
 
@@ -456,6 +458,11 @@ class ModuleProvider(object):
 
     def update_repository_url(self, repository_url):
         """Update repository URL for module provider."""
+        if not ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
+            raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
+                'Custom module provider git repository URL cannot be set.'
+            )
+
         if repository_url:
             url = urllib.parse.urlparse(repository_url)
             if not url.scheme:
