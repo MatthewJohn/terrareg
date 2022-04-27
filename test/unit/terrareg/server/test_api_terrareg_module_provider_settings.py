@@ -28,7 +28,6 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
                 unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_attributes') as mock_update_attributes:
 
@@ -46,10 +45,8 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             # Ensure required checks are called
             mock_check_csrf.assert_called_once_with('unittestcsrf')
             mocked_check_admin_authentication.assert_called()
-            mock_update_repository_url.assert_called_once_with(
-                repository_url=repository_url)
             mock_update_git_tag_format.assert_not_called()
-            mock_update_attributes.assert_not_called()
+            mock_update_attributes.assert_called_once_with(repository_url=repository_url)
 
     @setup_test_data()
     def test_update_repository_url_invalid_protocol(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
@@ -57,7 +54,6 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
                 unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_attributes') as mock_update_attributes:
 
@@ -74,7 +70,6 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             # Ensure required checks are called
             mock_check_csrf.assert_called_once_with('unittestcsrf')
             mocked_check_admin_authentication.assert_called()
-            mock_update_repository_url.assert_not_called()
             mock_update_git_tag_format.assert_not_called()
             mock_update_attributes.assert_not_called()
 
@@ -84,7 +79,6 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
                 unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_attributes') as mock_update_attributes:
 
@@ -101,7 +95,6 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             # Ensure required checks are called
             mock_check_csrf.assert_called_once_with('unittestcsrf')
             mocked_check_admin_authentication.assert_called()
-            mock_update_repository_url.assert_not_called()
             mock_update_git_tag_format.assert_not_called()
             mock_update_attributes.assert_not_called()
 
@@ -111,7 +104,6 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
                 unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_attributes') as mock_update_attributes:
 
@@ -128,7 +120,6 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             # Ensure required checks are called
             mock_check_csrf.assert_called_once_with('unittestcsrf')
             mocked_check_admin_authentication.assert_called()
-            mock_update_repository_url.assert_not_called()
             mock_update_git_tag_format.assert_not_called()
             mock_update_attributes.assert_not_called()
 
@@ -138,7 +129,6 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
                 unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_attributes') as mock_update_attributes:
 
@@ -154,10 +144,8 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             # Ensure required checks are called
             mock_check_csrf.assert_called_once_with(None)
             mocked_check_admin_authentication.assert_called()
-            mock_update_repository_url.assert_called_once_with(
-                repository_url='https://example.com/test.git')
             mock_update_git_tag_format.assert_not_called()
-            mock_update_attributes.assert_not_called()
+            mock_update_attributes.assert_called_once_with(repository_url='https://example.com/test.git')
 
     @setup_test_data()
     def test_update_git_tag_format(
@@ -169,7 +157,6 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
                 unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_attributes') as mock_update_attributes:
 
@@ -186,7 +173,6 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             # Ensure required checks are called
             mock_check_csrf.assert_called_once_with('unittestcsrf')
             mocked_check_admin_authentication.assert_called()
-            mock_update_repository_url.assert_not_called()
             mock_update_git_tag_format.assert_called_with('newgittagformat')
             mock_update_attributes.assert_not_called()
 
@@ -200,7 +186,6 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
                 unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_attributes') as mock_update_attributes:
 
@@ -217,7 +202,6 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             # Ensure required checks are called
             mock_check_csrf.assert_called_once_with('unittestcsrf')
             mocked_check_admin_authentication.assert_called()
-            mock_update_repository_url.assert_not_called()
             mock_update_git_tag_format.assert_called_with('')
             mock_update_attributes.assert_not_called()
 
@@ -232,7 +216,6 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
                 unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_attributes') as mock_update_attributes:
 
@@ -249,7 +232,6 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             # Ensure required checks are called
             mock_check_csrf.assert_called_once_with('unittestcsrf')
             mocked_check_admin_authentication.assert_called()
-            mock_update_repository_url.assert_not_called()
             mock_update_git_tag_format.assert_not_called()
             mock_update_attributes.assert_called_with(verified=verified_state)
 
@@ -264,7 +246,6 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
                 unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_attributes') as mock_update_attributes:
 
@@ -281,8 +262,5 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             # Ensure required checks are called
             mock_check_csrf.assert_not_called()
             mocked_check_admin_authentication.assert_called()
-            mock_update_repository_url.assert_not_called()
             mock_update_git_tag_format.assert_not_called()
             mock_update_attributes.assert_not_called()
-
-

@@ -46,6 +46,7 @@
                 $('#navbar_login_icon').removeClass('fa-lock');
                 $('#navbar_login_icon').addClass('fa-sign-out');
                 $('#navbar_login_span').html('Logout');
+                $('#navbarCreateDropdown').css('display', 'flex');
               }
             });
           });
@@ -69,10 +70,18 @@
             <div  class="navbar-menu">
               <div class="navbar-start">
                 <a class="navbar-item" href="/">Home</a>
+
                 <div id="navbarRegistryDropdown" class="navbar-item has-dropdown is-hoverable">
                   <a class="navbar-link" href="#">Registry</a>
                   <div class="navbar-dropdown is-boxed">
                     <a class="navbar-item" href="/modules">Modules</a>
+                  </div>
+                </div>
+
+                <div style="display: none;" id="navbarCreateDropdown" class="navbar-item has-dropdown is-hoverable">
+                  <a class="navbar-link" href="#">Create</a>
+                  <div class="navbar-dropdown is-boxed">
+                    <a class="navbar-item" href="/create-module">Module</a>
                   </div>
                 </div>
 
