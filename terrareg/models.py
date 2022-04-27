@@ -50,13 +50,13 @@ class GitProvider:
             GitUrlValidator(git_provider_config['clone_url']).validate(
                 requires_namespace_placeholder=True,
                 requires_module_placeholder=True,
-                requires_version_placeholder=False,
+                requires_tag_placeholder=False,
                 requires_path_placeholder=False
             )
             GitUrlValidator(git_provider_config['browse_url']).validate(
                 requires_namespace_placeholder=True,
                 requires_module_placeholder=True,
-                requires_version_placeholder=True,
+                requires_tag_placeholder=True,
                 requires_path_placeholder=True
             )
 
