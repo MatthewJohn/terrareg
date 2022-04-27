@@ -15,8 +15,13 @@ from terrareg.config import (
     VERIFIED_MODULE_NAMESPACES
 )
 from terrareg.errors import (
-    InvalidModuleNameError, InvalidModuleProviderNameError, InvalidVersionError, NoModuleVersionAvailableError, InvalidGitTagFormatError,
-    InvalidNamespaceNameError
+    InvalidModuleNameError, InvalidModuleProviderNameError,
+    InvalidVersionError, NoModuleVersionAvailableError,
+    InvalidGitTagFormatError, InvalidNamespaceNameError,
+    RepositoryUrlDoesNotContainValidSchemeError,
+    RepositoryUrlContainsInvalidSchemeError,
+    RepositoryUrlDoesNotContainHostError,
+    RepositoryDoesNotContainPathError
 )
 from terrareg.utils import safe_join_paths
 
@@ -374,6 +379,26 @@ class ModuleProvider(object):
     def update_repository_url(self, repository_url):
         """Update repository URL for module provider."""
         sanitised_repository_url = urllib.parse.quote(repository_url, safe='/:@%?=')
+
+        if sanitised_repository_url:
+            url = urllib.parse.urlparse(sanitised_repository_url)
+            if not url.scheme:
+                raise RepositoryUrlDoesNotContainValidSchemeError(
+                    'Repository URL does not contain a scheme (e.g. ssh://)'
+                )
+            if url.scheme not in ['http', 'https', 'ssh']:
+                raise RepositoryUrlContainsInvalidSchemeError(
+                    'Repository URL contains an unknown scheme (e.g. https/git/http)'
+                )
+            if not url.hostname:
+                raise RepositoryUrlDoesNotContainHostError(
+                    'Repository URL does not contain a host/domain'
+                )
+            if not url.path:
+                raise RepositoryDoesNotContainPathError(
+                    'Repository URL does not contain a path'
+                )
+
         self.update_attributes(repository_url=sanitised_repository_url)
 
     def get_view_url(self):

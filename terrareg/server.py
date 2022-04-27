@@ -18,7 +18,7 @@ from flask_restful import Resource, Api, reqparse, inputs, abort
 import terrareg.config
 from terrareg.database import Database
 from terrareg.errors import (
-    TerraregError, UploadError, NoModuleVersionAvailableError,
+    RepositoryUrlParseError, TerraregError, UploadError, NoModuleVersionAvailableError,
     NoSessionSetError, IncorrectCSRFTokenError
 )
 from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion, Submodule
@@ -1084,21 +1084,14 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
         # Ensure repository URL is parsable
         repository_url = args.repository_url
         if repository_url is not None:
-            if repository_url != '':
-                url = urllib.parse.urlparse(args.repository_url)
-                if not url.scheme:
-                    return {'message': 'Repository URL does not contain a scheme (e.g. ssh://)'}, 400
-                if url.scheme not in ['http', 'https', 'ssh']:
-                    return {'message': 'Repository URL contains an unknown scheme (e.g. https/git/http)'}, 400
-                if not url.hostname:
-                    return {'message': 'Repository URL does not contain a host/domain'}, 400
-                if not url.path:
-                    return {'message': 'Repository URL does not contain a path'}, 400
-            else:
+            if repository_url == '':
                 # If repository URL is empty, set to None
                 repository_url = None
 
-            module_provider.update_repository_url(repository_url=args.repository_url)
+            try:
+                module_provider.update_repository_url(repository_url=repository_url)
+            except RepositoryUrlParseError as exc:
+                return {'message': str(exc)}, 400
 
         git_tag_format = args.git_tag_format
         if git_tag_format is not None:
@@ -1161,21 +1154,14 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         # Ensure repository URL is parsable
         repository_url = args.repository_url
         if repository_url is not None:
-            if repository_url != '':
-                url = urllib.parse.urlparse(args.repository_url)
-                if not url.scheme:
-                    return {'message': 'Repository URL does not contain a scheme (e.g. ssh://)'}, 400
-                if url.scheme not in ['http', 'https', 'ssh']:
-                    return {'message': 'Repository URL contains an unknown scheme (e.g. https/git/http)'}, 400
-                if not url.hostname:
-                    return {'message': 'Repository URL does not contain a host/domain'}, 400
-                if not url.path:
-                    return {'message': 'Repository URL does not contain a path'}, 400
-            else:
+            if repository_url == '':
                 # If repository URL is empty, set to None
                 repository_url = None
 
-            module_provider.update_repository_url(repository_url=args.repository_url)
+            try:
+                module_provider.update_repository_url(repository_url=repository_url)
+            except RepositoryUrlParseError as exc:
+                return {'message': str(exc)}, 400
 
         git_tag_format = args.git_tag_format
         if git_tag_format is not None:

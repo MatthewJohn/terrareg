@@ -83,3 +83,32 @@ class InvalidVersionError(TerraregError):
 
     pass
 
+
+class RepositoryUrlParseError(TerraregError):
+    """An invalid repository URL has been provided."""
+
+    pass
+
+
+class RepositoryUrlDoesNotContainValidSchemeError(RepositoryUrlParseError):
+    """Repository URL does not contain a scheme."""
+
+    pass
+
+
+class RepositoryUrlContainsInvalidSchemeError(RepositoryUrlParseError):
+    """Repository URL contains an unknown scheme."""
+
+    pass
+
+
+class RepositoryUrlDoesNotContainHostError(RepositoryUrlParseError):
+    """Repository URL does not contain a host/domain."""
+
+    pass
+
+
+class RepositoryDoesNotContainPathError(RepositoryUrlParseError):
+    """Repository URL does not contain path."""
+
+    pass
