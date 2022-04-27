@@ -1,5 +1,5 @@
 
-from terrareg.module_search import ModuleSearch
+from terrareg.module_search import ModuleSearch, ModuleSearchResults
 
 from . import mocked_search_module_providers
 from test.unit.terrareg import (
@@ -17,7 +17,7 @@ class TestApiModuleList(TerraregUnitTest):
 
         assert res.status_code == 200
         assert res.json == {
-            'meta': {'current_offset': 0, 'limit': 10, 'next_offset': 10, 'prev_offset': 0}, 'modules': []
+            'meta': {'current_offset': 0, 'limit': 10}, 'modules': []
         }
 
         ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=False, offset=0, limit=10)
@@ -28,7 +28,7 @@ class TestApiModuleList(TerraregUnitTest):
 
         assert res.status_code == 200
         assert res.json == {
-            'meta': {'current_offset': 23, 'limit': 12, 'next_offset': 35, 'prev_offset': 11}, 'modules': []
+            'meta': {'current_offset': 23, 'limit': 12, 'prev_offset': 11}, 'modules': []
         }
 
         ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=False, offset=23, limit=12)
@@ -39,7 +39,7 @@ class TestApiModuleList(TerraregUnitTest):
 
         assert res.status_code == 200
         assert res.json == {
-            'meta': {'current_offset': 65, 'limit': 50, 'next_offset': 115, 'prev_offset': 15}, 'modules': []
+            'meta': {'current_offset': 65, 'limit': 50, 'prev_offset': 15}, 'modules': []
         }
 
         ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=False, offset=65, limit=50)
@@ -50,7 +50,7 @@ class TestApiModuleList(TerraregUnitTest):
 
         assert res.status_code == 200
         assert res.json == {
-            'meta': {'current_offset': 0, 'limit': 10, 'next_offset': 10, 'prev_offset': 0}, 'modules': []
+            'meta': {'current_offset': 0, 'limit': 10}, 'modules': []
         }
 
         ModuleSearch.search_module_providers.assert_called_with(provider='testprovider', verified=False, offset=0, limit=10)
@@ -61,7 +61,7 @@ class TestApiModuleList(TerraregUnitTest):
 
         assert res.status_code == 200
         assert res.json == {
-            'meta': {'current_offset': 0, 'limit': 10, 'next_offset': 10, 'prev_offset': 0}, 'modules': []
+            'meta': {'current_offset': 0, 'limit': 10}, 'modules': []
         }
         ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=False, offset=0, limit=10)
 
@@ -72,7 +72,7 @@ class TestApiModuleList(TerraregUnitTest):
 
         assert res.status_code == 200
         assert res.json == {
-            'meta': {'current_offset': 0, 'limit': 10, 'next_offset': 10, 'prev_offset': 0}, 'modules': []
+            'meta': {'current_offset': 0, 'limit': 10}, 'modules': []
         }
         ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=True, offset=0, limit=10)
 
@@ -82,13 +82,46 @@ class TestApiModuleList(TerraregUnitTest):
         namespace = MockNamespace(name='testnamespace')
         module = MockModule(namespace=namespace, name='mock-module')
         mock_module_provider = MockModuleProvider(module=module, name='testprovider')
-        ModuleSearch.search_module_providers.return_value = [mock_module_provider]
+
+        def side_effect(*args, **kwargs):
+            return ModuleSearchResults(
+                offset=0, limit=1,
+                count=1, module_providers=[mock_module_provider]
+            )
+        ModuleSearch.search_module_providers.side_effect = side_effect
 
         res = client.get('/v1/modules?offset=0&limit=1')
 
         assert res.status_code == 200
         assert res.json == {
-            'meta': {'current_offset': 0, 'limit': 1, 'next_offset': 1, 'prev_offset': 0}, 'modules': [
+            'meta': {'current_offset': 0, 'limit': 1}, 'modules': [
+                {'id': 'testnamespace/mock-module/testprovider/1.2.3', 'owner': 'Mock Owner',
+                'namespace': 'testnamespace', 'name': 'mock-module',
+                'version': '1.2.3', 'provider': 'testprovider',
+                'description': 'Mock description', 'source': 'http://mock.example.com/mockmodule',
+                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True}
+            ]
+        }
+
+    @setup_test_data()
+    def test_with_module_response_with_more_results_available(self, client, mocked_search_module_providers):
+        """Test return of single module module"""
+        namespace = MockNamespace(name='testnamespace')
+        module = MockModule(namespace=namespace, name='mock-module')
+        mock_module_provider = MockModuleProvider(module=module, name='testprovider')
+
+        def side_effect(*args, **kwargs):
+            return ModuleSearchResults(
+                offset=0, limit=1,
+                count=2, module_providers=[mock_module_provider]
+            )
+        ModuleSearch.search_module_providers.side_effect = side_effect
+
+        res = client.get('/v1/modules?offset=0&limit=1')
+
+        assert res.status_code == 200
+        assert res.json == {
+            'meta': {'current_offset': 0, 'limit': 1, 'next_offset': 1}, 'modules': [
                 {'id': 'testnamespace/mock-module/testprovider/1.2.3', 'owner': 'Mock Owner',
                 'namespace': 'testnamespace', 'name': 'mock-module',
                 'version': '1.2.3', 'provider': 'testprovider',
@@ -108,7 +141,13 @@ class TestApiModuleList(TerraregUnitTest):
         mock_module_2 = MockModule(namespace=mock_namespace_2, name='mockmodule2')
         mock_module_provider_2 = MockModuleProvider(module=mock_module_2, name='secondprovider')
         mock_module_provider_2.MOCK_LATEST_VERSION_NUMBER = '3.0.0'
-        ModuleSearch.search_module_providers.return_value = [mock_module_provider_2, mock_module_provider]
+
+        def side_effect(*args, **kwargs):
+            return ModuleSearchResults(
+                offset=0, limit=2,
+                count=3, module_providers=[mock_module_provider_2, mock_module_provider]
+            )
+        ModuleSearch.search_module_providers.side_effect = side_effect
 
         res = client.get('/v1/modules?offset=0&limit=2')
 
