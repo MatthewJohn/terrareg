@@ -133,17 +133,17 @@ class ModuleSearch(object):
         limited_search = select.limit(limit).offset(offset)
         count_search = sqlalchemy.select(sqlalchemy.func.count().label('count')).select_from(select.subquery())
 
-        conn = db.get_engine().connect()
-        res = conn.execute(limited_search)
+        with db.get_engine().connect() as conn:
+            res = conn.execute(limited_search)
+            count_result = conn.execute(count_search)
 
-        count_result = conn.execute(count_search)
-        count = count_result.fetchone()['count']
+            count = count_result.fetchone()['count']
 
-        module_providers = []
-        for r in res:
-            namespace = terrareg.models.Namespace(name=r['namespace'])
-            module = terrareg.models.Module(namespace=namespace, name=r['module'])
-            module_providers.append(terrareg.models.ModuleProvider(module=module, name=r['provider']))
+            module_providers = []
+            for r in res:
+                namespace = terrareg.models.Namespace(name=r['namespace'])
+                module = terrareg.models.Module(namespace=namespace, name=r['module'])
+                module_providers.append(terrareg.models.ModuleProvider(module=module, name=r['provider']))
 
         return ModuleSearchResults(
             offset=offset,
@@ -156,63 +156,63 @@ class ModuleSearch(object):
     def get_search_filters(cls, query):
         """Get list of search filters and filter counts."""
         db = Database.get()
-        conn = db.get_engine().connect()
         select = db.select_module_version_joined_module_provider()
 
         main_select = cls._get_search_query_filter(select, query)
 
-        verified_count = conn.execute(
-            sqlalchemy.select(
-                [sqlalchemy.func.count().label('count')]
-            ).select_from(
-                main_select.where(
-                    db.module_provider.c.verified==True
-                ).subquery()
+        with db.get_engine().connect() as conn:
+            verified_count = conn.execute(
+                sqlalchemy.select(
+                    [sqlalchemy.func.count().label('count')]
+                ).select_from(
+                    main_select.where(
+                        db.module_provider.c.verified==True
+                    ).subquery()
+                )
+            ).fetchone()['count']
+
+            trusted_count = conn.execute(
+                sqlalchemy.select(
+                    [sqlalchemy.func.count().label('count')]
+                ).select_from(
+                    main_select.where(
+                        db.module_provider.c.namespace.in_(tuple(TRUSTED_NAMESPACES))
+                    ).subquery()
+                )
+            ).fetchone()['count']
+
+            contributed_count = conn.execute(
+                sqlalchemy.select(
+                    [sqlalchemy.func.count().label('count')]
+                ).select_from(
+                    main_select.where(
+                        ~db.module_provider.c.namespace.in_(tuple(TRUSTED_NAMESPACES))
+                    ).subquery()
+                )
+            ).fetchone()['count']
+
+            provider_subquery = main_select.group_by(
+                db.module_provider.c.namespace,
+                db.module_provider.c.module,
+                db.module_provider.c.provider
+            ).subquery()
+            provider_res = conn.execute(
+                sqlalchemy.select(
+                    [sqlalchemy.func.count().label('count'), provider_subquery.c.provider]
+                ).select_from(
+                    provider_subquery
+                ).group_by(provider_subquery.c.provider)
             )
-        ).fetchone()['count']
 
-        trusted_count = conn.execute(
-            sqlalchemy.select(
-                [sqlalchemy.func.count().label('count')]
-            ).select_from(
-                main_select.where(
-                    db.module_provider.c.namespace.in_(tuple(TRUSTED_NAMESPACES))
-                ).subquery()
-            )
-        ).fetchone()['count']
-
-        contributed_count = conn.execute(
-            sqlalchemy.select(
-                [sqlalchemy.func.count().label('count')]
-            ).select_from(
-                main_select.where(
-                    ~db.module_provider.c.namespace.in_(tuple(TRUSTED_NAMESPACES))
-                ).subquery()
-            )
-        ).fetchone()['count']
-
-        provider_subquery = main_select.group_by(
-            db.module_provider.c.namespace,
-            db.module_provider.c.module,
-            db.module_provider.c.provider
-        ).subquery()
-        provider_res = conn.execute(
-            sqlalchemy.select(
-                [sqlalchemy.func.count().label('count'), provider_subquery.c.provider]
-            ).select_from(
-                provider_subquery
-            ).group_by(provider_subquery.c.provider)
-        )
-
-        return {
-            'verified': verified_count,
-            'trusted_namespaces': trusted_count,
-            'contributed': contributed_count,
-            'providers': {
-                r['provider']: r['count']
-                for r in provider_res
+            return {
+                'verified': verified_count,
+                'trusted_namespaces': trusted_count,
+                'contributed': contributed_count,
+                'providers': {
+                    r['provider']: r['count']
+                    for r in provider_res
+                }
             }
-        }
 
     @staticmethod
     def get_most_recently_published():
@@ -222,10 +222,10 @@ class ModuleSearch(object):
         ).order_by(db.module_version.c.published_at.desc(), 
         ).limit(1)
 
-        conn = db.get_engine().connect()
-        res = conn.execute(select)
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
 
-        row = res.fetchone()
+            row = res.fetchone()
 
         # If there are no rows, return None
         if not row:
@@ -243,7 +243,6 @@ class ModuleSearch(object):
     def get_most_downloaded_module_provider_this_Week():
         """Obtain module provider with most downloads this week."""
         db = Database.get()
-        conn = db.get_engine().connect()
         counts = sqlalchemy.select(
             [
                 sqlalchemy.func.count().label('download_count'),
@@ -274,10 +273,9 @@ class ModuleSearch(object):
         ).order_by(counts.c.download_count.desc()
         ).limit(1)
 
-        conn = db.get_engine().connect()
-        res = conn.execute(select)
-
-        row = res.fetchone()
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+            row = res.fetchone()
 
         # If there are no rows, return None
         if not row:
