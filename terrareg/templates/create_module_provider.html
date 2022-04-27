@@ -10,6 +10,9 @@
 
 <script>
     function createModuleProvider() {
+        if (! $('#create-module-form')[0].reportValidity()) {
+            return;
+        }
         $.post({
             url: '/v1/terrareg/modules/' +
                 $('#create-module-namespace').val() + '/' +
@@ -40,25 +43,25 @@
         <div class="field is-vertical">
             <div id="create-error" style="display: none" class="notification is-danger">
             </div>
-            <form onsubmit="createModuleProvider(); event.preventDefault();">
+            <form id="create-module-form" onsubmit="event.preventDefault(); createModuleProvider();">
                 <div class="field">
                     <label class="label">Namespace</label>
                     <div class="control">
-                    <input id="create-module-namespace" class="input" type="text" placeholder="my-team">
+                    <input required id="create-module-namespace" class="input" type="text" placeholder="my-team">
                     </div>
                 </div>
 
                 <div class="field">
                     <label class="label">Module Name</label>
                     <div class="control">
-                    <input id="create-module-module" class="input" type="text" placeholder="my-module">
+                    <input required id="create-module-module" class="input" type="text" placeholder="my-module">
                     </div>
                 </div>
 
                 <div class="field">
                     <label class="label">Provider</label>
                     <div class="control">
-                    <input id="create-module-provider" class="input" type="text" placeholder="e.g. aws, null...">
+                    <input required id="create-module-provider" class="input" type="text" placeholder="e.g. aws, null...">
                     </div>
                 </div>
 
