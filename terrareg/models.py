@@ -47,12 +47,20 @@ class GitProvider:
             existing_git_provider = GitProvider.get_by_name(name=git_provider_config['name'])
             if existing_git_provider:
                 # Update existing row
-                update = db.git_provider.update().where(
+                upsert = db.git_provider.update().where(
                     db.git_provider.c.id == existing_git_provider.pk
                 ).values(
                     clone_url_template=git_provider_config['clone_url'],
                     browse_url_template=git_provider_config['browse_url']
                 )
+            else:
+                upsert = db.git_provider.insert().values(
+                    name=git_provider_config['name'],
+                    clone_url_template=git_provider_config['clone_url'],
+                    browse_url_template=git_provider_config['browse_url']
+                )
+            with db.get_engine().connect() as conn:
+                conn.execute(upsert)
 
     @staticmethod
     def get_by_name(name):
