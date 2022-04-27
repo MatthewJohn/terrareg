@@ -102,3 +102,26 @@ E.g. If MODULES_DIRECTORY is set to 'modules', with the root module, the followi
 This can be set to an empty string, to expected submodules to be in the root directory of the parent module.
 """
 MODULES_DIRECTORY = os.environ.get('MODULES_DIRECTORY', 'modules')
+
+"""
+Git provider config.
+JSON list of known git providers.
+Each item in the list should contain the following attributes:
+ - name - Name of the git provider (e.g. 'Corporate Gitlab')
+
+ - clone_url - Formatted clone URL for modules.
+               (e.g. 'ssh://gitlab.corporate.com/scm/{namespace}/{module}.git'
+                  or 'https://github.com/{namespace}/{module}-{provider}.git')
+               Note: Do not include '{version}' placeholder in the URL -
+               the git tag will be automatically provided.
+
+ - browse_url - Formatted URL for user-viewable source code
+                (e.g. 'https://github.com/{namespace}/{module}-{provider}/tree'
+                   or 'https://bitbucket.org/{namespace}/{module}/src/{version}')
+
+An example for public repositories might be:
+[{'name': 'Github', 'clone_url': 'ssh://git@github.com/{namespace}/{module}-{provider}.git', 'browse_url': 'https://github.com/{namespace}/{module}-{provider}/tree'},
+ {'name': 'Bitbucket', 'clone_url': 'ssh://git@bitbucket.org:{namespace}/{module}-{provider}.git', 'browse_url': 'https://bitbucket.org/{namespace}/{module}-{provider}/src/{version}'}
+ {'name': 'Gitlab', 'clone_url': 'ssh://git@gitlab.com:mrmattyboy/test-deletion-bug.git', 'browse_url': 'https://gitlab.com/{namespace}/{module}-{provider}/-/tree/{version}'}]
+"""
+GIT_PROVIDER_CONFIG = os.environ.get('GIT_PROVIDER_CONFIG', '[]')
