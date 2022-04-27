@@ -106,7 +106,7 @@ class ModuleSearch(object):
         )
 
         limited_search = select.limit(limit).offset(offset)
-        count_search = sqlalchemy.select(sqlalchemy.func.count).select_from(select)
+        count_search = sqlalchemy.select(sqlalchemy.func.count().label('count')).select_from(select.subquery())
 
         conn = db.get_engine().connect()
         res = conn.execute(limited_search)
