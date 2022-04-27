@@ -28,6 +28,7 @@ from terrareg.errors import (
     ModuleProviderCustomGitRepositoryUrlNotAllowedError
 )
 from terrareg.utils import safe_join_paths
+from terrareg.validators import GitUrlValidator
 
 
 class GitProvider:
@@ -44,6 +45,20 @@ class GitProvider:
                 if attr not in git_provider_config:
                     raise InvalidGitProviderConfigError(
                         'Git provider config does not contain required attribute: {}'.format(attr))
+
+            # Valid git URLs for git provider
+            GitUrlValidator(git_provider_config['clone_url']).validate(
+                requires_namespace_placeholder=True,
+                requires_module_placeholder=True,
+                requires_version_placeholder=False,
+                requires_path_placeholder=False
+            )
+            GitUrlValidator(git_provider_config['browse_url']).validate(
+                requires_namespace_placeholder=True,
+                requires_module_placeholder=True,
+                requires_version_placeholder=True,
+                requires_path_placeholder=True
+            )
 
             # Check if git provider exists in DB
             existing_git_provider = GitProvider.get_by_name(name=git_provider_config['name'])

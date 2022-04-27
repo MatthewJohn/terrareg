@@ -130,3 +130,9 @@ class ModuleVersionCustomGitRepositoryUrlNotAllowedError(TerraregError):
     """Module provider cannot set custom git URL."""
 
     pass
+
+
+class GitUrlValidatorError(TerraregError):
+    """Git URL validation error."""
+
+    pass
