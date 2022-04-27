@@ -1,0 +1,95 @@
+{% extends 'template.html' %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li class="is-active"><a href="/create-module">Create Module</a></li>
+    </ul>
+</nav>
+
+<script>
+    function createModuleProvider() {
+        $.post({
+            url: '/v1/terrareg/modules/' +
+                $('#create-module-namespace').val() + '/' +
+                $('#create-module-module').val() + '/' +
+                $('#create-module-provider').val() + '/create',
+            data: JSON.stringify({
+                repository_url: $('#create-module-repository-url').val(),
+                git_tag_format: $('#create-module-git-tag-format').val(),
+                csrf_token: '{{ csrf_token }}'
+            }),
+            contentType: 'application/json'
+        }).done((res) => {
+            window.location.href = `/modules/${res.responseJSON.id}`
+        }).fail((res) => {
+            if (res.responseJSON && res.responseJSON.message) {
+                $('#create-error').html(res.responseJSON.message);
+            } else {
+                $('#create-error').html('An unexpected error occurred');
+            }
+            $('#create-error').css('display', 'block');
+        });
+    }
+</script>
+
+<nav class="level">
+    <div class="level-item">
+
+        <div class="field is-vertical">
+            <div id="create-error" style="display: none" class="notification is-danger">
+            </div>
+            <form onsubmit="createModuleProvider(); event.preventDefault();">
+                <div class="field">
+                    <label class="label">Namespace</label>
+                    <div class="control">
+                    <input id="create-module-namespace" class="input" type="text" placeholder="my-team">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Module Name</label>
+                    <div class="control">
+                    <input id="create-module-module" class="input" type="text" placeholder="my-module">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Provider</label>
+                    <div class="control">
+                    <input id="create-module-provider" class="input" type="text" placeholder="e.g. aws, null...">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Git URL</label>
+                    <div class="control">
+                    <input id="create-module-repository-url" class="input" type="text" placeholder="ssh://git@github.com:Namespace/Module.git">
+                    </div>
+                    This is an optional value.
+                    When enabled, API hooks can be used to index the module.
+                </div>
+
+                <div class="field">
+                    <label class="label">Git tag format</label>
+                    <div class="control">
+                    <input id="create-module-git-tag-format" class="input" type="text" placeholder="{version}">
+                    </div>
+                    This value will be converted to the expected git tag for a module version.<br />
+                    {version} will be replaced by the actual module version.<br />
+                    For example 'v{version}' will translate to a git tag v1.1.1 for module version 1.1.1
+                </div>
+
+                <div class="field">
+                    <div class="control">
+                    <button class="button is-link">Create</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</nav>
+
+{% endblock %}

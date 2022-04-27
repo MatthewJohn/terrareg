@@ -122,6 +122,9 @@ class Server(object):
             '/logout'
         )(self._logout)
         self._app.route(
+            '/create-module'
+        )(self._view_serve_create_module)
+        self._app.route(
             '/modules'
         )(self._view_serve_namespace_list)
         self._app.route(
@@ -262,6 +265,10 @@ class Server(object):
         """Remove cookie and redirect."""
         session['is_admin_authenticated'] = False
         return redirect('/')
+
+    def _view_serve_create_module(self):
+        """Provide view to create module provider."""
+        return self._render_template('create_module_provider.html')
 
     def _view_serve_namespace_list(self):
         """Render view for display module."""
