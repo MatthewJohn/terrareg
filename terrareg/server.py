@@ -589,20 +589,8 @@ class ApiModuleList(ErrorCatchingResource):
             limit=limit
         )
 
-        meta_data = {
-            "limit": limit,
-            "current_offset": current_offset,
-        }
-
-        if current_offset > 0:
-            meta_data['prev_offset'] = (current_offset - limit) if (current_offset >= limit) else 0
-
-        next_offset = (current_offset + limit)
-        if search_results.count >= next_offset:
-            meta_data['next_offset'] = next_offset
-
         return {
-            "meta": meta_data,
+            "meta": search_results.meta,
             "modules": [
                 module_provider.get_latest_version().get_api_outline()
                 for module_provider in search_results.module_providers
@@ -678,20 +666,8 @@ class ApiModuleSearch(ErrorCatchingResource):
             limit=limit
         )
 
-        meta_data = {
-            "limit": limit,
-            "current_offset": current_offset,
-        }
-
-        if current_offset > 0:
-            meta_data['prev_offset'] = (current_offset - limit) if (current_offset >= limit) else 0
-
-        next_offset = (current_offset + limit)
-        if search_results.count >= next_offset:
-            meta_data['next_offset'] = next_offset
-
         return {
-            "meta": meta_data,
+            "meta": search_results.meta,
             "modules": [
                 module_provider.get_latest_version().get_api_outline()
                 for module_provider in search_results.module_providers
