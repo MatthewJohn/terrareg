@@ -290,10 +290,14 @@ class GitModuleExtractor(ModuleExtractor):
         # Set SSH to autoaccept new host keys
         env['GIT_SSH_COMMAND'] = 'ssh -o StrictHostKeyChecking=accept-new'
 
+        git_url = self._module_version._module_provider.get_git_clone_url()
+        if git_url.startswith('ssh://'):
+            git_url = re.sub(r'^ssh://', '', git_url)
+
         subprocess.check_call([
             'git', 'clone', '--single-branch',
             '--branch', self._module_version.source_git_tag,
-            self._module_version._module_provider.get_git_clone_url(),
+            git_url,
             self.extract_directory
         ], env=env)
 
