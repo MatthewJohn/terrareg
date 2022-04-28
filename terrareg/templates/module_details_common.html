@@ -49,6 +49,11 @@
         $('#analytics-table').DataTable();
     });
 
+</script>
+
+{% endif %}
+
+<script>
     function update_module_provider_settings(ev) {
         $('#settings-status-success').css('display', 'none');
         $('#settings-status-error').css('display', 'none');
@@ -87,10 +92,7 @@
         // Navigate page to submodule
         window.location.href = url;
     }
-
 </script>
-
-{% endif %}
 
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
@@ -161,42 +163,43 @@ module "{{ module.name }}" {
 </div>
 
 
-{% if current_module %}
 <div class="tabs">
     <ul>
-        <li class="module-tab-link is-active"><a onclick="selectModuleTab(event, 'readme')">Readme</a></li>
-        <li class="module-tab-link"><a onclick="selectModuleTab(event, 'inputs')">Inputs</a></li>
-        <li class="module-tab-link"><a onclick="selectModuleTab(event, 'outputs')">Outputs</a></li>
-        <li class="module-tab-link"><a onclick="selectModuleTab(event, 'dependencies')">Dependencies</a></li>
-        <li class="module-tab-link">
-            <a onclick="selectModuleTab(event, 'resources')">Resources</a>
-        </li>
+        {% if current_module %}
+            <li class="module-tab-link is-active"><a onclick="selectModuleTab(event, 'readme')">Readme</a></li>
+            <li class="module-tab-link"><a onclick="selectModuleTab(event, 'inputs')">Inputs</a></li>
+            <li class="module-tab-link"><a onclick="selectModuleTab(event, 'outputs')">Outputs</a></li>
+            <li class="module-tab-link"><a onclick="selectModuleTab(event, 'dependencies')">Dependencies</a></li>
+            <li class="module-tab-link">
+                <a onclick="selectModuleTab(event, 'resources')">Resources</a>
+            </li>
 
-        {% if not current_module.is_submodule %}
-        <li class="module-tab-link">
-            <a onclick="selectModuleTab(event, 'analytics')">
-                Analytics
-                <span class="tag is-warning is-light">Terrareg Exclusive</span>
-            </a>
-        </li>
-        <li id="usageBuilderTabButton" class="module-tab-link">
-            <a onclick="selectModuleTab(event, 'usage-builder')">
-                Usage Builder
-                <span class="tag is-warning is-light">Terrareg Exclusive</span>
-            </a>
-        </li>
+            {% if not current_module.is_submodule %}
+                <li class="module-tab-link">
+                    <a onclick="selectModuleTab(event, 'analytics')">
+                        Analytics
+                        <span class="tag is-warning is-light">Terrareg Exclusive</span>
+                    </a>
+                </li>
+                <li id="usageBuilderTabButton" class="module-tab-link">
+                    <a onclick="selectModuleTab(event, 'usage-builder')">
+                        Usage Builder
+                        <span class="tag is-warning is-light">Terrareg Exclusive</span>
+                    </a>
+                </li>
+            {% endif %}
+        {% endif %}
         <li style="display: none" id="settingsTabButton" class="module-tab-link">
             <a onclick="selectModuleTab(event, 'settings')">
                 Settings
             </a>
         </li>
-        {% endif %}
     </ul>
 </div>
 
 <div class="columns">
     <div class="column is-three-fifths is-offset-one-fifth">
-
+        {% if current_module %}
         <div id="module-tab-readme" class="module-tabs">
             {{ current_module.get_readme_html()|safe }}
         </div>
@@ -326,10 +329,13 @@ module "{{ module.name }}" {
             </table>
             <pre id="usageBuilderOutput">
             </pre>
+        
         </div>
+        {% endif %}
+        {% endif %}
 
         <!-- Module settings tab -->
-        <div id="module-tab-settings" class="module-tabs" style="display: none;">
+        <div id="module-tab-settings" class="module-tabs" {% if current_module %}style="display: none;"{% endif %}>
             <div class="field is-vertical">
                 <div id="settings-status-success" style="display: none" class="notification is-success">
                     Settings Updated
@@ -428,9 +434,10 @@ module "{{ module.name }}" {
                 </form>
             </div>
         </div>
-        {% endif %}
     </div>
 </div>
+
+{% if current_module %}
 
 <script>
     var input_variables;
@@ -566,6 +573,9 @@ ${output_tf}
             `);
         });
     });
+</script>
+{% endif %}
+<script>
 
     // Check if user is authenticated and display settings tab
     is_logged_in((logged_in) => {
@@ -575,7 +585,6 @@ ${output_tf}
     });
 </script>
 
-{% endif %}
 
 
 {% endblock %}
