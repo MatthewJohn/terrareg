@@ -514,7 +514,7 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
         # Get module provider and optionally create, if it doesn't exist
         module_provider = ModuleProvider.get(module=module, name=provider, create=True)
 
-        if not module_provider.repository_url:
+        if not module_provider.get_git_clone_url():
             return {'message': 'Module provider is not configured with a repository'}, 400
 
         bitbucket_data = request.json
