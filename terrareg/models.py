@@ -530,12 +530,12 @@ class ModuleProvider(object):
                 'Custom module provider git repository URL cannot be set.'
             )
 
-        converted_template = clone_url_template.format(
-            namespace=self._module._namespace.name,
-            module=self._module.name,
-            provider=self.name)
+        if clone_url_template:
+            converted_template = clone_url_template.format(
+                namespace=self._module._namespace.name,
+                module=self._module.name,
+                provider=self.name)
 
-        if converted_template:
             url = urllib.parse.urlparse(converted_template)
             if not url.scheme:
                 raise RepositoryUrlDoesNotContainValidSchemeError(
@@ -554,9 +554,9 @@ class ModuleProvider(object):
                     'Repository URL does not contain a path'
                 )
 
-        sanitised_clone_url_template = urllib.parse.quote(clone_url_template, safe='\{\}/:@%?=')
+            clone_url_template = urllib.parse.quote(clone_url_template, safe='\{\}/:@%?=')
 
-        self.update_attributes(clone_url_template=sanitised_clone_url_template)
+        self.update_attributes(clone_url_template=clone_url_template)
 
     def update_browse_url_template(self, browse_url_template):
         """Update browse URL template for module provider."""
@@ -565,17 +565,17 @@ class ModuleProvider(object):
                 'Custom module provider git repository URL cannot be set.'
             )
 
-        GitUrlValidator(browse_url_template).validate(
-            requires_path_placeholder=True,
-            requires_tag_placeholder=True
-        )
+        if browse_url_template:
+            GitUrlValidator(browse_url_template).validate(
+                requires_path_placeholder=True,
+                requires_tag_placeholder=True
+            )
 
-        converted_template = browse_url_template.format(
-            namespace=self._module._namespace.name,
-            module=self._module.name,
-            provider=self.name)
+            converted_template = browse_url_template.format(
+                namespace=self._module._namespace.name,
+                module=self._module.name,
+                provider=self.name)
 
-        if converted_template:
             url = urllib.parse.urlparse(converted_template)
             if not url.scheme:
                 raise RepositoryUrlDoesNotContainValidSchemeError(
@@ -594,9 +594,9 @@ class ModuleProvider(object):
                     'Repository URL does not contain a path'
                 )
 
-        sanitised_browse_url_template = urllib.parse.quote(browse_url_template, safe='\{\}/:@%?=')
+            browse_url_template = urllib.parse.quote(browse_url_template, safe='\{\}/:@%?=')
 
-        self.update_attributes(browse_url_template=sanitised_browse_url_template)
+        self.update_attributes(browse_url_template=browse_url_template)
 
     def get_view_url(self):
         """Return view URL"""
