@@ -489,7 +489,7 @@ class ApiModuleVersionCreate(ErrorCatchingResource):
         module_provider = ModuleProvider.get(module=module, name=provider, create=True)
 
         # Ensure that the module provider has a repository url configured.
-        if not module_provider.repository_url:
+        if not module_provider.get_git_clone_url():
             return {'message': 'Module provider is not configured with a repository'}, 400
 
         module_version = ModuleVersion(module_provider=module_provider, version=version)
