@@ -934,12 +934,31 @@ class ModuleVersion(TerraformSpecsObject):
 
         # Return rendered version of template
         if template:
-            return template.format(
+            rendered_url = template.format(
                 namespace=self._module_provider._module._namespace.name,
                 module=self._module_provider._module.name,
-                provider=self._module_provider.name,
+                provider=self._module_provider.name
+            )
+            # Check if scheme starts with git::, which is required
+            # by terraform to acknowledge a git repository
+            # and add if it not
+            parsed_url = urllib.parse.urlparse(rendered_url)
+            if not parsed_url.scheme.startswith('git::'):
+                rendered_url = 'git::{rendered_url}'.format(rendered_url=rendered_url)
+
+            # Check if path is present for module (only used for submodules)
+            if self.path:
+                rendered_url = '{rendered_url}//{path}'.format(
+                    rendered_url=rendered_url,
+                    path=self.path)
+
+            # Add tag to URL
+            rendered_url = '{rendered_url}?ref={tag}'.format(
+                rendered_url=rendered_url,
                 tag=self.source_git_tag
             )
+
+            return rendered_url
 
         if ALLOW_MODULE_HOSTING:
             return '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
