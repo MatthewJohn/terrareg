@@ -1,6 +1,5 @@
 """Provide extraction method of modules."""
 
-from concurrent.futures.process import _ThreadWakeup
 import os
 import tempfile
 import zipfile
@@ -148,8 +147,9 @@ class ModuleExtractor:
             # Terrareg meta-data
             owner=terrareg_metadata.get('owner', None),
             description=terrareg_metadata.get('description', None),
-            clone_url_template=terrareg_metadata.get('clone_url_template', None),
-            browse_url_template=terrareg_metadata.get('browse_url_template', None),
+            repo_clone_url_template=terrareg_metadata.get('repo_clone_url', None),
+            repo_browse_url_template=terrareg_metadata.get('repo_browse_url', None),
+            repo_base_url_template=terrareg_metadata.get('repo_base_url', None),
             variable_template=json.dumps(terrareg_metadata.get('variable_template', {})),
             artifact_location=terrareg_metadata.get('artifact_location', None),
             published=AUTO_PUBLISH_MODULE_VERSIONS
