@@ -4,6 +4,12 @@ import os
 DATA_DIRECTORY = os.path.join(os.environ.get('DATA_DIRECTORY', os.getcwd()), 'data')
 
 """
+URL for database.
+Defaults to local sqlite database.
+"""
+DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///modules.db')
+
+"""
 Port for server to listen on.
 """
 LISTEN_PORT = int(os.environ.get('LISTEN_PORT', 5000))

@@ -98,3 +98,15 @@ ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=False ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=F
 
 ```
 
+## Generating DB changes
+
+```
+alembic revision --autogenerate
+```
+
+## Applying DB changes
+
+```
+alembic upgrade head
+```
+

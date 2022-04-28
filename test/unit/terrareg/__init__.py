@@ -8,6 +8,7 @@ import pytest
 from terrareg.database import Database
 from terrareg.models import GitProvider, Module, ModuleProvider, ModuleVersion, Namespace
 from terrareg.server import Server
+import terrareg.config
 from .test_data import test_data_full, test_git_providers
 
 
@@ -25,7 +26,7 @@ class TerraregUnitTest:
         TerraregUnitTest.INSTANCE_ = self
         Database.reset()
         self.SERVER = Server()
-        Database.SQLITE_DB_PATH = 'temp-unittest.db'
+        terrareg.config.DATABASE_URL = 'sqlite:///temp-unittest.db'
         self.SERVER._app.config['TESTING'] = True
 
 
