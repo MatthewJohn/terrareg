@@ -640,10 +640,6 @@ class ModuleProvider(object):
             )
 
         if repo_base_url_template:
-            GitUrlValidator(repo_base_url_template).validate(
-                requires_path_placeholder=True,
-                requires_tag_placeholder=True
-            )
 
             converted_template = repo_base_url_template.format(
                 namespace=self._module._namespace.name,
