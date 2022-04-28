@@ -11,6 +11,7 @@ test_git_providers = {
 test_data_full = {
     'testnamespace': {
         'testmodulename': {'testprovider': {
+            'repo_base_url_template': 'http://mock.example.com/mockmodule',
             'id': 1,
             'latest_version': '2.4.1',
             'verified': True,
