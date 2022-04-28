@@ -103,7 +103,8 @@ class MockModuleVersion(ModuleVersion):
             'version': self._version,
             'owner': self._unittest_data.get('owner', 'Mock Owner'),
             'description': self._unittest_data.get('description', 'Mock description'),
-            'source': self._unittest_data.get('source', 'http://mock.example.com/mockmodule'),
+            'clone_url_template': self._unittest_data.get('clone_url_template', None),
+            'browse_url_template': self._unittest_data.get('clone_url_template', None),
             'published_at': self._unittest_data.get(
                 'published_at',
                 datetime.datetime(year=2020, month=1, day=1,
@@ -151,7 +152,9 @@ class MockModuleProvider(ModuleProvider):
             'module': self._module.name,
             'provider': self.name,
             'verified': self._unittest_data.get('verified', False),
-            'repository_url': self._unittest_data.get('repository_url', None),
+            'clone_url_template': self._unittest_data.get('clone_url_template', None),
+            'browse_url_template': self._unittest_data.get('clone_url_template', None),
+            'git_provider_id': self._unittest_data.get('git_provider_id', None),
             'git_tag_format': self._unittest_data.get('git_tag_format', None)
         }
 
