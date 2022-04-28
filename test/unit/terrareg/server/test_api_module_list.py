@@ -98,7 +98,7 @@ class TestApiModuleList(TerraregUnitTest):
                 {'id': 'testnamespace/mock-module/testprovider/1.2.3', 'owner': 'Mock Owner',
                 'namespace': 'testnamespace', 'name': 'mock-module',
                 'version': '1.2.3', 'provider': 'testprovider',
-                'description': 'Mock description', 'source': 'http://mock.example.com/mockmodule',
+                'description': 'Mock description', 'source': 'http://github.com/testnamespace/mock-module',
                 'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True}
             ]
         }
@@ -125,7 +125,7 @@ class TestApiModuleList(TerraregUnitTest):
                 {'id': 'testnamespace/mock-module/testprovider/1.2.3', 'owner': 'Mock Owner',
                 'namespace': 'testnamespace', 'name': 'mock-module',
                 'version': '1.2.3', 'provider': 'testprovider',
-                'description': 'Mock description', 'source': 'http://mock.example.com/mockmodule',
+                'description': 'Mock description', 'source': 'http://github.com/testnamespace/mock-module',
                 'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True}
             ]
         }

@@ -34,8 +34,8 @@ class TestApiModuleVersionCreate(TerraregUnitTest):
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
             res = client.post(
                 '/v1/terrareg/modules/testnamespace/modulewithrepourl/testprovider/5.5.4/import')
-            assert res.status_code == 200
             assert res.json == {'status': 'Success'}
+            assert res.status_code == 200
 
             mocked_prepare_module.assert_called_once()
             mocked_process_upload.assert_called_once()

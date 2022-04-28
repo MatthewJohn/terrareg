@@ -11,8 +11,12 @@ import markdown
 import terrareg.analytics
 from terrareg.database import Database
 from terrareg.config import (
+    ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+    ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
+    ALLOW_MODULE_HOSTING,
     DATA_DIRECTORY,
-    VERIFIED_MODULE_NAMESPACES
+    VERIFIED_MODULE_NAMESPACES,
+    GIT_PROVIDER_CONFIG
 )
 from terrareg.errors import (
     InvalidModuleNameError, InvalidModuleProviderNameError,
@@ -21,9 +25,156 @@ from terrareg.errors import (
     RepositoryUrlDoesNotContainValidSchemeError,
     RepositoryUrlContainsInvalidSchemeError,
     RepositoryUrlDoesNotContainHostError,
-    RepositoryDoesNotContainPathError
+    RepositoryDoesNotContainPathError,
+    InvalidGitProviderConfigError,
+    ModuleProviderCustomGitRepositoryUrlNotAllowedError,
+    NoModuleDownloadMethodConfiguredError
 )
 from terrareg.utils import safe_join_paths
+from terrareg.validators import GitUrlValidator
+
+
+class GitProvider:
+    """Interface to specify how modules should interact with known git providers."""
+
+    @staticmethod
+    def initialise_from_config():
+        """Load git providers from config into database."""
+        git_provider_config = json.loads(GIT_PROVIDER_CONFIG)
+        db = Database.get()
+        for git_provider_config in git_provider_config:
+            # Validate provider config
+            for attr in ['name', 'base_url', 'clone_url', 'browse_url']:
+                if attr not in git_provider_config:
+                    raise InvalidGitProviderConfigError(
+                        'Git provider config does not contain required attribute: {}'.format(attr))
+
+            # Valid git URLs for git provider
+            GitUrlValidator(git_provider_config['base_url']).validate(
+                requires_namespace_placeholder=True,
+                requires_module_placeholder=True,
+                requires_tag_placeholder=False,
+                requires_path_placeholder=False
+            )
+            GitUrlValidator(git_provider_config['clone_url']).validate(
+                requires_namespace_placeholder=True,
+                requires_module_placeholder=True,
+                requires_tag_placeholder=False,
+                requires_path_placeholder=False
+            )
+            GitUrlValidator(git_provider_config['browse_url']).validate(
+                requires_namespace_placeholder=True,
+                requires_module_placeholder=True,
+                requires_tag_placeholder=True,
+                requires_path_placeholder=True
+            )
+
+            # Check if git provider exists in DB
+            existing_git_provider = GitProvider.get_by_name(name=git_provider_config['name'])
+            if existing_git_provider:
+                # Update existing row
+                upsert = db.git_provider.update().where(
+                    db.git_provider.c.id == existing_git_provider.pk
+                ).values(
+                    base_url_template=git_provider_config['base_url'],
+                    clone_url_template=git_provider_config['clone_url'],
+                    browse_url_template=git_provider_config['browse_url']
+                )
+            else:
+                upsert = db.git_provider.insert().values(
+                    name=git_provider_config['name'],
+                    base_url_template=git_provider_config['base_url'],
+                    clone_url_template=git_provider_config['clone_url'],
+                    browse_url_template=git_provider_config['browse_url']
+                )
+            with db.get_engine().connect() as conn:
+                conn.execute(upsert)
+
+    @classmethod
+    def get_by_name(cls, name):
+        """Return instance of git provider by name."""
+        db = Database.get()
+        # Obtain row from git providers table where name
+        # matches git provider name
+        select = db.git_provider.select().where(
+            db.git_provider.c.name == name
+        )
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+            row = res.fetchone()
+
+        # If git provider found with name, return instance
+        # of git provider object with ID
+        if row:
+            return cls(id=row['id'])
+
+        # Otherwise return None
+        return None
+
+    @classmethod
+    def get_all(cls):
+        """Return all repository providers."""
+        db = Database.get()
+        # Obtain row from git providers table where name
+        # matches git provider name
+        select = db.git_provider.select()
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+            return [
+                cls(id=row['id'])
+                for row in res
+            ]
+
+    @classmethod
+    def get(cls, id):
+        """Create object and validate that it exists."""
+        git_provider = cls(id=id)
+        if git_provider._get_db_row() is None:
+            return None
+        return git_provider
+
+    @property
+    def pk(self):
+        """Return DB ID for git provider."""
+        return self._get_db_row()['id']
+
+    @property
+    def name(self):
+        """Return name for git provider."""
+        return self._get_db_row()['name']
+
+    @property
+    def clone_url_template(self):
+        """Return clone_url_template for git provider."""
+        return self._get_db_row()['clone_url_template']
+
+    @property
+    def base_url_template(self):
+        """Return base_url for git provider."""
+        return self._get_db_row()['base_url_template']
+
+    @property
+    def browse_url_template(self):
+        """Return browse_url for git provider."""
+        return self._get_db_row()['browse_url_template']
+
+    def __init__(self, id):
+        """Store member variable for ID."""
+        self._id = id
+        self._row_cache = None
+
+    def _get_db_row(self):
+        """Return DB row for git provider."""
+        if self._row_cache is None:
+            db = Database.get()
+            # Obtain row from git providers table for git provider.
+            select = db.git_provider.select().where(
+                db.git_provider.c.id == self._id
+            )
+            with db.get_engine().connect() as conn:
+                res = conn.execute(select)
+                return res.fetchone()
+        return self._row_cache
 
 
 class Namespace(object):
@@ -275,11 +426,6 @@ class ModuleProvider(object):
         return self._get_db_row()['verified']
 
     @property
-    def repository_url(self):
-        """Return repository URL"""
-        return self._get_db_row()['repository_url']
-
-    @property
     def git_tag_format(self):
         """Return git tag format"""
         if self._get_db_row()['git_tag_format']:
@@ -329,7 +475,6 @@ class ModuleProvider(object):
         self._module = module
         self._name = name
 
-
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
         return statement.where(
@@ -351,6 +496,36 @@ class ModuleProvider(object):
             res = conn.execute(select)
             return res.fetchone()
 
+    def get_git_provider(self):
+        """Return the git provider associated with this module provider."""
+        if self._get_db_row()['git_provider_id']:
+            return GitProvider.get(id=self._get_db_row()['git_provider_id'])
+        return None
+
+    def get_git_clone_url(self):
+        """Return URL to perform git clone"""
+        template = None
+
+        # Check if allowed and module provider has custom git URL
+        if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._get_db_row()['repo_clone_url_template']:
+            template = self._get_db_row()['repo_clone_url_template']
+
+        # Otherwise, check if module provider is configured with git provider
+        elif self.get_git_provider():
+            template = self.get_git_provider().clone_url_template
+
+        # Return rendered version of template
+        if template:
+            rendered_url = template.format(
+                namespace=self._module._namespace.name,
+                module=self._module.name,
+                provider=self.name
+            )
+
+            return rendered_url
+
+        return None
+
     def update_attributes(self, **kwargs):
         """Update DB row."""
         db = Database.get()
@@ -359,6 +534,12 @@ class ModuleProvider(object):
         ).values(**kwargs)
         with db.get_engine().connect() as conn:
             conn.execute(update)
+
+    def update_git_provider(self, git_provider: GitProvider):
+        """Update git provider associated with module provider."""
+        self.update_attributes(
+            git_provider_id=(git_provider.pk if git_provider is not None else None)
+        )
 
     def update_git_tag_format(self, git_tag_format):
         """Update git_tag_format."""
@@ -376,17 +557,27 @@ class ModuleProvider(object):
             sanitised_git_tag_format = None
         self.update_attributes(git_tag_format=sanitised_git_tag_format)
 
-    def update_repository_url(self, repository_url):
+    def update_repo_clone_url_template(self, repo_clone_url_template):
         """Update repository URL for module provider."""
-        if repository_url:
-            url = urllib.parse.urlparse(repository_url)
+        if not ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
+            raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
+                'Custom module provider git repository URL cannot be set.'
+            )
+
+        if repo_clone_url_template:
+            converted_template = repo_clone_url_template.format(
+                namespace=self._module._namespace.name,
+                module=self._module.name,
+                provider=self.name)
+
+            url = urllib.parse.urlparse(converted_template)
             if not url.scheme:
                 raise RepositoryUrlDoesNotContainValidSchemeError(
                     'Repository URL does not contain a scheme (e.g. ssh://)'
                 )
             if url.scheme not in ['http', 'https', 'ssh']:
                 raise RepositoryUrlContainsInvalidSchemeError(
-                    'Repository URL contains an unknown scheme (e.g. https/git/http)'
+                    'Repository URL contains an unknown scheme (e.g. https/ssh/http)'
                 )
             if not url.hostname:
                 raise RepositoryUrlDoesNotContainHostError(
@@ -397,9 +588,87 @@ class ModuleProvider(object):
                     'Repository URL does not contain a path'
                 )
 
-        sanitised_repository_url = urllib.parse.quote(repository_url, safe='/:@%?=')
+            repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe='\{\}/:@%?=')
 
-        self.update_attributes(repository_url=sanitised_repository_url)
+        self.update_attributes(repo_clone_url_template=repo_clone_url_template)
+
+    def update_repo_browse_url_template(self, repo_browse_url_template):
+        """Update browse URL template for module provider."""
+        if not ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
+            raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
+                'Custom module provider git repository URL cannot be set.'
+            )
+
+        if repo_browse_url_template:
+            GitUrlValidator(repo_browse_url_template).validate(
+                requires_path_placeholder=True,
+                requires_tag_placeholder=True
+            )
+
+            converted_template = repo_browse_url_template.format(
+                namespace=self._module._namespace.name,
+                module=self._module.name,
+                provider=self.name,
+                tag='',
+                path='')
+
+            url = urllib.parse.urlparse(converted_template)
+            if not url.scheme:
+                raise RepositoryUrlDoesNotContainValidSchemeError(
+                    'Repository URL does not contain a scheme (e.g. https://)'
+                )
+            if url.scheme not in ['http', 'https']:
+                raise RepositoryUrlContainsInvalidSchemeError(
+                    'Repository URL contains an unknown scheme (e.g. https/http)'
+                )
+            if not url.hostname:
+                raise RepositoryUrlDoesNotContainHostError(
+                    'Repository URL does not contain a host/domain'
+                )
+            if not url.path:
+                raise RepositoryDoesNotContainPathError(
+                    'Repository URL does not contain a path'
+                )
+
+            repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe='\{\}/:@%?=')
+
+        self.update_attributes(repo_browse_url_template=repo_browse_url_template)
+
+    def update_repo_base_url_template(self, repo_base_url_template):
+        """Update browse URL template for module provider."""
+        if not ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
+            raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
+                'Custom module provider git repository URL cannot be set.'
+            )
+
+        if repo_base_url_template:
+
+            converted_template = repo_base_url_template.format(
+                namespace=self._module._namespace.name,
+                module=self._module.name,
+                provider=self.name)
+
+            url = urllib.parse.urlparse(converted_template)
+            if not url.scheme:
+                raise RepositoryUrlDoesNotContainValidSchemeError(
+                    'Repository URL does not contain a scheme (e.g. https://)'
+                )
+            if url.scheme not in ['http', 'https']:
+                raise RepositoryUrlContainsInvalidSchemeError(
+                    'Repository URL contains an unknown scheme (e.g. https/http)'
+                )
+            if not url.hostname:
+                raise RepositoryUrlDoesNotContainHostError(
+                    'Repository URL does not contain a host/domain'
+                )
+            if not url.path:
+                raise RepositoryDoesNotContainPathError(
+                    'Repository URL does not contain a path'
+                )
+
+            repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe='\{\}/:@%?=')
+
+        self.update_attributes(repo_base_url_template=repo_base_url_template)
 
     def get_view_url(self):
         """Return view URL"""
@@ -486,6 +755,11 @@ class TerraformSpecsObject(object):
     @property
     def is_submodule(self):
         """Whether object is submodule."""
+        raise NotImplementedError
+
+    @property
+    def registry_id(self):
+        """Return registry path ID (with excludes version)."""
         raise NotImplementedError
 
     def _get_db_row(self):
@@ -617,11 +891,6 @@ class ModuleVersion(TerraformSpecsObject):
         return bool(self._get_db_row()['published'])
 
     @property
-    def source_code_url(self):
-        """Return source code URL."""
-        return self._get_db_row()['source']
-
-    @property
     def description(self):
         """Return description."""
         return self._get_db_row()['description']
@@ -635,7 +904,6 @@ class ModuleVersion(TerraformSpecsObject):
     def source_git_tag(self):
         """Return git tag used for extraction clone"""
         return self._module_provider.git_tag_format.format(version=self._version)
-
 
     @property
     def git_tag_ref(self):
@@ -692,6 +960,11 @@ class ModuleVersion(TerraformSpecsObject):
         )
 
     @property
+    def registry_id(self):
+        """Return registry path ID (with excludes version)."""
+        return self._module_provider.id
+
+    @property
     def variable_template(self):
         """Return variable template for module version."""
         return json.loads(self._get_db_row()['variable_template'])
@@ -725,12 +998,119 @@ class ModuleVersion(TerraformSpecsObject):
             version=self.version
         )
 
-    def get_source_download_url(self):
-        """Return URL to download source file."""
-        if self._get_db_row()['artifact_location']:
-            return self._get_db_row()['artifact_location'].format(module_version=self.version)
+    def get_git_clone_url(self):
+        """Return URL to perform git clone"""
+        template = None
 
-        return '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
+        # Check if allowed, and module version has custom git URL
+        if ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['repo_clone_url_template']:
+            template = self._get_db_row()['repo_clone_url_template']
+
+        # Otherwise, get git clone URL from module provider
+        elif self._module_provider.get_git_clone_url():
+            template = self._module_provider.get_git_clone_url()
+
+        # Return rendered version of template
+        if template:
+            rendered_url = template.format(
+                namespace=self._module_provider._module._namespace.name,
+                module=self._module_provider._module.name,
+                provider=self._module_provider.name
+            )
+
+            return rendered_url
+
+        return None
+
+    def get_source_download_url(self, path=None):
+        """Return URL to download source file."""
+        rendered_url = None
+
+        rendered_url = self.get_git_clone_url()
+
+        # Return rendered version of template
+        if rendered_url:
+            # Check if scheme starts with git::, which is required
+            # by terraform to acknowledge a git repository
+            # and add if it not
+            parsed_url = urllib.parse.urlparse(rendered_url)
+            if not parsed_url.scheme.startswith('git::'):
+                rendered_url = 'git::{rendered_url}'.format(rendered_url=rendered_url)
+
+            # Check if path is present for module (only used for submodules)
+            if path:
+                rendered_url = '{rendered_url}//{path}'.format(
+                    rendered_url=rendered_url,
+                    path=path)
+
+            # Add tag to URL
+            rendered_url = '{rendered_url}?ref={tag}'.format(
+                rendered_url=rendered_url,
+                tag=self.source_git_tag
+            )
+
+            return rendered_url
+
+        if ALLOW_MODULE_HOSTING:
+            return '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
+
+        raise NoModuleDownloadMethodConfiguredError(
+            'Module is not configured with a git URL and direct downloads are disabled'
+        )
+
+    def get_source_browse_url(self, path=None):
+        """Return URL to browse the source doe."""
+        template = None
+
+        # Check if allowed, and module version has custom git URL
+        if ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['repo_browse_url_template']:
+            template = self._get_db_row()['repo_browse_url_template']
+
+        # Otherwise, check if allowed and module provider has custom git URL
+        elif ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._module_provider._get_db_row()['repo_browse_url_template']:
+            template = self._module_provider._get_db_row()['repo_browse_url_template']
+
+        # Otherwise, check if module provider is configured with git provider
+        elif self._module_provider.get_git_provider():
+            template = self._module_provider.get_git_provider().browse_url_template
+
+        # Return rendered version of template
+        if template:
+            return template.format(
+                namespace=self._module_provider._module._namespace.name,
+                module=self._module_provider._module.name,
+                provider=self._module_provider.name,
+                tag=self.source_git_tag,
+                path=path
+            )
+
+        return None
+
+    def get_source_base_url(self, path=None):
+        """Return URL to view the source repository."""
+        template = None
+
+        # Check if allowed, and module version has custom git URL
+        if ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['repo_base_url_template']:
+            template = self._get_db_row()['repo_base_url_template']
+
+        # Otherwise, check if allowed and module provider has custom git URL
+        elif ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._module_provider._get_db_row()['repo_base_url_template']:
+            template = self._module_provider._get_db_row()['repo_base_url_template']
+
+        # Otherwise, check if module provider is configured with git provider
+        elif self._module_provider.get_git_provider():
+            template = self._module_provider.get_git_provider().base_url_template
+
+        # Return rendered version of template
+        if template:
+            return template.format(
+                namespace=self._module_provider._module._namespace.name,
+                module=self._module_provider._module.name,
+                provider=self._module_provider.name
+            )
+
+        return None
 
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
@@ -752,7 +1132,7 @@ class ModuleVersion(TerraformSpecsObject):
             "version": self.version,
             "provider": self._module_provider.name,
             "description": row['description'],
-            "source": row['source'],
+            "source": self.get_source_base_url(),
             "published_at": row['published_at'].isoformat(),
             "downloads": self.get_total_downloads(),
             "verified": self._module_provider.verified,
@@ -847,6 +1227,11 @@ class Submodule(TerraformSpecsObject):
         return '{0}//{1}'.format(self._module_version.id, self.path)
 
     @property
+    def registry_id(self):
+        """Return registry path ID (with excludes version)."""
+        return '{0}//{1}'.format(self._module_version.registry_id, self.path)
+
+    @property
     def is_submodule(self):
         """Whether object is submodule."""
         return True
@@ -866,6 +1251,14 @@ class Submodule(TerraformSpecsObject):
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
             return res.fetchone()
+
+    def get_source_browse_url(self):
+        """Get formatted source browse URL"""
+        return self._module_version.get_source_browse_url(path=self.path)
+
+    def get_source_download_url(self):
+        """Get formatted source download URL"""
+        return self._module_version.get_source_download_url(path=self.path)
 
     def get_view_url(self):
         """Return view URL"""

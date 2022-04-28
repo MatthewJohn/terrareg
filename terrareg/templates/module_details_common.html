@@ -5,25 +5,6 @@
 {% if module_version %}
 
 <script>
-    function selectModuleTab(event, tab_name) {
-        tab_name = "module-tab-" + tab_name;
-        var i, tabcontent, tablinks;
-
-        // Hide content of all tabs
-        tabcontent = document.getElementsByClassName("module-tabs");
-        for (i = 0; i < tabcontent.length; i++) {
-            tabcontent[i].style.display = "none";
-        }
-
-        // Remove 'active' from all tab links
-        tablinks = document.getElementsByClassName("module-tab-link");
-        for (i = 0; i < tablinks.length; i++) {
-            tablinks[i].className = tablinks[i].className.replace(" is-active", "");
-        }
-        // Show content of current tab and mark current link as active.
-        document.getElementById(tab_name).style.display = "block";
-        event.target.parentNode.className += " is-active";
-    }
     $.get("/v1/modules/{{ module_provider.id }}/downloads/summary", function(data, status) {
         Object.keys(data.data.attributes).forEach((key) => {
             $(`#downloads-${key}`).html(data.data.attributes[key]);
@@ -49,13 +30,42 @@
         $('#analytics-table').DataTable();
     });
 
+</script>
+
+{% endif %}
+
+<script>
+    function selectModuleTab(event, tab_name) {
+        tab_name = "module-tab-" + tab_name;
+        var i, tabcontent, tablinks;
+
+        // Hide content of all tabs
+        tabcontent = document.getElementsByClassName("module-tabs");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+
+        // Remove 'active' from all tab links
+        tablinks = document.getElementsByClassName("module-tab-link");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" is-active", "");
+        }
+        // Show content of current tab and mark current link as active.
+        document.getElementById(tab_name).style.display = "block";
+        event.target.parentNode.className += " is-active";
+    }
+
+
     function update_module_provider_settings(ev) {
         $('#settings-status-success').css('display', 'none');
         $('#settings-status-error').css('display', 'none');
         $.post({
             url: '/v1/terrareg/modules/{{ module_provider.id }}/settings',
             data: JSON.stringify({
-                repository_url: $('#settings-repository-url').val(),
+                git_provider_id: $('select[id=settings-git-provider] option').filter(':selected').val(),
+                repo_base_url_template: $('#settings-base-url-template').val(),
+                repo_clone_url_template: $('#settings-clone-url-template').val(),
+                repo_browse_url_template: $('#settings-browse-url-template').val(),
                 git_tag_format: $('#settings-git-tag-format').val(),
                 verified: $('#settings-verified').is(':checked'),
                 csrf_token: '{{ csrf_token }}'
@@ -84,10 +94,7 @@
         // Navigate page to submodule
         window.location.href = url;
     }
-
 </script>
-
-{% endif %}
 
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
@@ -145,7 +152,7 @@
             <h5 class="title is-5">Usage</h4>
             <pre>
 module "{{ module.name }}" {
-    source  = "{{ server_hostname }}/{{ current_module.id }}"
+    source  = "{{ server_hostname }}/{{ current_module.registry_id }}"
     version = "{{ module_version.version }}"
 
     # Provide variables here
@@ -158,28 +165,35 @@ module "{{ module.name }}" {
 </div>
 
 
-{% if current_module %}
 <div class="tabs">
     <ul>
-        <li class="module-tab-link is-active"><a onclick="selectModuleTab(event, 'readme')">Readme</a></li>
-        <li class="module-tab-link"><a onclick="selectModuleTab(event, 'inputs')">Inputs</a></li>
-        <li class="module-tab-link"><a onclick="selectModuleTab(event, 'outputs')">Outputs</a></li>
-        <li class="module-tab-link"><a onclick="selectModuleTab(event, 'dependencies')">Dependencies</a></li>
-        <li class="module-tab-link">
-            <a onclick="selectModuleTab(event, 'resources')">Resources</a>
-        </li>
+        {% if current_module %}
+            <li class="module-tab-link is-active"><a onclick="selectModuleTab(event, 'readme')">Readme</a></li>
+            <li class="module-tab-link"><a onclick="selectModuleTab(event, 'inputs')">Inputs</a></li>
+            <li class="module-tab-link"><a onclick="selectModuleTab(event, 'outputs')">Outputs</a></li>
+            <li class="module-tab-link"><a onclick="selectModuleTab(event, 'dependencies')">Dependencies</a></li>
+            <li class="module-tab-link">
+                <a onclick="selectModuleTab(event, 'resources')">Resources</a>
+            </li>
 
-        {% if not current_module.is_submodule %}
-        <li class="module-tab-link">
-            <a onclick="selectModuleTab(event, 'analytics')">
-                Analytics
-                <span class="tag is-warning is-light">Terrareg Exclusive</span>
-            </a>
-        </li>
-        <li id="usageBuilderTabButton" class="module-tab-link">
-            <a onclick="selectModuleTab(event, 'usage-builder')">
-                Usage Builder
-                <span class="tag is-warning is-light">Terrareg Exclusive</span>
+            {% if not current_module.is_submodule %}
+                <li class="module-tab-link">
+                    <a onclick="selectModuleTab(event, 'analytics')">
+                        Analytics
+                        <span class="tag is-warning is-light">Terrareg Exclusive</span>
+                    </a>
+                </li>
+                <li id="usageBuilderTabButton" class="module-tab-link">
+                    <a onclick="selectModuleTab(event, 'usage-builder')">
+                        Usage Builder
+                        <span class="tag is-warning is-light">Terrareg Exclusive</span>
+                    </a>
+                </li>
+            {% endif %}
+        {% endif %}
+        <li id="indexVersionTabButton" class="module-tab-link">
+            <a onclick="selectModuleTab(event, 'indexVersion')">
+                Index Version
             </a>
         </li>
         <li style="display: none" id="settingsTabButton" class="module-tab-link">
@@ -187,13 +201,12 @@ module "{{ module.name }}" {
                 Settings
             </a>
         </li>
-        {% endif %}
     </ul>
 </div>
 
 <div class="columns">
     <div class="column is-three-fifths is-offset-one-fifth">
-
+        {% if current_module %}
         <div id="module-tab-readme" class="module-tabs">
             {{ current_module.get_readme_html()|safe }}
         </div>
@@ -323,6 +336,67 @@ module "{{ module.name }}" {
             </table>
             <pre id="usageBuilderOutput">
             </pre>
+        
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <!-- Index version tab -->
+        <div id="module-tab-indexVersion" class="module-tabs" style="display: none;">
+            <script>
+                function indexModuleVersion() {
+                    let moduleVersionToIndex = $('#indexModuleVersion').val();
+                    $.post(
+                        `/v1/terrareg/modules/{{ module_provider.id }}/${moduleVersionToIndex}/import`
+                    ).done(() => {
+                        $('#index-version-success').html('Successfully indexed version');
+                        $('#index-version-success').css('display', 'block');
+                        $('#index-version-error').css('display', 'none');
+                        if ($('#indexModuleVersionPublish').is(':checked')) {
+                            $.post(
+                                `/v1/terrareg/modules/{{ module_provider.id }}/${moduleVersionToIndex}/publish`
+                            ).done(() => {
+                                $('#index-version-success').html('Successfully indexed and published version.');
+                            }).fail((res) => {
+                                if (res.responseJSON && res.responseJSON.message) {
+                                    $('#index-version-error').html(res.responseJSON.message);
+                                } else {
+                                    $('#index-version-error').html('An unexpected error occurred when publishing module version');
+                                }
+                                $('#index-version-error').css('display', 'block');
+                            });
+                        }
+                    }).fail((res) => {
+                        if (res.responseJSON && res.responseJSON.message) {
+                            $('#index-version-error').html(res.responseJSON.message);
+                        } else {
+                            $('#index-version-error').html('An unexpected error occurred when indexing module');
+                        }
+                        $('#index-version-error').css('display', 'block');
+                    });
+                }
+            </script>
+            Index Module Version
+            <div id="index-version-success" style="display: none" class="notification is-success">
+                Successfully indexed version
+            </div>
+            <div id="index-version-error" style="display: none" class="notification is-danger">
+            </div>
+            <div class="field is-vertical">
+                <label class="label">Version</label>
+                <div class="control">
+                    <input id="indexModuleVersion" class="input is-small" type="text" size="5" placeholder="1.0.0">
+                </div>
+                <label class="checkbox">
+                    <input id="indexModuleVersionPublish" type="checkbox" value="true">
+                    Publish
+                </label>
+                <div class="control">
+                    <a onclick="indexModuleVersion();" class="button is-info is-small">
+                    Index Version
+                    </a>
+                </div>
+            </div>
         </div>
 
         <!-- Module settings tab -->
@@ -346,11 +420,66 @@ module "{{ module.name }}" {
                     </div>
 
                     <div class="field">
-                        <label class="label">Repository URL</label>
-                        <div class="control">
-                            <input placeholder="ssh://git@github.com/{{ namespace.name }}/{{ module.name }}" class="input" type="text" value="{{ module_provider.repository_url or '' }}" id="settings-repository-url">
+                        <label class="label">Git Repository Provider</label>
+                        <div class="control select">
+                            <select id="settings-git-provider">
+
+                                {% if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER or ALLOW_CUSTOM_GIT_URL_MODULE_VERSION %}
+                                <option value=""
+                                        {% if not module_provider.get_git_provider() %}
+                                        selected
+                                        {% endif %}>
+                                    Custom
+                                </option>
+                                {% endif %}
+
+                                {% for git_provider in git_providers %}
+                                <option
+                                    value="{{ git_provider.pk }}"
+                                    {% if module_provider.get_git_provider() and
+                                        module_provider.get_git_provider().name == git_provider.name
+                                        %}selected{% endif %}>
+
+                                    {{ git_provider.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
+
+                    {% if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER %}
+                    <div class="field">
+                        <label class="label">Custom Repository base URL</label>
+                        <div class="control">
+                            <input placeholder="https://github.com/{{ namespace.name }}/{{ module.name }}-{{ module_provider.name }}" class="input" type="text" value="{{ module_provider._get_db_row()['repo_base_url_template'] or '' }}" id="settings-base-url-template">
+                        </div>
+                        This URL must be valid for browsing the base of the repository.<br />
+                        It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                        E.g. <code>https://github.com/{namespace}/{module}-{provider}</code><br />
+                        NOTE: Setting this field will override the repository provider configuration.
+                    </div>
+                    <div class="field">
+                        <label class="label">Custom Repository Clone URL</label>
+                        <div class="control">
+                            <input placeholder="ssh://git@github.com/{{ namespace.name }}/{{ module.name }}-{{ module_provider.name }}.git" class="input" type="text" value="{{ module_provider._get_db_row()['repo_clone_url_template'] or '' }}" id="settings-clone-url-template">
+                        </div>
+                        This URL must be valid for cloning the repository.<br />
+                        It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>>.<br />
+                        E.g. <code>ssh://git@github.com/{namespace}/{module}-{provider}.git</code><br />
+                        NOTE: Setting this field will override the repository provider configuration.
+                    </div>
+                    <div class="field">
+                        <label class="label">Custom Repository source browse URL</label>
+                        <div class="control">
+                            <input placeholder="https://github.com/{{ namespace.name }}/{{ module.name }}-{{ module_provider.name }}/tree/{tag}/{path}" class="input" type="text" value="{{ module_provider._get_db_row()['repo_browse_url_template'] or '' }}" id="settings-browse-url-template">
+                        </div>
+                        This URL must be valid for browsing the source code of the repository at a particular tag/path.<br />
+                        It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                        It must include the following template values: <code>code>{tag}</code> and {path}</code><br />
+                        E.g. <code>https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}</code><br />
+                        NOTE: Setting this field will override the repository provider configuration.
+                    </div>
+                    {% endif %}
 
                     <div class="field">
                         <label class="label">Git tag format</label>
@@ -359,7 +488,7 @@ module "{{ module.name }}" {
                         </div>
                         This value will be converted to the expected git tag for a module version.<br />
                         {version} will be replaced by the actual module version.<br />
-                        For example 'v{version}' will translate to a git tag v1.1.1 for module version 1.1.1
+                        For example <code>v{version}</code> will translate to a git tag 'v1.1.1' for module version '1.1.1'
                     </div>
     
                     <div class="field">
@@ -370,9 +499,10 @@ module "{{ module.name }}" {
                 </form>
             </div>
         </div>
-        {% endif %}
     </div>
 </div>
+
+{% if current_module %}
 
 <script>
     var input_variables;
@@ -450,7 +580,7 @@ module "{{ module.name }}" {
         $('#usageBuilderOutput').html(`
 ${additional_content}
 module "{{ module.name }}" {
-    source  = "{{ server_hostname }}/{{ module_provider.id }}"
+    source  = "{{ server_hostname }}/{{ current_module.registry_id }}"
     version = "{{ module_version.version }}"
 ${output_tf}
 }
@@ -508,6 +638,9 @@ ${output_tf}
             `);
         });
     });
+</script>
+{% endif %}
+<script>
 
     // Check if user is authenticated and display settings tab
     is_logged_in((logged_in) => {
@@ -517,7 +650,6 @@ ${output_tf}
     });
 </script>
 
-{% endif %}
 
 
 {% endblock %}

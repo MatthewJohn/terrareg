@@ -20,7 +20,7 @@ class TestApiModuleDetails(TerraregUnitTest):
                 {'id': 'testnamespace/lonelymodule/testprovider/1.0.0', 'owner': 'Mock Owner',
                 'namespace': 'testnamespace', 'name': 'lonelymodule', 'version': '1.0.0',
                 'provider': 'testprovider', 'description': 'Mock description',
-                'source': 'http://mock.example.com/mockmodule',
+                'source': None,
                 'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True}
             ]
         }
@@ -37,7 +37,7 @@ class TestApiModuleDetails(TerraregUnitTest):
                 {'id': 'testnamespace/unverifiedmodule/testprovider/1.2.3', 'owner': 'Mock Owner',
                 'namespace': 'testnamespace', 'name': 'unverifiedmodule', 'version': '1.2.3',
                 'provider': 'testprovider', 'description': 'Mock description',
-                'source': 'http://mock.example.com/mockmodule',
+                'source': None,
                 'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': False}
             ]
         }
@@ -62,7 +62,7 @@ class TestApiModuleDetails(TerraregUnitTest):
                 {'id': 'testnamespace/lonelymodule/testprovider/1.0.0', 'owner': 'Mock Owner',
                 'namespace': 'testnamespace', 'name': 'lonelymodule', 'version': '1.0.0',
                 'provider': 'testprovider', 'description': 'Mock description',
-                'source': 'http://mock.example.com/mockmodule',
+                'source': None,
                 'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True}
             ]
         }

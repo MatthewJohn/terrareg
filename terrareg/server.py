@@ -21,13 +21,22 @@ from terrareg.errors import (
     RepositoryUrlParseError, TerraregError, UploadError, NoModuleVersionAvailableError,
     NoSessionSetError, IncorrectCSRFTokenError
 )
-from terrareg.models import Namespace, Module, ModuleProvider, ModuleVersion, Submodule
+from terrareg.models import (
+    Namespace, Module, ModuleProvider,
+    ModuleVersion, Submodule,
+    GitProvider
+)
 from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ApiUploadModuleExtractor, GitModuleExtractor
 from terrareg.analytics import AnalyticsEngine
 from terrareg.filters import NamespaceTrustFilter
-from terrareg.config import APPLICATION_NAME, LOGO_URL
-
+from terrareg.config import (
+    ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+    ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
+    ALLOW_MODULE_HOSTING,
+    APPLICATION_NAME,
+    LISTEN_PORT, LOGO_URL
+)
 
 class Server(object):
     """Manage web server and route requests"""
@@ -45,7 +54,7 @@ class Server(object):
         )
 
         self.host = '0.0.0.0'
-        self.port = 5000
+        self.port = LISTEN_PORT
         self.ssl_public_key = ssl_public_key
         self.ssl_private_key = ssl_private_key
 
@@ -60,6 +69,7 @@ class Server(object):
 
         # Initialise database
         Database.get().initialise()
+        GitProvider.initialise_from_config()
 
         self._register_routes()
 
@@ -242,7 +252,6 @@ class Server(object):
             csrf_token=get_csrf_token()
         )
 
-
     def run(self):
         """Run flask server."""
         kwargs = {
@@ -272,7 +281,12 @@ class Server(object):
 
     def _view_serve_create_module(self):
         """Provide view to create module provider."""
-        return self._render_template('create_module_provider.html')
+        return self._render_template(
+            'create_module_provider.html',
+            git_providers=GitProvider.get_all(),
+            ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
+        )
 
     def _view_serve_namespace_list(self):
         """Render view for display module."""
@@ -342,7 +356,10 @@ class Server(object):
             module_provider=module_provider,
             module_version=module_version,
             current_module=module_version,
-            server_hostname=request.host
+            server_hostname=request.host,
+            git_providers=GitProvider.get_all(),
+            ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
 
     def _view_serve_submodule(self, namespace, name, provider, version, submodule_path):
@@ -365,7 +382,10 @@ class Server(object):
             module_version=module_version,
             submodule=submodule,
             current_module=submodule,
-            server_hostname=request.host
+            server_hostname=request.host,
+            git_providers=GitProvider.get_all(),
+            ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
 
     def _view_serve_module_search(self):
@@ -470,7 +490,7 @@ class ApiModuleVersionCreate(ErrorCatchingResource):
         module_provider = ModuleProvider.get(module=module, name=provider, create=True)
 
         # Ensure that the module provider has a repository url configured.
-        if not module_provider.repository_url:
+        if not module_provider.get_git_clone_url():
             return {'message': 'Module provider is not configured with a repository'}, 400
 
         module_version = ModuleVersion(module_provider=module_provider, version=version)
@@ -494,7 +514,7 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
         # Get module provider and optionally create, if it doesn't exist
         module_provider = ModuleProvider.get(module=module, name=provider, create=True)
 
-        if not module_provider.repository_url:
+        if not module_provider.get_git_clone_url():
             return {'message': 'Module provider is not configured with a repository'}, 400
 
         bitbucket_data = request.json
@@ -837,6 +857,9 @@ class ApiModuleVersionSourceDownload(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version):
         """Return static file."""
+        if not ALLOW_MODULE_HOSTING:
+            return {'message': 'Module hosting is disbaled'}, 500
+
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
@@ -1045,10 +1068,31 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
         """Handle update to settings."""
         parser = reqparse.RequestParser()
         parser.add_argument(
-            'repository_url', type=str,
+            'git_provider_id', type=str,
             required=False,
             default=None,
-            help='Module provider repository URL.',
+            help='ID of the git provider to associate to module provider.',
+            location='json'
+        )
+        parser.add_argument(
+            'repo_base_url_template', type=str,
+            required=False,
+            default=None,
+            help='Templated base git URL.',
+            location='json'
+        )
+        parser.add_argument(
+            'repo_clone_url_template', type=str,
+            required=False,
+            default=None,
+            help='Templated git clone URL.',
+            location='json'
+        )
+        parser.add_argument(
+            'repo_browse_url_template', type=str,
+            required=False,
+            default=None,
+            help='Templated URL for browsing repository.',
             location='json'
         )
         parser.add_argument(
@@ -1081,18 +1125,59 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
 
         module_provider = ModuleProvider.get(module=module, name=provider, create=True)
 
-        # Ensure repository URL is parsable
-        repository_url = args.repository_url
-        if repository_url is not None:
-            if repository_url == '':
+        # If git provider ID has been specified,
+        # validate it and update attribute of module provider.
+        if args.git_provider_id is not None:
+            git_provider = GitProvider.get(id=args.git_provider_id)
+            # If a non-empty git provider ID was provided and none
+            # were returned, return an error about invalid
+            # git provider ID
+            if args.git_provider_id and git_provider is None:
+                return {'message': 'Git provider does not exist.'}, 400
+
+            module_provider.update_git_provider(git_provider=git_provider)
+
+        # Ensure base repository URL is parsable
+        repo_base_url_template = args.repo_base_url_template
+        # If the argument is None, assume it's not being updated,
+        # as this is the default value for the arg parser.
+        if repo_base_url_template is not None:
+            if repo_base_url_template == '':
                 # If repository URL is empty, set to None
-                repository_url = None
+                repo_base_url_template = None
 
             try:
-                module_provider.update_repository_url(repository_url=repository_url)
+                module_provider.update_repo_base_url_template(repo_base_url_template=repo_base_url_template)
             except RepositoryUrlParseError as exc:
-                return {'message': str(exc)}, 400
+                return {'message': 'Repo base URL: {}'.format(str(exc))}, 400
 
+        # Ensure repository URL is parsable
+        repo_clone_url_template = args.repo_clone_url_template
+        # If the argument is None, assume it's not being updated,
+        # as this is the default value for the arg parser.
+        if repo_clone_url_template is not None:
+            if repo_clone_url_template == '':
+                # If repository URL is empty, set to None
+                repo_clone_url_template = None
+
+            try:
+                module_provider.update_repo_clone_url_template(repo_clone_url_template=repo_clone_url_template)
+            except RepositoryUrlParseError as exc:
+                return {'message': 'Repo clone URL: {}'.format(str(exc))}, 400
+
+        # Ensure repository URL is parsable
+        repo_browse_url_template = args.repo_browse_url_template
+        if repo_browse_url_template is not None:
+            if repo_browse_url_template == '':
+                # If repository URL is empty, set to None
+                repo_browse_url_template = None
+
+            try:
+                module_provider.update_repo_browse_url_template(repo_browse_url_template=repo_browse_url_template)
+            except RepositoryUrlParseError as exc:
+                return {'message': 'Repo browse URL: {}'.format(str(exc))}, 400
+
+        # Update git tag format of object
         git_tag_format = args.git_tag_format
         if git_tag_format is not None:
             module_provider.update_git_tag_format(git_tag_format=git_tag_format)
@@ -1111,10 +1196,31 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         """Handle update to settings."""
         parser = reqparse.RequestParser()
         parser.add_argument(
-            'repository_url', type=str,
+            'git_provider_id', type=str,
             required=False,
             default=None,
-            help='Module provider repository URL.',
+            help='ID of the git provider to associate to module provider.',
+            location='json'
+        )
+        parser.add_argument(
+            'repo_base_url_template', type=str,
+            required=False,
+            default=None,
+            help='Templated base git repository URL.',
+            location='json'
+        )
+        parser.add_argument(
+            'repo_clone_url_template', type=str,
+            required=False,
+            default=None,
+            help='Templated git clone URL.',
+            location='json'
+        )
+        parser.add_argument(
+            'repo_browse_url_template', type=str,
+            required=False,
+            default=None,
+            help='Templated URL for browsing repository.',
             location='json'
         )
         parser.add_argument(
@@ -1151,17 +1257,57 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         if not module_provider:
             return {'message': 'Module provider does not exist'}, 400
 
-        # Ensure repository URL is parsable
-        repository_url = args.repository_url
-        if repository_url is not None:
-            if repository_url == '':
+        # If git provider ID has been specified,
+        # validate it and update attribute of module provider.
+        if args.git_provider_id is not None:
+            git_provider = GitProvider.get(id=args.git_provider_id)
+            # If a non-empty git provider ID was provided and none
+            # were returned, return an error about invalid
+            # git provider ID
+            if args.git_provider_id and git_provider is None:
+                return {'message': 'Git provider does not exist.'}, 400
+
+            module_provider.update_git_provider(git_provider=git_provider)
+
+        # Ensure base URL is parsable
+        repo_base_url_template = args.repo_base_url_template
+        # If the argument is None, assume it's not being updated,
+        # as this is the default value for the arg parser.
+        if repo_base_url_template is not None:
+            if repo_base_url_template == '':
                 # If repository URL is empty, set to None
-                repository_url = None
+                repo_base_url_template = None
 
             try:
-                module_provider.update_repository_url(repository_url=repository_url)
+                module_provider.update_repo_base_url_template(repo_base_url_template=repo_base_url_template)
             except RepositoryUrlParseError as exc:
-                return {'message': str(exc)}, 400
+                return {'message': 'Repo base URL: {}'.format(str(exc))}, 400
+
+        # Ensure repository URL is parsable
+        repo_clone_url_template = args.repo_clone_url_template
+        # If the argument is None, assume it's not being updated,
+        # as this is the default value for the arg parser.
+        if repo_clone_url_template is not None:
+            if repo_clone_url_template == '':
+                # If repository URL is empty, set to None
+                repo_clone_url_template = None
+
+            try:
+                module_provider.update_repo_clone_url_template(repo_clone_url_template=repo_clone_url_template)
+            except RepositoryUrlParseError as exc:
+                return {'message': 'Repo clone URL: {}'.format(str(exc))}, 400
+
+        # Ensure repository URL is parsable
+        repo_browse_url_template = args.repo_browse_url_template
+        if repo_browse_url_template is not None:
+            if repo_browse_url_template == '':
+                # If repository URL is empty, set to None
+                repo_browse_url_template = None
+
+            try:
+                module_provider.update_repo_browse_url_template(repo_browse_url_template=repo_browse_url_template)
+            except RepositoryUrlParseError as exc:
+                return {'message': 'Repo browse URL: {}'.format(str(exc))}, 400
 
         git_tag_format = args.git_tag_format
         if git_tag_format is not None:

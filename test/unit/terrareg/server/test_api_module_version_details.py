@@ -26,7 +26,8 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
                 'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],
                 'provider_dependencies': [], 'resources': []
             },
-            'submodules': [], 'providers': ['testprovider'], 'versions': []
+            'submodules': [], 'providers': ['testprovider'],
+            'versions': ['2.4.1', '1.0.0']
         }
 
         assert res.status_code == 200
@@ -40,7 +41,7 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
             'namespace': 'testnamespace', 'name': 'unverifiedmodule',
             'version': '1.2.3', 'provider': 'testprovider',
             'description': 'Mock description',
-            'source': 'http://mock.example.com/mockmodule',
+            'source': None,
             'published_at': '2020-01-01T23:18:12',
             'downloads': 0, 'verified': False,
             'root': {
@@ -48,7 +49,7 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
                 'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],
                 'provider_dependencies': [], 'resources': []
             },
-            'submodules': [], 'providers': ['testprovider'], 'versions': []
+            'submodules': [], 'providers': ['testprovider'], 'versions': ['1.2.3']
         }
 
         assert res.status_code == 200
