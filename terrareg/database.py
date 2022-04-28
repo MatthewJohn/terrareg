@@ -95,6 +95,7 @@ class Database():
             'git_provider', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
             sqlalchemy.Column('name', sqlalchemy.String, unique=True),
+            sqlalchemy.Column('base_url_template', sqlalchemy.String),
             sqlalchemy.Column('clone_url_template', sqlalchemy.String),
             sqlalchemy.Column('browse_url_template', sqlalchemy.String)
         )
@@ -105,6 +106,7 @@ class Database():
             sqlalchemy.Column('namespace', sqlalchemy.String),
             sqlalchemy.Column('module', sqlalchemy.String),
             sqlalchemy.Column('provider', sqlalchemy.String),
+            sqlalchemy.Column('base_url_template', sqlalchemy.String),
             sqlalchemy.Column('clone_url_template', sqlalchemy.String),
             sqlalchemy.Column('browse_url_template', sqlalchemy.String),
             sqlalchemy.Column('git_tag_format', sqlalchemy.String),
@@ -133,6 +135,7 @@ class Database():
             sqlalchemy.Column('version', sqlalchemy.String),
             sqlalchemy.Column('owner', sqlalchemy.String),
             sqlalchemy.Column('description', sqlalchemy.String),
+            sqlalchemy.Column('base_url_template', sqlalchemy.String),
             sqlalchemy.Column('clone_url_template', sqlalchemy.String),
             sqlalchemy.Column('browse_url_template', sqlalchemy.String),
             sqlalchemy.Column('published_at', sqlalchemy.DateTime),

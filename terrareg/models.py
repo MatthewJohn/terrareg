@@ -44,12 +44,18 @@ class GitProvider:
         db = Database.get()
         for git_provider_config in git_provider_config:
             # Validate provider config
-            for attr in ['name', 'clone_url', 'browse_url']:
+            for attr in ['name', 'base_url', 'clone_url', 'browse_url']:
                 if attr not in git_provider_config:
                     raise InvalidGitProviderConfigError(
                         'Git provider config does not contain required attribute: {}'.format(attr))
 
             # Valid git URLs for git provider
+            GitUrlValidator(git_provider_config['base_url']).validate(
+                requires_namespace_placeholder=True,
+                requires_module_placeholder=True,
+                requires_tag_placeholder=False,
+                requires_path_placeholder=False
+            )
             GitUrlValidator(git_provider_config['clone_url']).validate(
                 requires_namespace_placeholder=True,
                 requires_module_placeholder=True,
@@ -70,12 +76,14 @@ class GitProvider:
                 upsert = db.git_provider.update().where(
                     db.git_provider.c.id == existing_git_provider.pk
                 ).values(
+                    base_url_template=git_provider_config['base_url'],
                     clone_url_template=git_provider_config['clone_url'],
                     browse_url_template=git_provider_config['browse_url']
                 )
             else:
                 upsert = db.git_provider.insert().values(
                     name=git_provider_config['name'],
+                    base_url_template=git_provider_config['base_url'],
                     clone_url_template=git_provider_config['clone_url'],
                     browse_url_template=git_provider_config['browse_url']
                 )
@@ -131,14 +139,19 @@ class GitProvider:
         return self._get_db_row()['id']
 
     @property
+    def name(self):
+        """Return name for git provider."""
+        return self._get_db_row()['name']
+
+    @property
     def clone_url_template(self):
         """Return clone_url_template for git provider."""
         return self._get_db_row()['clone_url_template']
 
     @property
-    def name(self):
-        """Return name for git provider."""
-        return self._get_db_row()['name']
+    def base_url_template(self):
+        """Return base_url for git provider."""
+        return self._get_db_row()['base_url_template']
 
     @property
     def browse_url_template(self):
@@ -617,6 +630,46 @@ class ModuleProvider(object):
 
         self.update_attributes(browse_url_template=browse_url_template)
 
+    def update_base_url_template(self, base_url_template):
+        """Update browse URL template for module provider."""
+        if not ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
+            raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
+                'Custom module provider git repository URL cannot be set.'
+            )
+
+        if base_url_template:
+            GitUrlValidator(base_url_template).validate(
+                requires_path_placeholder=True,
+                requires_tag_placeholder=True
+            )
+
+            converted_template = base_url_template.format(
+                namespace=self._module._namespace.name,
+                module=self._module.name,
+                provider=self.name)
+
+            url = urllib.parse.urlparse(converted_template)
+            if not url.scheme:
+                raise RepositoryUrlDoesNotContainValidSchemeError(
+                    'Repository URL does not contain a scheme (e.g. https://)'
+                )
+            if url.scheme not in ['http', 'https']:
+                raise RepositoryUrlContainsInvalidSchemeError(
+                    'Repository URL contains an unknown scheme (e.g. https/http)'
+                )
+            if not url.hostname:
+                raise RepositoryUrlDoesNotContainHostError(
+                    'Repository URL does not contain a host/domain'
+                )
+            if not url.path:
+                raise RepositoryDoesNotContainPathError(
+                    'Repository URL does not contain a path'
+                )
+
+            base_url_template = urllib.parse.quote(base_url_template, safe='\{\}/:@%?=')
+
+        self.update_attributes(base_url_template=base_url_template)
+
     def get_view_url(self):
         """Return view URL"""
         return '{module_url}/{module}'.format(
@@ -1037,6 +1090,32 @@ class ModuleVersion(TerraformSpecsObject):
 
         return None
 
+    def get_source_base_url(self, path=None):
+        """Return URL to view the source repository."""
+        template = None
+
+        # Check if allowed, and module version has custom git URL
+        if ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['base_url_template']:
+            template = self._get_db_row()['base_url_template']
+
+        # Otherwise, check if allowed and module provider has custom git URL
+        elif ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._module_provider._get_db_row()['base_url_template']:
+            template = self._module_provider._get_db_row()['base_url_template']
+
+        # Otherwise, check if module provider is configured with git provider
+        elif self._module_provider.get_git_provider():
+            template = self._module_provider.get_git_provider().base_url_template
+
+        # Return rendered version of template
+        if template:
+            return template.format(
+                namespace=self._module_provider._module._namespace.name,
+                module=self._module_provider._module.name,
+                provider=self._module_provider.name
+            )
+
+        return None
+
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
         # Check if parent exists
@@ -1057,6 +1136,7 @@ class ModuleVersion(TerraformSpecsObject):
             "version": self.version,
             "provider": self._module_provider.name,
             "description": row['description'],
+            "source": self.get_source_base_url(),
             "published_at": row['published_at'].isoformat(),
             "downloads": self.get_total_downloads(),
             "verified": self._module_provider.verified,

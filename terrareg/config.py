@@ -120,6 +120,9 @@ JSON list of known git providers.
 Each item in the list should contain the following attributes:
  - name - Name of the git provider (e.g. 'Corporate Gitlab')
 
+ - base_url - Formatted base URL for project's repo.
+              (e.g. 'https://github.com/{namespace}/{module}'
+                 or 'https://gitlab.corporate.com/{namespace}/{module}')
  - clone_url - Formatted clone URL for modules.
                (e.g. 'ssh://gitlab.corporate.com/scm/{namespace}/{module}.git'
                   or 'https://github.com/{namespace}/{module}-{provider}.git')
@@ -131,9 +134,9 @@ Each item in the list should contain the following attributes:
                    or 'https://bitbucket.org/{namespace}/{module}/src/{version}')
 
 An example for public repositories might be:
-[{"name": "Github", "clone_url": "ssh://git@github.com:{namespace}/{module}-{provider}.git", "browse_url": "https://github.com/{namespace}/{module}-{provider}/tree/{path}"},
- {"name": "Bitbucket", "clone_url": "ssh://git@bitbucket.org:{namespace}/{module}-{provider}.git", "browse_url": "https://bitbucket.org/{namespace}/{module}-{provider}/src/{version}/{path}"},
- {"name": "Gitlab", "clone_url": "ssh://git@gitlab.com:{namespace}/{module}-{provider}.git", "browse_url": "https://gitlab.com/{namespace}/{module}-{provider}/-/tree/{version}/{path}"}]
+[{"name": "Github", "base_url": "https://github.com/{namespace}/{module}", "clone_url": "ssh://git@github.com:{namespace}/{module}.git", "browse_url": "https://github.com/{namespace}/{module}/tree/{tag}/{path}"},
+ {"name": "Bitbucket", "base_url": "https://bitbucket.org/{namespace}/{module}", "clone_url": "ssh://git@bitbucket.org:{namespace}/{module}-{provider}.git", "browse_url": "https://bitbucket.org/{namespace}/{module}-{provider}/src/{tag}/{path}"},
+ {"name": "Gitlab", "base_url": "https://gitlab.com/{namespace}/{module}", "clone_url": "ssh://git@gitlab.com:{namespace}/{module}-{provider}.git", "browse_url": "https://gitlab.com/{namespace}/{module}-{provider}/-/tree/{tag}/{path}"}]
 """
 GIT_PROVIDER_CONFIG = os.environ.get('GIT_PROVIDER_CONFIG', '[]')
 

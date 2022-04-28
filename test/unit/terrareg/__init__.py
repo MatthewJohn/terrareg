@@ -114,6 +114,7 @@ class MockModuleVersion(ModuleVersion):
             'version': self._version,
             'owner': self._unittest_data.get('owner', 'Mock Owner'),
             'description': self._unittest_data.get('description', 'Mock description'),
+            'base_url_template': self._unittest_data.get('base_url_template', None),
             'clone_url_template': self._unittest_data.get('clone_url_template', None),
             'browse_url_template': self._unittest_data.get('clone_url_template', None),
             'published_at': self._unittest_data.get(
@@ -151,6 +152,7 @@ class MockModuleProvider(ModuleProvider):
                 'id': 99,
                 'latest_version': None,
                 'versions': {},
+                'base_url_template': None,
                 'clone_url_template': None,
                 'browse_url_template': None
             }
@@ -171,6 +173,7 @@ class MockModuleProvider(ModuleProvider):
             'module': self._module.name,
             'provider': self.name,
             'verified': self._unittest_data.get('verified', False),
+            'base_url_template': self._unittest_data.get('base_url_template', None),
             'clone_url_template': self._unittest_data.get('clone_url_template', None),
             'browse_url_template': self._unittest_data.get('clone_url_template', None),
             'git_provider_id': self._unittest_data.get('git_provider_id', None),

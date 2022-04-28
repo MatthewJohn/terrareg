@@ -56,6 +56,7 @@
             url: '/v1/terrareg/modules/{{ module_provider.id }}/settings',
             data: JSON.stringify({
                 git_provider_id: $('select[id=settings-git-provider] option').filter(':selected').val(),
+                clone_url_template: $('#settings-base-url-template').val(),
                 clone_url_template: $('#settings-clone-url-template').val(),
                 browse_url_template: $('#settings-browse-url-template').val(),
                 git_tag_format: $('#settings-git-tag-format').val(),
@@ -377,6 +378,16 @@ module "{{ module.name }}" {
 
                     {% if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER %}
                     <div class="field">
+                        <label class="label">Custom Repository base URL</label>
+                        <div class="control">
+                            <input placeholder="https://github.com/{{ namespace.name }}/{{ module.name }}-{{ module_provider.name }}" class="input" type="text" value="{{ module_provider._get_db_row()['base_url_template'] or '' }}" id="settings-base-url-template">
+                        </div>
+                        This URL must be valid for browsing the base of the repository.<br />
+                        It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                        E.g. <code>https://github.com/{namespace}/{module}-{provider}</code><br />
+                        NOTE: Setting this field will override the repository provider configuration.
+                    </div>
+                    <div class="field">
                         <label class="label">Custom Repository URL</label>
                         <div class="control">
                             <input placeholder="ssh://git@github.com/{{ namespace.name }}/{{ module.name }}-{{ module_provider.name }}.git" class="input" type="text" value="{{ module_provider._get_db_row()['clone_url_template'] or '' }}" id="settings-clone-url-template">
@@ -391,7 +402,7 @@ module "{{ module.name }}" {
                         <div class="control">
                             <input placeholder="https://github.com/{{ namespace.name }}/{{ module.name }}-{{ module_provider.name }}/tree/{tag}/{path}" class="input" type="text" value="{{ module_provider._get_db_row()['clone_url_template'] or '' }}" id="settings-browse-url-template">
                         </div>
-                        This URL must be valid for browsing the source code of the repository.<br />
+                        This URL must be valid for browsing the source code of the repository at a particular tag/path.<br />
                         It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
                         It must include the following template values: <code>code>{tag}</code> and {path}</code><br />
                         E.g. <code>https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}</code><br />

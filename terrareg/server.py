@@ -1075,6 +1075,13 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
             location='json'
         )
         parser.add_argument(
+            'base_url_template', type=str,
+            required=False,
+            default=None,
+            help='Templated base git URL.',
+            location='json'
+        )
+        parser.add_argument(
             'clone_url_template', type=str,
             required=False,
             default=None,
@@ -1127,6 +1134,20 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
 
             module_provider.update_git_provider(git_provider=git_provider)
 
+        # Ensure base repository URL is parsable
+        base_url_template = args.base_url_template
+        # If the argument is None, assume it's not being updated,
+        # as this is the default value for the arg parser.
+        if base_url_template is not None:
+            if base_url_template == '':
+                # If repository URL is empty, set to None
+                base_url_template = None
+
+            try:
+                module_provider.update_base_url_template(base_url_template=base_url_template)
+            except RepositoryUrlParseError as exc:
+                return {'message': str(exc)}, 400
+
         # Ensure repository URL is parsable
         clone_url_template = args.clone_url_template
         # If the argument is None, assume it's not being updated,
@@ -1176,6 +1197,13 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             required=False,
             default=None,
             help='ID of the git provider to associate to module provider.',
+            location='json'
+        )
+        parser.add_argument(
+            'base_url_template', type=str,
+            required=False,
+            default=None,
+            help='Templated base git repository URL.',
             location='json'
         )
         parser.add_argument(
@@ -1234,6 +1262,20 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
                 return {'message': 'Git provider does not exist.'}, 400
 
             module_provider.update_git_provider(git_provider=git_provider)
+
+        # Ensure base URL is parsable
+        base_url_template = args.base_url_template
+        # If the argument is None, assume it's not being updated,
+        # as this is the default value for the arg parser.
+        if base_url_template is not None:
+            if base_url_template == '':
+                # If repository URL is empty, set to None
+                base_url_template = None
+
+            try:
+                module_provider.update_base_url_template(base_url_template=base_url_template)
+            except RepositoryUrlParseError as exc:
+                return {'message': str(exc)}, 400
 
         # Ensure repository URL is parsable
         clone_url_template = args.clone_url_template

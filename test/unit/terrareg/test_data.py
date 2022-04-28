@@ -2,6 +2,7 @@
 test_git_providers = {
     1: {
         'name': 'testgitprovider',
+        'base_url_template': 'https://localhost.com/{namespace}/{module}-{provider}',
         'browse_url_template': 'https://localhost.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
         'clone_url_template': 'ssh://localhost.com/{namespace}/{module}-{provider}'
     }
