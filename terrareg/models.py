@@ -934,7 +934,7 @@ class ModuleVersion(TerraformSpecsObject):
 
         # Return rendered version of template
         if template:
-            return template.render(
+            return template.format(
                 namespace=self._module_provider._module._namespace.name,
                 module=self._module_provider._module.name,
                 provider=self._module_provider.name,
@@ -966,7 +966,7 @@ class ModuleVersion(TerraformSpecsObject):
 
         # Return rendered version of template
         if template:
-            return template.render(
+            return template.format(
                 namespace=self._module_provider._module._namespace.name,
                 module=self._module_provider._module.name,
                 provider=self._module_provider.name,
