@@ -55,7 +55,7 @@
         $.post({
             url: '/v1/terrareg/modules/{{ module_provider.id }}/settings',
             data: JSON.stringify({
-                repository_provider: $('select[id=settings-repository-provider] option').filter(':selected').val(),
+                git_provider_id: $('select[id=settings-git-provider] option').filter(':selected').val(),
                 clone_url_template: $('#settings-clone-url-template').val(),
                 browse_url_template: $('#settings-browse-url-template').val(),
                 git_tag_format: $('#settings-git-tag-format').val(),
@@ -350,7 +350,7 @@ module "{{ module.name }}" {
                     <div class="field">
                         <label class="label">Git Repository Provider</label>
                         <div class="control select">
-                            <select id="settings-repository-provider">
+                            <select id="settings-git-provider">
 
                                 {% if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER or ALLOW_CUSTOM_GIT_URL_MODULE_VERSION %}
                                 <option value=""

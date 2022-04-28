@@ -1062,10 +1062,24 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
         """Handle update to settings."""
         parser = reqparse.RequestParser()
         parser.add_argument(
-            'repository_url', type=str,
+            'git_provider_id', type=int,
             required=False,
             default=None,
-            help='Module provider repository URL.',
+            help='ID of the git provider to associate to module provider.',
+            location='json'
+        )
+        parser.add_argument(
+            'clone_url_template', type=str,
+            required=False,
+            default=None,
+            help='Templated git clone URL.',
+            location='json'
+        )
+        parser.add_argument(
+            'browse_url_template', type=str,
+            required=False,
+            default=None,
+            help='Templated URL for browsing repository.',
             location='json'
         )
         parser.add_argument(
@@ -1098,18 +1112,42 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
 
         module_provider = ModuleProvider.get(module=module, name=provider, create=True)
 
+        # If git provider ID has been specified,
+        # validate it and update attribute of module provider.
+        if args.git_provider_id is not None:
+            git_provider = GitProvider.get(id=args.git_provider_id)
+            if git_provider is None:
+                return {'message': 'Git provider does not exist.'}, 400
+
+            module_provider.update_git_provider(git_provider=git_provider)
+
         # Ensure repository URL is parsable
-        repository_url = args.repository_url
-        if repository_url is not None:
-            if repository_url == '':
+        clone_url_template = args.clone_url_template
+        # If the argument is None, assume it's not being updated,
+        # as this is the default value for the arg parser.
+        if clone_url_template is not None:
+            if clone_url_template == '':
                 # If repository URL is empty, set to None
-                repository_url = None
+                clone_url_template = None
 
             try:
-                module_provider.update_repository_url(repository_url=repository_url)
+                module_provider.update_clone_url_template(clone_url_template=clone_url_template)
             except RepositoryUrlParseError as exc:
                 return {'message': str(exc)}, 400
 
+        # Ensure repository URL is parsable
+        browse_url_template = args.browse_url_template
+        if browse_url_template is not None:
+            if browse_url_template == '':
+                # If repository URL is empty, set to None
+                browse_url_template = None
+
+            try:
+                module_provider.update_browse_url_template(browse_url_template=browse_url_template)
+            except RepositoryUrlParseError as exc:
+                return {'message': str(exc)}, 400
+
+        # Update git tag format of object
         git_tag_format = args.git_tag_format
         if git_tag_format is not None:
             module_provider.update_git_tag_format(git_tag_format=git_tag_format)
@@ -1128,10 +1166,24 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         """Handle update to settings."""
         parser = reqparse.RequestParser()
         parser.add_argument(
-            'repository_url', type=str,
+            'git_provider_id', type=int,
             required=False,
             default=None,
-            help='Module provider repository URL.',
+            help='ID of the git provider to associate to module provider.',
+            location='json'
+        )
+        parser.add_argument(
+            'clone_url_template', type=str,
+            required=False,
+            default=None,
+            help='Templated git clone URL.',
+            location='json'
+        )
+        parser.add_argument(
+            'browse_url_template', type=str,
+            required=False,
+            default=None,
+            help='Templated URL for browsing repository.',
             location='json'
         )
         parser.add_argument(
@@ -1168,15 +1220,38 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         if not module_provider:
             return {'message': 'Module provider does not exist'}, 400
 
+        # If git provider ID has been specified,
+        # validate it and update attribute of module provider.
+        if args.git_provider_id is not None:
+            git_provider = GitProvider.get(id=args.git_provider_id)
+            if git_provider is None:
+                return {'message': 'Git provider does not exist.'}, 400
+
+            module_provider.update_git_provider(git_provider=git_provider)
+
         # Ensure repository URL is parsable
-        repository_url = args.repository_url
-        if repository_url is not None:
-            if repository_url == '':
+        clone_url_template = args.clone_url_template
+        # If the argument is None, assume it's not being updated,
+        # as this is the default value for the arg parser.
+        if clone_url_template is not None:
+            if clone_url_template == '':
                 # If repository URL is empty, set to None
-                repository_url = None
+                clone_url_template = None
 
             try:
-                module_provider.update_repository_url(repository_url=repository_url)
+                module_provider.update_clone_url_template(clone_url_template=clone_url_template)
+            except RepositoryUrlParseError as exc:
+                return {'message': str(exc)}, 400
+
+        # Ensure repository URL is parsable
+        browse_url_template = args.browse_url_template
+        if browse_url_template is not None:
+            if browse_url_template == '':
+                # If repository URL is empty, set to None
+                browse_url_template = None
+
+            try:
+                module_provider.update_browse_url_template(browse_url_template=browse_url_template)
             except RepositoryUrlParseError as exc:
                 return {'message': str(exc)}, 400
 
