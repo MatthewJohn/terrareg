@@ -5,6 +5,25 @@
 {% endblock %}
 
 {% block main_details %}
+
+    {% if module_version %}
+    <section>
+        Version
+        <div class="select is-small">
+            <select onchange="selectVersion(event);">
+                {% for module_version_itx in module_provider.get_versions() %}
+                <option
+                        value="{{ module_version_itx.get_view_url() }}"
+                        {% if module_version_itx.version == module_version.version %}selected{% endif %}
+                        >
+                    {{ module_version_itx.version }}{% if module_version_itx.version == module_provider.get_latest_version().version %} (latest){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </section>
+    {% endif %}
+
     <p class="title">
         {{ module.name }}
     </p>
@@ -32,15 +51,18 @@
         {% if module_version.is_submodule %}
             <button>Back to parent</button>
         {% else %}
+
             {% if module_version.get_submodules() %}
-            <div class="select is-small">
-                <select onchange="selectSubmodule(event);">
-                    <option value="none">Select submodule</option>
-                    {% for submodule in module_version.get_submodules() %}
-                    <option value="{{ submodule.get_view_url() }}">{{ submodule.path }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+            <section>
+                <div class="select is-small">
+                    <select onchange="selectSubmodule(event);">
+                        <option value="none">Select submodule</option>
+                        {% for submodule in module_version.get_submodules() %}
+                        <option value="{{ submodule.get_view_url() }}">{{ submodule.path }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </section>
             {% endif %}
         {% endif %}
 
