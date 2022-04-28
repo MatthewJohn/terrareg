@@ -18,7 +18,7 @@ class TestApiModuleProviderDetails(TerraregUnitTest):
             'namespace': 'testnamespace', 'name': 'mock-module',
             'version': '1.2.3', 'provider': 'testprovider',
             'description': 'Mock description',
-            'source': 'http://mock.example.com/mockmodule',
+            'source': 'http://github.com/testnamespace/mock-module',
             'published_at': '2020-01-01T23:18:12',
             'downloads': 0, 'verified': True,
             'root': {
@@ -40,7 +40,7 @@ class TestApiModuleProviderDetails(TerraregUnitTest):
             'namespace': 'testnamespace', 'name': 'unverifiedmodule',
             'version': '1.2.3', 'provider': 'testprovider',
             'description': 'Mock description',
-            'source': 'http://mock.example.com/mockmodule',
+            'source': None,
             'published_at': '2020-01-01T23:18:12',
             'downloads': 0, 'verified': False,
             'root': {
