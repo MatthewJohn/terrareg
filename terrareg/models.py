@@ -491,7 +491,7 @@ class ModuleProvider(object):
     def get_git_provider(self):
         """Return the git provider associated with this module provider."""
         if self._get_db_row()['git_provider_id']:
-            return GitProvider(id=self._get_db_row()['git_provider_id'])
+            return GitProvider.get(id=self._get_db_row()['git_provider_id'])
         return None
 
     def update_attributes(self, **kwargs):
