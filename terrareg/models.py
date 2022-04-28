@@ -1009,7 +1009,7 @@ class ModuleVersion(TerraformSpecsObject):
             'Module is not configured with a git URL and direct downloads are disabled'
         )
 
-    def get_source_browse_url(self, path):
+    def get_source_browse_url(self, path=None):
         """Return URL to browse the source doe."""
         template = None
 
