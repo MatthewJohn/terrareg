@@ -963,7 +963,7 @@ class ModuleVersion(TerraformSpecsObject):
 
         return None
 
-    def get_source_download_url(self):
+    def get_source_download_url(self, path=None):
         """Return URL to download source file."""
         rendered_url = None
 
@@ -979,10 +979,10 @@ class ModuleVersion(TerraformSpecsObject):
                 rendered_url = 'git::{rendered_url}'.format(rendered_url=rendered_url)
 
             # Check if path is present for module (only used for submodules)
-            if self.path:
+            if path:
                 rendered_url = '{rendered_url}//{path}'.format(
                     rendered_url=rendered_url,
-                    path=self.path)
+                    path=path)
 
             # Add tag to URL
             rendered_url = '{rendered_url}?ref={tag}'.format(
@@ -999,7 +999,7 @@ class ModuleVersion(TerraformSpecsObject):
             'Module is not configured with a git URL and direct downloads are disabled'
         )
 
-    def get_source_browse_url(self):
+    def get_source_browse_url(self, path):
         """Return URL to browse the source doe."""
         template = None
 
@@ -1022,7 +1022,7 @@ class ModuleVersion(TerraformSpecsObject):
                 module=self._module_provider._module.name,
                 provider=self._module_provider.name,
                 tag=self.source_git_tag,
-                path=self.path
+                path=path
             )
 
         return None
@@ -1160,6 +1160,15 @@ class Submodule(TerraformSpecsObject):
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
             return res.fetchone()
+
+
+    def get_source_browse_url(self):
+        """Get formatted source browse URL"""
+        return self._module_version.get_source_browse_url(path=self.path)
+
+    def get_source_download_url(self):
+        """Get formatted source download URL"""
+        return self._module_version.get_source_download_url(path=self.path)
 
     def get_view_url(self):
         """Return view URL"""
