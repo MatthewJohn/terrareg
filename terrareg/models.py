@@ -440,7 +440,6 @@ class ModuleProvider(object):
         self._module = module
         self._name = name
 
-
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
         return statement.where(
@@ -461,6 +460,12 @@ class ModuleProvider(object):
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
             return res.fetchone()
+
+    def get_git_provider(self):
+        """Return the git provider associated with this module provider."""
+        if self._get_db_row()['git_provider_id']:
+            return GitProvider(id=self._get_db_row()['git_provider_id'])
+        return None
 
     def update_attributes(self, **kwargs):
         """Update DB row."""
@@ -613,12 +618,6 @@ class TerraformSpecsObject(object):
         if self._module_specs is None:
             self._module_specs = json.loads(self._get_db_row()['module_details'])
         return self._module_specs
-
-    def get_git_provider(self):
-        """Return the git provider associated with this module provider."""
-        if self._get_db_row()['git_provider_id']:
-            return GitProvider(id=self._get_db_row()['git_provider_id'])
-        return None
 
     def get_readme_html(self):
         """Convert readme markdown to HTML"""
