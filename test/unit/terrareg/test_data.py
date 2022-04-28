@@ -44,7 +44,7 @@ test_data_full = {
         'modulewithrepourl': {'testprovider': {
             'id': 6,
             'latest_version': '2.1.0',
-            'repository_url': 'https://github.com/test/test.git',
+            'repo_clone_url_template': 'https://github.com/test/test.git',
             'versions': {'2.1.0': {}}
         }},
         'modulenotpublished': {'testprovider': {
