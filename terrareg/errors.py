@@ -132,12 +132,6 @@ class ModuleVersionCustomGitRepositoryUrlNotAllowedError(TerraregError):
     pass
 
 
-class GitUrlValidatorError(TerraregError):
-    """Git URL validation error."""
-
-    pass
-
-
 class NoModuleDownloadMethodConfiguredError(TerraregError):
     """Module is not configured with a git URL and direct downloads are disabled"""
 

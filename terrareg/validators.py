@@ -1,5 +1,5 @@
 
-from terrareg.errors import GitUrlValidatorError
+from terrareg.errors import RepositoryUrlParseError
 
 class GitUrlValidator:
 
@@ -17,47 +17,47 @@ class GitUrlValidator:
         really_random_string = 'D3f1N1t3LyW0nt3x15t!'
         if requires_namespace_placeholder:
             if '{namespace}' not in self._template:
-                raise GitUrlValidatorError('Namespace placeholder not present in URL')
+                raise RepositoryUrlParseError('Namespace placeholder not present in URL')
             if really_random_string not in self._template.format(
                     namespace=really_random_string,
                     module='',
                     provider='',
                     path='',
                     tag=''):
-                raise GitUrlValidatorError('Template does not contain valid namespace placeholder')
+                raise RepositoryUrlParseError('Template does not contain valid namespace placeholder')
 
         if requires_module_placeholder:
             if '{module}' not in self._template:
-                raise GitUrlValidatorError('Module placeholder not present in URL')
+                raise RepositoryUrlParseError('Module placeholder not present in URL')
             if really_random_string not in self._template.format(
                     namespace='',
                     module=really_random_string,
                     provider='',
                     path='',
                     tag=''):
-                raise GitUrlValidatorError('Template does not contain valid module placeholder')
+                raise RepositoryUrlParseError('Template does not contain valid module placeholder')
 
         if requires_tag_placeholder:
             if '{tag}' not in self._template:
-                raise GitUrlValidatorError('tag placeholder not present in URL')
+                raise RepositoryUrlParseError('tag placeholder not present in URL')
             if really_random_string not in self._template.format(
                     namespace='',
                     module=really_random_string,
                     provider='',
                     path='',
                     tag=really_random_string):
-                raise GitUrlValidatorError('Template does not contain valid tag placeholder')
+                raise RepositoryUrlParseError('Template does not contain valid tag placeholder')
 
         if requires_path_placeholder:
             if '{path}' not in self._template:
-                raise GitUrlValidatorError('Path placeholder not present in URL')
+                raise RepositoryUrlParseError('Path placeholder not present in URL')
             if really_random_string not in self._template.format(
                     namespace='',
                     module='',
                     provider='',
                     path=really_random_string,
                     tag=''):
-                raise GitUrlValidatorError('Template does not contain valid path placeholder')
+                raise RepositoryUrlParseError('Template does not contain valid path placeholder')
 
     def get_value(self, namespace, module, provider, tag, path):
         """Return value with placeholders replaced."""
