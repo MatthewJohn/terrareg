@@ -6,9 +6,9 @@ import unittest.mock
 import pytest
 
 from terrareg.database import Database
-from terrareg.models import Module, ModuleProvider, ModuleVersion, Namespace
+from terrareg.models import GitProvider, Module, ModuleProvider, ModuleVersion, Namespace
 from terrareg.server import Server
-from .test_data import test_data_full
+from .test_data import test_data_full, test_git_providers
 
 
 class TerraregUnitTest:
@@ -47,6 +47,7 @@ def app_context():
     return TerraregUnitTest.get().SERVER._app.app_context()
 
 TEST_MODULE_DATA = {}
+TEST_GIT_PROVIDER_DATA = {}
 
 def setup_test_data(test_data=None):
     """Provide decorator to setup test data to be used for mocked objects."""
@@ -55,12 +56,22 @@ def setup_test_data(test_data=None):
         def wrapper(*args, **kwargs):
             global TEST_MODULE_DATA
             TEST_MODULE_DATA = dict(test_data if test_data else test_data_full)
+            global TEST_GIT_PROVIDER_DATA
+            TEST_GIT_PROVIDER_DATA = dict(test_git_providers)
             res = func(*args, **kwargs)
             TEST_MODULE_DATA = {}
+            TEST_GIT_PROVIDER_DATA = {}
             return res
         return wrapper
     return deco
 
+
+class MockGitProvider(GitProvider):
+    """Mocked GitProvider."""
+
+    def _get_db_row(self):
+        """Return mocked data for git provider."""
+        return TEST_GIT_PROVIDER_DATA.get(self._id, None)
 
 class MockModule(Module):
     """Mocked module."""
@@ -143,6 +154,12 @@ class MockModuleProvider(ModuleProvider):
                 'clone_url_template': None,
                 'browse_url_template': None
             }
+
+    def get_git_provider(self):
+        """Return Mocked git provider"""
+        if self._get_db_row()['git_provider_id']:
+            return MockGitProvider.get(self._get_db_row()['git_provider_id'])
+        return None
 
     def _get_db_row(self):
         """Return fake data in DB row."""

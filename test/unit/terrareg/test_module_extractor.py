@@ -18,9 +18,9 @@ class TestGitModuleExtractor(TerraregUnitTest):
     @pytest.mark.parametrize('module_provider_name,expected_git_url,expected_git_tag', [
         ('staticrepourl', 'git@localhost:7999/bla/test-module.git', 'v4.3.2'),
         ('placeholdercloneurl', 'git@localhost:7999/moduleextraction/gitextraction-placeholdercloneurl.git', 'v4.3.2'),
-        ('usesgitprovider', '', 'v4.3.2'),
-        ('nogittagformat', '', '4.3.2'),
-        ('complexgittagformat', '', 'unittest4.3.2value')
+        ('usesgitprovider', 'localhost.com/moduleextraction/gitextraction-usesgitprovider', 'v4.3.2'),
+        ('nogittagformat', 'localhost.com/moduleextraction/gitextraction-nogittagformat', '4.3.2'),
+        ('complexgittagformat', 'localhost.com/moduleextraction/gitextraction-complexgittagformat', 'unittest4.3.2value')
     ])
     @setup_test_data()
     def test__clone_repository(self, module_provider_name, expected_git_url, expected_git_tag):
