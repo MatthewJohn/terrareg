@@ -82,8 +82,8 @@ class GitProvider:
             with db.get_engine().connect() as conn:
                 conn.execute(upsert)
 
-    @staticmethod
-    def get_by_name(name):
+    @classmethod
+    def get_by_name(cls, name):
         """Return instance of git provider by name."""
         db = Database.get()
         # Obtain row from git providers table where name
@@ -98,13 +98,13 @@ class GitProvider:
         # If git provider found with name, return instance
         # of git provider object with ID
         if row:
-            return GitProvider(id=row['id'])
+            return cls(id=row['id'])
 
         # Otherwise return None
         return None
 
-    @staticmethod
-    def get_all():
+    @classmethod
+    def get_all(cls):
         """Return all repository providers."""
         db = Database.get()
         # Obtain row from git providers table where name
@@ -113,14 +113,14 @@ class GitProvider:
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
             return [
-                GitProvider(id=row['id'])
+                cls(id=row['id'])
                 for row in res
             ]
 
-    @staticmethod
-    def get(id):
+    @classmethod
+    def get(cls, id):
         """Create object and validate that it exists."""
-        git_provider = GitProvider(id=id)
+        git_provider = cls(id=id)
         if git_provider._get_db_row() is None:
             return None
         return git_provider
