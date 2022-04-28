@@ -6,9 +6,9 @@ import unittest.mock
 import pytest
 
 from terrareg.database import Database
-from terrareg.models import Module, ModuleProvider, ModuleVersion, Namespace
+from terrareg.models import GitProvider, Module, ModuleProvider, ModuleVersion, Namespace
 from terrareg.server import Server
-from .test_data import test_data_full
+from .test_data import test_data_full, test_git_providers
 
 
 class TerraregUnitTest:
@@ -47,6 +47,7 @@ def app_context():
     return TerraregUnitTest.get().SERVER._app.app_context()
 
 TEST_MODULE_DATA = {}
+TEST_GIT_PROVIDER_DATA = {}
 
 def setup_test_data(test_data=None):
     """Provide decorator to setup test data to be used for mocked objects."""
@@ -55,12 +56,22 @@ def setup_test_data(test_data=None):
         def wrapper(*args, **kwargs):
             global TEST_MODULE_DATA
             TEST_MODULE_DATA = dict(test_data if test_data else test_data_full)
+            global TEST_GIT_PROVIDER_DATA
+            TEST_GIT_PROVIDER_DATA = dict(test_git_providers)
             res = func(*args, **kwargs)
             TEST_MODULE_DATA = {}
+            TEST_GIT_PROVIDER_DATA = {}
             return res
         return wrapper
     return deco
 
+
+class MockGitProvider(GitProvider):
+    """Mocked GitProvider."""
+
+    def _get_db_row(self):
+        """Return mocked data for git provider."""
+        return TEST_GIT_PROVIDER_DATA.get(self._id, None)
 
 class MockModule(Module):
     """Mocked module."""
@@ -103,7 +114,9 @@ class MockModuleVersion(ModuleVersion):
             'version': self._version,
             'owner': self._unittest_data.get('owner', 'Mock Owner'),
             'description': self._unittest_data.get('description', 'Mock description'),
-            'source': self._unittest_data.get('source', 'http://mock.example.com/mockmodule'),
+            'repo_base_url_template': self._unittest_data.get('repo_base_url_template', None),
+            'repo_clone_url_template': self._unittest_data.get('repo_clone_url_template', None),
+            'repo_browse_url_template': self._unittest_data.get('repo_clone_url_template', None),
             'published_at': self._unittest_data.get(
                 'published_at',
                 datetime.datetime(year=2020, month=1, day=1,
@@ -138,8 +151,17 @@ class MockModuleProvider(ModuleProvider):
             TEST_MODULE_DATA[module._namespace.name][module.name][name] = {
                 'id': 99,
                 'latest_version': None,
-                'versions': {}
+                'versions': {},
+                'repo_base_url_template': None,
+                'repo_clone_url_template': None,
+                'repo_browse_url_template': None
             }
+
+    def get_git_provider(self):
+        """Return Mocked git provider"""
+        if self._get_db_row()['git_provider_id']:
+            return MockGitProvider.get(self._get_db_row()['git_provider_id'])
+        return None
 
     def _get_db_row(self):
         """Return fake data in DB row."""
@@ -151,7 +173,10 @@ class MockModuleProvider(ModuleProvider):
             'module': self._module.name,
             'provider': self.name,
             'verified': self._unittest_data.get('verified', False),
-            'repository_url': self._unittest_data.get('repository_url', None),
+            'repo_base_url_template': self._unittest_data.get('repo_base_url_template', None),
+            'repo_clone_url_template': self._unittest_data.get('repo_clone_url_template', None),
+            'repo_browse_url_template': self._unittest_data.get('repo_clone_url_template', None),
+            'git_provider_id': self._unittest_data.get('git_provider_id', None),
             'git_tag_format': self._unittest_data.get('git_tag_format', None)
         }
 
@@ -160,6 +185,11 @@ class MockModuleProvider(ModuleProvider):
         if 'latest_version' in self._unittest_data:
             return MockModuleVersion.get(module_provider=self, version=self._unittest_data['latest_version'])
         return None
+
+    def get_versions(self):
+        """Return all MockModuleVersion objects for ModuleProvider."""
+        return [MockModuleVersion(module_provider=self, version=version)
+                for version in self._unittest_data['versions']]
 
 class MockNamespace(Namespace):
     """Mocked namespace."""

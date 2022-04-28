@@ -4,6 +4,11 @@ import os
 DATA_DIRECTORY = os.path.join(os.environ.get('DATA_DIRECTORY', os.getcwd()), 'data')
 
 """
+Port for server to listen on.
+"""
+LISTEN_PORT = int(os.environ.get('LISTEN_PORT', 5000))
+
+"""
 Whether modules can be downloaded with terraform
 without specifying an identification string in
 the namespace
@@ -37,6 +42,12 @@ should be removed after analysis.
 If enabled, module versions with externally hosted artifacts cannot be re-analysed after upload. 
 """
 DELETE_EXTERNALLY_HOSTED_ARTIFACTS = os.environ.get('DELETE_EXTERNALLY_HOSTED_ARTIFACTS', 'False') == 'True'
+
+"""
+Whether uploaded modules can be downloaded directly.
+If disabled, all modules must be configured with a git URL.
+"""
+ALLOW_MODULE_HOSTING = os.environ.get('ALLOW_MODULE_HOSTING', 'True') == 'True'
 
 """
 Comma-seperated list of metadata attributes that each uploaded module _must_ contain, otherwise the upload is aborted.
@@ -102,3 +113,39 @@ E.g. If MODULES_DIRECTORY is set to 'modules', with the root module, the followi
 This can be set to an empty string, to expected submodules to be in the root directory of the parent module.
 """
 MODULES_DIRECTORY = os.environ.get('MODULES_DIRECTORY', 'modules')
+
+"""
+Git provider config.
+JSON list of known git providers.
+Each item in the list should contain the following attributes:
+ - name - Name of the git provider (e.g. 'Corporate Gitlab')
+
+ - base_url - Formatted base URL for project's repo.
+              (e.g. 'https://github.com/{namespace}/{module}'
+                 or 'https://gitlab.corporate.com/{namespace}/{module}')
+ - clone_url - Formatted clone URL for modules.
+               (e.g. 'ssh://gitlab.corporate.com/scm/{namespace}/{module}.git'
+                  or 'https://github.com/{namespace}/{module}-{provider}.git')
+               Note: Do not include '{version}' placeholder in the URL -
+               the git tag will be automatically provided.
+
+ - browse_url - Formatted URL for user-viewable source code
+                (e.g. 'https://github.com/{namespace}/{module}-{provider}/tree'
+                   or 'https://bitbucket.org/{namespace}/{module}/src/{version}')
+
+An example for public repositories might be:
+[{"name": "Github", "base_url": "https://github.com/{namespace}/{module}", "clone_url": "ssh://git@github.com:{namespace}/{module}.git", "browse_url": "https://github.com/{namespace}/{module}/tree/{tag}/{path}"},
+ {"name": "Bitbucket", "base_url": "https://bitbucket.org/{namespace}/{module}", "clone_url": "ssh://git@bitbucket.org:{namespace}/{module}-{provider}.git", "browse_url": "https://bitbucket.org/{namespace}/{module}-{provider}/src/{tag}/{path}"},
+ {"name": "Gitlab", "base_url": "https://gitlab.com/{namespace}/{module}", "clone_url": "ssh://git@gitlab.com:{namespace}/{module}-{provider}.git", "browse_url": "https://gitlab.com/{namespace}/{module}-{provider}/-/tree/{tag}/{path}"}]
+"""
+GIT_PROVIDER_CONFIG = os.environ.get('GIT_PROVIDER_CONFIG', '[]')
+
+"""
+Whether module providers can specify their own git repository source.
+"""
+ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER = os.environ.get('ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', 'True') == 'True'
+
+"""
+Whether module versions can specify git repository in terrareg config.
+"""
+ALLOW_CUSTOM_GIT_URL_MODULE_VERSION = os.environ.get('ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', 'True') == 'True'

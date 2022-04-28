@@ -25,7 +25,7 @@
         </p>
         <p>Published {{ module_version.publish_date_display }} by <a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></p>
         <p>{% if module_version.owner %}Module managed by {{ module_version.owner }}{% endif %}</p>
-        <p>{% if module_version.source_code_url %}Source Code: <a href="{{ module_version.source_code_url }}">{{ module_version.source_code_url }}</a>{% endif %}</p>
+        <p>{% if module_version.get_source_browse_url() %}Source Code: <a href="{{ module_version.get_source_browse_url() }}">{{ module_version.get_source_browse_url() }}</a>{% endif %}</p>
 
         <br />
 
@@ -47,5 +47,8 @@
     {% else %}
     <p>There are no published versions of this module.</p>
     {% endif %}
+
+    <br />
+    <br />
 
 {% endblock %}

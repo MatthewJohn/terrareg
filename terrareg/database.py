@@ -17,10 +17,18 @@ class Database():
 
     def __init__(self):
         """Setup member variables."""
+        self._git_provider = None
         self._module_provider = None
         self._module_version = None
         self._sub_module = None
         self._analytics = None
+
+    @property
+    def git_provider(self):
+        """Return git_provider table."""
+        if self._git_provider is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._git_provider
 
     @property
     def module_provider(self):
@@ -83,15 +91,34 @@ class Database():
         meta = self.get_meta()
         engine = self.get_engine()
 
+        self._git_provider = sqlalchemy.Table(
+            'git_provider', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column('name', sqlalchemy.String, unique=True),
+            sqlalchemy.Column('base_url_template', sqlalchemy.String),
+            sqlalchemy.Column('clone_url_template', sqlalchemy.String),
+            sqlalchemy.Column('browse_url_template', sqlalchemy.String)
+        )
+
         self._module_provider = sqlalchemy.Table(
             'module_provider', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
             sqlalchemy.Column('namespace', sqlalchemy.String),
             sqlalchemy.Column('module', sqlalchemy.String),
             sqlalchemy.Column('provider', sqlalchemy.String),
-            sqlalchemy.Column('repository_url', sqlalchemy.String),
+            sqlalchemy.Column('repo_base_url_template', sqlalchemy.String),
+            sqlalchemy.Column('repo_clone_url_template', sqlalchemy.String),
+            sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String),
             sqlalchemy.Column('git_tag_format', sqlalchemy.String),
             sqlalchemy.Column('verified', sqlalchemy.Boolean),
+            sqlalchemy.Column(
+                'git_provider_id',
+                sqlalchemy.ForeignKey(
+                    'git_provider.id',
+                    onupdate='CASCADE',
+                    ondelete='SET NULL'),
+                nullable=True
+            )
         )
 
         self._module_version = sqlalchemy.Table(
@@ -108,7 +135,9 @@ class Database():
             sqlalchemy.Column('version', sqlalchemy.String),
             sqlalchemy.Column('owner', sqlalchemy.String),
             sqlalchemy.Column('description', sqlalchemy.String),
-            sqlalchemy.Column('source', sqlalchemy.String),
+            sqlalchemy.Column('repo_base_url_template', sqlalchemy.String),
+            sqlalchemy.Column('repo_clone_url_template', sqlalchemy.String),
+            sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String),
             sqlalchemy.Column('published_at', sqlalchemy.DateTime),
             sqlalchemy.Column('readme_content', sqlalchemy.String),
             sqlalchemy.Column('module_details', sqlalchemy.String),

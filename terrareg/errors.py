@@ -112,3 +112,27 @@ class RepositoryDoesNotContainPathError(RepositoryUrlParseError):
     """Repository URL does not contain path."""
 
     pass
+
+
+class InvalidGitProviderConfigError(TerraregError):
+    """Invalid git provider config has been passed."""
+
+    pass
+
+
+class ModuleProviderCustomGitRepositoryUrlNotAllowedError(TerraregError):
+    """Module provider cannot set custom git URL."""
+
+    pass
+
+
+class ModuleVersionCustomGitRepositoryUrlNotAllowedError(TerraregError):
+    """Module provider cannot set custom git URL."""
+
+    pass
+
+
+class NoModuleDownloadMethodConfiguredError(TerraregError):
+    """Module is not configured with a git URL and direct downloads are disabled"""
+
+    pass

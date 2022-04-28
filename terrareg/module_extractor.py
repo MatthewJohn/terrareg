@@ -1,6 +1,5 @@
 """Provide extraction method of modules."""
 
-from concurrent.futures.process import _ThreadWakeup
 import os
 import tempfile
 import zipfile
@@ -148,7 +147,9 @@ class ModuleExtractor:
             # Terrareg meta-data
             owner=terrareg_metadata.get('owner', None),
             description=terrareg_metadata.get('description', None),
-            source=terrareg_metadata.get('source', None),
+            repo_clone_url_template=terrareg_metadata.get('repo_clone_url', None),
+            repo_browse_url_template=terrareg_metadata.get('repo_browse_url', None),
+            repo_base_url_template=terrareg_metadata.get('repo_base_url', None),
             variable_template=json.dumps(terrareg_metadata.get('variable_template', {})),
             artifact_location=terrareg_metadata.get('artifact_location', None),
             published=AUTO_PUBLISH_MODULE_VERSIONS
@@ -289,10 +290,14 @@ class GitModuleExtractor(ModuleExtractor):
         # Set SSH to autoaccept new host keys
         env['GIT_SSH_COMMAND'] = 'ssh -o StrictHostKeyChecking=accept-new'
 
+        git_url = self._module_version._module_provider.get_git_clone_url()
+        if git_url.startswith('ssh://'):
+            git_url = re.sub(r'^ssh://', '', git_url)
+
         subprocess.check_call([
             'git', 'clone', '--single-branch',
             '--branch', self._module_version.source_git_tag,
-            self._module_version._module_provider.repository_url,
+            git_url,
             self.extract_directory
         ], env=env)
 

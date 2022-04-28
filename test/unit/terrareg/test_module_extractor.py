@@ -6,21 +6,28 @@ import pytest
 
 from test.unit.terrareg import (
     MockNamespace, MockModule, MockModuleProvider,
-    MockModuleVersion, setup_test_data
+    MockModuleVersion, TerraregUnitTest, setup_test_data
 )
 from terrareg.models import Module, ModuleProvider, ModuleVersion, Namespace
 from terrareg.module_extractor import GitModuleExtractor
 
 
-class TestGitModuleExtractor:
+class TestGitModuleExtractor(TerraregUnitTest):
     """Test GitModuleExtractor class."""
 
+    @pytest.mark.parametrize('module_provider_name,expected_git_url,expected_git_tag', [
+        ('staticrepourl', 'git@localhost:7999/bla/test-module.git', 'v4.3.2'),
+        ('placeholdercloneurl', 'git@localhost:7999/moduleextraction/gitextraction-placeholdercloneurl.git', 'v4.3.2'),
+        ('usesgitprovider', 'localhost.com/moduleextraction/gitextraction-usesgitprovider', 'v4.3.2'),
+        ('nogittagformat', 'localhost.com/moduleextraction/gitextraction-nogittagformat', '4.3.2'),
+        ('complexgittagformat', 'localhost.com/moduleextraction/gitextraction-complexgittagformat', 'unittest4.3.2value')
+    ])
     @setup_test_data()
-    def test__clone_repository(self):
+    def test__clone_repository(self, module_provider_name, expected_git_url, expected_git_tag):
         """Test _clone_repository method"""
         namespace = MockNamespace(name='moduleextraction')
-        module = MockModule(namespace=namespace, name='test-module')
-        module_provider = MockModuleProvider(module=module, name='testprovider')
+        module = MockModule(namespace=namespace, name='gitextraction')
+        module_provider = MockModuleProvider(module=module, name=module_provider_name)
         module_version = MockModuleVersion(module_provider=module_provider, version='4.3.2')
 
         check_call_mock = unittest.mock.MagicMock()
@@ -32,8 +39,8 @@ class TestGitModuleExtractor:
         check_call_mock.assert_called_with([
             'git', 'clone',
             '--single-branch',
-            '--branch', '4.3.2',
-            'ssh://example.com/repo.git',
+            '--branch', expected_git_tag,
+            expected_git_url,
             module_extractor.extract_directory],
             env=unittest.mock.ANY)
         assert check_call_mock.call_args.kwargs['env']['GIT_SSH_COMMAND'] == 'ssh -o StrictHostKeyChecking=accept-new'

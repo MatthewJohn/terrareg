@@ -1,7 +1,17 @@
 
+test_git_providers = {
+    1: {
+        'name': 'testgitprovider',
+        'base_url_template': 'https://localhost.com/{namespace}/{module}-{provider}',
+        'browse_url_template': 'https://localhost.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
+        'clone_url_template': 'ssh://localhost.com/{namespace}/{module}-{provider}'
+    }
+}
+
 test_data_full = {
     'testnamespace': {
         'testmodulename': {'testprovider': {
+            'repo_base_url_template': 'http://mock.example.com/mockmodule',
             'id': 1,
             'latest_version': '2.4.1',
             'verified': True,
@@ -16,6 +26,7 @@ test_data_full = {
         'mock-module': {'testprovider': {
             'id': 3,
             'verified': True,
+            'repo_base_url_template': 'http://github.com/{namespace}/{module}',
             'latest_version': '1.2.3',
             'versions': {'1.2.3': {}}
         }},
@@ -33,7 +44,7 @@ test_data_full = {
         'modulewithrepourl': {'testprovider': {
             'id': 6,
             'latest_version': '2.1.0',
-            'repository_url': 'https://github.com/test/test.git',
+            'repo_clone_url_template': 'https://github.com/test/test.git',
             'versions': {'2.1.0': {}}
         }},
         'modulenotpublished': {'testprovider': {
@@ -54,13 +65,44 @@ test_data_full = {
     'moduleextraction': {
         'test-module': { 'testprovider': {
             'id': 7,
-            'repository_url': 'ssh://example.com/repo.git'
+            'repo_clone_url_template': 'ssh://example.com/repo.git'
         }},
         'bitbucketexample': {
             'testprovider': {
                 'id': 8,
-                'repository_url': 'ssh://git@localhost:7999/bla/test-module.git',
+                'repo_clone_url_template': 'ssh://git@localhost:7999/bla/test-module.git',
                 'git_tag_format': 'v{version}',
+                'versions': []
+            }
+        },
+        'gitextraction': {
+            'staticrepourl': {
+                'id': 8,
+                'repo_clone_url_template': 'ssh://git@localhost:7999/bla/test-module.git',
+                'git_tag_format': 'v{version}',
+                'versions': []
+            },
+            'placeholdercloneurl': {
+                'id': 8,
+                'repo_clone_url_template': 'ssh://git@localhost:7999/{namespace}/{module}-{provider}.git',
+                'git_tag_format': 'v{version}',
+                'versions': []
+            },
+            'usesgitprovider': {
+                'id': 9,
+                'git_provider_id': 1,
+                'git_tag_format': 'v{version}',
+                'versions': []
+            },
+            'nogittagformat': {
+                'id': 9,
+                'git_provider_id': 1,
+                'versions': []
+            },
+            'complexgittagformat': {
+                'id': 9,
+                'git_provider_id': 1,
+                'git_tag_format': 'unittest{version}value',
                 'versions': []
             },
             'norepourl': {

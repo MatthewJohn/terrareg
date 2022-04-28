@@ -24,14 +24,14 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
                 unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
 
             res = client.post(
                 '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/create',
                 json={
                     'git_tag_format': 'gittag',
-                    'repository_url': 'https://github.com/unit/test',
+                    'repo_clone_url_template': 'https://github.com/unit/test',
                     'csrf_token': 'unittestcsrf'
                 }
             )
@@ -41,7 +41,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
             # Ensure required checks are called
             mock_check_csrf.assert_called_once_with('unittestcsrf')
             mocked_check_admin_authentication.assert_called()
-            mock_update_repository_url.assert_not_called()
+            mock_update_repo_clone_url_template.assert_not_called()
             mock_update_git_tag_format.assert_not_called()
 
     @setup_test_data()
@@ -53,7 +53,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
                 unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
 
             res = client.post(
@@ -69,7 +69,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
             # Ensure required checks are called
             mock_check_csrf.assert_called_once_with('unittestcsrf')
             mocked_check_admin_authentication.assert_called()
-            mock_update_repository_url.assert_not_called()
+            mock_update_repo_clone_url_template.assert_not_called()
             mock_update_git_tag_format.assert_not_called()
 
             ns = MockNamespace(name='newnamespace')
@@ -83,13 +83,13 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
                 unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.models.ModuleProvider.update_repository_url') as mock_update_repository_url, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
 
             res = client.post(
                 '/v1/terrareg/modules/newns/newm/newp/create',
                 json={
-                    'repository_url': 'https://unittest.com/module.git',
+                    'repo_clone_url_template': 'https://unittest.com/module.git',
                     'git_tag_format': 'unitv{version}test',
                     'csrf_token': 'unittestcsrf'
                 }
@@ -100,5 +100,5 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
             # Ensure required checks are called
             mock_check_csrf.assert_called_once_with('unittestcsrf')
             mocked_check_admin_authentication.assert_called()
-            mock_update_repository_url.assert_called_once_with(repository_url='https://unittest.com/module.git')
+            mock_update_repo_clone_url_template.assert_called_once_with(repo_clone_url_template='https://unittest.com/module.git')
             mock_update_git_tag_format.assert_called_once_with(git_tag_format='unitv{version}test')
