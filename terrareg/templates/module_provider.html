@@ -49,39 +49,6 @@
     {% endif %}
 
     <br />
-
-
-    <script>
-        function indexModuleVersion() {
-            $.post(
-                `/v1/terrareg/modules/{{ module_provider.id }}/${$('#indexModuleVersion').val()}/import`
-            ).done(() => {
-                $('#index-version-success').css('display', 'block');
-                $('#index-version-error').css('display', 'none');
-            }).fail((res) => {
-                if (res.responseJSON && res.responseJSON.message) {
-                    $('#index-version-error').html(res.responseJSON.message);
-                } else {
-                    $('#index-version-error').html('An unexpected error occurred');
-                }
-                $('#index-version-error').css('display', 'block');
-            });
-        }
-    </script>
-    <div id="index-version-success" style="display: none" class="notification is-success">
-        Successfully indexed version
-    </div>
-    <div id="index-version-error" style="display: none" class="notification is-danger">
-    </div>
-    <div class="field has-addons">
-        <div class="control">
-            <input id="indexModuleVersion" class="input is-small" type="text" size="5" placeholder="1.0.0">
-        </div>
-        <div class="control">
-            <a onclick="indexModuleVersion();" class="button is-info is-small">
-            Index Version
-            </a>
-        </div>
-    </div>
+    <br />
 
 {% endblock %}

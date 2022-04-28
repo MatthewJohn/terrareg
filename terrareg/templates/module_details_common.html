@@ -191,6 +191,11 @@ module "{{ module.name }}" {
                 </li>
             {% endif %}
         {% endif %}
+        <li id="indexVersionTabButton" class="module-tab-link">
+            <a onclick="selectModuleTab(event, 'indexVersion')">
+                Index Version
+            </a>
+        </li>
         <li style="display: none" id="settingsTabButton" class="module-tab-link">
             <a onclick="selectModuleTab(event, 'settings')">
                 Settings
@@ -335,6 +340,64 @@ module "{{ module.name }}" {
         </div>
         {% endif %}
         {% endif %}
+
+        <!-- Index version tab -->
+        <div id="module-tab-indexVersion" class="module-tabs" style="display: none;">
+            <script>
+                function indexModuleVersion() {
+                    let moduleVersionToIndex = $('#indexModuleVersion').val();
+                    $.post(
+                        `/v1/terrareg/modules/{{ module_provider.id }}/${moduleVersionToIndex}/import`
+                    ).done(() => {
+                        $('#index-version-success').html('Successfully indexed version');
+                        $('#index-version-success').css('display', 'block');
+                        $('#index-version-error').css('display', 'none');
+                        if ($('#indexModuleVersionPublish').is(':checked')) {
+                            $.post(
+                                `/v1/terrareg/modules/{{ module_provider.id }}/${moduleVersionToIndex}/publish`
+                            ).done(() => {
+                                $('#index-version-success').html('Successfully indexed and published version.');
+                            }).fail((res) => {
+                                if (res.responseJSON && res.responseJSON.message) {
+                                    $('#index-version-error').html(res.responseJSON.message);
+                                } else {
+                                    $('#index-version-error').html('An unexpected error occurred when publishing module version');
+                                }
+                                $('#index-version-error').css('display', 'block');
+                            });
+                        }
+                    }).fail((res) => {
+                        if (res.responseJSON && res.responseJSON.message) {
+                            $('#index-version-error').html(res.responseJSON.message);
+                        } else {
+                            $('#index-version-error').html('An unexpected error occurred');
+                        }
+                        $('#index-version-error').css('display', 'block');
+                    });
+                }
+            </script>
+            Index Module Version
+            <div id="index-version-success" style="display: none" class="notification is-success">
+                Successfully indexed version
+            </div>
+            <div id="index-version-error" style="display: none" class="notification is-danger">
+            </div>
+            <div class="field is-vertical">
+                <label class="label">Version</label>
+                <div class="control">
+                    <input id="indexModuleVersion" class="input is-small" type="text" size="5" placeholder="1.0.0">
+                </div>
+                <label class="checkbox">
+                    <input id="indexModuleVersionPublish" type="checkbox" value="true">
+                    Publish
+                </label>
+                <div class="control">
+                    <a onclick="indexModuleVersion();" class="button is-info is-small">
+                    Index Version
+                    </a>
+                </div>
+            </div>
+        </div>
 
         <!-- Module settings tab -->
         <div id="module-tab-settings" class="module-tabs" style="display: none;">
