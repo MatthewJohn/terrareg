@@ -26,7 +26,7 @@ class TestApiModuleProviderDetails(TerraregUnitTest):
                 'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],
                 'provider_dependencies': [], 'resources': []
             },
-            'submodules': [], 'providers': ['testprovider'], 'versions': []
+            'submodules': [], 'providers': ['testprovider'], 'versions': ['1.2.3']
         }
 
         assert res.status_code == 200
@@ -48,7 +48,7 @@ class TestApiModuleProviderDetails(TerraregUnitTest):
                 'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],
                 'provider_dependencies': [], 'resources': []
             },
-            'submodules': [], 'providers': ['testprovider'], 'versions': []
+            'submodules': [], 'providers': ['testprovider'], 'versions': ['1.2.3']
         }
 
         assert res.status_code == 200
