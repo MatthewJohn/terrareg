@@ -507,8 +507,8 @@ class ModuleProvider(object):
         template = None
 
         # Check if allowed and module provider has custom git URL
-        if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._get_db_row()['clone_url_template']:
-            template = self._get_db_row()['clone_url_template']
+        if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._get_db_row()['repo_clone_url_template']:
+            template = self._get_db_row()['repo_clone_url_template']
 
         # Otherwise, check if module provider is configured with git provider
         elif self.get_git_provider():
@@ -555,15 +555,15 @@ class ModuleProvider(object):
             sanitised_git_tag_format = None
         self.update_attributes(git_tag_format=sanitised_git_tag_format)
 
-    def update_clone_url_template(self, clone_url_template):
+    def update_repo_clone_url_template(self, repo_clone_url_template):
         """Update repository URL for module provider."""
         if not ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
             raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
                 'Custom module provider git repository URL cannot be set.'
             )
 
-        if clone_url_template:
-            converted_template = clone_url_template.format(
+        if repo_clone_url_template:
+            converted_template = repo_clone_url_template.format(
                 namespace=self._module._namespace.name,
                 module=self._module.name,
                 provider=self.name)
@@ -586,24 +586,24 @@ class ModuleProvider(object):
                     'Repository URL does not contain a path'
                 )
 
-            clone_url_template = urllib.parse.quote(clone_url_template, safe='\{\}/:@%?=')
+            repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe='\{\}/:@%?=')
 
-        self.update_attributes(clone_url_template=clone_url_template)
+        self.update_attributes(repo_clone_url_template=repo_clone_url_template)
 
-    def update_browse_url_template(self, browse_url_template):
+    def update_repo_browse_url_template(self, repo_browse_url_template):
         """Update browse URL template for module provider."""
         if not ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
             raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
                 'Custom module provider git repository URL cannot be set.'
             )
 
-        if browse_url_template:
-            GitUrlValidator(browse_url_template).validate(
+        if repo_browse_url_template:
+            GitUrlValidator(repo_browse_url_template).validate(
                 requires_path_placeholder=True,
                 requires_tag_placeholder=True
             )
 
-            converted_template = browse_url_template.format(
+            converted_template = repo_browse_url_template.format(
                 namespace=self._module._namespace.name,
                 module=self._module.name,
                 provider=self.name)
@@ -626,24 +626,24 @@ class ModuleProvider(object):
                     'Repository URL does not contain a path'
                 )
 
-            browse_url_template = urllib.parse.quote(browse_url_template, safe='\{\}/:@%?=')
+            repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe='\{\}/:@%?=')
 
-        self.update_attributes(browse_url_template=browse_url_template)
+        self.update_attributes(repo_browse_url_template=repo_browse_url_template)
 
-    def update_base_url_template(self, base_url_template):
+    def update_repo_base_url_template(self, repo_base_url_template):
         """Update browse URL template for module provider."""
         if not ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
             raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
                 'Custom module provider git repository URL cannot be set.'
             )
 
-        if base_url_template:
-            GitUrlValidator(base_url_template).validate(
+        if repo_base_url_template:
+            GitUrlValidator(repo_base_url_template).validate(
                 requires_path_placeholder=True,
                 requires_tag_placeholder=True
             )
 
-            converted_template = base_url_template.format(
+            converted_template = repo_base_url_template.format(
                 namespace=self._module._namespace.name,
                 module=self._module.name,
                 provider=self.name)
@@ -666,9 +666,9 @@ class ModuleProvider(object):
                     'Repository URL does not contain a path'
                 )
 
-            base_url_template = urllib.parse.quote(base_url_template, safe='\{\}/:@%?=')
+            repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe='\{\}/:@%?=')
 
-        self.update_attributes(base_url_template=base_url_template)
+        self.update_attributes(repo_base_url_template=repo_base_url_template)
 
     def get_view_url(self):
         """Return view URL"""
@@ -1003,16 +1003,12 @@ class ModuleVersion(TerraformSpecsObject):
         template = None
 
         # Check if allowed, and module version has custom git URL
-        if ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['clone_url_template']:
-            template = self._get_db_row()['clone_url_template']
+        if ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['repo_clone_url_template']:
+            template = self._get_db_row()['repo_clone_url_template']
 
         # Otherwise, get git clone URL from module provider
         elif self._module_provider.get_git_clone_url():
             template = self._module_provider.get_git_clone_url()
-
-        # Otherwise, check if module provider is configured with git provider
-        elif self._module_provider.get_git_provider():
-            template = self._module_provider.get_git_provider().clone_url_template
 
         # Return rendered version of template
         if template:
@@ -1067,12 +1063,12 @@ class ModuleVersion(TerraformSpecsObject):
         template = None
 
         # Check if allowed, and module version has custom git URL
-        if ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['browse_url_template']:
-            template = self._get_db_row()['browse_url_template']
+        if ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['repo_browse_url_template']:
+            template = self._get_db_row()['repo_browse_url_template']
 
         # Otherwise, check if allowed and module provider has custom git URL
-        elif ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._module_provider._get_db_row()['browse_url_template']:
-            template = self._module_provider._get_db_row()['browse_url_template']
+        elif ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._module_provider._get_db_row()['repo_browse_url_template']:
+            template = self._module_provider._get_db_row()['repo_browse_url_template']
 
         # Otherwise, check if module provider is configured with git provider
         elif self._module_provider.get_git_provider():
@@ -1095,12 +1091,12 @@ class ModuleVersion(TerraformSpecsObject):
         template = None
 
         # Check if allowed, and module version has custom git URL
-        if ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['base_url_template']:
-            template = self._get_db_row()['base_url_template']
+        if ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['repo_base_url_template']:
+            template = self._get_db_row()['repo_base_url_template']
 
         # Otherwise, check if allowed and module provider has custom git URL
-        elif ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._module_provider._get_db_row()['base_url_template']:
-            template = self._module_provider._get_db_row()['base_url_template']
+        elif ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._module_provider._get_db_row()['repo_base_url_template']:
+            template = self._module_provider._get_db_row()['repo_base_url_template']
 
         # Otherwise, check if module provider is configured with git provider
         elif self._module_provider.get_git_provider():

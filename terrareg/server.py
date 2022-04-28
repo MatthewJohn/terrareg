@@ -1075,21 +1075,21 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
             location='json'
         )
         parser.add_argument(
-            'base_url_template', type=str,
+            'repo_base_url_template', type=str,
             required=False,
             default=None,
             help='Templated base git URL.',
             location='json'
         )
         parser.add_argument(
-            'clone_url_template', type=str,
+            'repo_clone_url_template', type=str,
             required=False,
             default=None,
             help='Templated git clone URL.',
             location='json'
         )
         parser.add_argument(
-            'browse_url_template', type=str,
+            'repo_browse_url_template', type=str,
             required=False,
             default=None,
             help='Templated URL for browsing repository.',
@@ -1135,42 +1135,42 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
             module_provider.update_git_provider(git_provider=git_provider)
 
         # Ensure base repository URL is parsable
-        base_url_template = args.base_url_template
+        repo_base_url_template = args.repo_base_url_template
         # If the argument is None, assume it's not being updated,
         # as this is the default value for the arg parser.
-        if base_url_template is not None:
-            if base_url_template == '':
+        if repo_base_url_template is not None:
+            if repo_base_url_template == '':
                 # If repository URL is empty, set to None
-                base_url_template = None
+                repo_base_url_template = None
 
             try:
-                module_provider.update_base_url_template(base_url_template=base_url_template)
+                module_provider.update_repo_base_url_template(repo_base_url_template=repo_base_url_template)
             except RepositoryUrlParseError as exc:
                 return {'message': str(exc)}, 400
 
         # Ensure repository URL is parsable
-        clone_url_template = args.clone_url_template
+        repo_clone_url_template = args.repo_clone_url_template
         # If the argument is None, assume it's not being updated,
         # as this is the default value for the arg parser.
-        if clone_url_template is not None:
-            if clone_url_template == '':
+        if repo_clone_url_template is not None:
+            if repo_clone_url_template == '':
                 # If repository URL is empty, set to None
-                clone_url_template = None
+                repo_clone_url_template = None
 
             try:
-                module_provider.update_clone_url_template(clone_url_template=clone_url_template)
+                module_provider.update_repo_clone_url_template(repo_clone_url_template=repo_clone_url_template)
             except RepositoryUrlParseError as exc:
                 return {'message': str(exc)}, 400
 
         # Ensure repository URL is parsable
-        browse_url_template = args.browse_url_template
-        if browse_url_template is not None:
-            if browse_url_template == '':
+        repo_browse_url_template = args.repo_browse_url_template
+        if repo_browse_url_template is not None:
+            if repo_browse_url_template == '':
                 # If repository URL is empty, set to None
-                browse_url_template = None
+                repo_browse_url_template = None
 
             try:
-                module_provider.update_browse_url_template(browse_url_template=browse_url_template)
+                module_provider.update_repo_browse_url_template(repo_browse_url_template=repo_browse_url_template)
             except RepositoryUrlParseError as exc:
                 return {'message': str(exc)}, 400
 
@@ -1200,21 +1200,21 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             location='json'
         )
         parser.add_argument(
-            'base_url_template', type=str,
+            'repo_base_url_template', type=str,
             required=False,
             default=None,
             help='Templated base git repository URL.',
             location='json'
         )
         parser.add_argument(
-            'clone_url_template', type=str,
+            'repo_clone_url_template', type=str,
             required=False,
             default=None,
             help='Templated git clone URL.',
             location='json'
         )
         parser.add_argument(
-            'browse_url_template', type=str,
+            'repo_browse_url_template', type=str,
             required=False,
             default=None,
             help='Templated URL for browsing repository.',
@@ -1264,42 +1264,42 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             module_provider.update_git_provider(git_provider=git_provider)
 
         # Ensure base URL is parsable
-        base_url_template = args.base_url_template
+        repo_base_url_template = args.repo_base_url_template
         # If the argument is None, assume it's not being updated,
         # as this is the default value for the arg parser.
-        if base_url_template is not None:
-            if base_url_template == '':
+        if repo_base_url_template is not None:
+            if repo_base_url_template == '':
                 # If repository URL is empty, set to None
-                base_url_template = None
+                repo_base_url_template = None
 
             try:
-                module_provider.update_base_url_template(base_url_template=base_url_template)
+                module_provider.update_repo_base_url_template(repo_base_url_template=repo_base_url_template)
             except RepositoryUrlParseError as exc:
                 return {'message': str(exc)}, 400
 
         # Ensure repository URL is parsable
-        clone_url_template = args.clone_url_template
+        repo_clone_url_template = args.repo_clone_url_template
         # If the argument is None, assume it's not being updated,
         # as this is the default value for the arg parser.
-        if clone_url_template is not None:
-            if clone_url_template == '':
+        if repo_clone_url_template is not None:
+            if repo_clone_url_template == '':
                 # If repository URL is empty, set to None
-                clone_url_template = None
+                repo_clone_url_template = None
 
             try:
-                module_provider.update_clone_url_template(clone_url_template=clone_url_template)
+                module_provider.update_repo_clone_url_template(repo_clone_url_template=repo_clone_url_template)
             except RepositoryUrlParseError as exc:
                 return {'message': str(exc)}, 400
 
         # Ensure repository URL is parsable
-        browse_url_template = args.browse_url_template
-        if browse_url_template is not None:
-            if browse_url_template == '':
+        repo_browse_url_template = args.repo_browse_url_template
+        if repo_browse_url_template is not None:
+            if repo_browse_url_template == '':
                 # If repository URL is empty, set to None
-                browse_url_template = None
+                repo_browse_url_template = None
 
             try:
-                module_provider.update_browse_url_template(browse_url_template=browse_url_template)
+                module_provider.update_repo_browse_url_template(repo_browse_url_template=repo_browse_url_template)
             except RepositoryUrlParseError as exc:
                 return {'message': str(exc)}, 400
 

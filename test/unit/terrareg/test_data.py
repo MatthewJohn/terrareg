@@ -63,12 +63,12 @@ test_data_full = {
     'moduleextraction': {
         'test-module': { 'testprovider': {
             'id': 7,
-            'clone_url_template': 'ssh://example.com/repo.git'
+            'repo_clone_url_template': 'ssh://example.com/repo.git'
         }},
         'bitbucketexample': {
             'testprovider': {
                 'id': 8,
-                'clone_url_template': 'ssh://git@localhost:7999/bla/test-module.git',
+                'repo_clone_url_template': 'ssh://git@localhost:7999/bla/test-module.git',
                 'git_tag_format': 'v{version}',
                 'versions': []
             }
@@ -76,13 +76,13 @@ test_data_full = {
         'gitextraction': {
             'staticrepourl': {
                 'id': 8,
-                'clone_url_template': 'ssh://git@localhost:7999/bla/test-module.git',
+                'repo_clone_url_template': 'ssh://git@localhost:7999/bla/test-module.git',
                 'git_tag_format': 'v{version}',
                 'versions': []
             },
             'placeholdercloneurl': {
                 'id': 8,
-                'clone_url_template': 'ssh://git@localhost:7999/{namespace}/{module}-{provider}.git',
+                'repo_clone_url_template': 'ssh://git@localhost:7999/{namespace}/{module}-{provider}.git',
                 'git_tag_format': 'v{version}',
                 'versions': []
             },
