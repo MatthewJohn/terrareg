@@ -370,7 +370,7 @@ module "{{ module.name }}" {
                         if (res.responseJSON && res.responseJSON.message) {
                             $('#index-version-error').html(res.responseJSON.message);
                         } else {
-                            $('#index-version-error').html('An unexpected error occurred');
+                            $('#index-version-error').html('An unexpected error occurred when indexing module');
                         }
                         $('#index-version-error').css('display', 'block');
                     });
