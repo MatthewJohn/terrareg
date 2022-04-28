@@ -130,7 +130,7 @@ An example for public repositories might be:
  {"name": "Bitbucket", "clone_url": "ssh://git@bitbucket.org:{namespace}/{module}-{provider}.git", "browse_url": "https://bitbucket.org/{namespace}/{module}-{provider}/src/{version}/{path}"},
  {"name": "Gitlab", "clone_url": "ssh://git@gitlab.com:{namespace}/{module}-{provider}.git", "browse_url": "https://gitlab.com/{namespace}/{module}-{provider}/-/tree/{version}/{path}"}]
 """
-GIT_PROVIDER_CONFIG = os.environ.get('GIT_PROVIDER_CONFIG', '')
+GIT_PROVIDER_CONFIG = os.environ.get('GIT_PROVIDER_CONFIG', '[]')
 
 """
 Whether module providers can specify their own git repository source.
