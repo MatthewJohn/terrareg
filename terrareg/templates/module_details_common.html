@@ -388,7 +388,7 @@ module "{{ module.name }}" {
                         NOTE: Setting this field will override the repository provider configuration.
                     </div>
                     <div class="field">
-                        <label class="label">Custom Repository URL</label>
+                        <label class="label">Custom Repository Clone URL</label>
                         <div class="control">
                             <input placeholder="ssh://git@github.com/{{ namespace.name }}/{{ module.name }}-{{ module_provider.name }}.git" class="input" type="text" value="{{ module_provider._get_db_row()['repo_clone_url_template'] or '' }}" id="settings-clone-url-template">
                         </div>
@@ -398,7 +398,7 @@ module "{{ module.name }}" {
                         NOTE: Setting this field will override the repository provider configuration.
                     </div>
                     <div class="field">
-                        <label class="label">Custom Repository browse URL</label>
+                        <label class="label">Custom Repository source browse URL</label>
                         <div class="control">
                             <input placeholder="https://github.com/{{ namespace.name }}/{{ module.name }}-{{ module_provider.name }}/tree/{tag}/{path}" class="input" type="text" value="{{ module_provider._get_db_row()['repo_browse_url_template'] or '' }}" id="settings-browse-url-template">
                         </div>
