@@ -139,7 +139,9 @@ class MockModuleProvider(ModuleProvider):
             TEST_MODULE_DATA[module._namespace.name][module.name][name] = {
                 'id': 99,
                 'latest_version': None,
-                'versions': {}
+                'versions': {},
+                'clone_url_template': None,
+                'browse_url_template': None
             }
 
     def _get_db_row(self):

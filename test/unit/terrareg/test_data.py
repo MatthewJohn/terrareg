@@ -1,4 +1,12 @@
 
+test_git_providers = {
+    1: {
+        'name': 'testgitprovider',
+        'browse_url_template': 'https://localhost.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
+        'clone_url_template': 'ssh://localhost.com/{namespace}/{module}-{provider}'
+    }
+}
+
 test_data_full = {
     'testnamespace': {
         'testmodulename': {'testprovider': {
@@ -54,13 +62,44 @@ test_data_full = {
     'moduleextraction': {
         'test-module': { 'testprovider': {
             'id': 7,
-            'repository_url': 'ssh://example.com/repo.git'
+            'clone_url_template': 'ssh://example.com/repo.git'
         }},
         'bitbucketexample': {
             'testprovider': {
                 'id': 8,
-                'repository_url': 'ssh://git@localhost:7999/bla/test-module.git',
+                'clone_url_template': 'ssh://git@localhost:7999/bla/test-module.git',
                 'git_tag_format': 'v{version}',
+                'versions': []
+            }
+        },
+        'gitextraction': {
+            'staticrepourl': {
+                'id': 8,
+                'clone_url_template': 'ssh://git@localhost:7999/bla/test-module.git',
+                'git_tag_format': 'v{version}',
+                'versions': []
+            },
+            'placeholdercloneurl': {
+                'id': 8,
+                'clone_url_template': 'ssh://git@localhost:7999/{namespace}/{module}-{provider}.git',
+                'git_tag_format': 'v{version}',
+                'versions': []
+            },
+            'usesgitprovider': {
+                'id': 9,
+                'git_provider_id': 1,
+                'git_tag_format': 'v{version}',
+                'versions': []
+            },
+            'nogittagformat': {
+                'id': 9,
+                'git_provider_id': 1,
+                'versions': []
+            },
+            'complexgittagformat': {
+                'id': 9,
+                'git_provider_id': 1,
+                'git_tag_format': 'unittest{version}value',
                 'versions': []
             },
             'norepourl': {
