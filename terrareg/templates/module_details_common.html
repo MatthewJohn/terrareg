@@ -55,7 +55,9 @@
         $.post({
             url: '/v1/terrareg/modules/{{ module_provider.id }}/settings',
             data: JSON.stringify({
-                repository_url: $('#settings-repository-url').val(),
+                repository_provider: $('select[id=settings-repository-provider] option').filter(':selected').val(),
+                clone_url_template: $('#settings-clone-url-template').val(),
+                browse_url_template: $('#settings-browse-url-template').val(),
                 git_tag_format: $('#settings-git-tag-format').val(),
                 verified: $('#settings-verified').is(':checked'),
                 csrf_token: '{{ csrf_token }}'
@@ -346,11 +348,56 @@ module "{{ module.name }}" {
                     </div>
 
                     <div class="field">
-                        <label class="label">Repository URL</label>
-                        <div class="control">
-                            <input placeholder="ssh://git@github.com/{{ namespace.name }}/{{ module.name }}" class="input" type="text" value="{{ module_provider.repository_url or '' }}" id="settings-repository-url">
+                        <label class="label">Git Repository Provider</label>
+                        <div class="control select">
+                            <select id="settings-repository-provider">
+
+                                {% if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER or ALLOW_CUSTOM_GIT_URL_MODULE_VERSION %}
+                                <option value=""
+                                        {% if not module_provider.get_git_provider() %}
+                                        selected
+                                        {% endif %}>
+                                    Custom
+                                </option>
+                                {% endif %}
+
+                                {% for git_provider in git_providers %}
+                                <option
+                                    value="{{ git_provider.pk }}"
+                                    {% if module_provider.get_git_provider() and
+                                        module_provider.get_git_provider().name == git_provider.name
+                                        %}selected{% endif %}>
+
+                                    {{ git_provider.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
+
+                    {% if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER %}
+                    <div class="field">
+                        <label class="label">Custom Repository URL</label>
+                        <div class="control">
+                            <input placeholder="ssh://git@github.com/{{ namespace.name }}/{{ module.name }}-{{ module_provider.name }}.git" class="input" type="text" value="{{ module_provider._get_db_row()['clone_url_template'] or '' }}" id="settings-clone-url-template">
+                        </div>
+                        This URL must be valid for cloning the repository.<br />
+                        It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>>.<br />
+                        E.g. <code>ssh://git@github.com/{namespace}/{module}-{provider}.git</code><br />
+                        NOTE: Setting this field will override the repository provider configuration.
+                    </div>
+                    <div class="field">
+                        <label class="label">Custom Repository browse URL</label>
+                        <div class="control">
+                            <input placeholder="https://github.com/{{ namespace.name }}/{{ module.name }}-{{ module_provider.name }}/tree/{tag}/{path}" class="input" type="text" value="{{ module_provider._get_db_row()['clone_url_template'] or '' }}" id="settings-browse-url-template">
+                        </div>
+                        This URL must be valid for browsing the source code of the repository.<br />
+                        It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                        It must include the following template values: <code>code>{tag}</code> and {path}</code><br />
+                        E.g. <code>https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}</code><br />
+                        NOTE: Setting this field will override the repository provider configuration.
+                    </div>
+                    {% endif %}
 
                     <div class="field">
                         <label class="label">Git tag format</label>
@@ -359,7 +406,7 @@ module "{{ module.name }}" {
                         </div>
                         This value will be converted to the expected git tag for a module version.<br />
                         {version} will be replaced by the actual module version.<br />
-                        For example 'v{version}' will translate to a git tag v1.1.1 for module version 1.1.1
+                        For example <code>v{version}</code> will translate to a git tag 'v1.1.1' for module version '1.1.1'
                     </div>
     
                     <div class="field">

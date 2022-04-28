@@ -103,6 +103,20 @@ class GitProvider:
         # Otherwise return None
         return None
 
+    @staticmethod
+    def get_all():
+        """Return all repository providers."""
+        db = Database.get()
+        # Obtain row from git providers table where name
+        # matches git provider name
+        select = db.git_provider.select()
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+            return [
+                GitProvider(id=row['id'])
+                for row in res
+            ]
+
     @property
     def pk(self):
         """Return DB ID for git provider."""
@@ -112,6 +126,11 @@ class GitProvider:
     def clone_url_template(self):
         """Return clone_url_template for git provider."""
         return self._get_db_row()['clone_url_template']
+
+    @property
+    def name(self):
+        """Return name for git provider."""
+        return self._get_db_row()['name']
 
     @property
     def browse_url(self):

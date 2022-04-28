@@ -30,8 +30,12 @@ from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ApiUploadModuleExtractor, GitModuleExtractor
 from terrareg.analytics import AnalyticsEngine
 from terrareg.filters import NamespaceTrustFilter
-from terrareg.config import ALLOW_MODULE_HOSTING, APPLICATION_NAME, LOGO_URL
-
+from terrareg.config import (
+    ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+    ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
+    ALLOW_MODULE_HOSTING,
+    APPLICATION_NAME, LOGO_URL
+)
 
 class Server(object):
     """Manage web server and route requests"""
@@ -247,7 +251,6 @@ class Server(object):
             csrf_token=get_csrf_token()
         )
 
-
     def run(self):
         """Run flask server."""
         kwargs = {
@@ -347,7 +350,10 @@ class Server(object):
             module_provider=module_provider,
             module_version=module_version,
             current_module=module_version,
-            server_hostname=request.host
+            server_hostname=request.host,
+            git_providers=GitProvider.get_all(),
+            ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
 
     def _view_serve_submodule(self, namespace, name, provider, version, submodule_path):
@@ -370,7 +376,10 @@ class Server(object):
             module_version=module_version,
             submodule=submodule,
             current_module=submodule,
-            server_hostname=request.host
+            server_hostname=request.host,
+            git_providers=GitProvider.get_all(),
+            ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
 
     def _view_serve_module_search(self):
