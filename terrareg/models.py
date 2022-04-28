@@ -413,11 +413,6 @@ class ModuleProvider(object):
         return self._get_db_row()['verified']
 
     @property
-    def repository_url(self):
-        """Return repository URL"""
-        return self._get_db_row()['repository_url']
-
-    @property
     def git_tag_format(self):
         """Return git tag format"""
         if self._get_db_row()['git_tag_format']:
@@ -492,6 +487,30 @@ class ModuleProvider(object):
         """Return the git provider associated with this module provider."""
         if self._get_db_row()['git_provider_id']:
             return GitProvider.get(id=self._get_db_row()['git_provider_id'])
+        return None
+
+    def get_git_clone_url(self):
+        """Return URL to perform git clone"""
+        template = None
+
+        # Check if allowed and module provider has custom git URL
+        if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._get_db_row()['clone_url_template']:
+            template = self._get_db_row()['clone_url_template']
+
+        # Otherwise, check if module provider is configured with git provider
+        elif self.get_git_provider():
+            template = self.get_git_provider().clone_url_template
+
+        # Return rendered version of template
+        if template:
+            rendered_url = template.format(
+                namespace=self._module._namespace.name,
+                module=self._module.name,
+                provider=self.name
+            )
+
+            return rendered_url
+
         return None
 
     def update_attributes(self, **kwargs):
@@ -916,17 +935,17 @@ class ModuleVersion(TerraformSpecsObject):
             version=self.version
         )
 
-    def get_source_download_url(self):
-        """Return URL to download source file."""
+    def get_git_clone_url(self):
+        """Return URL to perform git clone"""
         template = None
 
         # Check if allowed, and module version has custom git URL
         if ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['clone_url_template']:
             template = self._get_db_row()['clone_url_template']
 
-        # Otherwise, check if allowed and module provider has custom git URL
-        elif ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._module_provider._get_db_row()['clone_url_template']:
-            template = self._module_provider._get_db_row()['clone_url_template']
+        # Otherwise, get git clone URL from module provider
+        elif self._module_provider.get_git_clone_url():
+            template = self._module_provider.get_git_clone_url()
 
         # Otherwise, check if module provider is configured with git provider
         elif self._module_provider.get_git_provider():
@@ -939,6 +958,19 @@ class ModuleVersion(TerraformSpecsObject):
                 module=self._module_provider._module.name,
                 provider=self._module_provider.name
             )
+
+            return rendered_url
+
+        return None
+
+    def get_source_download_url(self):
+        """Return URL to download source file."""
+        rendered_url = None
+
+        rendered_url = self.get_git_clone_url()
+
+        # Return rendered version of template
+        if rendered_url:
             # Check if scheme starts with git::, which is required
             # by terraform to acknowledge a git repository
             # and add if it not
