@@ -20,9 +20,9 @@
                 $('#create-module-provider').val() + '/create',
             data: JSON.stringify({
                 git_provider_id: $('select[id=create-module-git-provider] option').filter(':selected').val(),
-                base_url_template: $('#create-module-base-url-template').val(),
-                clone_url_template: $('#create-module-clone-url-template').val(),
-                browse_url_template: $('#create-module-browse-url-template').val(),
+                repo_base_url_template: $('#create-module-base-url-template').val(),
+                repo_clone_url_template: $('#create-module-clone-url-template').val(),
+                repo_browse_url_template: $('#create-module-browse-url-template').val(),
                 git_tag_format: $('#create-module-git-tag-format').val(),
                 csrf_token: '{{ csrf_token }}'
             }),

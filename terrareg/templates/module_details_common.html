@@ -56,9 +56,9 @@
             url: '/v1/terrareg/modules/{{ module_provider.id }}/settings',
             data: JSON.stringify({
                 git_provider_id: $('select[id=settings-git-provider] option').filter(':selected').val(),
-                clone_url_template: $('#settings-base-url-template').val(),
-                clone_url_template: $('#settings-clone-url-template').val(),
-                browse_url_template: $('#settings-browse-url-template').val(),
+                repo_base_url_template: $('#settings-base-url-template').val(),
+                repo_clone_url_template: $('#settings-clone-url-template').val(),
+                repo_browse_url_template: $('#settings-browse-url-template').val(),
                 git_tag_format: $('#settings-git-tag-format').val(),
                 verified: $('#settings-verified').is(':checked'),
                 csrf_token: '{{ csrf_token }}'
