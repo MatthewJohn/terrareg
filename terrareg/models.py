@@ -117,6 +117,14 @@ class GitProvider:
                 for row in res
             ]
 
+    @staticmethod
+    def get(id):
+        """Create object and validate that it exists."""
+        git_provider = GitProvider(id=id)
+        if git_provider._get_db_row() is None:
+            return None
+        return git_provider
+
     @property
     def pk(self):
         """Return DB ID for git provider."""
@@ -495,6 +503,10 @@ class ModuleProvider(object):
         with db.get_engine().connect() as conn:
             conn.execute(update)
 
+    def update_git_provider(self, git_provider: GitProvider):
+        """Update git provider associated with module provider."""
+        self.update_attributes(git_provider_id=git_provider.pk)
+
     def update_git_tag_format(self, git_tag_format):
         """Update git_tag_format."""
         sanitised_git_tag_format = urllib.parse.quote(git_tag_format, safe='/{}')
@@ -511,22 +523,27 @@ class ModuleProvider(object):
             sanitised_git_tag_format = None
         self.update_attributes(git_tag_format=sanitised_git_tag_format)
 
-    def update_repository_url(self, repository_url):
+    def update_clone_url_template(self, clone_url_template):
         """Update repository URL for module provider."""
         if not ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
             raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
                 'Custom module provider git repository URL cannot be set.'
             )
 
-        if repository_url:
-            url = urllib.parse.urlparse(repository_url)
+        converted_template = clone_url_template.format(
+            namespace=self._module._namespace.name,
+            module=self._module.name,
+            provider=self.name)
+
+        if converted_template:
+            url = urllib.parse.urlparse(converted_template)
             if not url.scheme:
                 raise RepositoryUrlDoesNotContainValidSchemeError(
                     'Repository URL does not contain a scheme (e.g. ssh://)'
                 )
             if url.scheme not in ['http', 'https', 'ssh']:
                 raise RepositoryUrlContainsInvalidSchemeError(
-                    'Repository URL contains an unknown scheme (e.g. https/git/http)'
+                    'Repository URL contains an unknown scheme (e.g. https/ssh/http)'
                 )
             if not url.hostname:
                 raise RepositoryUrlDoesNotContainHostError(
@@ -537,9 +554,49 @@ class ModuleProvider(object):
                     'Repository URL does not contain a path'
                 )
 
-        sanitised_repository_url = urllib.parse.quote(repository_url, safe='/:@%?=')
+        sanitised_clone_url_template = urllib.parse.quote(clone_url_template, safe='\{\}/:@%?=')
 
-        self.update_attributes(repository_url=sanitised_repository_url)
+        self.update_attributes(clone_url_template=sanitised_clone_url_template)
+
+    def update_browse_url_template(self, browse_url_template):
+        """Update browse URL template for module provider."""
+        if not ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
+            raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
+                'Custom module provider git repository URL cannot be set.'
+            )
+
+        GitUrlValidator(browse_url_template).validate(
+            requires_path_placeholder=True,
+            requires_tag_placeholder=True
+        )
+
+        converted_template = browse_url_template.format(
+            namespace=self._module._namespace.name,
+            module=self._module.name,
+            provider=self.name)
+
+        if converted_template:
+            url = urllib.parse.urlparse(converted_template)
+            if not url.scheme:
+                raise RepositoryUrlDoesNotContainValidSchemeError(
+                    'Repository URL does not contain a scheme (e.g. https://)'
+                )
+            if url.scheme not in ['http', 'https']:
+                raise RepositoryUrlContainsInvalidSchemeError(
+                    'Repository URL contains an unknown scheme (e.g. https/http)'
+                )
+            if not url.hostname:
+                raise RepositoryUrlDoesNotContainHostError(
+                    'Repository URL does not contain a host/domain'
+                )
+            if not url.path:
+                raise RepositoryDoesNotContainPathError(
+                    'Repository URL does not contain a path'
+                )
+
+        sanitised_browse_url_template = urllib.parse.quote(browse_url_template, safe='\{\}/:@%?=')
+
+        self.update_attributes(browse_url_template=sanitised_browse_url_template)
 
     def get_view_url(self):
         """Return view URL"""
