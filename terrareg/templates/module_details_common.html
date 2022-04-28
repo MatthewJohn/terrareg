@@ -380,7 +380,7 @@ module "{{ module.name }}" {
                     <div class="field">
                         <label class="label">Custom Repository base URL</label>
                         <div class="control">
-                            <input placeholder="https://github.com/{{ namespace.name }}/{{ module.name }}-{{ module_provider.name }}" class="input" type="text" value="{{ module_provider._get_db_row()['base_url_template'] or '' }}" id="settings-base-url-template">
+                            <input placeholder="https://github.com/{{ namespace.name }}/{{ module.name }}-{{ module_provider.name }}" class="input" type="text" value="{{ module_provider._get_db_row()['repo_base_url_template'] or '' }}" id="settings-base-url-template">
                         </div>
                         This URL must be valid for browsing the base of the repository.<br />
                         It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
@@ -390,7 +390,7 @@ module "{{ module.name }}" {
                     <div class="field">
                         <label class="label">Custom Repository URL</label>
                         <div class="control">
-                            <input placeholder="ssh://git@github.com/{{ namespace.name }}/{{ module.name }}-{{ module_provider.name }}.git" class="input" type="text" value="{{ module_provider._get_db_row()['clone_url_template'] or '' }}" id="settings-clone-url-template">
+                            <input placeholder="ssh://git@github.com/{{ namespace.name }}/{{ module.name }}-{{ module_provider.name }}.git" class="input" type="text" value="{{ module_provider._get_db_row()['repo_clone_url_template'] or '' }}" id="settings-clone-url-template">
                         </div>
                         This URL must be valid for cloning the repository.<br />
                         It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>>.<br />
@@ -400,7 +400,7 @@ module "{{ module.name }}" {
                     <div class="field">
                         <label class="label">Custom Repository browse URL</label>
                         <div class="control">
-                            <input placeholder="https://github.com/{{ namespace.name }}/{{ module.name }}-{{ module_provider.name }}/tree/{tag}/{path}" class="input" type="text" value="{{ module_provider._get_db_row()['clone_url_template'] or '' }}" id="settings-browse-url-template">
+                            <input placeholder="https://github.com/{{ namespace.name }}/{{ module.name }}-{{ module_provider.name }}/tree/{tag}/{path}" class="input" type="text" value="{{ module_provider._get_db_row()['repo_browse_url_template'] or '' }}" id="settings-browse-url-template">
                         </div>
                         This URL must be valid for browsing the source code of the repository at a particular tag/path.<br />
                         It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
