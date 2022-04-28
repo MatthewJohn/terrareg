@@ -280,7 +280,12 @@ class Server(object):
 
     def _view_serve_create_module(self):
         """Provide view to create module provider."""
-        return self._render_template('create_module_provider.html')
+        return self._render_template(
+            'create_module_provider.html',
+            git_providers=GitProvider.get_all(),
+            ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
+        )
 
     def _view_serve_namespace_list(self):
         """Render view for display module."""

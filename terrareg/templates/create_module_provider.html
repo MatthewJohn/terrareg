@@ -19,7 +19,9 @@
                 $('#create-module-module').val() + '/' +
                 $('#create-module-provider').val() + '/create',
             data: JSON.stringify({
-                repository_url: $('#create-module-repository-url').val(),
+                git_provider_id: $('select[id=create-module-git-provider] option').filter(':selected').val(),
+                clone_url_template: $('#create-module-clone-url-template').val(),
+                browse_url_template: $('#create-module-browse-url-template').val(),
                 git_tag_format: $('#create-module-git-tag-format').val(),
                 csrf_token: '{{ csrf_token }}'
             }),
@@ -66,22 +68,58 @@
                 </div>
 
                 <div class="field">
-                    <label class="label">Git URL</label>
-                    <div class="control">
-                    <input id="create-module-repository-url" class="input" type="text" placeholder="ssh://git@github.com:Namespace/Module.git">
+                    <label class="label">Git Repository Provider</label>
+                    <div class="control select">
+                        <select id="create-module-git-provider">
+
+                            {% if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER or ALLOW_CUSTOM_GIT_URL_MODULE_VERSION %}
+                            <option value="" selected>
+                                Custom
+                            </option>
+                            {% endif %}
+
+                            {% for git_provider in git_providers %}
+                            <option value="{{ git_provider.pk }}">
+
+                                {{ git_provider.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    This is an optional value.
-                    When enabled, API hooks can be used to index the module.
                 </div>
+
+                {% if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER %}
+                <div class="field">
+                    <label class="label">Custom Repository URL</label>
+                    <div class="control">
+                        <input placeholder="ssh://git@github.com:my-team/my-module-provider.git" class="input" type="text" id="create-module-clone-url-template">
+                    </div>
+                    This URL must be valid for cloning the repository.<br />
+                    It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>>.<br />
+                    E.g. <code>ssh://git@github.com/{namespace}/{module}-{provider}.git</code><br />
+                    NOTE: Setting this field will override the repository provider configuration.
+                </div>
+                <div class="field">
+                    <label class="label">Custom Repository browse URL</label>
+                    <div class="control">
+                        <input placeholder="https://github.com/my-team/my-module-provider/tree/{tag}/{path}" class="input" type="text" id="create-module-browse-url-template">
+                    </div>
+                    This URL must be valid for browsing the source code of the repository.<br />
+                    It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                    It must include the following template values: <code>code>{tag}</code> and {path}</code><br />
+                    E.g. <code>https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}</code><br />
+                    NOTE: Setting this field will override the repository provider configuration.
+                </div>
+                {% endif %}
 
                 <div class="field">
                     <label class="label">Git tag format</label>
                     <div class="control">
-                    <input id="create-module-git-tag-format" class="input" type="text" placeholder="{version}">
+                        <input placeholder="v{version}" class="input" type="text" id="create-module-git-tag-format">
                     </div>
                     This value will be converted to the expected git tag for a module version.<br />
                     {version} will be replaced by the actual module version.<br />
-                    For example 'v{version}' will translate to a git tag v1.1.1 for module version 1.1.1
+                    For example <code>v{version}</code> will translate to a git tag 'v1.1.1' for module version '1.1.1'
                 </div>
 
                 <div class="field">
