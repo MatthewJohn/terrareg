@@ -2,7 +2,7 @@
 
 import sqlalchemy
 
-from terrareg.config import DEBUG
+from terrareg.config import DATABASE_URL, DEBUG
 from terrareg.errors import DatabaseMustBeIniistalisedError
 
 
@@ -12,8 +12,6 @@ class Database():
     _META = None
     _ENGINE = None
     _INSTANCE = None
-
-    SQLITE_DB_PATH = 'modules.db'
 
     def __init__(self):
         """Setup member variables."""
@@ -83,7 +81,7 @@ class Database():
     def get_engine(cls):
         """Get singleton instance of engine."""
         if cls._ENGINE is None:
-            cls._ENGINE = sqlalchemy.create_engine('sqlite:///{}'.format(cls.SQLITE_DB_PATH), echo=DEBUG)
+            cls._ENGINE = sqlalchemy.create_engine(DATABASE_URL, echo=DEBUG)
         return cls._ENGINE
 
     def initialise(self):
