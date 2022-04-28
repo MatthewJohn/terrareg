@@ -496,6 +496,17 @@ class ModuleProvider(object):
             res = conn.execute(select)
             return res.fetchone()
 
+    def delete(self):
+        """DELETE module provider, all module version and all associated subversions."""
+        db = Database.get()
+
+        with db.get_engine().connect() as conn:
+            # Delete module from module_version table
+            delete_statement = db.module_provider.delete().where(
+                db.module_provider.c.id == self.pk
+            )
+            conn.execute(delete_statement)
+
     def get_git_provider(self):
         """Return the git provider associated with this module provider."""
         if self._get_db_row()['git_provider_id']:
