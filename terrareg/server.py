@@ -199,6 +199,10 @@ class Server(object):
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/create'
         )
         self._api.add_resource(
+            ApiTerraregModuleProviderDelete,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/delete'
+        )
+        self._api.add_resource(
             ApiTerraregModuleProviderSettings,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/settings'
         )
@@ -428,6 +432,20 @@ class ErrorCatchingResource(Resource):
         """Run subclasses post in error handling fashion."""
         try:
             return self._post(*args, **kwargs)
+        except TerraregError as exc:
+            return {
+                "status": "Error",
+                "message": str(exc)
+            }, 500
+
+    def _delete(self, *args, **kwargs):
+        """Placeholder for overridable delete method."""
+        raise NotImplementedError
+
+    def delete(self, *args, **kwargs):
+        """Run subclasses delete in error handling fashion."""
+        try:
+            return self._delete(*args, **kwargs)
         except TerraregError as exc:
             return {
                 "status": "Error",
@@ -1185,6 +1203,38 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
         return {
             'id': module_provider.id
         }
+
+
+class ApiTerraregModuleProviderDelete(ErrorCatchingResource):
+    """Provide interface to delete module provider."""
+
+    method_decorators = [require_admin_authentication]
+
+    def _delete(self, namespace, name, provider):
+        """Delete module provider."""
+        parser = reqparse.RequestParser()
+        parser.add_argument(
+            'csrf_token', type=str,
+            required=False,
+            help='CSRF token',
+            location='json',
+            default=None
+        )
+
+        args = parser.parse_args()
+
+        check_csrf_token(args.csrf_token)
+
+        # Update repository URL of module version
+        namespace = Namespace(name=namespace)
+        module = Module(namespace=namespace, name=name)
+
+        # Check if module provider already exists
+        module_provider = ModuleProvider.get(module=module, name=provider)
+        if module_provider is None:
+            return {'message': 'Module provider does not exist'}, 400
+
+        module_provider.delete()
 
 
 class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
