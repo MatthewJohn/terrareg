@@ -5,25 +5,6 @@
 {% if module_version %}
 
 <script>
-    function selectModuleTab(event, tab_name) {
-        tab_name = "module-tab-" + tab_name;
-        var i, tabcontent, tablinks;
-
-        // Hide content of all tabs
-        tabcontent = document.getElementsByClassName("module-tabs");
-        for (i = 0; i < tabcontent.length; i++) {
-            tabcontent[i].style.display = "none";
-        }
-
-        // Remove 'active' from all tab links
-        tablinks = document.getElementsByClassName("module-tab-link");
-        for (i = 0; i < tablinks.length; i++) {
-            tablinks[i].className = tablinks[i].className.replace(" is-active", "");
-        }
-        // Show content of current tab and mark current link as active.
-        document.getElementById(tab_name).style.display = "block";
-        event.target.parentNode.className += " is-active";
-    }
     $.get("/v1/modules/{{ module_provider.id }}/downloads/summary", function(data, status) {
         Object.keys(data.data.attributes).forEach((key) => {
             $(`#downloads-${key}`).html(data.data.attributes[key]);
@@ -54,6 +35,27 @@
 {% endif %}
 
 <script>
+    function selectModuleTab(event, tab_name) {
+        tab_name = "module-tab-" + tab_name;
+        var i, tabcontent, tablinks;
+
+        // Hide content of all tabs
+        tabcontent = document.getElementsByClassName("module-tabs");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+
+        // Remove 'active' from all tab links
+        tablinks = document.getElementsByClassName("module-tab-link");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" is-active", "");
+        }
+        // Show content of current tab and mark current link as active.
+        document.getElementById(tab_name).style.display = "block";
+        event.target.parentNode.className += " is-active";
+    }
+
+
     function update_module_provider_settings(ev) {
         $('#settings-status-success').css('display', 'none');
         $('#settings-status-error').css('display', 'none');
@@ -335,7 +337,7 @@ module "{{ module.name }}" {
         {% endif %}
 
         <!-- Module settings tab -->
-        <div id="module-tab-settings" class="module-tabs" {% if current_module %}style="display: none;"{% endif %}>
+        <div id="module-tab-settings" class="module-tabs" style="display: none;">
             <div class="field is-vertical">
                 <div id="settings-status-success" style="display: none" class="notification is-success">
                     Settings Updated
