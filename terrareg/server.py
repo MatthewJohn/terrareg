@@ -1068,7 +1068,7 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
         """Handle update to settings."""
         parser = reqparse.RequestParser()
         parser.add_argument(
-            'git_provider_id', type=int,
+            'git_provider_id', type=str,
             required=False,
             default=None,
             help='ID of the git provider to associate to module provider.',
@@ -1129,7 +1129,10 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
         # validate it and update attribute of module provider.
         if args.git_provider_id is not None:
             git_provider = GitProvider.get(id=args.git_provider_id)
-            if git_provider is None:
+            # If a non-empty git provider ID was provided and none
+            # were returned, return an error about invalid
+            # git provider ID
+            if args.git_provider_id and git_provider is None:
                 return {'message': 'Git provider does not exist.'}, 400
 
             module_provider.update_git_provider(git_provider=git_provider)
@@ -1193,7 +1196,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         """Handle update to settings."""
         parser = reqparse.RequestParser()
         parser.add_argument(
-            'git_provider_id', type=int,
+            'git_provider_id', type=str,
             required=False,
             default=None,
             help='ID of the git provider to associate to module provider.',
@@ -1258,7 +1261,10 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         # validate it and update attribute of module provider.
         if args.git_provider_id is not None:
             git_provider = GitProvider.get(id=args.git_provider_id)
-            if git_provider is None:
+            # If a non-empty git provider ID was provided and none
+            # were returned, return an error about invalid
+            # git provider ID
+            if args.git_provider_id and git_provider is None:
                 return {'message': 'Git provider does not exist.'}, 400
 
             module_provider.update_git_provider(git_provider=git_provider)
