@@ -108,20 +108,33 @@ class GitProvider:
         """Return DB ID for git provider."""
         return self._get_db_row()['id']
 
+    @property
+    def clone_url_template(self):
+        """Return clone_url_template for git provider."""
+        return self._get_db_row()['clone_url_template']
+
+    @property
+    def browse_url(self):
+        """Return browse_url for git provider."""
+        return self._get_db_row()['browse_url']
+
     def __init__(self, id):
         """Store member variable for ID."""
         self._id = id
+        self._row_cache = None
 
     def _get_db_row(self):
         """Return DB row for git provider."""
-        db = Database.get()
-        # Obtain row from git providers table for git provider.
-        select = db.git_provider.select().where(
-            db.git_provider.c.id == self._id
-        )
-        with db.get_engine().connect() as conn:
-            res = conn.execute(select)
-            return res.fetchone()
+        if self._row_cache is None:
+            db = Database.get()
+            # Obtain row from git providers table for git provider.
+            select = db.git_provider.select().where(
+                db.git_provider.c.id == self._id
+            )
+            with db.get_engine().connect() as conn:
+                res = conn.execute(select)
+                return res.fetchone()
+        return self._row_cache
 
 
 class Namespace(object):
@@ -601,6 +614,12 @@ class TerraformSpecsObject(object):
             self._module_specs = json.loads(self._get_db_row()['module_details'])
         return self._module_specs
 
+    def get_git_provider(self):
+        """Return the git provider associated with this module provider."""
+        if self._get_db_row()['git_provider_id']:
+            return GitProvider(id=self._get_db_row()['git_provider_id'])
+        return None
+
     def get_readme_html(self):
         """Convert readme markdown to HTML"""
         if self.get_readme_content():
@@ -718,11 +737,6 @@ class ModuleVersion(TerraformSpecsObject):
     def published(self):
         """Return whether module is published"""
         return bool(self._get_db_row()['published'])
-
-    @property
-    def source_code_url(self):
-        """Return source code URL."""
-        return self._get_db_row()['source']
 
     @property
     def description(self):
@@ -859,6 +873,34 @@ class ModuleVersion(TerraformSpecsObject):
             'Module is not configured with a git URL and direct downloads are disabled'
         )
 
+    def get_source_browse_url(self):
+        """Return URL to browse the source doe."""
+        template = None
+
+        # Check if allowed, and module version has custom git URL
+        if ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['browse_url_template']:
+            template = self._get_db_row()['browse_url_template']
+
+        # Otherwise, check if allowed and module provider has custom git URL
+        elif ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._module_provider._get_db_row()['browse_url_template']:
+            template = self._module_provider._get_db_row()['browse_url_template']
+
+        # Otherwise, check if module provider is configured with git provider
+        elif self._module_provider.get_git_provider():
+            template = self._module_provider.get_git_provider().browse_url_template
+
+        # Return rendered version of template
+        if template:
+            return template.render(
+                namespace=self._module_provider._module._namespace.name,
+                module=self._module_provider._module.name,
+                provider=self._module_provider.name,
+                tag=self.source_git_tag,
+                path=''
+            )
+
+        return None
+
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
         # Check if parent exists
@@ -879,7 +921,6 @@ class ModuleVersion(TerraformSpecsObject):
             "version": self.version,
             "provider": self._module_provider.name,
             "description": row['description'],
-            "source": row['source'],
             "published_at": row['published_at'].isoformat(),
             "downloads": self.get_total_downloads(),
             "verified": self._module_provider.verified,

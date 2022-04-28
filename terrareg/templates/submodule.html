@@ -20,7 +20,7 @@
         </p>
         {% endif %}
 
-        <p>{% if submodule.source_code_url %}Source Code: <a href="{{ submodule.source_code_url }}">{{ submodule.source_code_url }}</a>{% endif %}</p>
+        <p>{% if submodule.get_source_code_url() %}Source Code: <a href="{{ submodule.get_source_code_url() }}">{{ submodule.get_source_code_url() }}</a>{% endif %}</p>
 
         <br />
 
