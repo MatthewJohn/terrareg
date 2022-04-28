@@ -704,6 +704,11 @@ class TerraformSpecsObject(object):
         """Whether object is submodule."""
         raise NotImplementedError
 
+    @property
+    def registry_id(self):
+        """Return registry path ID (with excludes version)."""
+        raise NotImplementedError
+
     def _get_db_row(self):
         """Must be implemented by object. Return row from DB."""
         raise NotImplementedError
@@ -900,6 +905,11 @@ class ModuleVersion(TerraformSpecsObject):
             provider_id=self._module_provider.id,
             version=self.version
         )
+
+    @property
+    def registry_id(self):
+        """Return registry path ID (with excludes version)."""
+        return self._module_provider.id
 
     @property
     def variable_template(self):
@@ -1141,6 +1151,11 @@ class Submodule(TerraformSpecsObject):
         return '{0}//{1}'.format(self._module_version.id, self.path)
 
     @property
+    def registry_id(self):
+        """Return registry path ID (with excludes version)."""
+        return '{0}//{1}'.format(self._module_version.registry_id, self.path)
+
+    @property
     def is_submodule(self):
         """Whether object is submodule."""
         return True
@@ -1160,7 +1175,6 @@ class Submodule(TerraformSpecsObject):
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
             return res.fetchone()
-
 
     def get_source_browse_url(self):
         """Get formatted source browse URL"""

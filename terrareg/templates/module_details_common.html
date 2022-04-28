@@ -147,7 +147,7 @@
             <h5 class="title is-5">Usage</h4>
             <pre>
 module "{{ module.name }}" {
-    source  = "{{ server_hostname }}/{{ current_module.id }}"
+    source  = "{{ server_hostname }}/{{ current_module.registry_id }}"
     version = "{{ module_version.version }}"
 
     # Provide variables here
@@ -497,7 +497,7 @@ module "{{ module.name }}" {
         $('#usageBuilderOutput').html(`
 ${additional_content}
 module "{{ module.name }}" {
-    source  = "{{ server_hostname }}/{{ module_provider.id }}"
+    source  = "{{ server_hostname }}/{{ current_module.registry_id }}"
     version = "{{ module_version.version }}"
 ${output_tf}
 }
