@@ -141,9 +141,9 @@ class GitProvider:
         return self._get_db_row()['name']
 
     @property
-    def browse_url(self):
+    def browse_url_template(self):
         """Return browse_url for git provider."""
-        return self._get_db_row()['browse_url']
+        return self._get_db_row()['browse_url_template']
 
     def __init__(self, id):
         """Store member variable for ID."""
