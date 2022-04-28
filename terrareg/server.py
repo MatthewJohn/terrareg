@@ -34,7 +34,8 @@ from terrareg.config import (
     ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
     ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
     ALLOW_MODULE_HOSTING,
-    APPLICATION_NAME, LOGO_URL
+    APPLICATION_NAME,
+    LISTEN_PORT, LOGO_URL
 )
 
 class Server(object):
@@ -53,7 +54,7 @@ class Server(object):
         )
 
         self.host = '0.0.0.0'
-        self.port = 5000
+        self.port = LISTEN_PORT
         self.ssl_public_key = ssl_public_key
         self.ssl_private_key = ssl_private_key
 

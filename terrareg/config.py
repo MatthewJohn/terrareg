@@ -4,6 +4,11 @@ import os
 DATA_DIRECTORY = os.path.join(os.environ.get('DATA_DIRECTORY', os.getcwd()), 'data')
 
 """
+Port for server to listen on.
+"""
+LISTEN_PORT = int(os.environ.get('LISTEN_PORT', 5000))
+
+"""
 Whether modules can be downloaded with terraform
 without specifying an identification string in
 the namespace
