@@ -63,7 +63,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
                     'csrf_token': 'unittestcsrf'
                 }
             )
-            assert res.json == {'message': 'Repository URL contains an unknown scheme (e.g. https/ssh/http)'}
+            assert res.json == {'message': 'Repo clone URL: Repository URL contains an unknown scheme (e.g. https/ssh/http)'}
             assert res.status_code == 400
 
             # Ensure required checks are called
@@ -88,7 +88,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
                     'csrf_token': 'unittestcsrf'
                 }
             )
-            assert res.json == {'message': 'Repository URL does not contain a host/domain'}
+            assert res.json == {'message': 'Repo clone URL: Repository URL does not contain a host/domain'}
             assert res.status_code == 400
 
             # Ensure required checks are called
@@ -113,7 +113,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
                     'csrf_token': 'unittestcsrf'
                 }
             )
-            assert res.json == {'message': 'Repository URL does not contain a path'}
+            assert res.json == {'message': 'Repo clone URL: Repository URL does not contain a path'}
             assert res.status_code == 400
 
             # Ensure required checks are called
