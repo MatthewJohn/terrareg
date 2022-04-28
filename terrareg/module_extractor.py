@@ -148,7 +148,8 @@ class ModuleExtractor:
             # Terrareg meta-data
             owner=terrareg_metadata.get('owner', None),
             description=terrareg_metadata.get('description', None),
-            source=terrareg_metadata.get('source', None),
+            clone_url_template=terrareg_metadata.get('clone_url_template', None),
+            browse_url_template=terrareg_metadata.get('browse_url_template', None),
             variable_template=json.dumps(terrareg_metadata.get('variable_template', {})),
             artifact_location=terrareg_metadata.get('artifact_location', None),
             published=AUTO_PUBLISH_MODULE_VERSIONS
