@@ -608,7 +608,9 @@ class ModuleProvider(object):
             converted_template = repo_browse_url_template.format(
                 namespace=self._module._namespace.name,
                 module=self._module.name,
-                provider=self.name)
+                provider=self.name,
+                tag='',
+                path='')
 
             url = urllib.parse.urlparse(converted_template)
             if not url.scheme:
