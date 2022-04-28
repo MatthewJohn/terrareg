@@ -26,6 +26,7 @@ test_data_full = {
         'mock-module': {'testprovider': {
             'id': 3,
             'verified': True,
+            'repo_base_url_template': 'http://github.com/{namespace}/{module}',
             'latest_version': '1.2.3',
             'versions': {'1.2.3': {}}
         }},
