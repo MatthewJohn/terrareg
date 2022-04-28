@@ -186,6 +186,11 @@ class MockModuleProvider(ModuleProvider):
             return MockModuleVersion.get(module_provider=self, version=self._unittest_data['latest_version'])
         return None
 
+    def get_versions(self):
+        """Return all MockModuleVersion objects for ModuleProvider."""
+        return [MockModuleVersion(module_provider=self, version=version)
+                for version in self._unittest_data['versions']]
+
 class MockNamespace(Namespace):
     """Mocked namespace."""
 
