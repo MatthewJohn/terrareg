@@ -537,7 +537,9 @@ class ModuleProvider(object):
 
     def update_git_provider(self, git_provider: GitProvider):
         """Update git provider associated with module provider."""
-        self.update_attributes(git_provider_id=git_provider.pk)
+        self.update_attributes(
+            git_provider_id=(git_provider.pk if git_provider is not None else None)
+        )
 
     def update_git_tag_format(self, git_tag_format):
         """Update git_tag_format."""
