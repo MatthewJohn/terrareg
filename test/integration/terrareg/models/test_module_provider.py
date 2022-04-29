@@ -4,7 +4,11 @@ import pytest
 
 from terrareg.models import Module, Namespace, ModuleProvider
 import terrareg.errors
-from test.integration.terrareg import TerraregIntegrationTest
+from test.integration.terrareg import (
+    TerraregIntegrationTest,
+    setup_test_data
+)
+
 
 class TestModuleProvider(TerraregIntegrationTest):
 
@@ -63,3 +67,7 @@ class TestModuleProvider(TerraregIntegrationTest):
             module = Module(namespace=namespace, name='test')
             with pytest.raises(terrareg.errors.ProviderNameNotPermittedError):
                 ModuleProvider(module=module, name='notallowed')
+
+    @setup_test_data()
+    def test_module_provider_get_versions(self):
+        pass
