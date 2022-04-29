@@ -11,5 +11,5 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY . .
 
-ENTRYPOINT [ "python", "terrareg.py" ]
 
+ENTRYPOINT [ "bash", "scripts/entrypoint.sh" ]
