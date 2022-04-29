@@ -64,6 +64,20 @@
                 </div>
             </section>
             {% endif %}
+
+            <br />
+            {% if module_version.get_examples() %}
+            <section>
+                <div class="select is-small">
+                    <select onchange="selectSubmodule(event);">
+                        <option value="none">Select example</option>
+                        {% for example in module_version.get_examples() %}
+                        <option value="{{ example.get_view_url() }}">{{ example.path }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </section>
+            {% endif %}
         {% endif %}
 
     {% else %}
