@@ -27,6 +27,10 @@ class TerraregUnitTest:
         Database.reset()
         self.SERVER = Server()
         terrareg.config.DATABASE_URL = 'sqlite:///temp-unittest.db'
+
+        # Create DB tables
+        Database.get().get_meta().create_all(Database.get().get_engine())
+
         self.SERVER._app.config['TESTING'] = True
 
 
