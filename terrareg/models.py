@@ -384,7 +384,7 @@ class ProviderLogo:
         return self._details['alt'] if self._details is not None else None
 
     @property
-    def alt(self):
+    def link(self):
         """Return logo image link URL."""
         return self._details['link'] if self._details is not None else None
 
