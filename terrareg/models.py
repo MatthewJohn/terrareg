@@ -1253,7 +1253,7 @@ class BaseSubmodule(TerraformSpecsObject):
     def __init__(self, module_version: ModuleVersion, module_path: str):
         self._module_version = module_version
         self._module_path = module_path
-        super(Submodule, self).__init__()
+        super(BaseSubmodule, self).__init__()
 
     def _get_db_row(self):
         """Get object from database"""
