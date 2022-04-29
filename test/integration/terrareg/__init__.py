@@ -37,6 +37,16 @@ def setup_test_data(test_data=None):
     def deco(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
+
+            # Setup test git providers
+            for git_provider_id in integration_git_providers:
+                insert = Database.get().git_provider.insert().values(
+                    id=git_provider_id,
+                    **integration_git_providers[git_provider_id]
+                )
+                with Database.get_engine().connect() as conn:
+                    conn.execute(insert)
+
             # Setup test Namespaces, Modules, ModuleProvider and ModuleVersion
             import_data = integration_test_data if test_data is None else test_data
 
@@ -52,7 +62,6 @@ def setup_test_data(test_data=None):
 
                     # Iterate through providers
                     for provider_name in import_data[namespace_name][module_name]:
-                        module_provider = ModuleProvider.get(module=module, name=provider_name, create=True)
                         module_provider_test_data = module_data[provider_name]
 
                         # Update provided test attributes
