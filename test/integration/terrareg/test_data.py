@@ -31,7 +31,7 @@ integration_test_data = {
             'versions': {'1.2.3': {}}
         }},
         'unverifiedmodule': {'testprovider': {
-            'id': 11,
+            'id': 16,
             'verified': False,
             'latest_version': '1.2.3',
             'versions': {'1.2.3': {}}
@@ -48,8 +48,8 @@ integration_test_data = {
             'versions': {'2.1.0': {}}
         }},
         'modulenotpublished': {'testprovider': {
-            'id': 10,
-            'latest_verison': '10.2.1',
+            'id': 15,
+            'latest_version': '10.2.1',
             'versions': {
                 '10.2.1': {'published': False}
             }
@@ -77,36 +77,36 @@ integration_test_data = {
         },
         'gitextraction': {
             'staticrepourl': {
-                'id': 8,
+                'id': 9,
                 'repo_clone_url_template': 'ssh://git@localhost:7999/bla/test-module.git',
                 'git_tag_format': 'v{version}',
                 'versions': []
             },
             'placeholdercloneurl': {
-                'id': 8,
+                'id': 10,
                 'repo_clone_url_template': 'ssh://git@localhost:7999/{namespace}/{module}-{provider}.git',
                 'git_tag_format': 'v{version}',
                 'versions': []
             },
             'usesgitprovider': {
-                'id': 9,
+                'id': 11,
                 'git_provider_id': 1,
                 'git_tag_format': 'v{version}',
                 'versions': []
             },
             'nogittagformat': {
-                'id': 9,
+                'id': 12,
                 'git_provider_id': 1,
                 'versions': []
             },
             'complexgittagformat': {
-                'id': 9,
+                'id': 13,
                 'git_provider_id': 1,
                 'git_tag_format': 'unittest{version}value',
                 'versions': []
             },
             'norepourl': {
-                'id': 9,
+                'id': 14,
                 'git_tag_format': 'v{version}',
                 'versions': []
             }
