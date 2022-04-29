@@ -30,7 +30,7 @@ class TestModuleVersion(TerraregIntegrationTest):
         '1.1.1',
         '13.14.16',
         '1.10.10',
-        '01.01.01'
+        '01.01.01'  # @TODO Should this be allowed?
     ])
     def test_valid_module_versions(self, version):
         """Test valid module versions"""
