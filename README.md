@@ -8,8 +8,9 @@ Install depdencies:
 
     pip install -r requirements.txt
 
-Start server:
+Initialise database and start server:
 
+    alembic upgrade head
     python ./terrareg.py
 
 
