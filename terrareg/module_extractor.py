@@ -25,6 +25,7 @@ from terrareg.errors import (
 from terrareg.utils import PathDoesNotExistError, safe_join_paths
 from terrareg.config import (
     DELETE_EXTERNALLY_HOSTED_ARTIFACTS,
+    EXAMPLES_DIRECTORY,
     REQUIRED_MODULE_METADATA_ATTRIBUTES,
     AUTO_PUBLISH_MODULE_VERSIONS,
     MODULES_DIRECTORY
@@ -156,7 +157,7 @@ class ModuleExtractor:
         )
         print(AUTO_PUBLISH_MODULE_VERSIONS)
 
-    def _process_submodule(self, submodule: str):
+    def _process_submodule(self, type_: str, submodule: str):
         """Process submodule."""
         print('Processing submodule: {0}'.format(submodule))
         submodule_dir = safe_join_paths(self.extract_directory, submodule)
@@ -168,16 +169,17 @@ class ModuleExtractor:
         conn = db.get_engine().connect()
         insert_statement = db.sub_module.insert().values(
             parent_module_version=self._module_version.pk,
+            type=type_,
             path=submodule,
             readme_content=readme_content,
-            module_details=json.dumps(tf_docs),
+            module_details=json.dumps(tf_docs)
         )
         conn.execute(insert_statement)
 
-    def _scan_submodules(self):
+    def _scan_submodules(self, subdirectory, type_):
         """Scan for submodules and extract details."""
         try:
-            submodule_base_directory = safe_join_paths(self.extract_directory, MODULES_DIRECTORY, is_dir=True)
+            submodule_base_directory = safe_join_paths(self.extract_directory, subdirectory, is_dir=True)
         except PathDoesNotExistError:
             # If the modules directory does not exist,
             # ignore and return
@@ -212,7 +214,7 @@ class ModuleExtractor:
 
         # Extract all submodules
         for submodule in submodules:
-            self._process_submodule(submodule)
+            self._process_submodule(type_, submodule)
 
     def process_upload(self):
         """Handle data extraction from module source."""
@@ -234,7 +236,8 @@ class ModuleExtractor:
             terrareg_metadata=terrareg_metadata
         )
 
-        self._scan_submodules()
+        self._scan_submodules(type_='submodule', subdirectory=MODULES_DIRECTORY)
+        self._scan_submodules(type_='example', subdirectory=EXAMPLES_DIRECTORY)
 
 
 class ApiUploadModuleExtractor(ModuleExtractor):
