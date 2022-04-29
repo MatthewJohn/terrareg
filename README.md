@@ -106,6 +106,15 @@ Comma-separated list of trusted namespaces.
 Default: ``
 
 
+### ALLOWED_PROVIDERS
+
+Comma-seperated list of allowed providers.
+
+Leave empty to disable allow-list and allow all providers.
+
+Default: ``
+
+
 ### VERIFIED_MODULE_NAMESPACES
 
 List of namespaces, who's modules will be automatically set to verified.

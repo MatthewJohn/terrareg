@@ -30,6 +30,18 @@ ANALYTICS_TOKEN_PHRASE = os.environ.get('ANALYTICS_TOKEN_PHRASE', 'analytics tok
 """Example analytics token to provide in responses (e.g. my-tf-application, my-slack-channel etc.)"""
 EXAMPLE_ANALYTICS_TOKEN = os.environ.get('EXAMPLE_ANALYTICS_TOKEN', 'my-tf-application')
 
+"""
+Comma-seperated list of allowed providers.
+
+Leave empty to disable allow-list and allow all providers.
+
+Default: ''
+
+"""
+ALLOWED_PROVIDERS = [
+    attr for attr in os.environ.get('ALLOWED_PROVIDERS', '').split(',') if attr
+]
+
 """Comma-separated list of trusted namespaces."""
 TRUSTED_NAMESPACES = [
     attr for attr in os.environ.get('TRUSTED_NAMESPACES', '').split(',') if attr

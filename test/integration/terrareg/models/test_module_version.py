@@ -5,7 +5,7 @@ from terrareg.models import Module, Namespace, ModuleProvider, ModuleVersion
 import terrareg.errors
 from test.integration.terrareg import TerraregIntegrationTest
 
-class TestModuleProvider(TerraregIntegrationTest):
+class TestModuleVersion(TerraregIntegrationTest):
 
     @pytest.mark.parametrize('version', [
         'astring',
@@ -30,7 +30,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         '1.1.1',
         '13.14.16',
         '1.10.10',
-        '01.01.01'
+        '01.01.01'  # @TODO Should this be allowed?
     ])
     def test_valid_module_versions(self, version):
         """Test valid module versions"""

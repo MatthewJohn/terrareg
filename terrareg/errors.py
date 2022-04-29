@@ -136,3 +136,9 @@ class NoModuleDownloadMethodConfiguredError(TerraregError):
     """Module is not configured with a git URL and direct downloads are disabled"""
 
     pass
+
+
+class ProviderNameNotPermittedError(TerraregError):
+    """Provider name not in list of allowed providers."""
+
+    pass

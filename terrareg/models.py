@@ -14,6 +14,7 @@ from terrareg.config import (
     ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
     ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
     ALLOW_MODULE_HOSTING,
+    ALLOWED_PROVIDERS,
     DATA_DIRECTORY,
     VERIFIED_MODULE_NAMESPACES,
     GIT_PROVIDER_CONFIG
@@ -28,7 +29,8 @@ from terrareg.errors import (
     RepositoryDoesNotContainPathError,
     InvalidGitProviderConfigError,
     ModuleProviderCustomGitRepositoryUrlNotAllowedError,
-    NoModuleDownloadMethodConfiguredError
+    NoModuleDownloadMethodConfiguredError,
+    ProviderNameNotPermittedError
 )
 from terrareg.utils import safe_join_paths
 from terrareg.validators import GitUrlValidator
@@ -349,6 +351,13 @@ class ModuleProvider(object):
         """Validate name of module"""
         if not re.match(r'^[0-9a-z]+$', name):
             raise InvalidModuleProviderNameError('Module provider name is invalid')
+
+        # Check if providers allow-list is enabled
+        # and check if name in list of allowed providers
+        if ALLOWED_PROVIDERS and name not in ALLOWED_PROVIDERS:
+            raise ProviderNameNotPermittedError(
+                'Provider name is not in the list of alllowed providers.'
+            )
 
     @staticmethod
     def get_total_count():
