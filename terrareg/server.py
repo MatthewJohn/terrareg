@@ -256,6 +256,7 @@ class Server(object):
             *args, **kwargs,
             terrareg_application_name=APPLICATION_NAME,
             terrareg_logo_url=LOGO_URL,
+            ALLOW_MODULE_HOSTING=ALLOW_MODULE_HOSTING,
             csrf_token=get_csrf_token()
         )
 
