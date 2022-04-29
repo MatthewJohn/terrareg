@@ -8,8 +8,9 @@ Install depdencies:
 
     pip install -r requirements.txt
 
-Start server:
+Initialise database and start server:
 
+    alembic upgrade head
     python ./terrareg.py
 
 
@@ -40,6 +41,22 @@ Navigate to http://localhost:5000 to get started, or http://localhost/modules/me
 ## Environment variables
 
 The following environment variables are available to configure the application
+
+### MIGRATE_DATABASE
+
+Set to `True` to enable database schema creation/migration on startup.
+
+This is only used in the context of the docker image (or entrypoint script)
+
+Default: ``
+
+### MIGRATE_DATABASE_ONLY
+
+Set to `True` to exit after performing database migration.
+
+This is only used in the context of the docker image (or entrypoint script)
+
+Default: ``
 
 ### DATABASE_URL
 
