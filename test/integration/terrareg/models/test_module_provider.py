@@ -4,7 +4,11 @@ import pytest
 
 from terrareg.models import Module, Namespace, ModuleProvider
 import terrareg.errors
-from test.integration.terrareg import TerraregIntegrationTest
+from test.integration.terrareg import (
+    TerraregIntegrationTest,
+    setup_test_data
+)
+
 
 class TestModuleProvider(TerraregIntegrationTest):
 
@@ -63,3 +67,16 @@ class TestModuleProvider(TerraregIntegrationTest):
             module = Module(namespace=namespace, name='test')
             with pytest.raises(terrareg.errors.ProviderNameNotPermittedError):
                 ModuleProvider(module=module, name='notallowed')
+
+    @setup_test_data()
+    def test_module_provider_get_versions(self):
+        """Test that a module provider with versions in the wrong order are still returned correctly."""
+        namespace = Namespace(name='testnamespace')
+        module = Module(namespace=namespace, name='wrongversionorder')
+        module_provider = ModuleProvider.get(module=module, name='testprovider')
+
+        assert [mv.version for mv in module_provider.get_versions()] == [
+            '10.23.0', '2.1.0', '1.5.4',
+            '0.1.10', '0.1.09', '0.1.8',
+            '0.1.1', '0.0.9'
+        ]

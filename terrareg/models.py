@@ -743,11 +743,15 @@ class ModuleProvider(object):
         )
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
-
-            return [
+            module_versions = [
                 ModuleVersion(module_provider=self, version=r['version'])
                 for r in res
             ]
+        module_versions.sort(
+            key=lambda x: StrictVersion(x.version),
+            reverse=True
+        )
+        return module_versions
 
 
 class TerraformSpecsObject(object):

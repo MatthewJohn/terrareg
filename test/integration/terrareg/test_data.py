@@ -1,5 +1,5 @@
 
-test_git_providers = {
+integration_git_providers = {
     1: {
         'name': 'testgitprovider',
         'base_url_template': 'https://localhost.com/{namespace}/{module}-{provider}',
@@ -8,7 +8,7 @@ test_git_providers = {
     }
 }
 
-test_data_full = {
+integration_test_data = {
     'testnamespace': {
         'testmodulename': {'testprovider': {
             'repo_base_url_template': 'http://mock.example.com/mockmodule',
@@ -49,9 +49,17 @@ test_data_full = {
         }},
         'modulenotpublished': {'testprovider': {
             'id': 15,
-            'latest_verison': '10.2.1',
+            'latest_version': '10.2.1',
             'versions': {
                 '10.2.1': {'published': False}
+            }
+        }},
+        'wrongversionorder': {'testprovider': {
+            'id': 17,
+            'versions': {
+                '1.5.4': {'published': True}, '2.1.0': {'published': True}, '0.1.1': {'published': True},
+                '10.23.0': {'published': True}, '0.1.10': {'published': True}, '0.0.9': {'published': True},
+                '0.1.09': {'published': True}, '0.1.8': {'published': True}
             }
         }}
     },
