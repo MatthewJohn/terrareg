@@ -1287,3 +1287,9 @@ class BaseSubmodule(TerraformSpecsObject):
 class Submodule(BaseSubmodule):
 
     TYPE = 'submodule'
+
+
+class Example(BaseSubmodule):
+
+    TYPE = 'example'
+
