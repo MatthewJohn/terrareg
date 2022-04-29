@@ -1295,7 +1295,7 @@ class BaseSubmodule(TerraformSpecsObject):
         """Return view URL"""
         return '{module_version_url}/{submodules_type}/{submodule_path}'.format(
             module_version_url=self._module_version.get_view_url(),
-            submodules_type=self.TYPE
+            submodules_type=self.TYPE,
             submodule_path=self.path
         )
 
