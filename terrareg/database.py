@@ -179,8 +179,6 @@ class Database():
             sqlalchemy.Column('environment', sqlalchemy.String)
         )
 
-        meta.create_all(engine)
-
     def select_module_version_joined_module_provider(self, *args, **kwargs):
         """Perform select on module_version, joined to module_provider table."""
         return sqlalchemy.select(self.module_version.join(
