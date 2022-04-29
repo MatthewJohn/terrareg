@@ -411,6 +411,13 @@ class ModuleProvider(object):
         return obj
 
     @property
+    def logo_details(self):
+        """Return logo for provider."""
+        return {
+            'aws': '/static/images/PB_AWS_logo_RGB_stacked.547f032d90171cdea4dd90c258f47373c5573db5.png'
+        }.get(self.name, None)
+
+    @property
     def name(self):
         """Return name."""
         return self._name

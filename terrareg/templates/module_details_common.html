@@ -114,8 +114,13 @@
     </ul>
 </nav>
 
-<div class="columns" style="background-color: #f9f9f9; padding-top: 30px; padding-bottom: 30px;">
-    <div class="column is-two-fifths is-offset-one-fifth">
+<div class="columns is-centered" style="background-color: #f9f9f9; padding-top: 30px; padding-bottom: 30px;">
+
+    {% if module_provider.logo_url %}
+        <img style="margin-top: 30px; max-height: 100px;" src="{{ module_provider.logo_url }}" />
+    {% endif %}
+
+    <div class="column is-two-fifths">
         {% block main_details %}{% endblock %}
     </div>
 
