@@ -52,12 +52,10 @@ def setup_test_data(test_data=None):
 
             # Iterate through namespaces
             for namespace_name in import_data:
-                namespace = Namespace(name=namespace_name)
                 namespace_data = import_data[namespace_name]
 
                 # Iterate through modules
                 for module_name in namespace_data:
-                    module = Module(namespace=namespace, name=module_name)
                     module_data = namespace_data[module_name]
 
                     # Iterate through providers
