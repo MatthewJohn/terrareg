@@ -366,6 +366,7 @@ class Server(object):
             current_module=module_version,
             server_hostname=request.host,
             git_providers=GitProvider.get_all(),
+            provider_logo=module_provider.get_logo(),
             ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
             ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
@@ -392,6 +393,7 @@ class Server(object):
             current_module=submodule,
             server_hostname=request.host,
             git_providers=GitProvider.get_all(),
+            provider_logo=module_provider.get_logo(),
             ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
             ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
@@ -417,6 +419,7 @@ class Server(object):
             submodule=submodule,
             current_module=submodule,
             server_hostname=request.host,
+            provider_logo=module_provider.get_logo(),
             git_providers=GitProvider.get_all(),
             ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
             ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=ALLOW_CUSTOM_GIT_URL_MODULE_VERSION

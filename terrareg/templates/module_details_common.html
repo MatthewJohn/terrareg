@@ -116,8 +116,10 @@
 
 <div class="columns is-centered" style="background-color: #f9f9f9; padding-top: 30px; padding-bottom: 30px;">
 
-    {% if module_provider.logo_url %}
-        <img style="margin-top: 30px; max-height: 100px;" src="{{ module_provider.logo_url }}" />
+    {% if provider_logo.exists %}
+    <a style="margin-top: 30px; max-height: 100px;" href="{{ provider_logo.ref }}">
+        <img alt="{{ provider_logo.alt }}" src="{{ provider_logo.source }}" />
+    </a>
     {% endif %}
 
     <div class="column is-two-fifths">
@@ -733,4 +735,12 @@ ${output_tf}
 
 
 
+{% endblock %}
+
+{% block additional_footer %}
+<p>
+    {% if provider_logo.exists %}
+    {{ provider_logo.tos }}
+    {% endif %}
+</p>
 {% endblock %}
