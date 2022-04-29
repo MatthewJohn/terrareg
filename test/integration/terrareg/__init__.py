@@ -70,7 +70,20 @@ def setup_test_data(test_data=None):
 
                         insert = Database.get().module_provider.insert().values(**module_provider_attributes)
                         with Database.get_engine().connect() as conn:
-                            conn.execute(insert)
+                            res = conn.execute(insert)
+
+                        # Insert module versions
+                        for module_version in (
+                                module_provider_test_data['versions']
+                                if 'versions' in module_provider_test_data else
+                                []):
+                            insert = Database.get().module_version.insert().values(
+                                module_provider_id=module_provider_attributes['id'],
+                                version=module_version,
+                                **module_provider_test_data['versions'][module_version]
+                            )
+                            with Database.get_engine().connect() as conn:
+                                conn.execute(insert)
 
             res = func(*args, **kwargs)
             return res
