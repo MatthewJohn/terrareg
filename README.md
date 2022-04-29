@@ -31,6 +31,12 @@ Upload a terraform module:
 
 Navigate to http://localhost:5000 to get started, or http://localhost/modules/me/my-tf-module to see the uploaded example!
 
+## Running with docker
+
+    docker build . -t terrareg:latest
+    docker run -p 5000:5000 -e MIGRATE_DATABASE=True terrareg:latest
+
+
 ## Terrareg module metadata
 
 A metadata file can be provided each an uploaded module's archive to provide additional metadata to terrareg.
