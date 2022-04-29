@@ -1214,6 +1214,7 @@ class ModuleVersion(TerraformSpecsObject):
         select = db.sub_module.select(
         ).join(db.module_version, db.module_version.c.id == db.sub_module.c.parent_module_version).where(
             db.module_version.c.id == self.pk,
+            db.sub_module.c.type == 'submodule'
         )
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
