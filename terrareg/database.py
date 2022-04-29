@@ -173,7 +173,7 @@ class Database():
                     ondelete='CASCADE'),
                 nullable=False
             ),
-            sqlalchemy.Column('timestamp', sqlalchemy.String, nullable=False),
+            sqlalchemy.Column('timestamp', sqlalchemy.String),
             sqlalchemy.Column('terraform_version', sqlalchemy.String),
             sqlalchemy.Column('analytics_token', sqlalchemy.String),
             sqlalchemy.Column('auth_token', sqlalchemy.String),

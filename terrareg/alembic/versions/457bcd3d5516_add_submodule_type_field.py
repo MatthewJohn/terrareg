@@ -24,7 +24,6 @@ def upgrade():
     # Set all existing submodules to submodule type
     op.execute("UPDATE submodule SET type = 'submodule'")
 
-    op.alter_column('submodule', 'type', nullable=False)
     # ### end Alembic commands ###
 
 
