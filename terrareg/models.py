@@ -1225,8 +1225,10 @@ class ModuleVersion(TerraformSpecsObject):
             ]
 
 
-class Submodule(TerraformSpecsObject):
-    """Sub module from a module version."""
+class BaseSubmodule(TerraformSpecsObject):
+    """Base submodule, for submodule and examples from a module version."""
+
+    TYPE = None
 
     @property
     def path(self):
@@ -1258,7 +1260,8 @@ class Submodule(TerraformSpecsObject):
         db = Database.get()
         select = db.sub_module.select().where(
             db.sub_module.c.parent_module_version == self._module_version.pk,
-            db.sub_module.c.path == self._module_path
+            db.sub_module.c.path == self._module_path,
+            db.sub_module.c.type == self.TYPE
         )
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
@@ -1274,7 +1277,13 @@ class Submodule(TerraformSpecsObject):
 
     def get_view_url(self):
         """Return view URL"""
-        return '{module_version_url}/submodules/{submodule_path}'.format(
+        return '{module_version_url}/{submodules_type}/{submodule_path}'.format(
             module_version_url=self._module_version.get_view_url(),
+            submodules_type=self.TYPE
             submodule_path=self.path
         )
+
+
+class Submodule(BaseSubmodule):
+
+    TYPE = 'submodule'
