@@ -1105,7 +1105,9 @@ class ModuleVersion(TerraformSpecsObject):
                 module=self._module_provider._module.name,
                 provider=self._module_provider.name,
                 tag=self.source_git_tag,
-                path=path
+                # Default path to empty string to avoid
+                # adding 'None' to string
+                path=(path if path else '')
             )
 
         return None
