@@ -3,7 +3,7 @@
 {% block module_breadcrumb %}
 <li ><a href="/modules/{{ namespace.name }}/{{ module.name }}/{{ module_provider.name }}">{{ module_provider.name }}</a></li>
 <li ><a href="/modules/{{ namespace.name }}/{{ module.name }}/{{ module_provider.name }}/{{ module_version.version }}">{{ module_version.version }}</a></li>
-<li class="is-active"><a>Submodule: {{ submodule.path }}</a></li>
+<li class="is-active"><a>{{ submodule.path }}</a></li>
 {% endblock %}
 
 {% block main_details %}
@@ -11,7 +11,7 @@
     {% if submodule %}
 
         <p class="subtitle">
-            submodules / {{ submodule.path }}
+            {{ submodule.path }}
         </p>
 
         {% if not module_version.published %}

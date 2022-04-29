@@ -155,6 +155,7 @@ class Database():
                     ondelete='CASCADE'),
                 nullable=False
             ),
+            sqlalchemy.Column('type', sqlalchemy.String),
             sqlalchemy.Column('path', sqlalchemy.String),
             sqlalchemy.Column('name', sqlalchemy.String),
             sqlalchemy.Column('readme_content', sqlalchemy.String),

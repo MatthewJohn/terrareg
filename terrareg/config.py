@@ -121,6 +121,15 @@ This can be set to an empty string, to expected submodules to be in the root dir
 MODULES_DIRECTORY = os.environ.get('MODULES_DIRECTORY', 'modules')
 
 """
+Directory with a module's source that contains examples.
+
+Examples are expected to be within sub-directories of the examples directory.
+
+E.g. If EXAMPLES_DIRECTORY is set to 'examples', with the root module, the following would be expected for an example: 'examples/myexample/main.tf'.
+"""
+EXAMPLES_DIRECTORY = os.environ.get('MODULES_DIRECTORY', 'examples')
+
+"""
 Git provider config.
 JSON list of known git providers.
 Each item in the list should contain the following attributes:

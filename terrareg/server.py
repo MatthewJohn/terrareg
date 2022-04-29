@@ -22,7 +22,7 @@ from terrareg.errors import (
     NoSessionSetError, IncorrectCSRFTokenError
 )
 from terrareg.models import (
-    Namespace, Module, ModuleProvider,
+    Example, Namespace, Module, ModuleProvider,
     ModuleVersion, Submodule,
     GitProvider
 )
@@ -171,8 +171,11 @@ class Server(object):
             '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/'
         )(self._view_serve_module_provider)
         self._app.route(
-            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodules/<path:submodule_path>'
+            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodule/<path:submodule_path>'
         )(self._view_serve_submodule)
+        self._app.route(
+            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/example/<path:submodule_path>'
+        )(self._view_serve_example)
 
         # Terrareg APIs
         ## Analytics URLs /v1/terrareg/analytics
@@ -377,6 +380,32 @@ class Server(object):
             return redirect(module_provider.get_view_url())
 
         submodule = Submodule(module_version=module_version, module_path=submodule_path)
+
+        return self._render_template(
+            'submodule.html',
+            namespace=namespace,
+            module=module,
+            module_provider=module_provider,
+            module_version=module_version,
+            submodule=submodule,
+            current_module=submodule,
+            server_hostname=request.host,
+            git_providers=GitProvider.get_all(),
+            ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
+        )
+
+    def _view_serve_example(self, namespace, name, provider, version, submodule_path):
+        """Review view for displaying example"""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+
+        if module_version is None:
+            return redirect(module_provider.get_view_url())
+
+        submodule = Example(module_version=module_version, module_path=submodule_path)
 
         return self._render_template(
             'submodule.html',

@@ -209,6 +209,16 @@ This can be set to an empty string, to expected submodules to be in the root dir
 
 Default: `modules`
 
+### EXAMPLES_DIRECTORY
+
+Directory with a module's source that contains examples.
+
+Examples are expected to be within sub-directories of the examples directory.
+
+E.g. If EXAMPLES_DIRECTORY is set to `examples`, with the root module, the following would be expected for an example: `examples/myexample/main.tf`.
+
+Default: `examples`
+
 
 ### GIT_PROVIDER_CONFIG
 
