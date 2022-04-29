@@ -1214,6 +1214,7 @@ class ModuleVersion(TerraformSpecsObject):
         select = db.sub_module.select(
         ).join(db.module_version, db.module_version.c.id == db.sub_module.c.parent_module_version).where(
             db.module_version.c.id == self.pk,
+            db.sub_module.c.type == Submodule.TYPE
         )
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
@@ -1223,9 +1224,27 @@ class ModuleVersion(TerraformSpecsObject):
                 for r in res
             ]
 
+    def get_examples(self):
+        """Return list of submodules."""
+        db = Database.get()
+        select = db.sub_module.select(
+        ).join(db.module_version, db.module_version.c.id == db.sub_module.c.parent_module_version).where(
+            db.module_version.c.id == self.pk,
+            db.sub_module.c.type == Example.TYPE
+        )
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
 
-class Submodule(TerraformSpecsObject):
-    """Sub module from a module version."""
+            return [
+                Example(module_version=self, module_path=r['path'])
+                for r in res
+            ]
+
+
+class BaseSubmodule(TerraformSpecsObject):
+    """Base submodule, for submodule and examples from a module version."""
+
+    TYPE = None
 
     @property
     def path(self):
@@ -1250,14 +1269,15 @@ class Submodule(TerraformSpecsObject):
     def __init__(self, module_version: ModuleVersion, module_path: str):
         self._module_version = module_version
         self._module_path = module_path
-        super(Submodule, self).__init__()
+        super(BaseSubmodule, self).__init__()
 
     def _get_db_row(self):
         """Get object from database"""
         db = Database.get()
         select = db.sub_module.select().where(
             db.sub_module.c.parent_module_version == self._module_version.pk,
-            db.sub_module.c.path == self._module_path
+            db.sub_module.c.path == self._module_path,
+            db.sub_module.c.type == self.TYPE
         )
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
@@ -1273,7 +1293,19 @@ class Submodule(TerraformSpecsObject):
 
     def get_view_url(self):
         """Return view URL"""
-        return '{module_version_url}/submodules/{submodule_path}'.format(
+        return '{module_version_url}/{submodules_type}/{submodule_path}'.format(
             module_version_url=self._module_version.get_view_url(),
+            submodules_type=self.TYPE,
             submodule_path=self.path
         )
+
+
+class Submodule(BaseSubmodule):
+
+    TYPE = 'submodule'
+
+
+class Example(BaseSubmodule):
+
+    TYPE = 'example'
+
