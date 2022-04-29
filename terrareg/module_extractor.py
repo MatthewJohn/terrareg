@@ -15,7 +15,7 @@ import pathlib
 from werkzeug.utils import secure_filename
 import magic
 
-from terrareg.models import ModuleVersion
+from terrareg.models import Example, ModuleVersion, Submodule
 from terrareg.database import Database
 from terrareg.errors import (
     UnknownFiletypeError,
@@ -236,8 +236,8 @@ class ModuleExtractor:
             terrareg_metadata=terrareg_metadata
         )
 
-        self._scan_submodules(type_='submodule', subdirectory=MODULES_DIRECTORY)
-        self._scan_submodules(type_='example', subdirectory=EXAMPLES_DIRECTORY)
+        self._scan_submodules(type_=Submodule.TYPE, subdirectory=MODULES_DIRECTORY)
+        self._scan_submodules(type_=Example.TYPE, subdirectory=EXAMPLES_DIRECTORY)
 
 
 class ApiUploadModuleExtractor(ModuleExtractor):
