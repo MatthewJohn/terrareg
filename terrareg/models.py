@@ -1214,13 +1214,29 @@ class ModuleVersion(TerraformSpecsObject):
         select = db.sub_module.select(
         ).join(db.module_version, db.module_version.c.id == db.sub_module.c.parent_module_version).where(
             db.module_version.c.id == self.pk,
-            db.sub_module.c.type == 'submodule'
+            db.sub_module.c.type == Submodule.TYPE
         )
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
 
             return [
                 Submodule(module_version=self, module_path=r['path'])
+                for r in res
+            ]
+
+    def get_examples(self):
+        """Return list of submodules."""
+        db = Database.get()
+        select = db.sub_module.select(
+        ).join(db.module_version, db.module_version.c.id == db.sub_module.c.parent_module_version).where(
+            db.module_version.c.id == self.pk,
+            db.sub_module.c.type == Example.TYPE
+        )
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+
+            return [
+                Example(module_version=self, module_path=r['path'])
                 for r in res
             ]
 
