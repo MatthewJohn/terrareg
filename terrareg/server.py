@@ -498,6 +498,11 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
     def _post(self, namespace, name, provider, version):
         """Handle module version upload."""
 
+        # If module hosting is disabled,
+        # refuse the upload of new modules
+        if not ALLOW_MODULE_HOSTING:
+            return {'message': 'Module upload is disabled.'}, 400
+
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
         # Get module provider and, optionally create, if it doesn't exist
