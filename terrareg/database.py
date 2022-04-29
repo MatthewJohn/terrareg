@@ -155,6 +155,7 @@ class Database():
                     ondelete='CASCADE'),
                 nullable=False
             ),
+            sqlalchemy.Column('type', sqlalchemy.String),
             sqlalchemy.Column('path', sqlalchemy.String),
             sqlalchemy.Column('name', sqlalchemy.String),
             sqlalchemy.Column('readme_content', sqlalchemy.String),
@@ -172,7 +173,7 @@ class Database():
                     ondelete='CASCADE'),
                 nullable=False
             ),
-            sqlalchemy.Column('timestamp', sqlalchemy.String),
+            sqlalchemy.Column('timestamp', sqlalchemy.String, nullable=False),
             sqlalchemy.Column('terraform_version', sqlalchemy.String),
             sqlalchemy.Column('analytics_token', sqlalchemy.String),
             sqlalchemy.Column('auth_token', sqlalchemy.String),
