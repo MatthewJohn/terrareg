@@ -5,7 +5,7 @@ from terrareg.models import Module, Namespace, ModuleProvider, ModuleVersion
 import terrareg.errors
 from test.integration.terrareg import TerraregIntegrationTest
 
-class TestModuleProvider(TerraregIntegrationTest):
+class TestModuleVersion(TerraregIntegrationTest):
 
     @pytest.mark.parametrize('version', [
         'astring',
