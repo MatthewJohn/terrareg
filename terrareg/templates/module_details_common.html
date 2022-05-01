@@ -114,8 +114,15 @@
     </ul>
 </nav>
 
-<div class="columns" style="background-color: #f9f9f9; padding-top: 30px; padding-bottom: 30px;">
-    <div class="column is-two-fifths is-offset-one-fifth">
+<div class="columns is-centered" style="background-color: #f9f9f9; padding-top: 30px; padding-bottom: 30px;">
+
+    {% if provider_logo.exists %}
+    <a style="margin-top: 30px; max-height: 150px;" href="{{ provider_logo.link }}">
+        <img height="150" width="150" alt="{{ provider_logo.alt }}" src="{{ provider_logo.source }}" />
+    </a>
+    {% endif %}
+
+    <div class="column is-two-fifths">
         {% block main_details %}{% endblock %}
     </div>
 
@@ -728,4 +735,12 @@ ${output_tf}
 
 
 
+{% endblock %}
+
+{% block additional_footer %}
+<p>
+    {% if provider_logo.exists %}
+    {{ provider_logo.tos }}
+    {% endif %}
+</p>
 {% endblock %}
