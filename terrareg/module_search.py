@@ -219,6 +219,7 @@ class ModuleSearch(object):
         """Return module with most recent published date."""
         db = Database.get()
         select = db.select_module_version_joined_module_provider().where(
+            db.module_version.c.published == True
         ).order_by(db.module_version.c.published_at.desc(), 
         ).limit(1)
 
@@ -262,7 +263,8 @@ class ModuleSearch(object):
             db.analytics.c.timestamp >= (
                 datetime.datetime.now() -
                 datetime.timedelta(days=7)
-            )
+            ),
+            db.module_version.c.published == True
         ).group_by(
             db.module_provider.c.namespace,
             db.module_provider.c.module,
