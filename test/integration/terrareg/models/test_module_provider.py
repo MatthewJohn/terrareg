@@ -253,3 +253,139 @@ class TestModuleProvider(TerraregIntegrationTest):
             with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
                 assert module_version.get_source_browse_url(**kwargs) == expected_browse_url
 
+
+    @setup_test_data()
+    @pytest.mark.parametrize('module_name,module_version,expected_clone_url', [
+        # Test no clone URL in any configuration
+        ('no-git-provider', '1.0.0', None),
+        # Test clone URL only configured in module version
+        ('no-git-provider', '1.4.0', 'ssh://mv-clone-url.com/repo_url_tests/no-git-provider-test'),
+
+        # Test with git provider configured in module provider
+        ('git-provider-urls', '1.1.0', 'ssh://clone-url.com/repo_url_tests/git-provider-urls-test'),
+        # Test with git provider configured in module provider and override in module version
+        ('git-provider-urls', '1.4.0', 'ssh://mv-clone-url.com/repo_url_tests/git-provider-urls-test'),
+
+        # Test with git provider configured in module provider
+        ('module-provider-urls', '1.2.0', 'ssh://mp-clone-url.com/repo_url_tests/module-provider-urls-test'),
+        # Test with URls configured in module provider and override in module version
+        ('module-provider-urls', '1.4.0', 'ssh://mv-clone-url.com/repo_url_tests/module-provider-urls-test'),
+
+        # Test with git provider configured in module provider and URLs configured in git provider
+        ('module-provider-override-git-provider', '1.3.0', 'ssh://mp-clone-url.com/repo_url_tests/module-provider-override-git-provider-test'),
+        # Test with URls configured in module provider and override in module version
+        ('module-provider-override-git-provider', '1.4.0', 'ssh://mv-clone-url.com/repo_url_tests/module-provider-override-git-provider-test'),
+    ])
+    def test_get_source_clone_url(self, module_name, module_version, expected_clone_url):
+        """Ensure clone URL matches the expected values."""
+        namespace = Namespace(name='repo_url_tests')
+        module = Module(namespace=namespace, name=module_name)
+        module_provider = ModuleProvider.get(module=module, name='test')
+        assert module_provider is not None
+        module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
+        assert module_version is not None
+
+        assert module_version.get_git_clone_url() == expected_clone_url
+
+    @setup_test_data()
+    @pytest.mark.parametrize('module_name,module_version,expected_clone_url', [
+        # Test no clone URL in any configuration
+        ('no-git-provider', '1.0.0', None),
+        # Test clone URL only configured in module version
+        ('no-git-provider', '1.4.0', None),
+
+        # Test with git provider configured in module provider
+        ('git-provider-urls', '1.1.0', 'ssh://clone-url.com/repo_url_tests/git-provider-urls-test'),
+        # Test with git provider configured in module provider and override in module version
+        ('git-provider-urls', '1.4.0', 'ssh://clone-url.com/repo_url_tests/git-provider-urls-test'),
+
+        # Test with repo URLs configured in module provider
+        ('module-provider-urls', '1.2.0', 'ssh://mp-clone-url.com/repo_url_tests/module-provider-urls-test'),
+        # Test with repo URls configured in module provider and override in module version
+        ('module-provider-urls', '1.4.0', 'ssh://mp-clone-url.com/repo_url_tests/module-provider-urls-test'),
+
+        # Test with git provider configured in module provider and URLs configured in git provider
+        ('module-provider-override-git-provider', '1.3.0', 'ssh://mp-clone-url.com/repo_url_tests/module-provider-override-git-provider-test'),
+        # Test with URls configured in module provider and override in module version
+        ('module-provider-override-git-provider', '1.4.0', 'ssh://mp-clone-url.com/repo_url_tests/module-provider-override-git-provider-test'),
+    ])
+    def test_get_source_clone_url_with_custom_module_version_urls_disabled(self, module_name, module_version, expected_clone_url):
+        """Ensure clone URL matches the expected values when module version repo urls are disabled."""
+        namespace = Namespace(name='repo_url_tests')
+        module = Module(namespace=namespace, name=module_name)
+        module_provider = ModuleProvider.get(module=module, name='test')
+        assert module_provider is not None
+        module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
+        assert module_version is not None
+
+        with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
+            assert module_version.get_git_clone_url() == expected_clone_url
+
+    @setup_test_data()
+    @pytest.mark.parametrize('module_name,module_version,expected_clone_url', [
+        # Test no clone URL in any configuration
+        ('no-git-provider', '1.0.0', None),
+        # Test clone URL only configured in module version
+        ('no-git-provider', '1.4.0', 'ssh://mv-clone-url.com/repo_url_tests/no-git-provider-test'),
+
+        # Test with git provider configured in module provider
+        ('git-provider-urls', '1.1.0', 'ssh://clone-url.com/repo_url_tests/git-provider-urls-test'),
+        # Test with git provider configured in module provider and override in module version
+        ('git-provider-urls', '1.4.0', 'ssh://mv-clone-url.com/repo_url_tests/git-provider-urls-test'),
+
+        # Test with repo URLs configured in module provider
+        ('module-provider-urls', '1.2.0', None),
+        # Test with repo URls configured in module provider and override in module version
+        ('module-provider-urls', '1.4.0', 'ssh://mv-clone-url.com/repo_url_tests/module-provider-urls-test'),
+
+        # Test with git provider configured in module provider and URLs configured in git provider
+        ('module-provider-override-git-provider', '1.3.0', 'ssh://clone-url.com/repo_url_tests/module-provider-override-git-provider-test'),
+        # Test with URls configured in module provider and override in module version
+        ('module-provider-override-git-provider', '1.4.0', 'ssh://mv-clone-url.com/repo_url_tests/module-provider-override-git-provider-test'),
+    ])
+    def test_get_source_clone_url_with_custom_module_provider_urls_disabled(self, module_name, module_version, expected_clone_url):
+        """Ensure clone URL matches the expected values when module provider repo urls are disabled."""
+        namespace = Namespace(name='repo_url_tests')
+        module = Module(namespace=namespace, name=module_name)
+        module_provider = ModuleProvider.get(module=module, name='test')
+        assert module_provider is not None
+        module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
+        assert module_version is not None
+
+        with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
+            assert module_version.get_git_clone_url() == expected_clone_url
+
+    @setup_test_data()
+    @pytest.mark.parametrize('module_name,module_version,expected_clone_url', [
+        # Test no clone URL in any configuration
+        ('no-git-provider', '1.0.0', None),
+        # Test clone URL only configured in module version
+        ('no-git-provider', '1.4.0', None),
+
+        # Test with git provider configured in module provider
+        ('git-provider-urls', '1.1.0', 'ssh://clone-url.com/repo_url_tests/git-provider-urls-test'),
+        # Test with git provider configured in module provider and override in module version
+        ('git-provider-urls', '1.4.0', 'ssh://clone-url.com/repo_url_tests/git-provider-urls-test'),
+
+        # Test with repo URLs configured in module provider
+        ('module-provider-urls', '1.2.0', None),
+        # Test with repo URls configured in module provider and override in module version
+        ('module-provider-urls', '1.4.0', None),
+
+        # Test with git provider configured in module provider and URLs configured in git provider
+        ('module-provider-override-git-provider', '1.3.0', 'ssh://clone-url.com/repo_url_tests/module-provider-override-git-provider-test'),
+        # Test with URls configured in module provider and override in module version
+        ('module-provider-override-git-provider', '1.4.0', 'ssh://clone-url.com/repo_url_tests/module-provider-override-git-provider-test'),
+    ])
+    def test_get_source_clone_url_with_custom_module_provider_and_module_version_urls_disabled(self, module_name, module_version, expected_clone_url):
+        """Ensure clone URL matches the expected values when module provider and module version repo urls are disabled."""
+        namespace = Namespace(name='repo_url_tests')
+        module = Module(namespace=namespace, name=module_name)
+        module_provider = ModuleProvider.get(module=module, name='test')
+        assert module_provider is not None
+        module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
+        assert module_version is not None
+
+        with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
+            with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
+                assert module_version.get_git_clone_url() == expected_clone_url
