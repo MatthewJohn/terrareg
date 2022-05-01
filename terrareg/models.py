@@ -10,15 +10,7 @@ import markdown
 
 import terrareg.analytics
 from terrareg.database import Database
-from terrareg.config import (
-    ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
-    ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
-    ALLOW_MODULE_HOSTING,
-    ALLOWED_PROVIDERS,
-    DATA_DIRECTORY,
-    VERIFIED_MODULE_NAMESPACES,
-    GIT_PROVIDER_CONFIG
-)
+import terrareg.config
 from terrareg.errors import (
     InvalidModuleNameError, InvalidModuleProviderNameError,
     InvalidVersionError, NoModuleVersionAvailableError,
@@ -42,7 +34,7 @@ class GitProvider:
     @staticmethod
     def initialise_from_config():
         """Load git providers from config into database."""
-        git_provider_config = json.loads(GIT_PROVIDER_CONFIG)
+        git_provider_config = json.loads(terrareg.config.GIT_PROVIDER_CONFIG)
         db = Database.get()
         for git_provider_config in git_provider_config:
             # Validate provider config
@@ -231,7 +223,7 @@ class Namespace(object):
     @property
     def base_directory(self):
         """Return base directory."""
-        return safe_join_paths(DATA_DIRECTORY, 'modules', self._name)
+        return safe_join_paths(terrareg.config.DATA_DIRECTORY, 'modules', self._name)
 
     @property
     def name(self):
@@ -241,7 +233,7 @@ class Namespace(object):
     @property
     def is_auto_verified(self):
         """Whether the namespace is set to verfied in the config."""
-        return self.name in VERIFIED_MODULE_NAMESPACES
+        return self.name in terrareg.config.VERIFIED_MODULE_NAMESPACES
 
     @staticmethod
     def _validate_name(name):
@@ -354,7 +346,7 @@ class ModuleProvider(object):
 
         # Check if providers allow-list is enabled
         # and check if name in list of allowed providers
-        if ALLOWED_PROVIDERS and name not in ALLOWED_PROVIDERS:
+        if terrareg.config.ALLOWED_PROVIDERS and name not in terrareg.config.ALLOWED_PROVIDERS:
             raise ProviderNameNotPermittedError(
                 'Provider name is not in the list of alllowed providers.'
             )
@@ -527,7 +519,8 @@ class ModuleProvider(object):
         template = None
 
         # Check if allowed and module provider has custom git URL
-        if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._get_db_row()['repo_clone_url_template']:
+        if (terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and
+                self._get_db_row()['repo_clone_url_template']):
             template = self._get_db_row()['repo_clone_url_template']
 
         # Otherwise, check if module provider is configured with git provider
@@ -579,7 +572,7 @@ class ModuleProvider(object):
 
     def update_repo_clone_url_template(self, repo_clone_url_template):
         """Update repository URL for module provider."""
-        if not ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
+        if not terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
             raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
                 'Custom module provider git repository URL cannot be set.'
             )
@@ -614,7 +607,7 @@ class ModuleProvider(object):
 
     def update_repo_browse_url_template(self, repo_browse_url_template):
         """Update browse URL template for module provider."""
-        if not ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
+        if not terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
             raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
                 'Custom module provider git repository URL cannot be set.'
             )
@@ -656,7 +649,7 @@ class ModuleProvider(object):
 
     def update_repo_base_url_template(self, repo_base_url_template):
         """Update browse URL template for module provider."""
-        if not ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
+        if not terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
             raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
                 'Custom module provider git repository URL cannot be set.'
             )
@@ -1027,7 +1020,8 @@ class ModuleVersion(TerraformSpecsObject):
         template = None
 
         # Check if allowed, and module version has custom git URL
-        if ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['repo_clone_url_template']:
+        if (terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and
+                self._get_db_row()['repo_clone_url_template']):
             template = self._get_db_row()['repo_clone_url_template']
 
         # Otherwise, get git clone URL from module provider
@@ -1075,7 +1069,7 @@ class ModuleVersion(TerraformSpecsObject):
 
             return rendered_url
 
-        if ALLOW_MODULE_HOSTING:
+        if terrareg.config.ALLOW_MODULE_HOSTING:
             return '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
 
         raise NoModuleDownloadMethodConfiguredError(
@@ -1087,11 +1081,12 @@ class ModuleVersion(TerraformSpecsObject):
         template = None
 
         # Check if allowed, and module version has custom git URL
-        if ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['repo_browse_url_template']:
+        if terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['repo_browse_url_template']:
             template = self._get_db_row()['repo_browse_url_template']
 
         # Otherwise, check if allowed and module provider has custom git URL
-        elif ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._module_provider._get_db_row()['repo_browse_url_template']:
+        elif (terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and
+                self._module_provider._get_db_row()['repo_browse_url_template']):
             template = self._module_provider._get_db_row()['repo_browse_url_template']
 
         # Otherwise, check if module provider is configured with git provider
@@ -1105,7 +1100,9 @@ class ModuleVersion(TerraformSpecsObject):
                 module=self._module_provider._module.name,
                 provider=self._module_provider.name,
                 tag=self.source_git_tag,
-                path=path
+                # Default path to empty string to avoid
+                # adding 'None' to string
+                path=(path if path else '')
             )
 
         return None
@@ -1115,11 +1112,13 @@ class ModuleVersion(TerraformSpecsObject):
         template = None
 
         # Check if allowed, and module version has custom git URL
-        if ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and self._get_db_row()['repo_base_url_template']:
+        if (terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION and
+                self._get_db_row()['repo_base_url_template']):
             template = self._get_db_row()['repo_base_url_template']
 
         # Otherwise, check if allowed and module provider has custom git URL
-        elif ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and self._module_provider._get_db_row()['repo_base_url_template']:
+        elif (terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER and
+                self._module_provider._get_db_row()['repo_base_url_template']):
             template = self._module_provider._get_db_row()['repo_base_url_template']
 
         # Otherwise, check if module provider is configured with git provider
