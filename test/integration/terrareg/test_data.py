@@ -126,6 +126,28 @@ integration_test_data = {
             }
         },
     },
+    'real_providers': {
+        'test-module': {
+            'aws': {
+                'id': 22,
+                'versions': {
+                    '1.0.0': {}
+                }
+            },
+            'gcp': {
+                'id': 23,
+                'versions': {
+                    '1.0.0': {}
+                }
+            },
+            'doesnotexist': {
+                'id': 24,
+                'versions': {
+                    '1.0.0': {}
+                }
+            }
+        }
+    },
     'repo_url_tests': {
         'no-git-provider': {'test': {
             'id': 18,
