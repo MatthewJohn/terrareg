@@ -5,6 +5,12 @@ integration_git_providers = {
         'base_url_template': 'https://localhost.com/{namespace}/{module}-{provider}',
         'browse_url_template': 'https://localhost.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
         'clone_url_template': 'ssh://localhost.com/{namespace}/{module}-{provider}'
+    },
+    2: {
+        'name': 'repo_url_tests',
+        'base_url_template': 'https://base-url.com/{namespace}/{module}-{provider}',
+        'browse_url_template': 'https://browse-url.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+        'clone_url_template': 'ssh://clone-url.com/{namespace}/{module}-{provider}'
     }
 }
 
@@ -118,6 +124,60 @@ integration_test_data = {
                 'git_tag_format': 'v{version}',
                 'versions': []
             }
-        }
+        },
+    },
+    'repo_url_tests': {
+        'no-git-provider': {'test': {
+            'id': 18,
+            'versions': {
+                '1.0.0': {},
+                '1.4.0': {
+                    'repo_base_url_template': 'https://mv-base-url.com/{namespace}/{module}-{provider}',
+                    'repo_browse_url_template': 'https://mv-browse-url.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+                    'repo_clone_url_template': 'ssh://mv-clone-url.com/{namespace}/{module}-{provider}'
+                }
+            }
+        }},
+        'git-provider-urls': {'test': {
+            'id': 19,
+            'versions': {
+                '1.1.0': {},
+                '1.4.0': {
+                    'repo_base_url_template': 'https://mv-base-url.com/{namespace}/{module}-{provider}',
+                    'repo_browse_url_template': 'https://mv-browse-url.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+                    'repo_clone_url_template': 'ssh://mv-clone-url.com/{namespace}/{module}-{provider}'
+                }
+            },
+            'git_provider_id': 2
+        }},
+        'module-provider-urls': { 'test': {
+            'id': 20,
+            'versions': {
+                '1.2.0': {},
+                '1.4.0': {
+                    'repo_base_url_template': 'https://mv-base-url.com/{namespace}/{module}-{provider}',
+                    'repo_browse_url_template': 'https://mv-browse-url.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+                    'repo_clone_url_template': 'ssh://mv-clone-url.com/{namespace}/{module}-{provider}'
+                }
+            },
+            'repo_base_url_template': 'https://mp-base-url.com/{namespace}/{module}-{provider}',
+            'repo_browse_url_template': 'https://mp-browse-url.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'repo_clone_url_template': 'ssh://mp-clone-url.com/{namespace}/{module}-{provider}'
+        }},
+        'module-provider-override-git-provider': { 'test': {
+            'id': 21,
+            'versions': {
+                '1.3.0': {},
+                '1.4.0': {
+                    'repo_base_url_template': 'https://mv-base-url.com/{namespace}/{module}-{provider}',
+                    'repo_browse_url_template': 'https://mv-browse-url.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+                    'repo_clone_url_template': 'ssh://mv-clone-url.com/{namespace}/{module}-{provider}'
+                }
+            },
+            'repo_base_url_template': 'https://mp-base-url.com/{namespace}/{module}-{provider}',
+            'repo_browse_url_template': 'https://mp-browse-url.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'repo_clone_url_template': 'ssh://mp-clone-url.com/{namespace}/{module}-{provider}',
+            'git_provider_id': 2
+        }}
     }
 }
