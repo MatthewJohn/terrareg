@@ -336,6 +336,57 @@ class Module(object):
             os.mkdir(self.base_directory)
 
 
+class ProviderLogo:
+
+    INFO = {
+        'aws': {
+            'source': '/static/images/PB_AWS_logo_RGB_stacked.547f032d90171cdea4dd90c258f47373c5573db5.png',
+            'tos': 'Amazon Web Services, AWS, the Powered by AWS logo are trademarks of Amazon.com, Inc. or its affiliates.',
+            'alt': 'Powered by AWS Cloud Computing',
+            'link': 'https://aws.amazon.com/'
+        },
+        'gcp': {
+            'source': '/static/images/gcp.png',
+            'tos': 'Google Cloud and the Google Cloud logo are trademarks of Google LLC.',
+            'alt': 'Google Cloud',
+            'link': 'https://cloud.google.com/'
+        }
+    }
+
+    def __init__(self, provider):
+        """Store details and provider."""
+        self._details = ProviderLogo.INFO.get(provider, None)
+        if self._details is not None:
+            # Ensure required attributes exist for logo
+            for attr in ['source', 'tos', 'alt', 'link']:
+                assert attr in self._details and self._details[attr]
+
+    @property
+    def exists(self):
+        """Determine whether logo exists."""
+        return self._details is not None
+
+    @property
+    def source(self):
+        """Return logo source URL."""
+        return self._details['source'] if self._details is not None else None
+
+    @property
+    def tos(self):
+        """Return logo terms of service."""
+        return self._details['tos'] if self._details is not None else None
+
+    @property
+    def alt(self):
+        """Return logo image alt text."""
+        return self._details['alt'] if self._details is not None else None
+
+    @property
+    def link(self):
+        """Return logo image link URL."""
+        return self._details['link'] if self._details is not None else None
+
+
 class ModuleProvider(object):
 
     @staticmethod
@@ -401,6 +452,10 @@ class ModuleProvider(object):
 
         # Otherwise, return object
         return obj
+
+    def get_logo(self):
+        """Return logo for provider."""
+        return ProviderLogo(provider=self.name)
 
     @property
     def name(self):
