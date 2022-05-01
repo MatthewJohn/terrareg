@@ -344,6 +344,12 @@ class ProviderLogo:
             'tos': 'Amazon Web Services, AWS, the Powered by AWS logo are trademarks of Amazon.com, Inc. or its affiliates.',
             'alt': 'Powered by AWS Cloud Computing',
             'link': 'https://aws.amazon.com/'
+        },
+        'gcp': {
+            'source': '/static/images/gcp.png',
+            'tos': 'Google Cloud and the Google Cloud logo are trademarks of Google LLC.',
+            'alt': 'Google Cloud',
+            'link': 'https://cloud.google.com/'
         }
     }
 
