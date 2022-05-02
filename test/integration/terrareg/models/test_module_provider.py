@@ -52,7 +52,7 @@ class TestModuleProvider(TerraregIntegrationTest):
 
     def test_module_provider_name_in_allow_list(self):
         """Test module provider name that is not in allow list"""
-        with mock.patch('terrareg.config.ALLOWED_PROVIDERS', ['aws', 'azure', 'test']):
+        with mock.patch('terrareg.config.Config.ALLOWED_PROVIDERS', ['aws', 'azure', 'test']):
             namespace = Namespace(name='test')
             module = Module(namespace=namespace, name='test')
             ModuleProvider(module=module, name='aws')
@@ -62,7 +62,7 @@ class TestModuleProvider(TerraregIntegrationTest):
 
     def test_module_provider_name_not_in_allow_list(self):
         """Test module provider name that is not in allow list"""
-        with mock.patch('terrareg.config.ALLOWED_PROVIDERS', ['onlyallow']):
+        with mock.patch('terrareg.config.Config.ALLOWED_PROVIDERS', ['onlyallow']):
             namespace = Namespace(name='test')
             module = Module(namespace=namespace, name='test')
             with pytest.raises(terrareg.errors.ProviderNameNotPermittedError):
@@ -163,7 +163,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         assert module_version is not None
 
         kwargs = {'path': path} if path else {}
-        with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
+        with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
             assert module_version.get_source_browse_url(**kwargs) == expected_browse_url
 
     @setup_test_data()
@@ -206,7 +206,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         assert module_version is not None
 
         kwargs = {'path': path} if path else {}
-        with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
+        with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
             assert module_version.get_source_browse_url(**kwargs) == expected_browse_url
 
     @setup_test_data()
@@ -249,8 +249,8 @@ class TestModuleProvider(TerraregIntegrationTest):
         assert module_version is not None
 
         kwargs = {'path': path} if path else {}
-        with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
-            with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
+        with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
+            with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
                 assert module_version.get_source_browse_url(**kwargs) == expected_browse_url
 
     @setup_test_data()
@@ -317,7 +317,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
         assert module_version is not None
 
-        with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
+        with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
             assert module_version.get_git_clone_url() == expected_clone_url
 
     @setup_test_data()
@@ -351,7 +351,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
         assert module_version is not None
 
-        with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
+        with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
             assert module_version.get_git_clone_url() == expected_clone_url
 
     @setup_test_data()
@@ -385,8 +385,8 @@ class TestModuleProvider(TerraregIntegrationTest):
         module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
         assert module_version is not None
 
-        with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
-            with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
+        with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
+            with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
                 assert module_version.get_git_clone_url() == expected_clone_url
 
     @setup_test_data()
@@ -453,7 +453,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
         assert module_version is not None
 
-        with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
+        with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
             assert module_version.get_source_base_url() == expected_base_url
 
     @setup_test_data()
@@ -487,7 +487,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
         assert module_version is not None
 
-        with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
+        with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
             assert module_version.get_source_base_url() == expected_base_url
 
     @setup_test_data()
@@ -521,6 +521,6 @@ class TestModuleProvider(TerraregIntegrationTest):
         module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
         assert module_version is not None
 
-        with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
-            with mock.patch('terrareg.config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
+        with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
+            with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
                 assert module_version.get_source_base_url() == expected_base_url

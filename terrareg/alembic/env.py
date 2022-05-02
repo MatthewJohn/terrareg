@@ -6,7 +6,7 @@ from sqlalchemy import pool
 from alembic import context
 
 from terrareg.database import Database
-from terrareg.config import DATABASE_URL
+from terrareg.config import Config
 
 
 # this is the Alembic Config object, which provides
@@ -27,7 +27,7 @@ db.initialise()
 
 target_metadata = db.get_meta()
 
-config.set_section_option('alembic', 'sqlalchemy.url', DATABASE_URL)
+config.set_section_option('alembic', 'sqlalchemy.url', Config().DATABASE_URL)
 
 
 def run_migrations_offline():
@@ -42,7 +42,7 @@ def run_migrations_offline():
     script output.
 
     """
-    url = DATABASE_URL
+    url = Config().DATABASE_URL
     context.configure(
         url=url,
         target_metadata=target_metadata,

@@ -14,8 +14,8 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
         """Test endpoint when user is authenticated."""
         cookie_expiry_mins = 5
         with unittest.mock.patch('terrareg.server.check_admin_authentication') as mock_admin_authentication:
-            with unittest.mock.patch('terrareg.config.SECRET_KEY', 'averysecretkey'):
-                with unittest.mock.patch('terrareg.config.ADMIN_SESSION_EXPIRY_MINS', cookie_expiry_mins):
+            with unittest.mock.patch('terrareg.config.Config.SECRET_KEY', 'averysecretkey'):
+                with unittest.mock.patch('terrareg.config.Config.ADMIN_SESSION_EXPIRY_MINS', cookie_expiry_mins):
                     # Update real app secret key
                     self.SERVER._app.secret_key = 'averysecretkey'
 
@@ -37,7 +37,7 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
     def test_authenticated_without_secret_key(self, client):
         """Test endpoint and ensure session is not provided"""
         with unittest.mock.patch('terrareg.server.check_admin_authentication') as mock_admin_authentication:
-            with unittest.mock.patch('terrareg.config.SECRET_KEY', ''):
+            with unittest.mock.patch('terrareg.config.Config.SECRET_KEY', ''):
                 # Update real app secret key with fake value,
                 # otherwise an error would be received when checking the session.
                 self.SERVER._app.secret_key = 'test'

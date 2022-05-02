@@ -1,14 +1,12 @@
 
 import re
 import datetime
-from distutils.version import StrictVersion
-from telnetlib import AUTHENTICATION
 
 
 import sqlalchemy
 
 from terrareg.database import Database
-from terrareg.config import ANALYTICS_AUTH_KEYS
+from terrareg.config import Config
 
 
 class AnalyticsEngine:
@@ -21,7 +19,7 @@ class AnalyticsEngine:
     def are_tokens_enabled(cls):
         """Determine if tokens are enabled."""
         if AnalyticsEngine._ARE_TOKENS_ENABLED is None:
-            AnalyticsEngine._ARE_TOKENS_ENABLED = bool(ANALYTICS_AUTH_KEYS)
+            AnalyticsEngine._ARE_TOKENS_ENABLED = bool(Config().ANALYTICS_AUTH_KEYS)
         return AnalyticsEngine._ARE_TOKENS_ENABLED
 
     @classmethod
@@ -30,7 +28,7 @@ class AnalyticsEngine:
         if AnalyticsEngine._ARE_ENVIRONMENTS_ENABLED is None:
             AnalyticsEngine._ARE_ENVIRONMENTS_ENABLED = (
                 AnalyticsEngine.are_tokens_enabled() and
-                not (len(ANALYTICS_AUTH_KEYS) == 1 and len(ANALYTICS_AUTH_KEYS[0].split(':')) == 1)
+                not (len(Config().ANALYTICS_AUTH_KEYS) == 1 and len(Config().ANALYTICS_AUTH_KEYS[0].split(':')) == 1)
             )
         return AnalyticsEngine._ARE_ENVIRONMENTS_ENABLED
 
@@ -40,7 +38,7 @@ class AnalyticsEngine:
         if AnalyticsEngine._TOKEN_ENVIRONMENT_MAPPING is None:
             AnalyticsEngine._TOKEN_ENVIRONMENT_MAPPING = {
                 analytics_auth_key.split(':')[0]: analytics_auth_key.split(':')[1]
-                for analytics_auth_key in ANALYTICS_AUTH_KEYS
+                for analytics_auth_key in Config().ANALYTICS_AUTH_KEYS
             } if AnalyticsEngine.are_environments_enabled() else {}
         return AnalyticsEngine._TOKEN_ENVIRONMENT_MAPPING
 
@@ -70,7 +68,7 @@ class AnalyticsEngine:
         # check and return empty environment
         if not AnalyticsEngine.are_environments_enabled():
             # Check if token matches provided token
-            return (ANALYTICS_AUTH_KEYS[0] == auth_token), None
+            return (Config().ANALYTICS_AUTH_KEYS[0] == auth_token), None
 
         # Otherwise check if auth token is for an environment
         if auth_token in AnalyticsEngine.get_token_environment_mapping():
@@ -219,7 +217,7 @@ class AnalyticsEngine:
         # in the environment list).
         environment_priorities = {
             env.split(':')[1]: itx
-            for itx, env in enumerate(ANALYTICS_AUTH_KEYS)
+            for itx, env in enumerate(Config().ANALYTICS_AUTH_KEYS)
         }
 
         with db.get_engine().connect() as conn:

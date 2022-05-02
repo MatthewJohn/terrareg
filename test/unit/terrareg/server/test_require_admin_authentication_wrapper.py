@@ -35,8 +35,8 @@ class TestRequireAdminAuthenticationWrapper(TerraregUnitTest):
         """Perform authentication test."""
         with test_request_context, \
                 app_context, \
-                unittest.mock.patch('terrareg.config.SECRET_KEY', config_secret_key), \
-                unittest.mock.patch('terrareg.config.ADMIN_AUTHENTICATION_TOKEN', config_admin_authentication_token):
+                unittest.mock.patch('terrareg.config.Config.SECRET_KEY', config_secret_key), \
+                unittest.mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', config_admin_authentication_token):
 
             # Fake mock_headers and mock_session
             if mock_headers:

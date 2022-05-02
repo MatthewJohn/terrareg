@@ -18,7 +18,7 @@ class TerraregIntegrationTest:
 
     def setup_method(self, method):
         """Setup database"""
-        terrareg.config.DATABASE_URL = 'sqlite:///temp-integration.db'
+        terrareg.config.Config.DATABASE_URL = 'sqlite:///temp-integration.db'
 
         # Remove any pre-existing database files
         if os.path.isfile('temp-integration.db'):
