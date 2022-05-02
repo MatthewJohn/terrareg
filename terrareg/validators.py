@@ -1,6 +1,7 @@
 
 from terrareg.errors import RepositoryUrlParseError
 
+
 class GitUrlValidator:
 
     def __init__(self, template):

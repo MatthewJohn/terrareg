@@ -23,13 +23,7 @@ from terrareg.errors import (
     MetadataDoesNotContainRequiredAttributeError
 )
 from terrareg.utils import PathDoesNotExistError, safe_join_paths
-from terrareg.config import (
-    DELETE_EXTERNALLY_HOSTED_ARTIFACTS,
-    EXAMPLES_DIRECTORY,
-    REQUIRED_MODULE_METADATA_ATTRIBUTES,
-    AUTO_PUBLISH_MODULE_VERSIONS,
-    MODULES_DIRECTORY
-)
+from terrareg.config import Config
 
 
 class ModuleExtractor:
@@ -113,7 +107,7 @@ class ModuleExtractor:
 
             break
 
-        for required_attr in REQUIRED_MODULE_METADATA_ATTRIBUTES:
+        for required_attr in Config().REQUIRED_MODULE_METADATA_ATTRIBUTES:
             if not terrareg_metadata.get(required_attr, None):
                 raise MetadataDoesNotContainRequiredAttributeError(
                     'terrareg metadata file does not contain required attribute: {}'.format(required_attr)
@@ -153,9 +147,8 @@ class ModuleExtractor:
             repo_base_url_template=terrareg_metadata.get('repo_base_url', None),
             variable_template=json.dumps(terrareg_metadata.get('variable_template', {})),
             artifact_location=terrareg_metadata.get('artifact_location', None),
-            published=AUTO_PUBLISH_MODULE_VERSIONS
+            published=Config().AUTO_PUBLISH_MODULE_VERSIONS
         )
-        print(AUTO_PUBLISH_MODULE_VERSIONS)
 
     def _process_submodule(self, type_: str, submodule: str):
         """Process submodule."""
@@ -227,7 +220,8 @@ class ModuleExtractor:
 
         # Generate the archive, unless the module is externally hosted and
         # the config for deleting externally hosted artifacts is enabled.
-        if not (terrareg_metadata.get('artifact_location', None) and DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
+        if not (terrareg_metadata.get('artifact_location', None) and
+                Config().DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
             self._generate_archive()
 
         self._insert_database(
@@ -236,8 +230,12 @@ class ModuleExtractor:
             terrareg_metadata=terrareg_metadata
         )
 
-        self._scan_submodules(type_=Submodule.TYPE, subdirectory=MODULES_DIRECTORY)
-        self._scan_submodules(type_=Example.TYPE, subdirectory=EXAMPLES_DIRECTORY)
+        self._scan_submodules(
+            type_=Submodule.TYPE,
+            subdirectory=Config().MODULES_DIRECTORY)
+        self._scan_submodules(
+            type_=Example.TYPE,
+            subdirectory=Config().EXAMPLES_DIRECTORY)
 
 
 class ApiUploadModuleExtractor(ModuleExtractor):
