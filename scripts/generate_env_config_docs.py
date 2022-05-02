@@ -2,6 +2,7 @@
 
 import re
 import sys
+import os
 
 sys.path.append('.')
 
@@ -31,6 +32,9 @@ for prop in dir(Config):
         documented_default_value = 'False'
     else:
         documented_default_value = default_value
+
+    if type(documented_default_value) is str and os.getcwd() in documented_default_value:
+        documented_default_value = documented_default_value.replace(os.getcwd(), '.')
 
     description = getattr(Config, prop).__doc__ or ''
     description = strip_leading_space_re.sub('', description)
