@@ -225,13 +225,19 @@ module "{{ module.name }}" {
         <div id="module-tab-readme" class="module-tabs">
             {{ current_module.get_readme_html()|safe }}
         </div>
+        <style>
+            #module-tab-readme h1, h2, h3, h4 {
+                margin-top: 20px;
+            }
+        </style>
+
         <script>
             // Add 'table' class to all tables in README
             $('#module-tab-readme').find('table').addClass('table');
-            $('#module-tab-readme').find('h1').addClass('title').addClass('is-spaced').addClass('is-2');
-            $('#module-tab-readme').find('h2').addClass('subtitle').addClass('is-spaced').addClass('is-3');
-            $('#module-tab-readme').find('h3').addClass('subtitle').addClass('is-spaced').addClass('is-4');
-            $('#module-tab-readme').find('h4').addClass('subtitle').addClass('is-spaced').addClass('is-5');
+            $('#module-tab-readme').find('h1').addClass('title').addClass('is-2');
+            $('#module-tab-readme').find('h2').addClass('subtitle').addClass('is-3');
+            $('#module-tab-readme').find('h3').addClass('subtitle').addClass('is-4');
+            $('#module-tab-readme').find('h4').addClass('subtitle').addClass('is-5');
 
 
         </script>
