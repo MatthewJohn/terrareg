@@ -30,13 +30,7 @@ from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ApiUploadModuleExtractor, GitModuleExtractor
 from terrareg.analytics import AnalyticsEngine
 from terrareg.filters import NamespaceTrustFilter
-from terrareg.config import (
-    ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
-    ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
-    ALLOW_MODULE_HOSTING,
-    APPLICATION_NAME,
-    LISTEN_PORT, LOGO_URL
-)
+
 
 class Server(object):
     """Manage web server and route requests"""
@@ -54,16 +48,16 @@ class Server(object):
         )
 
         self.host = '0.0.0.0'
-        self.port = LISTEN_PORT
+        self.port = terrareg.config.Config().LISTEN_PORT
         self.ssl_public_key = ssl_public_key
         self.ssl_private_key = ssl_private_key
 
-        if not os.path.isdir(terrareg.config.DATA_DIRECTORY):
-            os.mkdir(terrareg.config.DATA_DIRECTORY)
+        if not os.path.isdir(terrareg.config.Config().DATA_DIRECTORY):
+            os.mkdir(terrareg.config.Config().DATA_DIRECTORY)
         if not os.path.isdir(self._get_upload_directory()):
             os.mkdir(self._get_upload_directory())
-        if not os.path.isdir(os.path.join(terrareg.config.DATA_DIRECTORY, 'modules')):
-            os.mkdir(os.path.join(terrareg.config.DATA_DIRECTORY, 'modules'))
+        if not os.path.isdir(os.path.join(terrareg.config.Config().DATA_DIRECTORY, 'modules')):
+            os.mkdir(os.path.join(terrareg.config.Config().DATA_DIRECTORY, 'modules'))
 
         self._app.config['UPLOAD_FOLDER'] = self._get_upload_directory()
 
@@ -74,7 +68,7 @@ class Server(object):
         self._register_routes()
 
     def _get_upload_directory(self):
-        return os.path.join(terrareg.config.DATA_DIRECTORY, 'upload')
+        return os.path.join(terrareg.config.Config().DATA_DIRECTORY, 'upload')
 
     def _register_routes(self):
         """Register routes with flask."""
@@ -254,9 +248,9 @@ class Server(object):
         """Override render_template, passing in base variables."""
         return render_template(
             *args, **kwargs,
-            terrareg_application_name=APPLICATION_NAME,
-            terrareg_logo_url=LOGO_URL,
-            ALLOW_MODULE_HOSTING=ALLOW_MODULE_HOSTING,
+            terrareg_application_name=terrareg.config.Config().APPLICATION_NAME,
+            terrareg_logo_url=terrareg.config.Config().LOGO_URL,
+            ALLOW_MODULE_HOSTING=terrareg.config.Config().ALLOW_MODULE_HOSTING,
             csrf_token=get_csrf_token()
         )
 
@@ -265,12 +259,12 @@ class Server(object):
         kwargs = {
             'host': self.host,
             'port': self.port,
-            'debug': terrareg.config.DEBUG
+            'debug': terrareg.config.Config().DEBUG
         }
         if self.ssl_public_key and self.ssl_private_key:
             kwargs['ssl_context'] = (self.ssl_public_key, self.ssl_private_key)
 
-        self._app.secret_key = terrareg.config.SECRET_KEY
+        self._app.secret_key = terrareg.config.Config().SECRET_KEY
 
         self._app.run(**kwargs)
 
@@ -292,8 +286,8 @@ class Server(object):
         return self._render_template(
             'create_module_provider.html',
             git_providers=GitProvider.get_all(),
-            ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
-            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
+            ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
 
     def _view_serve_namespace_list(self):
@@ -367,8 +361,8 @@ class Server(object):
             server_hostname=request.host,
             git_providers=GitProvider.get_all(),
             provider_logo=module_provider.get_logo(),
-            ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
-            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
+            ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
 
     def _view_serve_submodule(self, namespace, name, provider, version, submodule_path):
@@ -394,8 +388,8 @@ class Server(object):
             server_hostname=request.host,
             git_providers=GitProvider.get_all(),
             provider_logo=module_provider.get_logo(),
-            ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
-            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
+            ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
 
     def _view_serve_example(self, namespace, name, provider, version, submodule_path):
@@ -421,8 +415,8 @@ class Server(object):
             server_hostname=request.host,
             provider_logo=module_provider.get_logo(),
             git_providers=GitProvider.get_all(),
-            ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
-            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
+            ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
 
     def _view_serve_module_search(self):
@@ -504,7 +498,7 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
 
         # If module hosting is disabled,
         # refuse the upload of new modules
-        if not ALLOW_MODULE_HOSTING:
+        if not terrareg.config.Config().ALLOW_MODULE_HOSTING:
             return {'message': 'Module upload is disabled.'}, 400
 
         namespace = Namespace(namespace)
@@ -874,14 +868,14 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
 
         # Determine if module download should be rejected due to
         # non-existent analytics token
-        if not analytics_token and not terrareg.config.ALLOW_UNIDENTIFIED_DOWNLOADS:
+        if not analytics_token and not terrareg.config.Config().ALLOW_UNIDENTIFIED_DOWNLOADS:
             return make_response(
                 ("\nAn {analytics_token_phrase} must be provided.\n"
                  "Please update module source to include {analytics_token_phrase}.\n"
                  "\nFor example:\n  source = \"{host}/{example_analytics_token}__{namespace}/{module_name}/{provider}\"").format(
-                    analytics_token_phrase=terrareg.config.ANALYTICS_TOKEN_PHRASE,
+                    analytics_token_phrase=terrareg.config.Config().ANALYTICS_TOKEN_PHRASE,
                     host=request.host,
-                    example_analytics_token=terrareg.config.EXAMPLE_ANALYTICS_TOKEN,
+                    example_analytics_token=terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN,
                     namespace=namespace.name,
                     module_name=module.name,
                     provider=module_provider.name
@@ -913,7 +907,7 @@ class ApiModuleVersionSourceDownload(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version):
         """Return static file."""
-        if not ALLOW_MODULE_HOSTING:
+        if not terrareg.config.Config().ALLOW_MODULE_HOSTING:
             return {'message': 'Module hosting is disbaled'}, 500
 
         namespace = Namespace(namespace)
@@ -1057,15 +1051,15 @@ def check_admin_authentication():
     # Check that:
     # - An admin authentication token has been setup
     # - A token has neeif valid authorisation header has been passed
-    if (terrareg.config.ADMIN_AUTHENTICATION_TOKEN and
+    if (terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN and
             request.headers.get('X-Terrareg-ApiKey', '') ==
-            terrareg.config.ADMIN_AUTHENTICATION_TOKEN):
+            terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN):
         authenticated = True
         g.authentication_type = AuthenticationType.AUTHENTICATION_TOKEN
 
     # Check if authenticated via session
     # - Ensure session key has been setup
-    if (terrareg.config.SECRET_KEY and
+    if (terrareg.config.Config().SECRET_KEY and
             session.get('is_admin_authenticated', False) and
             'expires' in session and
             session.get('expires').timestamp() > datetime.datetime.now().timestamp()):
@@ -1102,13 +1096,13 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
     def _post(self):
         """Handle POST requests to the authentication endpoint."""
 
-        if not terrareg.config.SECRET_KEY:
+        if not terrareg.config.Config().SECRET_KEY:
             return {'message': 'Sessions not enabled in configuration'}, 403
 
         session['is_admin_authenticated'] = True
         session['expires'] = (
             datetime.datetime.now() +
-            datetime.timedelta(minutes=terrareg.config.ADMIN_SESSION_EXPIRY_MINS)
+            datetime.timedelta(minutes=terrareg.config.Config().ADMIN_SESSION_EXPIRY_MINS)
         )
         session['csrf_token'] = hashlib.sha1(os.urandom(64)).hexdigest()
         session.modified = True
