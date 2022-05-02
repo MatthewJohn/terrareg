@@ -2,7 +2,7 @@
 import datetime
 
 import sqlalchemy
-from terrareg.config import TRUSTED_NAMESPACES
+from terrareg.config import Config
 
 from terrareg.database import Database
 import terrareg.models
@@ -120,9 +120,9 @@ class ModuleSearch(object):
         if namespace_trust_filters is not NamespaceTrustFilter.UNSPECIFIED:
             or_query = []
             if NamespaceTrustFilter.TRUSTED_NAMESPACES in namespace_trust_filters:
-                or_query.append(db.module_provider.c.namespace.in_(tuple(TRUSTED_NAMESPACES)))
+                or_query.append(db.module_provider.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES)))
             if NamespaceTrustFilter.CONTRIBUTED in namespace_trust_filters:
-                or_query.append(~db.module_provider.c.namespace.in_(tuple(TRUSTED_NAMESPACES)))
+                or_query.append(~db.module_provider.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES)))
             select = select.where(sqlalchemy.or_(*or_query))
 
 
@@ -183,7 +183,7 @@ class ModuleSearch(object):
                     [sqlalchemy.func.count().label('count')]
                 ).select_from(
                     main_select.where(
-                        db.module_provider.c.namespace.in_(tuple(TRUSTED_NAMESPACES))
+                        db.module_provider.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES))
                     ).subquery()
                 )
             ).fetchone()['count']
@@ -193,7 +193,7 @@ class ModuleSearch(object):
                     [sqlalchemy.func.count().label('count')]
                 ).select_from(
                     main_select.where(
-                        ~db.module_provider.c.namespace.in_(tuple(TRUSTED_NAMESPACES))
+                        ~db.module_provider.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES))
                     ).subquery()
                 )
             ).fetchone()['count']

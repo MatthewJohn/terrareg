@@ -82,8 +82,8 @@ class Database():
         """Get singleton instance of engine."""
         if cls._ENGINE is None:
             cls._ENGINE = sqlalchemy.create_engine(
-                terrareg.config.DATABASE_URL,
-                echo=terrareg.config.DEBUG)
+                terrareg.config.Config().DATABASE_URL,
+                echo=terrareg.config.Config().DEBUG)
         return cls._ENGINE
 
     def initialise(self):
