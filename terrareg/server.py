@@ -268,6 +268,15 @@ class Server(object):
 
         self._app.run(**kwargs)
 
+    def _module_provider_404(self, namespace: Namespace, module: Module,
+                             module_provider_name: str):
+        return self._render_template(
+            'module_provider_404.html',
+            namespace=namespace,
+            module=module,
+            module_provider_name=module_provider_name
+        ), 404
+
     def _view_serve_static_index(self):
         """Serve static index"""
         return self._render_template('index.html')
@@ -335,7 +344,13 @@ class Server(object):
         """Render view for displaying module provider information"""
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
+        module_provider = ModuleProvider.get(module=module, name=provider)
+        if module_provider is None:
+            return self._module_provider_404(
+                namespace=namespace,
+                module=module,
+                module_provider_name=provider)
+
         if version is None:
             try:
                 module_version = module_provider.get_latest_version()

@@ -1,0 +1,27 @@
+{% extends 'template.html' %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li><a href="/modules">Modules</a></li>
+        <li><a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></li>
+        <li><a href="/modules/{{ namespace.name }}/{{ module.name }}">{{ module.name }}</a></li>
+        <li class="is-active"><a href="#">{{ module_provider_name }}</a></li>
+    </ul>
+</nav>
+
+
+<div class="columns is-centered" style="background-color: #f9f9f9; padding-top: 30px; padding-bottom: 30px;">
+    <div class="column is-two-fifths">
+        <p class="title is-4">
+            Module/Provider does not exist
+        </p>
+        <br />
+        <p class="subtitle is-5">
+            The module {{ namespace.name }}/{{ module.name }}/{{ module_provider_name }} does not exist
+        </p>
+    </div>
+</div>
+
+{% endblock %}
