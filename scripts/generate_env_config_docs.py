@@ -17,7 +17,7 @@ for prop in dir(Config):
     if not valid_config_re.match(prop):
         continue
 
-    default_value = getattr(Config(), prop)()
+    default_value = getattr(Config(), prop)
 
     # If the config becomes a list,
     # default to empty string, as it will

@@ -3,9 +3,11 @@ import os
 
 class Config:
 
+    @property
     def DATA_DIRECTORY(self):
         return os.path.join(os.environ.get('DATA_DIRECTORY', os.getcwd()), 'data')
 
+    @property
     def DATABASE_URL(self):
         """
         URL for database.
@@ -13,12 +15,14 @@ class Config:
         """
         return os.environ.get('DATABASE_URL', 'sqlite:///modules.db')
 
+    @property
     def LISTEN_PORT(self):
         """
         Port for server to listen on.
         """
         return int(os.environ.get('LISTEN_PORT', 5000))
 
+    @property
     def ALLOW_UNIDENTIFIED_DOWNLOADS(self):
         """
         Whether modules can be downloaded with terraform
@@ -27,18 +31,22 @@ class Config:
         """
         return False
 
+    @property
     def DEBUG(self):
         """Whether flask and sqlalchemy is setup in debug mode."""
         return bool(os.environ.get('DEBUG', False))
 
+    @property
     def ANALYTICS_TOKEN_PHRASE(self):
         """Name of analytics token to provide in responses (e.g. application name, team name etc.)"""
         return os.environ.get('ANALYTICS_TOKEN_PHRASE', 'analytics token')
 
+    @property
     def EXAMPLE_ANALYTICS_TOKEN(self):
         """Example analytics token to provide in responses (e.g. my-tf-application, my-slack-channel etc.)"""
         return os.environ.get('EXAMPLE_ANALYTICS_TOKEN', 'my-tf-application')
 
+    @property
     def ALLOWED_PROVIDERS(self):
         """
         Comma-seperated list of allowed providers.
@@ -49,12 +57,14 @@ class Config:
             attr for attr in os.environ.get('ALLOWED_PROVIDERS', '').split(',') if attr
         ]
 
+    @property
     def TRUSTED_NAMESPACES(self):
         """Comma-separated list of trusted namespaces."""
         return [
             attr for attr in os.environ.get('TRUSTED_NAMESPACES', '').split(',') if attr
         ]
 
+    @property
     def VERIFIED_MODULE_NAMESPACES(self):
         """
         List of namespaces, who's modules will be automatically set to verified.
@@ -63,6 +73,7 @@ class Config:
             attr for attr in os.environ.get('VERIFIED_MODULE_NAMESPACES', '').split(',') if attr
         ]
 
+    @property
     def DELETE_EXTERNALLY_HOSTED_ARTIFACTS(self):
         """
         Whether uploaded modules, that provide an external URL for the artifact,
@@ -71,6 +82,7 @@ class Config:
         """
         return os.environ.get('DELETE_EXTERNALLY_HOSTED_ARTIFACTS', 'False') == 'True'
 
+    @property
     def ALLOW_MODULE_HOSTING(self):
         """
         Whether uploaded modules can be downloaded directly.
@@ -78,6 +90,7 @@ class Config:
         """
         return os.environ.get('ALLOW_MODULE_HOSTING', 'True') == 'True'
 
+    @property
     def REQUIRED_MODULE_METADATA_ATTRIBUTES(self):
         """
         Comma-seperated list of metadata attributes that each uploaded module _must_ contain, otherwise the upload is aborted.
@@ -86,14 +99,17 @@ class Config:
             attr for attr in os.environ.get('REQUIRED_MODULE_METADATA_ATTRIBUTES', '').split(',') if attr
         ]
 
+    @property
     def APPLICATION_NAME(self):
         """Name of application to be displayed in web interface."""
         return os.environ.get('APPLICATION_NAME', 'Terrareg')
 
+    @property
     def LOGO_URL(self):
         """URL of logo to be used in web interface."""
         return os.environ.get('LOGO_URL', '/static/images/logo.png')
 
+    @property
     def ANALYTICS_AUTH_KEYS(self):
         """
         List of comma-separated values for terraform auth tokens for deployment environments.
@@ -110,12 +126,14 @@ class Config:
             token for token in os.environ.get('ANALYTICS_AUTH_KEYS', '').split(',') if token
         ]
 
+    @property
     def ADMIN_AUTHENTICATION_TOKEN(self):
         """
         Token to use for authorisation to be able to modify modules in the user interface.
         """
         return os.environ.get('ADMIN_AUTHENTICATION_TOKEN', None)
 
+    @property
     def SECRET_KEY(self):
         """
         Flask secret key used for encrypting sessions.
@@ -124,12 +142,14 @@ class Config:
         """
         return os.environ.get('SECRET_KEY', None)
 
+    @property
     def ADMIN_SESSION_EXPIRY_MINS(self):
         """
         Session timeout for admin cookie sessions
         """
         return int(os.environ.get('ADMIN_SESSION_EXPIRY_MINS', 5))
 
+    @property
     def AUTO_PUBLISH_MODULE_VERSIONS(self):
         """
         Whether new module versions (either via upload, import or hook) are automatically
@@ -142,6 +162,7 @@ class Config:
         """
         return os.environ.get('AUTO_PUBLISH_MODULE_VERSIONS', 'True') == 'True'
 
+    @property
     def MODULES_DIRECTORY(self):
         """
         Directory with a module's source that contains sub-modules.
@@ -154,6 +175,7 @@ class Config:
         """
         return os.environ.get('MODULES_DIRECTORY', 'modules')
 
+    @property
     def EXAMPLES_DIRECTORY(self):
         """
         Directory with a module's source that contains examples.
@@ -164,6 +186,7 @@ class Config:
         """
         return os.environ.get('MODULES_DIRECTORY', 'examples')
 
+    @property
     def GIT_PROVIDER_CONFIG(self):
         """
         Git provider config.
@@ -193,14 +216,14 @@ class Config:
         """
         return os.environ.get('GIT_PROVIDER_CONFIG', '[]')
 
-
+    @property
     def ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER(self):
         """
         Whether module providers can specify their own git repository source.
         """
         return os.environ.get('ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', 'True') == 'True'
 
-
+    @property
     def ALLOW_CUSTOM_GIT_URL_MODULE_VERSION(self):
         """
         Whether module versions can specify git repository in terrareg config.
