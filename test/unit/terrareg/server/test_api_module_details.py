@@ -16,7 +16,7 @@ class TestApiModuleDetails(TerraregUnitTest):
         res = client.get('/v1/modules/testnamespace/lonelymodule')
 
         assert res.json == {
-            'meta': {'limit': 5, 'offset': 0}, 'modules': [
+            'meta': {'limit': 10, 'offset': 0}, 'modules': [
                 {'id': 'testnamespace/lonelymodule/testprovider/1.0.0', 'owner': 'Mock Owner',
                 'namespace': 'testnamespace', 'name': 'lonelymodule', 'version': '1.0.0',
                 'provider': 'testprovider', 'description': 'Mock description',
@@ -33,7 +33,7 @@ class TestApiModuleDetails(TerraregUnitTest):
         res = client.get('/v1/modules/testnamespace/unverifiedmodule')
 
         assert res.json == {
-            'meta': {'limit': 5, 'offset': 0}, 'modules': [
+            'meta': {'limit': 10, 'offset': 0}, 'modules': [
                 {'id': 'testnamespace/unverifiedmodule/testprovider/1.2.3', 'owner': 'Mock Owner',
                 'namespace': 'testnamespace', 'name': 'unverifiedmodule', 'version': '1.2.3',
                 'provider': 'testprovider', 'description': 'Mock description',
@@ -58,7 +58,7 @@ class TestApiModuleDetails(TerraregUnitTest):
         res = client.get('/v1/modules/test_token-name__testnamespace/lonelymodule')
 
         assert res.json == {
-            'meta': {'limit': 5, 'offset': 0}, 'modules': [
+            'meta': {'limit': 10, 'offset': 0}, 'modules': [
                 {'id': 'testnamespace/lonelymodule/testprovider/1.0.0', 'owner': 'Mock Owner',
                 'namespace': 'testnamespace', 'name': 'lonelymodule', 'version': '1.0.0',
                 'provider': 'testprovider', 'description': 'Mock description',
