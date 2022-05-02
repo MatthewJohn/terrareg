@@ -42,7 +42,6 @@ Navigate to http://localhost:5000 to get started, or http://localhost/modules/me
 
 The following environment variables are available to configure the application
 
-
 ### ADMIN_AUTHENTICATION_TOKEN
 
 
@@ -176,6 +175,14 @@ Defaults to local sqlite database.
 
 
 Default: `sqlite:///modules.db`
+
+
+
+### DATA_DIRECTORY
+
+
+
+Default: `./data`
 
 
 
@@ -325,6 +332,7 @@ List of namespaces, who's modules will be automatically set to verified.
 
 
 Default: ``
+
 
 
 ## Terrareg module metadata
