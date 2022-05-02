@@ -83,6 +83,7 @@ class ModuleSearch(object):
         limit: int,
         query: str=None,
         namespace: str=None,
+        module: str=None,
         provider: str=None,
         verified: bool=False,
         namespace_trust_filters: list=NamespaceTrustFilter.UNSPECIFIED):
@@ -102,6 +103,12 @@ class ModuleSearch(object):
         if namespace:
             select = select.where(
                 db.module_provider.c.namespace == namespace
+            )
+
+        # If namespace has been supplied, select by that
+        if module:
+            select = select.where(
+                db.module_provider.c.module == module
             )
 
         # Filter by verified modules, if requested
