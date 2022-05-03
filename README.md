@@ -1,6 +1,12 @@
 # terrareg
 
-Terraform Registry
+Open source Terraform Registry.
+
+Provides features to aid usage and discovery of modules:
+
+ * Provide analytics about usage of modules;
+ * Interactive 'Usage builder', helping users build terraform to use the terraform;
+ * Hooks for git SCM applications to automatically index modules;
 
 ## Getting started
 
