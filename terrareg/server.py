@@ -18,7 +18,7 @@ from flask_restful import Resource, Api, reqparse, inputs, abort
 import terrareg.config
 from terrareg.database import Database
 from terrareg.errors import (
-    InvalidModuleNameError, InvalidNamespaceNameError, InvalidVersionError, RepositoryUrlParseError, TerraregError, UploadError, NoModuleVersionAvailableError,
+    InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceNameError, InvalidVersionError, RepositoryUrlParseError, TerraregError, UploadError, NoModuleVersionAvailableError,
     NoSessionSetError, IncorrectCSRFTokenError
 )
 from terrareg.models import (
@@ -47,6 +47,7 @@ def catch_name_exceptions(f):
                 error_description="The namespace name '{}' is invalid".format(kwargs['namespace'])
             ), 404
 
+        # Handle invalid module name exceptions
         except InvalidModuleNameError:
             namespace = None
             if 'namespace' in kwargs:
@@ -56,6 +57,22 @@ def catch_name_exceptions(f):
                 error_title='Invalid module name',
                 error_description="The module name '{}' is invalid".format(kwargs['name']),
                 namespace=namespace
+            ), 404
+
+        # Handle invalid provider name exceptions
+        except InvalidModuleProviderNameError:
+            namespace = None
+            module = None
+            if 'namespace' in kwargs:
+                namespace = Namespace(name=kwargs['namespace'])
+                if 'name' in kwargs:
+                    module = Module(namespace=namespace, name=kwargs['name'])
+            return self._render_template(
+                'error.html',
+                error_title='Invalid provider name',
+                error_description="The provider name '{}' is invalid".format(kwargs['provider']),
+                namespace=namespace,
+                module=module
             ), 404
 
         # Handle invalid version number error
