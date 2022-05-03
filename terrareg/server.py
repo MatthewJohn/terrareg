@@ -18,7 +18,7 @@ from flask_restful import Resource, Api, reqparse, inputs, abort
 import terrareg.config
 from terrareg.database import Database
 from terrareg.errors import (
-    InvalidVersionError, RepositoryUrlParseError, TerraregError, UploadError, NoModuleVersionAvailableError,
+    InvalidNamespaceNameError, InvalidVersionError, RepositoryUrlParseError, TerraregError, UploadError, NoModuleVersionAvailableError,
     NoSessionSetError, IncorrectCSRFTokenError
 )
 from terrareg.models import (
@@ -39,12 +39,19 @@ def catch_name_exceptions(f):
         try:
             return f(self, *args, **kwargs)
 
+        # Handle invalid namespace name
+        except InvalidNamespaceNameError:
+            return self._render_template(
+                'error.html',
+                error_title='Invalid namespace name',
+                error_description="The namespace name '{}' is invalid".format(kwargs['namespace'])
+            ), 404
+
         # Handle invalid version number error
         except InvalidVersionError:
             namespace = None
             module = None
             module_provider_name = None
-            print(kwargs)
             if 'namespace' in kwargs:
                 namespace = Namespace(name=kwargs['namespace'])
                 if 'name' in kwargs:
@@ -351,6 +358,7 @@ class Server(object):
                 namespaces=namespaces
             )
 
+    @catch_name_exceptions
     def _view_serve_namespace(self, namespace):
         """Render view for namespace."""
         namespace = Namespace(namespace)
@@ -362,6 +370,7 @@ class Server(object):
             modules=modules
         )
 
+    @catch_name_exceptions
     def _view_serve_module(self, namespace, name):
         """Render view for display module."""
         namespace = Namespace(namespace)
