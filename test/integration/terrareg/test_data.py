@@ -201,5 +201,30 @@ integration_test_data = {
             'repo_clone_url_template': 'ssh://mp-clone-url.com/{namespace}/{module}-{provider}',
             'git_provider_id': 2
         }}
+    },
+    'modulesearch': {
+        'contributedmodule-oneversion': {'aws': {
+            'id': 25,
+            'versions': {'1.0.0': {'published': True}}
+        }},
+        'contributedmodule-multiversion': {'aws': {
+            'id': 26,
+            'versions': {
+                '1.2.3': {'published': True},
+                '2.0.0': {'published': True}
+            }
+        }},
+        'contributedmodule-differentprovider': {'gcp': {
+            'id': 27,
+            'versions': {
+                '1.2.3': {'published': True}
+            }
+        }},
+        'contributedmodule-unpublished': {'aws': {
+            'id': 28,
+            'versions': {
+                '1.0.0': {}
+            }
+        }}
     }
 }
