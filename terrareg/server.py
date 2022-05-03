@@ -18,7 +18,7 @@ from flask_restful import Resource, Api, reqparse, inputs, abort
 import terrareg.config
 from terrareg.database import Database
 from terrareg.errors import (
-    RepositoryUrlParseError, TerraregError, UploadError, NoModuleVersionAvailableError,
+    InvalidVersionError, RepositoryUrlParseError, TerraregError, UploadError, NoModuleVersionAvailableError,
     NoSessionSetError, IncorrectCSRFTokenError
 )
 from terrareg.models import (
@@ -30,6 +30,39 @@ from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ApiUploadModuleExtractor, GitModuleExtractor
 from terrareg.analytics import AnalyticsEngine
 from terrareg.filters import NamespaceTrustFilter
+
+
+def catch_name_exceptions(f):
+    """Wrapper method to catch name validation errors."""
+    @wraps(f)
+    def decorated_function(self, *args, **kwargs):
+        try:
+            return f(self, *args, **kwargs)
+
+        # Handle invalid version number error
+        except InvalidVersionError:
+            namespace = None
+            module = None
+            module_provider_name = None
+            print(kwargs)
+            if 'namespace' in kwargs:
+                namespace = Namespace(name=kwargs['namespace'])
+                if 'name' in kwargs:
+                    module = Module(namespace=namespace, name=kwargs['name'])
+                    if 'provider' in kwargs:
+                        module_provider_name = kwargs['provider']
+            version = None
+            if 'version' in kwargs:
+                version = kwargs['version']
+            return self._render_template(
+                'error.html',
+                error_title='Invalid version number',
+                error_description=("The version number '{}' is invalid".format(version) if version else ''),
+                namespace=namespace,
+                module=module,
+                module_provider_name=module_provider_name
+            ), 404
+    return decorated_function
 
 
 class Server(object):
@@ -346,6 +379,7 @@ class Server(object):
                 module_providers=module_providers
             )
 
+    @catch_name_exceptions
     def _view_serve_module_provider(self, namespace, name, provider, version=None):
         """Render view for displaying module provider information"""
         namespace = Namespace(namespace)
@@ -386,6 +420,7 @@ class Server(object):
             ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
 
+    @catch_name_exceptions
     def _view_serve_submodule(self, namespace, name, provider, version, submodule_path):
         """Review view for displaying submodule"""
         namespace = Namespace(namespace)
@@ -413,6 +448,7 @@ class Server(object):
             ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
 
+    @catch_name_exceptions
     def _view_serve_example(self, namespace, name, provider, version, submodule_path):
         """Review view for displaying example"""
         namespace = Namespace(namespace)
