@@ -3,3 +3,4 @@ example/*
 venv
 data
 modules.db
+*.db
