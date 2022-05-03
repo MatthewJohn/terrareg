@@ -74,9 +74,7 @@ class ModuleSearch(object):
                     ),
                     db.module_version.c.published == True
                 ).group_by(
-                    db.module_provider.c.namespace,
-                    db.module_provider.c.module,
-                    db.module_provider.c.provider
+                    db.module_provider.c.id
                 )
         return select
 
