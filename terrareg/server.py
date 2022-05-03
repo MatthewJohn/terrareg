@@ -45,7 +45,7 @@ def catch_name_exceptions(f):
                 'error.html',
                 error_title='Invalid namespace name',
                 error_description="The namespace name '{}' is invalid".format(kwargs['namespace'])
-            ), 404
+            ), 400
 
         # Handle invalid module name exceptions
         except InvalidModuleNameError:
@@ -57,7 +57,7 @@ def catch_name_exceptions(f):
                 error_title='Invalid module name',
                 error_description="The module name '{}' is invalid".format(kwargs['name']),
                 namespace=namespace
-            ), 404
+            ), 400
 
         # Handle invalid provider name exceptions
         except InvalidModuleProviderNameError:
@@ -73,7 +73,7 @@ def catch_name_exceptions(f):
                 error_description="The provider name '{}' is invalid".format(kwargs['provider']),
                 namespace=namespace,
                 module=module
-            ), 404
+            ), 400
 
         # Handle invalid version number error
         except InvalidVersionError:
@@ -96,7 +96,7 @@ def catch_name_exceptions(f):
                 namespace=namespace,
                 module=module,
                 module_provider_name=module_provider_name
-            ), 404
+            ), 400
     return decorated_function
 
 
