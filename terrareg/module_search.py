@@ -73,6 +73,10 @@ class ModuleSearch(object):
                         db.module_version.c.owner.like(wildcarded_query_part)
                     ),
                     db.module_version.c.published == True
+                ).group_by(
+                    db.module_provider.c.namespace,
+                    db.module_provider.c.module,
+                    db.module_provider.c.provider
                 )
         return select
 
