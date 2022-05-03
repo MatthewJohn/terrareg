@@ -18,7 +18,7 @@ from flask_restful import Resource, Api, reqparse, inputs, abort
 import terrareg.config
 from terrareg.database import Database
 from terrareg.errors import (
-    RepositoryUrlParseError, TerraregError, UploadError, NoModuleVersionAvailableError,
+    InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceNameError, InvalidVersionError, RepositoryUrlParseError, TerraregError, UploadError, NoModuleVersionAvailableError,
     NoSessionSetError, IncorrectCSRFTokenError
 )
 from terrareg.models import (
@@ -30,6 +30,74 @@ from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ApiUploadModuleExtractor, GitModuleExtractor
 from terrareg.analytics import AnalyticsEngine
 from terrareg.filters import NamespaceTrustFilter
+
+
+def catch_name_exceptions(f):
+    """Wrapper method to catch name validation errors."""
+    @wraps(f)
+    def decorated_function(self, *args, **kwargs):
+        try:
+            return f(self, *args, **kwargs)
+
+        # Handle invalid namespace name
+        except InvalidNamespaceNameError:
+            return self._render_template(
+                'error.html',
+                error_title='Invalid namespace name',
+                error_description="The namespace name '{}' is invalid".format(kwargs['namespace'])
+            ), 400
+
+        # Handle invalid module name exceptions
+        except InvalidModuleNameError:
+            namespace = None
+            if 'namespace' in kwargs:
+                namespace = Namespace(name=kwargs['namespace'])
+            return self._render_template(
+                'error.html',
+                error_title='Invalid module name',
+                error_description="The module name '{}' is invalid".format(kwargs['name']),
+                namespace=namespace
+            ), 400
+
+        # Handle invalid provider name exceptions
+        except InvalidModuleProviderNameError:
+            namespace = None
+            module = None
+            if 'namespace' in kwargs:
+                namespace = Namespace(name=kwargs['namespace'])
+                if 'name' in kwargs:
+                    module = Module(namespace=namespace, name=kwargs['name'])
+            return self._render_template(
+                'error.html',
+                error_title='Invalid provider name',
+                error_description="The provider name '{}' is invalid".format(kwargs['provider']),
+                namespace=namespace,
+                module=module
+            ), 400
+
+        # Handle invalid version number error
+        except InvalidVersionError:
+            namespace = None
+            module = None
+            module_provider_name = None
+            if 'namespace' in kwargs:
+                namespace = Namespace(name=kwargs['namespace'])
+                if 'name' in kwargs:
+                    module = Module(namespace=namespace, name=kwargs['name'])
+                    if 'provider' in kwargs:
+                        module_provider_name = kwargs['provider']
+            version = None
+            if 'version' in kwargs:
+                version = kwargs['version']
+            return self._render_template(
+                'error.html',
+                error_title='Invalid version number',
+                error_description=("The version number '{}' is invalid".format(version) if version else ''),
+                namespace=namespace,
+                module=module,
+                module_provider_name=module_provider_name
+            ), 400
+    return decorated_function
 
 
 class Server(object):
@@ -268,6 +336,21 @@ class Server(object):
 
         self._app.run(**kwargs)
 
+    def _module_provider_404(self, namespace: Namespace, module: Module,
+                             module_provider_name: str):
+        return self._render_template(
+            'error.html',
+            error_title='Module/Provider does not exist',
+            error_description='The module {namespace}/{module}/{module_provider_name} does not exist'.format(
+                namespace=namespace.name,
+                module=module.name,
+                module_provider_name=module_provider_name
+            ),
+            namespace=namespace,
+            module=module,
+            module_provider_name=module_provider_name
+        ), 404
+
     def _view_serve_static_index(self):
         """Serve static index"""
         return self._render_template('index.html')
@@ -303,6 +386,7 @@ class Server(object):
                 namespaces=namespaces
             )
 
+    @catch_name_exceptions
     def _view_serve_namespace(self, namespace):
         """Render view for namespace."""
         namespace = Namespace(namespace)
@@ -314,6 +398,7 @@ class Server(object):
             modules=modules
         )
 
+    @catch_name_exceptions
     def _view_serve_module(self, namespace, name):
         """Render view for display module."""
         namespace = Namespace(namespace)
@@ -331,11 +416,18 @@ class Server(object):
                 module_providers=module_providers
             )
 
+    @catch_name_exceptions
     def _view_serve_module_provider(self, namespace, name, provider, version=None):
         """Render view for displaying module provider information"""
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
+        module_provider = ModuleProvider.get(module=module, name=provider)
+        if module_provider is None:
+            return self._module_provider_404(
+                namespace=namespace,
+                module=module,
+                module_provider_name=provider)
+
         if version is None:
             try:
                 module_version = module_provider.get_latest_version()
@@ -365,6 +457,7 @@ class Server(object):
             ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
 
+    @catch_name_exceptions
     def _view_serve_submodule(self, namespace, name, provider, version, submodule_path):
         """Review view for displaying submodule"""
         namespace = Namespace(namespace)
@@ -392,6 +485,7 @@ class Server(object):
             ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
 
+    @catch_name_exceptions
     def _view_serve_example(self, namespace, name, provider, version, submodule_path):
         """Review view for displaying example"""
         namespace = Namespace(namespace)
