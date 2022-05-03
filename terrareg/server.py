@@ -271,7 +271,13 @@ class Server(object):
     def _module_provider_404(self, namespace: Namespace, module: Module,
                              module_provider_name: str):
         return self._render_template(
-            'module_provider_404.html',
+            'error.html',
+            error_title='Module/Provider does not exist',
+            error_description='The module {namespace}/{module}/{module_provider_name} does not exist'.format(
+                namespace=namespace.name,
+                module=module.name,
+                module_provider_name=module_provider_name
+            ),
             namespace=namespace,
             module=module,
             module_provider_name=module_provider_name
