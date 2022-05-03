@@ -4,10 +4,7 @@ import pytest
 
 from terrareg.models import Module, ModuleVersion, Namespace, ModuleProvider
 import terrareg.errors
-from test.integration.terrareg import (
-    TerraregIntegrationTest,
-    setup_test_data
-)
+from test.integration.terrareg import TerraregIntegrationTest
 
 
 class TestModuleProvider(TerraregIntegrationTest):
@@ -68,7 +65,6 @@ class TestModuleProvider(TerraregIntegrationTest):
             with pytest.raises(terrareg.errors.ProviderNameNotPermittedError):
                 ModuleProvider(module=module, name='notallowed')
 
-    @setup_test_data()
     def test_module_provider_get_versions(self):
         """Test that a module provider with versions in the wrong order are still returned correctly."""
         namespace = Namespace(name='testnamespace')
@@ -81,7 +77,6 @@ class TestModuleProvider(TerraregIntegrationTest):
             '0.1.1', '0.0.9'
         ]
 
-    @setup_test_data()
     @pytest.mark.parametrize('module_name,module_version,path,expected_browse_url', [
         # Test no browse URL in any configuration
         ('no-git-provider', '1.0.0', None, None),
@@ -123,7 +118,6 @@ class TestModuleProvider(TerraregIntegrationTest):
         kwargs = {'path': path} if path else {}
         assert module_version.get_source_browse_url(**kwargs) == expected_browse_url
 
-    @setup_test_data()
     @pytest.mark.parametrize('module_name,module_version,path,expected_browse_url', [
         # Test no browse URL in any configuration
         ('no-git-provider', '1.0.0', None, None),
@@ -166,7 +160,6 @@ class TestModuleProvider(TerraregIntegrationTest):
         with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
             assert module_version.get_source_browse_url(**kwargs) == expected_browse_url
 
-    @setup_test_data()
     @pytest.mark.parametrize('module_name,module_version,path,expected_browse_url', [
         # Test no browse URL in any configuration
         ('no-git-provider', '1.0.0', None, None),
@@ -209,7 +202,6 @@ class TestModuleProvider(TerraregIntegrationTest):
         with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
             assert module_version.get_source_browse_url(**kwargs) == expected_browse_url
 
-    @setup_test_data()
     @pytest.mark.parametrize('module_name,module_version,path,expected_browse_url', [
         # Test no browse URL in any configuration
         ('no-git-provider', '1.0.0', None, None),
@@ -253,7 +245,6 @@ class TestModuleProvider(TerraregIntegrationTest):
             with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
                 assert module_version.get_source_browse_url(**kwargs) == expected_browse_url
 
-    @setup_test_data()
     @pytest.mark.parametrize('module_name,module_version,expected_clone_url', [
         # Test no clone URL in any configuration
         ('no-git-provider', '1.0.0', None),
@@ -286,7 +277,6 @@ class TestModuleProvider(TerraregIntegrationTest):
 
         assert module_version.get_git_clone_url() == expected_clone_url
 
-    @setup_test_data()
     @pytest.mark.parametrize('module_name,module_version,expected_clone_url', [
         # Test no clone URL in any configuration
         ('no-git-provider', '1.0.0', None),
@@ -320,7 +310,6 @@ class TestModuleProvider(TerraregIntegrationTest):
         with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
             assert module_version.get_git_clone_url() == expected_clone_url
 
-    @setup_test_data()
     @pytest.mark.parametrize('module_name,module_version,expected_clone_url', [
         # Test no clone URL in any configuration
         ('no-git-provider', '1.0.0', None),
@@ -354,7 +343,6 @@ class TestModuleProvider(TerraregIntegrationTest):
         with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
             assert module_version.get_git_clone_url() == expected_clone_url
 
-    @setup_test_data()
     @pytest.mark.parametrize('module_name,module_version,expected_clone_url', [
         # Test no clone URL in any configuration
         ('no-git-provider', '1.0.0', None),
@@ -389,7 +377,6 @@ class TestModuleProvider(TerraregIntegrationTest):
             with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
                 assert module_version.get_git_clone_url() == expected_clone_url
 
-    @setup_test_data()
     @pytest.mark.parametrize('module_name,module_version,expected_base_url', [
         # Test no base URL in any configuration
         ('no-git-provider', '1.0.0', None),
@@ -422,7 +409,6 @@ class TestModuleProvider(TerraregIntegrationTest):
 
         assert module_version.get_source_base_url() == expected_base_url
 
-    @setup_test_data()
     @pytest.mark.parametrize('module_name,module_version,expected_base_url', [
         # Test no base URL in any configuration
         ('no-git-provider', '1.0.0', None),
@@ -456,7 +442,6 @@ class TestModuleProvider(TerraregIntegrationTest):
         with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
             assert module_version.get_source_base_url() == expected_base_url
 
-    @setup_test_data()
     @pytest.mark.parametrize('module_name,module_version,expected_base_url', [
         # Test no base URL in any configuration
         ('no-git-provider', '1.0.0', None),
@@ -490,7 +475,6 @@ class TestModuleProvider(TerraregIntegrationTest):
         with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
             assert module_version.get_source_base_url() == expected_base_url
 
-    @setup_test_data()
     @pytest.mark.parametrize('module_name,module_version,expected_base_url', [
         # Test no base URL in any configuration
         ('no-git-provider', '1.0.0', None),
