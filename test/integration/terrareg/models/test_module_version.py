@@ -134,12 +134,17 @@ class TestModuleVersion(TerraregIntegrationTest):
                      'variable_template']:
             assert new_db_row[attr] == None
 
-        # Ensure that all submodules have been removed
+        # Ensure that all moduleversion and submodules have been removed
         with db.get_engine().connect() as conn:
+            mv_res = conn.execute(db.module_version.select(
+                db.module_version.c.id == 10001
+            ))
+            assert [r for r in mv_res] == []
+
             # Check for any submodules with the original IDs
             # or with the previous module ID or with the example
             # paths
-            res = conn.execute(db.sub_module.select().where(
+            sub_module_res = conn.execute(db.sub_module.select().where(
                 sqlalchemy.or_(
                     db.sub_module.c.id.in_((10002, 10003)),
                     db.sub_module.c.parent_module_version == 10001,
@@ -147,4 +152,4 @@ class TestModuleVersion(TerraregIntegrationTest):
                                               'modules/test-modal-db-row-create-there'))
                 )
             ))
-            assert [r for r in res] == []
+            assert [r for r in sub_module_res] == []
