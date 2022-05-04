@@ -225,6 +225,33 @@ integration_test_data = {
             'versions': {
                 '1.0.0': {}
             }
+        }},
+        'verifiedmodule-oneversion': {'aws': {
+            'verified': True,
+            'id': 29,
+            'versions': {'1.0.0': {'published': True}}
+        }},
+        'verifiedmodule-multiversion': {'aws': {
+            'verified': True,
+            'id': 30,
+            'versions': {
+                '1.2.3': {'published': True},
+                '2.0.0': {'published': True}
+            }
+        }},
+        'verifiedmodule-differentprovider': {'gcp': {
+            'verified': True,
+            'id': 31,
+            'versions': {
+                '1.2.3': {'published': True}
+            }
+        }},
+        'verifiedmodule-unpublished': {'aws': {
+            'verified': True,
+            'id': 32,
+            'versions': {
+                '1.0.0': {}
+            }
         }}
     }
 }
