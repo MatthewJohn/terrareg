@@ -11,10 +11,19 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
     @pytest.mark.parametrize('offset,limit,expected_offset,expected_limit,expected_prev', [
         (0, 1, 0, 1, None),
         (0, 10, 0, 10, None),
+        # Test max allowed limit
         (0, 50, 0, 50, None),
+        # Test exceeding max limit
         (0, 51, 0, 50, None),
+        # Test with expected previous offset
         (10, 2, 10, 2, 8),
-        (10, 20, 10, 20, 0)
+        # Test with limit and offset that would
+        # mean a negative previous offset
+        (10, 20, 10, 20, 0),
+        # Test with negative offset
+        (-5, 1, 0, 1, None),
+        # Test with limit of 0
+        (5, 0, 5, 1, 4)
     ])
     def test_offset_without_next(self, offset, limit, expected_offset, expected_limit, expected_prev):
         """Test search with partial module name match with multiple matches."""
@@ -39,7 +48,7 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
 
         assert result.meta == expected_meta
 
-        if offset == 0:
+        if result.meta['current_offset'] == 0:
             assert len(result.module_providers) == 1
             assert result.module_providers[0].id == module_provider.id
         else:
