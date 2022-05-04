@@ -33,17 +33,6 @@ class TestApiModuleList(TerraregUnitTest):
 
         ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=False, offset=23, limit=12)
 
-    def test_with_max_limit(self, client, mocked_search_module_providers):
-        """Call with limit higher than max"""
-        res = client.get('/v1/modules?offset=65&limit=55')
-
-        assert res.status_code == 200
-        assert res.json == {
-            'meta': {'current_offset': 65, 'limit': 50, 'prev_offset': 15}, 'modules': []
-        }
-
-        ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=False, offset=65, limit=50)
-
     def test_with_provider_filter(self, client, mocked_search_module_providers):
         """Call with provider limit"""
         res = client.get('/v1/modules?provider=testprovider')
