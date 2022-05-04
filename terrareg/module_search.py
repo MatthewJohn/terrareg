@@ -65,7 +65,7 @@ class ModuleSearch(object):
                 wildcarded_query_part = '%{0}%'.format(query_part)
                 select = select.where(
                     sqlalchemy.or_(
-                        db.module_provider.c.namespace.like(query_part),
+                        db.module_provider.c.namespace.like(wildcarded_query_part),
                         db.module_provider.c.module.like(wildcarded_query_part),
                         db.module_provider.c.provider.like(query_part),
                         db.module_version.c.version.like(query_part),
