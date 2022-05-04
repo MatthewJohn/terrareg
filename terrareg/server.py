@@ -1016,7 +1016,10 @@ class ApiModuleProviderDownloadsSummary(ErrorCatchingResource):
         """Return list of download counts for module provider."""
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
+        module_provider = ModuleProvider.get(module=module, name=provider)
+        if module_provider is None:
+            return self._get_404_response()
+
         return {
             "data": {
                 "type": "module-downloads-summary",

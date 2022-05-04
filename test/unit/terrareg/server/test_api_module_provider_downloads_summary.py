@@ -21,3 +21,8 @@ class TestApiModuleProviderDownloadsSummary(TerraregUnitTest):
             }
         }
 
+    def test_non_existing_module(self, client, mocked_server_namespace_fixture, mock_server_get_module_provider_download_stats):
+        """Test endpoint with a non-existent module"""
+        res = client.get('/v1/modules/doesnotexist/testmodule/testprovider/downloads/summary')
+        assert res.status_code == 404
+        assert res.json == {'errors': ['Not Found']}
