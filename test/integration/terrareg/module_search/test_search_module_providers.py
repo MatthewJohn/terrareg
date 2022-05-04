@@ -32,12 +32,11 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
         module = Module(namespace=namespace, name='contributedmodule-oneversion')
         module_provider = ModuleProvider(module=module, name='aws')
 
-        with mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', 'modulesearch'):
-            result = ModuleSearch.search_module_providers(
-                query='contributedmodule-oneversion',
-                offset=offset,
-                limit=limit
-            )
+        result = ModuleSearch.search_module_providers(
+            query='contributedmodule-oneversion',
+            offset=offset,
+            limit=limit
+        )
 
         expected_meta = {
             'limit': expected_limit,
