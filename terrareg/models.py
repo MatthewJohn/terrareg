@@ -1258,14 +1258,21 @@ class ModuleVersion(TerraformSpecsObject):
         """Insert into datadabase, removing any existing duplicate versions."""
         db = Database.get()
 
+        previous_db_row = self._get_db_row()
+
         with db.get_engine().connect() as conn:
-            # Delete module from module_version table
-            delete_statement = db.module_version.delete().where(
-                db.module_version.c.module_provider_id ==
-                self._module_provider.pk,
-                db.module_version.c.version == self.version
-            )
-            conn.execute(delete_statement)
+            if previous_db_row:
+                # Delete module from module_version table
+                delete_statement = db.module_version.delete().where(
+                    db.module_version.c.id == previous_db_row['id']
+                )
+                conn.execute(delete_statement)
+
+                # Delete any submodules/examples
+                delete_statement = db.sub_module.delete().where(
+                    db.sub_module.c.parent_module_version == previous_db_row['id']
+                )
+                conn.execute(delete_statement)
 
             # Insert new module into table
             insert_statement = db.module_version.insert().values(
