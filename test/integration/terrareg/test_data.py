@@ -16,50 +16,6 @@ integration_git_providers = {
 
 integration_test_data = {
     'testnamespace': {
-        'testmodulename': {'testprovider': {
-            'repo_base_url_template': 'http://mock.example.com/mockmodule',
-            'id': 1,
-            'latest_version': '2.4.1',
-            'verified': True,
-            'versions': {'2.4.1': {'published': True}, '1.0.0': {'published': True}}
-        }},
-        'lonelymodule': {'testprovider': {
-            'id': 2,
-            'latest_version': '1.0.0',
-            'verified': True,
-            'versions': {'1.0.0': {}}
-        }},
-        'mock-module': {'testprovider': {
-            'id': 3,
-            'verified': True,
-            'repo_base_url_template': 'http://github.com/{namespace}/{module}',
-            'latest_version': '1.2.3',
-            'versions': {'1.2.3': {}}
-        }},
-        'unverifiedmodule': {'testprovider': {
-            'id': 16,
-            'verified': False,
-            'latest_version': '1.2.3',
-            'versions': {'1.2.3': {}}
-        }},
-        'modulenorepourl': {'testprovider': {
-            'id': 5,
-            'latest_version': '2.2.4',
-            'versions': {'2.2.4': {}}
-        }},
-        'modulewithrepourl': {'testprovider': {
-            'id': 6,
-            'latest_version': '2.1.0',
-            'repo_clone_url_template': 'https://github.com/test/test.git',
-            'versions': {'2.1.0': {}}
-        }},
-        'modulenotpublished': {'testprovider': {
-            'id': 15,
-            'latest_version': '10.2.1',
-            'versions': {
-                '10.2.1': {'published': False}
-            }
-        }},
         'wrongversionorder': {'testprovider': {
             'id': 17,
             'versions': {
@@ -67,13 +23,6 @@ integration_test_data = {
                 '10.23.0': {'published': True}, '0.1.10': {'published': True}, '0.0.9': {'published': True},
                 '0.1.09': {'published': True}, '0.1.8': {'published': True}
             }
-        }}
-    },
-    'secondtestnamespace': {
-        'mockmodule2': { 'secondprovider': {
-            'id': 4,
-            'latest_version': '3.0.0',
-            'versions': {'3.0.0': {}}
         }}
     },
     'moduleextraction': {
