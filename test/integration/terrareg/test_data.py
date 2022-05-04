@@ -215,5 +215,38 @@ integration_test_data = {
                 '2.0.0': {'published': True}
             }
         }},
+        'mixedsearch-result-unpublished': {'aws': {
+            'id': 35,
+            'versions': {
+                '1.2.3': {},
+                '2.0.0': {}
+            }
+        }},
+    },
+    'modulesearch-trusted': {
+        'mixedsearch-trusted-result': {'aws': {
+            'id': 36,
+            'versions': {'1.0.0': {'published': True}}
+        }},
+        'mixedsearch-trusted-second-result': {'aws': {
+            'id': 37,
+            'versions': {
+                '5.2.1': {'published': True},
+            }
+        }},
+        'mixedsearch-trusted-result-multiversion': {'aws': {
+            'id': 38,
+            'versions': {
+                '1.2.3': {'published': True},
+                '2.0.0': {'published': True}
+            }
+        }},
+        'mixedsearch-trusted-result-unpublished': {'aws': {
+            'id': 39,
+            'versions': {
+                '1.2.3': {},
+                '2.0.0': {}
+            }
+        }},
     }
 }

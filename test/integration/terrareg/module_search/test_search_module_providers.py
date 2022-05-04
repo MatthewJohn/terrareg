@@ -1,6 +1,7 @@
 
 from unittest import mock
 import pytest
+from terrareg.filters import NamespaceTrustFilter
 
 from terrareg.models import Module, ModuleProvider, Namespace
 from terrareg.module_search import ModuleSearch
@@ -54,3 +55,26 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
             assert result.module_providers[0].id == module_provider.id
         else:
             assert result.module_providers == []
+
+    @pytest.mark.parametrize('namespace_trust_filter,expected_result_count', [
+        (NamespaceTrustFilter.UNSPECIFIED, 5),
+        ([NamespaceTrustFilter.TRUSTED_NAMESPACES], 3),
+        ([NamespaceTrustFilter.CONTRIBUTED], 2),
+        ([NamespaceTrustFilter.TRUSTED_NAMESPACES, NamespaceTrustFilter.CONTRIBUTED], 5)
+    ])
+    def test_namespace_filter(self, namespace_trust_filter, expected_result_count):
+        """Test search with different trust filters."""
+
+        namespace = Namespace(name='modulesearch')
+        module = Module(namespace=namespace, name='contributedmodule-oneversion')
+        module_provider = ModuleProvider(module=module, name='aws')
+
+        with mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['modulesearch-trusted']):
+            result = ModuleSearch.search_module_providers(
+                query='mixedsearch',
+                offset=0,
+                limit=1,
+                namespace_trust_filters=namespace_trust_filter
+            )
+
+        assert result.count == expected_result_count
