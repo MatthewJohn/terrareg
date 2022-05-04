@@ -202,5 +202,18 @@ integration_test_data = {
                 '1.0.0': {}
             }
         }}
+    },
+    'modulesearch-contributed': {
+        'mixedsearch-result': {'aws': {
+            'id': 33,
+            'versions': {'1.0.0': {'published': True}}
+        }},
+        'mixedsearch-result-multiversion': {'aws': {
+            'id': 34,
+            'versions': {
+                '1.2.3': {'published': True},
+                '2.0.0': {'published': True}
+            }
+        }},
     }
 }

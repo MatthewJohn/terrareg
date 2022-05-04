@@ -109,3 +109,12 @@ class TestGetSearchFilters(TerraregIntegrationTest):
             results = ModuleSearch.get_search_filters(query='verifiedmodule-unpublished')
 
         assert results == {'providers': {}, 'contributed': 0, 'trusted_namespaces': 0, 'verified': 0}
+
+    def test_mixed_results(self):
+        """Test results containing all results."""
+
+        with mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['doestexist','modulesearch']):
+            # Search based on partial namespace match
+            results = ModuleSearch.get_search_filters(query='modulesearch')
+
+        assert results == {'providers': {'aws': 6, 'gcp': 2}, 'contributed': 2, 'trusted_namespaces': 6, 'verified': 3}
