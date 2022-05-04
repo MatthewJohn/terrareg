@@ -88,6 +88,11 @@ class ModuleSearch(object):
         verified: bool=False,
         namespace_trust_filters: list=NamespaceTrustFilter.UNSPECIFIED):
 
+        # Limit the limits
+        limit = 50 if limit > 50 else limit
+        limit = 1 if limit < 1 else limit
+        offset = 0 if offset < 0 else offset
+
         db = Database.get()
         select = db.select_module_version_joined_module_provider()
 
