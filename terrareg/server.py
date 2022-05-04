@@ -752,16 +752,11 @@ class ApiModuleList(ErrorCatchingResource):
 
         args = parser.parse_args()
 
-        # Limit the limits
-        limit = 50 if args.limit > 50 else args.limit
-        limit = 1 if limit < 1 else limit
-        current_offset = 0 if args.offset < 0 else args.offset
-
         search_results = ModuleSearch.search_module_providers(
             provider=args.provider,
             verified=args.verified,
-            offset=current_offset,
-            limit=limit
+            offset=args.offset,
+            limit=args.limit
         )
 
         return {
@@ -814,11 +809,6 @@ class ApiModuleSearch(ErrorCatchingResource):
 
         args = parser.parse_args()
 
-        # Limit the limits
-        limit = 50 if args.limit > 50 else args.limit
-        limit = 1 if limit < 1 else limit
-        current_offset = 0 if args.offset < 0 else args.offset
-
         namespace_trust_filters = NamespaceTrustFilter.UNSPECIFIED
         # If either trusted namepsaces or contributed have been provided
         # (irrelevant of whether they are set to true or false),
@@ -837,8 +827,8 @@ class ApiModuleSearch(ErrorCatchingResource):
             provider=args.provider,
             verified=args.verified,
             namespace_trust_filters=namespace_trust_filters,
-            offset=current_offset,
-            limit=limit
+            offset=args.offset,
+            limit=args.limit
         )
 
         return {
@@ -1026,7 +1016,10 @@ class ApiModuleProviderDownloadsSummary(ErrorCatchingResource):
         """Return list of download counts for module provider."""
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
+        module_provider = ModuleProvider.get(module=module, name=provider)
+        if module_provider is None:
+            return self._get_404_response()
+
         return {
             "data": {
                 "type": "module-downloads-summary",
