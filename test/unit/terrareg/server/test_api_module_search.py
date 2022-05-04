@@ -42,19 +42,6 @@ class TestApiModuleSearch(TerraregUnitTest):
             namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
             offset=23, limit=12)
 
-    def test_with_max_limit(self, client, mocked_search_module_providers):
-        """Call with limit higher than max"""
-        res = client.get('/v1/modules/search?q=test&offset=65&limit=55')
-
-        assert res.status_code == 200
-        assert res.json == {
-            'meta': {'current_offset': 65, 'limit': 50, 'prev_offset': 15}, 'modules': []
-        }
-        ModuleSearch.search_module_providers.assert_called_with(
-            query='test', namespace=None, provider=None, verified=False,
-            namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
-            offset=65, limit=50)
-
     def test_with_provider(self, client, mocked_search_module_providers):
         """Call with provider filter"""
         res = client.get('/v1/modules/search?q=test&provider=testprovider')
