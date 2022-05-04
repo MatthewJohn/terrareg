@@ -71,7 +71,7 @@ class TestModuleVersion(TerraregIntegrationTest):
             assert new_db_row[attr] == None
 
     def test_create_db_row_replace_existing(self):
-        """Test creating DB row"""
+        """Test creating DB row with pre-existing module version"""
 
         db = Database.get()
 
