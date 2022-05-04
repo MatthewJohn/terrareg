@@ -48,6 +48,8 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
 
         assert result.meta == expected_meta
 
+        assert result.count == 1
+
         if result.meta['current_offset'] == 0:
             assert len(result.module_providers) == 1
             assert result.module_providers[0].id == module_provider.id
