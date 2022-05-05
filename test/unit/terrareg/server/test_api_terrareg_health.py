@@ -10,7 +10,7 @@ class TestApiTerraregHealth(TerraregUnitTest):
         res = client.get('/v1/terrareg/health')
         assert res.status_code == 200
         assert res.json == {
-            'messasge': 'Ok'
+            'message': 'Ok'
         }
 
     def test_with_post(self, client):
