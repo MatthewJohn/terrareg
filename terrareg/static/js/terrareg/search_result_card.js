@@ -59,23 +59,46 @@ function timeDifference(previous) {
     }
 }
 
-function createSearchResultCard(parent_id, module) {
+function createSearchResultCard(parent_id, module, provider_logos) {
     let display_published = timeDifference(new Date(module.published_at));
+    let provider_logo_html = '';
+    if (provider_logos[module.provider] !== undefined) {
+        let provider_logo_details = provider_logos[module.provider];
+        provider_logo_html = `
+            <a href="${provider_logo_details.link}">
+                <img style="margin: 5px" height="40" width="40" alt="${provider_logo_details.alt}" src="${provider_logo_details.source}" />
+            </a>
+        `;
+
+        // Add provider TOS to results, if not already there
+        if ($('#provider-tos-' + module.provider).length == 0) {
+            console.log('ADding now');
+            console.log($('#provider-tos')[0]);
+            let tos_object = document.createElement('p');
+            tos_object.id = `provider-tos-${module.provider}`;
+            tos_object.innerHTML = provider_logo_details.tos;
+            $('#provider-tos')[0].append(tos_object);
+        }
+    }
+
     // Add module to search results
     $(`#${parent_id}`).append(
-        `
-        <a href="/modules/${module.id}">
-            <div class="card">
-                <header class="card-header">
-                    <p class="card-header-title">
-                        ${module.namespace} / ${module.name}
-                    </p>
+        `  
+        <div class="card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    ${provider_logo_html}
+                    <a href="/modules/${module.id}">${module.namespace} / ${module.name}</a>
+                </p>
+                <a href="/modules/${module.id}">
                     <button class="card-header-icon" aria-label="more options">
-                    <span class="icon">
-                        <i class="fas fa-external-link" aria-hidden="true"></i>
-                    </span>
+                        <span class="icon">
+                            <i class="fas fa-external-link" aria-hidden="true"></i>
+                        </span>
                     </button>
-                </header>
+                </a>
+            </header>
+            <a href="/modules/${module.id}">
                 <div class="card-content">
                     <div class="content">
                         ${module.description ? "Description<br />" + module.description : "No description provided"}
@@ -89,8 +112,8 @@ function createSearchResultCard(parent_id, module) {
                     <br />
                     <p class="card-footer-item">Last updated: ${display_published}</p>
                 </footer>
-            </div>
-        </a>
+            </a>
+        </div>
         <br />
         `
     );
