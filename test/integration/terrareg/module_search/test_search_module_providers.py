@@ -117,6 +117,41 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
         for expected_module_provider in expected_results:
             assert expected_module_provider in resulting_module_provider_ids
 
+    @pytest.mark.parametrize('verified_flag,expected_module_provider_ids', [
+        # Search with flag unset
+        (None, ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
+                'searchbynamespace/searchbymodulename1/searchbyprovidergcp',
+                'searchbynamespace/searchbymodulename2/published',
+                'searchbynamesp-similar/searchbymodulename3/searchbyprovideraws',
+                'searchbynamesp-similar/searchbymodulename4/aws']),
+
+        # Search for verified modules
+        (True, ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
+                'searchbynamesp-similar/searchbymodulename3/searchbyprovideraws']),
+
+        # Search for with verified flag off
+        (False, ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
+                 'searchbynamespace/searchbymodulename1/searchbyprovidergcp',
+                 'searchbynamespace/searchbymodulename2/published',
+                 'searchbynamesp-similar/searchbymodulename3/searchbyprovideraws',
+                 'searchbynamesp-similar/searchbymodulename4/aws'])
+    ])
+    def test_search_with_verified_flag(self, verified_flag, expected_module_provider_ids):
+        """Test search with verified flag"""
+        result = ModuleSearch.search_module_providers(
+            offset=0, limit=50,
+            query='searchbynamesp',
+            verified=verified_flag
+        )
+
+        assert result.count == len(expected_module_provider_ids)
+        resulting_module_provider_ids = [
+            module_provider.id
+            for module_provider in result.module_providers
+        ]
+        for expected_module_provider in expected_module_provider_ids:
+            assert expected_module_provider in resulting_module_provider_ids
+
     @pytest.mark.parametrize('namespace,expected_module_provider_ids', [
         ('testnotexist', []),
 

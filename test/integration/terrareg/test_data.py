@@ -255,7 +255,8 @@ integration_test_data = {
                 'id': 40,
                 'versions': {
                     '1.2.3': {'published': True}
-                }
+                },
+                'verified': True
             },
             'searchbyprovidergcp': {
                 'id': 41,
@@ -280,7 +281,8 @@ integration_test_data = {
     'searchbynamesp-similar': {
         'searchbymodulename3': {'searchbyprovideraws': {
             'id': 44,
-            'versions': {'4.4.1': {'published': True}}
+            'versions': {'4.4.1': {'published': True}},
+            'verified': True
         }},
         'searchbymodulename4': {'aws': {
             'id': 45,
