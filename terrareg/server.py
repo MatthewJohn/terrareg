@@ -317,6 +317,12 @@ class Server(object):
             '/v1/terrareg/auth/admin/is_authenticated'
         )
 
+        # Healthcheck endpoint
+        self._api.add_resource(
+            ApiTerraregHealth,
+            '/v1/terrareg/health'
+        )
+
     def _render_template(self, *args, **kwargs):
         """Override render_template, passing in base variables."""
         return render_template(
@@ -538,7 +544,7 @@ class ErrorCatchingResource(Resource):
 
     def _get(self, *args, **kwargs):
         """Placeholder for overridable get method."""
-        raise NotImplementedError
+        return {'message': 'The method is not allowed for the requested URL.'}, 405
 
     def get(self, *args, **kwargs):
         """Run subclasses get in error handling fashion."""
@@ -552,7 +558,7 @@ class ErrorCatchingResource(Resource):
 
     def _post(self, *args, **kwargs):
         """Placeholder for overridable post method."""
-        raise NotImplementedError
+        return {'message': 'The method is not allowed for the requested URL.'}, 405
 
     def post(self, *args, **kwargs):
         """Run subclasses post in error handling fashion."""
@@ -566,7 +572,7 @@ class ErrorCatchingResource(Resource):
 
     def _delete(self, *args, **kwargs):
         """Placeholder for overridable delete method."""
-        raise NotImplementedError
+        return {'message': 'The method is not allowed for the requested URL.'}, 405
 
     def delete(self, *args, **kwargs):
         """Run subclasses delete in error handling fashion."""
@@ -581,6 +587,16 @@ class ErrorCatchingResource(Resource):
     def _get_404_response(self):
         """Return common 404 error"""
         return {'errors': ['Not Found']}, 404
+
+
+class ApiTerraregHealth(ErrorCatchingResource):
+    """Endpoint to return 200 when healthy."""
+
+    def _get(self):
+        """Return static 200"""
+        return {
+            "message": "Ok"
+        }
 
 
 class ApiModuleVersionUpload(ErrorCatchingResource):
