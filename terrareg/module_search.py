@@ -71,11 +71,16 @@ class ModuleSearch(object):
                         db.module_version.c.version.like(query_part),
                         db.module_version.c.description.like(wildcarded_query_part),
                         db.module_version.c.owner.like(wildcarded_query_part)
-                    ),
-                    db.module_version.c.published == True
-                ).group_by(
-                    db.module_provider.c.id
+                    )
                 )
+
+        # Filter search by published module versions
+        # and group by module provider ID
+        select = select.where(
+            db.module_version.c.published == True
+        ).group_by(
+            db.module_provider.c.id
+        )
         return select
 
     @classmethod
