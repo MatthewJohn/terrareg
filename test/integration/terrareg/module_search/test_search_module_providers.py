@@ -78,3 +78,282 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
             )
 
         assert result.count == expected_result_count
+
+    @pytest.mark.parametrize('offset,expected_next_offset,expected_results', [
+        (0, 2, ['searchbynamesp-similar/searchbymodulename3/searchbyprovideraws',
+                'searchbynamesp-similar/searchbymodulename4/aws']),
+        (2, 4, ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
+                'searchbynamespace/searchbymodulename1/searchbyprovidergcp']),
+        (3, None, ['searchbynamespace/searchbymodulename1/searchbyprovidergcp',
+                   'searchbynamespace/searchbymodulename2/published']),
+        (4, None, ['searchbynamespace/searchbymodulename2/published']),
+        (5, None, [])
+    ])
+    def test_offset_limit(self, offset, expected_next_offset, expected_results):
+        """Test offset and limit params of module search."""
+        result = ModuleSearch.search_module_providers(
+            offset=offset, limit=2,
+            query='searchbynamesp'
+        )
+
+        assert result.count == 5
+
+        assert result.meta['current_offset'] == offset
+
+        if offset == 0:
+            assert 'prev_offset' not in result.meta
+        else:
+            assert result.meta['prev_offset'] == (offset - 2)
+
+        if offset in [0, 2]:
+            assert result.meta['next_offset'] == expected_next_offset
+        else:
+            assert 'next_offset' not in result.meta
+
+        resulting_module_provider_ids = [
+            module_provider.id
+            for module_provider in result.module_providers
+        ]
+        for expected_module_provider in expected_results:
+            assert expected_module_provider in resulting_module_provider_ids
+
+    @pytest.mark.parametrize('verified_flag,expected_module_provider_ids', [
+        # Search with flag unset
+        (None, ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
+                'searchbynamespace/searchbymodulename1/searchbyprovidergcp',
+                'searchbynamespace/searchbymodulename2/published',
+                'searchbynamesp-similar/searchbymodulename3/searchbyprovideraws',
+                'searchbynamesp-similar/searchbymodulename4/aws']),
+
+        # Search for verified modules
+        (True, ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
+                'searchbynamesp-similar/searchbymodulename3/searchbyprovideraws']),
+
+        # Search for with verified flag off
+        (False, ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
+                 'searchbynamespace/searchbymodulename1/searchbyprovidergcp',
+                 'searchbynamespace/searchbymodulename2/published',
+                 'searchbynamesp-similar/searchbymodulename3/searchbyprovideraws',
+                 'searchbynamesp-similar/searchbymodulename4/aws'])
+    ])
+    def test_search_with_verified_flag(self, verified_flag, expected_module_provider_ids):
+        """Test search with verified flag"""
+        result = ModuleSearch.search_module_providers(
+            offset=0, limit=50,
+            query='searchbynamesp',
+            verified=verified_flag
+        )
+
+        assert result.count == len(expected_module_provider_ids)
+        resulting_module_provider_ids = [
+            module_provider.id
+            for module_provider in result.module_providers
+        ]
+        for expected_module_provider in expected_module_provider_ids:
+            assert expected_module_provider in resulting_module_provider_ids
+
+    @pytest.mark.parametrize('namespace,expected_module_provider_ids', [
+        ('testnotexist', []),
+
+        # Search with exact namespace match
+        ('searchbynamespace',
+         ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
+          'searchbynamespace/searchbymodulename1/searchbyprovidergcp',
+          'searchbynamespace/searchbymodulename2/published']
+        ),
+
+        # Search with partial namespace match
+        ('searchbynamesp',
+         ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
+          'searchbynamespace/searchbymodulename1/searchbyprovidergcp',
+          'searchbynamespace/searchbymodulename2/published',
+          'searchbynamesp-similar/searchbymodulename3/searchbyprovideraws',
+          'searchbynamesp-similar/searchbymodulename4/aws']
+        )
+    ])
+    def test_namespace_search_in_query_string(self, namespace, expected_module_provider_ids):
+        """Search based on namespace in query string"""
+        # Perform search with namespace in query
+        result = ModuleSearch.search_module_providers(
+            offset=0, limit=50,
+            query=namespace
+        )
+
+        assert result.count == len(expected_module_provider_ids)
+        resulting_module_provider_ids = [
+            module_provider.id
+            for module_provider in result.module_providers
+        ]
+        for expected_module_provider in expected_module_provider_ids:
+            assert expected_module_provider in resulting_module_provider_ids
+
+    @pytest.mark.parametrize('namespace,expected_module_provider_ids', [
+        ('testnotexist', []),
+
+        # Search with exact namespace match
+        ('searchbynamespace',
+         ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
+          'searchbynamespace/searchbymodulename1/searchbyprovidergcp',
+          'searchbynamespace/searchbymodulename2/published']),
+
+        # Search with partial namespace match
+        ('searchbynamesp',
+         [])
+    ])
+    def test_namespace_search_in_filter(self, namespace, expected_module_provider_ids):
+        """Search based on namespace in filter"""
+        # Search with empty query string with namespace filter
+        result = ModuleSearch.search_module_providers(
+            offset=0, limit=50,
+            query='',
+            namespace=namespace
+        )
+
+        resulting_module_provider_ids = [
+            module_provider.id
+            for module_provider in result.module_providers
+        ]
+
+        assert result.count == len(expected_module_provider_ids)
+
+        for expected_module_provider in expected_module_provider_ids:
+            assert expected_module_provider in resulting_module_provider_ids
+
+    @pytest.mark.parametrize('module_name_search,expected_module_provider_ids', [
+        ('testnotexist', []),
+
+        # Search with exact module name match
+        ('searchbymodulename1',
+         ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
+          'searchbynamespace/searchbymodulename1/searchbyprovidergcp']
+        ),
+        ('searchbymodulename2',
+         ['searchbynamespace/searchbymodulename2/published']
+        ),
+
+        # Search with partial module name match
+        ('searchbymodulename',
+         ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
+          'searchbynamespace/searchbymodulename1/searchbyprovidergcp',
+          'searchbynamespace/searchbymodulename2/published',
+          'searchbynamesp-similar/searchbymodulename3/searchbyprovideraws',
+          'searchbynamesp-similar/searchbymodulename4/aws']
+        )
+    ])
+    def test_module_name_search_in_query_string(self, module_name_search, expected_module_provider_ids):
+        """Search based on module name in query string"""
+        # Perform search with module name in query
+        result = ModuleSearch.search_module_providers(
+            offset=0, limit=50,
+            query=module_name_search
+        )
+
+        assert result.count == len(expected_module_provider_ids)
+        resulting_module_provider_ids = [
+            module_provider.id
+            for module_provider in result.module_providers
+        ]
+        for expected_module_provider in expected_module_provider_ids:
+            assert expected_module_provider in resulting_module_provider_ids
+
+    @pytest.mark.parametrize('module_name_search,expected_module_provider_ids', [
+        ('testnotexist', []),
+
+        # Search with exact module name match
+        ('searchbymodulename1',
+         ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
+          'searchbynamespace/searchbymodulename1/searchbyprovidergcp']
+        ),
+        ('searchbymodulename2',
+         ['searchbynamespace/searchbymodulename2/published']
+        ),
+
+        # Search with partial module name match
+        ('searchbymodulename', [])
+    ])
+    def test_module_name_search_in_filter(self, module_name_search, expected_module_provider_ids):
+        """Search based on module name in filter"""
+        # Search with empty query string with module name filter
+        result = ModuleSearch.search_module_providers(
+            offset=0, limit=50,
+            query='',
+            module=module_name_search
+        )
+
+        resulting_module_provider_ids = [
+            module_provider.id
+            for module_provider in result.module_providers
+        ]
+
+        assert result.count == len(expected_module_provider_ids)
+
+        for expected_module_provider in expected_module_provider_ids:
+            assert expected_module_provider in resulting_module_provider_ids
+
+    @pytest.mark.parametrize('provider_name_search,expected_module_provider_ids', [
+        ('testnotexist', []),
+
+        # Search with exact provider name match
+        ('searchbyprovideraws',
+         ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
+          'searchbynamesp-similar/searchbymodulename3/searchbyprovideraws']
+        ),
+        ('searchbyprovidergcp',
+         ['searchbynamespace/searchbymodulename1/searchbyprovidergcp']
+        ),
+
+        # Search with partial provider name match.
+        # Provider is not searched by wildcard, so
+        # partial match should not yield any results.
+        ('searchbyprovider', [])
+    ])
+    def test_provider_name_search_in_query_string(self, provider_name_search, expected_module_provider_ids):
+        """Search based on provider name in query string"""
+        # Perform search with provider name in query
+        result = ModuleSearch.search_module_providers(
+            offset=0, limit=50,
+            query=provider_name_search
+        )
+
+        assert result.count == len(expected_module_provider_ids)
+        resulting_module_provider_ids = [
+            module_provider.id
+            for module_provider in result.module_providers
+        ]
+        for expected_module_provider in expected_module_provider_ids:
+            assert expected_module_provider in resulting_module_provider_ids
+
+    @pytest.mark.parametrize('provider_name_search,expected_module_provider_ids', [
+        ('testnotexist', []),
+
+        # Search with exact provider name match
+        ('searchbyprovideraws',
+         ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
+          'searchbynamesp-similar/searchbymodulename3/searchbyprovideraws']
+        ),
+        ('searchbyprovidergcp',
+         ['searchbynamespace/searchbymodulename1/searchbyprovidergcp']
+        ),
+
+        # Search with partial provider name match
+        ('searchbyprovider', [])
+    ])
+    def test_provider_name_search_in_filter(self, provider_name_search, expected_module_provider_ids):
+        """Search based on provider name in filter"""
+        # Search with empty query string with provider name filter
+        result = ModuleSearch.search_module_providers(
+            offset=0, limit=50,
+            query='',
+            provider=provider_name_search
+        )
+
+        resulting_module_provider_ids = [
+            module_provider.id
+            for module_provider in result.module_providers
+        ]
+
+        assert result.count == len(expected_module_provider_ids)
+
+        for expected_module_provider in expected_module_provider_ids:
+            assert expected_module_provider in resulting_module_provider_ids
+
