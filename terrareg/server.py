@@ -317,6 +317,12 @@ class Server(object):
             '/v1/terrareg/auth/admin/is_authenticated'
         )
 
+        # Healthcheck endpoint
+        self._api.add_resource(
+            ApiTerraregHealth,
+            '/v1/terrareg/health'
+        )
+
     def _render_template(self, *args, **kwargs):
         """Override render_template, passing in base variables."""
         return render_template(
@@ -581,6 +587,16 @@ class ErrorCatchingResource(Resource):
     def _get_404_response(self):
         """Return common 404 error"""
         return {'errors': ['Not Found']}, 404
+
+
+class ApiTerraregHealth(ErrorCatchingResource):
+    """Endpoint to return 200 when healthy."""
+
+    def _get(self):
+        """Return static 200"""
+        return {
+            "message": "Ok"
+        }
 
 
 class ApiModuleVersionUpload(ErrorCatchingResource):
