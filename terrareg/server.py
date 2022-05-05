@@ -544,7 +544,7 @@ class ErrorCatchingResource(Resource):
 
     def _get(self, *args, **kwargs):
         """Placeholder for overridable get method."""
-        raise NotImplementedError
+        return {'message': 'The method is not allowed for the requested URL.'}, 405
 
     def get(self, *args, **kwargs):
         """Run subclasses get in error handling fashion."""
@@ -558,7 +558,7 @@ class ErrorCatchingResource(Resource):
 
     def _post(self, *args, **kwargs):
         """Placeholder for overridable post method."""
-        raise NotImplementedError
+        return {'message': 'The method is not allowed for the requested URL.'}, 405
 
     def post(self, *args, **kwargs):
         """Run subclasses post in error handling fashion."""
@@ -572,7 +572,7 @@ class ErrorCatchingResource(Resource):
 
     def _delete(self, *args, **kwargs):
         """Placeholder for overridable delete method."""
-        raise NotImplementedError
+        return {'message': 'The method is not allowed for the requested URL.'}, 405
 
     def delete(self, *args, **kwargs):
         """Run subclasses delete in error handling fashion."""
