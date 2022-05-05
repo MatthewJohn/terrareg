@@ -76,6 +76,12 @@
         }
     }
 
+    // Obtain map of all provider logos
+    provider_logos = {};
+    $.get('/v1/terrareg/provider_logos', (data) => {
+        provider_logos = data;
+    })
+
     let previousSearchString = '';
     function performSearch(new_offset) {
 
@@ -126,7 +132,7 @@
 
                     // Iterate through modules
                     data.modules.forEach((module) => {
-                        createSearchResultCard('results', module);
+                        createSearchResultCard('results', module, provider_logos);
                     });
                 }
             });
