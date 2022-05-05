@@ -78,3 +78,59 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
             )
 
         assert result.count == expected_result_count
+
+
+    @pytest.mark.parametrize('namespace,expected_query_string_result_ids,expected_namespace_filter_result_ids', [
+        ('testnotexist', [], []),
+
+        # Search with exact namespace match
+        ('searchbynamespace',
+         ['searchbynamespace/module1/aws',
+          'searchbynamespace/module1/gcp',
+          'searchbynamespace/module2/published'],
+         ['searchbynamespace/module1/aws',
+          'searchbynamespace/module1/gcp',
+          'searchbynamespace/module2/published']),
+
+        # Search with partial namespace match
+        ('searchbynamesp',
+         ['searchbynamespace/module1/aws',
+          'searchbynamespace/module1/gcp',
+          'searchbynamespace/module2/published',
+          'searchbynamesp-similar/module3/aws'],
+         [])
+    ])
+    def test_namespace_search(self, namespace, expected_query_string_result_ids, expected_namespace_filter_result_ids):
+        """Search based on namespace"""
+        # Perform search with namespace in query
+        result = ModuleSearch.search_module_providers(
+            offset=0, limit=50,
+            query=namespace
+        )
+
+        assert result.count == len(expected_query_string_result_ids)
+        resulting_module_provider_ids = [
+            module_provider.id
+            for module_provider in result.module_providers
+        ]
+        for expected_module_provider in expected_query_string_result_ids:
+            assert expected_module_provider in resulting_module_provider_ids
+
+
+        # Search with empty query string with namespace filter
+        result = ModuleSearch.search_module_providers(
+            offset=0, limit=50,
+            query='',
+            namespace=namespace
+        )
+
+        resulting_module_provider_ids = [
+            module_provider.id
+            for module_provider in result.module_providers
+        ]
+        print(resulting_module_provider_ids)
+
+        assert result.count == len(expected_namespace_filter_result_ids)
+
+        for expected_module_provider in expected_namespace_filter_result_ids:
+            assert expected_module_provider in resulting_module_provider_ids

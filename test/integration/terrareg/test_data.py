@@ -248,5 +248,39 @@ integration_test_data = {
                 '2.0.0': {}
             }
         }},
+    },
+    'searchbynamespace': {
+        'module1': {
+            'aws': {
+                'id': 40,
+                'versions': {
+                    '1.2.3': {'published': True}
+                }
+            },
+            'gcp': {
+                'id': 41,
+                'versions': {
+                    '2.0.0': {'published': True}
+                }
+            }
+        },
+        'module2': {
+            'notpublished': {
+                'id': 42,
+                'versions': {'1.2.3': {}}
+            },
+            'published': {
+                'id': 43,
+                'versions': {
+                    '3.1.6': {'published': True}
+                }
+            }
+        }
+    },
+    'searchbynamesp-similar': {
+        'module3': {'aws': {
+            'id': 44,
+            'versions': {'4.4.1': {'published': True}}
+        }}
     }
 }
