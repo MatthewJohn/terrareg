@@ -103,6 +103,9 @@
                 new_offset = 0;
             }
 
+            // Clear any existing provider logo TOS
+            $('#provider-tos')[0].innerHTML = '';
+
             // Perform AJAX query to obtain results
             $.get(`/v1/modules/search?` +
                   `q=${encodeURIComponent(searchQuery)}&` +
