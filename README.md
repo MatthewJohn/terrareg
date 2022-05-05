@@ -352,10 +352,11 @@ The following attributes are available at the root of the JSON object:
 |Key |Description|
 --- | --- |
 |owner|Name of the owner of the module|
-|source|Link to the original source code (used for links on the module page)|
 |description|Description of the module|
 |variable_template|Structure holding required input variables for module, used for 'Usage Builder'. See table below|
-|artifact_location|Optional variable to use an external URL as source of terraform module. Add `{module_version}` as placeholder for the module version. If not provided, the module will be hosted by terrareg.|
+|repo_clone_url|Url to clone the repository. Optional placeholders `{namespace}`, `{module}` and `{provider}` can be used. E.g. `ssh://gitlab.corporate.com/scm/{namespace}/{module}.git`|
+|repo_base_url|Formatted base URL for project's repo. E.g. `https://gitlab.corporate.com/{namespace}/{module}`|
+|repo_browse_url|Formatted URL for user-viewable source code. Must contain `{tag}` and `{path}` placeholders. E.g. `https://github.com/{namespace}/{module}-{provider}/blob/{tag}/{path}`|
 
 ### Usage builder configuration
 
