@@ -251,13 +251,13 @@ integration_test_data = {
     },
     'searchbynamespace': {
         'searchbymodulename1': {
-            'aws': {
+            'searchbyprovideraws': {
                 'id': 40,
                 'versions': {
                     '1.2.3': {'published': True}
                 }
             },
-            'gcp': {
+            'searchbyprovidergcp': {
                 'id': 41,
                 'versions': {
                     '2.0.0': {'published': True}
@@ -278,7 +278,7 @@ integration_test_data = {
         }
     },
     'searchbynamesp-similar': {
-        'searchbymodulename3': {'aws': {
+        'searchbymodulename3': {'searchbyprovideraws': {
             'id': 44,
             'versions': {'4.4.1': {'published': True}}
         }}
