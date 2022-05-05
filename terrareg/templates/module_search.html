@@ -76,6 +76,12 @@
         }
     }
 
+    // Obtain map of all provider logos
+    provider_logos = {};
+    $.get('/v1/terrareg/provider_logos', (data) => {
+        provider_logos = data;
+    })
+
     let previousSearchString = '';
     function performSearch(new_offset) {
 
@@ -96,6 +102,9 @@
             if (new_offset === undefined) {
                 new_offset = 0;
             }
+
+            // Clear any existing provider logo TOS
+            $('#provider-tos')[0].innerHTML = '';
 
             // Perform AJAX query to obtain results
             $.get(`/v1/modules/search?` +
@@ -126,7 +135,7 @@
 
                     // Iterate through modules
                     data.modules.forEach((module) => {
-                        createSearchResultCard('results', module);
+                        createSearchResultCard('results', module, provider_logos);
                     });
                 }
             });
@@ -170,4 +179,10 @@
     performSearch();
 </script>
 
+{% endblock %}
+
+{% block additional_footer %}
+<p id="provider-tos">
+
+</p>
 {% endblock %}

@@ -5,6 +5,12 @@
 <script src="/static/js/terrareg/search_result_card.js"></script>
 
 <script>
+    // Obtain map of all provider logos
+    provider_logos = {};
+    $.get('/v1/terrareg/provider_logos', (data) => {
+        provider_logos = data;
+    });
+
     $.get("/v1/terrareg/analytics/global/stats_summary", function(data, status) {
         $('#namespace-count').html(data.namespaces);
         $('#module-count').html(data.modules);
@@ -12,10 +18,10 @@
         $('#download-count').html(data.downloads);
     });
     $.get("/v1/terrareg/analytics/global/most_recently_published_module_version", function(data, status) {
-        createSearchResultCard('most-recent-module-version', data);
+        createSearchResultCard('most-recent-module-version', data, provider_logos);
     });
     $.get("/v1/terrareg/analytics/global/most_downloaded_module_provider_this_week", function(data, status) {
-        createSearchResultCard('most-downloaded-this-week', data);
+        createSearchResultCard('most-downloaded-this-week', data, provider_logos);
     });
     
 </script>
@@ -49,12 +55,18 @@
         </div>
     </div>
 </nav>
-<div class="columns">
-    <div id="most-recent-module-version" class="column is-one-quarter is-offset-one-quarter">
+<div class="columns is-centered">
+    <div id="most-recent-module-version" class="column is-one-third">
         <h4 class="title is-4">Most recently published</h4>
     </div>
-    <div id="most-downloaded-this-week" class="column is-one-quarter">
+    <div id="most-downloaded-this-week" class="column is-one-third">
         <h4 class="title is-4">Most downloaded this week</h4>
     </div>
 </div>
+{% endblock %}
+
+{% block additional_footer %}
+<p id="provider-tos">
+
+</p>
 {% endblock %}
