@@ -117,7 +117,6 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
         for expected_module_provider in expected_results:
             assert expected_module_provider in resulting_module_provider_ids
 
-
     @pytest.mark.parametrize('namespace,expected_module_provider_ids', [
         ('testnotexist', []),
 
@@ -133,7 +132,8 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
          ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
           'searchbynamespace/searchbymodulename1/searchbyprovidergcp',
           'searchbynamespace/searchbymodulename2/published',
-          'searchbynamesp-similar/searchbymodulename3/searchbyprovideraws']
+          'searchbynamesp-similar/searchbymodulename3/searchbyprovideraws',
+          'searchbynamesp-similar/searchbymodulename4/aws']
         )
     ])
     def test_namespace_search_in_query_string(self, namespace, expected_module_provider_ids):
@@ -201,7 +201,8 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
          ['searchbynamespace/searchbymodulename1/searchbyprovideraws',
           'searchbynamespace/searchbymodulename1/searchbyprovidergcp',
           'searchbynamespace/searchbymodulename2/published',
-          'searchbynamesp-similar/searchbymodulename3/searchbyprovideraws']
+          'searchbynamesp-similar/searchbymodulename3/searchbyprovideraws',
+          'searchbynamesp-similar/searchbymodulename4/aws']
         )
     ])
     def test_module_name_search_in_query_string(self, module_name_search, expected_module_provider_ids):
