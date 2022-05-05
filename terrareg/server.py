@@ -23,7 +23,7 @@ from terrareg.errors import (
 )
 from terrareg.models import (
     Example, Namespace, Module, ModuleProvider,
-    ModuleVersion, Submodule,
+    ModuleVersion, ProviderLogo, Submodule,
     GitProvider
 )
 from terrareg.module_search import ModuleSearch
@@ -295,6 +295,11 @@ class Server(object):
         self._api.add_resource(
             ApiTerraregModuleVersionPublish,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/publish'
+        )
+
+        self._api.add_resource(
+            ApiTerraregProviderLogos,
+            '/v1/terrareg/provider_logos'
         )
 
         self._api.add_resource(
@@ -1026,6 +1031,22 @@ class ApiModuleProviderDownloadsSummary(ErrorCatchingResource):
                 "id": module_provider.id,
                 "attributes": AnalyticsEngine.get_module_provider_download_stats(module_provider)
             }
+        }
+
+
+class ApiTerraregProviderLogos(ErrorCatchingResource):
+    """Provide interface to obtain all provider logo details"""
+
+    def _get(self):
+        """Return all details about provider logos."""
+        return {
+            provider_logo.provider: {
+                'source': provider_logo.source,
+                'alt': provider_logo.alt,
+                'tos': provider_logo.tos,
+                'link': provider_logo.link
+            }
+            for provider_logo in ProviderLogo.get_all()
         }
 
 

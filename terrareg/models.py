@@ -353,13 +353,27 @@ class ProviderLogo:
         }
     }
 
+    @staticmethod
+    def get_all():
+        """Return all provider logos"""
+        return [
+            ProviderLogo(provider)
+            for provider in ProviderLogo.INFO
+        ]
+
     def __init__(self, provider):
         """Store details and provider."""
+        self._provider = provider
         self._details = ProviderLogo.INFO.get(provider, None)
         if self._details is not None:
             # Ensure required attributes exist for logo
             for attr in ['source', 'tos', 'alt', 'link']:
                 assert attr in self._details and self._details[attr]
+
+    @property
+    def provider(self):
+        """Return name of provider"""
+        return self._provider
 
     @property
     def exists(self):
