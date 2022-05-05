@@ -250,7 +250,7 @@ integration_test_data = {
         }},
     },
     'searchbynamespace': {
-        'module1': {
+        'searchbymodulename1': {
             'aws': {
                 'id': 40,
                 'versions': {
@@ -264,7 +264,7 @@ integration_test_data = {
                 }
             }
         },
-        'module2': {
+        'searchbymodulename2': {
             'notpublished': {
                 'id': 42,
                 'versions': {'1.2.3': {}}
@@ -278,7 +278,7 @@ integration_test_data = {
         }
     },
     'searchbynamesp-similar': {
-        'module3': {'aws': {
+        'searchbymodulename3': {'aws': {
             'id': 44,
             'versions': {'4.4.1': {'published': True}}
         }}
