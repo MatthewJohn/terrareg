@@ -69,6 +69,16 @@ function createSearchResultCard(parent_id, module, provider_logos) {
                 <img style="margin: 5px" height="40" width="40" alt="${provider_logo_details.alt}" src="${provider_logo_details.source}" />
             </a>
         `;
+
+        // Add provider TOS to results, if not already there
+        if ($('#provider-tos-' + module.provider).length == 0) {
+            console.log('ADding now');
+            console.log($('#provider-tos')[0]);
+            let tos_object = document.createElement('p');
+            tos_object.id = `provider-tos-${module.provider}`;
+            tos_object.innerHTML = provider_logo_details.tos;
+            $('#provider-tos')[0].append(tos_object);
+        }
     }
 
     // Add module to search results
