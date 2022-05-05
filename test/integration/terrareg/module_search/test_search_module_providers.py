@@ -80,27 +80,25 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
         assert result.count == expected_result_count
 
 
-    @pytest.mark.parametrize('namespace,expected_query_string_result_ids,expected_namespace_filter_result_ids', [
-        ('testnotexist', [], []),
+    @pytest.mark.parametrize('namespace,expected_module_provider_ids', [
+        ('testnotexist', []),
 
         # Search with exact namespace match
         ('searchbynamespace',
          ['searchbynamespace/module1/aws',
           'searchbynamespace/module1/gcp',
-          'searchbynamespace/module2/published'],
-         ['searchbynamespace/module1/aws',
-          'searchbynamespace/module1/gcp',
-          'searchbynamespace/module2/published']),
+          'searchbynamespace/module2/published']
+        ),
 
         # Search with partial namespace match
         ('searchbynamesp',
          ['searchbynamespace/module1/aws',
           'searchbynamespace/module1/gcp',
           'searchbynamespace/module2/published',
-          'searchbynamesp-similar/module3/aws'],
-         [])
+          'searchbynamesp-similar/module3/aws']
+        )
     ])
-    def test_namespace_search(self, namespace, expected_query_string_result_ids, expected_namespace_filter_result_ids):
+    def test_namespace_search_in_query_string(self, namespace, expected_module_provider_ids):
         """Search based on namespace"""
         # Perform search with namespace in query
         result = ModuleSearch.search_module_providers(
@@ -108,15 +106,29 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
             query=namespace
         )
 
-        assert result.count == len(expected_query_string_result_ids)
+        assert result.count == len(expected_module_provider_ids)
         resulting_module_provider_ids = [
             module_provider.id
             for module_provider in result.module_providers
         ]
-        for expected_module_provider in expected_query_string_result_ids:
+        for expected_module_provider in expected_module_provider_ids:
             assert expected_module_provider in resulting_module_provider_ids
 
+    @pytest.mark.parametrize('namespace,expected_module_provider_ids', [
+        ('testnotexist', []),
 
+        # Search with exact namespace match
+        ('searchbynamespace',
+         ['searchbynamespace/module1/aws',
+          'searchbynamespace/module1/gcp',
+          'searchbynamespace/module2/published']),
+
+        # Search with partial namespace match
+        ('searchbynamesp',
+         [])
+    ])
+    def test_namespace_search_in_filter(self, namespace, expected_module_provider_ids):
+        """Search based on namespace"""
         # Search with empty query string with namespace filter
         result = ModuleSearch.search_module_providers(
             offset=0, limit=50,
@@ -130,7 +142,8 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
         ]
         print(resulting_module_provider_ids)
 
-        assert result.count == len(expected_namespace_filter_result_ids)
+        assert result.count == len(expected_module_provider_ids)
 
-        for expected_module_provider in expected_namespace_filter_result_ids:
+        for expected_module_provider in expected_module_provider_ids:
             assert expected_module_provider in resulting_module_provider_ids
+
