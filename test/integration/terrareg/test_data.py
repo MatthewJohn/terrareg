@@ -281,6 +281,10 @@ integration_test_data = {
         'searchbymodulename3': {'searchbyprovideraws': {
             'id': 44,
             'versions': {'4.4.1': {'published': True}}
+        }},
+        'searchbymodulename4': {'aws': {
+            'id': 45,
+            'versions': {'5.5.5': {'published': True}}
         }}
     }
 }
