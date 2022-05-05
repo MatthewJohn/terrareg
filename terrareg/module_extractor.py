@@ -146,7 +146,6 @@ class ModuleExtractor:
             repo_browse_url_template=terrareg_metadata.get('repo_browse_url', None),
             repo_base_url_template=terrareg_metadata.get('repo_base_url', None),
             variable_template=json.dumps(terrareg_metadata.get('variable_template', {})),
-            artifact_location=terrareg_metadata.get('artifact_location', None),
             published=Config().AUTO_PUBLISH_MODULE_VERSIONS
         )
 
