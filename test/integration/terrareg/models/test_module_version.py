@@ -64,7 +64,7 @@ class TestModuleVersion(TerraregIntegrationTest):
         assert new_db_row['published'] == False
         assert new_db_row['version'] == '1.0.0'
 
-        for attr in ['artifact_location', 'description', 'module_details', 'owner',
+        for attr in ['description', 'module_details', 'owner',
                      'published_at', 'readme_content', 'repo_base_url_template',
                      'repo_browse_url_template', 'repo_clone_url_template',
                      'variable_template']:
@@ -128,7 +128,7 @@ class TestModuleVersion(TerraregIntegrationTest):
         assert new_db_row['published'] == False
         assert new_db_row['version'] == '1.1.0'
 
-        for attr in ['artifact_location', 'description', 'module_details', 'owner',
+        for attr in ['description', 'module_details', 'owner',
                      'published_at', 'readme_content', 'repo_base_url_template',
                      'repo_browse_url_template', 'repo_clone_url_template',
                      'variable_template']:
