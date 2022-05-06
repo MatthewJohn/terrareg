@@ -1378,19 +1378,22 @@ class BaseSubmodule(TerraformSpecsObject):
     def __init__(self, module_version: ModuleVersion, module_path: str):
         self._module_version = module_version
         self._module_path = module_path
+        self._cache_db_row = None
         super(BaseSubmodule, self).__init__()
 
     def _get_db_row(self):
         """Get object from database"""
-        db = Database.get()
-        select = db.sub_module.select().where(
-            db.sub_module.c.parent_module_version == self._module_version.pk,
-            db.sub_module.c.path == self._module_path,
-            db.sub_module.c.type == self.TYPE
-        )
-        with db.get_engine().connect() as conn:
-            res = conn.execute(select)
-            return res.fetchone()
+        if self._cache_db_row is None:
+            db = Database.get()
+            select = db.sub_module.select().where(
+                db.sub_module.c.parent_module_version == self._module_version.pk,
+                db.sub_module.c.path == self._module_path,
+                db.sub_module.c.type == self.TYPE
+            )
+            with db.get_engine().connect() as conn:
+                res = conn.execute(select)
+                self._cache_db_row = res.fetchone()
+        return self._cache_db_row
 
     def get_source_browse_url(self):
         """Get formatted source browse URL"""
