@@ -544,6 +544,7 @@ class ModuleProvider(object):
         self._validate_name(name)
         self._module = module
         self._name = name
+        self._cache_db_row = None
 
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
@@ -555,16 +556,19 @@ class ModuleProvider(object):
 
     def _get_db_row(self):
         """Return database row for module provider."""
-        db = Database.get()
-        select = db.module_provider.select(
-        ).where(
-            db.module_provider.c.namespace == self._module._namespace.name,
-            db.module_provider.c.module == self._module.name,
-            db.module_provider.c.provider == self.name
-        )
-        with db.get_engine().connect() as conn:
-            res = conn.execute(select)
-            return res.fetchone()
+        if self._cache_db_row is None:
+            db = Database.get()
+            select = db.module_provider.select(
+            ).where(
+                db.module_provider.c.namespace == self._module._namespace.name,
+                db.module_provider.c.module == self._module.name,
+                db.module_provider.c.provider == self.name
+            )
+            with db.get_engine().connect() as conn:
+                res = conn.execute(select)
+                self._cache_db_row = res.fetchone()
+
+        return self._cache_db_row
 
     def delete(self):
         """DELETE module provider, all module version and all associated subversions."""
@@ -616,6 +620,9 @@ class ModuleProvider(object):
         ).values(**kwargs)
         with db.get_engine().connect() as conn:
             conn.execute(update)
+
+        # Remove cached DB row
+        self._cache_db_row = None
 
     def update_git_provider(self, git_provider: GitProvider):
         """Update git provider associated with module provider."""
