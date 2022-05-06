@@ -419,6 +419,11 @@ There are common attributes that can be added to each of variable objects, which
 
 ## Changelog
 
+### v2.0.0
+
+ * Update all database columns to use MySQL-compatible types.
+ * Convert large data values to blobs
+
 ### v1.1.0
 
  * Add MySQL connector and document URL format to connect to MySQL
