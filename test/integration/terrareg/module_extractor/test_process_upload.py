@@ -454,6 +454,15 @@ output "submodule_test_output_{itx}" {{
                 with open(os.path.join(upload_directory, 'README.md'), 'w') as main_tf_fh:
                     main_tf_fh.writelines(self.TEST_README_CONTENT)
 
+                os.mkdir(os.path.join(upload_directory, 'modules'))
+
+                # Create main.tf in each of the submodules
+                for itx in [1, 2]:
+                    root_dir = os.path.join(upload_directory, 'modules', 'testmodule{itx}'.format(itx=itx))
+                    os.mkdir(root_dir)
+                    with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(self.SUB_MODULE_MAIN_TF.format(itx=itx))
+
                 os.mkdir(os.path.join(upload_directory, 'examples'))
 
                 # Create main.tf in each of the examples
@@ -473,7 +482,6 @@ output "submodule_test_output_{itx}" {{
         submodules.sort(key=lambda x: x.path)
         assert len(submodules) == 2
         assert [sm.path for sm in submodules] == ['modules/testmodule1', 'modules/testmodule2']
-
 
         # Check examples
         examples = module_version.get_examples()
