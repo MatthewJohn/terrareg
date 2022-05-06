@@ -87,16 +87,16 @@ output "test_output" {
 }
 """
     SUB_MODULE_MAIN_TF = """
-variable "submodule_test_input_{itx}" {
+variable "submodule_test_input_{itx}" {{
     type        = string
     description = "This is a test input in a submodule"
     default     = "test_default_val"
-}
+}}
 
-output "submodule_test_output_{itx}" {
+output "submodule_test_output_{itx}" {{
     description = "test output in a submodule"
     value       = var.test_input
-}
+}}
 """
 
     def _upload_module_version(self, module_version, zip_file):
@@ -324,7 +324,7 @@ output "submodule_test_output_{itx}" {
 
         submodules = module_version.get_submodules()
         # Order submodules by path
-        submodules = submodules.sort(key=lambda x: x.path)
+        submodules.sort(key=lambda x: x.path)
         assert len(submodules) == 2
         assert [sm.path for sm in submodules] == ['modules/testmodule1', 'modules/testmodule2']
 
@@ -333,18 +333,19 @@ output "submodule_test_output_{itx}" {
             assert submodule.get_terraform_inputs() == [
                 {
                     'default': 'test_default_val',
-                    'description': 'This is a test input',
-                    'name': 'submodule_test_input_{itx}'.format(itx),
+                    'description': 'This is a test input in a submodule',
+                    'name': 'submodule_test_input_{itx}'.format(itx=(itx + 1)),
                     'required': False,
                     'type': 'string'
                 }
             ]
             assert submodule.get_terraform_outputs() == [
                 {
-                    'description': 'test output',
-                    'name': 'submodule_test_output_{itx}'.format(itx)
+                    'description': 'test output in a submodule',
+                    'name': 'submodule_test_output_{itx}'.format(itx=(itx + 1))
                 }
             ]
+        assert len(module_version.get_examples()) == 0
 
     def test_examples(self):
         """Test uploading module with examples."""
