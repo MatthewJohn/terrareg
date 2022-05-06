@@ -855,7 +855,7 @@ class TerraformSpecsObject(object):
     def get_module_specs(self):
         """Return module specs"""
         if self._module_specs is None:
-            self._module_specs = json.loads(self._get_db_row()['module_details'])
+            self._module_specs = json.loads(Database.decode_blob(self._get_db_row()['module_details']))
         return self._module_specs
 
     def get_readme_html(self):
@@ -871,7 +871,7 @@ class TerraformSpecsObject(object):
 
     def get_readme_content(self):
         """Get readme contents"""
-        return self._get_db_row()['readme_content']
+        return Database.decode_blob(self._get_db_row()['readme_content'])
 
     def get_terraform_inputs(self):
         """Obtain module inputs"""
@@ -1053,7 +1053,7 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def variable_template(self):
         """Return variable template for module version."""
-        return json.loads(self._get_db_row()['variable_template'])
+        return json.loads(Database.decode_blob(self._get_db_row()['variable_template']))
 
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
@@ -1261,6 +1261,11 @@ class ModuleVersion(TerraformSpecsObject):
 
     def update_attributes(self, **kwargs):
         """Update attributes of module version in database row."""
+        # Check for any blob and encode the values
+        for kwarg in kwargs:
+            if kwarg in ['readme_content', 'module_details', 'variable_template']:
+                kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
+
         db = Database.get()
         update = self.get_db_where(
             db=db, statement=db.module_version.update()

@@ -159,8 +159,8 @@ class ModuleExtractor:
             parent_module_version=self._module_version.pk,
             type=type_,
             path=submodule,
-            readme_content=readme_content,
-            module_details=json.dumps(tf_docs)
+            readme_content=Database.encode_blob(readme_content),
+            module_details=Database.encode_blob(json.dumps(tf_docs))
         )
         conn.execute(insert_statement)
 
