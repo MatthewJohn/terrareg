@@ -416,6 +416,10 @@ There are common attributes that can be added to each of variable objects, which
 
 ## Changelog
 
+### v1.1.0
+
+ * Provide ability to pass SSH private key through environment variable
+
 ### v1.0.3
 
  * Update base image to python:10
