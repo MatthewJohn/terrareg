@@ -213,17 +213,17 @@ class ModuleExtractor:
         # Check for any terrareg metadata files
         terrareg_metadata = self._get_terrareg_metadata(self.extract_directory)
 
-        # Generate the archive, unless the module is externally hosted and
-        # the config for deleting externally hosted artifacts is enabled.
-        if not (terrareg_metadata.get('artifact_location', None) and
-                Config().DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
-            self._generate_archive()
-
         self._insert_database(
             readme_content=readme_content,
             terraform_docs_output=module_details,
             terrareg_metadata=terrareg_metadata
         )
+
+        # Generate the archive, unless the module has a git clone URL and
+        # the config for deleting externally hosted artifacts is enabled.
+        if not (self._module_version.get_git_clone_url() and
+                Config().DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
+            self._generate_archive()
 
         self._scan_submodules(
             type_=Submodule.TYPE,

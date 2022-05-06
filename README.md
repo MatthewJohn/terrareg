@@ -382,6 +382,15 @@ There are common attributes that can be added to each of variable objects, which
 |static|This does not appear in the 'Usage Builder' 'config input' table, but provides a static value in the 'terraform input'||
 |select|Provides a dropdown for the user to select from a list of choices|"choices" must be added to the object, which may either be a list of strings, or a list of objects. If using a list of objects, a "name" and "value" must be provided. Optionally an "additional_content" attribute can be added to the choice, which provides additional terraform to be added to the top of the terraform example. The main variable object may also contain a "allow_custom" boolean attribute, which allows the user to enter a custom text input.|
 
+## Changelog
+
+### v1.0.1
+
+ * Add package updates to Dockerfile
+
+### v1.0.0
+
+ * Initial release
 
 ## Local development
 
