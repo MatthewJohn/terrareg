@@ -206,7 +206,26 @@ output "test_input" {
 
     def test_invalid_terrareg_metadata_file(self):
         """Test module upload with an invaid terrareg metadata file."""
-        pass
+        test_upload = UploadTestModule()
+
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+
+                with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
+                    metadata_fh.writelines('This is invalid JSON!')
+
+            # Ensure an exception is raised about invalid metadata JSON
+            with pytest.raises(terrareg.errors.InvalidTerraregMetadataFileError):
+                self._upload_module_version(module_version=module_version, zip_file=zip_file)
 
     def test_override_repo_urls_with_metadata(self):
         """Test module upload with repo urls in metadata file."""
