@@ -421,6 +421,8 @@ There are common attributes that can be added to each of variable objects, which
 
 ### v2.0.0
 
+WARNING: This version does not support migration from previous versions.
+
  * Update all database columns to use MySQL-compatible types.
  * Convert large data values to blobs
 
