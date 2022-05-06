@@ -13,6 +13,21 @@ class Database():
     _ENGINE = None
     _INSTANCE = None
 
+    blob_encoding_format = 'utf-8'
+
+    @staticmethod
+    def encode_blob(value):
+        """Encode string as a blog value"""
+        # Convert any untruthful values to empty string
+        if not value:
+            value = ''
+        return value.encode(Database.blob_encoding_format)
+
+    @staticmethod
+    def decode_blob(value):
+        """Decode blob as a string."""
+        return value.decode(Database.blob_encoding_format)
+
     def __init__(self):
         """Setup member variables."""
         self._git_provider = None
