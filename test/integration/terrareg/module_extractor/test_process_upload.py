@@ -349,7 +349,55 @@ output "submodule_test_output_{itx}" {{
 
     def test_examples(self):
         """Test uploading module with examples."""
-        pass
+        test_upload = UploadTestModule()
+
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+
+                os.mkdir(os.path.join(upload_directory, 'examples'))
+
+                # Create main.tf in each of the examples
+                for itx in [1, 2]:
+                    root_dir = os.path.join(upload_directory, 'examples', 'testexample{itx}'.format(itx=itx))
+                    os.mkdir(root_dir)
+                    with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(self.SUB_MODULE_MAIN_TF.format(itx=itx))
+
+            self._upload_module_version(module_version=module_version, zip_file=zip_file)
+
+        examples = module_version.get_examples()
+        # Order submodules by path
+        examples.sort(key=lambda x: x.path)
+        assert len(examples) == 2
+        assert [example.path for example in examples] == ['examples/testexample1', 'examples/testexample2']
+
+        for itx, example in enumerate(examples):
+            # Ensure terraform docs output contains variable and output
+            assert example.get_terraform_inputs() == [
+                {
+                    'default': 'test_default_val',
+                    'description': 'This is a test input in a submodule',
+                    'name': 'submodule_test_input_{itx}'.format(itx=(itx + 1)),
+                    'required': False,
+                    'type': 'string'
+                }
+            ]
+            assert example.get_terraform_outputs() == [
+                {
+                    'description': 'test output in a submodule',
+                    'name': 'submodule_test_output_{itx}'.format(itx=(itx + 1))
+                }
+            ]
+        assert len(module_version.get_submodules()) == 0
 
     def test_upload_with_readme(self):
         """Test uploading a module with a README."""
