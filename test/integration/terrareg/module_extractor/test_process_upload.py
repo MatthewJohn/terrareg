@@ -426,7 +426,71 @@ output "submodule_test_output_{itx}" {{
 
     def test_all_features(self):
         """Test uploading a module with multiple features."""
-        pass
+        test_upload = UploadTestModule()
+
+        namespace = Namespace(name='repo_url_tests')
+        module = Module(namespace=namespace, name='module-provider-override-git-provider')
+        module_provider = ModuleProvider.get(module=module, name='test')
+        module_version = ModuleVersion(module_provider=module_provider, version='9.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+
+                with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
+                    metadata_fh.writelines(json.dumps({
+                        'description': 'Test unittest description',
+                        'owner': 'Test unittest owner',
+                        'variable_template': [{'test_variable': {}}],
+                        'repo_clone_url': 'ssh://overrideurl_here.com/{namespace}/{module}-{provider}',
+                        'repo_base_url': 'https://realoverride.com/blah/{namespace}-{module}-{provider}',
+                        'repo_browse_url': 'https://base_url.com/{namespace}-{module}-{provider}-{tag}/{path}'
+                    }))
+
+                # Create README
+                with open(os.path.join(upload_directory, 'README.md'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines(self.TEST_README_CONTENT)
+
+                os.mkdir(os.path.join(upload_directory, 'examples'))
+
+                # Create main.tf in each of the examples
+                for itx in [1, 2]:
+                    root_dir = os.path.join(upload_directory, 'examples', 'testexample{itx}'.format(itx=itx))
+                    os.mkdir(root_dir)
+                    with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(self.SUB_MODULE_MAIN_TF.format(itx=itx))
+
+            self._upload_module_version(module_version=module_version, zip_file=zip_file)
+
+        # Ensure README is present in module version
+        assert module_version.get_readme_content() == self.TEST_README_CONTENT
+
+        # Check submodules
+        submodules = module_version.get_submodules()
+        submodules.sort(key=lambda x: x.path)
+        assert len(submodules) == 2
+        assert [sm.path for sm in submodules] == ['modules/testmodule1', 'modules/testmodule2']
+
+
+        # Check examples
+        examples = module_version.get_examples()
+        examples.sort(key=lambda x: x.path)
+        assert len(examples) == 2
+        assert [example.path for example in examples] == ['examples/testexample1', 'examples/testexample2']
+
+        # Check repo URLs
+        assert module_version.get_source_base_url() == 'https://realoverride.com/blah/repo_url_tests-module-provider-override-git-provider-test'
+        assert module_version.get_git_clone_url() == 'ssh://overrideurl_here.com/repo_url_tests/module-provider-override-git-provider-test'
+        assert module_version.get_source_browse_url() == 'https://base_url.com/repo_url_tests-module-provider-override-git-provider-test-9.0.0/'
+        assert module_version.get_source_browse_url(path='subdir') == 'https://base_url.com/repo_url_tests-module-provider-override-git-provider-test-9.0.0/subdir'
+
+        # Check attributes from terrareg
+        assert module_version.description == 'unittestdescription!'
+        assert module_version.owner == 'unittestowner.'
+        assert module_version.variable_template == [{'test_variable': {}}]
 
     def test_uploading_module_with_invalid_terraform(self):
         """Test uploading a module with invalid terraform."""
