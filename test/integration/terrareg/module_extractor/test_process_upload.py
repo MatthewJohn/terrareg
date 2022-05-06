@@ -1,4 +1,5 @@
 
+from distutils.command.upload import upload
 from enum import Enum
 import json
 import os
@@ -85,6 +86,18 @@ output "test_output" {
     value       = var.test_input
 }
 """
+    SUB_MODULE_MAIN_TF = """
+variable "submodule_test_input_{itx}" {
+    type        = string
+    description = "This is a test input in a submodule"
+    default     = "test_default_val"
+}
+
+output "submodule_test_output_{itx}" {
+    description = "test output in a submodule"
+    value       = var.test_input
+}
+"""
 
     def _upload_module_version(self, module_version, zip_file):
         """Use ApiUploadModuleExtractor to upload version of module."""
@@ -129,7 +142,6 @@ output "test_output" {
                 'name': 'test_output'
             }
         ]
-
 
     def test_terrareg_metadata(self):
         """Test module upload with terrareg metadata file."""
@@ -285,7 +297,54 @@ output "test_output" {
 
     def test_sub_modules(self):
         """Test uploading module with submodules."""
-        pass
+        test_upload = UploadTestModule()
+
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+
+                os.mkdir(os.path.join(upload_directory, 'modules'))
+
+                # Create main.tf in each of the submodules
+                for itx in [1, 2]:
+                    root_dir = os.path.join(upload_directory, 'modules', 'testmodule{itx}'.format(itx=itx))
+                    os.mkdir(root_dir)
+                    with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(self.SUB_MODULE_MAIN_TF.format(itx=itx))
+
+            self._upload_module_version(module_version=module_version, zip_file=zip_file)
+
+        submodules = module_version.get_submodules()
+        # Order submodules by path
+        submodules = submodules.sort(key=lambda x: x.path)
+        assert len(submodules) == 2
+        assert [sm.path for sm in submodules] == ['modules/testmodule1', 'modules/testmodule2']
+
+        for itx, submodule in enumerate(submodules):
+            # Ensure terraform docs output contains variable and output
+            assert submodule.get_terraform_inputs() == [
+                {
+                    'default': 'test_default_val',
+                    'description': 'This is a test input',
+                    'name': 'submodule_test_input_{itx}'.format(itx),
+                    'required': False,
+                    'type': 'string'
+                }
+            ]
+            assert submodule.get_terraform_outputs() == [
+                {
+                    'description': 'test output',
+                    'name': 'submodule_test_output_{itx}'.format(itx)
+                }
+            ]
 
     def test_examples(self):
         """Test uploading module with examples."""
