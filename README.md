@@ -44,7 +44,39 @@ Navigate to http://localhost:5000 to get started, or http://localhost/modules/me
     docker run -p 5000:5000 -e MIGRATE_DATABASE=True terrareg:latest
 
 
-## Environment variables
+## Docker environment variables
+
+The following environment variables are available to configure the docker container
+
+### MIGRATE_DATABASE
+
+Whether to perform a database migration on container startup.
+
+Set to `True` to enable database migration
+
+Default: `False`
+
+### MIGRATE_DATABASE_ONLY
+
+Whether to perform database migration and exit immediately.
+
+This is useful for scheduling migrations by starting a 'migration' instance of the application.
+
+Set to `True` to exit after migration.
+
+The `MIGRATE_DATABASE` environment variable must also be set to `True` to perform the migration, otherwise nothing will be performed and the container will exit.
+
+Default: `False`
+
+### SSH_PRIVATE_KEY
+
+Provide the contents of the SSH key to perform git clones.
+
+This is an alternative to mounting the '.ssh' directory of the root user.
+
+Default: ''
+
+## Application environment variables
 
 The following environment variables are available to configure the application
 
