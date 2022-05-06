@@ -120,7 +120,7 @@ output "test_input" {
         namespace = Namespace(name='testprocessupload')
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
-        module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
+        module_version = ModuleVersion(module_provider=module_provider, version='2.0.0')
         module_version.prepare_module()
 
         with test_upload as zip_file:
@@ -151,7 +151,7 @@ output "test_input" {
             namespace = Namespace(name='testprocessupload')
             module = Module(namespace=namespace, name='test-module')
             module_provider = ModuleProvider.get(module=module, name='aws', create=True)
-            module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
+            module_version = ModuleVersion(module_provider=module_provider, version='3.0.0')
             module_version.prepare_module()
 
             with test_upload as zip_file:
@@ -187,7 +187,7 @@ output "test_input" {
             namespace = Namespace(name='testprocessupload')
             module = Module(namespace=namespace, name='test-module')
             module_provider = ModuleProvider.get(module=module, name='aws', create=True)
-            module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
+            module_version = ModuleVersion(module_provider=module_provider, version='4.0.0')
             module_version.prepare_module()
 
             with test_upload as zip_file:
@@ -211,7 +211,7 @@ output "test_input" {
         namespace = Namespace(name='testprocessupload')
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
-        module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
+        module_version = ModuleVersion(module_provider=module_provider, version='5.0.0')
         module_version.prepare_module()
 
         with test_upload as zip_file:
@@ -229,7 +229,41 @@ output "test_input" {
 
     def test_override_repo_urls_with_metadata(self):
         """Test module upload with repo urls in metadata file."""
-        pass
+        test_upload = UploadTestModule()
+
+        namespace = Namespace(name='repo_url_tests')
+        module = Module(namespace=namespace, name='module-provider-override-git-provider')
+        module_provider = ModuleProvider.get(module=module, name='test')
+
+        # Ensure that module provider is setup with git proider and overriden repo URLs
+        assert module_provider is not None
+        assert module_provider._get_db_row()['repo_base_url_template']
+        assert module_provider._get_db_row()['repo_clone_url_template']
+        assert module_provider._get_db_row()['repo_browse_url_template']
+        assert module_provider._get_db_row()['git_provider_id']
+
+        module_version = ModuleVersion(module_provider=module_provider, version='1.5.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+
+                with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
+                    metadata_fh.writelines(json.dumps({
+                        'repo_clone_url': 'ssh://overrideurl_here.com/{namespace}/{module}-{provider}',
+                        'repo_base_url': 'https://realoverride.com/blah/{namespace}-{module}-{provider}',
+                        'repo_browse_url': 'https://base_url.com/{namespace}-{module}-{provider}-{tag}/{path}'
+                    }))
+
+            self._upload_module_version(module_version=module_version, zip_file=zip_file)
+
+            assert module_version.get_source_base_url() == 'https://realoverride.com/blah/repo_url_tests-module-provider-override-git-provider-test'
+            assert module_version.get_git_clone_url() == 'ssh://overrideurl_here.com/repo_url_tests/module-provider-override-git-provider-test'
+            assert module_version.get_source_browse_url() == 'https://base_url.com/repo_url_tests-module-provider-override-git-provider-test-1.5.0/'
+            assert module_version.get_source_browse_url(path='subdir') == 'https://base_url.com/repo_url_tests-module-provider-override-git-provider-test-1.5.0/subdir'
 
     def test_sub_modules(self):
         """Test uploading module with submodules."""
