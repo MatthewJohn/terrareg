@@ -384,6 +384,10 @@ There are common attributes that can be added to each of variable objects, which
 
 ## Changelog
 
+### v1.0.1
+
+ * Add package updates to Dockerfile
+
 ### v1.0.0
 
  * Initial release
