@@ -80,7 +80,7 @@ variable "test_input" {
     default     = "test_default_val"
 }
 
-output "test_input" {
+output "test_output" {
     description = "test output"
     value       = var.test_input
 }
@@ -112,6 +112,24 @@ output "test_input" {
                     main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
 
             self._upload_module_version(module_version=module_version, zip_file=zip_file)
+
+        # Ensure terraform docs output contains variable and output
+        assert module_version.get_terraform_inputs() == [
+            {
+                'default': 'test_default_val',
+                'description': 'This is a test input',
+                'name': 'test_input',
+                'required': False,
+                'type': 'string'
+            }
+        ]
+        assert module_version.get_terraform_outputs() == [
+            {
+                'description': 'test output',
+                'name': 'test_output'
+            }
+        ]
+
 
     def test_terrareg_metadata(self):
         """Test module upload with terrareg metadata file."""
