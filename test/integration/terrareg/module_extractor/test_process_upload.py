@@ -401,7 +401,28 @@ output "submodule_test_output_{itx}" {{
 
     def test_upload_with_readme(self):
         """Test uploading a module with a README."""
-        pass
+        test_upload = UploadTestModule()
+
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+
+                # Create README
+                with open(os.path.join(upload_directory, 'README.md'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines(self.TEST_README_CONTENT)
+
+            self._upload_module_version(module_version=module_version, zip_file=zip_file)
+
+        # Ensure README is present in module version
+        assert module_version.get_readme_content() == self.TEST_README_CONTENT
 
     def test_all_features(self):
         """Test uploading a module with multiple features."""
