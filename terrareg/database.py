@@ -106,15 +106,17 @@ class Database():
         meta = self.get_meta()
         engine = self.get_engine()
 
-        GENERAL_COLUMN_SIZE = 1024
+        GENERAL_COLUMN_SIZE = 128
+        LARGE_COLUMN_SIZE = 1024
+        URL_COLUMN_SIZE = 1024
 
         self._git_provider = sqlalchemy.Table(
             'git_provider', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), unique=True),
-            sqlalchemy.Column('base_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('clone_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('browse_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE))
+            sqlalchemy.Column('base_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
+            sqlalchemy.Column('clone_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
+            sqlalchemy.Column('browse_url_template', sqlalchemy.String(URL_COLUMN_SIZE))
         )
 
         self._module_provider = sqlalchemy.Table(
@@ -123,9 +125,9 @@ class Database():
             sqlalchemy.Column('namespace', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('module', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('provider', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('repo_base_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('repo_clone_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('repo_base_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
+            sqlalchemy.Column('repo_clone_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
+            sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('git_tag_format', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('verified', sqlalchemy.Boolean),
             sqlalchemy.Column(
@@ -151,10 +153,10 @@ class Database():
             ),
             sqlalchemy.Column('version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('owner', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('description', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('repo_base_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('repo_clone_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('description', sqlalchemy.String(LARGE_COLUMN_SIZE)),
+            sqlalchemy.Column('repo_base_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
+            sqlalchemy.Column('repo_clone_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
+            sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('published_at', sqlalchemy.DateTime),
             sqlalchemy.Column('readme_content', sqlalchemy.BLOB),
             sqlalchemy.Column('module_details', sqlalchemy.BLOB),
@@ -174,7 +176,7 @@ class Database():
                 nullable=False
             ),
             sqlalchemy.Column('type', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('path', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('path', sqlalchemy.String(LARGE_COLUMN_SIZE)),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('readme_content', sqlalchemy.BLOB),
             sqlalchemy.Column('module_details', sqlalchemy.BLOB)
