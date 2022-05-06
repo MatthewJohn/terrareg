@@ -36,15 +36,6 @@ class ModuleExtractor:
         self._module_version = module_version
         self._extract_directory = tempfile.TemporaryDirectory()  # noqa: R1732
         self._upload_directory = tempfile.TemporaryDirectory()  # noqa: R1732
-        self._source_file = None
-
-    @property
-    def source_file(self):
-        """Generate/return source filename."""
-        if self._source_file is None:
-            filename = secure_filename(self._upload_file.filename)
-            self._source_file = safe_join_paths(self.upload_directory, filename)
-        return self._source_file
 
     @property
     def extract_directory(self):
@@ -244,6 +235,15 @@ class ApiUploadModuleExtractor(ModuleExtractor):
         """Store member variables."""
         super(ApiUploadModuleExtractor, self).__init__(*args, **kwargs)
         self._upload_file = upload_file
+        self._source_file = None
+
+    @property
+    def source_file(self):
+        """Generate/return source filename."""
+        if self._source_file is None:
+            filename = secure_filename(self._upload_file.filename)
+            self._source_file = safe_join_paths(self.upload_directory, filename)
+        return self._source_file
 
     def _save_upload_file(self):
         """Save uploaded file to uploads directory."""
