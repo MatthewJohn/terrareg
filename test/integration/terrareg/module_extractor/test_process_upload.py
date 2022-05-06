@@ -1,5 +1,6 @@
 
 from enum import Enum
+import json
 import os
 import re
 import shutil
@@ -113,7 +114,33 @@ output "test_input" {
 
     def test_terrareg_metadata(self):
         """Test module upload with terrareg metadata file."""
-        pass
+        test_upload = UploadTestModule()
+
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+
+                with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
+                    metadata_fh.writelines(json.dumps({
+                        'description': 'unittestdescription!',
+                        'owner': 'unittestowner.',
+                        'variable_template': [{'test_variable': {}}]
+                    }))
+
+            self._upload_module_version(module_version=module_version, zip_file=zip_file)
+
+        assert module_version.description == 'unittestdescription!'
+        assert module_version.owner == 'unittestowner.'
+        assert module_version.variable_template == [{'test_variable': {}}]
+
 
     def test_terrareg_metadata_required_attributes(self):
         """Test module upload with terrareg metadata file with required attributes."""
