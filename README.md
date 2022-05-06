@@ -384,6 +384,11 @@ There are common attributes that can be added to each of variable objects, which
 
 ## Changelog
 
+### v1.0.3
+
+ * Update base image to python:10
+ * Remove update of system packages in Dockerfile
+
 ### v1.0.2
 
  * Add exception to be thrown when upload fails to analyse terraform

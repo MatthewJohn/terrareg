@@ -1,8 +1,6 @@
-FROM python:3.8
+FROM python:3.10
 
 WORKDIR /
-
-RUN apt-get update && apt-get dist-upgrade --assume-yes && apt-get clean all
 
 RUN apt-get update && apt-get install --assume-yes curl unzip git && apt-get clean all
 
