@@ -142,7 +142,6 @@ class Database():
             sqlalchemy.Column('readme_content', sqlalchemy.String),
             sqlalchemy.Column('module_details', sqlalchemy.String),
             sqlalchemy.Column('variable_template', sqlalchemy.String),
-            sqlalchemy.Column('artifact_location', sqlalchemy.String),
             sqlalchemy.Column('published', sqlalchemy.Boolean)
         )
 

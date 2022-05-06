@@ -132,8 +132,7 @@ class MockModuleVersion(ModuleVersion):
                 'module_details',
                 '{"inputs": [], "outputs": [], "providers": [], "resources": []}'
             ),
-            'variable_template': self._unittest_data.get('variable_template', '{}'),
-            'artifact_location': self._unittest_data.get('artifact_location', None)
+            'variable_template': self._unittest_data.get('variable_template', '{}')
         }
 
 
