@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: d1a0f8c16f39
+Revision ID: 5807fd7c4ad6
 Revises: 
-Create Date: 2022-05-06 13:06:56.337406
+Create Date: 2022-05-06 13:08:14.313449
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'd1a0f8c16f39'
+revision = '5807fd7c4ad6'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -61,7 +61,7 @@ def upgrade():
     op.create_table('analytics',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('parent_module_version', sa.Integer(), nullable=False),
-    sa.Column('timestamp', sa.String(length=1024), nullable=True),
+    sa.Column('timestamp', sa.DateTime(), nullable=True),
     sa.Column('terraform_version', sa.String(length=1024), nullable=True),
     sa.Column('analytics_token', sa.String(length=1024), nullable=True),
     sa.Column('auth_token', sa.String(length=1024), nullable=True),

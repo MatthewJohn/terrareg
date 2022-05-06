@@ -176,7 +176,7 @@ class Database():
                     ondelete='CASCADE'),
                 nullable=False
             ),
-            sqlalchemy.Column('timestamp', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('timestamp', sqlalchemy.DateTime),
             sqlalchemy.Column('terraform_version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('analytics_token', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('auth_token', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
