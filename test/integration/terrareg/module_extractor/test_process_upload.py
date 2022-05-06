@@ -302,7 +302,7 @@ output "submodule_test_output_{itx}" {{
         namespace = Namespace(name='testprocessupload')
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
-        module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
+        module_version = ModuleVersion(module_provider=module_provider, version='6.0.0')
         module_version.prepare_module()
 
         with test_upload as zip_file:
@@ -354,7 +354,7 @@ output "submodule_test_output_{itx}" {{
         namespace = Namespace(name='testprocessupload')
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
-        module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
+        module_version = ModuleVersion(module_provider=module_provider, version='7.0.0')
         module_version.prepare_module()
 
         with test_upload as zip_file:
@@ -406,7 +406,7 @@ output "submodule_test_output_{itx}" {{
         namespace = Namespace(name='testprocessupload')
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
-        module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
+        module_version = ModuleVersion(module_provider=module_provider, version='8.0.0')
         module_version.prepare_module()
 
         with test_upload as zip_file:
