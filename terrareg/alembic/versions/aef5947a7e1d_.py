@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 5807fd7c4ad6
+Revision ID: aef5947a7e1d
 Revises: 
-Create Date: 2022-05-06 13:08:14.313449
+Create Date: 2022-05-06 13:09:10.827263
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '5807fd7c4ad6'
+revision = 'aef5947a7e1d'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -51,9 +51,9 @@ def upgrade():
     sa.Column('repo_clone_url_template', sa.String(length=1024), nullable=True),
     sa.Column('repo_browse_url_template', sa.String(length=1024), nullable=True),
     sa.Column('published_at', sa.DateTime(), nullable=True),
-    sa.Column('readme_content', sa.String(length=1024), nullable=True),
-    sa.Column('module_details', sa.String(length=1024), nullable=True),
-    sa.Column('variable_template', sa.String(length=1024), nullable=True),
+    sa.Column('readme_content', sa.BLOB(), nullable=True),
+    sa.Column('module_details', sa.BLOB(), nullable=True),
+    sa.Column('variable_template', sa.BLOB(), nullable=True),
     sa.Column('published', sa.Boolean(), nullable=True),
     sa.ForeignKeyConstraint(['module_provider_id'], ['module_provider.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
@@ -75,8 +75,8 @@ def upgrade():
     sa.Column('type', sa.String(length=1024), nullable=True),
     sa.Column('path', sa.String(length=1024), nullable=True),
     sa.Column('name', sa.String(length=1024), nullable=True),
-    sa.Column('readme_content', sa.String(length=1024), nullable=True),
-    sa.Column('module_details', sa.String(length=1024), nullable=True),
+    sa.Column('readme_content', sa.BLOB(), nullable=True),
+    sa.Column('module_details', sa.BLOB(), nullable=True),
     sa.ForeignKeyConstraint(['parent_module_version'], ['module_version.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )

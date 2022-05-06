@@ -141,9 +141,9 @@ class Database():
             sqlalchemy.Column('repo_clone_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('published_at', sqlalchemy.DateTime),
-            sqlalchemy.Column('readme_content', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('module_details', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('variable_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('readme_content', sqlalchemy.BLOB),
+            sqlalchemy.Column('module_details', sqlalchemy.BLOB),
+            sqlalchemy.Column('variable_template', sqlalchemy.BLOB),
             sqlalchemy.Column('published', sqlalchemy.Boolean)
         )
 
@@ -161,8 +161,8 @@ class Database():
             sqlalchemy.Column('type', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('path', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('readme_content', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('module_details', sqlalchemy.String(GENERAL_COLUMN_SIZE))
+            sqlalchemy.Column('readme_content', sqlalchemy.BLOB),
+            sqlalchemy.Column('module_details', sqlalchemy.BLOB)
         )
 
         self._analytics = sqlalchemy.Table(
