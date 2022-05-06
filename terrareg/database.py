@@ -13,6 +13,21 @@ class Database():
     _ENGINE = None
     _INSTANCE = None
 
+    blob_encoding_format = 'utf-8'
+
+    @staticmethod
+    def encode_blob(value):
+        """Encode string as a blog value"""
+        # Convert any untruthful values to empty string
+        if not value:
+            value = ''
+        return value.encode(Database.blob_encoding_format)
+
+    @staticmethod
+    def decode_blob(value):
+        """Decode blob as a string."""
+        return value.decode(Database.blob_encoding_format)
+
     def __init__(self):
         """Setup member variables."""
         self._git_provider = None
@@ -91,25 +106,27 @@ class Database():
         meta = self.get_meta()
         engine = self.get_engine()
 
+        GENERAL_COLUMN_SIZE = 1024
+
         self._git_provider = sqlalchemy.Table(
             'git_provider', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
-            sqlalchemy.Column('name', sqlalchemy.String, unique=True),
-            sqlalchemy.Column('base_url_template', sqlalchemy.String),
-            sqlalchemy.Column('clone_url_template', sqlalchemy.String),
-            sqlalchemy.Column('browse_url_template', sqlalchemy.String)
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), unique=True),
+            sqlalchemy.Column('base_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('clone_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('browse_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE))
         )
 
         self._module_provider = sqlalchemy.Table(
             'module_provider', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
-            sqlalchemy.Column('namespace', sqlalchemy.String),
-            sqlalchemy.Column('module', sqlalchemy.String),
-            sqlalchemy.Column('provider', sqlalchemy.String),
-            sqlalchemy.Column('repo_base_url_template', sqlalchemy.String),
-            sqlalchemy.Column('repo_clone_url_template', sqlalchemy.String),
-            sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String),
-            sqlalchemy.Column('git_tag_format', sqlalchemy.String),
+            sqlalchemy.Column('namespace', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('module', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('provider', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('repo_base_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('repo_clone_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('git_tag_format', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('verified', sqlalchemy.Boolean),
             sqlalchemy.Column(
                 'git_provider_id',
@@ -132,16 +149,16 @@ class Database():
                     ondelete='CASCADE'),
                 nullable=False
             ),
-            sqlalchemy.Column('version', sqlalchemy.String),
-            sqlalchemy.Column('owner', sqlalchemy.String),
-            sqlalchemy.Column('description', sqlalchemy.String),
-            sqlalchemy.Column('repo_base_url_template', sqlalchemy.String),
-            sqlalchemy.Column('repo_clone_url_template', sqlalchemy.String),
-            sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String),
+            sqlalchemy.Column('version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('owner', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('description', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('repo_base_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('repo_clone_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('published_at', sqlalchemy.DateTime),
-            sqlalchemy.Column('readme_content', sqlalchemy.String),
-            sqlalchemy.Column('module_details', sqlalchemy.String),
-            sqlalchemy.Column('variable_template', sqlalchemy.String),
+            sqlalchemy.Column('readme_content', sqlalchemy.BLOB),
+            sqlalchemy.Column('module_details', sqlalchemy.BLOB),
+            sqlalchemy.Column('variable_template', sqlalchemy.BLOB),
             sqlalchemy.Column('published', sqlalchemy.Boolean)
         )
 
@@ -156,11 +173,11 @@ class Database():
                     ondelete='CASCADE'),
                 nullable=False
             ),
-            sqlalchemy.Column('type', sqlalchemy.String),
-            sqlalchemy.Column('path', sqlalchemy.String),
-            sqlalchemy.Column('name', sqlalchemy.String),
-            sqlalchemy.Column('readme_content', sqlalchemy.String),
-            sqlalchemy.Column('module_details', sqlalchemy.String)
+            sqlalchemy.Column('type', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('path', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('readme_content', sqlalchemy.BLOB),
+            sqlalchemy.Column('module_details', sqlalchemy.BLOB)
         )
 
         self._analytics = sqlalchemy.Table(
@@ -174,11 +191,11 @@ class Database():
                     ondelete='CASCADE'),
                 nullable=False
             ),
-            sqlalchemy.Column('timestamp', sqlalchemy.String),
-            sqlalchemy.Column('terraform_version', sqlalchemy.String),
-            sqlalchemy.Column('analytics_token', sqlalchemy.String),
-            sqlalchemy.Column('auth_token', sqlalchemy.String),
-            sqlalchemy.Column('environment', sqlalchemy.String)
+            sqlalchemy.Column('timestamp', sqlalchemy.DateTime),
+            sqlalchemy.Column('terraform_version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('analytics_token', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('auth_token', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('environment', sqlalchemy.String(GENERAL_COLUMN_SIZE))
         )
 
     def select_module_version_joined_module_provider(self, *args, **kwargs):

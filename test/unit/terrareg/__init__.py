@@ -127,12 +127,12 @@ class MockModuleVersion(ModuleVersion):
                 datetime.datetime(year=2020, month=1, day=1,
                                   hour=23, minute=18, second=12)
             ),
-            'readme_content': self._unittest_data.get('readme_content', 'Mock module README file'),
-            'module_details': self._unittest_data.get(
+            'readme_content': Database.encode_blob(self._unittest_data.get('readme_content', 'Mock module README file')),
+            'module_details': Database.encode_blob(self._unittest_data.get(
                 'module_details',
                 '{"inputs": [], "outputs": [], "providers": [], "resources": []}'
-            ),
-            'variable_template': self._unittest_data.get('variable_template', '{}')
+            )),
+            'variable_template': Database.encode_blob(self._unittest_data.get('variable_template', '{}'))
         }
 
 
