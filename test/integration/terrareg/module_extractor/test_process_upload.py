@@ -496,8 +496,8 @@ output "submodule_test_output_{itx}" {{
         assert module_version.get_source_browse_url(path='subdir') == 'https://base_url.com/repo_url_tests-module-provider-override-git-provider-test-9.0.0/subdir'
 
         # Check attributes from terrareg
-        assert module_version.description == 'unittestdescription!'
-        assert module_version.owner == 'unittestowner.'
+        assert module_version.description == 'Test unittest description'
+        assert module_version.owner == 'Test unittest owner'
         assert module_version.variable_template == [{'test_variable': {}}]
 
     def test_uploading_module_with_invalid_terraform(self):
