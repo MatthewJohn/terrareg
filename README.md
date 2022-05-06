@@ -179,6 +179,9 @@ Default: `True`
 URL for database.
 Defaults to local sqlite database.
 
+To setup SQLite datbase, use `sqlite:///<path to sqlite DB>`
+
+To setup MySQL, use `mysql+mysqlconnector://<user>:<password>@<host>[:<port>]/<database>`
 
 Default: `sqlite:///modules.db`
 
