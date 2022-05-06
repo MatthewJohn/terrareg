@@ -18,6 +18,7 @@ import magic
 from terrareg.models import Example, ModuleVersion, Submodule
 from terrareg.database import Database
 from terrareg.errors import (
+    UnableToProcessTerraformError,
     UnknownFiletypeError,
     InvalidTerraregMetadataFileError,
     MetadataDoesNotContainRequiredAttributeError
@@ -36,15 +37,6 @@ class ModuleExtractor:
         self._module_version = module_version
         self._extract_directory = tempfile.TemporaryDirectory()  # noqa: R1732
         self._upload_directory = tempfile.TemporaryDirectory()  # noqa: R1732
-        self._source_file = None
-
-    @property
-    def source_file(self):
-        """Generate/return source filename."""
-        if self._source_file is None:
-            filename = secure_filename(self._upload_file.filename)
-            self._source_file = safe_join_paths(self.upload_directory, filename)
-        return self._source_file
 
     @property
     def extract_directory(self):
@@ -70,7 +62,11 @@ class ModuleExtractor:
     @staticmethod
     def _run_terraform_docs(module_path):
         """Run terraform docs and return output."""
-        terradocs_output = subprocess.check_output(['terraform-docs', 'json', module_path])
+        try:
+            terradocs_output = subprocess.check_output(['terraform-docs', 'json', module_path])
+        except subprocess.CalledProcessError as exc:
+            raise UnableToProcessTerraformError('An error occurred whilst processing the terraform code.')
+
         return json.loads(terradocs_output)
 
     @staticmethod
@@ -244,6 +240,15 @@ class ApiUploadModuleExtractor(ModuleExtractor):
         """Store member variables."""
         super(ApiUploadModuleExtractor, self).__init__(*args, **kwargs)
         self._upload_file = upload_file
+        self._source_file = None
+
+    @property
+    def source_file(self):
+        """Generate/return source filename."""
+        if self._source_file is None:
+            filename = secure_filename(self._upload_file.filename)
+            self._source_file = safe_join_paths(self.upload_directory, filename)
+        return self._source_file
 
     def _save_upload_file(self):
         """Save uploaded file to uploads directory."""
