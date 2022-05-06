@@ -430,4 +430,22 @@ output "submodule_test_output_{itx}" {{
 
     def test_uploading_module_with_invalid_terraform(self):
         """Test uploading a module with invalid terraform."""
-        pass
+        test_upload = UploadTestModule()
+
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='10.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines("""
+                    this is { not_Really } valid "terraform"
+                    """)
+
+            with pytest.raises(terrareg.errors.UnableToProcessTerraformError):
+                self._upload_module_version(module_version=module_version, zip_file=zip_file)
+

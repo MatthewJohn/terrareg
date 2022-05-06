@@ -142,3 +142,9 @@ class ProviderNameNotPermittedError(TerraregError):
     """Provider name not in list of allowed providers."""
 
     pass
+
+
+class UnableToProcessTerraformError(TerraregError):
+    """An error occurred whilst attempting to process terraform."""
+
+    pass
