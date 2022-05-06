@@ -63,7 +63,7 @@ class ModuleExtractor:
     def _run_terraform_docs(module_path):
         """Run terraform docs and return output."""
         try:
-            terradocs_output = subprocess.check_call(['terraform-docs', 'json', module_path])
+            terradocs_output = subprocess.check_output(['terraform-docs', 'json', module_path])
         except subprocess.CalledProcessError as exc:
             raise UnableToProcessTerraformError('An error occurred whilst processing the terraform code.')
 
