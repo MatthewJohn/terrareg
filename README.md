@@ -387,6 +387,7 @@ There are common attributes that can be added to each of variable objects, which
 ### v1.0.3
 
  * Update base image to python:10
+ * Remove update of system packages in Dockerfile
 
 ### v1.0.2
 
