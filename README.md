@@ -211,6 +211,9 @@ Default: `True`
 URL for database.
 Defaults to local sqlite database.
 
+To setup SQLite datbase, use `sqlite:///<path to sqlite DB>`
+
+To setup MySQL, use `mysql+mysqlconnector://<user>:<password>@<host>[:<port>]/<database>`
 
 Default: `sqlite:///modules.db`
 
@@ -418,6 +421,7 @@ There are common attributes that can be added to each of variable objects, which
 
 ### v1.1.0
 
+ * Add MySQL connector and document URL format to connect to MySQL
  * Provide ability to pass SSH private key through environment variable
 
 ### v1.0.3

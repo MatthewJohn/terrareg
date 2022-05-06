@@ -12,6 +12,10 @@ class Config:
         """
         URL for database.
         Defaults to local sqlite database.
+
+        To setup SQLite datbase, use `sqlite:///<path to sqlite DB>`
+
+        To setup MySQL, use `mysql+mysqlconnector://<user>:<password>@<host>[:<port>]/<database>`
         """
         return os.environ.get('DATABASE_URL', 'sqlite:///modules.db')
 
