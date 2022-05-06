@@ -1067,22 +1067,25 @@ class ModuleVersion(TerraformSpecsObject):
         self._validate_version(version)
         self._module_provider = module_provider
         self._version = version
+        self._cache_db_row = None
         super(ModuleVersion, self).__init__()
 
     def _get_db_row(self):
         """Get object from database"""
-        db = Database.get()
-        select = db.module_version.select().join(
-            db.module_provider, db.module_version.c.module_provider_id == db.module_provider.c.id
-        ).where(
-            db.module_provider.c.namespace == self._module_provider._module._namespace.name,
-            db.module_provider.c.module == self._module_provider._module.name,
-            db.module_provider.c.provider == self._module_provider.name,
-            db.module_version.c.version == self.version
-        )
-        with db.get_engine().connect() as conn:
-            res = conn.execute(select)
-            return res.fetchone()
+        if self._cache_db_row is None:
+            db = Database.get()
+            select = db.module_version.select().join(
+                db.module_provider, db.module_version.c.module_provider_id == db.module_provider.c.id
+            ).where(
+                db.module_provider.c.namespace == self._module_provider._module._namespace.name,
+                db.module_provider.c.module == self._module_provider._module.name,
+                db.module_provider.c.provider == self._module_provider.name,
+                db.module_version.c.version == self.version
+            )
+            with db.get_engine().connect() as conn:
+                res = conn.execute(select)
+                self._cache_db_row = res.fetchone()
+        return self._cache_db_row
 
     def get_view_url(self):
         """Return view URL"""
@@ -1280,6 +1283,9 @@ class ModuleVersion(TerraformSpecsObject):
         with db.get_engine().connect() as conn:
             conn.execute(update)
 
+        # Clear cached DB row
+        self._cache_db_row = None
+
     def _create_db_row(self):
         """Insert into datadabase, removing any existing duplicate versions."""
         db = Database.get()
@@ -1293,6 +1299,9 @@ class ModuleVersion(TerraformSpecsObject):
                     db.module_version.c.id == previous_db_row['id']
                 )
                 conn.execute(delete_statement)
+
+                # Invalidate cache for previous DB row
+                self._cache_db_row = None
 
                 # Delete any submodules/examples
                 delete_statement = db.sub_module.delete().where(
