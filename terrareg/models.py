@@ -177,7 +177,10 @@ class Namespace(object):
     def get_total_count():
         """Get total number of namespaces."""
         db = Database.get()
-        counts = db.module_provider.select(
+        counts = sqlalchemy.select(
+            db.module_provider.c.namespace
+        ).select_from(
+            db.module_provider
         ).group_by(
             db.module_provider.c.namespace
         ).subquery()
@@ -425,7 +428,12 @@ class ModuleProvider(object):
     def get_total_count():
         """Get total number of module providers."""
         db = Database.get()
-        counts = db.module_provider.select(
+        counts = sqlalchemy.select(
+            db.module_provider.c.namespace,
+            db.module_provider.c.module,
+            db.module_provider.c.provider
+        ).select_from(
+            db.module_provider
         ).group_by(
             db.module_provider.c.namespace,
             db.module_provider.c.module,
