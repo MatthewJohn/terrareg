@@ -208,7 +208,9 @@ class Namespace(object):
     def get_all():
         """Return all namespaces."""
         db = Database.get()
-        select = db.module_provider.select().group_by(
+        select = sqlalchemy.select(
+            db.module_provider.c.namespace
+        ).group_by(
             db.module_provider.c.namespace
         )
         with db.get_engine().connect() as conn:
@@ -253,8 +255,9 @@ class Namespace(object):
     def get_all_modules(self):
         """Return all modules for namespace."""
         db = Database.get()
-        select = db.module_provider.select(
-        ).where(
+        select = sqlalchemy.select(
+            db.module_provider.c.module
+        ).select_from(db.module_provider).where(
             db.module_provider.c.namespace == self.name
         ).group_by(
             db.module_provider.c.module
@@ -309,10 +312,12 @@ class Module(object):
     def get_providers(self):
         """Return module providers for module."""
         db = Database.get()
-        select = db.module_provider.select(
+        select = sqlalchemy.select(
+            db.module_provider.c.provider
+        ).select_from(
+            db.module_provider
         ).where(
-            db.module_provider.c.namespace == self._namespace.name
-        ).where(
+            db.module_provider.c.namespace == self._namespace.name,
             db.module_provider.c.module == self.name
         ).group_by(
             db.module_provider.c.provider
