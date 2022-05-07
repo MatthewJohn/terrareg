@@ -508,3 +508,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', False):
             with mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
                 assert module_version.get_source_base_url() == expected_base_url
+
+    def test_get_total_count(self):
+        """Test get_total_count method"""
+        assert ModuleProvider.get_total_count() == 37
