@@ -44,3 +44,21 @@ run:
     paths:
       - dist/*.whl
 
+release:
+  stage: release
+  image: node
+  cache:
+    paths:
+      - node_modules/
+  before_script:
+    - npm install @semantic-release/gitlab
+  script:
+    - npx semantic-release
+  only:
+  refs:
+    - master
+  except:
+  changes:
+    - "*.md"
+    - ".gitignore"
+
