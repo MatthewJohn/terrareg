@@ -58,7 +58,7 @@ release:
     - npx semantic-release
   only:
     refs:
-      - master
+      - main
   except:
     changes:
       - "*.md"
