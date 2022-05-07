@@ -1,6 +1,7 @@
 """Provide database class."""
 
 import sqlalchemy
+import sqlalchemy.dialects.mysql
 
 import terrareg.config
 from terrareg.errors import DatabaseMustBeIniistalisedError
@@ -14,6 +15,7 @@ class Database():
     _INSTANCE = None
 
     blob_encoding_format = 'utf-8'
+    MEDIUM_BLOB_SIZE = ((2 ** 24) - 1)
 
     @staticmethod
     def encode_blob(value):
@@ -27,6 +29,13 @@ class Database():
     def decode_blob(value):
         """Decode blob as a string."""
         return value.decode(Database.blob_encoding_format)
+
+    @staticmethod
+    def medium_blob():
+        """Return column type for medium blob."""
+        return sqlalchemy.LargeBinary(
+                length=Database.MEDIUM_BLOB_SIZE).with_variant(
+                    sqlalchemy.dialects.mysql.MEDIUMBLOB(), "mysql")
 
     def __init__(self):
         """Setup member variables."""
@@ -109,7 +118,6 @@ class Database():
         GENERAL_COLUMN_SIZE = 128
         LARGE_COLUMN_SIZE = 1024
         URL_COLUMN_SIZE = 1024
-        MEDIUM_BLOB_SIZE = ((2 ** 24) - 1)
 
         self._git_provider = sqlalchemy.Table(
             'git_provider', meta,
@@ -159,9 +167,9 @@ class Database():
             sqlalchemy.Column('repo_clone_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('published_at', sqlalchemy.DateTime),
-            sqlalchemy.Column('readme_content', sqlalchemy.LargeBinary(length=MEDIUM_BLOB_SIZE)),
-            sqlalchemy.Column('module_details', sqlalchemy.LargeBinary(length=MEDIUM_BLOB_SIZE)),
-            sqlalchemy.Column('variable_template', sqlalchemy.LargeBinary(length=MEDIUM_BLOB_SIZE)),
+            sqlalchemy.Column('readme_content', Database.medium_blob()),
+            sqlalchemy.Column('module_details', Database.medium_blob()),
+            sqlalchemy.Column('variable_template', Database.medium_blob()),
             sqlalchemy.Column('published', sqlalchemy.Boolean)
         )
 
@@ -179,8 +187,8 @@ class Database():
             sqlalchemy.Column('type', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('path', sqlalchemy.String(LARGE_COLUMN_SIZE)),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('readme_content', sqlalchemy.LargeBinary(length=MEDIUM_BLOB_SIZE)),
-            sqlalchemy.Column('module_details', sqlalchemy.LargeBinary(length=MEDIUM_BLOB_SIZE))
+            sqlalchemy.Column('readme_content', Database.medium_blob()),
+            sqlalchemy.Column('module_details', Database.medium_blob())
         )
 
         self._analytics = sqlalchemy.Table(
