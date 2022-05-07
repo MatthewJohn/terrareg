@@ -38,3 +38,7 @@ class TestNamespace(TerraregIntegrationTest):
     def test_valid_namespace_names(self, namespace_name):
         """Test valid namespace names"""
         Namespace(name=namespace_name)
+
+    def test_get_total_count(self):
+        """Test get_total_count method"""
+        assert Namespace.get_total_count() == 9
