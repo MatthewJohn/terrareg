@@ -101,7 +101,9 @@ class ModuleSearch(object):
         offset = 0 if offset < 0 else offset
 
         db = Database.get()
-        select = db.select_module_version_joined_module_provider()
+        select = db.select_module_version_joined_module_provider(
+            db.module_provider
+        )
 
         select = cls._get_search_query_filter(select, query)
 
@@ -175,7 +177,9 @@ class ModuleSearch(object):
     def get_search_filters(cls, query):
         """Get list of search filters and filter counts."""
         db = Database.get()
-        select = db.select_module_version_joined_module_provider()
+        select = db.select_module_version_joined_module_provider(
+            db.module_provider
+        )
 
         main_select = cls._get_search_query_filter(select, query)
 
@@ -237,7 +241,10 @@ class ModuleSearch(object):
     def get_most_recently_published():
         """Return module with most recent published date."""
         db = Database.get()
-        select = db.select_module_version_joined_module_provider().where(
+        select = db.select_module_version_joined_module_provider(
+            db.module_version,
+            db.module_provider
+        ).where(
             db.module_version.c.published == True
         ).order_by(db.module_version.c.published_at.desc(), 
         ).limit(1)
