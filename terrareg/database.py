@@ -1,6 +1,7 @@
 """Provide database class."""
 
 import sqlalchemy
+import sqlalchemy.dialects.mysql
 
 import terrareg.config
 from terrareg.errors import DatabaseMustBeIniistalisedError
@@ -14,6 +15,7 @@ class Database():
     _INSTANCE = None
 
     blob_encoding_format = 'utf-8'
+    MEDIUM_BLOB_SIZE = ((2 ** 24) - 1)
 
     @staticmethod
     def encode_blob(value):
@@ -27,6 +29,13 @@ class Database():
     def decode_blob(value):
         """Decode blob as a string."""
         return value.decode(Database.blob_encoding_format)
+
+    @staticmethod
+    def medium_blob():
+        """Return column type for medium blob."""
+        return sqlalchemy.LargeBinary(
+                length=Database.MEDIUM_BLOB_SIZE).with_variant(
+                    sqlalchemy.dialects.mysql.MEDIUMBLOB(), "mysql")
 
     def __init__(self):
         """Setup member variables."""
@@ -158,9 +167,9 @@ class Database():
             sqlalchemy.Column('repo_clone_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('published_at', sqlalchemy.DateTime),
-            sqlalchemy.Column('readme_content', sqlalchemy.BLOB),
-            sqlalchemy.Column('module_details', sqlalchemy.BLOB),
-            sqlalchemy.Column('variable_template', sqlalchemy.BLOB),
+            sqlalchemy.Column('readme_content', Database.medium_blob()),
+            sqlalchemy.Column('module_details', Database.medium_blob()),
+            sqlalchemy.Column('variable_template', Database.medium_blob()),
             sqlalchemy.Column('published', sqlalchemy.Boolean)
         )
 
@@ -178,8 +187,8 @@ class Database():
             sqlalchemy.Column('type', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('path', sqlalchemy.String(LARGE_COLUMN_SIZE)),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('readme_content', sqlalchemy.BLOB),
-            sqlalchemy.Column('module_details', sqlalchemy.BLOB)
+            sqlalchemy.Column('readme_content', Database.medium_blob()),
+            sqlalchemy.Column('module_details', Database.medium_blob())
         )
 
         self._analytics = sqlalchemy.Table(
@@ -200,8 +209,10 @@ class Database():
             sqlalchemy.Column('environment', sqlalchemy.String(GENERAL_COLUMN_SIZE))
         )
 
-    def select_module_version_joined_module_provider(self, *args, **kwargs):
+    def select_module_version_joined_module_provider(self, *select_args):
         """Perform select on module_version, joined to module_provider table."""
-        return sqlalchemy.select(self.module_version.join(
+        return sqlalchemy.select(
+            *select_args
+        ).select_from(self.module_version).join(
             self.module_provider, self.module_version.c.module_provider_id == self.module_provider.c.id
-        ))
+        )
