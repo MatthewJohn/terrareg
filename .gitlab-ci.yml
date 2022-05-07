@@ -1,9 +1,14 @@
 image: python:3.10
 
+services:
+- mysql
+
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  MYSQL_DATABASE: terrareg-integration
+  MYSQL_ROOT_PASSWORD: password
 
 # Pip's cache doesn't store the python packages
 # https://pip.pypa.io/en/stable/reference/pip_install/#caching
@@ -26,11 +31,44 @@ cache:
     - virtualenv venv
     - source venv/bin/activate
 
-test:
+unit-tests:
+  stage: test
   extends: .before_script_python
   script:
     - pip install --proxy=$http_proxy -r requirements-dev.txt
-    - coverage run -m pytest --verbose
+    - coverage run -m pytest --verbose ./test/unit
+    - coverage report
+    - coverage xml
+  artifacts:
+    reports:
+      cobertura: coverage.xml
+
+integration-tests:
+  stage: test
+  extends: .before_script_python
+  script:
+    - pip install --proxy=$http_proxy -r requirements-dev.txt
+    - coverage run -m pytest --verbose ./test/integration
+    - coverage report
+    - coverage xml
+  artifacts:
+    reports:
+      cobertura: coverage.xml
+
+mysql-integration-tests:
+  stage: test
+  extends: .before_script_python
+  variables:
+    # Set database url for integration tests
+    INTEGRATION_DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
+    # Set datbase URL for schema migration
+    DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
+  script:
+    - pip install --proxy=$http_proxy -r requirements-dev.txt
+    # Perform database migration
+    - alembic upgrade head
+    # Run integration tests
+    - coverage run -m pytest --verbose ./test/integration
     - coverage report
     - coverage xml
   artifacts:
