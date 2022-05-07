@@ -48,7 +48,7 @@ build-wheel:
 
 release:
   stage: deploy
-  image: node:12-buster-slim
+  image: node:18-buster-slim
   cache:
     paths:
       - node_modules/
