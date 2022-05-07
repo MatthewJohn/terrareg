@@ -48,15 +48,17 @@ build-wheel:
 
 release:
   stage: deploy
-  image: node
+  image: node:12-buster-slim
   cache:
     paths:
       - node_modules/
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends git-core ca-certificates
+    - npm install -g semantic-release @semantic-release/gitlab
   script:
-    - npx semantic-release
+    - semantic-release
   only:
-    refs:
-      - main
+    - main
   except:
     changes:
       - "*.md"
