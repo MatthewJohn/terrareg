@@ -18,7 +18,8 @@ class TerraregIntegrationTest:
 
     def setup_class(self):
         """Setup database"""
-        terrareg.config.Config.DATABASE_URL = 'sqlite:///temp-integration.db'
+        database_url = os.environ.get('INTEGRATION_DATABASE_URL', 'sqlite:///temp-integration.db')
+        terrareg.config.Config.DATABASE_URL = database_url
 
         # Remove any pre-existing database files
         if os.path.isfile('temp-integration.db'):
@@ -37,6 +38,14 @@ class TerraregIntegrationTest:
     @staticmethod
     def _setup_test_data(test_data=None):
         """Setup test data in database"""
+        # Delete any pre-existing data
+        db = Database.get()
+        with Database.get_engine().connect() as conn:
+            conn.execute(db.sub_module.delete())
+            conn.execute(db.module_version.delete())
+            conn.execute(db.module_provider.delete())
+            conn.execute(db.git_provider.delete())
+
         # Setup test git providers
         for git_provider_id in integration_git_providers:
             insert = Database.get().git_provider.insert().values(
