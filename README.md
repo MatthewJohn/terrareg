@@ -419,6 +419,10 @@ There are common attributes that can be added to each of variable objects, which
 
 ## Changelog
 
+### v2.0.1
+
+ * Reduce size of columns that are too large
+
 ### v2.0.0
 
 WARNING: This version does not support migration from previous versions.

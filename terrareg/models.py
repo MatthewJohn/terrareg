@@ -544,6 +544,7 @@ class ModuleProvider(object):
         self._validate_name(name)
         self._module = module
         self._name = name
+        self._cache_db_row = None
 
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
@@ -555,16 +556,19 @@ class ModuleProvider(object):
 
     def _get_db_row(self):
         """Return database row for module provider."""
-        db = Database.get()
-        select = db.module_provider.select(
-        ).where(
-            db.module_provider.c.namespace == self._module._namespace.name,
-            db.module_provider.c.module == self._module.name,
-            db.module_provider.c.provider == self.name
-        )
-        with db.get_engine().connect() as conn:
-            res = conn.execute(select)
-            return res.fetchone()
+        if self._cache_db_row is None:
+            db = Database.get()
+            select = db.module_provider.select(
+            ).where(
+                db.module_provider.c.namespace == self._module._namespace.name,
+                db.module_provider.c.module == self._module.name,
+                db.module_provider.c.provider == self.name
+            )
+            with db.get_engine().connect() as conn:
+                res = conn.execute(select)
+                self._cache_db_row = res.fetchone()
+
+        return self._cache_db_row
 
     def delete(self):
         """DELETE module provider, all module version and all associated subversions."""
@@ -616,6 +620,9 @@ class ModuleProvider(object):
         ).values(**kwargs)
         with db.get_engine().connect() as conn:
             conn.execute(update)
+
+        # Remove cached DB row
+        self._cache_db_row = None
 
     def update_git_provider(self, git_provider: GitProvider):
         """Update git provider associated with module provider."""
@@ -1060,22 +1067,25 @@ class ModuleVersion(TerraformSpecsObject):
         self._validate_version(version)
         self._module_provider = module_provider
         self._version = version
+        self._cache_db_row = None
         super(ModuleVersion, self).__init__()
 
     def _get_db_row(self):
         """Get object from database"""
-        db = Database.get()
-        select = db.module_version.select().join(
-            db.module_provider, db.module_version.c.module_provider_id == db.module_provider.c.id
-        ).where(
-            db.module_provider.c.namespace == self._module_provider._module._namespace.name,
-            db.module_provider.c.module == self._module_provider._module.name,
-            db.module_provider.c.provider == self._module_provider.name,
-            db.module_version.c.version == self.version
-        )
-        with db.get_engine().connect() as conn:
-            res = conn.execute(select)
-            return res.fetchone()
+        if self._cache_db_row is None:
+            db = Database.get()
+            select = db.module_version.select().join(
+                db.module_provider, db.module_version.c.module_provider_id == db.module_provider.c.id
+            ).where(
+                db.module_provider.c.namespace == self._module_provider._module._namespace.name,
+                db.module_provider.c.module == self._module_provider._module.name,
+                db.module_provider.c.provider == self._module_provider.name,
+                db.module_version.c.version == self.version
+            )
+            with db.get_engine().connect() as conn:
+                res = conn.execute(select)
+                self._cache_db_row = res.fetchone()
+        return self._cache_db_row
 
     def get_view_url(self):
         """Return view URL"""
@@ -1273,6 +1283,9 @@ class ModuleVersion(TerraformSpecsObject):
         with db.get_engine().connect() as conn:
             conn.execute(update)
 
+        # Clear cached DB row
+        self._cache_db_row = None
+
     def _create_db_row(self):
         """Insert into datadabase, removing any existing duplicate versions."""
         db = Database.get()
@@ -1286,6 +1299,9 @@ class ModuleVersion(TerraformSpecsObject):
                     db.module_version.c.id == previous_db_row['id']
                 )
                 conn.execute(delete_statement)
+
+                # Invalidate cache for previous DB row
+                self._cache_db_row = None
 
                 # Delete any submodules/examples
                 delete_statement = db.sub_module.delete().where(
@@ -1362,19 +1378,22 @@ class BaseSubmodule(TerraformSpecsObject):
     def __init__(self, module_version: ModuleVersion, module_path: str):
         self._module_version = module_version
         self._module_path = module_path
+        self._cache_db_row = None
         super(BaseSubmodule, self).__init__()
 
     def _get_db_row(self):
         """Get object from database"""
-        db = Database.get()
-        select = db.sub_module.select().where(
-            db.sub_module.c.parent_module_version == self._module_version.pk,
-            db.sub_module.c.path == self._module_path,
-            db.sub_module.c.type == self.TYPE
-        )
-        with db.get_engine().connect() as conn:
-            res = conn.execute(select)
-            return res.fetchone()
+        if self._cache_db_row is None:
+            db = Database.get()
+            select = db.sub_module.select().where(
+                db.sub_module.c.parent_module_version == self._module_version.pk,
+                db.sub_module.c.path == self._module_path,
+                db.sub_module.c.type == self.TYPE
+            )
+            with db.get_engine().connect() as conn:
+                res = conn.execute(select)
+                self._cache_db_row = res.fetchone()
+        return self._cache_db_row
 
     def get_source_browse_url(self):
         """Get formatted source browse URL"""
