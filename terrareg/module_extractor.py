@@ -302,14 +302,14 @@ class GitModuleExtractor(ModuleExtractor):
 
         try:
             subprocess.check_output([
-                'git', 'clone', '--single-branch',
-                '--branch', self._module_version.source_git_tag,
-                git_url,
-                self.extract_directory
-            ],
-            stderr=subprocess.STDOUT,
-            # stdout=subprocess.PIPE,
-            env=env)
+                    'git', 'clone', '--single-branch',
+                    '--branch', self._module_version.source_git_tag,
+                    git_url,
+                    self.extract_directory
+                ],
+                stderr=subprocess.STDOUT,
+                env=env
+            )
         except subprocess.CalledProcessError as exc:
             error = 'Unknown error occurred during git clone'
             for line in exc.output.decode('ascii').split('\n'):
