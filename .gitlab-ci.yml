@@ -16,16 +16,18 @@ cache:
     - venv/
     - terraform-docs
 
-before_script:
-  # Install terraform-docs
-  - test -f ./terraform-docs || { wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-linux-amd64.tar.gz && tar -zxvf terraform-docs-v0.16.0-linux-amd64.tar.gz && chmod +x terraform-docs && rm terraform-docs-v0.16.0-linux-amd64.tar.gz; }
-  - cp terraform-docs /usr/local/bin/
-  - python --version  # For debugging
-  - pip install --proxy=$http_proxy virtualenv
-  - virtualenv venv
-  - source venv/bin/activate
+.before_script_python:
+  before_script:
+    # Install terraform-docs
+    - test -f ./terraform-docs || { wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-linux-amd64.tar.gz && tar -zxvf terraform-docs-v0.16.0-linux-amd64.tar.gz && chmod +x terraform-docs && rm terraform-docs-v0.16.0-linux-amd64.tar.gz; }
+    - cp terraform-docs /usr/local/bin/
+    - python --version  # For debugging
+    - pip install --proxy=$http_proxy virtualenv
+    - virtualenv venv
+    - source venv/bin/activate
 
 test:
+  extends: .before_script_python
   script:
     - pip install --proxy=$http_proxy -r requirements-dev.txt
     - coverage run -m pytest --verbose
@@ -37,6 +39,7 @@ test:
 
 build-wheel:
   stage: build
+  extends: .before_script_python
   script:
     - python setup.py bdist_wheel
     # an alternative approach is to install and run:
