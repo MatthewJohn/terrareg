@@ -1,4 +1,4 @@
-image: python:3.10
+image: fare-docker-reg.dock.studios:5000/python:3.10
 
 services:
 - mysql
