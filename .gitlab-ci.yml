@@ -14,11 +14,12 @@ cache:
   paths:
     - .cache/pip
     - venv/
-    - /usr/local/bin/terraform-docs
+    - terraform-docs
 
 before_script:
   # Install terraform-docs
-  - test -f /usr/local/bin/terraform-docs || { wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-linux-amd64.tar.gz && tar -zxvf terraform-docs-v0.16.0-linux-amd64.tar.gz && chmod +x terraform-docs && mv terraform-docs /usr/local/bin/ && rm terraform-docs-v0.16.0-linux-amd64.tar.gz; }
+  - { test -f ./terraform-docs || { wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-linux-amd64.tar.gz && tar -zxvf terraform-docs-v0.16.0-linux-amd64.tar.gz && chmod +x terraform-docs && rm terraform-docs-v0.16.0-linux-amd64.tar.gz; }
+  - cp terraform-docs /usr/local/bin/
   - python --version  # For debugging
   - pip install --proxy=$http_proxy virtualenv
   - virtualenv venv
