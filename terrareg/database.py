@@ -202,6 +202,8 @@ class Database():
 
     def select_module_version_joined_module_provider(self, *args, **kwargs):
         """Perform select on module_version, joined to module_provider table."""
-        return sqlalchemy.select(self.module_version.join(
+        return sqlalchemy.select(
+            self.module_provider
+        ).select_from(self.module_version).join(
             self.module_provider, self.module_version.c.module_provider_id == self.module_provider.c.id
-        ))
+        )
