@@ -54,7 +54,7 @@ release:
       - node_modules/
   before_script:
     - apt-get update && apt-get install -y --no-install-recommends git-core ca-certificates
-    - npm install -g semantic-release @semantic-release/gitlab
+    - npm --proxy=$http_proxy install -g semantic-release @semantic-release/gitlab
   variables:
     GITLAB_TOKEN: $GITLAB_TOKEN
   script:
