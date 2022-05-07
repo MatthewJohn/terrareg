@@ -109,6 +109,7 @@ class Database():
         GENERAL_COLUMN_SIZE = 128
         LARGE_COLUMN_SIZE = 1024
         URL_COLUMN_SIZE = 1024
+        MEDIUM_BLOB_SIZE = ((2 ** 24) - 1)
 
         self._git_provider = sqlalchemy.Table(
             'git_provider', meta,
@@ -158,9 +159,9 @@ class Database():
             sqlalchemy.Column('repo_clone_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('published_at', sqlalchemy.DateTime),
-            sqlalchemy.Column('readme_content', sqlalchemy.BLOB),
-            sqlalchemy.Column('module_details', sqlalchemy.BLOB),
-            sqlalchemy.Column('variable_template', sqlalchemy.BLOB),
+            sqlalchemy.Column('readme_content', sqlalchemy.LargeBinary(length=MEDIUM_BLOB_SIZE)),
+            sqlalchemy.Column('module_details', sqlalchemy.LargeBinary(length=MEDIUM_BLOB_SIZE)),
+            sqlalchemy.Column('variable_template', sqlalchemy.LargeBinary(length=MEDIUM_BLOB_SIZE)),
             sqlalchemy.Column('published', sqlalchemy.Boolean)
         )
 
@@ -178,8 +179,8 @@ class Database():
             sqlalchemy.Column('type', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('path', sqlalchemy.String(LARGE_COLUMN_SIZE)),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('readme_content', sqlalchemy.BLOB),
-            sqlalchemy.Column('module_details', sqlalchemy.BLOB)
+            sqlalchemy.Column('readme_content', sqlalchemy.LargeBinary(length=MEDIUM_BLOB_SIZE)),
+            sqlalchemy.Column('module_details', sqlalchemy.LargeBinary(length=MEDIUM_BLOB_SIZE))
         )
 
         self._analytics = sqlalchemy.Table(
