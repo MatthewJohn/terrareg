@@ -48,15 +48,10 @@ build-wheel:
 
 release:
   stage: deploy
-  image: node:18-buster-slim
+  image: fare-docker-reg.dock.studios:5000/semantic-release:latest
   cache:
     paths:
       - node_modules/
-  before_script:
-    - apt-get update && apt-get install -y --no-install-recommends git-core ca-certificates
-    - npm config set proxy $http_proxy
-    - npm config set https-proxy $http_proxy
-    - npm install -g semantic-release @semantic-release/gitlab
   variables:
     GITLAB_TOKEN: $GITLAB_TOKEN
   script:
