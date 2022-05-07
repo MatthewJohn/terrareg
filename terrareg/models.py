@@ -774,7 +774,9 @@ class ModuleProvider(object):
     def get_latest_version(self):
         """Get latest version of module."""
         db = Database.get()
-        select = db.select_module_version_joined_module_provider().where(
+        select = db.select_module_version_joined_module_provider(
+            db.module_version.c.version
+        ).where(
             db.module_provider.c.namespace == self._module._namespace.name,
             db.module_provider.c.module == self._module.name,
             db.module_provider.c.provider == self.name,
@@ -809,7 +811,9 @@ class ModuleProvider(object):
         """Return all module provider versions."""
         db = Database.get()
 
-        select = db.select_module_version_joined_module_provider().where(
+        select = db.select_module_version_joined_module_provider(
+            db.module_version.c.version
+        ).where(
             db.module_provider.c.namespace == self._module._namespace.name,
             db.module_provider.c.module == self._module.name,
             db.module_provider.c.provider == self.name,
@@ -948,7 +952,9 @@ class ModuleVersion(TerraformSpecsObject):
     def get_total_count():
         """Get total number of module versions."""
         db = Database.get()
-        counts = db.select_module_version_joined_module_provider().group_by(
+        counts = db.select_module_version_joined_module_provider(
+            db.module_version.c.version
+        ).group_by(
             db.module_provider.c.namespace,
             db.module_provider.c.module,
             db.module_provider.c.provider,

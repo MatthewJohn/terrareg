@@ -201,10 +201,10 @@ class Database():
             sqlalchemy.Column('environment', sqlalchemy.String(GENERAL_COLUMN_SIZE))
         )
 
-    def select_module_version_joined_module_provider(self, *args, **kwargs):
+    def select_module_version_joined_module_provider(self, *select_args):
         """Perform select on module_version, joined to module_provider table."""
         return sqlalchemy.select(
-            self.module_provider
+            *select_args
         ).select_from(self.module_version).join(
             self.module_provider, self.module_version.c.module_provider_id == self.module_provider.c.id
         )
