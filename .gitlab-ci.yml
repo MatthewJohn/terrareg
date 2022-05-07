@@ -52,8 +52,6 @@ release:
   cache:
     paths:
       - node_modules/
-  before_script:
-    - npm install @semantic-release/gitlab
   script:
     - npx semantic-release
   only:
