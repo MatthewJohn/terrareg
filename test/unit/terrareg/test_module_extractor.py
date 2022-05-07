@@ -1,4 +1,5 @@
 
+import subprocess
 from unittest.main import MODULE_EXAMPLES
 import unittest.mock
 
@@ -32,7 +33,7 @@ class TestGitModuleExtractor(TerraregUnitTest):
 
         check_call_mock = unittest.mock.MagicMock()
         module_extractor = GitModuleExtractor(module_version=module_version)
-        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_call', check_call_mock):
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock):
             with module_extractor as me:
                 me._clone_repository()
 
@@ -42,5 +43,6 @@ class TestGitModuleExtractor(TerraregUnitTest):
             '--branch', expected_git_tag,
             expected_git_url,
             module_extractor.extract_directory],
+            stderr=subprocess.STDOUT,
             env=unittest.mock.ANY)
         assert check_call_mock.call_args.kwargs['env']['GIT_SSH_COMMAND'] == 'ssh -o StrictHostKeyChecking=accept-new'
