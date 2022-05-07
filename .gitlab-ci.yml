@@ -1,9 +1,5 @@
 image: fare-docker-reg.dock.studios:5000/python:3.10
 
-services:
-  - name: fare-docker-reg.dock.studios:5000/mysql:8.0.29
-    alias: mysql
-
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.
 variables:
@@ -59,6 +55,9 @@ integration-tests:
 mysql-integration-tests:
   stage: test
   extends: .before_script_python
+  services:
+    - name: fare-docker-reg.dock.studios:5000/mysql:8.0.29
+      alias: mysql
   variables:
     # Set database url for integration tests
     INTEGRATION_DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
