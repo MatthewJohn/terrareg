@@ -34,7 +34,8 @@ test:
     reports:
       cobertura: coverage.xml
 
-run:
+build-wheel:
+  stage: build
   script:
     - python setup.py bdist_wheel
     # an alternative approach is to install and run:
@@ -45,7 +46,7 @@ run:
       - dist/*.whl
 
 release:
-  stage: release
+  stage: deploy
   image: node
   cache:
     paths:
@@ -55,10 +56,10 @@ release:
   script:
     - npx semantic-release
   only:
-  refs:
-    - master
+    refs:
+      - master
   except:
-  changes:
-    - "*.md"
-    - ".gitignore"
+    changes:
+      - "*.md"
+      - ".gitignore"
 
