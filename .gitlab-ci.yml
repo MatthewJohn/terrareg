@@ -27,6 +27,7 @@ cache:
     - pip install --proxy=$http_proxy virtualenv
     - virtualenv venv
     - source venv/bin/activate
+    - pip install --proxy=$http_proxy -r requirements.txt
 
 unit-tests:
   stage: test

@@ -148,3 +148,9 @@ class UnableToProcessTerraformError(TerraregError):
     """An error occurred whilst attempting to process terraform."""
 
     pass
+
+
+class GitCloneError(TerraregError):
+    """An error occurred during git clone."""
+
+    pass
