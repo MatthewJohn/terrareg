@@ -21,7 +21,8 @@ from terrareg.errors import (
     UnableToProcessTerraformError,
     UnknownFiletypeError,
     InvalidTerraregMetadataFileError,
-    MetadataDoesNotContainRequiredAttributeError
+    MetadataDoesNotContainRequiredAttributeError,
+    GitCloneError
 )
 from terrareg.utils import PathDoesNotExistError, safe_join_paths
 from terrareg.config import Config
@@ -299,12 +300,23 @@ class GitModuleExtractor(ModuleExtractor):
         if git_url.startswith('ssh://'):
             git_url = re.sub(r'^ssh://', '', git_url)
 
-        subprocess.check_call([
-            'git', 'clone', '--single-branch',
-            '--branch', self._module_version.source_git_tag,
-            git_url,
-            self.extract_directory
-        ], env=env)
+        try:
+            subprocess.check_output([
+                'git', 'clone', '--single-branch',
+                '--branch', self._module_version.source_git_tag,
+                git_url,
+                self.extract_directory
+            ],
+            stderr=subprocess.STDOUT,
+            # stdout=subprocess.PIPE,
+            env=env)
+        except subprocess.CalledProcessError as exc:
+            error = 'Unknown error occurred during git clone'
+            for line in exc.output.decode('ascii').split('\n'):
+                print(line)
+                if line.startswith('fatal:'):
+                    error = 'Error occurred during git clone: {}'.format(line)
+            raise GitCloneError(error)
 
     def process_upload(self):
         """Extract archive and perform data extraction from module source."""
