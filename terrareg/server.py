@@ -1210,6 +1210,32 @@ def require_admin_authentication(func):
             return func(*args, **kwargs)
     return wrapper
 
+def check_api_key_authentication(api_keys):
+    """Check API key authentication."""
+    # If user is authenticated as admin, allow
+    if check_admin_authentication():
+        return True
+    # Check if no API keys have been configured
+    # and allow request
+    if not api_keys:
+        return True
+
+    # Check header against list of allowed API keys
+    provided_api_key = request.headers.get('X-Terrareg-ApiKey', '')
+    return provided_api_key and provided_api_key in api_keys
+
+def require_api_authentication(api_keys):
+    """Check user is authenticated using API key or as admin and either call function or return 401, if not."""
+    def outer_wrapper(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+
+            if not check_api_key_authentication(api_keys):
+                abort(401)
+            else:
+                return func(*args, **kwargs)
+        return wrapper
+    return outer_wrapper
 
 class ApiTerraregIsAuthenticated(ErrorCatchingResource):
     """Interface to teturn whether user is authenticated as an admin."""
