@@ -529,6 +529,106 @@ class Server(object):
         return self._render_template('module_search.html')
 
 
+class AuthenticationType(Enum):
+    """Determine the method of authentication."""
+    NOT_CHECKED = 0
+    NOT_AUTHENTICATED = 1
+    AUTHENTICATION_TOKEN = 2
+    SESSION = 3
+
+
+def get_csrf_token():
+    """Return current session CSRF token."""
+    return session.get('csrf_token', '')
+
+
+def check_csrf_token(csrf_token):
+    """Check CSRF token."""
+    # If user is authenticated using authentication token,
+    # do not required CSRF token
+    if get_current_authentication_type() is AuthenticationType.AUTHENTICATION_TOKEN:
+        return False
+
+    session_token = get_csrf_token()
+    if not session_token:
+        raise NoSessionSetError('No session is presesnt to check CSRF token')
+    elif session_token != csrf_token:
+        raise IncorrectCSRFTokenError('CSRF token is incorrect')
+    else:
+        return True
+
+
+def get_current_authentication_type():
+    """Return the current authentication method of the user."""
+    return g.get('authentication_type', AuthenticationType.NOT_CHECKED)
+
+
+def check_admin_authentication():
+    """Check authorization header is present or authenticated session"""
+    authenticated = False
+    g.authentication_type = AuthenticationType.NOT_AUTHENTICATED
+
+    # Check that:
+    # - An admin authentication token has been setup
+    # - A token has neeif valid authorisation header has been passed
+    if (terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN and
+            request.headers.get('X-Terrareg-ApiKey', '') ==
+            terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN):
+        authenticated = True
+        g.authentication_type = AuthenticationType.AUTHENTICATION_TOKEN
+
+    # Check if authenticated via session
+    # - Ensure session key has been setup
+    if (terrareg.config.Config().SECRET_KEY and
+            session.get('is_admin_authenticated', False) and
+            'expires' in session and
+            session.get('expires').timestamp() > datetime.datetime.now().timestamp()):
+        authenticated = True
+        g.authentication_type = AuthenticationType.SESSION
+
+    return authenticated
+
+
+def require_admin_authentication(func):
+    """Check user is authenticated as admin and either call function or return 401, if not."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not check_admin_authentication():
+            abort(401)
+        else:
+            return func(*args, **kwargs)
+    return wrapper
+
+
+def check_api_key_authentication(api_keys):
+    """Check API key authentication."""
+    # If user is authenticated as admin, allow
+    if check_admin_authentication():
+        return True
+    # Check if no API keys have been configured
+    # and allow request
+    if not api_keys:
+        return True
+
+    # Check header against list of allowed API keys
+    provided_api_key = request.headers.get('X-Terrareg-ApiKey', '')
+    return provided_api_key and provided_api_key in api_keys
+
+
+def require_api_authentication(api_keys):
+    """Check user is authenticated using API key or as admin and either call function or return 401, if not."""
+    def outer_wrapper(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+
+            if not check_api_key_authentication(api_keys):
+                abort(401)
+            else:
+                return func(*args, **kwargs)
+        return wrapper
+    return outer_wrapper
+
+
 class ApiTerraformWellKnown(Resource):
     """Terraform .well-known discovery"""
 
@@ -1140,102 +1240,6 @@ class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
 
         return ModuleSearch.get_search_filters(query=args.q)
 
-
-class AuthenticationType(Enum):
-    """Determine the method of authentication."""
-    NOT_CHECKED = 0
-    NOT_AUTHENTICATED = 1
-    AUTHENTICATION_TOKEN = 2
-    SESSION = 3
-
-
-def get_csrf_token():
-    """Return current session CSRF token."""
-    return session.get('csrf_token', '')
-
-
-def check_csrf_token(csrf_token):
-    """Check CSRF token."""
-    # If user is authenticated using authentication token,
-    # do not required CSRF token
-    if get_current_authentication_type() is AuthenticationType.AUTHENTICATION_TOKEN:
-        return False
-
-    session_token = get_csrf_token()
-    if not session_token:
-        raise NoSessionSetError('No session is presesnt to check CSRF token')
-    elif session_token != csrf_token:
-        raise IncorrectCSRFTokenError('CSRF token is incorrect')
-    else:
-        return True
-
-
-def get_current_authentication_type():
-    """Return the current authentication method of the user."""
-    return g.get('authentication_type', AuthenticationType.NOT_CHECKED)
-
-
-def check_admin_authentication():
-    """Check authorization header is present or authenticated session"""
-    authenticated = False
-    g.authentication_type = AuthenticationType.NOT_AUTHENTICATED
-
-    # Check that:
-    # - An admin authentication token has been setup
-    # - A token has neeif valid authorisation header has been passed
-    if (terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN and
-            request.headers.get('X-Terrareg-ApiKey', '') ==
-            terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN):
-        authenticated = True
-        g.authentication_type = AuthenticationType.AUTHENTICATION_TOKEN
-
-    # Check if authenticated via session
-    # - Ensure session key has been setup
-    if (terrareg.config.Config().SECRET_KEY and
-            session.get('is_admin_authenticated', False) and
-            'expires' in session and
-            session.get('expires').timestamp() > datetime.datetime.now().timestamp()):
-        authenticated = True
-        g.authentication_type = AuthenticationType.SESSION
-
-    return authenticated
-
-def require_admin_authentication(func):
-    """Check user is authenticated as admin and either call function or return 401, if not."""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if not check_admin_authentication():
-            abort(401)
-        else:
-            return func(*args, **kwargs)
-    return wrapper
-
-def check_api_key_authentication(api_keys):
-    """Check API key authentication."""
-    # If user is authenticated as admin, allow
-    if check_admin_authentication():
-        return True
-    # Check if no API keys have been configured
-    # and allow request
-    if not api_keys:
-        return True
-
-    # Check header against list of allowed API keys
-    provided_api_key = request.headers.get('X-Terrareg-ApiKey', '')
-    return provided_api_key and provided_api_key in api_keys
-
-def require_api_authentication(api_keys):
-    """Check user is authenticated using API key or as admin and either call function or return 401, if not."""
-    def outer_wrapper(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-
-            if not check_api_key_authentication(api_keys):
-                abort(401)
-            else:
-                return func(*args, **kwargs)
-        return wrapper
-    return outer_wrapper
 
 class ApiTerraregIsAuthenticated(ErrorCatchingResource):
     """Interface to teturn whether user is authenticated as an admin."""
