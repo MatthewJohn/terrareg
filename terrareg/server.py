@@ -1,4 +1,5 @@
 
+import hmac
 import os
 import re
 import datetime
@@ -688,6 +689,13 @@ class ErrorCatchingResource(Resource):
         """Return common 404 error"""
         return {'errors': ['Not Found']}, 404
 
+    def _get_401_response(self):
+        """Return standardised 401."""
+        return {'message': ('The server could not verify that you are authorized to access the URL requested. '
+                            'You either supplied the wrong credentials (e.g. a bad password), '
+                            'or your browser doesn\'t understand how to supply the credentials required.')
+        }, 401
+
 
 class ApiTerraregHealth(ErrorCatchingResource):
     """Endpoint to return 200 when healthy."""
@@ -783,6 +791,27 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
         # Get module provider and optionally create, if it doesn't exist
         module_provider = ModuleProvider.get(module=module, name=provider, create=True)
 
+        # Validate signature
+        if terrareg.config.Config().UPLOAD_API_KEYS:
+            # Get signature from request
+            request_signature = request.headers.get('X-Hub-Signature', '')
+            # Remove 'sha256=' from beginning of header
+            request_signature = re.sub(r'^sha256=', '', request_signature)
+            # Iterate through each of the keys and test
+            for test_key in terrareg.config.Config().UPLOAD_API_KEYS:
+                # Generate
+                valid_signature = hmac.new(bytes(test_key, 'utf8'), b'', hashlib.sha256)
+                valid_signature.update(request.data)
+                # If the signatures match, break from loop
+                if hmac.compare_digest(valid_signature.hexdigest(), request_signature):
+                    break
+            # If a valid signature wasn't found with one of the configured keys,
+            # return 401
+            else:
+                return self._get_401_response()
+
+        print(request.headers)
+        print(request.json)
         if not module_provider.get_git_clone_url():
             return {'message': 'Module provider is not configured with a repository'}, 400
 

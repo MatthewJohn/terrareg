@@ -384,6 +384,8 @@ Default: ``
 
 List of comma-separated list of API keys to upload/import new module versions.
 
+For bitbucket hooks, one of these keys must be provided as the 'secret' to the webhook.
+
 To disable authentication for upload endpoint, leave empty.
 
 
