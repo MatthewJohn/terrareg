@@ -100,8 +100,4 @@ release:
     - semantic-release
   only:
     - main
-  except:
-    changes:
-      - "*.md"
-      - ".gitignore"
 
