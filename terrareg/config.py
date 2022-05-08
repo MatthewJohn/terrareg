@@ -131,6 +131,34 @@ class Config:
         ]
 
     @property
+    def UPLOAD_API_KEYS(self):
+        """
+        List of comma-separated list of API keys to upload/import new module versions.
+
+        For bitbucket hooks, one of these keys must be provided as the 'secret' to the webhook.
+
+        To disable authentication for upload endpoint, leave empty.
+        """
+        return [
+            token
+            for token in os.environ.get('UPLOAD_API_KEYS', '').split(',')
+            if token
+        ]
+
+    @property
+    def PUBLISH_API_KEYS(self):
+        """
+        List of comma-separated list of API keys to publish module versions.
+
+        To disable authentication for publish endpoint, leave empty.
+        """
+        return [
+            token
+            for token in os.environ.get('UPLOAD_API_KEYS', '').split(',')
+            if token
+        ]
+
+    @property
     def ADMIN_AUTHENTICATION_TOKEN(self):
         """
         Token to use for authorisation to be able to modify modules in the user interface.
