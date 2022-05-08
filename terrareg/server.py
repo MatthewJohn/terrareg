@@ -749,6 +749,8 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
 class ApiModuleVersionCreate(ErrorCatchingResource):
     """Provide interface to create release for git-backed modules."""
 
+    method_decorators = [require_api_authentication(terrareg.config.Config().UPLOAD_API_KEYS)]
+
     def _post(self, namespace, name, provider, version):
         """Handle creation of module version."""
         namespace = Namespace(name=namespace)
