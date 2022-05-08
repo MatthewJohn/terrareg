@@ -1570,6 +1570,8 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
 class ApiTerraregModuleVersionPublish(ErrorCatchingResource):
     """Provide interface to publish module version."""
 
+    method_decorators = [require_api_authentication(terrareg.config.Config().PUBLISH_API_KEYS)]
+
     def _post(self, namespace, name, provider, version):
         """Publish module."""
         namespace = Namespace(name=namespace)
