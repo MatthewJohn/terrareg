@@ -1,5 +1,10 @@
 
+import hashlib
+import hmac
+import json
 import unittest.mock
+
+import pytest
 
 import terrareg.errors
 from test.unit.terrareg import (
@@ -536,3 +541,106 @@ class TestApiModuleVersionBitbucketHook(TerraregUnitTest):
                 ]
             }
         )
+
+    @pytest.mark.parametrize('signature', [
+        # No header
+        None,
+        # Empty header value
+        '',
+        # Invalid signature without sha256= prefix
+        'isnotavalidsignature',
+        # Invalid signature
+        'sha256=invalidsignature'
+    ])
+    @setup_test_data()
+    def test_hook_with_invalid_signatures_with_api_keys_enabled(self, signature, client, mocked_server_namespace_fixture):
+        """Test hook call with upload API keys enabled with invalid request signature."""
+        with unittest.mock.patch(
+                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
+                unittest.mock.patch(
+                    'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload, \
+                unittest.mock.patch('terrareg.config.Config.UPLOAD_API_KEYS', ['test-api-key1', 'test-api-key2']):
+
+            res = client.post(
+                '/v1/terrareg/modules/moduleextraction/bitbucketexample/testprovider/hooks/bitbucket',
+                json={},
+                headers={'X-Hub-Signature': signature}
+            )
+
+            assert res.status_code == 401
+            assert res.json == {
+                'message': 'The server could not verify that you are authorized to access the '
+                           'URL requested. You either supplied the wrong credentials (e.g. a '
+                           "bad password), or your browser doesn't understand how to supply "
+                           'the credentials required.'
+            }
+
+            mocked_prepare_module.assert_not_called()
+            mocked_process_upload.assert_not_called()
+
+    @setup_test_data()
+    def test_hook_with_valid_api_key_signature(self, client, mocked_server_namespace_fixture):
+        """Test hook call with valid API key signature."""
+        with unittest.mock.patch(
+                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
+                unittest.mock.patch(
+                    'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload, \
+                unittest.mock.patch('terrareg.config.Config.UPLOAD_API_KEYS', ['test-api-key1', 'test-api-key2']):
+
+            request_json = {
+                "eventKey": "repo:refs_changed", "date": "2022-04-23T21:21:46+0000",
+                "actor": {
+                    "name": "admin", "emailAddress": "admin@localhost",
+                    "id": 2, "displayName": "admin", "active": True,
+                    "slug": "admin", "type": "NORMAL",
+                    "links": {"self": [ {"href": "http://localhost:7990/users/admin"}]
+                    }
+                },
+                "repository": {
+                    "slug": "test-module", "id": 1, "name": "test-module", "hierarchyId": "34098b9e0f8011fcfb25",
+                    "scmId": "git", "state": "AVAILABLE", "statusMessage": "Available", "forkable": True,
+                    "project": {
+                        "key": "BLA", "id": 1, "name": "bla", "public": True, "type": "NORMAL",
+                        "links": {"self": [{"href": "http://localhost:7990/projects/BLA"}]}
+                    },
+                    "public": True,
+                    "links": {
+                        "clone": [
+                            {"href": "ssh://git@localhost:7999/bla/test-module.git", "name": "ssh"},
+                            {"href": "http://localhost:7990/scm/bla/test-module.git", "name": "http"}
+                        ],
+                        "self": [{"href": "http://localhost:7990/projects/BLA/repos/test-module/browse"}]
+                    }
+                },
+                "changes": [
+                    {
+                        "ref": {
+                            "id": "refs/tags/v4.0.6",
+                            "displayId": "v4.0.6",
+                            "type": "TAG"
+                        },
+                        "refId": "refs/tags/v4.0.6",
+                        "fromHash": "0000000000000000000000000000000000000000",
+                        "toHash": "1097d939669e3209ff33e6dfe982d84c204f6087",
+                        "type": "ADD"
+                    }
+                ]
+            }
+
+            valid_signature = hmac.new(bytes('test-api-key1', 'utf8'), b'', hashlib.sha256)
+            valid_signature.update(json.dumps(request_json).encode('utf8'))
+
+            res = client.post(
+                '/v1/terrareg/modules/moduleextraction/bitbucketexample/testprovider/hooks/bitbucket',
+                data=json.dumps(request_json),
+                headers={
+                    'Content-Type': 'application/json',
+                    'X-Hub-Signature': 'sha256={}'.format(valid_signature.hexdigest())
+                }
+            )
+
+            assert res.status_code == 200
+            assert res.json == {'status': 'Success', 'message': 'Imported all provided tags', 'tags': {'4.0.6': {'status': 'Success'}}}
+
+            mocked_prepare_module.assert_called_once()
+            mocked_process_upload.assert_called_once()

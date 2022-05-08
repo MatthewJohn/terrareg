@@ -215,6 +215,7 @@ To setup SQLite datbase, use `sqlite:///<path to sqlite DB>`
 
 To setup MySQL, use `mysql+mysqlconnector://<user>:<password>@<host>[:<port>]/<database>`
 
+
 Default: `sqlite:///modules.db`
 
 
@@ -336,6 +337,18 @@ Default: `modules`
 
 
 
+### PUBLISH_API_KEYS
+
+
+List of comma-separated list of API keys to publish module versions.
+
+To disable authentication for publish endpoint, leave empty.
+
+
+Default: ``
+
+
+
 ### REQUIRED_MODULE_METADATA_ATTRIBUTES
 
 
@@ -361,6 +374,20 @@ Default: ``
 ### TRUSTED_NAMESPACES
 
 Comma-separated list of trusted namespaces.
+
+Default: ``
+
+
+
+### UPLOAD_API_KEYS
+
+
+List of comma-separated list of API keys to upload/import new module versions.
+
+For bitbucket hooks, one of these keys must be provided as the 'secret' to the webhook.
+
+To disable authentication for upload endpoint, leave empty.
+
 
 Default: ``
 
