@@ -703,6 +703,8 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
 
     ALLOWED_EXTENSIONS = ['zip']
 
+    method_decorators = [require_api_authentication(terrareg.config.Config().UPLOAD_API_KEYS)]
+
     def allowed_file(self, filename):
         """Check if file has allowed file-extension"""
         return '.' in filename and \
