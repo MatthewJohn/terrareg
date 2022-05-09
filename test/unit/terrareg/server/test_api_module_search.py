@@ -25,7 +25,7 @@ class TestApiModuleSearch(TerraregUnitTest):
             'meta': {'current_offset': 0, 'limit': 10}, 'modules': []
         }
         ModuleSearch.search_module_providers.assert_called_with(
-            query='unittestteststring', namespace=None, provider=None, verified=False,
+            query='unittestteststring', namespaces=None, providers=None, verified=False,
             namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
             offset=0, limit=10)
 
@@ -38,7 +38,7 @@ class TestApiModuleSearch(TerraregUnitTest):
             'meta': {'current_offset': 23, 'limit': 12, 'prev_offset': 11}, 'modules': []
         }
         ModuleSearch.search_module_providers.assert_called_with(
-            query='test', namespace=None, provider=None, verified=False,
+            query='test', namespaces=None, providers=None, verified=False,
             namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
             offset=23, limit=12)
 
@@ -51,7 +51,20 @@ class TestApiModuleSearch(TerraregUnitTest):
             'meta': {'current_offset': 0, 'limit': 10}, 'modules': []
         }
         ModuleSearch.search_module_providers.assert_called_with(
-            query='test', namespace=None, provider='testprovider', verified=False,
+            query='test', namespaces=None, providers=['testprovider'], verified=False,
+            namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
+            offset=0, limit=10)
+
+    def test_with_multiple_providers(self, client, mocked_search_module_providers):
+        """Call with multiple provider filters."""
+        res = client.get('/v1/modules/search?q=test&provider=testprovider1&provider=unittestprovider2')
+
+        assert res.status_code == 200
+        assert res.json == {
+            'meta': {'current_offset': 0, 'limit': 10}, 'modules': []
+        }
+        ModuleSearch.search_module_providers.assert_called_with(
+            query='test', namespaces=None, providers=['testprovider1', 'unittestprovider2'], verified=False,
             namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
             offset=0, limit=10)
 
@@ -64,7 +77,20 @@ class TestApiModuleSearch(TerraregUnitTest):
             'meta': {'current_offset': 0, 'limit': 10}, 'modules': []
         }
         ModuleSearch.search_module_providers.assert_called_with(
-            query='test', namespace='testnamespace', provider=None, verified=False,
+            query='test', namespaces=['testnamespace'], providers=None, verified=False,
+            namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
+            offset=0, limit=10)
+
+    def test_with_multiple_namespaces(self, client, mocked_search_module_providers):
+        """Call with namespace filter"""
+        res = client.get('/v1/modules/search?q=test&namespace=testnamespace&namespace=unittestnamespace2')
+
+        assert res.status_code == 200
+        assert res.json == {
+            'meta': {'current_offset': 0, 'limit': 10}, 'modules': []
+        }
+        ModuleSearch.search_module_providers.assert_called_with(
+            query='test', namespaces=['testnamespace', 'unittestnamespace2'], providers=None, verified=False,
             namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
             offset=0, limit=10)
 
@@ -86,7 +112,7 @@ class TestApiModuleSearch(TerraregUnitTest):
                 'meta': {'current_offset': 0, 'limit': 10}, 'modules': []
             }
             ModuleSearch.search_module_providers.assert_called_with(
-                query='test', namespace=None, provider=None, verified=False,
+                query='test', namespaces=None, providers=None, verified=False,
                 namespace_trust_filters=namespace_filter[1],
                 offset=0, limit=10)
 
@@ -99,7 +125,7 @@ class TestApiModuleSearch(TerraregUnitTest):
             'meta': {'current_offset': 0, 'limit': 10}, 'modules': []
         }
         ModuleSearch.search_module_providers.assert_called_with(
-            query='test', namespace=None, provider=None, verified=False,
+            query='test', namespaces=None, providers=None, verified=False,
             namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
             offset=0, limit=10)
 
@@ -112,7 +138,7 @@ class TestApiModuleSearch(TerraregUnitTest):
             'meta': {'current_offset': 0, 'limit': 10}, 'modules': []
         }
         ModuleSearch.search_module_providers.assert_called_with(
-            query='test', namespace=None, provider=None, verified=True,
+            query='test', namespaces=None, providers=None, verified=True,
             namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
             offset=0, limit=10)
 
