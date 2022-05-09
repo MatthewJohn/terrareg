@@ -104,7 +104,12 @@
             }
 
             // Clear any existing provider logo TOS
-            $('#provider-tos')[0].innerHTML = '';
+            // Check if element exists - on initial page load,
+            // the element will not be present
+            // on the page at this point.
+            if ($('#provider-tos')[0] !== undefined) {
+                $('#provider-tos')[0].innerHTML = '';
+            }
 
             // Perform AJAX query to obtain results
             $.get(`/v1/modules/search?` +
