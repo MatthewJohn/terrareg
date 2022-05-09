@@ -89,9 +89,9 @@ class ModuleSearch(object):
         offset: int,
         limit: int,
         query: str=None,
-        namespace: str=None,
-        module: str=None,
-        provider: str=None,
+        namespaces: list=None,
+        modules: list=None,
+        providers: list=None,
         verified: bool=False,
         namespace_trust_filters: list=NamespaceTrustFilter.UNSPECIFIED):
 
@@ -108,21 +108,21 @@ class ModuleSearch(object):
         select = cls._get_search_query_filter(select, query)
 
         # If provider has been supplied, select by that
-        if provider:
+        if providers:
             select = select.where(
-                db.module_provider.c.provider == provider
+                db.module_provider.c.provider.in_(providers)
             )
 
         # If namespace has been supplied, select by that
-        if namespace:
+        if namespaces:
             select = select.where(
-                db.module_provider.c.namespace == namespace
+                db.module_provider.c.namespace.in_(namespaces)
             )
 
         # If namespace has been supplied, select by that
-        if module:
+        if modules:
             select = select.where(
-                db.module_provider.c.module == module
+                db.module_provider.c.module.in_(modules)
             )
 
         # Filter by verified modules, if requested
