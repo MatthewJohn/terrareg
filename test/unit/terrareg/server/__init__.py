@@ -16,8 +16,8 @@ def mocked_search_module_providers(request):
             offset: int,
             limit: int,
             query: str=None,
-            namespace: str=None,
-            provider: str=None,
+            namespaces: list=None,
+            providers: list=None,
             verified: bool=False,
             namespace_trust_filters: list=NamespaceTrustFilter.UNSPECIFIED):
         return ModuleSearchResults(offset=offset, limit=limit, count=0, module_providers=[])
