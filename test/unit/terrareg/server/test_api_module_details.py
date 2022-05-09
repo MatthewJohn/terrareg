@@ -44,7 +44,7 @@ class TestApiModuleDetails(TerraregUnitTest):
         assert res.status_code == 200
 
         mocked_search_module_providers.assert_called_once_with(
-            offset=0, limit=10, namespace='testnamespace', module='lonelymodule')
+            offset=0, limit=10, namespaces=['testnamespace'], modules=['lonelymodule'])
 
     @setup_test_data()
     def test_unverified_module(self, client, mocked_server_namespace_fixture,
@@ -78,7 +78,7 @@ class TestApiModuleDetails(TerraregUnitTest):
         assert res.status_code == 200
 
         mocked_search_module_providers.assert_called_once_with(
-            offset=0, limit=10, namespace='testnamespace', module='unverifiedmodule')
+            offset=0, limit=10, namespaces=['testnamespace'], modules=['unverifiedmodule'])
 
     def test_non_existent_module(self, client, mocked_server_namespace_fixture,
                                  mocked_search_module_providers):
@@ -99,7 +99,7 @@ class TestApiModuleDetails(TerraregUnitTest):
         assert res.status_code == 404
 
         mocked_search_module_providers.assert_called_once_with(
-            offset=0, limit=10, namespace='doesnotexist', module='unittestdoesnotexist')
+            offset=0, limit=10, namespaces=['doesnotexist'], modules=['unittestdoesnotexist'])
 
     @setup_test_data()
     def test_analytics_token(self, client, mocked_server_namespace_fixture,
@@ -141,5 +141,5 @@ class TestApiModuleDetails(TerraregUnitTest):
         }
         assert res.status_code == 200
         mocked_search_module_providers.assert_called_once_with(
-            offset=0, limit=10, namespace='testnamespace', module='lonelymodule')
+            offset=0, limit=10, namespaces=['testnamespace'], modules=['lonelymodule'])
 

@@ -206,7 +206,7 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
         result = ModuleSearch.search_module_providers(
             offset=0, limit=50,
             query='',
-            namespace=namespace
+            namespaces=[namespace]
         )
 
         resulting_module_provider_ids = [
@@ -277,7 +277,7 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
         result = ModuleSearch.search_module_providers(
             offset=0, limit=50,
             query='',
-            module=module_name_search
+            modules=[module_name_search]
         )
 
         resulting_module_provider_ids = [
@@ -344,7 +344,7 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
         result = ModuleSearch.search_module_providers(
             offset=0, limit=50,
             query='',
-            provider=provider_name_search
+            providers=[provider_name_search]
         )
 
         resulting_module_provider_ids = [
