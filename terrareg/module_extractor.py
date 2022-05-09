@@ -297,8 +297,6 @@ class GitModuleExtractor(ModuleExtractor):
         env['GIT_SSH_COMMAND'] = 'ssh -o StrictHostKeyChecking=accept-new'
 
         git_url = self._module_version._module_provider.get_git_clone_url()
-        if git_url.startswith('ssh://'):
-            git_url = re.sub(r'^ssh://', '', git_url)
 
         try:
             subprocess.check_output([
