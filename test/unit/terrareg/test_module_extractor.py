@@ -18,11 +18,11 @@ class TestGitModuleExtractor(TerraregUnitTest):
     """Test GitModuleExtractor class."""
 
     @pytest.mark.parametrize('module_provider_name,expected_git_url,expected_git_tag', [
-        ('staticrepourl', 'git@localhost:7999/bla/test-module.git', 'v4.3.2'),
-        ('placeholdercloneurl', 'git@localhost:7999/moduleextraction/gitextraction-placeholdercloneurl.git', 'v4.3.2'),
-        ('usesgitprovider', 'localhost.com/moduleextraction/gitextraction-usesgitprovider', 'v4.3.2'),
-        ('nogittagformat', 'localhost.com/moduleextraction/gitextraction-nogittagformat', '4.3.2'),
-        ('complexgittagformat', 'localhost.com/moduleextraction/gitextraction-complexgittagformat', 'unittest4.3.2value')
+        ('staticrepourl', 'ssh://git@localhost:7999/bla/test-module.git', 'v4.3.2'),
+        ('placeholdercloneurl', 'ssh://git@localhost:7999/moduleextraction/gitextraction-placeholdercloneurl.git', 'v4.3.2'),
+        ('usesgitprovider', 'ssh://localhost.com/moduleextraction/gitextraction-usesgitprovider', 'v4.3.2'),
+        ('nogittagformat', 'ssh://localhost.com/moduleextraction/gitextraction-nogittagformat', '4.3.2'),
+        ('complexgittagformat', 'ssh://localhost.com/moduleextraction/gitextraction-complexgittagformat', 'unittest4.3.2value')
     ])
     @setup_test_data()
     def test__clone_repository(self, module_provider_name, expected_git_url, expected_git_tag):
