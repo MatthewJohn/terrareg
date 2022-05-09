@@ -24,6 +24,9 @@
                     <td>
                         ${data[token].terraform_version}
                     </td>
+                    <td>
+                        ${data[token].environment}
+                    </td>
                 </tr>
             `);
         });
@@ -346,6 +349,7 @@ module "{{ module.name }}" {
                         <th>Token</th>
                         <th>Module Version</th>
                         <th>Terraform Version</th>
+                        <th>Environment</th>
                     </tr>
                 </thead>
                 <tbody id="analyticsVersionByTokenTable">
