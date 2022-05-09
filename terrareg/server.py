@@ -897,7 +897,8 @@ class ApiModuleList(ErrorCatchingResource):
         )
         parser.add_argument(
             'provider', type=str,
-            default=None, help='Limits modules to a specific provider.'
+            default=None, help='Limits modules to a specific provider.',
+            action='append', dest='providers'
         )
         parser.add_argument(
             'verified', type=inputs.boolean,
@@ -907,7 +908,7 @@ class ApiModuleList(ErrorCatchingResource):
         args = parser.parse_args()
 
         search_results = ModuleSearch.search_module_providers(
-            provider=args.provider,
+            providers=args.providers,
             verified=args.verified,
             offset=args.offset,
             limit=args.limit
@@ -941,11 +942,13 @@ class ApiModuleSearch(ErrorCatchingResource):
         )
         parser.add_argument(
             'provider', type=str,
-            default=None, help='Limits modules to a specific provider.'
+            default=None, help='Limits modules to a specific provider.',
+            action='append', dest='providers'
         )
         parser.add_argument(
             'namespace', type=str,
-            default=None, help='Limits modules to a specific namespace.'
+            default=None, help='Limits modules to a specific namespace.',
+            action='append', dest='namespaces'
         )
         parser.add_argument(
             'verified', type=inputs.boolean,
@@ -977,8 +980,8 @@ class ApiModuleSearch(ErrorCatchingResource):
 
         search_results = ModuleSearch.search_module_providers(
             query=args.q,
-            namespace=args.namespace,
-            provider=args.provider,
+            namespaces=args.namespaces,
+            providers=args.providers,
             verified=args.verified,
             namespace_trust_filters=namespace_trust_filters,
             offset=args.offset,
@@ -1013,8 +1016,8 @@ class ApiModuleDetails(ErrorCatchingResource):
         search_results = ModuleSearch.search_module_providers(
             offset=args.offset,
             limit=args.limit,
-            namespace=namespace,
-            module=name
+            namespaces=[namespace],
+            modules=[name]
         )
 
         if not search_results.module_providers:
