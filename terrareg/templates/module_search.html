@@ -41,6 +41,12 @@
                 <span id="search-contributed-count" class="tag"></span>
             </a>
         </nav>
+
+        <nav id="provider-filters" class="panel">
+            <p class="panel-heading">
+              Providers
+            </p>
+        </nav>
     </div>
     <div class="column is-three-fifths">
 
@@ -78,9 +84,23 @@
 
     // Obtain map of all provider logos
     provider_logos = {};
+    provider_filter_status = {};
     $.get('/v1/terrareg/provider_logos', (data) => {
         provider_logos = data;
     })
+
+    function getFilterProviders() {
+        let providers = [];
+        // Iterate over provider filter checkboxes and generate
+        // query string
+        $('#provider-filters').find('input').each((index, element) => {
+            let j_element = $(element);
+            if (j_element.is(':checked')) {
+                providers.push(j_element.data('providerName'));
+            }
+        });
+        return providers;
+    }
 
     let previousSearchString = '';
     function performSearch(new_offset) {
@@ -111,13 +131,19 @@
                 $('#provider-tos')[0].innerHTML = '';
             }
 
+            let query_string = '';
+            getFilterProviders().forEach((provider) => {
+                query_string += `&provider=${provider}`;
+            });
+
             // Perform AJAX query to obtain results
             $.get(`/v1/modules/search?` +
                   `q=${encodeURIComponent(searchQuery)}&` +
                   `offset=${new_offset}&` +
                   `verified=${$('#search-verified').is(':checked')}&` +
                   `trusted_namespaces=${$('#search-trusted-namespaces').is(':checked')}&` +
-                  `contributed=${$('#search-contributed').is(':checked')}`,
+                  `contributed=${$('#search-contributed').is(':checked')}` +
+                  query_string,
                   function(data, status){
                 if (data.modules.length == 0) {
                     $('#results').html(`
@@ -152,6 +178,26 @@
                     $('#search-verified-count').html(data.verified);
                     $('#search-trusted-namespaces-count').html(data.trusted_namespaces);
                     $('#search-contributed-count').html(data.contributed);
+
+                    let current_filtered_provider = getFilterProviders();
+
+                    // Clear all providers
+                    $('#provider-filters').find('a').remove();
+                    let new_provider_filter_status = {};
+                    Object.keys(data.providers).forEach((provider_name) => {
+
+                        // Check if provider already exists and is checked
+                        let checked = current_filtered_provider.indexOf(provider_name) !== -1;
+
+                        // Add providers to provider filter
+                        $('#provider-filters').append(`
+                        <a class="panel-block" onclick="toggleChildCheckbox(event);">
+                            <input data-provider-name="${provider_name}" id="provider-filter-${provider_name}" onchange="performSearch();" ${checked ? 'checked' : ''} type="checkbox" />
+                                ${provider_name}
+                            <span class="tag">${data.providers[provider_name]}</span>
+                        </a>
+                        `);
+                    });
                 });
 
                 previousSearchString = searchQuery;
