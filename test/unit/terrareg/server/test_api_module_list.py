@@ -20,7 +20,7 @@ class TestApiModuleList(TerraregUnitTest):
             'meta': {'current_offset': 0, 'limit': 10}, 'modules': []
         }
 
-        ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=False, offset=0, limit=10)
+        ModuleSearch.search_module_providers.assert_called_with(providers=None, verified=False, offset=0, limit=10)
 
     def test_with_limit_offset(self, client, mocked_search_module_providers):
         """Call with limit and offset"""
@@ -31,7 +31,7 @@ class TestApiModuleList(TerraregUnitTest):
             'meta': {'current_offset': 23, 'limit': 12, 'prev_offset': 11}, 'modules': []
         }
 
-        ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=False, offset=23, limit=12)
+        ModuleSearch.search_module_providers.assert_called_with(providers=None, verified=False, offset=23, limit=12)
 
     def test_with_provider_filter(self, client, mocked_search_module_providers):
         """Call with provider limit"""
@@ -42,7 +42,7 @@ class TestApiModuleList(TerraregUnitTest):
             'meta': {'current_offset': 0, 'limit': 10}, 'modules': []
         }
 
-        ModuleSearch.search_module_providers.assert_called_with(provider='testprovider', verified=False, offset=0, limit=10)
+        ModuleSearch.search_module_providers.assert_called_with(providers=['testprovider'], verified=False, offset=0, limit=10)
 
     def test_with_verified_false(self, client, mocked_search_module_providers):
         """Call with verified flag as false"""
@@ -52,7 +52,7 @@ class TestApiModuleList(TerraregUnitTest):
         assert res.json == {
             'meta': {'current_offset': 0, 'limit': 10}, 'modules': []
         }
-        ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=False, offset=0, limit=10)
+        ModuleSearch.search_module_providers.assert_called_with(providers=None, verified=False, offset=0, limit=10)
 
 
     def test_with_verified_true(self, client, mocked_search_module_providers):
@@ -63,7 +63,7 @@ class TestApiModuleList(TerraregUnitTest):
         assert res.json == {
             'meta': {'current_offset': 0, 'limit': 10}, 'modules': []
         }
-        ModuleSearch.search_module_providers.assert_called_with(provider=None, verified=True, offset=0, limit=10)
+        ModuleSearch.search_module_providers.assert_called_with(providers=None, verified=True, offset=0, limit=10)
 
     @setup_test_data()
     def test_with_module_response(self, client, mocked_search_module_providers):
