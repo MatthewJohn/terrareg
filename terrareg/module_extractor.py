@@ -63,6 +63,12 @@ class ModuleExtractor:
     @staticmethod
     def _run_terraform_docs(module_path):
         """Run terraform docs and return output."""
+        # Check if a terraform docs configuration file exists and remove it
+        for terraform_docs_config_file in ['.terraform-docs.yml', '.terraform-docs.yaml']:
+            terraform_docs_config_path = os.path.join(module_path, terraform_docs_config_file)
+            if os.path.isfile(terraform_docs_config_path):
+                os.unlink(terraform_docs_config_path)
+
         try:
             terradocs_output = subprocess.check_output(['terraform-docs', 'json', module_path])
         except subprocess.CalledProcessError as exc:
