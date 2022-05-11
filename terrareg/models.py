@@ -1216,7 +1216,8 @@ class ModuleVersion(TerraformSpecsObject):
 
         # Return rendered version of template
         if template:
-            return template.format(
+            validator = GitUrlValidator(template)
+            return validator.get_value(
                 namespace=self._module_provider._module._namespace.name,
                 module=self._module_provider._module.name,
                 provider=self._module_provider.name,
