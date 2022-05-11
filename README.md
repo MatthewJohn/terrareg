@@ -80,6 +80,7 @@ Default: ''
 
 The following environment variables are available to configure the application
 
+
 ### ADMIN_AUTHENTICATION_TOKEN
 
 
@@ -274,7 +275,14 @@ Default: `examples`
 
 ### EXAMPLE_ANALYTICS_TOKEN
 
-Example analytics token to provide in responses (e.g. my-tf-application, my-slack-channel etc.)
+
+Example analytics token to provide in responses (e.g. my-tf-application, my-slack-channel etc.).
+
+Note that, if this token is used in a module call, it will be ignored and treated as if
+an analytics token has not been provided.
+If analaytics tokens are required, this stops users from accidently using the example placeholder in
+terraform projects.
+
 
 Default: `my-tf-application`
 

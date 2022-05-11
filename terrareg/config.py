@@ -52,7 +52,14 @@ class Config:
 
     @property
     def EXAMPLE_ANALYTICS_TOKEN(self):
-        """Example analytics token to provide in responses (e.g. my-tf-application, my-slack-channel etc.)"""
+        """
+        Example analytics token to provide in responses (e.g. my-tf-application, my-slack-channel etc.).
+
+        Note that, if this token is used in a module call, it will be ignored and treated as if
+        an analytics token has not been provided.
+        If analaytics tokens are required, this stops users from accidently using the example placeholder in
+        terraform projects.
+        """
         return os.environ.get('EXAMPLE_ANALYTICS_TOKEN', 'my-tf-application')
 
     @property
