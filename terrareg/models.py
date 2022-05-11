@@ -201,6 +201,13 @@ class Namespace(object):
         # return first as analytics token and
         # second as namespace
         if len(namespace_split) == 2:
+            # Check if analytics token is the example provided
+            # in the config
+            if namespace_split[0] == terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN:
+                # Return None for analytics token, acting like one has
+                # not been provided.
+                return namespace_split[1], None
+
             return namespace_split[1], namespace_split[0]
 
         # If there were not two element (more or less),
