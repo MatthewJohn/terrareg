@@ -466,7 +466,10 @@ class Server(object):
             git_providers=GitProvider.get_all(),
             provider_logo=module_provider.get_logo(),
             ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
-            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
+            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
+            ANALYTICS_TOKEN_PHRASE=terrareg.config.Config().ANALYTICS_TOKEN_PHRASE,
+            ANALYTICS_TOKEN_DESCRIPTION=terrareg.config.Config().ANALYTICS_TOKEN_DESCRIPTION,
+            EXAMPLE_ANALYTICS_TOKEN=terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN
         )
 
     @catch_name_exceptions
@@ -495,7 +498,10 @@ class Server(object):
             git_providers=GitProvider.get_all(),
             provider_logo=module_provider.get_logo(),
             ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
-            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
+            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
+            ANALYTICS_TOKEN_PHRASE=terrareg.config.Config().ANALYTICS_TOKEN_PHRASE,
+            ANALYTICS_TOKEN_DESCRIPTION=terrareg.config.Config().ANALYTICS_TOKEN_DESCRIPTION,
+            EXAMPLE_ANALYTICS_TOKEN=terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN
         )
 
     @catch_name_exceptions
@@ -523,7 +529,10 @@ class Server(object):
             provider_logo=module_provider.get_logo(),
             git_providers=GitProvider.get_all(),
             ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
-            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
+            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
+            ANALYTICS_TOKEN_PHRASE=terrareg.config.Config().ANALYTICS_TOKEN_PHRASE,
+            ANALYTICS_TOKEN_DESCRIPTION=terrareg.config.Config().ANALYTICS_TOKEN_DESCRIPTION,
+            EXAMPLE_ANALYTICS_TOKEN=terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN
         )
 
     def _view_serve_module_search(self):

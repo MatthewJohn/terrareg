@@ -175,9 +175,17 @@ Default: ``
 
 
 
+### ANALYTICS_TOKEN_DESCRIPTION
+
+Describe to be provided to user about analytics token (e.g. `The name of your application`)
+
+Default: ``
+
+
+
 ### ANALYTICS_TOKEN_PHRASE
 
-Name of analytics token to provide in responses (e.g. application name, team name etc.)
+Name of analytics token to provide in responses (e.g. `application name`, `team name` etc.)
 
 Default: `analytics token`
 
