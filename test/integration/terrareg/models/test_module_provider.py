@@ -517,4 +517,4 @@ class TestModuleProvider(TerraregIntegrationTest):
 
     def test_get_total_count(self):
         """Test get_total_count method"""
-        assert ModuleProvider.get_total_count() == 37
+        assert ModuleProvider.get_total_count() == 39
