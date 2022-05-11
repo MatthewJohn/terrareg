@@ -201,6 +201,13 @@ class Namespace(object):
         # return first as analytics token and
         # second as namespace
         if len(namespace_split) == 2:
+            # Check if analytics token is the example provided
+            # in the config
+            if namespace_split[0] == terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN:
+                # Return None for analytics token, acting like one has
+                # not been provided.
+                return namespace_split[1], None
+
             return namespace_split[1], namespace_split[0]
 
         # If there were not two element (more or less),
@@ -1106,6 +1113,22 @@ class ModuleVersion(TerraformSpecsObject):
                 self._cache_db_row = res.fetchone()
         return self._cache_db_row
 
+    def get_terraform_example_version_string(self):
+        """Return formatted string of version parameter for example terraform."""
+        # Generate list of template values for formatting
+        major, minor, patch = self.version.split('.')
+        kwargs = {'major': major, 'minor': minor, 'patch': patch}
+        for i in ['major', 'minor', 'patch']:
+            val = int(kwargs[i])
+            kwargs['{}_plus_one'.format(i)] = val + 1
+            # Default minus_one values to 0, if they are already 0
+            kwargs['{}_minus_one'.format(i)] = val - 1 if val > 0 else 0
+
+        # Return formatted example template
+        return terrareg.config.Config().TERRAFORM_EXAMPLE_VERSION_TEMPLATE.format(
+            **kwargs
+        )
+
     def get_view_url(self):
         """Return view URL"""
         return '{module_provider_url}/{version}'.format(
@@ -1193,7 +1216,8 @@ class ModuleVersion(TerraformSpecsObject):
 
         # Return rendered version of template
         if template:
-            return template.format(
+            validator = GitUrlValidator(template)
+            return validator.get_value(
                 namespace=self._module_provider._module._namespace.name,
                 module=self._module_provider._module.name,
                 provider=self._module_provider.name,

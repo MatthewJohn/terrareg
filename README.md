@@ -80,6 +80,7 @@ Default: ''
 
 The following environment variables are available to configure the application
 
+
 ### ADMIN_AUTHENTICATION_TOKEN
 
 
@@ -168,6 +169,16 @@ To disable auth tokens and to report all downloads, leave empty.
 
 To only record downloads in a single environment, specify a single auth token. E.g. `zzzzzz.deploy1.zzzzzzzzzzzzz`
 
+For information on using these API keys, please see Terraform: https://docs.w3cub.com/terraform/commands/cli-config.html#credentials
+
+
+Default: ``
+
+
+
+### ANALYTICS_TOKEN_DESCRIPTION
+
+Describe to be provided to user about analytics token (e.g. `The name of your application`)
 
 Default: ``
 
@@ -175,7 +186,7 @@ Default: ``
 
 ### ANALYTICS_TOKEN_PHRASE
 
-Name of analytics token to provide in responses (e.g. application name, team name etc.)
+Name of analytics token to provide in responses (e.g. `application name`, `team name` etc.)
 
 Default: `analytics token`
 
@@ -264,7 +275,14 @@ Default: `examples`
 
 ### EXAMPLE_ANALYTICS_TOKEN
 
-Example analytics token to provide in responses (e.g. my-tf-application, my-slack-channel etc.)
+
+Example analytics token to provide in responses (e.g. my-tf-application, my-slack-channel etc.).
+
+Note that, if this token is used in a module call, it will be ignored and treated as if
+an analytics token has not been provided.
+If analaytics tokens are required, this stops users from accidently using the example placeholder in
+terraform projects.
+
 
 Default: `my-tf-application`
 
@@ -288,8 +306,11 @@ Note: Do not include '{version}' placeholder in the URL -
 the git tag will be automatically provided.
 
 - browse_url - Formatted URL for user-viewable source code
-(e.g. 'https://github.com/{namespace}/{module}-{provider}/tree'
-or 'https://bitbucket.org/{namespace}/{module}/src/{version}')
+(e.g. 'https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}'
+or 'https://bitbucket.org/{namespace}/{module}/src/{version}?at=refs%2Ftags%2F{tag_uri_encoded}').
+Must include placeholdes:
+- {path} (for source file/folder path)
+- {tag} or {tag_uri_encoded} for the git tag
 
 An example for public repositories might be:
 ```
@@ -368,6 +389,29 @@ Can be generated using: `python -c 'import secrets; print(secrets.token_hex())'`
 
 
 Default: ``
+
+
+
+### TERRAFORM_EXAMPLE_VERSION_TEMPLATE
+
+
+Template of version number string to be used in terraform examples in the UI.
+This is used by the snippet example of a terraform module and the 'resource builder' example.
+
+The template can contain the following placeholders:
+* `{major}`, `{minor}`, `{patch}`
+* `{major_minus_one}`, `{minor_minus_one}`, `{patch_minus_one}`
+* `{major_plus_one}`, `{minor_plus_one}`, `{patch_plus_one}`
+
+Some examples:
+* `>= {major}.{minor}.{patch}, < {major_plus_one}.0.0`
+* `~> {major}.{minor}.{patch}`
+
+For more information, see terraform documentation: https://www.terraform.io/language/expressions/version-constraints
+
+
+
+Default: `{major}.{minor}.{patch}`
 
 
 

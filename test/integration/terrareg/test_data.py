@@ -11,6 +11,12 @@ integration_git_providers = {
         'base_url_template': 'https://base-url.com/{namespace}/{module}-{provider}',
         'browse_url_template': 'https://browse-url.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
         'clone_url_template': 'ssh://clone-url.com/{namespace}/{module}-{provider}'
+    },
+    3: {
+        'name': 'repo_url_tests_uri_encoded',
+        'base_url_template': 'https://base-url.com/{namespace}/{module}-{provider}',
+        'browse_url_template': 'https://browse-url.com/{namespace}/{module}-{provider}/browse/{path}?at={tag_uri_encoded}',
+        'clone_url_template': 'ssh://clone-url.com/{namespace}/{module}-{provider}'
     }
 }
 
@@ -108,6 +114,25 @@ integration_test_data = {
                     'repo_clone_url_template': 'ssh://mv-clone-url.com/{namespace}/{module}-{provider}'
                 }
             }
+        }},
+        'no-git-provider-uri-encoded': {'test': {
+            'id': 46,
+            'versions': {
+                '1.4.0': {
+                    'repo_base_url_template': 'https://mv-base-url.com/{namespace}/{module}-{provider}',
+                    'repo_browse_url_template': 'https://mv-browse-url.com/{namespace}/{module}-{provider}/browse/{path}?at={tag_uri_encoded}',
+                    'repo_clone_url_template': 'ssh://mv-clone-url.com/{namespace}/{module}-{provider}'
+                }
+            },
+            'git_tag_format': 'release@test/{version}/'
+        }},
+        'git-provider-uri-encoded': {'test': {
+            'id': 47,
+            'versions': {
+                '1.4.0': {}
+            },
+            'git_provider_id': 3,
+            'git_tag_format': 'release@test/{version}/'
         }},
         'git-provider-urls': {'test': {
             'id': 19,

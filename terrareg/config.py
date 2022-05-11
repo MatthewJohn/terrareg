@@ -42,12 +42,24 @@ class Config:
 
     @property
     def ANALYTICS_TOKEN_PHRASE(self):
-        """Name of analytics token to provide in responses (e.g. application name, team name etc.)"""
+        """Name of analytics token to provide in responses (e.g. `application name`, `team name` etc.)"""
         return os.environ.get('ANALYTICS_TOKEN_PHRASE', 'analytics token')
 
     @property
+    def ANALYTICS_TOKEN_DESCRIPTION(self):
+        """Describe to be provided to user about analytics token (e.g. `The name of your application`)"""
+        return os.environ.get('ANALYTICS_TOKEN_DESCRIPTION', '')
+
+    @property
     def EXAMPLE_ANALYTICS_TOKEN(self):
-        """Example analytics token to provide in responses (e.g. my-tf-application, my-slack-channel etc.)"""
+        """
+        Example analytics token to provide in responses (e.g. my-tf-application, my-slack-channel etc.).
+
+        Note that, if this token is used in a module call, it will be ignored and treated as if
+        an analytics token has not been provided.
+        If analaytics tokens are required, this stops users from accidently using the example placeholder in
+        terraform projects.
+        """
         return os.environ.get('EXAMPLE_ANALYTICS_TOKEN', 'my-tf-application')
 
     @property
@@ -125,6 +137,8 @@ class Config:
         To disable auth tokens and to report all downloads, leave empty.
 
         To only record downloads in a single environment, specify a single auth token. E.g. `zzzzzz.deploy1.zzzzzzzzzzzzz`
+
+        For information on using these API keys, please see Terraform: https://docs.w3cub.com/terraform/commands/cli-config.html#credentials
         """
         return [
             token for token in os.environ.get('ANALYTICS_AUTH_KEYS', '').split(',') if token
@@ -236,8 +250,11 @@ class Config:
                     the git tag will be automatically provided.
 
         - browse_url - Formatted URL for user-viewable source code
-                        (e.g. 'https://github.com/{namespace}/{module}-{provider}/tree'
-                        or 'https://bitbucket.org/{namespace}/{module}/src/{version}')
+                        (e.g. 'https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}'
+                        or 'https://bitbucket.org/{namespace}/{module}/src/{version}?at=refs%2Ftags%2F{tag_uri_encoded}').
+                        Must include placeholdes:
+                         - {path} (for source file/folder path)
+                         - {tag} or {tag_uri_encoded} for the git tag
 
         An example for public repositories might be:
         ```
@@ -261,3 +278,23 @@ class Config:
         Whether module versions can specify git repository in terrareg config.
         """
         return os.environ.get('ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', 'True') == 'True'
+
+    @property
+    def TERRAFORM_EXAMPLE_VERSION_TEMPLATE(self):
+        """
+        Template of version number string to be used in terraform examples in the UI.
+        This is used by the snippet example of a terraform module and the 'resource builder' example.
+
+        The template can contain the following placeholders:
+         * `{major}`, `{minor}`, `{patch}`
+         * `{major_minus_one}`, `{minor_minus_one}`, `{patch_minus_one}`
+         * `{major_plus_one}`, `{minor_plus_one}`, `{patch_plus_one}`
+
+        Some examples:
+         * `>= {major}.{minor}.{patch}, < {major_plus_one}.0.0`
+         * `~> {major}.{minor}.{patch}`
+
+        For more information, see terraform documentation: https://www.terraform.io/language/expressions/version-constraints
+
+        """
+        return os.environ.get('TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '{major}.{minor}.{patch}')
