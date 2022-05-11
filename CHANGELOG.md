@@ -1,5 +1,21 @@
 # Changelog
 
+# [2.5.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.4.1...v2.5.0) (2022-05-11)
+
+
+### Bug Fixes
+
+* Issue [#113](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/113) Refuse the use of the example analaytics token. ([1c9e17c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1c9e17cf1c5445246576a8271626c3394fff7bb7))
+
+
+### Features
+
+* Issue [#109](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/109) Add namespace filtering to module search interface. ([f3798af](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f3798af1d2958728f9cdadeed725966eb5660bab))
+* Issue [#111](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/111) Add URI encoded tag placeholder to browse URL template. ([c467bde](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c467bdee6dd5010efede6102054e445f0f0a20e9))
+* Issue [#113](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/113) Add input for analytics token to 'usage builder' to add to module URL in built terraform. ([e599366](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e59936644f9bdd9831d241511da7288eab07583e))
+* Issue [#113](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/113) Add placeholder analytics token to 'usage' terraform with note about having to replace it. ([240764d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/240764d71db65bc671e9f5624571474559284a46))
+* Issue [#114](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/114) Add custom terraform module version template for use in terraform examples in UI. ([07bfe72](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/07bfe7247a3414267853f23a9cae42981e5b0a13))
+
 ## [2.4.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.4.0...v2.4.1) (2022-05-10)
 
 
