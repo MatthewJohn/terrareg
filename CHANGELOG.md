@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.5.0...v2.5.1) (2022-05-11)
+
+
+### Bug Fixes
+
+* Issue [#111](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/111) Fix validation errors thrown when validation git provider config with provided tag_uri_encoded placeholder ([3113ccd](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3113ccd319c6c662b14148e2fceb05d2dc681a83))
+
 # [2.5.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.4.1...v2.5.0) (2022-05-11)
 
 
