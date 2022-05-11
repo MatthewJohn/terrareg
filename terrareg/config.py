@@ -42,12 +42,24 @@ class Config:
 
     @property
     def ANALYTICS_TOKEN_PHRASE(self):
-        """Name of analytics token to provide in responses (e.g. application name, team name etc.)"""
+        """Name of analytics token to provide in responses (e.g. `application name`, `team name` etc.)"""
         return os.environ.get('ANALYTICS_TOKEN_PHRASE', 'analytics token')
 
     @property
+    def ANALYTICS_TOKEN_DESCRIPTION(self):
+        """Describe to be provided to user about analytics token (e.g. `The name of your application`)"""
+        return os.environ.get('ANALYTICS_TOKEN_DESCRIPTION', '')
+
+    @property
     def EXAMPLE_ANALYTICS_TOKEN(self):
-        """Example analytics token to provide in responses (e.g. my-tf-application, my-slack-channel etc.)"""
+        """
+        Example analytics token to provide in responses (e.g. my-tf-application, my-slack-channel etc.).
+
+        Note that, if this token is used in a module call, it will be ignored and treated as if
+        an analytics token has not been provided.
+        If analaytics tokens are required, this stops users from accidently using the example placeholder in
+        terraform projects.
+        """
         return os.environ.get('EXAMPLE_ANALYTICS_TOKEN', 'my-tf-application')
 
     @property
