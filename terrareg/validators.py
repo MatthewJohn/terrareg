@@ -25,7 +25,8 @@ class GitUrlValidator:
                     module='',
                     provider='',
                     path='',
-                    tag=''):
+                    tag='',
+                    tag_uri_encoded=''):
                 raise RepositoryUrlParseError('Template does not contain valid namespace placeholder')
 
         if requires_module_placeholder:
@@ -36,7 +37,8 @@ class GitUrlValidator:
                     module=really_random_string,
                     provider='',
                     path='',
-                    tag=''):
+                    tag='',
+                    tag_uri_encoded=''):
                 raise RepositoryUrlParseError('Template does not contain valid module placeholder')
 
         if requires_tag_placeholder:
@@ -59,7 +61,8 @@ class GitUrlValidator:
                     module='',
                     provider='',
                     path=really_random_string,
-                    tag=''):
+                    tag='',
+                    tag_uri_encoded=''):
                 raise RepositoryUrlParseError('Template does not contain valid path placeholder')
 
     def get_value(self, namespace, module, provider, tag, path):
