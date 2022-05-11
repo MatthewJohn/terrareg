@@ -168,6 +168,8 @@ To disable auth tokens and to report all downloads, leave empty.
 
 To only record downloads in a single environment, specify a single auth token. E.g. `zzzzzz.deploy1.zzzzzzzzzzzzz`
 
+For information on using these API keys, please see Terraform: https://docs.w3cub.com/terraform/commands/cli-config.html#credentials
+
 
 Default: ``
 
@@ -368,6 +370,29 @@ Can be generated using: `python -c 'import secrets; print(secrets.token_hex())'`
 
 
 Default: ``
+
+
+
+### TERRAFORM_EXAMPLE_VERSION_TEMPLATE
+
+
+Template of version number string to be used in terraform examples in the UI.
+This is used by the snippet example of a terraform module and the 'resource builder' example.
+
+The template can contain the following placeholders:
+* `{major}`, `{minor}`, `{patch}`
+* `{major_minus_one}`, `{minor_minus_one}`, `{patch_minus_one}`
+* `{major_plus_one}`, `{minor_plus_one}`, `{patch_plus_one}`
+
+Some examples:
+* `>= {major}.{minor}.{patch}, < {major_plus_one}.0.0`
+* `~> {major}.{minor}.{patch}`
+
+For more information, see terraform documentation: https://www.terraform.io/language/expressions/version-constraints
+
+
+
+Default: `{major}.{minor}.{patch}`
 
 
 
