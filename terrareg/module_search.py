@@ -227,6 +227,19 @@ class ModuleSearch(object):
                 ).group_by(provider_subquery.c.provider)
             )
 
+            namespace_subquery = main_select.group_by(
+                db.module_provider.c.namespace,
+                db.module_provider.c.module,
+                db.module_provider.c.provider
+            ).subquery()
+            namespace_res = conn.execute(
+                sqlalchemy.select(
+                    [sqlalchemy.func.count().label('count'), namespace_subquery.c.namespace]
+                ).select_from(
+                    namespace_subquery
+                ).group_by(namespace_subquery.c.namespace)
+            )
+
             return {
                 'verified': verified_count,
                 'trusted_namespaces': trusted_count,
@@ -234,6 +247,10 @@ class ModuleSearch(object):
                 'providers': {
                     r['provider']: r['count']
                     for r in provider_res
+                },
+                'namespaces': {
+                    r['namespace']: r['count']
+                    for r in namespace_res
                 }
             }
 
