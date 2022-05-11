@@ -165,12 +165,15 @@
         </div>
         {% endif %}
 
+        <script>
 
+        </script>
         <div class="box">
-            <h5 class="title is-5">Usage</h4>
+            <h5 class="title is-5">Usage</h5>
             <pre>
 module "{{ module.name }}" {
-    source  = "{{ server_hostname }}/{{ current_module.registry_id }}"
+    # Note - the "{{ EXAMPLE_ANALYTICS_TOKEN }}" placeholder must be updated
+    source  = "{{ server_hostname }}/{{ EXAMPLE_ANALYTICS_TOKEN }}__{{ current_module.registry_id }}"
     version = "{{ module_version.get_terraform_example_version_string() }}"
 
     # Provide variables here
