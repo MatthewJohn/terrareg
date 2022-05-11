@@ -1,4 +1,5 @@
 
+import unittest.mock
 import pytest
 import sqlalchemy
 from terrareg.database import Database
@@ -153,3 +154,20 @@ class TestModuleVersion(TerraregIntegrationTest):
                 )
             ))
             assert [r for r in sub_module_res] == []
+
+    @pytest.mark.parametrize('template,version,expected_string', [
+        ('= {major}.{minor}.{patch}', '1.5.0', '= 1.5.0'),
+        ('<= {major_plus_one}.{minor_plus_one}.{patch_plus_one}', '1.5.0', '<= 2.6.1'),
+        ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '4.3.2', '>= 3.2.1'),
+        ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '0.0.0', '>= 0.0.0'),
+        ('< {major_plus_one}.0.0', '10584.321.564', '< 10585.0.0')
+    ])
+    def test_get_terraform_example_version_string(self, template, version, expected_string):
+        """Test get_terraform_example_version_string method"""
+        with unittest.mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', template):
+            namespace = Namespace(name='test')
+            module = Module(namespace=namespace, name='test')
+            module_provider = ModuleProvider.get(module=module, name='test', create=True)
+            module_version = ModuleVersion(module_provider=module_provider, version=version)
+            module_version.prepare_module()
+            assert module_version.get_terraform_example_version_string() == expected_string
