@@ -171,7 +171,7 @@
             <pre>
 module "{{ module.name }}" {
     source  = "{{ server_hostname }}/{{ current_module.registry_id }}"
-    version = "{{ module_version.version }}"
+    version = "{{ module_version.get_terraform_example_version_string() }}"
 
     # Provide variables here
     # See 'Resource Builder' tab for an interactive builder
@@ -684,7 +684,7 @@ module "{{ module.name }}" {
 ${additional_content}
 module "{{ module.name }}" {
     source  = "{{ server_hostname }}/{{ current_module.registry_id }}"
-    version = "{{ module_version.version }}"
+    version = "{{ module_version.get_terraform_example_version_string() }}"
 ${output_tf}
 }
 `);

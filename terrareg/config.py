@@ -125,6 +125,8 @@ class Config:
         To disable auth tokens and to report all downloads, leave empty.
 
         To only record downloads in a single environment, specify a single auth token. E.g. `zzzzzz.deploy1.zzzzzzzzzzzzz`
+
+        For information on using these API keys, please see Terraform: https://docs.w3cub.com/terraform/commands/cli-config.html#credentials
         """
         return [
             token for token in os.environ.get('ANALYTICS_AUTH_KEYS', '').split(',') if token
@@ -261,3 +263,23 @@ class Config:
         Whether module versions can specify git repository in terrareg config.
         """
         return os.environ.get('ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', 'True') == 'True'
+
+    @property
+    def TERRAFORM_EXAMPLE_VERSION_TEMPLATE(self):
+        """
+        Template of version number string to be used in terraform examples in the UI.
+        This is used by the snippet example of a terraform module and the 'resource builder' example.
+
+        The template can contain the following placeholders:
+         * `{major}`, `{minor}`, `{patch}`
+         * `{major_minus_one}`, `{minor_minus_one}`, `{patch_minus_one}`
+         * `{major_plus_one}`, `{minor_plus_one}`, `{patch_plus_one}`
+
+        Some examples:
+         * `>= {major}.{minor}.{patch}, < {major_plus_one}.0.0`
+         * `~> {major}.{minor}.{patch}`
+
+        For more information, see terraform documentation: https://www.terraform.io/language/expressions/version-constraints
+
+        """
+        return os.environ.get('TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '{major}.{minor}.{patch}')

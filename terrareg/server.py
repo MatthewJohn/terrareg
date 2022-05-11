@@ -484,6 +484,7 @@ class Server(object):
 
         return self._render_template(
             'submodule.html',
+            # @TODO Merge this with _view_serve_module_provider
             namespace=namespace,
             module=module,
             module_provider=module_provider,

@@ -1106,6 +1106,22 @@ class ModuleVersion(TerraformSpecsObject):
                 self._cache_db_row = res.fetchone()
         return self._cache_db_row
 
+    def get_terraform_example_version_string(self):
+        """Return formatted string of version parameter for example terraform."""
+        # Generate list of template values for formatting
+        major, minor, patch = self.version.split('.')
+        kwargs = {'major': major, 'minor': minor, 'patch': patch}
+        for i in ['major', 'minor', 'patch']:
+            val = int(kwargs[i])
+            kwargs['{}_plus_one'.format(i)] = val + 1
+            # Default minus_one values to 0, if they are already 0
+            kwargs['{}_minus_one'.format(i)] = val - 1 if val > 0 else 0
+
+        # Return formatted example template
+        return terrareg.config.Config().TERRAFORM_EXAMPLE_VERSION_TEMPLATE.format(
+            **kwargs
+        )
+
     def get_view_url(self):
         """Return view URL"""
         return '{module_provider_url}/{version}'.format(
