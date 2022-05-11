@@ -47,6 +47,12 @@
               Providers
             </p>
         </nav>
+
+        <nav id="namespace-filters" class="panel">
+            <p class="panel-heading">
+              Namespaces
+            </p>
+        </nav>
     </div>
     <div class="column is-three-fifths">
 
@@ -84,7 +90,6 @@
 
     // Obtain map of all provider logos
     provider_logos = {};
-    provider_filter_status = {};
     $.get('/v1/terrareg/provider_logos', (data) => {
         provider_logos = data;
     })
@@ -100,6 +105,18 @@
             }
         });
         return providers;
+    }
+    function getFilterNamespaces() {
+        let namespaces = [];
+        // Iterate over namespace filter checkboxes and generate
+        // query string
+        $('#namespace-filters').find('input').each((index, element) => {
+            let j_element = $(element);
+            if (j_element.is(':checked')) {
+                namespaces.push(j_element.data('namespaceName'));
+            }
+        });
+        return namespaces;
     }
 
     let previousSearchString = '';
@@ -134,6 +151,10 @@
             let query_string = '';
             getFilterProviders().forEach((provider) => {
                 query_string += `&provider=${provider}`;
+            });
+
+            getFilterNamespaces().forEach((namespace) => {
+                query_string += `&namespace=${namespace}`;
             });
 
             // Perform AJAX query to obtain results
@@ -183,7 +204,6 @@
 
                     // Clear all providers
                     $('#provider-filters').find('a').remove();
-                    let new_provider_filter_status = {};
                     Object.keys(data.providers).forEach((provider_name) => {
 
                         // Check if provider already exists and is checked
@@ -195,6 +215,25 @@
                             <input data-provider-name="${provider_name}" id="provider-filter-${provider_name}" onchange="performSearch();" ${checked ? 'checked' : ''} type="checkbox" />
                                 ${provider_name}
                             <span class="tag">${data.providers[provider_name]}</span>
+                        </a>
+                        `);
+                    });
+
+
+                    let current_filtered_namespaces = getFilterNamespaces();
+                    // Clear all namespaces
+                    $('#namespace-filters').find('a').remove();
+                    Object.keys(data.namespaces).forEach((namespace_name) => {
+
+                        // Check if provider already exists and is checked
+                        let checked = current_filtered_namespaces.indexOf(namespace_name) !== -1;
+
+                        // Add providers to provider filter
+                        $('#namespace-filters').append(`
+                        <a class="panel-block" onclick="toggleChildCheckbox(event);">
+                            <input data-namespace-name="${namespace_name}" id="namespace-filter-${namespace_name}" onchange="performSearch();" ${checked ? 'checked' : ''} type="checkbox" />
+                                ${namespace_name}
+                            <span class="tag">${data.namespaces[namespace_name]}</span>
                         </a>
                         `);
                     });
