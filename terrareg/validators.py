@@ -1,4 +1,6 @@
 
+import urllib.parse
+
 from terrareg.errors import RepositoryUrlParseError
 
 
@@ -7,7 +9,6 @@ class GitUrlValidator:
     def __init__(self, template):
         """Store member variables."""
         self._template = template
-        print(template)
 
     def validate(self,
                  requires_namespace_placeholder=False,
@@ -39,15 +40,16 @@ class GitUrlValidator:
                 raise RepositoryUrlParseError('Template does not contain valid module placeholder')
 
         if requires_tag_placeholder:
-            if '{tag}' not in self._template:
-                raise RepositoryUrlParseError('tag placeholder not present in URL')
+            if '{tag}' not in self._template and '{tag_uri_encoded}' not in self._template:
+                raise RepositoryUrlParseError('tag or tag_uri_encoded placeholder not present in URL')
             if really_random_string not in self._template.format(
                     namespace='',
-                    module=really_random_string,
+                    module='',
                     provider='',
                     path='',
-                    tag=really_random_string):
-                raise RepositoryUrlParseError('Template does not contain valid tag placeholder')
+                    tag=really_random_string,
+                    tag_uri_encoded=really_random_string):
+                raise RepositoryUrlParseError('Template does not contain valid tag/tag_uri_encoded placeholder')
 
         if requires_path_placeholder:
             if '{path}' not in self._template:
@@ -62,10 +64,11 @@ class GitUrlValidator:
 
     def get_value(self, namespace, module, provider, tag, path):
         """Return value with placeholders replaced."""
-        return self._format.format(
+        return self._template.format(
             namespace=namespace,
             module=module,
             provider=provider,
             tag=tag,
+            tag_uri_encoded=urllib.parse.quote(tag, safe=''),
             path=path
         )

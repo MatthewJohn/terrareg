@@ -306,8 +306,11 @@ Note: Do not include '{version}' placeholder in the URL -
 the git tag will be automatically provided.
 
 - browse_url - Formatted URL for user-viewable source code
-(e.g. 'https://github.com/{namespace}/{module}-{provider}/tree'
-or 'https://bitbucket.org/{namespace}/{module}/src/{version}')
+(e.g. 'https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}'
+or 'https://bitbucket.org/{namespace}/{module}/src/{version}?at=refs%2Ftags%2F{tag_uri_encoded}').
+Must include placeholdes:
+- {path} (for source file/folder path)
+- {tag} or {tag_uri_encoded} for the git tag
 
 An example for public repositories might be:
 ```

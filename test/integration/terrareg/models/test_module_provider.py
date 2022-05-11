@@ -85,6 +85,12 @@ class TestModuleProvider(TerraregIntegrationTest):
         ('no-git-provider', '1.4.0', None, 'https://mv-browse-url.com/repo_url_tests/no-git-provider-test/browse/1.4.0/suffix'),
         ('no-git-provider', '1.4.0', 'unittestpath', 'https://mv-browse-url.com/repo_url_tests/no-git-provider-test/browse/1.4.0/unittestpathsuffix'),
 
+        # Test URI encoded tags in browse URL template
+        # - from module provider
+        ('no-git-provider-uri-encoded', '1.4.0', 'testpath', 'https://mv-browse-url.com/repo_url_tests/no-git-provider-uri-encoded-test/browse/testpath?at=release%40test%2F1.4.0%2F'),
+        # - from git provider
+        ('git-provider-uri-encoded', '1.4.0', 'testpath', 'https://browse-url.com/repo_url_tests/git-provider-uri-encoded-test/browse/testpath?at=release%40test%2F1.4.0%2F'),
+
         # Test with git provider configured in module provider
         ('git-provider-urls', '1.1.0', None, 'https://browse-url.com/repo_url_tests/git-provider-urls-test/browse/1.1.0/suffix'),
         ('git-provider-urls', '1.1.0', 'unittestpath', 'https://browse-url.com/repo_url_tests/git-provider-urls-test/browse/1.1.0/unittestpathsuffix'),
@@ -511,4 +517,4 @@ class TestModuleProvider(TerraregIntegrationTest):
 
     def test_get_total_count(self):
         """Test get_total_count method"""
-        assert ModuleProvider.get_total_count() == 37
+        assert ModuleProvider.get_total_count() == 39
