@@ -433,14 +433,14 @@ module "{{ module.name }}" {
                 <tr>
                     <td>Create module version using source archive</td>
                     <td>
-                        <code>POST https://{{ server_hostname }}/v1/terrareg/modules/${version}/upload</code><br />
+                        <code>POST https://{{ server_hostname }}/v1/terrareg/modules/{{ module_provider.id }}/${version}/upload</code><br />
                         Source ZIP file must be provided as data.
                     </td>
                 </tr>
                 {% endif %}
                 <tr>
                     <td>Trigger module version import</td>
-                    <td><code>POST https://{{ server_hostname }}/v1/terrareg/modules/${version}/import</code></td>
+                    <td><code>POST https://{{ server_hostname }}/v1/terrareg/modules/{{ module_provider.id }}/${version}/import</code></td>
                 </tr>
                 <tr>
                     <td>Bitbucket hook trigger</td>
@@ -456,7 +456,7 @@ module "{{ module.name }}" {
                 </tr>
                 <tr>
                     <td>Mark module version as published</td>
-                    <td><code>POST https://{{ server_hostname }}/v1/terrareg/modules/${version}/publish</code></td>
+                    <td><code>POST https://{{ server_hostname }}/v1/terrareg/modules/{{ module_provider.id }}/${version}/publish</code></td>
                 </tr>
 
             </table>
