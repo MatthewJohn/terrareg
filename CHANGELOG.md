@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.5.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.5.1...v2.5.2) (2022-05-12)
+
+
+### Bug Fixes
+
+* Issue [#118](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/118) Fix endpoint for module version upload in UI ([f50b7e6](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f50b7e646433c593ea169b693c39c7cae82c25ee))
+* Issue [#118](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/118) Fix module version import url in UI to contain module provider ID ([18e41b8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/18e41b8fd87fc8ac05a00640be448d96f08676c9))
+* Issue [#118](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/118) Fix publish endpoint in UI to contain module provider ID ([cecfff5](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/cecfff53d07e940608ad8a44bc0d59a58c6305c4))
+
 ## [2.5.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.5.0...v2.5.1) (2022-05-11)
 
 
