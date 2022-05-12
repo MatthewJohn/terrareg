@@ -456,7 +456,7 @@ module "{{ module.name }}" {
                 </tr>
                 <tr>
                     <td>Mark module version as published</td>
-                    <td><code>POST https://{{ server_hostname }}/v1/terrareg/modules/${version}/publish</code></td>
+                    <td><code>POST https://{{ server_hostname }}/v1/terrareg/modules/{{ module_provider.id }}/${version}/publish</code></td>
                 </tr>
 
             </table>
