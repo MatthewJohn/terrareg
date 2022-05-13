@@ -161,7 +161,6 @@ class ModuleExtractor:
         readme_content = self._get_readme_content(submodule_dir)
 
         db = Database.get()
-        conn = db.get_engine().connect()
         insert_statement = db.sub_module.insert().values(
             parent_module_version=self._module_version.pk,
             type=type_,
@@ -169,7 +168,8 @@ class ModuleExtractor:
             readme_content=Database.encode_blob(readme_content),
             module_details=Database.encode_blob(json.dumps(tf_docs))
         )
-        conn.execute(insert_statement)
+        with db.get_engine().connect() as conn:
+            conn.execute(insert_statement)
 
     def _scan_submodules(self, subdirectory, type_):
         """Scan for submodules and extract details."""
