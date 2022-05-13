@@ -44,6 +44,8 @@ unit-tests:
 integration-tests:
   stage: test
   extends: .before_script_python
+  needs:
+    - unit-tests
   script:
     - pip install --proxy=$http_proxy -r requirements-dev.txt
     - coverage run -m pytest --verbose ./test/integration
@@ -56,6 +58,8 @@ integration-tests:
 mysql-integration-tests:
   stage: test
   extends: .before_script_python
+  needs:
+    - integration-tests
   services:
     - name: fare-docker-reg.dock.studios:5000/mysql:8.0.29
       alias: mysql
