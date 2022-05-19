@@ -15,6 +15,8 @@ class AnalyticsEngine:
     _ARE_ENVIRONMENTS_ENABLED = None
     _TOKEN_ENVIRONMENT_MAPPING = None
 
+    DEFAULT_ENVIRONMENT_NAME = 'Default'
+
     @classmethod
     def are_tokens_enabled(cls):
         """Determine if tokens are enabled."""
@@ -58,24 +60,27 @@ class AnalyticsEngine:
         )
 
     @staticmethod
-    def check_auth_token(auth_token):
+    def get_environment_from_token(auth_token):
         """Check if auth token matches required environment analaytics tokens."""
-        # If no analytics tokens have been defined, always return to be recorded with empty environment
+        # If no analytics tokens have been defined, return default environment
         if not AnalyticsEngine.are_tokens_enabled():
-            return True, None
+            return AnalyticsEngine.DEFAULT_ENVIRONMENT_NAME
 
         # If there is one auth token provided and does not contain an environment name
         # check and return empty environment
         if not AnalyticsEngine.are_environments_enabled():
-            # Check if token matches provided token
-            return (Config().ANALYTICS_AUTH_KEYS[0] == auth_token), None
+            # Check if token matches provided token,
+            # if so, return default environment name
+            return (AnalyticsEngine.DEFAULT_ENVIRONMENT_NAME
+                    if (Config().ANALYTICS_AUTH_KEYS[0] == auth_token) else
+                    None)
 
         # Otherwise check if auth token is for an environment
         if auth_token in AnalyticsEngine.get_token_environment_mapping():
-            return True, AnalyticsEngine.get_token_environment_mapping()[auth_token]
+            return AnalyticsEngine.get_token_environment_mapping()[auth_token]
 
-        # Default to returning to not authenticate
-        return False, None
+        # Default to returning when not using a valid environment
+        return None
 
     @staticmethod
     def record_module_version_download(
@@ -93,11 +98,9 @@ class AnalyticsEngine:
             if user_agent_match:
                 terraform_version = user_agent_match.group(1)
 
-        # Check if token is valid and whether it matches a deployment environment to be
-        # recorded.
-        record, environment = AnalyticsEngine.check_auth_token(auth_token)
-        if not record:
-            return
+        # Obtain environment from auth token.
+        # If auth token is not provided, 
+        environment = AnalyticsEngine.get_environment_from_token(auth_token)
 
         print('Moudule {0} downloaded by {1} using terraform {2}'.format(
             module_version.id, analytics_token, terraform_version))
