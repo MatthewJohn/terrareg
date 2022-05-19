@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.5.2...v2.5.3) (2022-05-19)
+
+
+### Bug Fixes
+
+* Update analytics recording to record every module download. ([993bc46](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/993bc46533bc990b9b76ddd88355c2fb32f713ed)), closes [#119](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/119)
+
 ## [2.5.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.5.1...v2.5.2) (2022-05-12)
 
 
