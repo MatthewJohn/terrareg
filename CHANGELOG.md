@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.5.3...v2.5.4) (2022-05-19)
+
+
+### Bug Fixes
+
+* Add logo for null provider ([613f0b6](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/613f0b6a9a79a80af6ad9a1179bd7af615f2b891)), closes [#120](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/120)
+
 ## [2.5.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.5.2...v2.5.3) (2022-05-19)
 
 
