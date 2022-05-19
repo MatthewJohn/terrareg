@@ -365,6 +365,12 @@ class ProviderLogo:
             'tos': 'Google Cloud and the Google Cloud logo are trademarks of Google LLC.',
             'alt': 'Google Cloud',
             'link': 'https://cloud.google.com/'
+        },
+        'null': {
+            'source': '/static/images/null.png',
+            'tos': ' ',
+            'alt': 'Null Provider',
+            'link': '#'
         }
     }
 
