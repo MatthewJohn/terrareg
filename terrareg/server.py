@@ -776,6 +776,10 @@ class ApiModuleVersionCreate(ErrorCatchingResource):
         # Get module provider and optionally create, if it doesn't exist
         module_provider = ModuleProvider.get(module=module, name=provider, create=True)
 
+        # Ensure module provider exists
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
+
         # Ensure that the module provider has a repository url configured.
         if not module_provider.get_git_clone_url():
             return {'message': 'Module provider is not configured with a repository'}, 400
@@ -1381,7 +1385,7 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
         if module_provider is not None:
             return {'message': 'Module provider already exists'}, 400
 
-        module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+        module_provider = ModuleProvider.create(module=module, name=provider)
 
         # If git provider ID has been specified,
         # validate it and update attribute of module provider.

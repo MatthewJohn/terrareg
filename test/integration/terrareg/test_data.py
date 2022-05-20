@@ -313,5 +313,11 @@ integration_test_data = {
             'id': 45,
             'versions': {'5.5.5': {'published': True}}
         }}
+    },
+    'genericmodules': {
+        'modulename': {'providername': {
+            'id': 48,
+            'versions': {'1.2.3': {'published': True}}
+        }}
     }
 }
