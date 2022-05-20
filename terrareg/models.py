@@ -461,9 +461,9 @@ class ModuleProvider(object):
             return res.scalar()
 
     @classmethod
-    def _create(cls, module, name):
+    def create(cls, module, name):
         """Create instance of object in database."""
-        # Create module version, if it doesn't exist
+        # Create module provider
         db = Database.get()
         module_provider_insert = db.module_provider.insert().values(
             namespace=module._namespace.name,
@@ -474,16 +474,20 @@ class ModuleProvider(object):
         with db.get_engine().connect() as conn:
             conn.execute(module_provider_insert)
 
+        return cls(module=module, name=name)
+
     @classmethod
     def get(cls, module, name, create=False):
         """Create object and ensure the object exists."""
         obj = cls(module=module, name=name)
 
-        # If there is no row, return None
+        # If there is no row, the module provider does not exist
         if obj._get_db_row() is None:
 
-            if create:
-                cls._create(module=module, name=name)
+            # If set to create and auto module-provider creation
+            # is enabled in config, create the module provider
+            if create and terrareg.config.Config().AUTO_CREATE_MODULE_PROVIDER:
+                cls.create(module=module, name=name)
 
                 return obj
 

@@ -200,6 +200,19 @@ Default: `Terrareg`
 
 
 
+### AUTO_CREATE_MODULE_PROVIDER
+
+
+Whether to automatically create module providers when
+uploading module versions, either from create endpoint or hooks.
+
+If disabled, modules must be created using the module provider create endpoint (or via the web interface).
+
+
+Default: `True`
+
+
+
 ### AUTO_PUBLISH_MODULE_VERSIONS
 
 
@@ -468,7 +481,6 @@ List of namespaces, who's modules will be automatically set to verified.
 
 
 Default: ``
-
 
 
 ## Terrareg module metadata

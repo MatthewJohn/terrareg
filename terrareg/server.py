@@ -1384,7 +1384,7 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
         if module_provider is not None:
             return {'message': 'Module provider already exists'}, 400
 
-        module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+        module_provider = ModuleProvider.create(module=module, name=provider)
 
         # If git provider ID has been specified,
         # validate it and update attribute of module provider.
