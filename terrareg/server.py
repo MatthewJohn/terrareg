@@ -779,6 +779,10 @@ class ApiModuleVersionCreate(ErrorCatchingResource):
         # Get module provider and optionally create, if it doesn't exist
         module_provider = ModuleProvider.get(module=module, name=provider, create=True)
 
+        # Ensure module provider exists
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
+
         # Ensure that the module provider has a repository url configured.
         if not module_provider.get_git_clone_url():
             return {'message': 'Module provider is not configured with a repository'}, 400
