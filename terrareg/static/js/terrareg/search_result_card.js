@@ -94,6 +94,25 @@ function createSearchResultCard(parent_id, module, provider_logos) {
                 <p class="card-header-title">
                     ${provider_logo_html}
                     <a href="/modules/${module.id}">${module.namespace} / ${module.name}</a>
+                    ${module.trusted ? `
+                        <span class="tag is-info is-light result-card-label">
+                            <span class="panel-icon">
+                                <i class="fas fa-check-circle" aria-hidden="true"></i>
+                            </span>
+                            ${terraregConfig.TRUSTED_NAMESPACE_LABEL}
+                        </span>
+                    ` : `
+                        <span class="tag is-warning is-light result-card-label">
+                            ${terraregConfig.CONTRIBUTED_NAMESPACE_LABEL}
+                        </span>
+                                        `}
+                    ${module.verified ? `
+                        <span class="tag is-link is-light result-card-label">
+                            <span class="panel-icon">
+                                <i class="fas fa-thumbs-up" aria-hidden="true"></i>
+                            </span>
+                            ${terraregConfig.VERIFIED_MODULE_LABEL}
+                        </span>` : ``}
                 </p>
                 <a href="/modules/${module.id}">
                     <button class="card-header-icon" aria-label="more options">

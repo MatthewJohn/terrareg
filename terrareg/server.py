@@ -241,6 +241,11 @@ class Server(object):
         )(self._view_serve_example)
 
         # Terrareg APIs
+        ## Config endpoint
+        self._api.add_resource(
+            ApiTerraregConfig,
+            '/v1/terrareg/config'
+        )
         ## Analytics URLs /v1/terrareg/analytics
         self._api.add_resource(
             ApiTerraregGlobalStatsSummary,
@@ -717,6 +722,18 @@ class ApiTerraregHealth(ErrorCatchingResource):
         """Return static 200"""
         return {
             "message": "Ok"
+        }
+
+
+class ApiTerraregConfig(ErrorCatchingResource):
+    """Endpoint to return config used by UI."""
+
+    def _get(self):
+        """Return config."""
+        return {
+            'TRUSTED_NAMESPACE_LABEL': terrareg.config.Config().TRUSTED_NAMESPACE_LABEL,
+            'CONTRIBUTED_NAMESPACE_LABEL': terrareg.config.Config().CONTRIBUTED_NAMESPACE_LABEL,
+            'VERIFIED_MODULE_LABEL': terrareg.config.Config().VERIFIED_MODULE_LABEL
         }
 
 

@@ -247,6 +247,11 @@ class Namespace(object):
         """Whether the namespace is set to verfied in the config."""
         return self.name in terrareg.config.Config().VERIFIED_MODULE_NAMESPACES
 
+    @property
+    def trusted(self):
+        """Whether namespace is trusted."""
+        return self.name in terrareg.config.Config().TRUSTED_NAMESPACES
+
     @staticmethod
     def _validate_name(name):
         """Validate name of namespace"""
@@ -1287,6 +1292,7 @@ class ModuleVersion(TerraformSpecsObject):
             "published_at": row['published_at'].isoformat(),
             "downloads": self.get_total_downloads(),
             "verified": self._module_provider.verified,
+            "trusted": self._module_provider._module._namespace.trusted
         }
 
     def get_total_downloads(self):
