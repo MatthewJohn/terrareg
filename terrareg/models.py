@@ -1000,9 +1000,11 @@ class ModuleVersion(TerraformSpecsObject):
 
     @staticmethod
     def _validate_version(version):
-        """Validate version."""
-        if not re.match(r'^[0-9]+\.[0-9]+\.[0-9]+$', version):
+        """Validate version, checking if version is a beta version."""
+        match = re.match(r'^[0-9]+\.[0-9]+\.[0-9]+((:?-[a-z0-9]+)?)$', version)
+        if not match:
             raise InvalidVersionError('Version is invalid')
+        return bool(match.group(1))
 
     @property
     def is_submodule(self):
@@ -1105,7 +1107,7 @@ class ModuleVersion(TerraformSpecsObject):
 
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
-        self._validate_version(version)
+        self._extracted_beta_flag = self._validate_version(version)
         self._module_provider = module_provider
         self._version = version
         self._cache_db_row = None
@@ -1372,7 +1374,8 @@ class ModuleVersion(TerraformSpecsObject):
             insert_statement = db.module_version.insert().values(
                 module_provider_id=self._module_provider.pk,
                 version=self.version,
-                published=False
+                published=False,
+                beta=self._extracted_beta_flag
             )
             conn.execute(insert_statement)
 
