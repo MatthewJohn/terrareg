@@ -216,6 +216,14 @@ Default: `True`
 
 
 
+### CONTRIBUTED_NAMESPACE_LABEL
+
+Custom name for 'contributed namespace' in UI.
+
+Default: `Contributed`
+
+
+
 ### DATABASE_URL
 
 

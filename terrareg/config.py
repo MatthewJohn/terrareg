@@ -86,6 +86,11 @@ class Config:
         return os.environ.get('TRUSTED_NAMESPACE_LABEL', 'Trusted')
 
     @property
+    def CONTRIBUTED_NAMESPACE_LABEL(self):
+        """Custom name for 'contributed namespace' in UI."""
+        return os.environ.get('CONTRIBUTED_NAMESPACE_LABEL', 'Contributed')
+
+    @property
     def VERIFIED_MODULE_NAMESPACES(self):
         """
         List of namespaces, who's modules will be automatically set to verified.
