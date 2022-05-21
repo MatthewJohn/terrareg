@@ -94,9 +94,9 @@ class TerraregIntegrationTest:
                         data = {
                             'module_provider_id': module_provider_attributes['id'],
                             'version': module_version,
+                            # Default beta flag to false
+                            'beta': False
                         }
-                        # Default beta flag to false
-                        data['beta'] = False
                         # Update column values from test data
                         data.update(module_provider_test_data['versions'][module_version])
 
