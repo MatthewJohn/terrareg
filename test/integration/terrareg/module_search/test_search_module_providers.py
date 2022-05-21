@@ -152,6 +152,25 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
         for expected_module_provider in expected_module_provider_ids:
             assert expected_module_provider in resulting_module_provider_ids
 
+    @pytest.mark.parametrize('module_name,expected_versions', [
+        ('contributedmodule-withbetaversion', ['1.2.3']),
+        ('contributedmodule-onlybeta', []),
+
+        ('verifiedmodule-withbetaversion', ['1.2.3']),
+        ('verifiedmodule-onlybeta', [])
+    ])
+    def test_search_beta_versions(self, module_name, expected_versions):
+        """Test search excludes beta versions"""
+        result = ModuleSearch.search_module_providers(
+            offset=0, limit=50,
+            query=module_name,
+            namespaces=['modulesearch']
+        )
+
+        # Ensure that if at least one version is present,
+        # the provide is returned
+        assert result.count == (1 if len(expected_versions) else 0)
+
     @pytest.mark.parametrize('namespace,expected_module_provider_ids', [
         ('testnotexist', []),
 
