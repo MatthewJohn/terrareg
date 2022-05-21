@@ -74,10 +74,12 @@ class ModuleSearch(object):
                     )
                 )
 
-        # Filter search by published module versions
+        # Filter search by published module versions,
+        # remove beta versions
         # and group by module provider ID
         select = select.where(
-            db.module_version.c.published == True
+            db.module_version.c.published == True,
+            db.module_version.c.beta == False
         ).group_by(
             db.module_provider.c.id
         )
@@ -262,7 +264,8 @@ class ModuleSearch(object):
             db.module_version,
             db.module_provider
         ).where(
-            db.module_version.c.published == True
+            db.module_version.c.published == True,
+            db.module_version.c.beta == False
         ).order_by(db.module_version.c.published_at.desc(), 
         ).limit(1)
 
