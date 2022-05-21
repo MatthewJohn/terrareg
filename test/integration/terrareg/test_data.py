@@ -27,7 +27,8 @@ integration_test_data = {
             'versions': {
                 '1.5.4': {'published': True}, '2.1.0': {'published': True}, '0.1.1': {'published': True},
                 '10.23.0': {'published': True}, '0.1.10': {'published': True}, '0.0.9': {'published': True},
-                '0.1.09': {'published': True}, '0.1.8': {'published': True}
+                '0.1.09': {'published': True}, '0.1.8': {'published': True},
+                '23.2.3-beta': {'published': True, 'beta': True}, '5.21.2': {}
             }
         }}
     },
@@ -188,6 +189,19 @@ integration_test_data = {
                 '2.0.0': {'published': True}
             }
         }},
+        'contributedmodule-withbetaversion': {'aws': {
+            'id': 49,
+            'versions': {
+                '1.2.3': {'published': True},
+                '2.0.0-beta': {'published': True, 'beta': True}
+            }
+        }},
+        'contributedmodule-onlybeta': {'aws': {
+            'id': 50,
+            'versions': {
+                '2.5.0-beta': {'published': True, 'beta': True}
+            }
+        }},
         'contributedmodule-differentprovider': {'gcp': {
             'id': 27,
             'versions': {
@@ -211,6 +225,19 @@ integration_test_data = {
             'versions': {
                 '1.2.3': {'published': True},
                 '2.0.0': {'published': True}
+            }
+        }},
+        'verifiedmodule-withbetaversion': {'aws': {
+            'id': 51,
+            'versions': {
+                '1.2.3': {'published': True},
+                '2.0.0-beta': {'published': True, 'beta': True}
+            }
+        }},
+        'verifiedmodule-onybeta': {'aws': {
+            'id': 52,
+            'versions': {
+                '2.0.0-beta': {'published': True, 'beta': True}
             }
         }},
         'verifiedmodule-differentprovider': {'gcp': {

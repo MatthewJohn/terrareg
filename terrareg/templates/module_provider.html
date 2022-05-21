@@ -11,7 +11,7 @@
         Version
         <div class="select is-small">
             <select onchange="selectVersion(event);">
-                {% for module_version_itx in module_provider.get_versions() %}
+                {% for module_version_itx in module_provider.get_versions(include_beta=False) %}
                 <option
                         value="{{ module_version_itx.get_view_url() }}"
                         {% if module_version_itx.version == module_version.version %}selected{% endif %}

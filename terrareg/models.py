@@ -1,6 +1,6 @@
 
 import os
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 import json
 import re
 import sqlalchemy
@@ -810,7 +810,8 @@ class ModuleProvider(object):
             db.module_provider.c.namespace == self._module._namespace.name,
             db.module_provider.c.module == self._module.name,
             db.module_provider.c.provider == self.name,
-            db.module_version.c.published == True
+            db.module_version.c.published == True,
+            db.module_version.c.beta == False
         )
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
@@ -819,7 +820,7 @@ class ModuleProvider(object):
             rows = [r for r in res]
 
         # Sort rows by semantec versioning
-        rows.sort(key=lambda x: StrictVersion(x['version']), reverse=True)
+        rows.sort(key=lambda x: LooseVersion(x['version']), reverse=True)
 
         # Ensure at least one row
         if not rows:
@@ -837,7 +838,7 @@ class ModuleProvider(object):
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
 
-    def get_versions(self):
+    def get_versions(self, include_beta=True):
         """Return all module provider versions."""
         db = Database.get()
 
@@ -849,6 +850,12 @@ class ModuleProvider(object):
             db.module_provider.c.provider == self.name,
             db.module_version.c.published == True
         )
+        # Remove beta versions if not including them
+        if not include_beta:
+            select = select.where(
+                db.module_version.c.beta == False
+            )
+
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
             module_versions = [
@@ -856,7 +863,7 @@ class ModuleProvider(object):
                 for r in res
             ]
         module_versions.sort(
-            key=lambda x: StrictVersion(x.version),
+            key=lambda x: LooseVersion(x.version),
             reverse=True
         )
         return module_versions
@@ -1000,9 +1007,11 @@ class ModuleVersion(TerraformSpecsObject):
 
     @staticmethod
     def _validate_version(version):
-        """Validate version."""
-        if not re.match(r'^[0-9]+\.[0-9]+\.[0-9]+$', version):
+        """Validate version, checking if version is a beta version."""
+        match = re.match(r'^[0-9]+\.[0-9]+\.[0-9]+((:?-[a-z0-9]+)?)$', version)
+        if not match:
             raise InvalidVersionError('Version is invalid')
+        return bool(match.group(1))
 
     @property
     def is_submodule(self):
@@ -1075,6 +1084,11 @@ class ModuleVersion(TerraformSpecsObject):
         return safe_join_paths(self.base_directory, self.archive_name_zip)
 
     @property
+    def beta(self):
+        """Return whether module version is a beta version."""
+        return self._get_db_row()['beta']
+
+    @property
     def pk(self):
         """Return database ID of module version."""
         return self._get_db_row()['id']
@@ -1105,7 +1119,7 @@ class ModuleVersion(TerraformSpecsObject):
 
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
-        self._validate_version(version)
+        self._extracted_beta_flag = self._validate_version(version)
         self._module_provider = module_provider
         self._version = version
         self._cache_db_row = None
@@ -1130,6 +1144,10 @@ class ModuleVersion(TerraformSpecsObject):
 
     def get_terraform_example_version_string(self):
         """Return formatted string of version parameter for example terraform."""
+        # For beta versions, pass an exact version constraint.
+        if self.beta:
+            return self.version
+
         # Generate list of template values for formatting
         major, minor, patch = self.version.split('.')
         kwargs = {'major': major, 'minor': minor, 'patch': patch}
@@ -1372,7 +1390,8 @@ class ModuleVersion(TerraformSpecsObject):
             insert_statement = db.module_version.insert().values(
                 module_provider_id=self._module_provider.pk,
                 version=self.version,
-                published=False
+                published=False,
+                beta=self._extracted_beta_flag
             )
             conn.execute(insert_statement)
 

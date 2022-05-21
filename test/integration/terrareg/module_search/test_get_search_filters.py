@@ -38,8 +38,8 @@ class TestGetSearchFilters(TerraregIntegrationTest):
         with mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', []):
             results = ModuleSearch.get_search_filters(query='contributedmodule')
 
-        assert results == {'providers': {'aws': 2, 'gcp': 1}, 'namespaces': {'modulesearch': 3},
-                           'contributed': 3, 'trusted_namespaces': 0, 'verified': 0}
+        assert results == {'providers': {'aws': 3, 'gcp': 1}, 'namespaces': {'modulesearch': 4},
+                           'contributed': 4, 'trusted_namespaces': 0, 'verified': 0}
 
     def test_unpublished_module_version(self):
         """Test search with unpubished module provider version."""
@@ -74,8 +74,8 @@ class TestGetSearchFilters(TerraregIntegrationTest):
         with mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['doestexist','modulesearch','nordoesthis']):
             results = ModuleSearch.get_search_filters(query='contributedmodule')
 
-        assert results == {'providers': {'aws': 2, 'gcp': 1}, 'namespaces': {'modulesearch': 3},
-                           'contributed': 0, 'trusted_namespaces': 3, 'verified': 0}
+        assert results == {'providers': {'aws': 3, 'gcp': 1}, 'namespaces': {'modulesearch': 4},
+                           'contributed': 0, 'trusted_namespaces': 4, 'verified': 0}
 
     def test_trusted_unpublished_module(self):
         """Test search with unpubished module provider version."""
@@ -110,8 +110,8 @@ class TestGetSearchFilters(TerraregIntegrationTest):
         with mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['doestexist','modulesearch','nordoesthis']):
             results = ModuleSearch.get_search_filters(query='verifiedmodule')
 
-        assert results == {'providers': {'aws': 2, 'gcp': 1}, 'namespaces': {'modulesearch': 3},
-                           'contributed': 0, 'trusted_namespaces': 3, 'verified': 3}
+        assert results == {'providers': {'aws': 3, 'gcp': 1}, 'namespaces': {'modulesearch': 4},
+                           'contributed': 0, 'trusted_namespaces': 4, 'verified': 3}
 
     def test_verified_unpublished_modules(self):
         """Test search with unpubished module provider version."""
@@ -129,6 +129,6 @@ class TestGetSearchFilters(TerraregIntegrationTest):
             # Search based on partial namespace match
             results = ModuleSearch.get_search_filters(query='modulesearch')
 
-        assert results == {'providers': {'aws': 9, 'gcp': 2},
-                           'namespaces': {'modulesearch': 6, 'modulesearch-contributed': 2, 'modulesearch-trusted': 3},
-                           'contributed': 2, 'trusted_namespaces': 9, 'verified': 3}
+        assert results == {'providers': {'aws': 11, 'gcp': 2},
+                           'namespaces': {'modulesearch': 8, 'modulesearch-contributed': 2, 'modulesearch-trusted': 3},
+                           'contributed': 2, 'trusted_namespaces': 11, 'verified': 3}

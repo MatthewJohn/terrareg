@@ -161,6 +161,8 @@ class Database():
                 nullable=False
             ),
             sqlalchemy.Column('version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            # Whether the module version is a beta version
+            sqlalchemy.Column('beta', sqlalchemy.BOOLEAN, nullable=False),
             sqlalchemy.Column('owner', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('description', sqlalchemy.String(LARGE_COLUMN_SIZE)),
             sqlalchemy.Column('repo_base_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
