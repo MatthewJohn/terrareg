@@ -25,7 +25,7 @@ def upgrade():
 
     # Disable nullable flag in column
     with op.batch_alter_table('module_version', schema=None) as batch_op:
-        batch_op.alter_column('beta', nullable=False)
+        batch_op.alter_column('beta', existing_type=sa.BOOLEAN(), nullable=False)
 
 
 def downgrade():
