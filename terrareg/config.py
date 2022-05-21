@@ -209,6 +209,16 @@ class Config:
         return os.environ.get('AUTO_PUBLISH_MODULE_VERSIONS', 'True') == 'True'
 
     @property
+    def AUTO_CREATE_MODULE_PROVIDER(self):
+        """
+        Whether to automatically create module providers when
+        uploading module versions, either from create endpoint or hooks.
+
+        If disabled, modules must be created using the module provider create endpoint (or via the web interface).
+        """
+        return os.environ.get('AUTO_CREATE_MODULE_PROVIDER', 'True') == 'True'
+
+    @property
     def MODULES_DIRECTORY(self):
         """
         Directory with a module's source that contains sub-modules.
