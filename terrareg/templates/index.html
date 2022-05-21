@@ -2,9 +2,11 @@
 
 {% block content %}
 
+<script src="/static/js/terrareg/config.js"></script>
 <script src="/static/js/terrareg/search_result_card.js"></script>
 
 <script>
+
     // Obtain map of all provider logos
     provider_logos = {};
     $.get('/v1/terrareg/provider_logos', (data) => {
@@ -17,11 +19,14 @@
         $('#version-count').html(data.module_versions);
         $('#download-count').html(data.downloads);
     });
-    $.get("/v1/terrareg/analytics/global/most_recently_published_module_version", function(data, status) {
-        createSearchResultCard('most-recent-module-version', data, provider_logos);
-    });
-    $.get("/v1/terrareg/analytics/global/most_downloaded_module_provider_this_week", function(data, status) {
-        createSearchResultCard('most-downloaded-this-week', data, provider_logos);
+
+    $(document).ready(function () {
+        $.get("/v1/terrareg/analytics/global/most_recently_published_module_version", function(data, status) {
+            createSearchResultCard('most-recent-module-version', data, provider_logos);
+        });
+        $.get("/v1/terrareg/analytics/global/most_downloaded_module_provider_this_week", function(data, status) {
+            createSearchResultCard('most-downloaded-this-week', data, provider_logos);
+        });
     });
     
 </script>

@@ -88,7 +88,7 @@ class TestApiModuleList(TerraregUnitTest):
                 'namespace': 'testnamespace', 'name': 'mock-module',
                 'version': '1.2.3', 'provider': 'testprovider',
                 'description': 'Mock description', 'source': 'http://github.com/testnamespace/mock-module',
-                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True}
+                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True, 'trusted': False}
             ]
         }
 
@@ -115,7 +115,7 @@ class TestApiModuleList(TerraregUnitTest):
                 'namespace': 'testnamespace', 'name': 'mock-module',
                 'version': '1.2.3', 'provider': 'testprovider',
                 'description': 'Mock description', 'source': 'http://github.com/testnamespace/mock-module',
-                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True}
+                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True, 'trusted': False}
             ]
         }
 

@@ -229,6 +229,14 @@ Default: `True`
 
 
 
+### CONTRIBUTED_NAMESPACE_LABEL
+
+Custom name for 'contributed namespace' in UI.
+
+Default: `Contributed`
+
+
+
 ### DATABASE_URL
 
 
@@ -265,7 +273,7 @@ Default: `False`
 
 Whether uploaded modules, that provide an external URL for the artifact,
 should be removed after analysis.
-If enabled, module versions with externally hosted artifacts cannot be re-analysed after upload. 
+If enabled, module versions with externally hosted artifacts cannot be re-analysed after upload.
 
 
 Default: `False`
@@ -436,6 +444,14 @@ Default: ``
 
 
 
+### TRUSTED_NAMESPACE_LABEL
+
+Custom name for 'trusted namespace' in UI.
+
+Default: `Trusted`
+
+
+
 ### UPLOAD_API_KEYS
 
 
@@ -447,6 +463,14 @@ To disable authentication for upload endpoint, leave empty.
 
 
 Default: ``
+
+
+
+### VERIFIED_MODULE_LABEL
+
+Custom name for 'verified module' in UI.
+
+Default: `Verified`
 
 
 
