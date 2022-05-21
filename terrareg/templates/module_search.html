@@ -133,7 +133,7 @@
             $('#searchQueryBreadcrumbParent')[0].style.display = 'flex';
 
             // Update link and text in search query breadcrumb
-            document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search' + queryString);
+            document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search?q=' + encodeURIComponent(searchQuery));
             document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
 
             if (new_offset === undefined) {
@@ -259,14 +259,16 @@
 
     navbar_search_modules = performSearch;
 
-    const queryString = window.location.search;
-    const urlParams = new URLSearchParams(queryString);
-    const searchQuery = urlParams.get('q');
+    $(document).ready(function () {
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        const searchQuery = urlParams.get('q');
 
-    if (searchQuery) {
-        $('#navBarSearchInput').val(searchQuery);
-    }
-    performSearch();
+        if (searchQuery) {
+            $('#navBarSearchInput').val(searchQuery);
+        }
+        performSearch();
+    });
 </script>
 
 {% endblock %}
