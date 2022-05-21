@@ -805,7 +805,8 @@ class ModuleProvider(object):
             db.module_provider.c.namespace == self._module._namespace.name,
             db.module_provider.c.module == self._module.name,
             db.module_provider.c.provider == self.name,
-            db.module_version.c.published == True
+            db.module_version.c.published == True,
+            db.module_version.c.beta == False
         )
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
