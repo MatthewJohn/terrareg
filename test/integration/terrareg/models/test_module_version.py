@@ -30,22 +30,23 @@ class TestModuleVersion(TerraregIntegrationTest):
         with pytest.raises(terrareg.errors.InvalidVersionError):
             ModuleVersion(module_provider=module_provider, version=version)
 
-    @pytest.mark.parametrize('version', [
-        '1.1.1',
-        '13.14.16',
-        '1.10.10',
-        '01.01.01',  # @TODO Should this be allowed?
-        '1.2.3-alpha',
-        '1.2.3-beta',
-        '1.2.3-anothersuffix1',
-        '1.2.2-123'
+    @pytest.mark.parametrize('version,beta', [
+        ('1.1.1', False),
+        ('13.14.16', False),
+        ('1.10.10', False),
+        ('01.01.01', False),  # @TODO Should this be allowed?
+        ('1.2.3-alpha', True),
+        ('1.2.3-beta', True),
+        ('1.2.3-anothersuffix1', True),
+        ('1.2.2-123', True)
     ])
-    def test_valid_module_versions(self, version):
+    def test_valid_module_versions(self, version, beta):
         """Test valid module versions"""
         namespace = Namespace(name='test')
         module = Module(namespace=namespace, name='test')
         module_provider = ModuleProvider(module=module, name='test')
-        ModuleVersion(module_provider=module_provider, version=version)
+        module_version = ModuleVersion(module_provider=module_provider, version=version)
+        assert module_version._extracted_beta_flag == beta
 
     def test_create_db_row(self):
         """Test creating DB row"""
