@@ -1,6 +1,6 @@
 
 import os
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 import json
 import re
 import sqlalchemy
@@ -814,7 +814,7 @@ class ModuleProvider(object):
             rows = [r for r in res]
 
         # Sort rows by semantec versioning
-        rows.sort(key=lambda x: StrictVersion(x['version']), reverse=True)
+        rows.sort(key=lambda x: LooseVersion(x['version']), reverse=True)
 
         # Ensure at least one row
         if not rows:
@@ -857,7 +857,7 @@ class ModuleProvider(object):
                 for r in res
             ]
         module_versions.sort(
-            key=lambda x: StrictVersion(x.version),
+            key=lambda x: LooseVersion(x.version),
             reverse=True
         )
         return module_versions
