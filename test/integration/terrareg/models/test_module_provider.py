@@ -72,10 +72,35 @@ class TestModuleProvider(TerraregIntegrationTest):
         module_provider = ModuleProvider.get(module=module, name='testprovider')
 
         assert [mv.version for mv in module_provider.get_versions()] == [
+            '23.2.3-beta', '10.23.0', '2.1.0',
+            '1.5.4', '0.1.10', '0.1.09', '0.1.8',
+            '0.1.1', '0.0.9'
+        ]
+
+    def test_module_provider_get_versions_without_beta(self):
+        """Test that a module provider with versions in the wrong order are still returned correctly."""
+        namespace = Namespace(name='testnamespace')
+        module = Module(namespace=namespace, name='wrongversionorder')
+        module_provider = ModuleProvider.get(module=module, name='testprovider')
+
+        assert [mv.version for mv in module_provider.get_versions(include_beta=False)] == [
             '10.23.0', '2.1.0', '1.5.4',
             '0.1.10', '0.1.09', '0.1.8',
             '0.1.1', '0.0.9'
         ]
+
+    def test_module_provider_get_latest_version(self):
+        """
+        Test that a module provider with versions in the wrong order return correct
+        latest version and ignores beta version.
+        """
+        namespace = Namespace(name='testnamespace')
+        module = Module(namespace=namespace, name='wrongversionorder')
+        module_provider = ModuleProvider.get(module=module, name='testprovider')
+        module_version = module_provider.get_latest_version()
+
+        assert module_version.version == '10.23.0'
+
 
     @pytest.mark.parametrize('module_name,module_version,path,expected_browse_url', [
         # Test no browse URL in any configuration
@@ -517,7 +542,7 @@ class TestModuleProvider(TerraregIntegrationTest):
 
     def test_get_total_count(self):
         """Test get_total_count method"""
-        assert ModuleProvider.get_total_count() == 42
+        assert ModuleProvider.get_total_count() == 44
 
     def test_get_module_provider_existing(self):
         """Attempt to get existing module provider"""
