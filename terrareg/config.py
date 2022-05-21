@@ -81,6 +81,16 @@ class Config:
         ]
 
     @property
+    def TRUSTED_NAMESPACE_LABEL(self):
+        """Custom name for 'trusted namespace' in UI."""
+        return os.environ.get('TRUSTED_NAMESPACE_LABEL', 'Trusted')
+
+    @property
+    def CONTRIBUTED_NAMESPACE_LABEL(self):
+        """Custom name for 'contributed namespace' in UI."""
+        return os.environ.get('CONTRIBUTED_NAMESPACE_LABEL', 'Contributed')
+
+    @property
     def VERIFIED_MODULE_NAMESPACES(self):
         """
         List of namespaces, who's modules will be automatically set to verified.
@@ -90,11 +100,16 @@ class Config:
         ]
 
     @property
+    def VERIFIED_MODULE_LABEL(self):
+        """Custom name for 'verified module' in UI."""
+        return os.environ.get('VERIFIED_MODULE_LABEL', 'Verified')
+
+    @property
     def DELETE_EXTERNALLY_HOSTED_ARTIFACTS(self):
         """
         Whether uploaded modules, that provide an external URL for the artifact,
         should be removed after analysis.
-        If enabled, module versions with externally hosted artifacts cannot be re-analysed after upload. 
+        If enabled, module versions with externally hosted artifacts cannot be re-analysed after upload.
         """
         return os.environ.get('DELETE_EXTERNALLY_HOSTED_ARTIFACTS', 'False') == 'True'
 

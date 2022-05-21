@@ -1,4 +1,5 @@
 
+from unittest import mock
 from test.unit.terrareg import (
     MockModuleProvider, MockModule, MockNamespace,
     client, mocked_server_namespace_fixture,
@@ -20,7 +21,30 @@ class TestApiModuleProviderDetails(TerraregUnitTest):
             'description': 'Mock description',
             'source': 'http://github.com/testnamespace/mock-module',
             'published_at': '2020-01-01T23:18:12',
-            'downloads': 0, 'verified': True,
+            'downloads': 0, 'verified': True, 'trusted': False,
+            'root': {
+                'path': '', 'readme': 'Mock module README file',
+                'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],
+                'provider_dependencies': [], 'resources': []
+            },
+            'submodules': [], 'providers': ['testprovider'], 'versions': ['1.2.3']
+        }
+
+        assert res.status_code == 200
+
+    @setup_test_data()
+    def test_existing_trusted_module_provider(self, client, mocked_server_namespace_fixture):
+        with mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['testnamespace']):
+            res = client.get('/v1/modules/testnamespace/mock-module/testprovider')
+
+        assert res.json == {
+            'id': 'testnamespace/mock-module/testprovider/1.2.3', 'owner': 'Mock Owner',
+            'namespace': 'testnamespace', 'name': 'mock-module',
+            'version': '1.2.3', 'provider': 'testprovider',
+            'description': 'Mock description',
+            'source': 'http://github.com/testnamespace/mock-module',
+            'published_at': '2020-01-01T23:18:12',
+            'downloads': 0, 'verified': True, 'trusted': True,
             'root': {
                 'path': '', 'readme': 'Mock module README file',
                 'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],
@@ -42,7 +66,7 @@ class TestApiModuleProviderDetails(TerraregUnitTest):
             'description': 'Mock description',
             'source': None,
             'published_at': '2020-01-01T23:18:12',
-            'downloads': 0, 'verified': False,
+            'downloads': 0, 'verified': False, 'trusted': False,
             'root': {
                 'path': '', 'readme': 'Mock module README file',
                 'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],
