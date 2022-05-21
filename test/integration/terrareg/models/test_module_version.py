@@ -92,7 +92,8 @@ class TestModuleVersion(TerraregIntegrationTest):
                 id=10001,
                 module_provider_id=10000,
                 version='1.1.0',
-                published=True
+                published=True,
+                beta=False
             ))
 
             # Create submodules
