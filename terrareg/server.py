@@ -331,6 +331,8 @@ class Server(object):
             terrareg_application_name=terrareg.config.Config().APPLICATION_NAME,
             terrareg_logo_url=terrareg.config.Config().LOGO_URL,
             ALLOW_MODULE_HOSTING=terrareg.config.Config().ALLOW_MODULE_HOSTING,
+            TRUSTED_NAMESPACE_LABEL=terrareg.config.Config().TRUSTED_NAMESPACE_LABEL,
+            VERIFIED_MODULE_LABEL=terrareg.config.Config().VERIFIED_MODULE_LABEL,
             csrf_token=get_csrf_token()
         )
 
