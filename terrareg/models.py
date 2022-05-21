@@ -837,7 +837,7 @@ class ModuleProvider(object):
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
 
-    def get_versions(self):
+    def get_versions(self, include_beta=True):
         """Return all module provider versions."""
         db = Database.get()
 
@@ -849,6 +849,12 @@ class ModuleProvider(object):
             db.module_provider.c.provider == self.name,
             db.module_version.c.published == True
         )
+        # Remove beta versions if not including them
+        if not include_beta:
+            select = select.where(
+                db.module_version.c.beta == False
+            )
+
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
             module_versions = [
