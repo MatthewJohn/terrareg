@@ -200,7 +200,10 @@ class TestModuleVersion(TerraregIntegrationTest):
         ('<= {major_plus_one}.{minor_plus_one}.{patch_plus_one}', '1.5.0', '<= 2.6.1'),
         ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '4.3.2', '>= 3.2.1'),
         ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '0.0.0', '>= 0.0.0'),
-        ('< {major_plus_one}.0.0', '10584.321.564', '< 10585.0.0')
+        ('< {major_plus_one}.0.0', '10584.321.564', '< 10585.0.0'),
+        # Test that beta version returns the version and
+        # ignores the version template
+        ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '5.6.23-beta', '5.6.23-beta')
     ])
     def test_get_terraform_example_version_string(self, template, version, expected_string):
         """Test get_terraform_example_version_string method"""

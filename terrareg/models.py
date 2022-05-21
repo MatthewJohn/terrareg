@@ -1079,6 +1079,11 @@ class ModuleVersion(TerraformSpecsObject):
         return safe_join_paths(self.base_directory, self.archive_name_zip)
 
     @property
+    def beta(self):
+        """Return whether module version is a beta version."""
+        return self._get_db_row()['beta']
+
+    @property
     def pk(self):
         """Return database ID of module version."""
         return self._get_db_row()['id']
@@ -1134,6 +1139,10 @@ class ModuleVersion(TerraformSpecsObject):
 
     def get_terraform_example_version_string(self):
         """Return formatted string of version parameter for example terraform."""
+        # For beta versions, pass an exact version constraint.
+        if self.beta:
+            return self.version
+
         # Generate list of template values for formatting
         major, minor, patch = self.version.split('.')
         kwargs = {'major': major, 'minor': minor, 'patch': patch}
