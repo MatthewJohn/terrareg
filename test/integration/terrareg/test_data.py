@@ -27,7 +27,8 @@ integration_test_data = {
             'versions': {
                 '1.5.4': {'published': True}, '2.1.0': {'published': True}, '0.1.1': {'published': True},
                 '10.23.0': {'published': True}, '0.1.10': {'published': True}, '0.0.9': {'published': True},
-                '0.1.09': {'published': True}, '0.1.8': {'published': True}
+                '0.1.09': {'published': True}, '0.1.8': {'published': True},
+                '23.2.3-beta': {'published': True, 'beta': True}, '5.21.2': {}
             }
         }}
     },
