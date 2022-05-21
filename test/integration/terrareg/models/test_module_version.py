@@ -69,6 +69,39 @@ class TestModuleVersion(TerraregIntegrationTest):
         assert new_db_row['published'] == False
         assert new_db_row['version'] == '1.0.0'
 
+        assert new_db_row['beta'] == False
+
+        for attr in ['description', 'module_details', 'owner',
+                     'published_at', 'readme_content', 'repo_base_url_template',
+                     'repo_browse_url_template', 'repo_clone_url_template',
+                     'variable_template']:
+            assert new_db_row[attr] == None
+
+    def test_create_beta_version(self):
+        """Test creating DB row for beta version"""
+        namespace = Namespace(name='testcreation')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='testprovider', create=True)
+        module_provider_row = module_provider._get_db_row()
+
+        module_version = ModuleVersion(module_provider=module_provider, version='1.0.0-beta')
+
+        # Ensure that no DB row is returned for new module version
+        assert module_version._get_db_row() == None
+
+        # Insert module version into database
+        module_version._create_db_row()
+
+        # Ensure that a DB row is now returned
+        new_db_row = module_version._get_db_row()
+        assert new_db_row['module_provider_id'] == module_provider_row['id']
+        assert type(new_db_row['id']) == int
+
+        assert new_db_row['published'] == False
+        assert new_db_row['version'] == '1.0.0-beta'
+
+        assert new_db_row['beta'] == True
+
         for attr in ['description', 'module_details', 'owner',
                      'published_at', 'readme_content', 'repo_base_url_template',
                      'repo_browse_url_template', 'repo_clone_url_template',
