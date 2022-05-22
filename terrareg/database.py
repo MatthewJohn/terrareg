@@ -44,6 +44,7 @@ class Database():
         self._module_version = None
         self._sub_module = None
         self._analytics = None
+        self._example_file = None
 
     @property
     def git_provider(self):
@@ -79,6 +80,13 @@ class Database():
         if self._analytics is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._analytics
+
+    @property
+    def example_file(self):
+        """Return analytics table."""
+        if self._example_file is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._example_file
 
     @classmethod
     def reset(cls):
