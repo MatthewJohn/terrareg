@@ -91,10 +91,17 @@ class TerraregIntegrationTest:
                             module_provider_test_data['versions']
                             if 'versions' in module_provider_test_data else
                             []):
+                        data = {
+                            'module_provider_id': module_provider_attributes['id'],
+                            'version': module_version,
+                            # Default beta flag to false
+                            'beta': False
+                        }
+                        # Update column values from test data
+                        data.update(module_provider_test_data['versions'][module_version])
+
                         insert = Database.get().module_version.insert().values(
-                            module_provider_id=module_provider_attributes['id'],
-                            version=module_version,
-                            **module_provider_test_data['versions'][module_version]
+                            **data
                         )
                         with Database.get_engine().connect() as conn:
                             conn.execute(insert)

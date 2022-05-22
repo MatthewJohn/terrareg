@@ -27,6 +27,32 @@ class Config:
         return int(os.environ.get('LISTEN_PORT', 5000))
 
     @property
+    def SSL_CERT_PRIVATE_KEY(self):
+        """
+        Path to SSL private certificate key.
+
+        If running in a container, the key must be mounted inside the container.
+        This value must be set to the path of the key within the container.
+
+        This must be set in accordance with SSL_CERT_PUBLIC_KEY - both must either be
+        set or left empty.
+        """
+        return os.environ.get('SSL_CERT_PRIVATE_KEY', None)
+
+    @property
+    def SSL_CERT_PUBLIC_KEY(self):
+        """
+        Path to SSL public key.
+
+        If running in a container, the key must be mounted inside the container.
+        This value must be set to the path of the key within the container.
+
+        This must be set in accordance with SSL_CERT_PRIVATE_KEY - both must either be
+        set or left empty.
+        """
+        return os.environ.get('SSL_CERT_PUBLIC_KEY', None)
+
+    @property
     def ALLOW_UNIDENTIFIED_DOWNLOADS(self):
         """
         Whether modules can be downloaded with terraform
@@ -81,6 +107,16 @@ class Config:
         ]
 
     @property
+    def TRUSTED_NAMESPACE_LABEL(self):
+        """Custom name for 'trusted namespace' in UI."""
+        return os.environ.get('TRUSTED_NAMESPACE_LABEL', 'Trusted')
+
+    @property
+    def CONTRIBUTED_NAMESPACE_LABEL(self):
+        """Custom name for 'contributed namespace' in UI."""
+        return os.environ.get('CONTRIBUTED_NAMESPACE_LABEL', 'Contributed')
+
+    @property
     def VERIFIED_MODULE_NAMESPACES(self):
         """
         List of namespaces, who's modules will be automatically set to verified.
@@ -90,11 +126,16 @@ class Config:
         ]
 
     @property
+    def VERIFIED_MODULE_LABEL(self):
+        """Custom name for 'verified module' in UI."""
+        return os.environ.get('VERIFIED_MODULE_LABEL', 'Verified')
+
+    @property
     def DELETE_EXTERNALLY_HOSTED_ARTIFACTS(self):
         """
         Whether uploaded modules, that provide an external URL for the artifact,
         should be removed after analysis.
-        If enabled, module versions with externally hosted artifacts cannot be re-analysed after upload. 
+        If enabled, module versions with externally hosted artifacts cannot be re-analysed after upload.
         """
         return os.environ.get('DELETE_EXTERNALLY_HOSTED_ARTIFACTS', 'False') == 'True'
 
@@ -207,6 +248,16 @@ class Config:
         NOTE: Even whilst in an unpublished state, the module version can still be accessed directly, but not used within terraform.
         """
         return os.environ.get('AUTO_PUBLISH_MODULE_VERSIONS', 'True') == 'True'
+
+    @property
+    def AUTO_CREATE_MODULE_PROVIDER(self):
+        """
+        Whether to automatically create module providers when
+        uploading module versions, either from create endpoint or hooks.
+
+        If disabled, modules must be created using the module provider create endpoint (or via the web interface).
+        """
+        return os.environ.get('AUTO_CREATE_MODULE_PROVIDER', 'True') == 'True'
 
     @property
     def MODULES_DIRECTORY(self):

@@ -48,6 +48,9 @@ integration-tests:
     - unit-tests
   script:
     - pip install --proxy=$http_proxy -r requirements-dev.txt
+    # Perform database migration
+    - alembic upgrade head
+    # Run integration tests
     - coverage run -m pytest --verbose ./test/integration
     - coverage report
     - coverage xml
@@ -100,6 +103,7 @@ release:
       - node_modules/
   variables:
     GITLAB_TOKEN: $GITLAB_TOKEN
+    GIT_STRATEGY: clone
   script:
     - semantic-release
   only:

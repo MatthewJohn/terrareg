@@ -200,6 +200,19 @@ Default: `Terrareg`
 
 
 
+### AUTO_CREATE_MODULE_PROVIDER
+
+
+Whether to automatically create module providers when
+uploading module versions, either from create endpoint or hooks.
+
+If disabled, modules must be created using the module provider create endpoint (or via the web interface).
+
+
+Default: `True`
+
+
+
 ### AUTO_PUBLISH_MODULE_VERSIONS
 
 
@@ -213,6 +226,14 @@ NOTE: Even whilst in an unpublished state, the module version can still be acces
 
 
 Default: `True`
+
+
+
+### CONTRIBUTED_NAMESPACE_LABEL
+
+Custom name for 'contributed namespace' in UI.
+
+Default: `Contributed`
 
 
 
@@ -252,7 +273,7 @@ Default: `False`
 
 Whether uploaded modules, that provide an external URL for the artifact,
 should be removed after analysis.
-If enabled, module versions with externally hosted artifacts cannot be re-analysed after upload. 
+If enabled, module versions with externally hosted artifacts cannot be re-analysed after upload.
 
 
 Default: `False`
@@ -392,6 +413,38 @@ Default: ``
 
 
 
+### SSL_CERT_PRIVATE_KEY
+
+
+Path to SSL private certificate key.
+
+If running in a container, the key must be mounted inside the container.
+This value must be set to the path of the key within the container.
+
+This must be set in accordance with SSL_CERT_PUBLIC_KEY - both must either be
+set or left empty.
+
+
+Default: ``
+
+
+
+### SSL_CERT_PUBLIC_KEY
+
+
+Path to SSL public key.
+
+If running in a container, the key must be mounted inside the container.
+This value must be set to the path of the key within the container.
+
+This must be set in accordance with SSL_CERT_PRIVATE_KEY - both must either be
+set or left empty.
+
+
+Default: ``
+
+
+
 ### TERRAFORM_EXAMPLE_VERSION_TEMPLATE
 
 
@@ -423,6 +476,14 @@ Default: ``
 
 
 
+### TRUSTED_NAMESPACE_LABEL
+
+Custom name for 'trusted namespace' in UI.
+
+Default: `Trusted`
+
+
+
 ### UPLOAD_API_KEYS
 
 
@@ -437,6 +498,14 @@ Default: ``
 
 
 
+### VERIFIED_MODULE_LABEL
+
+Custom name for 'verified module' in UI.
+
+Default: `Verified`
+
+
+
 ### VERIFIED_MODULE_NAMESPACES
 
 
@@ -444,7 +513,6 @@ List of namespaces, who's modules will be automatically set to verified.
 
 
 Default: ``
-
 
 
 ## Terrareg module metadata

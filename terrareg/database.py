@@ -44,6 +44,7 @@ class Database():
         self._module_version = None
         self._sub_module = None
         self._analytics = None
+        self._example_file = None
 
     @property
     def git_provider(self):
@@ -79,6 +80,13 @@ class Database():
         if self._analytics is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._analytics
+
+    @property
+    def example_file(self):
+        """Return analytics table."""
+        if self._example_file is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._example_file
 
     @classmethod
     def reset(cls):
@@ -161,6 +169,8 @@ class Database():
                 nullable=False
             ),
             sqlalchemy.Column('version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            # Whether the module version is a beta version
+            sqlalchemy.Column('beta', sqlalchemy.BOOLEAN, nullable=False),
             sqlalchemy.Column('owner', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('description', sqlalchemy.String(LARGE_COLUMN_SIZE)),
             sqlalchemy.Column('repo_base_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
@@ -207,6 +217,21 @@ class Database():
             sqlalchemy.Column('analytics_token', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('auth_token', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('environment', sqlalchemy.String(GENERAL_COLUMN_SIZE))
+        )
+
+        self._example_file = sqlalchemy.Table(
+            'example_file', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column(
+                'submodule_id',
+                sqlalchemy.ForeignKey(
+                    'submodule.id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            ),
+            sqlalchemy.Column('path', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('content', Database.medium_blob())
         )
 
     def select_module_version_joined_module_provider(self, *select_args):

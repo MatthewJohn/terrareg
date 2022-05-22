@@ -1,6 +1,7 @@
 """Provide extraction method of modules."""
 
 import os
+from typing import Type
 import tempfile
 import zipfile
 import tarfile
@@ -15,7 +16,7 @@ import pathlib
 from werkzeug.utils import secure_filename
 import magic
 
-from terrareg.models import Example, ModuleVersion, Submodule
+from terrareg.models import BaseSubmodule, Example, ModuleVersion, Submodule
 from terrareg.database import Database
 from terrareg.errors import (
     UnableToProcessTerraformError,
@@ -24,7 +25,7 @@ from terrareg.errors import (
     MetadataDoesNotContainRequiredAttributeError,
     GitCloneError
 )
-from terrareg.utils import PathDoesNotExistError, safe_join_paths
+from terrareg.utils import PathDoesNotExistError, safe_iglob, safe_join_paths
 from terrareg.config import Config
 
 
@@ -152,10 +153,10 @@ class ModuleExtractor:
             published=Config().AUTO_PUBLISH_MODULE_VERSIONS
         )
 
-    def _process_submodule(self, type_: str, submodule: str):
+    def _process_submodule(self, submodule: BaseSubmodule):
         """Process submodule."""
-        print('Processing submodule: {0}'.format(submodule))
-        submodule_dir = safe_join_paths(self.extract_directory, submodule)
+        print('Processing submodule: {0}'.format(submodule.path))
+        submodule_dir = safe_join_paths(self.extract_directory, submodule.path)
 
         tf_docs = self._run_terraform_docs(submodule_dir)
         readme_content = self._get_readme_content(submodule_dir)
@@ -163,15 +164,41 @@ class ModuleExtractor:
         db = Database.get()
         insert_statement = db.sub_module.insert().values(
             parent_module_version=self._module_version.pk,
-            type=type_,
-            path=submodule,
+            type=submodule.TYPE,
+            path=submodule.path,
             readme_content=Database.encode_blob(readme_content),
             module_details=Database.encode_blob(json.dumps(tf_docs))
         )
         with db.get_engine().connect() as conn:
             conn.execute(insert_statement)
 
-    def _scan_submodules(self, subdirectory, type_):
+        if isinstance(submodule, Example):
+            self._extract_example_files(example=submodule)
+
+    def _extract_example_files(self, example: Example):
+        """Extract all terraform files in example and insert into DB"""
+        example_base_dir = safe_join_paths(self.extract_directory, example.path)
+        for tf_file_path in safe_iglob(base_dir=example_base_dir,
+                                       pattern='*.tf',
+                                       recursive=False,
+                                       is_file=True):
+            # Remove extraction directory from file path
+            tf_file = re.sub('^{}/'.format(self.extract_directory), '', tf_file_path)
+
+            # Obtain contents of file and insert into DB
+            with open(tf_file_path, 'r') as file_fd:
+                content = ''.join(file_fd.readlines())
+
+            db = Database.get()
+            insert_statement = db._example_file.insert().values(
+                submodule_id=example.pk,
+                path=tf_file,
+                content=Database.encode_blob(content)
+            )
+            with db.get_engine().connect() as conn:
+                conn.execute(insert_statement)
+
+    def _scan_submodules(self, subdirectory: str, submodule_class: Type[BaseSubmodule]):
         """Scan for submodules and extract details."""
         try:
             submodule_base_directory = safe_join_paths(self.extract_directory, subdirectory, is_dir=True)
@@ -208,8 +235,11 @@ class ModuleExtractor:
                 submodules.append(submodule_name)
 
         # Extract all submodules
-        for submodule in submodules:
-            self._process_submodule(type_, submodule)
+        for submodule_path in submodules:
+            obj = submodule_class(
+                module_version=self._module_version,
+                module_path=submodule_path)
+            self._process_submodule(submodule=obj)
 
     def process_upload(self):
         """Handle data extraction from module source."""
@@ -233,10 +263,10 @@ class ModuleExtractor:
             self._generate_archive()
 
         self._scan_submodules(
-            type_=Submodule.TYPE,
+            submodule_class=Submodule,
             subdirectory=Config().MODULES_DIRECTORY)
         self._scan_submodules(
-            type_=Example.TYPE,
+            submodule_class=Example,
             subdirectory=Config().EXAMPLES_DIRECTORY)
 
 
