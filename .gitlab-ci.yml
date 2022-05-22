@@ -103,6 +103,7 @@ release:
       - node_modules/
   variables:
     GITLAB_TOKEN: $GITLAB_TOKEN
+    GIT_STRATEGY: clone
   script:
     - semantic-release
   only:
