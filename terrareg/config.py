@@ -27,6 +27,32 @@ class Config:
         return int(os.environ.get('LISTEN_PORT', 5000))
 
     @property
+    def SSL_CERT_PRIVATE_KEY(self):
+        """
+        Path to SSL private certificate key.
+
+        If running in a container, the key must be mounted inside the container.
+        This value must be set to the path of the key within the container.
+
+        This must be set in accordance with SSL_CERT_PUBLIC_KEY - both must either be
+        set or left empty.
+        """
+        return os.environ.get('SSL_CERT_PRIVATE_KEY', None)
+
+    @property
+    def SSL_CERT_PUBLIC_KEY(self):
+        """
+        Path to SSL public key.
+
+        If running in a container, the key must be mounted inside the container.
+        This value must be set to the path of the key within the container.
+
+        This must be set in accordance with SSL_CERT_PRIVATE_KEY - both must either be
+        set or left empty.
+        """
+        return os.environ.get('SSL_CERT_PUBLIC_KEY', None)
+
+    @property
     def ALLOW_UNIDENTIFIED_DOWNLOADS(self):
         """
         Whether modules can be downloaded with terraform
