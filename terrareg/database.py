@@ -211,6 +211,21 @@ class Database():
             sqlalchemy.Column('environment', sqlalchemy.String(GENERAL_COLUMN_SIZE))
         )
 
+        self._example_file = sqlalchemy.Table(
+            'example_file', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column(
+                'submodule_id',
+                sqlalchemy.ForeignKey(
+                    'submodule.id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            ),
+            sqlalchemy.Column('path', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('contents', Database.medium_blob())
+        )
+
     def select_module_version_joined_module_provider(self, *select_args):
         """Perform select on module_version, joined to module_provider table."""
         return sqlalchemy.select(
