@@ -25,7 +25,7 @@ from terrareg.errors import (
     MetadataDoesNotContainRequiredAttributeError,
     GitCloneError
 )
-from terrareg.utils import PathDoesNotExistError, safe_join_paths
+from terrareg.utils import PathDoesNotExistError, safe_iglob, safe_join_paths
 from terrareg.config import Config
 
 
@@ -170,7 +170,19 @@ class ModuleExtractor:
             module_details=Database.encode_blob(json.dumps(tf_docs))
         )
         with db.get_engine().connect() as conn:
-            res = conn.execute(insert_statement)
+            conn.execute(insert_statement)
+
+        if isinstance(submodule, Example):
+            self._extract_example_files(example=submodule)
+
+    def _extract_example_files(self, example: Example):
+        """Extract all terraform files in example and insert into DB"""
+        example_base_dir = safe_join_paths(self.extract_directory, example.path)
+        for tf_file in safe_iglob(base_dir=example_base_dir,
+                                  pattern='*.tf',
+                                  recursive=False,
+                                  is_file=True):
+            print('IMPORTING EXAMPLE FILE: ' + tf_file)
 
     def _scan_submodules(self, subdirectory: str, submodule_class: Type[BaseSubmodule]):
         """Scan for submodules and extract details."""
