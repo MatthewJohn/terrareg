@@ -1380,6 +1380,16 @@ class ModuleVersion(TerraformSpecsObject):
                 # Invalidate cache for previous DB row
                 self._cache_db_row = None
 
+                # Delete any example files
+                # Obtain all example IDs
+                res = conn.execute(
+                    db.sub_module.select().where(
+                        db.sub_module.c.parent_module_version == previous_db_row['id']))
+                delete_statement = db.example_file.delete().where(
+                    db.example_file.c.submodule_id.in_([r['id'] for r in res])
+                )
+                conn.execute(delete_statement)
+
                 # Delete any submodules/examples
                 delete_statement = db.sub_module.delete().where(
                     db.sub_module.c.parent_module_version == previous_db_row['id']
