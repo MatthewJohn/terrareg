@@ -180,7 +180,6 @@ class ModuleExtractor:
         example_base_dir = safe_join_paths(self.extract_directory, example.path)
         for tf_file in safe_iglob(base_dir=example_base_dir,
                                   pattern='*.tf',
-                                  relative_results=True,
                                   recursive=False,
                                   is_file=True):
             print('IMPORTING EXAMPLE FILE: ' + tf_file)

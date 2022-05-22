@@ -26,31 +26,15 @@ def safe_join_paths(base_dir, *sub_paths, is_dir=False, is_file=False):
         base_dir=base_dir, sub_dir=joined_path,
         is_dir=is_dir, is_file=is_file)
 
-def safe_iglob(base_dir, pattern, recursive, relative_results, is_file=False, is_dir=False):
+def safe_iglob(base_dir, pattern, recursive, is_file=False, is_dir=False):
     """Perform iglob, ensuring that each of the returned values is within the base directory."""
     results = []
-    iglob_args = {
-        'pattern': pattern,
-        'recursive': recursive
-    }
-    # If user expects relative results -
-    # use root_dir parameter to iglob and use safe_join_paths
-    # to check that result is within base directory
-    if relative_results:
-        for res in glob.iglob(root_dir=base_dir, **iglob_args):
-            safe_join_paths(base_dir, res)
-            results.append(res)
-
-    # Otherwise, if full paths are expected, prepend base_dir to pattern
-    # and use check_subdirectory_within_base_dir to check result is in
-    # base directory.
-    else:
-        for res in glob.iglob('{base_dir}/{pattern}'.format(base_dir=base_dir, pattern=pattern),
-                            recursive=recursive):
-            results.append(check_subdirectory_within_base_dir(
-                base_dir=base_dir, sub_dir=res,
-                is_file=is_file, is_dir=is_dir
-            ))
+    for res in glob.iglob('{base_dir}/{pattern}'.format(base_dir=base_dir, pattern=pattern),
+                          recursive=recursive):
+        results.append(check_subdirectory_within_base_dir(
+            base_dir=base_dir, sub_dir=res,
+            is_file=is_file, is_dir=is_dir
+        ))
     return results
 
 def check_subdirectory_within_base_dir(base_dir, sub_dir, is_dir=False, is_file=False):
