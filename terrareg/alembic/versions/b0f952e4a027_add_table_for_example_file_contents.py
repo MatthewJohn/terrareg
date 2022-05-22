@@ -22,7 +22,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('submodule_id', sa.Integer(), nullable=False),
     sa.Column('path', sa.String(length=128), nullable=False),
-    sa.Column('contents', sa.LargeBinary(length=16777215).with_variant(mysql.MEDIUMBLOB(), 'mysql'), nullable=True),
+    sa.Column('content', sa.LargeBinary(length=16777215).with_variant(mysql.MEDIUMBLOB(), 'mysql'), nullable=True),
     sa.ForeignKeyConstraint(['submodule_id'], ['submodule.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
