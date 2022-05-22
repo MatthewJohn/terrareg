@@ -897,6 +897,11 @@ class TerraformSpecsObject(object):
         raise NotImplementedError
 
     @property
+    def pk(self):
+        """Return primary key of database row"""
+        return self._get_db_row()['id']
+
+    @property
     def registry_id(self):
         """Return registry path ID (with excludes version)."""
         raise NotImplementedError
@@ -1087,11 +1092,6 @@ class ModuleVersion(TerraformSpecsObject):
     def beta(self):
         """Return whether module version is a beta version."""
         return self._get_db_row()['beta']
-
-    @property
-    def pk(self):
-        """Return database ID of module version."""
-        return self._get_db_row()['id']
 
     @property
     def path(self):

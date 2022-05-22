@@ -223,7 +223,7 @@ class Database():
                 nullable=False
             ),
             sqlalchemy.Column('path', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
-            sqlalchemy.Column('contents', Database.medium_blob())
+            sqlalchemy.Column('content', Database.medium_blob())
         )
 
     def select_module_version_joined_module_provider(self, *select_args):

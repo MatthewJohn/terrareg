@@ -178,11 +178,25 @@ class ModuleExtractor:
     def _extract_example_files(self, example: Example):
         """Extract all terraform files in example and insert into DB"""
         example_base_dir = safe_join_paths(self.extract_directory, example.path)
-        for tf_file in safe_iglob(base_dir=example_base_dir,
-                                  pattern='*.tf',
-                                  recursive=False,
-                                  is_file=True):
-            print('IMPORTING EXAMPLE FILE: ' + tf_file)
+        for tf_file_path in safe_iglob(base_dir=example_base_dir,
+                                       pattern='*.tf',
+                                       recursive=False,
+                                       is_file=True):
+            # Remove extraction directory from file path
+            tf_file = re.sub('^{}/'.format(self.extract_directory), '', tf_file_path)
+
+            # Obtain contents of file and insert into DB
+            with open(tf_file_path, 'r') as file_fd:
+                content = ''.join(file_fd.readlines())
+
+            db = Database.get()
+            insert_statement = db._example_file.insert().values(
+                submodule_id=example.pk,
+                path=tf_file,
+                content=Database.encode_blob(content)
+            )
+            with db.get_engine().connect() as conn:
+                conn.execute(insert_statement)
 
     def _scan_submodules(self, subdirectory: str, submodule_class: Type[BaseSubmodule]):
         """Scan for submodules and extract details."""
