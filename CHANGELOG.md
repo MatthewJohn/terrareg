@@ -1,5 +1,40 @@
 # Changelog
 
+# [2.6.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.5.4...v2.6.0) (2022-05-22)
+
+
+### Bug Fixes
+
+* Update DB migration to use batch operation to handle errors caused by sqlite database ([e9212f1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e9212f114a42be99b8693e4fb392b57a386f76b6)), closes [#115](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/115)
+* Update DB migration to use batch operation to handle errors caused by sqlite database ([bf10420](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/bf10420bd75e7c2e6de73834373abbe9051a544a)), closes [#115](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/115)
+* Update example terraform version string for beta versions to return exact version match. ([b94fce6](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b94fce66ab442eaa163e42c4c26b564cd10ea5f9)), closes [#115](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/115)
+* Update example terraform version string for beta versions to return exact version match. ([6d4a677](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6d4a67793e9e64ad97a60c35447390262a40949d)), closes [#115](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/115)
+* Update initial module-search page search to occur once document has finished loading. ([5b7099d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5b7099d49a5e8030ebaa831e7ff40bbfb8e9dbc7)), closes [#122](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/122)
+
+
+### Features
+
+* Add column to module version table to handle 'beta' flag ([b0d3caa](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b0d3caa1f4206a1c0c45917b7f3d25c253e37e6c)), closes [#115](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/115)
+* Add column to module version table to handle 'beta' flag ([999cbc6](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/999cbc6faa06eeeb5349346afc4324a0cc3af02e)), closes [#115](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/115)
+* Add config for custom labels for trusted namespaces and verified modules in the search filters. ([f533beb](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f533bebd0be790da7291ad94770890a0d4983687)), closes [#122](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/122)
+* Add configuration to disable auto-creation of module providers on version creation/import ([ba6a0cd](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ba6a0cd3573be81e5a5ed570a7a4ef79440f760e)), closes [#123](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/123)
+* Add configuration to disable auto-creation of module providers on version creation/import ([5654b5b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5654b5bc13926de2d2c6c0612438f7001a9cadd1)), closes [#123](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/123)
+* Add configuration to use custom name for contributed modules in search UI ([19cfa6c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/19cfa6c7c89c301ba3ef5be17220698515377a92)), closes [#122](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/122)
+* Add environment variables for setting SSL public and private key. ([acadd38](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/acadd38bee3ce2a7d64937dd236715412d1529ce)), closes [#99](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/99)
+* Add labels to search results with tags for trusted, verified and contributed. ([e378441](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e378441fc667f883b39b88c764f4a72e4eb0ba05)), closes [#122](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/122)
+* Add labels to search results with tags for trusted, verified and contributed. ([72b2aa3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/72b2aa34c25dabb4e3da95f142abd68f6583fc2c)), closes [#122](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/122)
+* Add tab to example page to view list of example files and view file contents ([6aef439](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6aef439ae56501ed5e213f2b7962a34ed3cf6df9)), closes [#91](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/91)
+* Extract terraform files from examples during upload and store in  example file table. ([d1a8d76](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/d1a8d76a9a26bdadb1e163c0038306c565773dd7)), closes [#91](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/91)
+* Remove beta versions from web interface. ([99f68a0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/99f68a0eda3315046c7a0d7e46d762a864712cc1)), closes [#115](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/115)
+* Remove beta versions from web interface. ([21a12a5](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/21a12a5d317e25c3c462ba414c82259c191df050)), closes [#115](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/115)
+* Support version suffixes when creating module version. ([20a9e0a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/20a9e0ac09a703e51a0183478b9a42726328aaaa)), closes [#115](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/115)
+* Support version suffixes when creating module version. ([efcc72f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/efcc72f3599aeee5ee13e5e237c59225c41e002b)), closes [#115](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/115)
+
+
+### Reverts
+
+* Revert "chore: Update safe_iglob to support returning relative results." ([538c616](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/538c61699f5a14640a94d250bb016597dbbc8075))
+
 ## [2.5.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.5.3...v2.5.4) (2022-05-19)
 
 
