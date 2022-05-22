@@ -1,61 +1,68 @@
 
 
 function timeDifference(previous) {
-    var msPerMinute = 60 * 1000;
-    var msPerHour = msPerMinute * 60;
-    var msPerDay = msPerHour * 24;
-    var msPerMonth = msPerDay * 30;
-    var msPerYear = msPerDay * 365;
+    var min = 60 * 1000;
+    var hour = min * 60;
+    var day = hour * 24;
+    var month = day * 30;
+    var year = day * 365;
 
     var current = new Date();
     var elapsed = current - previous;
 
-    if (elapsed < msPerMinute) {
-        let cnt = Math.round(elapsed / 1000);
-        if (cnt == 1) {
-            return cnt + ' second ago';
+    if (elapsed > year)
+    {
+        let cnt = Math.round(elapsed / year);
+        if (cnt == 1)
+        {
+            return 'approximately ' + cnt + ' year ago';
         }
-        return cnt + ' seconds ago';
+        return 'approximately ' + cnt + ' years ago';   
     }
-
-    else if (elapsed < msPerHour) {
-        let cnt = Math.round(elapsed / msPerMinute);
-        if (cnt == 1) {
-            return cnt + ' minute ago';
-        }
-        return cnt + ' minutes ago';
-    }
-
-    else if (elapsed < msPerDay ) {
-        let cnt = Math.round(elapsed / msPerHour);
-        if (cnt == 1) {
-            return cnt + ' hour ago';
-        }
-        return cnt + ' hours ago';
-    }
-
-    else if (elapsed < msPerMonth) {
-        let cnt = Math.round(elapsed / msPerDay);
-        if (cnt == 1) {
-            return 'approximately ' + cnt + ' day ago'
-        }
-        return 'approximately ' + cnt + ' days ago';
-    }
-
-    else if (elapsed < msPerYear) {
-        let cnt = Math.round(elapsed / msPerMonth);
-        if (cnt == 1) {
+    else if (elapsed > month)
+    {
+        let cnt = Math.round(elapsed / month);
+        if (cnt == 1)
+        {
             return 'approximately ' + cnt + ' month ago';
         }
         return 'approximately ' + cnt + ' months ago';
     }
-
-    else {
-        let cnt = Math.round(elapsed / msPerYear);
-        if (cnt == 1) {
-            return 'approximately ' + cnt + ' year ago';
+    else if (elapsed > day)
+    {
+        let cnt = Math.round(elapsed / day);
+        if (cnt == 1)
+        {
+            return 'approximately ' + cnt + ' day ago'
         }
-        return 'approximately ' + cnt + ' years ago';   
+        return 'approximately ' + cnt + ' days ago';
+    }
+    else if (elapsed > hour)
+    {
+        let cnt = Math.round(elapsed / hour);
+        if (cnt == 1)
+        {
+            return cnt + ' hour ago';
+        }
+        return cnt + ' hours ago';
+    }
+    else if (elapsed > min)
+    {
+        let cnt = Math.round(elapsed / min);
+        if (cnt == 1)
+        {
+            return cnt + ' minute ago';
+        }
+        return cnt + ' minutes ago';
+    }
+    else
+    {
+        let cnt = Math.round(elapsed / 1000);
+        if (cnt == 1)
+        {
+            return cnt + ' second ago';
+        }
+        return cnt + ' seconds ago';
     }
 }
 
@@ -87,6 +94,25 @@ function createSearchResultCard(parent_id, module, provider_logos) {
                 <p class="card-header-title">
                     ${provider_logo_html}
                     <a href="/modules/${module.id}">${module.namespace} / ${module.name}</a>
+                    ${module.trusted ? `
+                        <span class="tag is-info is-light result-card-label">
+                            <span class="panel-icon">
+                                <i class="fas fa-check-circle" aria-hidden="true"></i>
+                            </span>
+                            ${terraregConfig.TRUSTED_NAMESPACE_LABEL}
+                        </span>
+                    ` : `
+                        <span class="tag is-warning is-light result-card-label">
+                            ${terraregConfig.CONTRIBUTED_NAMESPACE_LABEL}
+                        </span>
+                                        `}
+                    ${module.verified ? `
+                        <span class="tag is-link is-light result-card-label">
+                            <span class="panel-icon">
+                                <i class="fas fa-thumbs-up" aria-hidden="true"></i>
+                            </span>
+                            ${terraregConfig.VERIFIED_MODULE_LABEL}
+                        </span>` : ``}
                 </p>
                 <a href="/modules/${module.id}">
                     <button class="card-header-icon" aria-label="more options">

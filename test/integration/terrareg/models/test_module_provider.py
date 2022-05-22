@@ -72,10 +72,35 @@ class TestModuleProvider(TerraregIntegrationTest):
         module_provider = ModuleProvider.get(module=module, name='testprovider')
 
         assert [mv.version for mv in module_provider.get_versions()] == [
+            '23.2.3-beta', '10.23.0', '2.1.0',
+            '1.5.4', '0.1.10', '0.1.09', '0.1.8',
+            '0.1.1', '0.0.9'
+        ]
+
+    def test_module_provider_get_versions_without_beta(self):
+        """Test that a module provider with versions in the wrong order are still returned correctly."""
+        namespace = Namespace(name='testnamespace')
+        module = Module(namespace=namespace, name='wrongversionorder')
+        module_provider = ModuleProvider.get(module=module, name='testprovider')
+
+        assert [mv.version for mv in module_provider.get_versions(include_beta=False)] == [
             '10.23.0', '2.1.0', '1.5.4',
             '0.1.10', '0.1.09', '0.1.8',
             '0.1.1', '0.0.9'
         ]
+
+    def test_module_provider_get_latest_version(self):
+        """
+        Test that a module provider with versions in the wrong order return correct
+        latest version and ignores beta version.
+        """
+        namespace = Namespace(name='testnamespace')
+        module = Module(namespace=namespace, name='wrongversionorder')
+        module_provider = ModuleProvider.get(module=module, name='testprovider')
+        module_version = module_provider.get_latest_version()
+
+        assert module_version.version == '10.23.0'
+
 
     @pytest.mark.parametrize('module_name,module_version,path,expected_browse_url', [
         # Test no browse URL in any configuration
@@ -517,4 +542,58 @@ class TestModuleProvider(TerraregIntegrationTest):
 
     def test_get_total_count(self):
         """Test get_total_count method"""
-        assert ModuleProvider.get_total_count() == 39
+        assert ModuleProvider.get_total_count() == 44
+
+    def test_get_module_provider_existing(self):
+        """Attempt to get existing module provider"""
+        namespace = Namespace(name='genericmodules')
+        module = Module(namespace=namespace, name='modulename')
+        module_provider = ModuleProvider.get(module=module, name='providername')
+        assert module_provider is not None
+        row = module_provider._get_db_row()
+        assert row['id'] == 48
+        assert row['namespace'] == 'genericmodules'
+        assert row['module'] == 'modulename'
+        assert row['provider'] == 'providername'
+
+    def test_get_module_provider_non_existent(self):
+        """Attempt to get non-existent module provider"""
+        namespace = Namespace(name='genericmodules')
+        module = Module(namespace=namespace, name='modulename')
+        module_provider = ModuleProvider.get(module=module, name='doesnotexist')
+        assert module_provider is None
+
+    def test_get_module_provider_with_create(self):
+        """Attempt to get non-existent module provider with create"""
+        namespace = Namespace(name='genericmodules')
+        module = Module(namespace=namespace, name='modulename')
+        with mock.patch('terrareg.config.Config.AUTO_CREATE_MODULE_PROVIDER', True):
+            module_provider = ModuleProvider.get(module=module, name='doesnotexistgetcreate', create=True)
+            assert module_provider is not None
+            assert module_provider._get_db_row()['provider'] == 'doesnotexistgetcreate'
+
+    def test_get_module_provider_with_create_auto_create_disabled(self):
+        """Attempt to get non-existent module provider with auto-creation disabled"""
+        namespace = Namespace(name='genericmodules')
+        module = Module(namespace=namespace, name='modulename')
+        with mock.patch('terrareg.config.Config.AUTO_CREATE_MODULE_PROVIDER', False):
+            module_provider = ModuleProvider.get(module=module, name='doesnotexist', create=True)
+            assert module_provider is None
+
+    def test_get_module_provider_with_create_existing(self):
+        """Attempt to get non-existent module provider with create"""
+        namespace = Namespace(name='genericmodules')
+        module = Module(namespace=namespace, name='modulename')
+        with mock.patch('terrareg.config.Config.AUTO_CREATE_MODULE_PROVIDER', True):
+            module_provider = ModuleProvider.get(module=module, name='providername', create=True)
+            assert module_provider is not None
+            assert module_provider._get_db_row()['id'] == 48
+
+    def test_get_module_provider_with_create_auto_create_disabled_existing(self):
+        """Attempt to get non-existent module provider with auto-creation disabled"""
+        namespace = Namespace(name='genericmodules')
+        module = Module(namespace=namespace, name='modulename')
+        with mock.patch('terrareg.config.Config.AUTO_CREATE_MODULE_PROVIDER', False):
+            module_provider = ModuleProvider.get(module=module, name='providername', create=True)
+            assert module_provider is not None
+            assert module_provider._get_db_row()['id'] == 48

@@ -23,7 +23,7 @@ from terrareg.errors import (
     NoSessionSetError, IncorrectCSRFTokenError
 )
 from terrareg.models import (
-    Example, Namespace, Module, ModuleProvider,
+    Example, ExampleFile, Namespace, Module, ModuleProvider,
     ModuleVersion, ProviderLogo, Submodule,
     GitProvider
 )
@@ -241,6 +241,11 @@ class Server(object):
         )(self._view_serve_example)
 
         # Terrareg APIs
+        ## Config endpoint
+        self._api.add_resource(
+            ApiTerraregConfig,
+            '/v1/terrareg/config'
+        )
         ## Analytics URLs /v1/terrareg/analytics
         self._api.add_resource(
             ApiTerraregGlobalStatsSummary,
@@ -297,6 +302,14 @@ class Server(object):
             ApiTerraregModuleVersionPublish,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/publish'
         )
+        self._api.add_resource(
+            ApiTerraregExampleFileList,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/example/filelist/<path:example>'
+        )
+        self._api.add_resource(
+            ApiTerraregExampleFile,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/example/file/<path:example_file>'
+        )
 
         self._api.add_resource(
             ApiTerraregProviderLogos,
@@ -331,6 +344,9 @@ class Server(object):
             terrareg_application_name=terrareg.config.Config().APPLICATION_NAME,
             terrareg_logo_url=terrareg.config.Config().LOGO_URL,
             ALLOW_MODULE_HOSTING=terrareg.config.Config().ALLOW_MODULE_HOSTING,
+            TRUSTED_NAMESPACE_LABEL=terrareg.config.Config().TRUSTED_NAMESPACE_LABEL,
+            CONTRIBUTED_NAMESPACE_LABEL=terrareg.config.Config().CONTRIBUTED_NAMESPACE_LABEL,
+            VERIFIED_MODULE_LABEL=terrareg.config.Config().VERIFIED_MODULE_LABEL,
             csrf_token=get_csrf_token()
         )
 
@@ -717,6 +733,18 @@ class ApiTerraregHealth(ErrorCatchingResource):
         }
 
 
+class ApiTerraregConfig(ErrorCatchingResource):
+    """Endpoint to return config used by UI."""
+
+    def _get(self):
+        """Return config."""
+        return {
+            'TRUSTED_NAMESPACE_LABEL': terrareg.config.Config().TRUSTED_NAMESPACE_LABEL,
+            'CONTRIBUTED_NAMESPACE_LABEL': terrareg.config.Config().CONTRIBUTED_NAMESPACE_LABEL,
+            'VERIFIED_MODULE_LABEL': terrareg.config.Config().VERIFIED_MODULE_LABEL
+        }
+
+
 class ApiModuleVersionUpload(ErrorCatchingResource):
 
     ALLOWED_EXTENSIONS = ['zip']
@@ -775,6 +803,10 @@ class ApiModuleVersionCreate(ErrorCatchingResource):
         module = Module(namespace=namespace, name=name)
         # Get module provider and optionally create, if it doesn't exist
         module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+
+        # Ensure module provider exists
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
 
         # Ensure that the module provider has a repository url configured.
         if not module_provider.get_git_clone_url():
@@ -1381,7 +1413,7 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
         if module_provider is not None:
             return {'message': 'Module provider already exists'}, 400
 
-        module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+        module_provider = ModuleProvider.create(module=module, name=provider)
 
         # If git provider ID has been specified,
         # validate it and update attribute of module provider.
@@ -1631,3 +1663,58 @@ class ApiTerraregModuleVersionPublish(ErrorCatchingResource):
         return {
             'status': 'Success'
         }
+
+
+class ApiTerraregExampleFileList(ErrorCatchingResource):
+    """Interface to obtain list of example files."""
+
+    def _get(self, namespace, name, provider, version, example):
+        """Return list of files available in example."""
+        namespace_obj = Namespace(name=namespace)
+        module_obj = Module(namespace=namespace_obj, name=name)
+        module_provider = ModuleProvider.get(module=module_obj, name=provider)
+
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
+
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        if not module_version:
+            return {'message': 'Module version does not exist'}, 400
+
+        example_obj = Example(module_version=module_version, module_path=example)
+
+        return [
+            {
+                'filename': example_file.file_name,
+                'path': example_file.path,
+                'content_href': '/v1/terrareg/modules/{module_version_id}/example/files/{file_path}'.format(
+                    module_version_id=module_version.id,
+                    file_path=example_file.path)
+            }
+            for example_file in example_obj.get_files()
+        ]
+
+
+class ApiTerraregExampleFile(ErrorCatchingResource):
+    """Interface to obtain content of example file."""
+
+    def _get(self, namespace, name, provider, version, example_file):
+        """Return conent of example file in example module."""
+        namespace_obj = Namespace(name=namespace)
+        module_obj = Module(namespace=namespace_obj, name=name)
+        module_provider = ModuleProvider.get(module=module_obj, name=provider)
+
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
+
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        if not module_version:
+            return {'message': 'Module version does not exist'}, 400
+
+        example_file_obj = ExampleFile.get_by_path(module_version=module_version, file_path=example_file)
+
+        if example_file_obj is None:
+            return {'message': 'Example file object does not exist.'}
+
+        return example_file_obj.content
+

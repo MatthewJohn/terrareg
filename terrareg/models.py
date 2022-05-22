@@ -1,6 +1,6 @@
 
 import os
-from distutils.version import StrictVersion
+from distutils.version import LooseVersion
 import json
 import re
 import sqlalchemy
@@ -247,6 +247,11 @@ class Namespace(object):
         """Whether the namespace is set to verfied in the config."""
         return self.name in terrareg.config.Config().VERIFIED_MODULE_NAMESPACES
 
+    @property
+    def trusted(self):
+        """Whether namespace is trusted."""
+        return self.name in terrareg.config.Config().TRUSTED_NAMESPACES
+
     @staticmethod
     def _validate_name(name):
         """Validate name of namespace"""
@@ -461,9 +466,9 @@ class ModuleProvider(object):
             return res.scalar()
 
     @classmethod
-    def _create(cls, module, name):
+    def create(cls, module, name):
         """Create instance of object in database."""
-        # Create module version, if it doesn't exist
+        # Create module provider
         db = Database.get()
         module_provider_insert = db.module_provider.insert().values(
             namespace=module._namespace.name,
@@ -474,16 +479,20 @@ class ModuleProvider(object):
         with db.get_engine().connect() as conn:
             conn.execute(module_provider_insert)
 
+        return cls(module=module, name=name)
+
     @classmethod
     def get(cls, module, name, create=False):
         """Create object and ensure the object exists."""
         obj = cls(module=module, name=name)
 
-        # If there is no row, return None
+        # If there is no row, the module provider does not exist
         if obj._get_db_row() is None:
 
-            if create:
-                cls._create(module=module, name=name)
+            # If set to create and auto module-provider creation
+            # is enabled in config, create the module provider
+            if create and terrareg.config.Config().AUTO_CREATE_MODULE_PROVIDER:
+                cls.create(module=module, name=name)
 
                 return obj
 
@@ -801,7 +810,8 @@ class ModuleProvider(object):
             db.module_provider.c.namespace == self._module._namespace.name,
             db.module_provider.c.module == self._module.name,
             db.module_provider.c.provider == self.name,
-            db.module_version.c.published == True
+            db.module_version.c.published == True,
+            db.module_version.c.beta == False
         )
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
@@ -810,7 +820,7 @@ class ModuleProvider(object):
             rows = [r for r in res]
 
         # Sort rows by semantec versioning
-        rows.sort(key=lambda x: StrictVersion(x['version']), reverse=True)
+        rows.sort(key=lambda x: LooseVersion(x['version']), reverse=True)
 
         # Ensure at least one row
         if not rows:
@@ -828,7 +838,7 @@ class ModuleProvider(object):
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
 
-    def get_versions(self):
+    def get_versions(self, include_beta=True):
         """Return all module provider versions."""
         db = Database.get()
 
@@ -840,6 +850,12 @@ class ModuleProvider(object):
             db.module_provider.c.provider == self.name,
             db.module_version.c.published == True
         )
+        # Remove beta versions if not including them
+        if not include_beta:
+            select = select.where(
+                db.module_version.c.beta == False
+            )
+
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
             module_versions = [
@@ -847,7 +863,7 @@ class ModuleProvider(object):
                 for r in res
             ]
         module_versions.sort(
-            key=lambda x: StrictVersion(x.version),
+            key=lambda x: LooseVersion(x.version),
             reverse=True
         )
         return module_versions
@@ -879,6 +895,16 @@ class TerraformSpecsObject(object):
     def is_submodule(self):
         """Whether object is submodule."""
         raise NotImplementedError
+
+    @property
+    def is_example(self):
+        """Whether object is an example."""
+        return False
+
+    @property
+    def pk(self):
+        """Return primary key of database row"""
+        return self._get_db_row()['id']
 
     @property
     def registry_id(self):
@@ -991,9 +1017,11 @@ class ModuleVersion(TerraformSpecsObject):
 
     @staticmethod
     def _validate_version(version):
-        """Validate version."""
-        if not re.match(r'^[0-9]+\.[0-9]+\.[0-9]+$', version):
+        """Validate version, checking if version is a beta version."""
+        match = re.match(r'^[0-9]+\.[0-9]+\.[0-9]+((:?-[a-z0-9]+)?)$', version)
+        if not match:
             raise InvalidVersionError('Version is invalid')
+        return bool(match.group(1))
 
     @property
     def is_submodule(self):
@@ -1066,9 +1094,9 @@ class ModuleVersion(TerraformSpecsObject):
         return safe_join_paths(self.base_directory, self.archive_name_zip)
 
     @property
-    def pk(self):
-        """Return database ID of module version."""
-        return self._get_db_row()['id']
+    def beta(self):
+        """Return whether module version is a beta version."""
+        return self._get_db_row()['beta']
 
     @property
     def path(self):
@@ -1096,7 +1124,7 @@ class ModuleVersion(TerraformSpecsObject):
 
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
-        self._validate_version(version)
+        self._extracted_beta_flag = self._validate_version(version)
         self._module_provider = module_provider
         self._version = version
         self._cache_db_row = None
@@ -1121,6 +1149,10 @@ class ModuleVersion(TerraformSpecsObject):
 
     def get_terraform_example_version_string(self):
         """Return formatted string of version parameter for example terraform."""
+        # For beta versions, pass an exact version constraint.
+        if self.beta:
+            return self.version
+
         # Generate list of template values for formatting
         major, minor, patch = self.version.split('.')
         kwargs = {'major': major, 'minor': minor, 'patch': patch}
@@ -1287,6 +1319,7 @@ class ModuleVersion(TerraformSpecsObject):
             "published_at": row['published_at'].isoformat(),
             "downloads": self.get_total_downloads(),
             "verified": self._module_provider.verified,
+            "trusted": self._module_provider._module._namespace.trusted
         }
 
     def get_total_downloads(self):
@@ -1352,6 +1385,16 @@ class ModuleVersion(TerraformSpecsObject):
                 # Invalidate cache for previous DB row
                 self._cache_db_row = None
 
+                # Delete any example files
+                # Obtain all example IDs
+                res = conn.execute(
+                    db.sub_module.select().where(
+                        db.sub_module.c.parent_module_version == previous_db_row['id']))
+                delete_statement = db.example_file.delete().where(
+                    db.example_file.c.submodule_id.in_([r['id'] for r in res])
+                )
+                conn.execute(delete_statement)
+
                 # Delete any submodules/examples
                 delete_statement = db.sub_module.delete().where(
                     db.sub_module.c.parent_module_version == previous_db_row['id']
@@ -1362,7 +1405,8 @@ class ModuleVersion(TerraformSpecsObject):
             insert_statement = db.module_version.insert().values(
                 module_provider_id=self._module_provider.pk,
                 version=self.version,
-                published=False
+                published=False,
+                beta=self._extracted_beta_flag
             )
             conn.execute(insert_statement)
 
@@ -1403,6 +1447,22 @@ class BaseSubmodule(TerraformSpecsObject):
     """Base submodule, for submodule and examples from a module version."""
 
     TYPE = None
+
+    @classmethod
+    def get_by_id(cls, module_version: ModuleVersion, pk: int):
+        """Return instance of submodule based on ID of submodule"""
+        db = Database.get()
+        select = db.sub_module.select().where(
+            db.sub_module.c.id == pk,
+            db.sub_module.c.type == cls.TYPE
+        )
+        print("Finding " + cls.TYPE + " by pk: " + str(pk))
+        with db.get_engine().connect() as conn:
+            row = conn.execute(select).fetchone()
+        if row is None:
+            return None
+
+        return cls(module_version=module_version, module_path=row['path'])
 
     @property
     def path(self):
@@ -1470,3 +1530,76 @@ class Example(BaseSubmodule):
 
     TYPE = 'example'
 
+    @property
+    def is_example(self):
+        """Whether object is an example."""
+        return True
+
+    def get_files(self):
+        """Return example files associated with example."""
+        db = Database.get()
+        select = db._example_file.select().where(
+            db._example_file.c.submodule_id == self.pk
+        )
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+            return [ExampleFile(example=self, path=row['path']) for row in res]
+
+
+class ExampleFile:
+
+    @staticmethod
+    def get_by_path(module_version: ModuleVersion, file_path: str):
+        """Return example file object by file path and module version"""
+        db = Database.get()
+        select = db._example_file.select().where(
+            db._module_version.c.id == module_version.pk,
+            db._example_file.c.path == file_path
+        )
+        with db.get_engine().connect() as conn:
+            row = conn.execute(select).fetchone()
+        if not row:
+            return None
+
+        example = Example.get_by_id(module_version=module_version, pk=row['submodule_id'])
+
+        if example is None:
+            return None
+
+        return ExampleFile(example=example, path=file_path)
+
+    @property
+    def file_name(self):
+        """Return name of file"""
+        return self._path.split('/')[-1]
+
+    @property
+    def path(self):
+        """Return path of example file."""
+        return self._path
+
+    @property
+    def content(self):
+        """Return content of example file."""
+        return Database.decode_blob(self._get_db_row()['content'])
+
+    def __init__(self, example: Example, path: str):
+        """Store identifying data."""
+        self._example = example
+        self._path = path
+        self._row_cache = None
+
+    def _get_db_row(self):
+        """Return DB row for git provider."""
+        if self._row_cache is None:
+            db = Database.get()
+            # Obtain row from git providers table for git provider.
+            print('PAth: ' + self._path)
+            select = db.example_file.select().where(
+                db.example_file.c.submodule_id == self._example.pk,
+                db.example_file.c.path == self._path
+            )
+            with db.get_engine().connect() as conn:
+                res = conn.execute(select)
+                return res.fetchone()
+        return self._row_cache

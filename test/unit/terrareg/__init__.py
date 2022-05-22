@@ -145,7 +145,7 @@ class MockModuleProvider(ModuleProvider):
         return self._module._unittest_data[self._name] if self._name in self._module._unittest_data else {}
 
     @classmethod
-    def _create(cls, module, name):
+    def create(cls, module, name):
         """Mock version of upstream mock object"""
         if not module._namespace.name in TEST_MODULE_DATA:
             TEST_MODULE_DATA[module._namespace.name] = {}
@@ -160,6 +160,7 @@ class MockModuleProvider(ModuleProvider):
                 'repo_clone_url_template': None,
                 'repo_browse_url_template': None
             }
+        return cls(module=module, name=name)
 
     def get_git_provider(self):
         """Return Mocked git provider"""

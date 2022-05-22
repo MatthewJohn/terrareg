@@ -2,6 +2,7 @@
 
 {% block content %}
 
+<script src="/static/js/terrareg/config.js"></script>
 <script src="/static/js/terrareg/search_result_card.js"></script>
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
@@ -24,7 +25,7 @@
                 <span class="panel-icon">
                     <i class="fas fa-thumbs-up" aria-hidden="true"></i>
                 </span>
-                Verified
+                {{ VERIFIED_MODULE_LABEL }}
                 <span id="search-verified-count" class="tag"></span>
             </a>
             <a class="panel-block is-active" onclick="toggleChildCheckbox(event);">
@@ -32,12 +33,12 @@
                 <span class="panel-icon">
                     <i class="fas fa-check-circle" aria-hidden="true"></i>
                 </span>
-                Trusted
+                {{ TRUSTED_NAMESPACE_LABEL }}
                 <span id="search-trusted-namespaces-count" class="tag"></span>
             </a>
             <a class="panel-block" onclick="toggleChildCheckbox(event);">
                 <input id="search-contributed" onchange="performSearch();" type="checkbox" />
-                Contributed
+                {{ CONTRIBUTED_NAMESPACE_LABEL }}
                 <span id="search-contributed-count" class="tag"></span>
             </a>
         </nav>
@@ -133,7 +134,7 @@
             $('#searchQueryBreadcrumbParent')[0].style.display = 'flex';
 
             // Update link and text in search query breadcrumb
-            document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search' + queryString);
+            document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search?q=' + encodeURIComponent(searchQuery));
             document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
 
             if (new_offset === undefined) {
@@ -259,14 +260,16 @@
 
     navbar_search_modules = performSearch;
 
-    const queryString = window.location.search;
-    const urlParams = new URLSearchParams(queryString);
-    const searchQuery = urlParams.get('q');
+    $(document).ready(function () {
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        const searchQuery = urlParams.get('q');
 
-    if (searchQuery) {
-        $('#navBarSearchInput').val(searchQuery);
-    }
-    performSearch();
+        if (searchQuery) {
+            $('#navBarSearchInput').val(searchQuery);
+        }
+        performSearch();
+    });
 </script>
 
 {% endblock %}

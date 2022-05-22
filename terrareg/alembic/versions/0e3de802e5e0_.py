@@ -1,4 +1,4 @@
-"""empty message
+"""Convert blobs to medium blobs
 
 Revision ID: 0e3de802e5e0
 Revises: aef5947a7e1d
@@ -17,25 +17,27 @@ branch_labels = None
 depends_on = None
 
 def MediumBlob():
-    return sa.LargeBinary(length=((2 ** 24) - 1)).with_variant(sqlalchemy.dialects.mysql.MEDIUMBLOB(), "mysql")
+    return sa.BLOB().with_variant(sqlalchemy.dialects.mysql.MEDIUMBLOB(), "mysql")
 
 def upgrade():
-    # Convert blob columns to MEDIUMBLOB
-    op.alter_column('module_version', 'readme_content', existing_type=sa.BLOB, type_=MediumBlob())
-    op.alter_column('module_version', 'module_details', existing_type=sa.BLOB, type_=MediumBlob())
-    op.alter_column('module_version', 'variable_template', existing_type=sa.BLOB, type_=MediumBlob())
-
-    op.alter_column('submodule', 'readme_content', existing_type=sa.BLOB, type_=MediumBlob())
-    op.alter_column('submodule', 'module_details', existing_type=sa.BLOB, type_=MediumBlob())
+    with op.batch_alter_table('module_version') as batch_op:
+        # Convert blob columns to MEDIUMBLOB
+        batch_op.alter_column('readme_content', existing_type=sa.BLOB, type_=MediumBlob())
+        batch_op.alter_column('module_details', existing_type=sa.BLOB, type_=MediumBlob())
+        batch_op.alter_column('variable_template', existing_type=sa.BLOB, type_=MediumBlob())
+    with op.batch_alter_table('submodule') as batch_op:
+        batch_op.alter_column('readme_content', existing_type=sa.BLOB, type_=MediumBlob())
+        batch_op.alter_column('module_details', existing_type=sa.BLOB, type_=MediumBlob())
 
     # ### end Alembic commands ###
 
 
 def downgrade():
-    # Convert columns back to BLOB
-    op.alter_column('module_version', 'readme_content', existing_type=MediumBlob(), type_=sa.BLOB)
-    op.alter_column('module_version', 'module_details', existing_type=MediumBlob(), type_=sa.BLOB)
-    op.alter_column('module_version', 'variable_template', existing_type=MediumBlob(), type_=sa.BLOB)
+    with op.batch_alter_table('module_version') as batch_op:
+        batch_op.alter_column('readme_content', existing_type=MediumBlob(), type_=sa.BLOB)
+        batch_op.alter_column('module_details', existing_type=MediumBlob(), type_=sa.BLOB)
+        batch_op.alter_column('variable_template', existing_type=MediumBlob(), type_=sa.BLOB)
 
-    op.alter_column('submodule', 'readme_content', existing_type=MediumBlob(), type_=sa.BLOB)
-    op.alter_column('submodule', 'module_details', existing_type=MediumBlob(), type_=sa.BLOB)
+    with op.batch_alter_table('submodule') as batch_op:
+        batch_op.alter_column('readme_content', existing_type=MediumBlob(), type_=sa.BLOB)
+        batch_op.alter_column('module_details', existing_type=MediumBlob(), type_=sa.BLOB)

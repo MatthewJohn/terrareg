@@ -20,7 +20,7 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
             'description': 'Mock description',
             'source': 'http://mock.example.com/mockmodule',
             'published_at': '2020-01-01T23:18:12',
-            'downloads': 0, 'verified': True,
+            'downloads': 0, 'verified': True, 'trusted': False,
             'root': {
                 'path': '', 'readme': 'Mock module README file',
                 'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],
@@ -43,7 +43,7 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
             'description': 'Mock description',
             'source': None,
             'published_at': '2020-01-01T23:18:12',
-            'downloads': 0, 'verified': False,
+            'downloads': 0, 'verified': False, 'trusted': False,
             'root': {
                 'path': '', 'readme': 'Mock module README file',
                 'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],

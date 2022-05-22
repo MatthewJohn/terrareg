@@ -1,4 +1,6 @@
 
+import unittest.mock
+
 from test.unit.terrareg import (
     TerraregUnitTest,
     client, mocked_server_namespace_fixture,
@@ -38,7 +40,7 @@ class TestApiModuleDetails(TerraregUnitTest):
                 'namespace': 'testnamespace', 'name': 'lonelymodule', 'version': '1.0.0',
                 'provider': 'testprovider', 'description': 'Mock description',
                 'source': None,
-                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True}
+                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True, 'trusted': False}
             ]
         }
         assert res.status_code == 200
@@ -72,7 +74,7 @@ class TestApiModuleDetails(TerraregUnitTest):
                 'namespace': 'testnamespace', 'name': 'unverifiedmodule', 'version': '1.2.3',
                 'provider': 'testprovider', 'description': 'Mock description',
                 'source': None,
-                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': False}
+                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': False, 'trusted': False}
             ]
         }
         assert res.status_code == 200
@@ -104,7 +106,7 @@ class TestApiModuleDetails(TerraregUnitTest):
     @setup_test_data()
     def test_analytics_token(self, client, mocked_server_namespace_fixture,
                              mocked_search_module_providers):
-        """Test endpoint with analytics token"""
+        """Test endpoint with analytics token and trusted namespace"""
 
         namespace = MockNamespace(name='testnamespace')
         module = MockModule(namespace=namespace, name='lonelymodule')
@@ -128,7 +130,8 @@ class TestApiModuleDetails(TerraregUnitTest):
             )
         mocked_search_module_providers.side_effect = return_results
 
-        res = client.get('/v1/modules/test_token-name__testnamespace/lonelymodule')
+        with unittest.mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['testnamespace']):
+            res = client.get('/v1/modules/test_token-name__testnamespace/lonelymodule')
 
         assert res.json == {
             'meta': {'limit': 10, 'current_offset': 0}, 'modules': [
@@ -136,7 +139,7 @@ class TestApiModuleDetails(TerraregUnitTest):
                 'namespace': 'testnamespace', 'name': 'lonelymodule', 'version': '1.0.0',
                 'provider': 'testprovider', 'description': 'Mock description',
                 'source': None,
-                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True}
+                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True, 'trusted': True}
             ]
         }
         assert res.status_code == 200
