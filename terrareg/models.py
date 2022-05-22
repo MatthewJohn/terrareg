@@ -897,6 +897,11 @@ class TerraformSpecsObject(object):
         raise NotImplementedError
 
     @property
+    def is_example(self):
+        """Whether object is an example."""
+        return False
+
+    @property
     def pk(self):
         """Return primary key of database row"""
         return self._get_db_row()['id']
@@ -1443,6 +1448,22 @@ class BaseSubmodule(TerraformSpecsObject):
 
     TYPE = None
 
+    @classmethod
+    def get_by_id(cls, module_version: ModuleVersion, pk: int):
+        """Return instance of submodule based on ID of submodule"""
+        db = Database.get()
+        select = db.sub_module.select().where(
+            db.sub_module.c.id == pk,
+            db.sub_module.c.type == cls.TYPE
+        )
+        print("Finding " + cls.TYPE + " by pk: " + str(pk))
+        with db.get_engine().connect() as conn:
+            row = conn.execute(select).fetchone()
+        if row is None:
+            return None
+
+        return cls(module_version=module_version, module_path=row['path'])
+
     @property
     def path(self):
         """Return module path"""
@@ -1509,3 +1530,76 @@ class Example(BaseSubmodule):
 
     TYPE = 'example'
 
+    @property
+    def is_example(self):
+        """Whether object is an example."""
+        return True
+
+    def get_files(self):
+        """Return example files associated with example."""
+        db = Database.get()
+        select = db._example_file.select().where(
+            db._example_file.c.submodule_id == self.pk
+        )
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+            return [ExampleFile(example=self, path=row['path']) for row in res]
+
+
+class ExampleFile:
+
+    @staticmethod
+    def get_by_path(module_version: ModuleVersion, file_path: str):
+        """Return example file object by file path and module version"""
+        db = Database.get()
+        select = db._example_file.select().where(
+            db._module_version.c.id == module_version.pk,
+            db._example_file.c.path == file_path
+        )
+        with db.get_engine().connect() as conn:
+            row = conn.execute(select).fetchone()
+        if not row:
+            return None
+
+        example = Example.get_by_id(module_version=module_version, pk=row['submodule_id'])
+
+        if example is None:
+            return None
+
+        return ExampleFile(example=example, path=file_path)
+
+    @property
+    def file_name(self):
+        """Return name of file"""
+        return self._path.split('/')[-1]
+
+    @property
+    def path(self):
+        """Return path of example file."""
+        return self._path
+
+    @property
+    def content(self):
+        """Return content of example file."""
+        return Database.decode_blob(self._get_db_row()['content'])
+
+    def __init__(self, example: Example, path: str):
+        """Store identifying data."""
+        self._example = example
+        self._path = path
+        self._row_cache = None
+
+    def _get_db_row(self):
+        """Return DB row for git provider."""
+        if self._row_cache is None:
+            db = Database.get()
+            # Obtain row from git providers table for git provider.
+            print('PAth: ' + self._path)
+            select = db.example_file.select().where(
+                db.example_file.c.submodule_id == self._example.pk,
+                db.example_file.c.path == self._path
+            )
+            with db.get_engine().connect() as conn:
+                res = conn.execute(select)
+                return res.fetchone()
+        return self._row_cache

@@ -190,6 +190,9 @@ module "{{ module.name }}" {
     <ul>
         {% if current_module %}
             <li class="module-tab-link is-active"><a onclick="selectModuleTab(event, 'readme')">Readme</a></li>
+            {% if current_module.is_example %}
+            <li class="module-tab-link"><a onclick="selectModuleTab(event, 'example-files')">Files</a></li>
+            {% endif %}
             <li class="module-tab-link"><a onclick="selectModuleTab(event, 'inputs')">Inputs</a></li>
             <li class="module-tab-link"><a onclick="selectModuleTab(event, 'outputs')">Outputs</a></li>
             <li class="module-tab-link"><a onclick="selectModuleTab(event, 'dependencies')">Dependencies</a></li>
@@ -247,6 +250,68 @@ module "{{ module.name }}" {
 
 
         </script>
+        {% if current_module.is_example %}
+        <div id="module-tab-example-files" class="module-tabs" style="display: none;">
+            <script>
+                current_example_file = undefined;
+
+                function selectExampleFile(file_path) {
+                    $.ajax({
+                        type: "GET",
+                        url: `/v1/terrareg/modules/{{ module_version.id }}/example/file/${file_path}`,
+                        success: function (data) {
+                            $('#example-file-content').html(data);
+                        }
+                    });
+                }
+
+                $(document).ready(function () {
+                    $.ajax({
+                        type: "GET",
+                        url: "/v1/terrareg/modules/{{ module_version.id }}/example/filelist/{{ current_module.path }}",
+                        success: function (data) {
+                            data.forEach((example_file) => {
+                                $('#example-file-list-nav').append(`
+                                    <a class="panel-block" onClick="selectExampleFile('${example_file.path}')">
+                                        <span class="panel-icon">
+                                            <i class="fas fa-book" aria-hidden="true"></i>
+                                        </span>
+                                        ${example_file.filename}
+                                    </a>
+                                `);
+
+                                if (current_example_file == undefined) {
+                                    selectExampleFile(example_file.path);
+                                }
+                            });
+                        }
+                    });
+                });
+            </script>
+
+
+            <div class="columns">
+                <div class="column is-one-fifths">
+                    <nav id="example-file-list-nav" class="panel">
+                        <p class="panel-heading">
+                        Files
+                        </p>
+                    </nav>
+                </div>
+
+                <div class="column is-four-fifths">
+                    <pre >
+<code id="example-file-content" class="language-hcl" data-lang="html">
+</code>
+                    </pre>
+                </div>
+            </div>
+
+
+
+
+        </div>
+        {% endif %}
         <div id="module-tab-inputs" class="module-tabs" style="display: none;">
             <table class="table">
                 <thead>

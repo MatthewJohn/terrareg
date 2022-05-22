@@ -23,7 +23,7 @@ from terrareg.errors import (
     NoSessionSetError, IncorrectCSRFTokenError
 )
 from terrareg.models import (
-    Example, Namespace, Module, ModuleProvider,
+    Example, ExampleFile, Namespace, Module, ModuleProvider,
     ModuleVersion, ProviderLogo, Submodule,
     GitProvider
 )
@@ -301,6 +301,14 @@ class Server(object):
         self._api.add_resource(
             ApiTerraregModuleVersionPublish,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/publish'
+        )
+        self._api.add_resource(
+            ApiTerraregExampleFileList,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/example/filelist/<path:example>'
+        )
+        self._api.add_resource(
+            ApiTerraregExampleFile,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/example/file/<path:example_file>'
         )
 
         self._api.add_resource(
@@ -1655,3 +1663,58 @@ class ApiTerraregModuleVersionPublish(ErrorCatchingResource):
         return {
             'status': 'Success'
         }
+
+
+class ApiTerraregExampleFileList(ErrorCatchingResource):
+    """Interface to obtain list of example files."""
+
+    def _get(self, namespace, name, provider, version, example):
+        """Return list of files available in example."""
+        namespace_obj = Namespace(name=namespace)
+        module_obj = Module(namespace=namespace_obj, name=name)
+        module_provider = ModuleProvider.get(module=module_obj, name=provider)
+
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
+
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        if not module_version:
+            return {'message': 'Module version does not exist'}, 400
+
+        example_obj = Example(module_version=module_version, module_path=example)
+
+        return [
+            {
+                'filename': example_file.file_name,
+                'path': example_file.path,
+                'content_href': '/v1/terrareg/modules/{module_version_id}/example/files/{file_path}'.format(
+                    module_version_id=module_version.id,
+                    file_path=example_file.path)
+            }
+            for example_file in example_obj.get_files()
+        ]
+
+
+class ApiTerraregExampleFile(ErrorCatchingResource):
+    """Interface to obtain content of example file."""
+
+    def _get(self, namespace, name, provider, version, example_file):
+        """Return conent of example file in example module."""
+        namespace_obj = Namespace(name=namespace)
+        module_obj = Module(namespace=namespace_obj, name=name)
+        module_provider = ModuleProvider.get(module=module_obj, name=provider)
+
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
+
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        if not module_version:
+            return {'message': 'Module version does not exist'}, 400
+
+        example_file_obj = ExampleFile.get_by_path(module_version=module_version, file_path=example_file)
+
+        if example_file_obj is None:
+            return {'message': 'Example file object does not exist.'}
+
+        return example_file_obj.content
+
