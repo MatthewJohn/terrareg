@@ -306,10 +306,10 @@ module "{{ module.name }}" {
                 </div>
 
                 <div class="column is-four-fifths">
-                    <pre >
+                    <pre>
 <code id="example-file-content" class="language-hcl" data-lang="html">
 </code>
-                    </pre>
+</pre>
                 </div>
             </div>
 
@@ -454,7 +454,7 @@ module "{{ module.name }}" {
                 </tbody>
             </table>
             <pre id="usageBuilderOutput">
-            </pre>
+</pre>
 
         </div>
         {% endif %}
@@ -766,14 +766,11 @@ module "{{ module.name }}" {
         });
 
 
-        $('#usageBuilderOutput').html(`
-${additional_content}
-module "{{ module.name }}" {
+        $('#usageBuilderOutput').html(`${additional_content}module "{{ module.name }}" {
     source  = "{{ server_hostname }}/${analytics_token}__{{ current_module.registry_id }}"
     version = "{{ module_version.get_terraform_example_version_string() }}"
 ${output_tf}
-}
-`);
+}`);
     }
 
     $.get("/v1/terrareg/modules/{{ module_version.id }}/variable_template", (data, status) => {
