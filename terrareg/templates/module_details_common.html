@@ -172,7 +172,7 @@
             <h5 class="title is-5">Usage</h5>
             <pre>
 module "{{ module.name }}" {
-    # Note - the "{{ EXAMPLE_ANALYTICS_TOKEN }}" placeholder must be updated with 
+    # Note - the "{{ EXAMPLE_ANALYTICS_TOKEN }}" placeholder must be replaced with your '{{ ANALYTICS_TOKEN_PHRASE }}'
     source  = "{{ server_hostname }}/{{ EXAMPLE_ANALYTICS_TOKEN }}__{{ current_module.registry_id }}"
     version = "{{ module_version.get_terraform_example_version_string() }}"
 
