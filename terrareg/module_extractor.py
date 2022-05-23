@@ -1,5 +1,6 @@
 """Provide extraction method of modules."""
 
+from curses import KEY_RIGHT
 import os
 from typing import Type
 import tempfile
@@ -185,10 +186,11 @@ class ModuleExtractor:
             # Remove extraction directory from file path
             tf_file = re.sub('^{}/'.format(self.extract_directory), '', tf_file_path)
 
-            # Obtain contents of file and insert into DB
+            # Obtain contents of file
             with open(tf_file_path, 'r') as file_fd:
                 content = ''.join(file_fd.readlines())
 
+            # Insert example file into database
             db = Database.get()
             insert_statement = db._example_file.insert().values(
                 submodule_id=example.pk,

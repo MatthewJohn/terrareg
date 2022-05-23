@@ -1603,3 +1603,41 @@ class ExampleFile:
                 res = conn.execute(select)
                 return res.fetchone()
         return self._row_cache
+
+    def _replace_example_file_source(self, server_hostname):
+        """Replace single 'source' line in example file."""
+        # Method that will replace the source line in context of current hostname.
+        def callback(match):
+            # Convert relative path to absolute
+            module_path = os.path.abspath(
+                # Since example path does not contain a leading slash,
+                # prepend one to perform the abspath relative to root.
+                os.path.join('/', self._example.path, match.group(2))
+            )
+            # If the path is empty (at root),
+            # leave the path blank
+            if module_path == '/':
+                module_path = ''
+            else:
+                # Otherwise, prepend with additional leading slash,
+                # for the terraform annotation for a sub-directory within
+                # the module
+                module_path = '/{module_path}'.format(module_path=module_path)
+
+            return '{key_group}"{server_hostname}/{module_provider_id}{sub_dir}"\n'.format(
+                key_group=match.group(1),
+                server_hostname=server_hostname,
+                module_provider_id=self._example._module_version._module_provider.id,
+                sub_dir=module_path
+            )
+        return callback
+
+    def get_content(self, server_hostname):
+        """Return content with source replaced"""
+        # Replace source lines that use relative paths
+        return re.sub(
+            r'(\n[ \t]*source\s+=\s+)"(\..*)"[ \t]*\n',
+            self._replace_example_file_source(server_hostname=server_hostname),
+            self.content,
+            re.MULTILINE
+        )
