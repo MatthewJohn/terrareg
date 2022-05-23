@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.7.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.6.0...v2.7.0) (2022-05-23)
+
+
+### Features
+
+* Update examples in UI to display converted relative module source paths. ([4399886](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4399886a65ed8d436efcdd491d36ea28d5026f65)), closes [#91](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/91)
+
 # [2.6.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.5.4...v2.6.0) (2022-05-22)
 
 
