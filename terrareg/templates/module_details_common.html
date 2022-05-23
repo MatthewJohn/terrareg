@@ -259,8 +259,6 @@ module "{{ module.name }}" {
         {% if current_module.is_example %}
         <div id="module-tab-example-files" class="module-tabs" style="display: none;">
             <script>
-                current_example_file = undefined;
-
                 function selectExampleFile(file_path) {
                     $.ajax({
                         type: "GET",
@@ -276,6 +274,7 @@ module "{{ module.name }}" {
                         type: "GET",
                         url: "/v1/terrareg/modules/{{ module_version.id }}/example/filelist/{{ current_module.path }}",
                         success: function (data) {
+                            let first_file_selected = false;
                             data.forEach((example_file) => {
                                 $('#example-file-list-nav').append(`
                                     <a class="panel-block" onClick="selectExampleFile('${example_file.path}')">
@@ -286,7 +285,8 @@ module "{{ module.name }}" {
                                     </a>
                                 `);
 
-                                if (current_example_file == undefined) {
+                                if (first_file_selected == false) {
+                                    first_file_selected = true;
                                     selectExampleFile(example_file.path);
                                 }
                             });
