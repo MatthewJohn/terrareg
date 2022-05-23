@@ -172,12 +172,12 @@
             <h5 class="title is-5">Usage</h5>
             <pre>
 module "{{ module.name }}" {
-    # Note - the "{{ EXAMPLE_ANALYTICS_TOKEN }}" placeholder must be updated
+    # Note - the "{{ EXAMPLE_ANALYTICS_TOKEN }}" placeholder must be updated with 
     source  = "{{ server_hostname }}/{{ EXAMPLE_ANALYTICS_TOKEN }}__{{ current_module.registry_id }}"
     version = "{{ module_version.get_terraform_example_version_string() }}"
 
     # Provide variables here
-    # See 'Resource Builder' tab for an interactive builder
+    # See 'Usage Builder' tab for an interactive builder
     # example = "value"
 }</pre>
         </div>
