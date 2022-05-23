@@ -170,15 +170,21 @@
         </script>
         <div class="box">
             <h5 class="title is-5">Usage</h5>
+            <div class="content">
+                To use this module:
+                <ol>
+                    <li>Add the following example to your terraform,</li>
+                    <li>Ensure the "{{ EXAMPLE_ANALYTICS_TOKEN }}" placeholder must be replaced with your '{{ ANALYTICS_TOKEN_PHRASE }}',               </li>
+                    <li>Add the required inputs - use the 'Usage Builder' tab for help and 'Inputs' tab for a full list.</li>
+                </ol>
+            </div>
+
             <pre>
 module "{{ module.name }}" {
-    # Note - the "{{ EXAMPLE_ANALYTICS_TOKEN }}" placeholder must be replaced with your '{{ ANALYTICS_TOKEN_PHRASE }}'
     source  = "{{ server_hostname }}/{{ EXAMPLE_ANALYTICS_TOKEN }}__{{ current_module.registry_id }}"
     version = "{{ module_version.get_terraform_example_version_string() }}"
 
     # Provide variables here
-    # See 'Usage Builder' tab for an interactive builder
-    # example = "value"
 }</pre>
         </div>
     </div>
