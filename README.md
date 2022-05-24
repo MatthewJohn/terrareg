@@ -280,6 +280,18 @@ Default: `False`
 
 
 
+### DISABLE_TERRAREG_EXCLUSIVE_LABELS
+
+
+Whether to disable 'terrareg exclusive' labels from feature tabs in UI.
+
+Set to 'True' to disable the labels.
+
+
+Default: `False`
+
+
+
 ### EXAMPLES_DIRECTORY
 
 
