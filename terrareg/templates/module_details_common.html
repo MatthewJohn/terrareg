@@ -231,7 +231,7 @@ module "{{ module.name }}" {
 <div class="columns">
     <div class="column is-three-fifths is-offset-one-fifth">
         {% if current_module %}
-        <div id="module-tab-readme" class="module-tabs">
+        <div id="module-tab-readme" class="module-tabs content">
             {{ current_module.get_readme_html()|safe }}
         </div>
         <style>
