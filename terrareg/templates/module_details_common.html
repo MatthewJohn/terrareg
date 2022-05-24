@@ -108,8 +108,12 @@
     }
 
     $(document).ready(function () {
+        let window_hash_value = $(location).attr('hash').replace('#', '');
+        if (window_hash_value) {
+            selectModuleTab(window_hash_value);
+        }
         // If readme file is present, select the tab
-        if ($('#module-tab-link-readme').length) {
+        else if ($('#module-tab-link-readme').length) {
             selectModuleTab('readme');
 
         // otherwise, default to inputs tab
