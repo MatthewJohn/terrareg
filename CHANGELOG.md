@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.7.2...v2.7.3) (2022-05-24)
+
+
+### Bug Fixes
+
+* Handle error when README is empty (when None is stored in DB row) ([b49968d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b49968dfab786f0c4d58a99fcc5ff3c9d42d3ad9)), closes [#129](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/129)
+
 ## [2.7.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.7.1...v2.7.2) (2022-05-24)
 
 
