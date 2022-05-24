@@ -39,6 +39,9 @@
 
 <script>
     function selectModuleTab(tab_name) {
+        // Set URL anchor to selected tag
+        window.location.hash = '#' + tab_name;
+
         let tab_content_id = "module-tab-" + tab_name;
         let tab_link_id = "module-tab-link-" + tab_name;
         let i, tabcontent, tablinks;
