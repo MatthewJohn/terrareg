@@ -125,12 +125,12 @@
     </a>
     {% endif %}
 
-    <div class="column is-two-fifths">
+    <div class="column is-one-third">
         {% block main_details %}{% endblock %}
     </div>
 
     {% if module_version %}
-    <div class="column is-one-fifth">
+    <div class="column is-one-third">
 
         {% if not current_module.is_submodule %}
         <div class="box">
@@ -170,15 +170,21 @@
         </script>
         <div class="box">
             <h5 class="title is-5">Usage</h5>
+            <div class="content">
+                To use this module:
+                <ol>
+                    <li>Add the following example to your terraform,</li>
+                    <li>Ensure the "{{ EXAMPLE_ANALYTICS_TOKEN }}" placeholder must be replaced with your '{{ ANALYTICS_TOKEN_PHRASE }}',               </li>
+                    <li>Add the required inputs - use the 'Usage Builder' tab for help and 'Inputs' tab for a full list.</li>
+                </ol>
+            </div>
+
             <pre>
 module "{{ module.name }}" {
-    # Note - the "{{ EXAMPLE_ANALYTICS_TOKEN }}" placeholder must be updated
     source  = "{{ server_hostname }}/{{ EXAMPLE_ANALYTICS_TOKEN }}__{{ current_module.registry_id }}"
     version = "{{ module_version.get_terraform_example_version_string() }}"
 
     # Provide variables here
-    # See 'Resource Builder' tab for an interactive builder
-    # example = "value"
 }</pre>
         </div>
     </div>
@@ -243,19 +249,26 @@ module "{{ module.name }}" {
         <script>
             // Add 'table' class to all tables in README
             $('#module-tab-readme').find('table').addClass('table');
-            $('#module-tab-readme').find('h1').addClass('title').addClass('is-2');
-            $('#module-tab-readme').find('h2').addClass('subtitle').addClass('is-3');
-            $('#module-tab-readme').find('h3').addClass('subtitle').addClass('is-4');
-            $('#module-tab-readme').find('h4').addClass('subtitle').addClass('is-5');
+            $('#module-tab-readme').find('h1').addClass('subtitle').addClass('is-3');
+            $('#module-tab-readme').find('h2').addClass('subtitle').addClass('is-4');
+            $('#module-tab-readme').find('h3').addClass('subtitle').addClass('is-5');
+            $('#module-tab-readme').find('h4').addClass('subtitle').addClass('is-6');
 
 
         </script>
         {% if current_module.is_example %}
         <div id="module-tab-example-files" class="module-tabs" style="display: none;">
             <script>
-                current_example_file = undefined;
-
                 function selectExampleFile(file_path) {
+                    // Disable 'is-active' flag on all files
+                    $('#example-file-list-nav').find('a').each((itx, item) => {
+                        let a_obj = $(item);
+                        if (a_obj.data('path') == file_path) {
+                            item.className = "panel-block is-active";
+                        } else {
+                            item.className = "panel-block";
+                        }
+                    });
                     $.ajax({
                         type: "GET",
                         url: `/v1/terrareg/modules/{{ module_version.id }}/example/file/${file_path}`,
@@ -270,17 +283,19 @@ module "{{ module.name }}" {
                         type: "GET",
                         url: "/v1/terrareg/modules/{{ module_version.id }}/example/filelist/{{ current_module.path }}",
                         success: function (data) {
+                            let first_file_selected = false;
                             data.forEach((example_file) => {
                                 $('#example-file-list-nav').append(`
-                                    <a class="panel-block" onClick="selectExampleFile('${example_file.path}')">
+                                    <a class="panel-block" data-path="${example_file.path}" onClick="selectExampleFile('${example_file.path}')">
                                         <span class="panel-icon">
-                                            <i class="fas fa-book" aria-hidden="true"></i>
+                                            <i class="fa-solid fa-file-code" aria-hidden="true"></i>
                                         </span>
                                         ${example_file.filename}
                                     </a>
                                 `);
 
-                                if (current_example_file == undefined) {
+                                if (first_file_selected == false) {
+                                    first_file_selected = true;
                                     selectExampleFile(example_file.path);
                                 }
                             });
@@ -300,10 +315,10 @@ module "{{ module.name }}" {
                 </div>
 
                 <div class="column is-four-fifths">
-                    <pre >
+                    <pre>
 <code id="example-file-content" class="language-hcl" data-lang="html">
 </code>
-                    </pre>
+</pre>
                 </div>
             </div>
 
@@ -426,6 +441,7 @@ module "{{ module.name }}" {
         </div>
 
         <div id="module-tab-usage-builder" class="module-tabs" style="display: none;">
+            <span>Provide values to the following inputs to generate terraform required to use the module.</span>
             <table id="analytics-table" class="table" style="width: 100%">
                 <thead>
                     <tr>
@@ -447,7 +463,7 @@ module "{{ module.name }}" {
                 </tbody>
             </table>
             <pre id="usageBuilderOutput">
-            </pre>
+</pre>
 
         </div>
         {% endif %}
@@ -759,14 +775,11 @@ module "{{ module.name }}" {
         });
 
 
-        $('#usageBuilderOutput').html(`
-${additional_content}
-module "{{ module.name }}" {
+        $('#usageBuilderOutput').html(`${additional_content}module "{{ module.name }}" {
     source  = "{{ server_hostname }}/${analytics_token}__{{ current_module.registry_id }}"
     version = "{{ module_version.get_terraform_example_version_string() }}"
 ${output_tf}
-}
-`);
+}`);
     }
 
     $.get("/v1/terrareg/modules/{{ module_version.id }}/variable_template", (data, status) => {

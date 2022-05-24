@@ -120,141 +120,126 @@
         return namespaces;
     }
 
-    let previousSearchString = '';
+    let previousSearchString = undefined;
     function performSearch(new_offset) {
 
         let searchQuery = $('#navBarSearchInput')[0].value;
 
-        if (searchQuery) {
-            // Mark search query breadcrumb as active
-            document.getElementById('searchQueryBreadcrumbParent').className = "is-active";
-            document.getElementById('searchBreadcrumb').className = "";
+        // Mark search query breadcrumb as active
+        document.getElementById('searchQueryBreadcrumbParent').className = "is-active";
+        document.getElementById('searchBreadcrumb').className = "";
 
-            // Display search breadcrumb
-            $('#searchQueryBreadcrumbParent')[0].style.display = 'flex';
+        // Display search breadcrumb
+        $('#searchQueryBreadcrumbParent')[0].style.display = 'flex';
 
-            // Update link and text in search query breadcrumb
-            document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search?q=' + encodeURIComponent(searchQuery));
-            document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
+        // Update link and text in search query breadcrumb
+        document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search?q=' + encodeURIComponent(searchQuery));
+        document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
 
-            if (new_offset === undefined) {
-                new_offset = 0;
+        if (new_offset === undefined) {
+            new_offset = 0;
+        }
+
+        // Clear any existing provider logo TOS
+        // Check if element exists - on initial page load,
+        // the element will not be present
+        // on the page at this point.
+        if ($('#provider-tos')[0] !== undefined) {
+            $('#provider-tos')[0].innerHTML = '';
+        }
+
+        let query_string = '';
+        getFilterProviders().forEach((provider) => {
+            query_string += `&provider=${provider}`;
+        });
+
+        getFilterNamespaces().forEach((namespace) => {
+            query_string += `&namespace=${namespace}`;
+        });
+
+        // Perform AJAX query to obtain results
+        $.get(`/v1/modules/search?` +
+                `q=${encodeURIComponent(searchQuery)}&` +
+                `offset=${new_offset}&` +
+                `verified=${$('#search-verified').is(':checked')}&` +
+                `trusted_namespaces=${$('#search-trusted-namespaces').is(':checked')}&` +
+                `contributed=${$('#search-contributed').is(':checked')}` +
+                query_string,
+                function(data, status){
+            if (data.modules.length == 0) {
+                $('#results').html(`
+                    No modules match your search criteria.
+                    <br />
+                    Please check for spelling errors and try again.
+                `);
+
+                // Disable prev/next buttons
+                $('#prevButton').prop('disabled', true);
+                $('#nextButton').prop('disabled', true);
+                currentSearchMeta = undefined;
+            } else {
+                // Clear reuslts panel before adding results
+                $('#results').html('');
+
+                $('#prevButton').prop('disabled', (data.meta.prev_offset === undefined));
+                $('#nextButton').prop('disabled', (data.meta.next_offset === undefined));
+                currentSearchMeta = data.meta;
+
+                // Iterate through modules
+                data.modules.forEach((module) => {
+                    createSearchResultCard('results', module, provider_logos);
+                });
             }
+        });
 
-            // Clear any existing provider logo TOS
-            // Check if element exists - on initial page load,
-            // the element will not be present
-            // on the page at this point.
-            if ($('#provider-tos')[0] !== undefined) {
-                $('#provider-tos')[0].innerHTML = '';
-            }
+        if (searchQuery != previousSearchString) {
 
-            let query_string = '';
-            getFilterProviders().forEach((provider) => {
-                query_string += `&provider=${provider}`;
-            });
+            // Update list of search filters
+            $.get(`/v1/terrareg/search_filters?q=${encodeURIComponent(searchQuery)}`, (data, status) => {
+                $('#search-verified-count').html(data.verified);
+                $('#search-trusted-namespaces-count').html(data.trusted_namespaces);
+                $('#search-contributed-count').html(data.contributed);
 
-            getFilterNamespaces().forEach((namespace) => {
-                query_string += `&namespace=${namespace}`;
-            });
+                let current_filtered_provider = getFilterProviders();
 
-            // Perform AJAX query to obtain results
-            $.get(`/v1/modules/search?` +
-                  `q=${encodeURIComponent(searchQuery)}&` +
-                  `offset=${new_offset}&` +
-                  `verified=${$('#search-verified').is(':checked')}&` +
-                  `trusted_namespaces=${$('#search-trusted-namespaces').is(':checked')}&` +
-                  `contributed=${$('#search-contributed').is(':checked')}` +
-                  query_string,
-                  function(data, status){
-                if (data.modules.length == 0) {
-                    $('#results').html(`
-                        No modules match your search criteria.
-                        <br />
-                        Please check for spelling errors and try again.
+                // Clear all providers
+                $('#provider-filters').find('a').remove();
+                Object.keys(data.providers).forEach((provider_name) => {
+
+                    // Check if provider already exists and is checked
+                    let checked = current_filtered_provider.indexOf(provider_name) !== -1;
+
+                    // Add providers to provider filter
+                    $('#provider-filters').append(`
+                    <a class="panel-block" onclick="toggleChildCheckbox(event);">
+                        <input data-provider-name="${provider_name}" id="provider-filter-${provider_name}" onchange="performSearch();" ${checked ? 'checked' : ''} type="checkbox" />
+                            ${provider_name}
+                        <span class="tag">${data.providers[provider_name]}</span>
+                    </a>
                     `);
-
-                    // Disable prev/next buttons
-                    $('#prevButton').prop('disabled', true);
-                    $('#nextButton').prop('disabled', true);
-                    currentSearchMeta = undefined;
-                } else {
-                    // Clear reuslts panel before adding results
-                    $('#results').html('');
-
-                    $('#prevButton').prop('disabled', (data.meta.prev_offset === undefined));
-                    $('#nextButton').prop('disabled', (data.meta.next_offset === undefined));
-                    currentSearchMeta = data.meta;
-
-                    // Iterate through modules
-                    data.modules.forEach((module) => {
-                        createSearchResultCard('results', module, provider_logos);
-                    });
-                }
-            });
-
-            if (searchQuery != previousSearchString) {
-
-                // Update list of search filters
-                $.get(`/v1/terrareg/search_filters?q=${encodeURIComponent(searchQuery)}`, (data, status) => {
-                    $('#search-verified-count').html(data.verified);
-                    $('#search-trusted-namespaces-count').html(data.trusted_namespaces);
-                    $('#search-contributed-count').html(data.contributed);
-
-                    let current_filtered_provider = getFilterProviders();
-
-                    // Clear all providers
-                    $('#provider-filters').find('a').remove();
-                    Object.keys(data.providers).forEach((provider_name) => {
-
-                        // Check if provider already exists and is checked
-                        let checked = current_filtered_provider.indexOf(provider_name) !== -1;
-
-                        // Add providers to provider filter
-                        $('#provider-filters').append(`
-                        <a class="panel-block" onclick="toggleChildCheckbox(event);">
-                            <input data-provider-name="${provider_name}" id="provider-filter-${provider_name}" onchange="performSearch();" ${checked ? 'checked' : ''} type="checkbox" />
-                                ${provider_name}
-                            <span class="tag">${data.providers[provider_name]}</span>
-                        </a>
-                        `);
-                    });
-
-
-                    let current_filtered_namespaces = getFilterNamespaces();
-                    // Clear all namespaces
-                    $('#namespace-filters').find('a').remove();
-                    Object.keys(data.namespaces).forEach((namespace_name) => {
-
-                        // Check if provider already exists and is checked
-                        let checked = current_filtered_namespaces.indexOf(namespace_name) !== -1;
-
-                        // Add providers to provider filter
-                        $('#namespace-filters').append(`
-                        <a class="panel-block" onclick="toggleChildCheckbox(event);">
-                            <input data-namespace-name="${namespace_name}" id="namespace-filter-${namespace_name}" onchange="performSearch();" ${checked ? 'checked' : ''} type="checkbox" />
-                                ${namespace_name}
-                            <span class="tag">${data.namespaces[namespace_name]}</span>
-                        </a>
-                        `);
-                    });
                 });
 
-                previousSearchString = searchQuery;
-            }
-    
-        } else {
-            // Set 'search' breadcrumb as active
-            document.getElementById('searchBreadcrumb').className = "is-active";
-            // Hide search query breadcrumb
-            $('#searchQueryBreadcrumbParent')[0].style.display = 'none';
 
-            // Show no query provided
-            $('#results').html(`
-                No search query has been performed.
-                <br />
-                Use the search bar above to search for module.
-            `);
+                let current_filtered_namespaces = getFilterNamespaces();
+                // Clear all namespaces
+                $('#namespace-filters').find('a').remove();
+                Object.keys(data.namespaces).forEach((namespace_name) => {
+
+                    // Check if provider already exists and is checked
+                    let checked = current_filtered_namespaces.indexOf(namespace_name) !== -1;
+
+                    // Add providers to provider filter
+                    $('#namespace-filters').append(`
+                    <a class="panel-block" onclick="toggleChildCheckbox(event);">
+                        <input data-namespace-name="${namespace_name}" id="namespace-filter-${namespace_name}" onchange="performSearch();" ${checked ? 'checked' : ''} type="checkbox" />
+                            ${namespace_name}
+                        <span class="tag">${data.namespaces[namespace_name]}</span>
+                    </a>
+                    `);
+                });
+            });
+
+            previousSearchString = searchQuery;
         }
     }
 

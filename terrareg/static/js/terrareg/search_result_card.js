@@ -66,7 +66,7 @@ function timeDifference(previous) {
     }
 }
 
-function createSearchResultCard(parent_id, module, provider_logos) {
+async function createSearchResultCard(parent_id, module, provider_logos) {
     let display_published = timeDifference(new Date(module.published_at));
     let provider_logo_html = '';
     if (provider_logos[module.provider] !== undefined) {
@@ -86,6 +86,8 @@ function createSearchResultCard(parent_id, module, provider_logos) {
         }
     }
 
+    let terrareg_config = await getConfig();
+
     // Add module to search results
     $(`#${parent_id}`).append(
         `  
@@ -99,11 +101,11 @@ function createSearchResultCard(parent_id, module, provider_logos) {
                             <span class="panel-icon">
                                 <i class="fas fa-check-circle" aria-hidden="true"></i>
                             </span>
-                            ${terraregConfig.TRUSTED_NAMESPACE_LABEL}
+                            ${terrareg_config.TRUSTED_NAMESPACE_LABEL}
                         </span>
                     ` : `
                         <span class="tag is-warning is-light result-card-label">
-                            ${terraregConfig.CONTRIBUTED_NAMESPACE_LABEL}
+                            ${terrareg_config.CONTRIBUTED_NAMESPACE_LABEL}
                         </span>
                                         `}
                     ${module.verified ? `
@@ -111,7 +113,7 @@ function createSearchResultCard(parent_id, module, provider_logos) {
                             <span class="panel-icon">
                                 <i class="fas fa-thumbs-up" aria-hidden="true"></i>
                             </span>
-                            ${terraregConfig.VERIFIED_MODULE_LABEL}
+                            ${terrareg_config.VERIFIED_MODULE_LABEL}
                         </span>` : ``}
                 </p>
                 <a href="/modules/${module.id}">
