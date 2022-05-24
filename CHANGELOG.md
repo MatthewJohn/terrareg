@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.7.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.7.0...v2.7.1) (2022-05-24)
+
+
+### Bug Fixes
+
+* Allow empty search, which returns all module providers. ([bdd329a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/bdd329a97710cc3ed225e23e56779f047d8b140d)), closes [#133](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/133)
+* Ensure that first file in examples is left selected, rather than showing the content of the last file. ([c57ec87](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c57ec87d94c3346cf58a1d24fd0f2e132e923fe7)), closes [#133](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/133)
+* Fix name of usage builder in UI in Usage example ([1898ba0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1898ba0d8a533675745a75f4d12cf605904451e2)), closes [#133](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/133)
+* Fix tiles on homepage occasionally not loading when config request has not completed in time. ([ddeb549](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ddeb54963fb2abbb5a9539c5e92bde51423ba31b)), closes [#133](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/133)
+* Remove trailing/leading new lines in preformatted text for usage builder and example file content. ([51c418f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/51c418fbd8bd74929e6cfe4202dc0148ae0c35a6)), closes [#133](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/133)
+* Show currently selected example file in file list panel ([e2b04c5](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e2b04c58a8b9049d3166c8e5e8bab62fccd95efe)), closes [#133](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/133)
+
 # [2.7.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.6.0...v2.7.0) (2022-05-23)
 
 
