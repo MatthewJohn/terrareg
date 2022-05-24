@@ -131,6 +131,15 @@ class Config:
         return os.environ.get('VERIFIED_MODULE_LABEL', 'Verified')
 
     @property
+    def DISABLE_TERRAREG_EXCLUSIVE_LABELS(self):
+        """
+        Whether to disable 'terrareg exclusive' labels from feature tabs in UI.
+
+        Set to 'True' to disable the labels.
+        """
+        return os.environ.get('DISABLE_TERRAREG_EXCLUSIVE_LABELS', 'False') == 'True'
+
+    @property
     def DELETE_EXTERNALLY_HOSTED_ARTIFACTS(self):
         """
         Whether uploaded modules, that provide an external URL for the artifact,

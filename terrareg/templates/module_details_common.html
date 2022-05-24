@@ -210,13 +210,17 @@ module "{{ module.name }}" {
                 <li class="module-tab-link">
                     <a onclick="selectModuleTab(event, 'analytics')">
                         Analytics
+                        {% if not config.DISABLE_TERRAREG_EXCLUSIVE_LABELS %}
                         <span class="tag is-warning is-light">Terrareg Exclusive</span>
+                        {% endif %}
                     </a>
                 </li>
                 <li id="usageBuilderTabButton" class="module-tab-link">
                     <a onclick="selectModuleTab(event, 'usage-builder')">
                         Usage Builder
+                        {% if not config.DISABLE_TERRAREG_EXCLUSIVE_LABELS %}
                         <span class="tag is-warning is-light">Terrareg Exclusive</span>
+                        {% endif %}
                     </a>
                 </li>
             {% endif %}
