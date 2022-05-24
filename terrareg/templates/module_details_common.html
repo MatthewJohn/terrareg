@@ -38,9 +38,10 @@
 {% endif %}
 
 <script>
-    function selectModuleTab(event, tab_name) {
-        tab_name = "module-tab-" + tab_name;
-        var i, tabcontent, tablinks;
+    function selectModuleTab(tab_name) {
+        let tab_content_id = "module-tab-" + tab_name;
+        let tab_link_id = "module-tab-link-" + tab_name;
+        let i, tabcontent, tablinks;
 
         // Hide content of all tabs
         tabcontent = document.getElementsByClassName("module-tabs");
@@ -54,8 +55,8 @@
             tablinks[i].className = tablinks[i].className.replace(" is-active", "");
         }
         // Show content of current tab and mark current link as active.
-        document.getElementById(tab_name).style.display = "block";
-        event.target.parentNode.className += " is-active";
+        document.getElementById(tab_content_id).style.display = "block";
+        document.getElementById(tab_link_id).className += " is-active";
     }
 
 
@@ -105,6 +106,17 @@
         // Navigate page to version
         window.location.href = url;
     }
+
+    $(document).ready(function () {
+        // If readme file is present, select the tab
+        if ($('#module-tab-link-readme').length) {
+            selectModuleTab('readme');
+
+        // otherwise, default to inputs tab
+        } else {
+            selectModuleTab('inputs');
+        }
+    });
 </script>
 
 
@@ -195,39 +207,41 @@ module "{{ module.name }}" {
 <div class="tabs">
     <ul>
         {% if current_module %}
-            <li class="module-tab-link is-active"><a onclick="selectModuleTab(event, 'readme')">Readme</a></li>
-            {% if current_module.is_example %}
-            <li class="module-tab-link"><a onclick="selectModuleTab(event, 'example-files')">Files</a></li>
+            {% if current_module.get_readme_content() %}
+            <li id="module-tab-link-readme" class="module-tab-link"><a onclick="selectModuleTab('readme')">Readme</a></li>
             {% endif %}
-            <li class="module-tab-link"><a onclick="selectModuleTab(event, 'inputs')">Inputs</a></li>
-            <li class="module-tab-link"><a onclick="selectModuleTab(event, 'outputs')">Outputs</a></li>
-            <li class="module-tab-link"><a onclick="selectModuleTab(event, 'dependencies')">Dependencies</a></li>
-            <li class="module-tab-link">
-                <a onclick="selectModuleTab(event, 'resources')">Resources</a>
+            {% if current_module.is_example %}
+            <li id="module-tab-link-example-files" class="module-tab-link"><a onclick="selectModuleTab('example-files')">Files</a></li>
+            {% endif %}
+            <li id="module-tab-link-inputs" class="module-tab-link"><a onclick="selectModuleTab('inputs')">Inputs</a></li>
+            <li id="module-tab-link-outputs" class="module-tab-link"><a onclick="selectModuleTab('outputs')">Outputs</a></li>
+            <li id="module-tab-link-dependencies" class="module-tab-link"><a onclick="selectModuleTab('dependencies')">Dependencies</a></li>
+            <li id="module-tab-link-resources" class="module-tab-link">
+                <a onclick="selectModuleTab('resources')">Resources</a>
             </li>
 
             {% if not current_module.is_submodule %}
-                <li class="module-tab-link">
-                    <a onclick="selectModuleTab(event, 'analytics')">
+                <li id="module-tab-link-analytics" class="module-tab-link">
+                    <a onclick="selectModuleTab('analytics')">
                         Analytics
                         <span class="tag is-warning is-light">Terrareg Exclusive</span>
                     </a>
                 </li>
-                <li id="usageBuilderTabButton" class="module-tab-link">
-                    <a onclick="selectModuleTab(event, 'usage-builder')">
+                <li id="module-tab-link-usage-builder" class="module-tab-link">
+                    <a onclick="selectModuleTab('usage-builder')">
                         Usage Builder
                         <span class="tag is-warning is-light">Terrareg Exclusive</span>
                     </a>
                 </li>
             {% endif %}
         {% endif %}
-        <li id="integrationsTabButton" class="module-tab-link">
-            <a onclick="selectModuleTab(event, 'integrations')">
+        <li id="module-tab-link-integrations" class="module-tab-link">
+            <a onclick="selectModuleTab('integrations')">
                 Integrations
             </a>
         </li>
-        <li style="display: none" id="settingsTabButton" class="module-tab-link">
-            <a onclick="selectModuleTab(event, 'settings')">
+        <li style="display: none" id="module-tab-link-settings" class="module-tab-link">
+            <a onclick="selectModuleTab('settings')">
                 Settings
             </a>
         </li>
@@ -787,7 +801,7 @@ ${output_tf}
         input_variables = data;
 
         if (! input_variables.length) {
-            $('#usageBuilderTabButton').remove();
+            $('#module-tab-link-usage-builder').remove();
             return;
         }
 
@@ -840,7 +854,7 @@ ${output_tf}
     // Check if user is authenticated and display settings tab
     is_logged_in((logged_in) => {
         if (logged_in) {
-            $('#settingsTabButton').css('display', 'block');
+            $('#module-tab-link-settings').css('display', 'block');
         }
     });
 </script>
