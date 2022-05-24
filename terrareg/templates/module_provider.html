@@ -10,7 +10,7 @@
     <section>
         Version
         <div class="select is-small">
-            <select onchange="selectVersion(event);">
+            <select autocomplete="off" onchange="selectVersion(event);">
                 {% for module_version_itx in module_provider.get_versions(include_beta=False) %}
                 <option
                         value="{{ module_version_itx.get_view_url() }}"
@@ -55,7 +55,7 @@
             {% if module_version.get_submodules() %}
             <section>
                 <div class="select is-small">
-                    <select onchange="selectSubmodule(event);">
+                    <select autocomplete="off" onchange="selectSubmodule(event);">
                         <option value="none">Select submodule</option>
                         {% for submodule in module_version.get_submodules() %}
                         <option value="{{ submodule.get_view_url() }}">{{ submodule.path }}</option>
@@ -69,7 +69,7 @@
             {% if module_version.get_examples() %}
             <section>
                 <div class="select is-small">
-                    <select onchange="selectSubmodule(event);">
+                    <select autocomplete="off" onchange="selectSubmodule(event);">
                         <option value="none">Select example</option>
                         {% for example in module_version.get_examples() %}
                         <option value="{{ example.get_view_url() }}">{{ example.path }}</option>
