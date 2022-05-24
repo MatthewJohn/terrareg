@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.7.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.7.1...v2.7.2) (2022-05-24)
+
+
+### Bug Fixes
+
+* Add 'content' tag to README div, which allows for markup of various types of tags, such as lists ([f3cea4a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f3cea4ad084ac7b8045b416cc7eaff3d6b6e8361)), closes [#132](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/132)
+* Force version/submodule/example dropdowns from keeping previous value on page load. ([2faa911](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2faa9116aca6c663bc93b1562dbf4cdb5f6c86af)), closes [#131](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/131)
+
 ## [2.7.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.7.0...v2.7.1) (2022-05-24)
 
 
