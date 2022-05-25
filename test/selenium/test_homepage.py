@@ -1,11 +1,12 @@
 
-import time
 from unittest import mock
 import pytest
 
 from selenium.webdriver.common.by import By
+import selenium
 
 from test.selenium import SeleniumTest
+from terrareg.models import Namespace, Module, ModuleProvider
 
 class TestHomepage(SeleniumTest):
     """Test homepage."""
@@ -13,16 +14,63 @@ class TestHomepage(SeleniumTest):
     def test_title(self):
         """Check homepage."""
         with mock.patch('terrareg.config.Config.APPLICATION_NAME', 'unittest application name'), \
-               mock.patch('terrareg.analytics.AnalyticsEngine.get_total_downloads', 2003):
-            with self.run_server() as selenium:
-                selenium.get(self.get_url('/'))
-                time.sleep(5)
+                mock.patch('terrareg.analytics.AnalyticsEngine.get_total_downloads', return_value=2005), \
+                mock.patch('terrareg.config.Config.CONTRIBUTED_NAMESPACE_LABEL', 'unittest contributed module'), \
+                mock.patch('terrareg.config.Config.VERIFIED_MODULE_LABEL', 'unittest verified label'):
+            with self.run_server() as selenium_con:
+
+                selenium_con.implicitly_wait(5)
+
+                selenium_con.get(self.get_url('/'))
 
                 # Ensure title is injected correctly
-                assert selenium.find_element(By.ID, 'title').text == 'unittest application name'
+                assert selenium_con.find_element(By.ID, 'title').text == 'unittest application name'
 
                 # Ensure counts on page are correct
-                #assert selenium.find_element(By.ID, 'namespace-count').text == 5
-                #assert selenium.find_element(By.ID, 'module-count').text == 5
-                #assert selenium.find_element(By.ID, 'version-count').text == 5
-                assert selenium.find_element(By.ID, 'download-count').text == 5
+                assert selenium_con.find_element(By.ID, 'namespace-count').text == '11'
+                assert selenium_con.find_element(By.ID, 'module-count').text == '45'
+                assert selenium_con.find_element(By.ID, 'version-count').text == '59'
+                assert selenium_con.find_element(By.ID, 'download-count').text == '2005'
+
+                # Check tabs for most recent uploaded and most downloaded
+                most_recent_module_version_title = selenium_con.find_element(
+                    By.ID, 'most-recent-module-version'
+                ).find_element(
+                    By.CLASS_NAME, 'card-header-title'
+                )
+
+                # Check title of card
+                assert most_recent_module_version_title.find_element(
+                        By.TAG_NAME, 'a'
+                    ).text == 'mostrecent / modulename'
+                # Check contributed tag is applied
+                assert most_recent_module_version_title.find_element(
+                    By.CLASS_NAME,
+                    'result-card-label-contributed'
+                ).text == 'unittest contributed module'
+
+                # Ensure no other tags are applied
+                with pytest.raises(selenium.common.exceptions.NoSuchElementException):
+                    most_recent_module_version_title.find_element(
+                        By.CLASS_NAME,
+                        'result-card-label-trusted'
+                    )
+                with pytest.raises(selenium.common.exceptions.NoSuchElementException):
+                    most_recent_module_version_title.find_element(
+                        By.CLASS_NAME,
+                        'result-card-label-verified'
+                    )
+
+                # Make module verified and ensure tag is applied
+                namespace = Namespace('mostrecent')
+                module = Module(namespace=namespace, name='modulename')
+                provider = ModuleProvider(module=module, name='providername')
+                provider.update_attributes(verified=True)
+
+                # Reload page and ensure verified tag is present
+                selenium_con.get(self.get_url('/'))
+                assert selenium_con.find_element(
+                    By.ID, 'most-recent-module-version'
+                ).find_element(
+                    By.CLASS_NAME, 'result-card-label-verified'
+                ).text == 'unittest verified label'

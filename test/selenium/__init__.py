@@ -2,6 +2,7 @@
 import functools
 import multiprocessing
 import os
+from time import sleep
 from unittest.mock import patch
 
 
@@ -34,6 +35,8 @@ class SeleniumTestServer:
     def __enter__(self) -> webdriver.Firefox:
         """Setup flask server."""
         self._server_thread.start()
+        # wait for server to start
+        sleep(1)
         return self.test_instance.selenium_instance
 
     def __exit__(self, *args, **kwargs):

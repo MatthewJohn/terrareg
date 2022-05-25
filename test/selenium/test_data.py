@@ -341,10 +341,19 @@ integration_test_data = {
             'versions': {'5.5.5': {'published': True}}
         }}
     },
-    'genericmodules': {
+    'mostrecent': {
         'modulename': {'providername': {
             'id': 48,
             'versions': {'1.2.3': {'published': True}}
+        }}
+    },
+    'mostrecentunpublished': {
+        'modulename': {'providername': {
+            'id': 53,
+            'versions': {
+                '1.2.3': {'published': False},
+                '1.5.3-beta': {'published': True, 'beta': True}
+            }
         }}
     }
 }
