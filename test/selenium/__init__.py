@@ -2,6 +2,7 @@
 import functools
 import multiprocessing
 import os
+import random
 from time import sleep
 from unittest.mock import patch
 
@@ -34,15 +35,18 @@ class SeleniumTestServer:
 
     def __enter__(self) -> webdriver.Firefox:
         """Setup flask server."""
+        # Generate random port
+        self.test_instance.SERVER.port = random.randint(5000, 6000)
         self._server_thread.start()
         # wait for server to start
-        sleep(1)
+        sleep(2)
         return self.test_instance.selenium_instance
 
     def __exit__(self, *args, **kwargs):
         """Teardown test server."""
         self._server_thread.kill()
         self._server_thread.terminate()
+        self._server_thread.join()
 
 
 class SeleniumTest(BaseTest):
@@ -66,19 +70,19 @@ class SeleniumTest(BaseTest):
 
     def get_url(self, path):
         """Return full URL to perform selenium request."""
-        return 'http://localhost:5123{path}'.format(path=path)
+        return 'http://localhost:{port}{path}'.format(port=self.SERVER.port, path=path)
 
     def setup_class(self):
         """Setup host/port to host server."""
         super(SeleniumTest, self).setup_class(self)
 
-        self.SERVER.port = 5123
         self.SERVER.host = '127.0.0.1'
 
         self.display_instance = Display(visible=0, size=SeleniumTest.DEFAULT_RESOLUTION)
         self.display_instance.start()
         self.selenium_instance = webdriver.Firefox()
         self.selenium_instance.delete_all_cookies()
+        self.selenium_instance.implicitly_wait(1)
 
     def teardown_class(self):
         """Teardown display instance."""
