@@ -3,8 +3,10 @@ import functools
 import multiprocessing
 import os
 import random
+import threading
 from time import sleep
 from unittest.mock import patch
+from flask import request
 
 
 from pyvirtualdisplay import Display
@@ -22,31 +24,23 @@ from test import BaseTest
 from .test_data import integration_test_data, integration_git_providers
 
 
+def stop_server():
+    """Shutdown flask server."""
+    request.environ.get('werkzeug.server.shutdown')()
+
 class SeleniumTestServer:
 
     def __init__(self, test_instance):
         """Capture test_instance."""
         self.test_instance = test_instance
-        self._server_thread = multiprocessing.Process(
-            target=test_instance.SERVER.run,
-            kwargs={'debug': True},
-            daemon=True
-        )
 
     def __enter__(self) -> webdriver.Firefox:
         """Setup flask server."""
-        # Generate random port
-        self.test_instance.SERVER.port = random.randint(5000, 6000)
-        self._server_thread.start()
-        # wait for server to start
-        sleep(2)
         return self.test_instance.selenium_instance
 
     def __exit__(self, *args, **kwargs):
         """Teardown test server."""
-        self._server_thread.kill()
-        self._server_thread.terminate()
-        self._server_thread.join()
+        pass
 
 
 class SeleniumTest(BaseTest):
@@ -84,6 +78,18 @@ class SeleniumTest(BaseTest):
         self.selenium_instance.delete_all_cookies()
         self.selenium_instance.implicitly_wait(1)
 
+        self.SERVER._app.route('/SHUTDOWN')(stop_server)
+        self.SERVER.port = 5001
+        self._server_thread = threading.Thread(
+            target=self.SERVER.run,
+            kwargs={'debug': False},
+            daemon=True
+        )
+        self._server_thread.start()
+
     def teardown_class(self):
         """Teardown display instance."""
         self.display_instance.stop()
+        # Shutdown server
+        self.SERVER._app.test_client().get('/SHUTDOWN')
+        self._server_thread.join()
