@@ -34,7 +34,6 @@ unit-tests:
   stage: test
   extends: .test_image
   script:
-    - pip install --proxy=$http_proxy -r requirements-dev.txt
     - coverage run -m pytest --verbose ./test/unit
     - coverage report
     - coverage xml
@@ -48,7 +47,6 @@ integration-tests:
   needs:
     - unit-tests
   script:
-    - pip install --proxy=$http_proxy -r requirements-dev.txt
     # Perform database migration
     - alembic upgrade head
     # Run integration tests
@@ -89,7 +87,6 @@ mysql-integration-tests:
     # Set datbase URL for schema migration
     DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
   script:
-    - pip install --proxy=$http_proxy -r requirements-dev.txt
     # Perform database migration
     - alembic upgrade head
     # Run integration tests
