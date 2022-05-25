@@ -18,22 +18,22 @@ cache:
     - venv/
     - terraform-docs
 
+
 .before_script_python:
   before_script:
-    # Install terraform-docs
-    - test -f ./terraform-docs || { wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-linux-amd64.tar.gz && tar -zxvf terraform-docs-v0.16.0-linux-amd64.tar.gz && chmod +x terraform-docs && rm terraform-docs-v0.16.0-linux-amd64.tar.gz; }
-    - cp terraform-docs /usr/local/bin/
     - python --version  # For debugging
     - pip install --proxy=$http_proxy virtualenv
     - virtualenv venv
     - source venv/bin/activate
     - pip install --proxy=$http_proxy -r requirements.txt
 
+.test_image:
+  image: terrareg-test-image:latest
+
 unit-tests:
   stage: test
-  extends: .before_script_python
+  extends: .test_image
   script:
-    - pip install --proxy=$http_proxy -r requirements-dev.txt
     - coverage run -m pytest --verbose ./test/unit
     - coverage report
     - coverage xml
@@ -43,11 +43,10 @@ unit-tests:
 
 integration-tests:
   stage: test
-  extends: .before_script_python
+  extends: .test_image
   needs:
     - unit-tests
   script:
-    - pip install --proxy=$http_proxy -r requirements-dev.txt
     # Perform database migration
     - alembic upgrade head
     # Run integration tests
@@ -58,9 +57,25 @@ integration-tests:
     reports:
       cobertura: coverage.xml
 
+selenium-tests:
+  stage: test
+  extends: .test_image
+  needs:
+    - mysql-integration-tests
+  script:
+    # Perform database migration
+    - alembic upgrade head
+    # Run integration tests
+    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose ./test/selenium
+    - coverage report
+    - coverage xml
+  artifacts:
+    reports:
+      cobertura: coverage.xml
+
 mysql-integration-tests:
   stage: test
-  extends: .before_script_python
+  extends: .test_image
   needs:
     - integration-tests
   services:
@@ -72,7 +87,6 @@ mysql-integration-tests:
     # Set datbase URL for schema migration
     DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
   script:
-    - pip install --proxy=$http_proxy -r requirements-dev.txt
     # Perform database migration
     - alembic upgrade head
     # Run integration tests
@@ -95,6 +109,14 @@ build-wheel:
     paths:
       - dist/*.whl
 
+build-test-docker-image:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  script:
+    - docker build -f Dockerfile.tests -t terrareg-test-image:latest --build-arg http_proxy=$http_proxy --build-arg HTTP_PROXY=$http_proxy --build-arg https_proxy=$https_proxy --build-arg HTTPS_PROY=$https_proxy .
+ 
 release:
   stage: deploy
   image: fare-docker-reg.dock.studios:5000/semantic-release:latest
