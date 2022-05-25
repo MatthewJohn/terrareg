@@ -8,7 +8,7 @@ RUN wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.1
 
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --proxy=$http_proxy -r requirements.txt
 
 
 ENTRYPOINT [ "bash", "scripts/entrypoint.sh" ]
@@ -33,7 +33,7 @@ RUN GECKODRIVER_VERSION="v0.31.0" && \
 RUN apt-get update && apt-get install -y firefox-esr && apt-get clean all
 
 COPY requirements-dev.txt .
-RUN pip install -r requirements-dev.txt
+RUN pip install --proxy=$http_proxy -r requirements-dev.txt
 
 COPY . .
 
