@@ -34,8 +34,6 @@ class BaseTest:
 
         Database.reset()
         self.SERVER = Server()
-        self.SERVER.port = 5123
-        self.SERVER.host = '127.0.0.1'
 
         # Create DB tables
         Database.get().get_meta().create_all(Database.get().get_engine())
@@ -43,10 +41,6 @@ class BaseTest:
         self._setup_test_data()
 
         self.SERVER._app.config['TESTING'] = True
-
-    def get_url(self, path):
-        """Return full URL to perform selenium request."""
-        return 'http://localhost:5123{path}'.format(path=path)
 
     @classmethod
     def _setup_test_data(cls, test_data=None):

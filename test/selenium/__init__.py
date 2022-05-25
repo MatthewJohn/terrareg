@@ -2,6 +2,7 @@
 import functools
 import multiprocessing
 import os
+from unittest.mock import patch
 
 
 from pyvirtualdisplay import Display
@@ -19,6 +20,28 @@ from test import BaseTest
 from .test_data import integration_test_data, integration_git_providers
 
 
+class SeleniumTestServer:
+
+    def __init__(self, test_instance):
+        """Capture test_instance."""
+        self.test_instance = test_instance
+        self._server_thread = multiprocessing.Process(
+            target=test_instance.SERVER.run,
+            kwargs={'debug': True},
+            daemon=True
+        )
+
+    def __enter__(self) -> webdriver.Firefox:
+        """Setup flask server."""
+        self._server_thread.start()
+        return self.test_instance.selenium_instance
+
+    def __exit__(self, *args, **kwargs):
+        """Teardown test server."""
+        self._server_thread.kill()
+        self._server_thread.terminate()
+
+
 class SeleniumTest(BaseTest):
 
     _TEST_DATA = integration_test_data
@@ -34,35 +57,26 @@ class SeleniumTest(BaseTest):
         """Return path of database file to use."""
         return 'temp-selenium.db'
 
-    @staticmethod
-    def get_selenium_instance():
-        """Obtain singleton instance of selenium"""
-        if SeleniumTest.SELENIUM_INSTANCE is None:
-            SeleniumTest.get_display_instance()
-            SeleniumTest.SELENIUM_INSTANCE = webdriver.Firefox()
-        elif SeleniumTest.RESET_COOKIES:
-            SeleniumTest.SELENIUM_INSTANCE.delete_all_cookies()
-            SeleniumTest.RESET_COOKIES = False
-        return SeleniumTest.SELENIUM_INSTANCE
+    def run_server(self) -> SeleniumTestServer:
+        """Return instance of SeleniumTestServer"""
+        return SeleniumTestServer(test_instance=self)
 
-    @staticmethod
-    def get_display_instance():
-        """Obtain singleton instance of display"""
-        if SeleniumTest.DISPLAY_INSTANCE is None:
-            SeleniumTest.DISPLAY_INSTANCE = Display(visible=0, size=SeleniumTest.DEFAULT_RESOLUTION)
-            SeleniumTest.DISPLAY_INSTANCE.start()
-        return SeleniumTest.DISPLAY_INSTANCE
+    def get_url(self, path):
+        """Return full URL to perform selenium request."""
+        return 'http://localhost:5123{path}'.format(path=path)
 
     def setup_class(self):
-        """Setup test server"""
+        """Setup host/port to host server."""
         super(SeleniumTest, self).setup_class(self)
 
-        self._server_thread = multiprocessing.Process(
-            target=self.SERVER.run,
-            daemon=True
-        )
-        self._server_thread.start()
+        self.SERVER.port = 5123
+        self.SERVER.host = '127.0.0.1'
+
+        self.display_instance = Display(visible=0, size=SeleniumTest.DEFAULT_RESOLUTION)
+        self.display_instance.start()
+        self.selenium_instance = webdriver.Firefox()
+        self.selenium_instance.delete_all_cookies()
 
     def teardown_class(self):
-        """Stop test server."""
-        self._server_thread.terminate()
+        """Teardown display instance."""
+        self.display_instance.stop()
