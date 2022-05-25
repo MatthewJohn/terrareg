@@ -59,6 +59,22 @@ integration-tests:
     reports:
       cobertura: coverage.xml
 
+selenium-tests:
+  stage: test
+  extends: .test_image
+  needs:
+    - mysql-integration-tests
+  script:
+    # Perform database migration
+    - alembic upgrade head
+    # Run integration tests
+    - coverage run -m pytest --verbose ./test/selenium
+    - coverage report
+    - coverage xml
+  artifacts:
+    reports:
+      cobertura: coverage.xml
+
 mysql-integration-tests:
   stage: test
   extends: .test_image
