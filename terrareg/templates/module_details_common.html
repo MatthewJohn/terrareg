@@ -39,6 +39,9 @@
 
 <script>
     function selectModuleTab(tab_name) {
+        // Set URL anchor to selected tag
+        window.location.hash = '#' + tab_name;
+
         let tab_content_id = "module-tab-" + tab_name;
         let tab_link_id = "module-tab-link-" + tab_name;
         let i, tabcontent, tablinks;
@@ -108,8 +111,12 @@
     }
 
     $(document).ready(function () {
+        let window_hash_value = $(location).attr('hash').replace('#', '');
+        if (window_hash_value) {
+            selectModuleTab(window_hash_value);
+        }
         // If readme file is present, select the tab
-        if ($('#module-tab-link-readme').length) {
+        else if ($('#module-tab-link-readme').length) {
             selectModuleTab('readme');
 
         // otherwise, default to inputs tab
@@ -187,7 +194,7 @@
                 <ol>
                     <li>Add the following example to your terraform,</li>
                     <li>Ensure the "{{ EXAMPLE_ANALYTICS_TOKEN }}" placeholder must be replaced with your '{{ ANALYTICS_TOKEN_PHRASE }}',               </li>
-                    <li>Add the required inputs - use the 'Usage Builder' tab for help and 'Inputs' tab for a full list.</li>
+                    <li>Add the required inputs - use the '<a onclick="selectModuleTab('usage-builder')">Usage Builder</a>' tab for help and 'Inputs' tab for a full list.</li>
                 </ol>
             </div>
 
