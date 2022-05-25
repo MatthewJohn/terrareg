@@ -62,6 +62,8 @@ selenium-tests:
   extends: .test_image
   needs:
     - mysql-integration-tests
+  variables:
+    http_proxy: ''
   script:
     # Perform database migration
     - alembic upgrade head
