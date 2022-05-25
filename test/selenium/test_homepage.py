@@ -1,12 +1,10 @@
 
 from datetime import datetime
-from time import sleep
 from unittest import mock
-import pytest
 
+import pytest
 from selenium.webdriver.common.by import By
 import selenium
-from terrareg.database import Database
 
 from test.selenium import SeleniumTest
 from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
