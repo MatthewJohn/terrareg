@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.7.3...v2.7.4) (2022-05-25)
+
+
+### Bug Fixes
+
+* **test:** Add missing 'published_at' field in database rows for inserted test data ([986fe2e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/986fe2ebc0290ee9c257c8b7a2ee166e2c6a93c7)), closes [#136](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/136)
+
 ## [2.7.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.7.2...v2.7.3) (2022-05-24)
 
 
