@@ -37,4 +37,4 @@ RUN pip install --proxy=$http_proxy -r requirements-dev.txt
 
 COPY . .
 
-ENTRYPOINT ["bash"]
+ENTRYPOINT ["bash", "-c"]
