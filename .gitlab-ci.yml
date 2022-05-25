@@ -62,13 +62,11 @@ selenium-tests:
   extends: .test_image
   needs:
     - mysql-integration-tests
-  variables:
-    http_proxy: ''
   script:
     # Perform database migration
     - alembic upgrade head
     # Run integration tests
-    - coverage run -m pytest --verbose ./test/selenium
+    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose ./test/selenium
     - coverage report
     - coverage xml
   artifacts:
