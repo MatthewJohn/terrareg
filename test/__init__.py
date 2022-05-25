@@ -1,4 +1,5 @@
 
+from datetime import datetime
 import functools
 import os
 
@@ -102,7 +103,8 @@ class BaseTest:
                             'module_provider_id': module_provider_attributes['id'],
                             'version': module_version,
                             # Default beta flag to false
-                            'beta': False
+                            'beta': False,
+                            'published_at': datetime.now()
                         }
                         # Update column values from test data
                         data.update(module_provider_test_data['versions'][module_version])
