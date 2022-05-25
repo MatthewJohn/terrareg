@@ -95,7 +95,7 @@ async function createSearchResultCard(parent_id, module, provider_logos) {
             <header class="card-header">
                 <p class="card-header-title">
                     ${provider_logo_html}
-                    <a href="/modules/${module.id}">${module.namespace} / ${module.name}</a>
+                    <a class="module-card-title" href="/modules/${module.id}">${module.namespace} / ${module.name}</a>
                     ${module.trusted ? `
                         <span class="tag is-info is-light result-card-label result-card-label-trusted">
                             <span class="panel-icon">

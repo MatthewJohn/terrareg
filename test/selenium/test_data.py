@@ -330,11 +330,10 @@ integration_test_data = {
             }
         }
     },
-    'searchbynamesp-similar': {
-        'searchbymodulename3': {'searchbyprovideraws': {
+    'trustednamespace': {
+        'secondlatestmodule': {'aws': {
             'id': 44,
-            'versions': {'4.4.1': {'published': True}},
-            'verified': True
+            'versions': {'4.4.1': {'published': True}}
         }},
         'searchbymodulename4': {'aws': {
             'id': 45,
