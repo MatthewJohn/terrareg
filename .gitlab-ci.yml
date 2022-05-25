@@ -98,6 +98,7 @@ build-wheel:
 
 build-test-docker-image:
   stage: build
+  image: docker:latest
   services:
     - docker:dind
   script:
