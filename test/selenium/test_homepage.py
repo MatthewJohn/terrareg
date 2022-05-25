@@ -43,10 +43,6 @@ class TestHomepage(SeleniumTest):
         """Check counters on homepage."""
         self.selenium_instance.get(self.get_url('/'))
 
-        # Ensure title is injected correctly
-        assert self.selenium_instance.find_element(By.ID, 'title').text == 'unittest application name'
-
-
         # Ensure counts on page are correct
         assert self.selenium_instance.find_element(By.ID, 'namespace-count').text == '11'
         assert self.selenium_instance.find_element(By.ID, 'module-count').text == '45'
