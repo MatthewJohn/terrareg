@@ -934,8 +934,7 @@ class TerraformSpecsObject(object):
 
     def get_readme_content(self):
         """Get readme contents"""
-        blob = self._get_db_row()['readme_content']
-        return Database.decode_blob(blob) if blob else None
+        return Database.decode_blob(self._get_db_row()['readme_content'])
 
     def get_terraform_inputs(self):
         """Obtain module inputs"""
