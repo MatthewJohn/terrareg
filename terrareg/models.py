@@ -474,7 +474,8 @@ class ModuleProvider(object):
             namespace=module._namespace.name,
             module=module.name,
             provider=name,
-            verified=module._namespace.is_auto_verified
+            verified=module._namespace.is_auto_verified,
+            internal=False
         )
         with db.get_engine().connect() as conn:
             conn.execute(module_provider_insert)
