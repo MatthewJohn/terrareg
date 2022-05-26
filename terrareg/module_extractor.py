@@ -154,6 +154,12 @@ class ModuleExtractor:
             published=Config().AUTO_PUBLISH_MODULE_VERSIONS
         )
 
+        # Check if module version is latest version
+        if self._module_version._module_provider.get_latest_version().version == self._module_version.version:
+            self._module_version._module_provider.update_attributes(
+                internal=terrareg_metadata.get('internal', False)
+            )
+
     def _process_submodule(self, submodule: BaseSubmodule):
         """Process submodule."""
         print('Processing submodule: {0}'.format(submodule.path))
