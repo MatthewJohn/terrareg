@@ -1,5 +1,4 @@
 
-
 function timeDifference(previous) {
     var min = 60 * 1000;
     var hour = min * 60;
@@ -86,35 +85,14 @@ async function createSearchResultCard(parent_id, module, provider_logos) {
         }
     }
 
-    let terrareg_config = await getConfig();
-
     // Add module to search results
-    $(`#${parent_id}`).append(
+    let result_card = $(
         `  
         <div class="card">
             <header class="card-header">
                 <p class="card-header-title">
                     ${provider_logo_html}
                     <a href="/modules/${module.id}">${module.namespace} / ${module.name}</a>
-                    ${module.trusted ? `
-                        <span class="tag is-info is-light result-card-label">
-                            <span class="panel-icon">
-                                <i class="fas fa-check-circle" aria-hidden="true"></i>
-                            </span>
-                            ${terrareg_config.TRUSTED_NAMESPACE_LABEL}
-                        </span>
-                    ` : `
-                        <span class="tag is-warning is-light result-card-label">
-                            ${terrareg_config.CONTRIBUTED_NAMESPACE_LABEL}
-                        </span>
-                                        `}
-                    ${module.verified ? `
-                        <span class="tag is-link is-light result-card-label">
-                            <span class="panel-icon">
-                                <i class="fas fa-thumbs-up" aria-hidden="true"></i>
-                            </span>
-                            ${terrareg_config.VERIFIED_MODULE_LABEL}
-                        </span>` : ``}
                 </p>
                 <a href="/modules/${module.id}">
                     <button class="card-header-icon" aria-label="more options">
@@ -143,4 +121,59 @@ async function createSearchResultCard(parent_id, module, provider_logos) {
         <br />
         `
     );
+    $(`#${parent_id}`).append(result_card);
+    addModuleLabels(module, $(result_card.find('.card-header-title')[0]));
+}
+
+
+terraregModuleDetailsPromiseSingleton = [];
+
+async function getModuleDetails(module_id) {
+    // Create promise if it hasn't already been defined
+    if (terraregModuleDetailsPromiseSingleton[module_id] === undefined) {
+        terraregModuleDetailsPromiseSingleton[module_id] = new Promise((resolve, reject) => {
+            // Perform request to obtain module details
+            $.ajax({
+                type: "GET",
+                url: `/v1/modules/${module_id}`,
+                success: function (data) {
+                    // append module provider ID to data
+                    data.module_provider_id = data.id.split('/').slice(0, 3).join('/');
+                    resolve(data);
+                }
+            });
+        });
+    }
+    return terraregModuleDetailsPromiseSingleton[module_id];
+}
+
+async function addModuleLabels(module, parentDiv) {
+    let terrareg_config = await getConfig();
+    if (module.trusted) {
+        parentDiv.append($(`
+            <span class="tag is-info is-light result-card-label">
+                <span class="panel-icon">
+                    <i class="fas fa-check-circle" aria-hidden="true"></i>
+                </span>
+                ${terrareg_config.TRUSTED_NAMESPACE_LABEL}
+            </span>
+        `));
+    } else {
+        parentDiv.append($(`
+            <span class="tag is-warning is-light result-card-label">
+                ${terrareg_config.CONTRIBUTED_NAMESPACE_LABEL}
+            </span>
+        `));
+    }
+
+    if (module.verified) {
+        parentDiv.append($(`
+            <span class="tag is-link is-light result-card-label">
+                <span class="panel-icon">
+                    <i class="fas fa-thumbs-up" aria-hidden="true"></i>
+                </span>
+                ${terrareg_config.VERIFIED_MODULE_LABEL}
+            </span>
+        `));
+    }
 }

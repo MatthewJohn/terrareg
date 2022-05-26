@@ -10,6 +10,12 @@
 
     {% if submodule %}
 
+        Version: {{ module_version.version }}
+
+        <p id="module-title" class="title">
+            {{ module.name }}
+        </p>
+
         <p class="subtitle">
             {{ submodule.path }}
         </p>
