@@ -5,33 +5,44 @@
 {% if module_version %}
 
 <script>
-    $.get("/v1/modules/{{ module_provider.id }}/downloads/summary", function(data, status) {
-        Object.keys(data.data.attributes).forEach((key) => {
-            $(`#downloads-${key}`).html(data.data.attributes[key]);
+    async function populatePageDetails() {
+        let details = await getModuleDetails('{{ module_provider.id }}');
+
+        $.get(`/v1/modules/${details.module_provider_id}/downloads/summary`, function(data, status) {
+            Object.keys(data.data.attributes).forEach((key) => {
+                $(`#downloads-${key}`).html(data.data.attributes[key]);
+            });
         });
+
+        $.get(`/v1/terrareg/analytics/${details.module_provider_id}/token_versions`, (data, status) => {
+            Object.keys(data).forEach((token) => {
+                $('#analyticsVersionByTokenTable').append(`
+                    <tr>
+                        <td>
+                            ${token}
+                        </td>
+                        <td>
+                            ${data[token].module_version}
+                        </td>
+                        <td>
+                            ${data[token].terraform_version}
+                        </td>
+                        <td>
+                            ${data[token].environment}
+                        </td>
+                    </tr>
+                `);
+            });
+            $('#analytics-table').DataTable();
+        });
+
+        addModuleLabels(details, $('#module-title'));
+    }
+
+    $(document).ready(function() {
+        populatePageDetails();
     });
 
-    $.get("/v1/terrareg/analytics/{{ module_provider.id }}/token_versions", (data, status) => {
-        Object.keys(data).forEach((token) => {
-            $('#analyticsVersionByTokenTable').append(`
-                <tr>
-                    <td>
-                        ${token}
-                    </td>
-                    <td>
-                        ${data[token].module_version}
-                    </td>
-                    <td>
-                        ${data[token].terraform_version}
-                    </td>
-                    <td>
-                        ${data[token].environment}
-                    </td>
-                </tr>
-            `);
-        });
-        $('#analytics-table').DataTable();
-    });
 
 </script>
 
@@ -222,7 +233,7 @@ module "{{ module.name }}" {
             {% endif %}
             <li id="module-tab-link-inputs" class="module-tab-link"><a onclick="selectModuleTab('inputs')">Inputs</a></li>
             <li id="module-tab-link-outputs" class="module-tab-link"><a onclick="selectModuleTab('outputs')">Outputs</a></li>
-            <li id="module-tab-link-dependencies" class="module-tab-link"><a onclick="selectModuleTab('dependencies')">Dependencies</a></li>
+            <!--<li id="module-tab-link-dependencies" class="module-tab-link"><a onclick="selectModuleTab('dependencies')">Dependencies</a></li>-->
             <li id="module-tab-link-resources" class="module-tab-link">
                 <a onclick="selectModuleTab('resources')">Resources</a>
             </li>

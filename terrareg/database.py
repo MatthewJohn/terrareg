@@ -28,6 +28,8 @@ class Database():
     @staticmethod
     def decode_blob(value):
         """Decode blob as a string."""
+        if value is None:
+            return None
         return value.decode(Database.blob_encoding_format)
 
     @staticmethod
