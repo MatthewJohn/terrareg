@@ -92,7 +92,7 @@ async function createSearchResultCard(parent_id, module, provider_logos) {
             <header class="card-header">
                 <p class="card-header-title">
                     ${provider_logo_html}
-                    <a href="/modules/${module.id}">${module.namespace} / ${module.name}</a>
+                    <a class="module-card-title" href="/modules/${module.id}">${module.namespace} / ${module.name}</a>
                 </p>
                 <a href="/modules/${module.id}">
                     <button class="card-header-icon" aria-label="more options">
@@ -151,7 +151,7 @@ async function addModuleLabels(module, parentDiv) {
     let terrareg_config = await getConfig();
     if (module.trusted) {
         parentDiv.append($(`
-            <span class="tag is-info is-light result-card-label">
+            <span class="tag is-info is-light result-card-label result-card-label-trusted">
                 <span class="panel-icon">
                     <i class="fas fa-check-circle" aria-hidden="true"></i>
                 </span>
@@ -160,7 +160,7 @@ async function addModuleLabels(module, parentDiv) {
         `));
     } else {
         parentDiv.append($(`
-            <span class="tag is-warning is-light result-card-label">
+            <span class="tag is-warning is-light result-card-label result-card-label-contributed">
                 ${terrareg_config.CONTRIBUTED_NAMESPACE_LABEL}
             </span>
         `));
@@ -168,7 +168,7 @@ async function addModuleLabels(module, parentDiv) {
 
     if (module.verified) {
         parentDiv.append($(`
-            <span class="tag is-link is-light result-card-label">
+            <span class="tag is-link is-light result-card-label result-card-label-verified">
                 <span class="panel-icon">
                     <i class="fas fa-thumbs-up" aria-hidden="true"></i>
                 </span>

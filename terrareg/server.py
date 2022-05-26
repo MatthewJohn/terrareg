@@ -350,12 +350,12 @@ class Server(object):
             csrf_token=get_csrf_token()
         )
 
-    def run(self):
+    def run(self, debug=None):
         """Run flask server."""
         kwargs = {
             'host': self.host,
             'port': self.port,
-            'debug': terrareg.config.Config().DEBUG
+            'debug': terrareg.config.Config().DEBUG if debug is None else debug
         }
         if self.ssl_public_key and self.ssl_private_key:
             kwargs['ssl_context'] = (self.ssl_public_key, self.ssl_private_key)
