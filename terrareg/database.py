@@ -149,6 +149,7 @@ class Database():
             sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('git_tag_format', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('verified', sqlalchemy.Boolean),
+            sqlalchemy.Column('internal', sqlalchemy.Boolean, nullable=False),
             sqlalchemy.Column(
                 'git_provider_id',
                 sqlalchemy.ForeignKey(
