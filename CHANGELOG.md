@@ -1,5 +1,19 @@
 # Changelog
 
+# [2.8.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.7.4...v2.8.0) (2022-05-26)
+
+
+### Bug Fixes
+
+* Fix methods for obtaining variable_template and module details when database columns are empty ([ec22e39](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ec22e39fe4a69e1bbca9988fe2194b07b74398e5))
+* Handle None database value when decoding blob, which previously threw an exception ([9799cc8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9799cc82c6d5b57a87df117ca729d506e242683f))
+* Revert change to get_readme_content to handle None value before decoding, since this is now handled by the blob decode method ([a4aff2d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a4aff2d30f6e3b16dc733bfb330671aa85756780))
+
+
+### Features
+
+* Add module labels to module provider/version page. ([dcd63e1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/dcd63e17a7f30d61fe03265205326cdbfff8f6df)), closes [#138](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/138) [#12](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/12)
+
 ## [2.7.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.7.3...v2.7.4) (2022-05-25)
 
 
