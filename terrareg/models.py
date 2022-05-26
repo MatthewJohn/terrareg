@@ -918,7 +918,8 @@ class TerraformSpecsObject(object):
     def get_module_specs(self):
         """Return module specs"""
         if self._module_specs is None:
-            self._module_specs = json.loads(Database.decode_blob(self._get_db_row()['module_details']))
+            raw_json = Database.decode_blob(self._get_db_row()['module_details'])
+            self._module_specs = json.loads(raw_json) if raw_json else {}
         return self._module_specs
 
     def get_readme_html(self):
@@ -938,15 +939,15 @@ class TerraformSpecsObject(object):
 
     def get_terraform_inputs(self):
         """Obtain module inputs"""
-        return self.get_module_specs()['inputs']
+        return self.get_module_specs().get('inputs', [])
 
     def get_terraform_outputs(self):
         """Obtain module inputs"""
-        return self.get_module_specs()['outputs']
+        return self.get_module_specs().get('outputs', [])
 
     def get_terraform_resources(self):
         """Obtain module resources."""
-        return self.get_module_specs()['resources']
+        return self.get_module_specs().get('resources', [])
 
     def get_terraform_dependencies(self):
         """Obtain module dependencies."""
@@ -958,7 +959,7 @@ class TerraformSpecsObject(object):
     def get_terraform_provider_dependencies(self):
         """Obtain module dependencies."""
         providers = []
-        for provider in self.get_module_specs()['providers']:
+        for provider in self.get_module_specs().get('providers', []):
 
             name_split = provider['name'].split('/')
             # Default to name being the name and hashicorp
@@ -1120,7 +1121,8 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def variable_template(self):
         """Return variable template for module version."""
-        return json.loads(Database.decode_blob(self._get_db_row()['variable_template']))
+        raw_json = Database.decode_blob(self._get_db_row()['variable_template'])
+        return json.loads(raw_json) if raw_json else []
 
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
