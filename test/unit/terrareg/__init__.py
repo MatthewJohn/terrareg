@@ -158,7 +158,8 @@ class MockModuleProvider(ModuleProvider):
                 'versions': {},
                 'repo_base_url_template': None,
                 'repo_clone_url_template': None,
-                'repo_browse_url_template': None
+                'repo_browse_url_template': None,
+                'internal': False
             }
         return cls(module=module, name=name)
 
@@ -182,7 +183,8 @@ class MockModuleProvider(ModuleProvider):
             'repo_clone_url_template': self._unittest_data.get('repo_clone_url_template', None),
             'repo_browse_url_template': self._unittest_data.get('repo_clone_url_template', None),
             'git_provider_id': self._unittest_data.get('git_provider_id', None),
-            'git_tag_format': self._unittest_data.get('git_tag_format', None)
+            'git_tag_format': self._unittest_data.get('git_tag_format', None),
+            'internal': self._unittest_data.get('internal', False)
         }
 
     def get_latest_version(self):

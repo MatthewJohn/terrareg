@@ -82,7 +82,8 @@ class BaseTest:
                     module_provider_attributes = {
                         'namespace': namespace_name,
                         'module': module_name,
-                        'provider': provider_name
+                        'provider': provider_name,
+                        'internal': False
                     }
                     for attr in module_provider_test_data:
                         if attr not in ['latest_version', 'versions']:

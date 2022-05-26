@@ -120,7 +120,8 @@ class TestModuleVersion(TerraregIntegrationTest):
                 id=10000,
                 namespace='testcreation',
                 module='test-module',
-                provider='testprovider'
+                provider='testprovider',
+                internal=False
             ))
 
             conn.execute(db.module_version.insert().values(
