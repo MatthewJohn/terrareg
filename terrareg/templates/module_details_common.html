@@ -233,7 +233,7 @@ module "{{ module.name }}" {
             {% endif %}
             <li id="module-tab-link-inputs" class="module-tab-link"><a onclick="selectModuleTab('inputs')">Inputs</a></li>
             <li id="module-tab-link-outputs" class="module-tab-link"><a onclick="selectModuleTab('outputs')">Outputs</a></li>
-            <!--<li id="module-tab-link-dependencies" class="module-tab-link"><a onclick="selectModuleTab('dependencies')">Dependencies</a></li>-->
+            <li id="module-tab-link-providers" class="module-tab-link"><a onclick="selectModuleTab('providers')">Provider Requirements</a></li>
             <li id="module-tab-link-resources" class="module-tab-link">
                 <a onclick="selectModuleTab('resources')">Resources</a>
             </li>
@@ -415,8 +415,35 @@ module "{{ module.name }}" {
                 </tbody>
             </table>
         </div>
-        <div id="module-tab-dependencies" class="module-tabs" style="display: none;">
-            DEPENDENCIES
+        <div id="module-tab-providers" class="module-tabs" style="display: none;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Namespace</th>
+                        <th>Source</th>
+                        <th>Version</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for provider in current_module.get_terraform_provider_dependencies() %}
+                    <tr>
+                        <td>
+                            {{ provider['name'] }}
+                        </td>
+                        <td>
+                            {{ provider['namespace'] }}
+                        </td>
+                        <td>
+                            {{ provider['source'] }}
+                        </td>
+                        <td>
+                            {{ provider['version'] }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
         <div id="module-tab-resources" class="module-tabs" style="display: none;">
             <table class="table">
