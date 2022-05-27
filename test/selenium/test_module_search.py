@@ -43,7 +43,7 @@ class TestModuleSearch(SeleniumTest):
         assert self.selenium_instance.current_url == self.get_url('/modules/search?q=modulesearch')
 
         result_cards = self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')
-        assert len(result_cards) == 3
+        assert len(result_cards) == 4
 
     def test_result_cards(self):
         """Check the result cards."""
@@ -51,16 +51,18 @@ class TestModuleSearch(SeleniumTest):
         self.selenium_instance.get(self.get_url('/modules/search?q=modulesearch'))
 
         result_cards = self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')
-        assert len(result_cards) == 3
+        assert len(result_cards) == 4
 
         expected_card_headings = [
             'modulesearch-trusted / mixedsearch-trusted-result',
             'modulesearch-trusted / mixedsearch-trusted-result-multiversion',
+            'modulesearch-trusted / mixedsearch-trusted-result-verified',
             'modulesearch-trusted / mixedsearch-trusted-second-result'
         ]
         expected_card_links = [
             '/modules/modulesearch-trusted/mixedsearch-trusted-result/aws/1.0.0',
             '/modules/modulesearch-trusted/mixedsearch-trusted-result-multiversion/aws/2.0.0',
+            '/modules/modulesearch-trusted/mixedsearch-trusted-result-verified/aws/2.0.0',
             '/modules/modulesearch-trusted/mixedsearch-trusted-second-result/aws/5.2.1'
         ]
         for card in result_cards:
@@ -78,9 +80,76 @@ class TestModuleSearch(SeleniumTest):
         self.selenium_instance.get(self.get_url('/modules/search?q=modulesearch'))
 
         result_cards = self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')
-        assert len(result_cards) == 3
+        assert len(result_cards) == 4
 
         # Check counts of filters
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'search-verified-count').text, '3')
-        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'search-trusted-namespaces-count').text, '3')
-        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'search-contributed-count').text, '10')
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'search-trusted-namespaces-count').text, '4')
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'search-contributed-count').text, '9')
+
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'search-verified').is_selected(), False)
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'search-trusted-namespaces').is_selected(), True)
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'search-contributed').is_selected(), False)
+
+        # Click verified label
+        self.selenium_instance.find_element(By.ID, 'search-verified').click()
+
+        # Ensure that the number of results has changed
+        self.assert_equals(lambda: len(self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')), 1)
+        for card in self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card'):
+            assert card.find_element(By.CLASS_NAME, 'module-card-title').text == 'modulesearch-trusted / mixedsearch-trusted-result-verified'
+
+        # Click contributed label
+        self.selenium_instance.find_element(By.ID, 'search-contributed').click()
+
+        # Ensure that the number of results has changed
+        self.assert_equals(lambda: len(self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')), 3)
+
+    def test_next_prev_buttons(self):
+        """Check next and previous buttons."""
+        self.selenium_instance.get(self.get_url('/modules/search?q=modulesearch'))
+
+        result_cards = self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')
+        assert len(result_cards) == 4
+
+        # Ensure both buttons are disabled
+        self.selenium_instance.find_element(By.ID, 'nextButton').is_enabled() == False
+        self.selenium_instance.find_element(By.ID, 'prevButton').is_enabled() == False
+
+        # Search for contributed modules
+        self.selenium_instance.find_element(By.ID, 'search-contributed').click()
+
+        # Ensure NextButton is active
+        self.selenium_instance.find_element(By.ID, 'nextButton').is_enabled() == True
+        self.selenium_instance.find_element(By.ID, 'prevButton').is_enabled() == False
+
+        # Get list of all cards
+        first_page_cards = []
+        for card in self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card'):
+            first_page_cards.append(card.find_element(By.CLASS_NAME, 'module-card-title').text)
+
+        # Select next page
+        self.selenium_instance.find_element(By.ID, 'nextButton').click()
+
+        # Ensure next button is disabled and prev button is enabled
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'nextButton').is_enabled(), False)
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'prevButton').is_enabled(), True)
+
+        # Ensure that all cards have been updated
+        for card in self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card'):
+            assert card.find_element(By.CLASS_NAME, 'module-card-title').text not in first_page_cards
+
+        # Select previous page
+        self.selenium_instance.find_element(By.ID, 'prevButton').click()
+
+        # Ensure prev button is disabled and next button is enabled
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'nextButton').is_enabled(), True)
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'prevButton').is_enabled(), False)
+
+        # Ensure that all of the original cards are displayed
+        for card in self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card'):
+            card_title = card.find_element(By.CLASS_NAME, 'module-card-title').text
+            assert card_title in first_page_cards
+            first_page_cards.remove(card_title)
+
+        assert len(first_page_cards) == 0

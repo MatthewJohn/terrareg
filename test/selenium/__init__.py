@@ -99,7 +99,6 @@ class SeleniumTest(BaseTest):
         max_attempts = 5
         for itx in range(max_attempts):
             try:
-                print(itx)
                 # Attempt to call callback and assert value against expected result
                 actual = callback()
                 assert actual == value
