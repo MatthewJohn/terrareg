@@ -93,3 +93,24 @@ class SeleniumTest(BaseTest):
         # Shutdown server
         self.SERVER._app.test_client().get('/SHUTDOWN')
         self._server_thread.join()
+
+    def assert_equals(self, callback, value):
+        """Attempt to verify assertion and retry on failure."""
+        max_attempts = 5
+        for itx in range(max_attempts):
+            try:
+                print(itx)
+                # Attempt to call callback and assert value against expected result
+                actual = callback()
+                assert actual == value
+                # Break once assertion has completed
+                break
+            except AssertionError:
+                # If it fails the assertion,
+                # sleep and retry until last attmept
+                # and then re-raise
+                if itx < (max_attempts - 1):
+                    sleep(0.5)
+                else:
+                    print('Failed asserting that {} == {}'.format(actual, value))
+                    raise
