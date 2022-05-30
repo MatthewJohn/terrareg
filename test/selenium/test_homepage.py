@@ -12,23 +12,26 @@ from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
 class TestHomepage(SeleniumTest):
     """Test homepage."""
 
-    def setup_class(self):
+    @classmethod
+    def setup_class(cls):
         """Setup required mocks."""
-        self._mocks = []
-        self._mocks.append(mock.patch('terrareg.config.Config.APPLICATION_NAME', 'unittest application name')),
-        self._mocks.append(mock.patch('terrareg.analytics.AnalyticsEngine.get_total_downloads', return_value=2005))
-        self._mocks.append(mock.patch('terrareg.config.Config.CONTRIBUTED_NAMESPACE_LABEL', 'unittest contributed module'))
-        self._mocks.append(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACE_LABEL', 'unittest trusted namespace'))
-        self._mocks.append(mock.patch('terrareg.config.Config.VERIFIED_MODULE_LABEL', 'unittest verified label'))
-        self._mocks.append(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['trustednamespace']))
-        for mock_ in self._mocks:
+        cls._mocks = []
+        cls._mocks.append(mock.patch('terrareg.config.Config.APPLICATION_NAME', 'unittest application name')),
+        cls._mocks.append(mock.patch('terrareg.analytics.AnalyticsEngine.get_total_downloads', return_value=2005))
+        cls._mocks.append(mock.patch('terrareg.config.Config.CONTRIBUTED_NAMESPACE_LABEL', 'unittest contributed module'))
+        cls._mocks.append(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACE_LABEL', 'unittest trusted namespace'))
+        cls._mocks.append(mock.patch('terrareg.config.Config.VERIFIED_MODULE_LABEL', 'unittest verified label'))
+        cls._mocks.append(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['trustednamespace']))
+        for mock_ in cls._mocks:
             mock_.start()
-        super(TestHomepage, self).setup_class(self)
+        super(TestHomepage, cls).setup_class()
 
-    def teardown_class(self):
+    @classmethod
+    def teardown_class(cls):
         """Setup required mocks."""
-        for mock_ in self._mocks:
+        for mock_ in cls._mocks:
             mock_.stop()
+        super(TestHomepage, cls).teardown_class()
 
     def test_title(self):
         """Check homepage."""
@@ -44,7 +47,7 @@ class TestHomepage(SeleniumTest):
         # Ensure counts on page are correct
         assert self.selenium_instance.find_element(By.ID, 'namespace-count').text == '11'
         assert self.selenium_instance.find_element(By.ID, 'module-count').text == '45'
-        assert self.selenium_instance.find_element(By.ID, 'version-count').text == '59'
+        assert self.selenium_instance.find_element(By.ID, 'version-count').text == '58'
         assert self.selenium_instance.find_element(By.ID, 'download-count').text == '2005'
 
     def test_latest_module_version(self):

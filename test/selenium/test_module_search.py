@@ -13,21 +13,24 @@ from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
 class TestModuleSearch(SeleniumTest):
     """Test homepage."""
 
-    def setup_class(self):
+    @classmethod
+    def setup_class(cls):
         """Setup required mocks."""
-        self._mocks = []
-        self._mocks.append(mock.patch('terrareg.config.Config.CONTRIBUTED_NAMESPACE_LABEL', 'unittest contributed module'))
-        self._mocks.append(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACE_LABEL', 'unittest trusted namespace'))
-        self._mocks.append(mock.patch('terrareg.config.Config.VERIFIED_MODULE_LABEL', 'unittest verified label'))
-        self._mocks.append(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['modulesearch-trusted']))
-        for mock_ in self._mocks:
+        cls._mocks = []
+        cls._mocks.append(mock.patch('terrareg.config.Config.CONTRIBUTED_NAMESPACE_LABEL', 'unittest contributed module'))
+        cls._mocks.append(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACE_LABEL', 'unittest trusted namespace'))
+        cls._mocks.append(mock.patch('terrareg.config.Config.VERIFIED_MODULE_LABEL', 'unittest verified label'))
+        cls._mocks.append(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['modulesearch-trusted']))
+        for mock_ in cls._mocks:
             mock_.start()
-        super(TestModuleSearch, self).setup_class(self)
+        super(TestModuleSearch, cls).setup_class()
 
-    def teardown_class(self):
+    @classmethod
+    def teardown_class(cls):
         """Setup required mocks."""
-        for mock_ in self._mocks:
+        for mock_ in cls._mocks:
             mock_.stop()
+        super(TestModuleSearch, cls).teardown_class()
 
     def test_search_from_homepage(self):
         """Check search functionality from homepage."""
