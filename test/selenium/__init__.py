@@ -13,6 +13,7 @@ from flask import request
 from pyvirtualdisplay import Display
 from selenium import webdriver
 import pytest
+import werkzeug
 
 from terrareg.models import (
     Namespace, Module, ModuleProvider,
@@ -45,16 +46,6 @@ class SeleniumTest(BaseTest):
         return 'http://localhost:{port}{path}'.format(port=self.SERVER.port, path=path)
 
     @classmethod
-    def get_stop_server(cls):
-        """Shutdown flask server."""
-        def stop_server():
-            print(dir(cls.SERVER._app))
-            cls.SERVER._app._BaseServer__shutdown_request = True
-            cls.SERVER._app.do_teardown_appcontext()
-            return {}
-        return stop_server
-
-    @classmethod
     def setup_class(cls):
         """Setup host/port to host server."""
         super(SeleniumTest, cls).setup_class(cls)
@@ -67,17 +58,17 @@ class SeleniumTest(BaseTest):
         cls.selenium_instance.delete_all_cookies()
         cls.selenium_instance.implicitly_wait(1)
 
-        cls.SERVER._app.route('/SHUTDOWN')(cls.get_stop_server())
         cls.SERVER.port = random.randint(5000, 6000)
 
         log = logging.getLogger('werkzeug')
         log.disabled = True
-        cls.SERVER._app
 
+        cls._werzeug_server = werkzeug.serving.make_server(
+            "localhost",
+            cls.SERVER.port,
+            cls.SERVER._app)
         cls._server_thread = threading.Thread(
-            target=cls.SERVER.run,
-            kwargs={'debug': False},
-            daemon=True
+            target=cls._werzeug_server.serve_forever
         )
         cls._server_thread.start()
 
@@ -87,7 +78,7 @@ class SeleniumTest(BaseTest):
         cls.selenium_instance.quit()
         cls.display_instance.stop()
         # Shutdown server
-        cls.SERVER._app.test_client().get('/SHUTDOWN')
+        cls._werzeug_server.shutdown()
         cls._server_thread.join()
 
     def assert_equals(self, callback, value):
