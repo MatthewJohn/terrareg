@@ -156,7 +156,7 @@ class ModuleSearch(object):
         limited_search = select.limit(limit).offset(offset)
         count_search = sqlalchemy.select(sqlalchemy.func.count().label('count')).select_from(select.subquery())
 
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(limited_search)
             count_result = conn.execute(count_search)
 
@@ -185,7 +185,7 @@ class ModuleSearch(object):
 
         main_select = cls._get_search_query_filter(select, query)
 
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             verified_count = conn.execute(
                 sqlalchemy.select(
                     [sqlalchemy.func.count().label('count')]
@@ -269,7 +269,7 @@ class ModuleSearch(object):
         ).order_by(db.module_version.c.published_at.desc(), 
         ).limit(1)
 
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
 
             row = res.fetchone()
@@ -321,7 +321,7 @@ class ModuleSearch(object):
         ).order_by(counts.c.download_count.desc()
         ).limit(1)
 
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
             row = res.fetchone()
         print(row)
