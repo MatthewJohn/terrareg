@@ -767,32 +767,33 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
         if not terrareg.config.Config().ALLOW_MODULE_HOSTING:
             return {'message': 'Module upload is disabled.'}, 400
 
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        # Get module provider and, optionally create, if it doesn't exist
-        module_provider = ModuleProvider.get(module=module, name=provider, create=True)
-        module_version = ModuleVersion(module_provider=module_provider, version=version)
+        with Database.start_transaction():
+            namespace = Namespace(namespace)
+            module = Module(namespace=namespace, name=name)
+            # Get module provider and, optionally create, if it doesn't exist
+            module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+            module_version = ModuleVersion(module_provider=module_provider, version=version)
 
-        if len(request.files) != 1:
-            raise UploadError('One file can be uploaded')
+            if len(request.files) != 1:
+                raise UploadError('One file can be uploaded')
 
-        file = request.files[[f for f in request.files.keys()][0]]
+            file = request.files[[f for f in request.files.keys()][0]]
 
-        # If the user does not select a file, the browser submits an
-        # empty file without a filename.
-        if file.filename == '':
-            raise UploadError('No selected file')
+            # If the user does not select a file, the browser submits an
+            # empty file without a filename.
+            if file.filename == '':
+                raise UploadError('No selected file')
 
-        if not file or not self.allowed_file(file.filename):
-            raise UploadError('Error occurred - unknown file extension')
+            if not file or not self.allowed_file(file.filename):
+                raise UploadError('Error occurred - unknown file extension')
 
-        module_version.prepare_module()
-        with ApiUploadModuleExtractor(upload_file=file, module_version=module_version) as me:
-            me.process_upload()
+            module_version.prepare_module()
+            with ApiUploadModuleExtractor(upload_file=file, module_version=module_version) as me:
+                me.process_upload()
 
-        return {
-            'status': 'Success'
-        }
+            return {
+                'status': 'Success'
+            }
 
 
 class ApiModuleVersionCreate(ErrorCatchingResource):
@@ -802,28 +803,29 @@ class ApiModuleVersionCreate(ErrorCatchingResource):
 
     def _post(self, namespace, name, provider, version):
         """Handle creation of module version."""
-        namespace = Namespace(name=namespace)
-        module = Module(namespace=namespace, name=name)
-        # Get module provider and optionally create, if it doesn't exist
-        module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+        with Database.start_transaction():
+            namespace = Namespace(name=namespace)
+            module = Module(namespace=namespace, name=name)
+            # Get module provider and optionally create, if it doesn't exist
+            module_provider = ModuleProvider.get(module=module, name=provider, create=True)
 
-        # Ensure module provider exists
-        if not module_provider:
-            return {'message': 'Module provider does not exist'}, 400
+            # Ensure module provider exists
+            if not module_provider:
+                return {'message': 'Module provider does not exist'}, 400
 
-        # Ensure that the module provider has a repository url configured.
-        if not module_provider.get_git_clone_url():
-            return {'message': 'Module provider is not configured with a repository'}, 400
+            # Ensure that the module provider has a repository url configured.
+            if not module_provider.get_git_clone_url():
+                return {'message': 'Module provider is not configured with a repository'}, 400
 
-        module_version = ModuleVersion(module_provider=module_provider, version=version)
+            module_version = ModuleVersion(module_provider=module_provider, version=version)
 
-        module_version.prepare_module()
-        with GitModuleExtractor(module_version=module_version) as me:
-            me.process_upload()
+            module_version.prepare_module()
+            with GitModuleExtractor(module_version=module_version) as me:
+                me.process_upload()
 
-        return {
-            'status': 'Success'
-        }
+            return {
+                'status': 'Success'
+            }
 
 
 class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
