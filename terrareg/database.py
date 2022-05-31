@@ -280,7 +280,7 @@ class Database():
             return current_transaction
 
         # If transaction is not currently active, return database connection
-        return cls.get().get_connection()
+        return cls.get().get_engine().connect()
 
 
 class Transaction:
