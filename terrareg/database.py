@@ -50,7 +50,7 @@ class Database():
         self._sub_module = None
         self._analytics = None
         self._example_file = None
-        self.transaction = None
+        self.transaction_connection = None
 
     @property
     def git_provider(self):
@@ -252,14 +252,14 @@ class Database():
     def get_current_transaction(cls):
         """Check if currently in transaction."""
         if has_request_context():
-            if cls.get().transaction is not None:
+            if cls.get().transaction_connection is not None:
                 raise Exception('Global database transaction is present whilst in request context!')
 
-            if flask.g.get('database_transaction', None):
-                return flask.g.get('database_transaction', None)
+            if flask.g.get('database_transaction_connection', None):
+                return flask.g.get('database_transaction_connection', None)
         else:
-            if cls.get().transaction is not None:
-                return cls.get().transaction
+            if cls.get().transaction_connection is not None:
+                return cls.get().transaction_connection
 
         return None
 
@@ -277,10 +277,27 @@ class Database():
         """Get connection, checking for transaction and returning it."""
         current_transaction = cls.get_current_transaction()
         if current_transaction is not None:
-            return current_transaction
+            # Wrap current transaction in fake 'with' wrapper,
+            # to handle 'with get_connection():'
+            return TransactionConnectionWrapper(current_transaction)
 
         # If transaction is not currently active, return database connection
         return cls.get().get_engine().connect()
+
+
+class TransactionConnectionWrapper:
+
+    def __init__(self, transaction):
+        """Store transaction"""
+        self._transaction = transaction
+
+    def __enter__(self):
+        """On enter, return transaction."""
+        return self._transaction
+
+    def __exit__(self, *args, **kwargs):
+        """Do nothing on exit"""
+        self._transaction = None
 
 
 class Transaction:
@@ -295,21 +312,21 @@ class Transaction:
         """Start transaction and store in current context."""
         self._transaction_outer = self._connection.begin()
 
-        transaction = self._transaction_outer.__enter__()
+        self._transaction_outer.__enter__()
 
         # Store current transaction in context, so it is
         # returned by any get_connection methods
         if has_request_context():
-            flask.g.database_transaction = transaction
+            flask.g.database_transaction_connection = self._connection
         else:
-            Database.get().transaction = transaction
+            Database.get().transaction = self._connection
 
-        return transaction
+        return self._connection
 
     def __exit__(self, *args, **kwargs):
         """End transaction and remove from current context."""
         if has_request_context():
-            flask.g.database_transaction = None
+            flask.g.database_transaction_connection = None
         else:
             Database.get().transaction = None
 
