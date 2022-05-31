@@ -66,33 +66,36 @@ class SeleniumTest(BaseTest):
         """Return full URL to perform selenium request."""
         return 'http://localhost:{port}{path}'.format(port=self.SERVER.port, path=path)
 
-    def setup_class(self):
+    @classmethod
+    def setup_class(cls):
         """Setup host/port to host server."""
-        super(SeleniumTest, self).setup_class(self)
+        super(SeleniumTest, cls).setup_class()
 
-        self.SERVER.host = '127.0.0.1'
+        cls.SERVER.host = '127.0.0.1'
 
-        self.display_instance = Display(visible=0, size=SeleniumTest.DEFAULT_RESOLUTION)
-        self.display_instance.start()
-        self.selenium_instance = webdriver.Firefox()
-        self.selenium_instance.delete_all_cookies()
-        self.selenium_instance.implicitly_wait(1)
+        cls.display_instance = Display(visible=0, size=SeleniumTest.DEFAULT_RESOLUTION)
+        cls.display_instance.start()
+        cls.selenium_instance = webdriver.Firefox()
+        cls.selenium_instance.delete_all_cookies()
+        cls.selenium_instance.implicitly_wait(1)
 
-        self.SERVER._app.route('/SHUTDOWN')(stop_server)
-        self.SERVER.port = 5001
-        self._server_thread = threading.Thread(
-            target=self.SERVER.run,
+        cls.SERVER._app.route('/SHUTDOWN')(stop_server)
+        cls.SERVER.port = 5001
+        cls._server_thread = threading.Thread(
+            target=cls.SERVER.run,
             kwargs={'debug': False},
             daemon=True
         )
-        self._server_thread.start()
+        cls._server_thread.start()
 
-    def teardown_class(self):
+    @classmethod
+    def teardown_class(cls):
         """Teardown display instance."""
-        self.display_instance.stop()
+        cls.display_instance.stop()
         # Shutdown server
-        self.SERVER._app.test_client().get('/SHUTDOWN')
-        self._server_thread.join()
+        cls.SERVER._app.test_client().get('/SHUTDOWN')
+        cls._server_thread.join()
+        super(SeleniumTest, cls).teardown_class()
 
     def assert_equals(self, callback, value):
         """Attempt to verify assertion and retry on failure."""

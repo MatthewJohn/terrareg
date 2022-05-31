@@ -3,10 +3,11 @@ import unittest.mock
 
 from test.unit.terrareg import (
     TerraregUnitTest,
-    client, mocked_server_namespace_fixture,
+    mocked_server_namespace_fixture,
     setup_test_data,
     MockNamespace, MockModule, MockModuleProvider
 )
+from test import client
 from test.unit.terrareg.server import mocked_search_module_providers
 from terrareg.module_search import ModuleSearchResults
 

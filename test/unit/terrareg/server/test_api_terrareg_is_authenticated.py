@@ -1,7 +1,8 @@
 
 import unittest.mock
 
-from test.unit.terrareg import client, TerraregUnitTest
+from test.unit.terrareg import TerraregUnitTest
+from test import client
 
 
 class TestApiTerraregIsAuthenticated(TerraregUnitTest):
