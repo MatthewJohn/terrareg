@@ -28,7 +28,7 @@ cache:
     - pip install --proxy=$http_proxy -r requirements.txt
 
 .test_image:
-  image: terrareg-test-image:latest
+  image: terrareg-test-image:v${CI_COMMIT_SHORT_SHA}
 
 unit-tests:
   stage: test
@@ -115,7 +115,7 @@ build-test-docker-image:
   services:
     - docker:dind
   script:
-    - docker build -f Dockerfile.tests -t terrareg-test-image:latest --build-arg http_proxy=$http_proxy --build-arg HTTP_PROXY=$http_proxy --build-arg https_proxy=$https_proxy --build-arg HTTPS_PROY=$https_proxy .
+    - docker build -f Dockerfile.tests -t terrareg-test-image:v${CI_COMMIT_SHORT_SHA} --build-arg http_proxy=$http_proxy --build-arg HTTP_PROXY=$http_proxy --build-arg https_proxy=$https_proxy --build-arg HTTPS_PROY=$https_proxy .
  
 release:
   stage: deploy
