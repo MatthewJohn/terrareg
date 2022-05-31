@@ -267,7 +267,7 @@ class Database():
     def start_transaction(cls):
         """Start DB transaction, store in current context and return"""
         # Check if currently in transaction
-        if cls.is_in_transaction():
+        if cls.get_current_transaction():
             raise Exception('Already within database transaction')
         conn = Database.get().get_connection()
         return Transaction(conn)
