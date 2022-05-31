@@ -219,14 +219,6 @@ integration_test_data = {
             'id': 29,
             'versions': {'1.0.0': {'published': True}}
         }},
-        'verifiedmodule-multiversion': {'aws': {
-            'verified': True,
-            'id': 30,
-            'versions': {
-                '1.2.3': {'published': True},
-                '2.0.0': {'published': True}
-            }
-        }},
         'verifiedmodule-withbetaversion': {'aws': {
             'id': 51,
             'versions': {
@@ -298,6 +290,13 @@ integration_test_data = {
             'versions': {
                 '1.2.3': {},
                 '2.0.0': {}
+            }
+        }},
+        'mixedsearch-trusted-result-verified': {'aws': {
+            'id': 54,
+            'verified': True,
+            'versions': {
+                '2.0.0': {'published': True}
             }
         }},
     },
