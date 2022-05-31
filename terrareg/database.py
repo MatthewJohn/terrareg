@@ -286,7 +286,7 @@ class Database():
 class Transaction:
     """Custom wrapper for database tranaction."""
 
-    def __enter__(self, connection):
+    def __init__(self, connection):
         """Store database connection."""
         self._connection = connection
         self._transaction_outer = None
