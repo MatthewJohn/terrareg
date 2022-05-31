@@ -3,6 +3,9 @@
 import sqlalchemy
 import sqlalchemy.dialects.mysql
 
+from flask import has_request_context
+import flask
+
 import terrareg.config
 from terrareg.errors import DatabaseMustBeIniistalisedError
 
@@ -47,6 +50,7 @@ class Database():
         self._sub_module = None
         self._analytics = None
         self._example_file = None
+        self.transaction = None
 
     @property
     def git_provider(self):
@@ -243,3 +247,57 @@ class Database():
         ).select_from(self.module_version).join(
             self.module_provider, self.module_version.c.module_provider_id == self.module_provider.c.id
         )
+
+    @classmethod
+    def get_current_transaction(cls):
+        """Check if currently in transaction."""
+        if has_request_context():
+            if cls.get().transaction is not None:
+                raise Exception('Global database transaction is present whilst in request context!')
+
+            if flask.g.get('database_transaction', None):
+                return flask.g.get('database_transaction', None)
+        else:
+            if cls.get().transaction is not None:
+                return cls.get().transaction
+
+        return None
+
+    @classmethod
+    def start_transaction(cls):
+        """Start DB transaction, store in current context and return"""
+        # Check if currently in transaction
+        if cls.is_in_transaction():
+            raise Exception('Already within database transaction')
+        conn = Database.get().get_connection()
+        return Transaction(conn)
+
+    @classmethod
+    def get_connection(cls):
+        """Get connection, checking for transaction and returning it."""
+        current_transaction = cls.get_current_transaction()
+        if current_transaction is not None:
+            return current_transaction
+
+        # If transaction is not currently active, return database connection
+        return cls.get().get_connection()
+
+
+class Transaction:
+    """Custom wrapper for database tranaction."""
+
+    def __enter__(self, connection):
+        """Store database connection."""
+        self._connection = connection
+    
+    def __enter__(self):
+        """Start transaction and store in current context."""
+        transaction = self._connection.begin()
+
+        if has_request_context():
+            flask.g.database_transaction = transaction
+        else:
+            Database.get().transaction = transaction
+
+        return transaction.__enter__()
+        
