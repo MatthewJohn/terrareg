@@ -289,15 +289,28 @@ class Transaction:
     def __enter__(self, connection):
         """Store database connection."""
         self._connection = connection
+        self._transaction_outer = None
     
     def __enter__(self):
         """Start transaction and store in current context."""
-        transaction = self._connection.begin()
+        self._transaction_outer = self._connection.begin()
 
+        transaction = self._transaction_outer.__enter__()
+
+        # Store current transaction in context, so it is
+        # returned by any get_connection methods
         if has_request_context():
             flask.g.database_transaction = transaction
         else:
             Database.get().transaction = transaction
 
-        return transaction.__enter__()
-        
+        return transaction
+
+    def __exit__(self, *args, **kwargs):
+        """End transaction and remove from current context."""
+        if has_request_context():
+            flask.g.database_transaction = None
+        else:
+            Database.get().transaction = None
+
+        self._transaction_outer.__exit__(*args, **kwargs)
