@@ -126,6 +126,10 @@ class TestModuleSearch(SeleniumTest):
         self.selenium_instance.find_element(By.ID, 'nextButton').is_enabled() == True
         self.selenium_instance.find_element(By.ID, 'prevButton').is_enabled() == False
 
+        # Check number of results, which will also implicitly wait
+        # for results to update.
+        self.assert_equals(lambda: len(self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')), 10)
+
         # Get list of all cards
         first_page_cards = []
         for card in self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card'):
@@ -138,6 +142,15 @@ class TestModuleSearch(SeleniumTest):
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'nextButton').is_enabled(), False)
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'prevButton').is_enabled(), True)
 
+        # Wait again for first card to update
+        self.assert_equals(
+            lambda: self.selenium_instance.find_element(
+                By.ID, 'results').find_elements(
+                    By.CLASS_NAME, 'card')[0].find_element(
+                        By.CLASS_NAME, 'module-card-title').text,
+            'modulesearch-trusted / mixedsearch-trusted-result-multiversion'
+        )
+
         # Ensure that all cards have been updated
         for card in self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card'):
             assert card.find_element(By.CLASS_NAME, 'module-card-title').text not in first_page_cards
@@ -148,6 +161,15 @@ class TestModuleSearch(SeleniumTest):
         # Ensure prev button is disabled and next button is enabled
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'nextButton').is_enabled(), True)
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'prevButton').is_enabled(), False)
+
+        # Wait again for first card to update
+        self.assert_equals(
+            lambda: self.selenium_instance.find_element(
+                By.ID, 'results').find_elements(
+                    By.CLASS_NAME, 'card')[0].find_element(
+                        By.CLASS_NAME, 'module-card-title').text,
+            'modulesearch / contributedmodule-differentprovider'
+        )
 
         # Ensure that all of the original cards are displayed
         for card in self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card'):
