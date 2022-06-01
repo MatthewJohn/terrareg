@@ -1596,7 +1596,6 @@ class ExampleFile:
         if self._row_cache is None:
             db = Database.get()
             # Obtain row from git providers table for git provider.
-            print('PAth: ' + self._path)
             select = db.example_file.select().where(
                 db.example_file.c.submodule_id == self._example.pk,
                 db.example_file.c.path == self._path
@@ -1614,7 +1613,7 @@ class ExampleFile:
             module_path = os.path.abspath(
                 # Since example path does not contain a leading slash,
                 # prepend one to perform the abspath relative to root.
-                os.path.join('/', self._example.path, match.group(2))
+                os.path.join('/', self._example.path, match.group(3))
             )
             # If the path is empty (at root),
             # leave the path blank
@@ -1626,11 +1625,21 @@ class ExampleFile:
                 # the module
                 module_path = '/{module_path}'.format(module_path=module_path)
 
-            return '{key_group}"{server_hostname}/{module_provider_id}{sub_dir}"\n'.format(
-                key_group=match.group(1),
+            trailing_space_count = len(match.group(2))
+            # If only 1 leading space before source '=' character,
+            # increment by 1 to align to 'version'
+            if trailing_space_count < 2:
+                trailing_space_count = 2
+
+            return ('\n{leading_space}source{trailing_space}= "{server_hostname}/{module_provider_id}{sub_dir}"\n'
+                    '{leading_space}version{version_trailing_space}= "{version_string}"').format(
+                leading_space=match.group(1),
+                trailing_space=(' ' * trailing_space_count),
+                version_trailing_space=(' ' * (trailing_space_count - 1)),
                 server_hostname=server_hostname,
                 module_provider_id=self._example._module_version._module_provider.id,
-                sub_dir=module_path
+                sub_dir=module_path,
+                version_string=self._example._module_version.get_terraform_example_version_string()
             )
         return callback
 
@@ -1638,7 +1647,7 @@ class ExampleFile:
         """Return content with source replaced"""
         # Replace source lines that use relative paths
         return re.sub(
-            r'(\n[ \t]*source\s+=\s+)"(\..*)"[ \t]*\n',
+            r'\n([ \t]*)source(\s+)=\s+"(\..*)"[ \t]*\n',
             self._replace_example_file_source(server_hostname=server_hostname),
             self.content,
             re.MULTILINE
