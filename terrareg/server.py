@@ -1662,7 +1662,7 @@ class ApiTerraregModuleVersionPublish(ErrorCatchingResource):
         if not module_version:
             return {'message': 'Module version does not exist'}, 400
 
-        module_version.update_attributes(published=True)
+        module_version.publish()
         return {
             'status': 'Success'
         }

@@ -1324,6 +1324,15 @@ class ModuleVersion(TerraformSpecsObject):
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
 
+    def publish(self):
+        """Publish module version."""
+        # Mark module version as published
+        self.update_attributes(published=True)
+
+        # Update latest version of module provider, if necessary.
+        if self._module_provider.calculate_latest_version().version == self.version:
+            self._module_provider.update_attributes(latest_version_id=self.pk)
+
     def get_api_outline(self):
         """Return dict of basic version details for API response."""
         row = self._get_db_row()
