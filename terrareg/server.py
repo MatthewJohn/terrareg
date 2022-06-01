@@ -763,32 +763,33 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
         if not terrareg.config.Config().ALLOW_MODULE_HOSTING:
             return {'message': 'Module upload is disabled.'}, 400
 
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        # Get module provider and, optionally create, if it doesn't exist
-        module_provider = ModuleProvider.get(module=module, name=provider, create=True)
-        module_version = ModuleVersion(module_provider=module_provider, version=version)
+        with Database.start_transaction():
+            namespace = Namespace(namespace)
+            module = Module(namespace=namespace, name=name)
+            # Get module provider and, optionally create, if it doesn't exist
+            module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+            module_version = ModuleVersion(module_provider=module_provider, version=version)
 
-        if len(request.files) != 1:
-            raise UploadError('One file can be uploaded')
+            if len(request.files) != 1:
+                raise UploadError('One file can be uploaded')
 
-        file = request.files[[f for f in request.files.keys()][0]]
+            file = request.files[[f for f in request.files.keys()][0]]
 
-        # If the user does not select a file, the browser submits an
-        # empty file without a filename.
-        if file.filename == '':
-            raise UploadError('No selected file')
+            # If the user does not select a file, the browser submits an
+            # empty file without a filename.
+            if file.filename == '':
+                raise UploadError('No selected file')
 
-        if not file or not self.allowed_file(file.filename):
-            raise UploadError('Error occurred - unknown file extension')
+            if not file or not self.allowed_file(file.filename):
+                raise UploadError('Error occurred - unknown file extension')
 
-        module_version.prepare_module()
-        with ApiUploadModuleExtractor(upload_file=file, module_version=module_version) as me:
-            me.process_upload()
+            module_version.prepare_module()
+            with ApiUploadModuleExtractor(upload_file=file, module_version=module_version) as me:
+                me.process_upload()
 
-        return {
-            'status': 'Success'
-        }
+            return {
+                'status': 'Success'
+            }
 
 
 class ApiModuleVersionCreate(ErrorCatchingResource):
@@ -798,28 +799,29 @@ class ApiModuleVersionCreate(ErrorCatchingResource):
 
     def _post(self, namespace, name, provider, version):
         """Handle creation of module version."""
-        namespace = Namespace(name=namespace)
-        module = Module(namespace=namespace, name=name)
-        # Get module provider and optionally create, if it doesn't exist
-        module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+        with Database.start_transaction():
+            namespace = Namespace(name=namespace)
+            module = Module(namespace=namespace, name=name)
+            # Get module provider and optionally create, if it doesn't exist
+            module_provider = ModuleProvider.get(module=module, name=provider, create=True)
 
-        # Ensure module provider exists
-        if not module_provider:
-            return {'message': 'Module provider does not exist'}, 400
+            # Ensure module provider exists
+            if not module_provider:
+                return {'message': 'Module provider does not exist'}, 400
 
-        # Ensure that the module provider has a repository url configured.
-        if not module_provider.get_git_clone_url():
-            return {'message': 'Module provider is not configured with a repository'}, 400
+            # Ensure that the module provider has a repository url configured.
+            if not module_provider.get_git_clone_url():
+                return {'message': 'Module provider is not configured with a repository'}, 400
 
-        module_version = ModuleVersion(module_provider=module_provider, version=version)
+            module_version = ModuleVersion(module_provider=module_provider, version=version)
 
-        module_version.prepare_module()
-        with GitModuleExtractor(module_version=module_version) as me:
-            me.process_upload()
+            module_version.prepare_module()
+            with GitModuleExtractor(module_version=module_version) as me:
+                me.process_upload()
 
-        return {
-            'status': 'Success'
-        }
+            return {
+                'status': 'Success'
+            }
 
 
 class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
@@ -827,102 +829,103 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
 
     def _post(self, namespace, name, provider):
         """Create new version based on bitbucket hooks."""
-        namespace = Namespace(name=namespace)
-        module = Module(namespace=namespace, name=name)
-        # Get module provider and optionally create, if it doesn't exist
-        module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+        with Database.start_transaction():
+            namespace = Namespace(name=namespace)
+            module = Module(namespace=namespace, name=name)
+            # Get module provider and optionally create, if it doesn't exist
+            module_provider = ModuleProvider.get(module=module, name=provider, create=True)
 
-        # Validate signature
-        if terrareg.config.Config().UPLOAD_API_KEYS:
-            # Get signature from request
-            request_signature = request.headers.get('X-Hub-Signature', '')
-            # Remove 'sha256=' from beginning of header
-            request_signature = re.sub(r'^sha256=', '', request_signature)
-            # Iterate through each of the keys and test
-            for test_key in terrareg.config.Config().UPLOAD_API_KEYS:
-                # Generate
-                valid_signature = hmac.new(bytes(test_key, 'utf8'), b'', hashlib.sha256)
-                valid_signature.update(request.data)
-                # If the signatures match, break from loop
-                if hmac.compare_digest(valid_signature.hexdigest(), request_signature):
-                    break
-            # If a valid signature wasn't found with one of the configured keys,
-            # return 401
-            else:
-                return self._get_401_response()
+            # Validate signature
+            if terrareg.config.Config().UPLOAD_API_KEYS:
+                # Get signature from request
+                request_signature = request.headers.get('X-Hub-Signature', '')
+                # Remove 'sha256=' from beginning of header
+                request_signature = re.sub(r'^sha256=', '', request_signature)
+                # Iterate through each of the keys and test
+                for test_key in terrareg.config.Config().UPLOAD_API_KEYS:
+                    # Generate
+                    valid_signature = hmac.new(bytes(test_key, 'utf8'), b'', hashlib.sha256)
+                    valid_signature.update(request.data)
+                    # If the signatures match, break from loop
+                    if hmac.compare_digest(valid_signature.hexdigest(), request_signature):
+                        break
+                # If a valid signature wasn't found with one of the configured keys,
+                # return 401
+                else:
+                    return self._get_401_response()
 
-        print(request.headers)
-        print(request.json)
-        if not module_provider.get_git_clone_url():
-            return {'message': 'Module provider is not configured with a repository'}, 400
+            print(request.headers)
+            print(request.json)
+            if not module_provider.get_git_clone_url():
+                return {'message': 'Module provider is not configured with a repository'}, 400
 
-        bitbucket_data = request.json
+            bitbucket_data = request.json
 
-        if not ('changes' in bitbucket_data and type(bitbucket_data['changes']) == list):
-            return {'message': 'List of changes not found in payload'}, 400
+            if not ('changes' in bitbucket_data and type(bitbucket_data['changes']) == list):
+                return {'message': 'List of changes not found in payload'}, 400
 
-        imported_versions = {}
-        error = False
+            imported_versions = {}
+            error = False
 
-        for change in bitbucket_data['changes']:
+            for change in bitbucket_data['changes']:
 
-            # Check that change is a dict
-            if not type(change) is dict:
-                continue
+                # Check that change is a dict
+                if not type(change) is dict:
+                    continue
 
-            # Check if change type is tag
-            if not ('ref' in change and
-                    type(change['ref']) is dict and
-                    'type' in change['ref'] and
-                    type(change['ref']['type']) == str and
-                    change['ref']['type'] == 'TAG'):
-                continue
+                # Check if change type is tag
+                if not ('ref' in change and
+                        type(change['ref']) is dict and
+                        'type' in change['ref'] and
+                        type(change['ref']['type']) == str and
+                        change['ref']['type'] == 'TAG'):
+                    continue
 
-            # Check type of change is an ADD or UPDATE
-            if not ('type' in change and
-                    type(change['type']) is str and
-                    change['type'] in ['ADD', 'UPDATE']):
-                continue
+                # Check type of change is an ADD or UPDATE
+                if not ('type' in change and
+                        type(change['type']) is str and
+                        change['type'] in ['ADD', 'UPDATE']):
+                    continue
 
-            # Obtain tag name
-            tag_ref = change['ref']['id'] if 'id' in change['ref'] else None
+                # Obtain tag name
+                tag_ref = change['ref']['id'] if 'id' in change['ref'] else None
 
-            # Attempt to match version against regex
-            version = module_provider.get_version_from_tag_ref(tag_ref)
+                # Attempt to match version against regex
+                version = module_provider.get_version_from_tag_ref(tag_ref)
 
-            if not version:
-                continue
+                if not version:
+                    continue
 
-            # Create module version
-            module_version = ModuleVersion(module_provider=module_provider, version=version)
+                # Create module version
+                module_version = ModuleVersion(module_provider=module_provider, version=version)
 
-            # Perform import from git
-            try:
-                module_version.prepare_module()
-                with GitModuleExtractor(module_version=module_version) as me:
-                    me.process_upload()
-            except TerraregError as exc:
+                # Perform import from git
+                try:
+                    module_version.prepare_module()
+                    with GitModuleExtractor(module_version=module_version) as me:
+                        me.process_upload()
+                except TerraregError as exc:
+                    imported_versions[version] = {
+                        'status': 'Failed',
+                        'message': str(exc)
+                    }
+                    continue
+
                 imported_versions[version] = {
-                    'status': 'Failed',
-                    'message': str(exc)
+                    'status': 'Success'
                 }
-                continue
 
-            imported_versions[version] = {
-                'status': 'Success'
-            }
-
-        if error:
+            if error:
+                return {
+                    'status': 'Error',
+                    'message': 'One or more tags failed to import',
+                    'tags': imported_versions
+                }, 500
             return {
-                'status': 'Error',
-                'message': 'One or more tags failed to import',
+                'status': 'Success',
+                'message': 'Imported all provided tags',
                 'tags': imported_versions
-            }, 500
-        return {
-            'status': 'Success',
-            'message': 'Imported all provided tags',
-            'tags': imported_versions
-        }
+            }
 
 
 class ApiModuleList(ErrorCatchingResource):

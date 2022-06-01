@@ -81,7 +81,7 @@ class GitProvider:
                     clone_url_template=git_provider_config['clone_url'],
                     browse_url_template=git_provider_config['browse_url']
                 )
-            with db.get_engine().connect() as conn:
+            with db.get_connection() as conn:
                 conn.execute(upsert)
 
     @classmethod
@@ -93,7 +93,7 @@ class GitProvider:
         select = db.git_provider.select().where(
             db.git_provider.c.name == name
         )
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
             row = res.fetchone()
 
@@ -112,7 +112,7 @@ class GitProvider:
         # Obtain row from git providers table where name
         # matches git provider name
         select = db.git_provider.select()
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
             return [
                 cls(id=row['id'])
@@ -165,7 +165,7 @@ class GitProvider:
             select = db.git_provider.select().where(
                 db.git_provider.c.id == self._id
             )
-            with db.get_engine().connect() as conn:
+            with db.get_connection() as conn:
                 res = conn.execute(select)
                 return res.fetchone()
         return self._row_cache
@@ -187,7 +187,7 @@ class Namespace(object):
 
         select = sqlalchemy.select([sqlalchemy.func.count()]).select_from(counts)
 
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
 
             return res.scalar()
@@ -223,7 +223,7 @@ class Namespace(object):
         ).group_by(
             db.module_provider.c.namespace
         )
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
 
             namespaces = [r['namespace'] for r in res]
@@ -277,7 +277,7 @@ class Namespace(object):
         ).group_by(
             db.module_provider.c.module
         )
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
             modules = [r['module'] for r in res]
 
@@ -337,7 +337,7 @@ class Module(object):
         ).group_by(
             db.module_provider.c.provider
         )
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
             providers = [r['provider'] for r in res]
 
@@ -460,7 +460,7 @@ class ModuleProvider(object):
 
         select = sqlalchemy.select([sqlalchemy.func.count()]).select_from(counts)
 
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
 
             return res.scalar()
@@ -476,7 +476,7 @@ class ModuleProvider(object):
             provider=name,
             verified=module._namespace.is_auto_verified
         )
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             conn.execute(module_provider_insert)
 
         return cls(module=module, name=name)
@@ -599,7 +599,7 @@ class ModuleProvider(object):
                 db.module_provider.c.module == self._module.name,
                 db.module_provider.c.provider == self.name
             )
-            with db.get_engine().connect() as conn:
+            with db.get_connection() as conn:
                 res = conn.execute(select)
                 self._cache_db_row = res.fetchone()
 
@@ -609,7 +609,7 @@ class ModuleProvider(object):
         """DELETE module provider, all module version and all associated subversions."""
         db = Database.get()
 
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             # Delete module from module_version table
             delete_statement = db.module_provider.delete().where(
                 db.module_provider.c.id == self.pk
@@ -653,7 +653,7 @@ class ModuleProvider(object):
         update = self.get_db_where(
             db=db, statement=db.module_provider.update()
         ).values(**kwargs)
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             conn.execute(update)
 
         # Remove cached DB row
@@ -831,7 +831,7 @@ class ModuleProvider(object):
             db.module_version.c.published == True,
             db.module_version.c.beta == False
         )
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
 
             # Convert to list
@@ -874,7 +874,7 @@ class ModuleProvider(object):
                 db.module_version.c.beta == False
             )
 
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
             module_versions = [
                 ModuleVersion(module_provider=self, version=r['version'])
@@ -1029,7 +1029,7 @@ class ModuleVersion(TerraformSpecsObject):
 
         select = sqlalchemy.select([sqlalchemy.func.count()]).select_from(counts)
 
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
 
             return res.scalar()
@@ -1162,7 +1162,7 @@ class ModuleVersion(TerraformSpecsObject):
                 db.module_provider.c.provider == self._module_provider.name,
                 db.module_version.c.version == self.version
             )
-            with db.get_engine().connect() as conn:
+            with db.get_connection() as conn:
                 res = conn.execute(select)
                 self._cache_db_row = res.fetchone()
         return self._cache_db_row
@@ -1394,7 +1394,7 @@ class ModuleVersion(TerraformSpecsObject):
         update = self.get_db_where(
             db=db, statement=db.module_version.update()
         ).values(**kwargs)
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             conn.execute(update)
 
         # Clear cached DB row
@@ -1406,7 +1406,7 @@ class ModuleVersion(TerraformSpecsObject):
 
         previous_db_row = self._get_db_row()
 
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             if previous_db_row:
                 # Delete module from module_version table
                 delete_statement = db.module_version.delete().where(
@@ -1451,7 +1451,7 @@ class ModuleVersion(TerraformSpecsObject):
             db.module_version.c.id == self.pk,
             db.sub_module.c.type == Submodule.TYPE
         )
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
 
             return [
@@ -1467,7 +1467,7 @@ class ModuleVersion(TerraformSpecsObject):
             db.module_version.c.id == self.pk,
             db.sub_module.c.type == Example.TYPE
         )
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
 
             return [
@@ -1490,7 +1490,7 @@ class BaseSubmodule(TerraformSpecsObject):
             db.sub_module.c.type == cls.TYPE
         )
         print("Finding " + cls.TYPE + " by pk: " + str(pk))
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             row = conn.execute(select).fetchone()
         if row is None:
             return None
@@ -1532,7 +1532,7 @@ class BaseSubmodule(TerraformSpecsObject):
                 db.sub_module.c.path == self._module_path,
                 db.sub_module.c.type == self.TYPE
             )
-            with db.get_engine().connect() as conn:
+            with db.get_connection() as conn:
                 res = conn.execute(select)
                 self._cache_db_row = res.fetchone()
         return self._cache_db_row
@@ -1574,7 +1574,7 @@ class Example(BaseSubmodule):
         select = db._example_file.select().where(
             db._example_file.c.submodule_id == self.pk
         )
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
             return [ExampleFile(example=self, path=row['path']) for row in res]
 
@@ -1589,7 +1589,7 @@ class ExampleFile:
             db._module_version.c.id == module_version.pk,
             db._example_file.c.path == file_path
         )
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             row = conn.execute(select).fetchone()
         if not row:
             return None
@@ -1632,7 +1632,7 @@ class ExampleFile:
                 db.example_file.c.submodule_id == self._example.pk,
                 db.example_file.c.path == self._path
             )
-            with db.get_engine().connect() as conn:
+            with db.get_connection() as conn:
                 res = conn.execute(select)
                 return res.fetchone()
         return self._row_cache

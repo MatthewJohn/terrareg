@@ -3,6 +3,9 @@
 import sqlalchemy
 import sqlalchemy.dialects.mysql
 
+from flask import has_request_context
+import flask
+
 import terrareg.config
 from terrareg.errors import DatabaseMustBeIniistalisedError
 
@@ -47,6 +50,7 @@ class Database():
         self._sub_module = None
         self._analytics = None
         self._example_file = None
+        self.transaction_connection = None
 
     @property
     def git_provider(self):
@@ -262,3 +266,88 @@ class Database():
         ).select_from(self.module_provider).join(
             self.module_version, self.module_provider.c.latest_version_id == self.module_version.c.id
         )
+
+    @classmethod
+    def get_current_transaction(cls):
+        """Check if currently in transaction."""
+        if has_request_context():
+            if cls.get().transaction_connection is not None:
+                raise Exception('Global database transaction is present whilst in request context!')
+
+            if flask.g.get('database_transaction_connection', None):
+                return flask.g.get('database_transaction_connection', None)
+        else:
+            if cls.get().transaction_connection is not None:
+                return cls.get().transaction_connection
+
+        return None
+
+    @classmethod
+    def start_transaction(cls):
+        """Start DB transaction, store in current context and return"""
+        # Check if currently in transaction
+        if cls.get_current_transaction():
+            raise Exception('Already within database transaction')
+        conn = Database.get().get_connection()
+        return Transaction(conn)
+
+    @classmethod
+    def get_connection(cls):
+        """Get connection, checking for transaction and returning it."""
+        current_transaction = cls.get_current_transaction()
+        if current_transaction is not None:
+            # Wrap current transaction in fake 'with' wrapper,
+            # to handle 'with get_connection():'
+            return TransactionConnectionWrapper(current_transaction)
+
+        # If transaction is not currently active, return database connection
+        return cls.get().get_engine().connect()
+
+
+class TransactionConnectionWrapper:
+
+    def __init__(self, transaction):
+        """Store transaction"""
+        self._transaction = transaction
+
+    def __enter__(self):
+        """On enter, return transaction."""
+        return self._transaction
+
+    def __exit__(self, *args, **kwargs):
+        """Do nothing on exit"""
+        self._transaction = None
+
+
+class Transaction:
+    """Custom wrapper for database tranaction."""
+
+    def __init__(self, connection):
+        """Store database connection."""
+        self._connection = connection
+        self._transaction_outer = None
+    
+    def __enter__(self):
+        """Start transaction and store in current context."""
+        self._transaction_outer = self._connection.begin()
+
+        self._transaction_outer.__enter__()
+
+        # Store current transaction in context, so it is
+        # returned by any get_connection methods
+        if has_request_context():
+            flask.g.database_transaction_connection = self._connection
+        else:
+            Database.get().transaction = self._connection
+
+        return self._connection
+
+    def __exit__(self, *args, **kwargs):
+        """End transaction and remove from current context."""
+        if has_request_context():
+            flask.g.database_transaction_connection = None
+        else:
+            Database.get().transaction = None
+
+        self._transaction_outer.__exit__(*args, **kwargs)
+

@@ -1,5 +1,25 @@
 # Changelog
 
+# [2.10.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.9.0...v2.10.0) (2022-06-01)
+
+
+### Bug Fixes
+
+* Fix method call when checking if currently in transaction during creation of transaction ([e96c08f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e96c08fc9643cbde31edf27bd4af3eb83686c8bf)), closes [#101](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/101)
+* Fix name of __init__ method, which was incorrectly called __enter__ in transaction wrapper. ([5ead4f8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5ead4f832c91a84ce2d155d5e8d3c8c363af865b)), closes [#101](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/101)
+
+
+### Features
+
+* Update bitbucket hook to use transaction whilst handling request, meaning any database changes are rolled back if any issue occurs ([64f8e39](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/64f8e3972cb0cc4dc0b9fb9b054442754c2b2f4d)), closes [#101](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/101)
+
+# [2.9.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.8.0...v2.9.0) (2022-05-27)
+
+
+### Features
+
+* Add list of provider requirements to module page. ([4bf1a12](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4bf1a12210edaa3bd3e19944a5f542ca471577c8)), closes [#140](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/140)
+
 # [2.8.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.7.4...v2.8.0) (2022-05-26)
 
 

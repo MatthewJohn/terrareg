@@ -5,9 +5,10 @@ from terrareg.models import Namespace
 from terrareg.analytics import AnalyticsEngine
 from test.unit.terrareg import (
     MockModuleProvider, MockModuleVersion, MockModule, MockNamespace,
-    client, mocked_server_namespace_fixture,
+    mocked_server_namespace_fixture,
     setup_test_data, TerraregUnitTest
 )
+from test import client
 from . import mock_record_module_version_download
 
 
