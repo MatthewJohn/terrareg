@@ -254,3 +254,11 @@ class Database():
         ).select_from(self.module_version).join(
             self.module_provider, self.module_version.c.module_provider_id == self.module_provider.c.id
         )
+
+    def select_module_provider_joined_latest_module_version(self, *select_args):
+        """Perform select on module_provider, joined to latest version from module_version table."""
+        return sqlalchemy.select(
+            *select_args
+        ).select_from(self.module_provider).join(
+            self.module_version, self.module_provider.c.latest_version_id == self.module_version.c.id
+        )
