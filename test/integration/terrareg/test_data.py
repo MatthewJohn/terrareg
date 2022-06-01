@@ -30,7 +30,16 @@ integration_test_data = {
                 '0.1.09': {'published': True}, '0.1.8': {'published': True},
                 '23.2.3-beta': {'published': True, 'beta': True}, '5.21.2': {}
             }
-        }}
+        }},
+        'noversions': {'testprovider': {
+            'id': 53
+        }},
+        'onlybeta': {'testprovider': {
+            'id': 54,
+            'versions': {
+                '2.5.0-beta': {'published': True, 'beta': True}
+            }
+        }},
     },
     'moduleextraction': {
         'test-module': { 'testprovider': {
