@@ -149,13 +149,22 @@ class Database():
             sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('git_tag_format', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('verified', sqlalchemy.Boolean),
-            sqlalchemy.Column('internal', sqlalchemy.Boolean, nullable=False),
             sqlalchemy.Column(
                 'git_provider_id',
                 sqlalchemy.ForeignKey(
                     'git_provider.id',
                     onupdate='CASCADE',
                     ondelete='SET NULL'),
+                nullable=True
+            ),
+            sqlalchemy.Column(
+                'latest_version_id',
+                sqlalchemy.ForeignKey(
+                    'module_version.id',
+                    onupdate='CASCADE',
+                    ondelete='SET NULL',
+                    use_alter=True
+                ),
                 nullable=True
             )
         )
@@ -183,6 +192,7 @@ class Database():
             sqlalchemy.Column('readme_content', Database.medium_blob()),
             sqlalchemy.Column('module_details', Database.medium_blob()),
             sqlalchemy.Column('variable_template', Database.medium_blob()),
+            sqlalchemy.Column('internal', sqlalchemy.Boolean, nullable=False),
             sqlalchemy.Column('published', sqlalchemy.Boolean)
         )
 
