@@ -151,14 +151,9 @@ class ModuleExtractor:
             repo_browse_url_template=terrareg_metadata.get('repo_browse_url', None),
             repo_base_url_template=terrareg_metadata.get('repo_base_url', None),
             variable_template=json.dumps(terrareg_metadata.get('variable_template', {})),
-            published=Config().AUTO_PUBLISH_MODULE_VERSIONS
+            published=Config().AUTO_PUBLISH_MODULE_VERSIONS,
+            internal=terrareg_metadata.get('internal', False)
         )
-
-        # Check if module version is latest version
-        if self._module_version._module_provider.get_latest_version().version == self._module_version.version:
-            self._module_version._module_provider.update_attributes(
-                internal=terrareg_metadata.get('internal', False)
-            )
 
     def _process_submodule(self, submodule: BaseSubmodule):
         """Process submodule."""
