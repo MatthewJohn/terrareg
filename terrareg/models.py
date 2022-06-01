@@ -474,8 +474,7 @@ class ModuleProvider(object):
             namespace=module._namespace.name,
             module=module.name,
             provider=name,
-            verified=module._namespace.is_auto_verified,
-            internal=False
+            verified=module._namespace.is_auto_verified
         )
         with db.get_engine().connect() as conn:
             conn.execute(module_provider_insert)
@@ -1409,7 +1408,8 @@ class ModuleVersion(TerraformSpecsObject):
                 module_provider_id=self._module_provider.pk,
                 version=self.version,
                 published=False,
-                beta=self._extracted_beta_flag
+                beta=self._extracted_beta_flag,
+                internal=False
             )
             conn.execute(insert_statement)
 
