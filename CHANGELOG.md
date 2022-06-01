@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.9.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.8.0...v2.9.0) (2022-05-27)
+
+
+### Features
+
+* Add list of provider requirements to module page. ([4bf1a12](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4bf1a12210edaa3bd3e19944a5f542ca471577c8)), closes [#140](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/140)
+
 # [2.8.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.7.4...v2.8.0) (2022-05-26)
 
 
