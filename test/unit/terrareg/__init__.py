@@ -9,47 +9,32 @@ from terrareg.database import Database
 from terrareg.models import GitProvider, Module, ModuleProvider, ModuleVersion, Namespace
 from terrareg.server import Server
 import terrareg.config
+from test import BaseTest
 from .test_data import test_data_full, test_git_providers
 
 
-class TerraregUnitTest:
-
-    INSTANCE_ = None
+class TerraregUnitTest(BaseTest):
 
     @classmethod
-    def get(cls):
-        """Get instance of class"""
-        return cls.INSTANCE_
+    def _get_database_path(cls):
+        return 'temp-unittest.db'
+
+    @classmethod
+    def _setup_test_data(cls):
+        """Override setup test data method to disable any setup."""
+        pass
 
     def setup_method(self, method):
         """Setup database"""
-        TerraregUnitTest.INSTANCE_ = self
-        Database.reset()
-        self.SERVER = Server()
+        # Call super method
+        super(TerraregUnitTest, self).setup_method(method)
+
+        BaseTest.INSTANCE_ = self
         terrareg.config.Config.DATABASE_URL = 'sqlite:///temp-unittest.db'
 
         # Create DB tables
         Database.get().get_meta().create_all(Database.get().get_engine())
 
-        self.SERVER._app.config['TESTING'] = True
-
-
-@pytest.fixture
-def client():
-    """Return test client"""
-    client = TerraregUnitTest.get().SERVER._app.test_client()
-
-    yield client
-
-@pytest.fixture
-def test_request_context():
-    """Return test request context"""
-    return TerraregUnitTest.get().SERVER._app.test_request_context()
-
-@pytest.fixture
-def app_context():
-    """Return test request context"""
-    return TerraregUnitTest.get().SERVER._app.app_context()
 
 TEST_MODULE_DATA = {}
 TEST_GIT_PROVIDER_DATA = {}

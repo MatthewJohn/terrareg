@@ -48,7 +48,7 @@ class SeleniumTest(BaseTest):
     @classmethod
     def setup_class(cls):
         """Setup host/port to host server."""
-        super(SeleniumTest, cls).setup_class(cls)
+        super(SeleniumTest, cls).setup_class()
 
         cls.SERVER.host = '127.0.0.1'
 
@@ -80,6 +80,7 @@ class SeleniumTest(BaseTest):
         # Shutdown server
         cls._werzeug_server.shutdown()
         cls._server_thread.join()
+        super(SeleniumTest, cls).teardown_class()
 
     def assert_equals(self, callback, value):
         """Attempt to verify assertion and retry on failure."""

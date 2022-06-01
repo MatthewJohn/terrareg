@@ -1,8 +1,9 @@
 
 from test.unit.terrareg import (
-    client, mocked_server_namespace_fixture,
+    mocked_server_namespace_fixture,
     TerraregUnitTest, setup_test_data
 )
+from test import client
 from . import mock_server_get_module_provider_download_stats
 
 

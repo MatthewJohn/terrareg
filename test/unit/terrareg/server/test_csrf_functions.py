@@ -4,10 +4,8 @@ import datetime
 import pytest
 
 import terrareg.errors
-from test.unit.terrareg import (
-    client, test_request_context,
-    app_context, TerraregUnitTest
-)
+from test.unit.terrareg import TerraregUnitTest
+from test import client, app_context, test_request_context
 from terrareg.server import (
     AuthenticationType, check_csrf_token
 )

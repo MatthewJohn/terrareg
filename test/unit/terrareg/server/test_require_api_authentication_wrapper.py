@@ -5,10 +5,9 @@ import datetime
 import pytest
 import werkzeug.exceptions
 
-from test.unit.terrareg import (
-    client, test_request_context,
-    app_context, TerraregUnitTest
-)
+from test.unit.terrareg import TerraregUnitTest
+from test import client, app_context, test_request_context
+
 from terrareg.server import (
     AuthenticationType,
     get_current_authentication_type, require_api_authentication

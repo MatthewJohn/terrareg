@@ -1,6 +1,7 @@
 
 from distutils.command.upload import upload
 from enum import Enum
+from io import BytesIO
 import json
 import os
 import re
@@ -13,6 +14,7 @@ import terrareg.errors
 from terrareg.models import Module, ModuleProvider, ModuleVersion, Namespace
 from terrareg.module_extractor import ApiUploadModuleExtractor
 from test.integration.terrareg import TerraregIntegrationTest
+from test import client
 
 class UploadTestModuleState(Enum):
     NONE = 0
@@ -86,6 +88,12 @@ output "test_output" {
     value       = var.test_input
 }
 """
+
+    INVALID_MAIN_TF_FILE = """
+var "test" {
+
+"""
+
     SUB_MODULE_MAIN_TF = """
 variable "submodule_test_input_{itx}" {{
     type        = string
@@ -521,3 +529,68 @@ output "submodule_test_output_{itx}" {{
             with pytest.raises(terrareg.errors.UnableToProcessTerraformError):
                 self._upload_module_version(module_version=module_version, zip_file=zip_file)
 
+
+    def test_upload_via_server(self, client):
+        """Test basic module upload with single depth."""
+        test_upload = UploadTestModule()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+
+            client.post(
+                '/v1/terrareg/modules/testprocessupload/test-module/uplaodthroughserver/1.5.2/upload',
+                data={
+                    'file': (zip_file, 'module.zip')
+                }
+            )
+
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='uplaodthroughserver')
+        module_version = ModuleVersion(module_provider=module_provider, version='1.5.2')
+
+        # Ensure terraform docs output contains variable and output
+        assert module_version.get_terraform_inputs() == [
+            {
+                'default': 'test_default_val',
+                'description': 'This is a test input',
+                'name': 'test_input',
+                'required': False,
+                'type': 'string'
+            }
+        ]
+        assert module_version.get_terraform_outputs() == [
+            {
+                'description': 'test output',
+                'name': 'test_output'
+            }
+        ]
+
+    def test_bad_upload_via_server(self, client):
+        """Test invalid module upload, checking that module provider is cleared up in transaction."""
+        test_upload = UploadTestModule()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines(self.INVALID_MAIN_TF_FILE)
+
+            res = client.post(
+                '/v1/terrareg/modules/testprocessupload/test-module/badupload/2.0.0/upload',
+                data={
+                    'file': (zip_file, 'module.zip')
+                }
+            )
+
+            assert res.status_code == 500
+
+        # Ensure that module provider was not created.
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='badupload')
+        
+        assert module_provider is None
