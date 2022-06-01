@@ -804,7 +804,7 @@ class ModuleProvider(object):
     def get_latest_version(self):
         """Return latest published version of module."""
         db = Database.get()
-        select = db.select(db.module_version.c.version).select_from(db.module_provider).join(
+        select = sqlalchemy.select(db.module_version.c.version).select_from(db.module_provider).join(
             db.module_version,
             db.module_provider.c.latest_version_id==db.module_version.c.id
         ).where(
