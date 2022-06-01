@@ -810,7 +810,7 @@ class ModuleProvider(object):
         ).where(
             db.module_provider.c.id==self.pk
         )
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
             version = res.fetchone()
 
