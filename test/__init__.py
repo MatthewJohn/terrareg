@@ -69,14 +69,17 @@ class BaseTest:
         # Iterate through namespaces
         for namespace_name in import_data:
             namespace_data = import_data[namespace_name]
+            namespace = Namespace(name=namespace_name)
 
             # Iterate through modules
             for module_name in namespace_data:
                 module_data = namespace_data[module_name]
+                module = Module(namespace=namespace, name=module_name)
 
                 # Iterate through providers
                 for provider_name in import_data[namespace_name][module_name]:
                     module_provider_test_data = module_data[provider_name]
+                    module_provider = ModuleProvider(module=module, name=provider_name)
 
                     # Update provided test attributes
                     module_provider_attributes = {
@@ -95,23 +98,32 @@ class BaseTest:
                         res = conn.execute(insert)
 
                     # Insert module versions
-                    for module_version in (
+                    for version_number in (
                             module_provider_test_data['versions']
                             if 'versions' in module_provider_test_data else
                             []):
                         data = {
                             'module_provider_id': module_provider_attributes['id'],
-                            'version': module_version,
+                            'version': version_number,
                             # Default beta flag to false
                             'beta': False,
                             'published_at': datetime.now(),
                             'internal': False
                         }
                         # Update column values from test data
-                        data.update(module_provider_test_data['versions'][module_version])
+                        data.update(module_provider_test_data['versions'][version_number])
+
+                        # Reset published flag to False
+                        data['published'] = False
 
                         insert = Database.get().module_version.insert().values(
                             **data
                         )
                         with Database.get_engine().connect() as conn:
                             conn.execute(insert)
+
+                        module_version = ModuleVersion(module_provider=module_provider, version=version_number)
+
+                        # If module version is published, do so
+                        if module_provider_test_data['versions'][version_number].get('published', False):
+                            module_version.publish()
