@@ -802,7 +802,25 @@ class ModuleProvider(object):
         )
 
     def get_latest_version(self):
-        """Get latest version of module."""
+        """Return latest published version of module."""
+        db = Database.get()
+        select = db.select(db.module_version.c.version).select_from(db.module_provider).join(
+            db.module_version,
+            db.module_provider.c.latest_version_id==db.module_version.c.id
+        ).where(
+            db.module_provider.c.id==self.pk
+        )
+        with db.get_engine().connect() as conn:
+            res = conn.execute(select)
+            version = res.fetchone()
+
+        if version is None:
+            raise NoModuleVersionAvailableError('No module version available.')
+
+        return ModuleVersion(module_provider=self, version=version['version'])
+
+    def calculate_latest_version(self):
+        """Obtain all versions of module and sort by semantec version numbers to obtain latest version."""
         db = Database.get()
         select = db.select_module_version_joined_module_provider(
             db.module_version.c.version
@@ -816,7 +834,7 @@ class ModuleProvider(object):
         with db.get_engine().connect() as conn:
             res = conn.execute(select)
 
-        # Convert to list
+            # Convert to list
             rows = [r for r in res]
 
         # Sort rows by semantec versioning
