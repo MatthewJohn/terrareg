@@ -1329,8 +1329,11 @@ class ModuleVersion(TerraformSpecsObject):
         # Mark module version as published
         self.update_attributes(published=True)
 
-        # Update latest version of module provider, if necessary.
-        if self._module_provider.calculate_latest_version().version == self.version:
+        # Calculate latest version will take beta flag into account and will only match
+        # the current version if the current version is latest and is capable of being the
+        # latest version.
+        if (self._module_provider.calculate_latest_version() is not None and
+                self._module_provider.calculate_latest_version().version == self.version):
             self._module_provider.update_attributes(latest_version_id=self.pk)
 
     def get_api_outline(self):
