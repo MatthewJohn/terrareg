@@ -120,8 +120,7 @@ class TestModuleVersion(TerraregIntegrationTest):
                 id=10000,
                 namespace='testcreation',
                 module='test-module',
-                provider='testprovider',
-                internal=False
+                provider='testprovider'
             ))
 
             conn.execute(db.module_version.insert().values(
@@ -129,7 +128,8 @@ class TestModuleVersion(TerraregIntegrationTest):
                 module_provider_id=10000,
                 version='1.1.0',
                 published=True,
-                beta=False
+                beta=False,
+                internal=False
             ))
 
             # Create submodules

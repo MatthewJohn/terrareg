@@ -82,8 +82,7 @@ class BaseTest:
                     module_provider_attributes = {
                         'namespace': namespace_name,
                         'module': module_name,
-                        'provider': provider_name,
-                        'internal': False
+                        'provider': provider_name
                     }
                     for attr in module_provider_test_data:
                         if attr not in ['latest_version', 'versions']:
@@ -105,7 +104,8 @@ class BaseTest:
                             'version': module_version,
                             # Default beta flag to false
                             'beta': False,
-                            'published_at': datetime.now()
+                            'published_at': datetime.now(),
+                            'internal': False
                         }
                         # Update column values from test data
                         data.update(module_provider_test_data['versions'][module_version])
