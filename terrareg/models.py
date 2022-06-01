@@ -815,7 +815,7 @@ class ModuleProvider(object):
             version = res.fetchone()
 
         if version is None:
-            raise NoModuleVersionAvailableError('No module version available.')
+            return None
 
         return ModuleVersion(module_provider=self, version=version['version'])
 
@@ -842,7 +842,7 @@ class ModuleProvider(object):
 
         # Ensure at least one row
         if not rows:
-            raise NoModuleVersionAvailableError('No module version available.')
+            return None
 
         # Obtain latest row
         return ModuleVersion(module_provider=self, version=rows[0]['version'])
