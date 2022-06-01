@@ -34,8 +34,14 @@ integration_test_data = {
         'noversions': {'testprovider': {
             'id': 53
         }},
-        'onlybeta': {'testprovider': {
+        'onlyunpublished': {'testprovider': {
             'id': 54,
+            'versions': {
+                '0.1.8': {'published': False}
+            }
+        }},
+        'onlybeta': {'testprovider': {
+            'id': 55,
             'versions': {
                 '2.5.0-beta': {'published': True, 'beta': True}
             }

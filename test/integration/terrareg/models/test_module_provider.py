@@ -101,25 +101,21 @@ class TestModuleProvider(TerraregIntegrationTest):
 
         assert module_version.version == '10.23.0'
 
-    def test_module_provider_get_latest_version_no_version(self):
+    @pytest.mark.parametrize('module_name', [
+        # Module with no versions at all
+        'noversions',
+        # Module with only unpublished version
+        'onlyunpublished',
+        # Module with only a published beta version
+        'onlybeta'
+    ])
+    def test_module_provider_get_latest_version_with_no_version(self, module_name):
         """
         Test that a module provider without any versions does not return
         a latest version.
         """
         namespace = Namespace(name='testnamespace')
-        module = Module(namespace=namespace, name='noversions')
-        module_provider = ModuleProvider.get(module=module, name='testprovider')
-        module_version = module_provider.get_latest_version()
-
-        assert module_version is None
-
-    def test_module_provider_get_latest_version_only_beta(self):
-        """
-        Test that a module provider with only beta versions does not
-        return any versions.
-        """
-        namespace = Namespace(name='testnamespace')
-        module = Module(namespace=namespace, name='onlybeta')
+        module = Module(namespace=namespace, name=module_name)
         module_provider = ModuleProvider.get(module=module, name='testprovider')
         module_version = module_provider.get_latest_version()
 
@@ -137,25 +133,21 @@ class TestModuleProvider(TerraregIntegrationTest):
 
         assert module_version.version == '10.23.0'
 
-    def test_module_provider_calculate_latest_version_no_version(self):
+    @pytest.mark.parametrize('module_name', [
+        # Module with no versions at all
+        'noversions',
+        # Module with only unpublished version
+        'onlyunpublished',
+        # Module with only a published beta version
+        'onlybeta'
+    ])
+    def test_module_provider_calculate_latest_version_with_no_version(self, module_name):
         """
         Test that a module provider without any versions does not return
-        a latest version with calculate_latest_version.
+        a latest version using calculate_latest_version.
         """
         namespace = Namespace(name='testnamespace')
-        module = Module(namespace=namespace, name='noversions')
-        module_provider = ModuleProvider.get(module=module, name='testprovider')
-        module_version = module_provider.calculate_latest_version()
-
-        assert module_version is None
-
-    def test_module_provider_calculate_latest_version_only_beta(self):
-        """
-        Test that a module provider with only beta versions does not
-        return any versions with calculate_latest_version.
-        """
-        namespace = Namespace(name='testnamespace')
-        module = Module(namespace=namespace, name='onlybeta')
+        module = Module(namespace=namespace, name=module_name)
         module_provider = ModuleProvider.get(module=module, name='testprovider')
         module_version = module_provider.calculate_latest_version()
 
@@ -601,7 +593,7 @@ class TestModuleProvider(TerraregIntegrationTest):
 
     def test_get_total_count(self):
         """Test get_total_count method"""
-        assert ModuleProvider.get_total_count() == 46
+        assert ModuleProvider.get_total_count() == 47
 
     def test_get_module_provider_existing(self):
         """Attempt to get existing module provider"""
