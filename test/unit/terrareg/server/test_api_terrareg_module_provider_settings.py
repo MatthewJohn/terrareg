@@ -4,10 +4,11 @@ import unittest.mock
 import pytest
 
 from test.unit.terrareg import (
-    client, mocked_server_namespace_fixture,
-    test_request_context, app_context,
+    mocked_server_namespace_fixture,
     setup_test_data, TerraregUnitTest
 )
+from test import client, app_context, test_request_context
+
 
 
 class TestApiTerraregModuleProviderSettings(TerraregUnitTest):

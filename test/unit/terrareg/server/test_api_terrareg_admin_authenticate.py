@@ -3,9 +3,9 @@ import unittest.mock
 import datetime
 
 from test.unit.terrareg import (
-    client, TerraregUnitTest
+    TerraregUnitTest
 )
-
+from test import client
 
 
 class TestApiTerraregAdminAuthenticate(TerraregUnitTest):

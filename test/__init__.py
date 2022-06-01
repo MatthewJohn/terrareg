@@ -14,34 +14,77 @@ from terrareg.server import Server
 import terrareg.config
 
 
+@pytest.fixture
+def client():
+    """Return test client"""
+    client = BaseTest.get().SERVER._app.test_client()
+
+    yield client
+
+@pytest.fixture
+def test_request_context():
+    """Return test request context"""
+    return BaseTest.get().SERVER._app.test_request_context()
+
+@pytest.fixture
+def app_context():
+    """Return test request context"""
+    return BaseTest.get().SERVER._app.app_context()
+
+
 class BaseTest:
 
     _TEST_DATA = None
     _GIT_PROVIDER_DATA = None
+
+    INSTANCE_ = None
+
+    @staticmethod
+    def get():
+        """Get current test class."""
+        return BaseTest.INSTANCE_
 
     @staticmethod
     def _get_database_path():
         """Return path of database file to use."""
         raise NotImplementedError
 
-    def setup_class(self):
+    @classmethod
+    def setup_class(cls):
         """Setup database"""
-        database_url = os.environ.get('INTEGRATION_DATABASE_URL', 'sqlite:///{}'.format(self._get_database_path()))
+        # Setup current test object as
+        # property of base class
+        BaseTest.INSTANCE_ = cls
+
+        database_url = os.environ.get('INTEGRATION_DATABASE_URL', 'sqlite:///{}'.format(cls._get_database_path()))
         terrareg.config.Config.DATABASE_URL = database_url
 
         # Remove any pre-existing database files
-        if os.path.isfile(self._get_database_path()):
-            os.unlink(self._get_database_path())
+        if os.path.isfile(cls._get_database_path()):
+            os.unlink(cls._get_database_path())
 
         Database.reset()
-        self.SERVER = Server()
+        cls.SERVER = Server()
 
         # Create DB tables
         Database.get().get_meta().create_all(Database.get().get_engine())
 
-        self._setup_test_data()
+        cls._setup_test_data()
 
-        self.SERVER._app.config['TESTING'] = True
+        cls.SERVER._app.config['TESTING'] = True
+
+    @classmethod
+    def teardown_class(cls):
+        """Empty method for inheritting classes to call super method."""
+        pass
+
+    def setup_method(self, method):
+        """Empty method for inheritting classes to call super method."""
+        pass
+
+    def teardown_method(self, method):
+        """Empty method for inheritting classes to call super method."""
+        pass
 
     @classmethod
     def _setup_test_data(cls, test_data=None):

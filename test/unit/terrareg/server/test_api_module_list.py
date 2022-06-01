@@ -2,10 +2,11 @@
 from terrareg.module_search import ModuleSearch, ModuleSearchResults
 
 from . import mocked_search_module_providers
+from test import client
 from test.unit.terrareg import (
     TerraregUnitTest,
     MockModuleProvider, MockModule, MockNamespace,
-    client, setup_test_data
+    setup_test_data
 )
 
 

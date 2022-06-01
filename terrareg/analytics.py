@@ -115,7 +115,7 @@ class AnalyticsEngine:
             auth_token=auth_token,
             environment=environment
         )
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             conn.execute(insert_statement)
 
     def get_total_downloads():
@@ -126,7 +126,7 @@ class AnalyticsEngine:
         ).select_from(
             db.analytics
         )
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
             return res.scalar()
 
@@ -143,7 +143,7 @@ class AnalyticsEngine:
         ).where(
             db.module_version.c.id == module_version.pk
         )
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
             return res.scalar()
 
@@ -169,7 +169,7 @@ class AnalyticsEngine:
                     db.analytics.c.timestamp >= from_timestamp
                 )
 
-            with db.get_engine().connect() as conn:
+            with db.get_connection() as conn:
                 res = conn.execute(select)
                 stats[i[1]] = res.scalar()
 
@@ -223,7 +223,7 @@ class AnalyticsEngine:
             for itx, env in enumerate(Config().ANALYTICS_AUTH_KEYS)
         }
 
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             res = conn.execute(select)
 
             for row in res:

@@ -8,9 +8,10 @@ import pytest
 
 import terrareg.errors
 from test.unit.terrareg import (
-    client, mocked_server_namespace_fixture,
+    mocked_server_namespace_fixture,
     setup_test_data, TerraregUnitTest
 )
+from test import client
 
 
 class TestApiModuleVersionBitbucketHook(TerraregUnitTest):

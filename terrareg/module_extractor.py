@@ -170,7 +170,7 @@ class ModuleExtractor:
             readme_content=Database.encode_blob(readme_content),
             module_details=Database.encode_blob(json.dumps(tf_docs))
         )
-        with db.get_engine().connect() as conn:
+        with db.get_connection() as conn:
             conn.execute(insert_statement)
 
         if isinstance(submodule, Example):
@@ -197,7 +197,7 @@ class ModuleExtractor:
                 path=tf_file,
                 content=Database.encode_blob(content)
             )
-            with db.get_engine().connect() as conn:
+            with db.get_connection() as conn:
                 conn.execute(insert_statement)
 
     def _scan_submodules(self, subdirectory: str, submodule_class: Type[BaseSubmodule]):

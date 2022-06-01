@@ -3,8 +3,9 @@ from terrareg.module_search import ModuleSearch, ModuleSearchResults
 from terrareg.filters import NamespaceTrustFilter
 from test.unit.terrareg import (
     MockModuleProvider, MockModule, MockNamespace,
-    client, setup_test_data, TerraregUnitTest
+    setup_test_data, TerraregUnitTest
 )
+from test import client
 from . import mocked_search_module_providers
 
 
