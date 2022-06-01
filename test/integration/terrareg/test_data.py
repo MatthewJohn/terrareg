@@ -195,12 +195,15 @@ integration_test_data = {
     'modulesearch': {
         'contributedmodule-oneversion': {'aws': {
             'id': 25,
-            'versions': {'1.0.0': {'published': True}}
+            'versions': {'1.0.0': {
+                'published': True,
+                'description': 'DESCRIPTION-Search-PUBLISHED'
+            }}
         }},
         'contributedmodule-multiversion': {'aws': {
             'id': 26,
             'versions': {
-                '1.2.3': {'published': True},
+                '1.2.3': {'published': True, 'description': 'DESCRIPTION-Search-OLDVERSION'},
                 '2.0.0': {'published': True}
             }
         }},
@@ -208,7 +211,7 @@ integration_test_data = {
             'id': 49,
             'versions': {
                 '1.2.3': {'published': True},
-                '2.0.0-beta': {'published': True, 'beta': True}
+                '2.0.0-beta': {'published': True, 'beta': True, 'description': 'DESCRIPTION-Search-BETAVERSION'}
             }
         }},
         'contributedmodule-onlybeta': {'aws': {
@@ -226,7 +229,7 @@ integration_test_data = {
         'contributedmodule-unpublished': {'aws': {
             'id': 28,
             'versions': {
-                '1.0.0': {}
+                '1.0.0': {'description': 'DESCRIPTION-Search-UNPUBLISHED'}
             }
         }},
         'verifiedmodule-oneversion': {'aws': {
