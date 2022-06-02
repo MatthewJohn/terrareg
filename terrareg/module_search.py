@@ -324,7 +324,6 @@ class ModuleSearch(object):
         with db.get_connection() as conn:
             res = conn.execute(select)
             row = res.fetchone()
-        print(row)
 
         # If there are no rows, return None
         if not row:

@@ -350,7 +350,6 @@ class GitModuleExtractor(ModuleExtractor):
         except subprocess.CalledProcessError as exc:
             error = 'Unknown error occurred during git clone'
             for line in exc.output.decode('ascii').split('\n'):
-                print(line)
                 if line.startswith('fatal:'):
                     error = 'Error occurred during git clone: {}'.format(line)
             raise GitCloneError(error)

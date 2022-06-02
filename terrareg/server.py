@@ -854,8 +854,6 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
                 else:
                     return self._get_401_response()
 
-            print(request.headers)
-            print(request.json)
             if not module_provider.get_git_clone_url():
                 return {'message': 'Module provider is not configured with a repository'}, 400
 

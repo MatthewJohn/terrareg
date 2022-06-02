@@ -1493,7 +1493,6 @@ class BaseSubmodule(TerraformSpecsObject):
             db.sub_module.c.id == pk,
             db.sub_module.c.type == cls.TYPE
         )
-        print("Finding " + cls.TYPE + " by pk: " + str(pk))
         with db.get_connection() as conn:
             row = conn.execute(select).fetchone()
         if row is None:
@@ -1663,7 +1662,6 @@ class ExampleFile:
         if self._row_cache is None:
             db = Database.get()
             # Obtain row from git providers table for git provider.
-            print('PAth: ' + self._path)
             select = db.example_file.select().where(
                 db.example_file.c.submodule_id == self._example.pk,
                 db.example_file.c.path == self._path

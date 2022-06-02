@@ -102,9 +102,6 @@ class AnalyticsEngine:
         # If auth token is not provided, 
         environment = AnalyticsEngine.get_environment_from_token(auth_token)
 
-        print('Moudule {0} downloaded by {1} using terraform {2}'.format(
-            module_version.id, analytics_token, terraform_version))
-
         # Insert analytics details into DB
         db = Database.get()
         insert_statement = db.analytics.insert().values(
