@@ -146,6 +146,14 @@ class TestModuleVersion(TerraregIntegrationTest):
                 path='modules/test-modal-db-row-create-there'
             ))
 
+            # Create example file
+            conn.execute(db.example_file.insert().values(
+                id=10004,
+                submodule_id=10002,
+                path='testfile.tf',
+                content=None
+            ))
+
 
         namespace = Namespace(name='testcreation')
         module = Module(namespace=namespace, name='test-module')
@@ -176,7 +184,7 @@ class TestModuleVersion(TerraregIntegrationTest):
                      'variable_template']:
             assert new_db_row[attr] == None
 
-        # Ensure that all moduleversion and submodules have been removed
+        # Ensure that all moduleversion, submodules and example files have been removed
         with db.get_engine().connect() as conn:
             mv_res = conn.execute(db.module_version.select(
                 db.module_version.c.id == 10001
@@ -195,6 +203,13 @@ class TestModuleVersion(TerraregIntegrationTest):
                 )
             ))
             assert [r for r in sub_module_res] == []
+
+            # Ensure example files have been removed
+            example_file_res = conn.execute(db.example_file.select().where(
+                db.example_file.c.id == 10004
+            ))
+            assert [r for r in example_file_res] == []
+
 
     @pytest.mark.parametrize('template,version,expected_string', [
         ('= {major}.{minor}.{patch}', '1.5.0', '= 1.5.0'),
