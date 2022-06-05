@@ -277,7 +277,8 @@ class ModuleSearch(object):
             db.module_provider
         ).where(
             db.module_version.c.published == True,
-            db.module_version.c.beta == False
+            db.module_version.c.beta == False,
+            db.module_version.c.internal == False
         ).order_by(db.module_version.c.published_at.desc(), 
         ).limit(1)
 
@@ -322,7 +323,8 @@ class ModuleSearch(object):
                 datetime.datetime.now() -
                 datetime.timedelta(days=7)
             ),
-            db.module_version.c.published == True
+            db.module_version.c.published == True,
+            db.module_version.c.internal == False
         ).group_by(
             db.module_provider.c.namespace,
             db.module_provider.c.module,
