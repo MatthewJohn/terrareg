@@ -324,6 +324,7 @@ class ModuleSearch(object):
                 datetime.timedelta(days=7)
             ),
             db.module_version.c.published == True,
+            db.module_version.c.beta == False,
             db.module_version.c.internal == False
         ).group_by(
             db.module_provider.c.namespace,
