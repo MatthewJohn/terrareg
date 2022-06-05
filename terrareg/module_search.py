@@ -95,6 +95,7 @@ class ModuleSearch(object):
         modules: list=None,
         providers: list=None,
         verified: bool=False,
+        include_internal: bool=False,
         namespace_trust_filters: list=NamespaceTrustFilter.UNSPECIFIED):
 
         # Limit the limits
@@ -131,6 +132,12 @@ class ModuleSearch(object):
         if verified:
             select = select.where(
                 db.module_provider.c.verified == True
+            )
+
+        # Filter internal modules, if not being included
+        if not include_internal:
+            select = select.where(
+                db.module_version.c.internal == False
             )
 
         if namespace_trust_filters is not NamespaceTrustFilter.UNSPECIFIED:
@@ -184,6 +191,11 @@ class ModuleSearch(object):
         )
 
         main_select = cls._get_search_query_filter(select, query)
+
+        # Remove any internal modules
+        main_select = main_select.where(
+            db.module_version.c.internal == False
+        )
 
         with db.get_connection() as conn:
             verified_count = conn.execute(
