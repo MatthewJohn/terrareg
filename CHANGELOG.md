@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.10.0...v2.10.1) (2022-06-10)
+
+
+### Bug Fixes
+
+* Update example file module path replacement to add 'version' argument. ([05c5cc3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/05c5cc3091c7e8cd312afde034c80047fb042d18)), closes [#127](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/127)
+
 # [2.10.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.9.0...v2.10.0) (2022-06-01)
 
 
