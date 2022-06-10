@@ -159,6 +159,11 @@ class Server(object):
             '/v1/modules/search/'
         )
         self._api.add_resource(
+            ApiNamespaceModules,
+            '/v1/modules/<string:namespace>',
+            '/v1/modules/<string:namespace>/'
+        )
+        self._api.add_resource(
             ApiModuleDetails,
             '/v1/modules/<string:namespace>/<string:name>',
             '/v1/modules/<string:namespace>/<string:name>/'
@@ -417,13 +422,10 @@ class Server(object):
     @catch_name_exceptions
     def _view_serve_namespace(self, namespace):
         """Render view for namespace."""
-        namespace = Namespace(namespace)
-        modules = namespace.get_all_modules()
 
         return self._render_template(
             'namespace.html',
-            namespace=namespace,
-            modules=modules
+            namespace=namespace
         )
 
     @catch_name_exceptions
@@ -1044,6 +1046,38 @@ class ApiModuleSearch(ErrorCatchingResource):
             ]
         }
 
+class ApiNamespaceModules(ErrorCatchingResource):
+    """Interface to obtain list of modules in namespace."""
+
+    def _get(self, namespace):
+        """Return list of modules in namespace"""
+
+        parser = reqparse.RequestParser()
+        parser.add_argument(
+            'offset', type=int,
+            default=0, help='Pagination offset')
+        parser.add_argument(
+            'limit', type=int,
+            default=10, help='Pagination limit'
+        )
+        args = parser.parse_args()
+
+        search_results = ModuleSearch.search_module_providers(
+            offset=args.offset,
+            limit=args.limit,
+            namespaces=[namespace]
+        )
+
+        if not search_results.module_providers:
+            return self._get_404_response()
+
+        return {
+            "meta": search_results.meta,
+            "modules": [
+                module_provider.get_latest_version().get_api_outline()
+                for module_provider in search_results.module_providers
+            ]
+        }
 
 class ApiModuleDetails(ErrorCatchingResource):
     def _get(self, namespace, name):
