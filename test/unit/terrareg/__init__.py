@@ -117,7 +117,8 @@ class MockModuleVersion(ModuleVersion):
                 'module_details',
                 '{"inputs": [], "outputs": [], "providers": [], "resources": []}'
             )),
-            'variable_template': Database.encode_blob(self._unittest_data.get('variable_template', '{}'))
+            'variable_template': Database.encode_blob(self._unittest_data.get('variable_template', '{}')),
+            'internal': self._unittest_data.get('internal', False)
         }
 
 
@@ -168,8 +169,7 @@ class MockModuleProvider(ModuleProvider):
             'repo_clone_url_template': self._unittest_data.get('repo_clone_url_template', None),
             'repo_browse_url_template': self._unittest_data.get('repo_clone_url_template', None),
             'git_provider_id': self._unittest_data.get('git_provider_id', None),
-            'git_tag_format': self._unittest_data.get('git_tag_format', None),
-            'internal': self._unittest_data.get('internal', False)
+            'git_tag_format': self._unittest_data.get('git_tag_format', None)
         }
 
     def get_latest_version(self):
