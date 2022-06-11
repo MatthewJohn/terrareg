@@ -117,7 +117,8 @@ class MockModuleVersion(ModuleVersion):
                 'module_details',
                 '{"inputs": [], "outputs": [], "providers": [], "resources": []}'
             )),
-            'variable_template': Database.encode_blob(self._unittest_data.get('variable_template', '{}'))
+            'variable_template': Database.encode_blob(self._unittest_data.get('variable_template', '{}')),
+            'internal': self._unittest_data.get('internal', False)
         }
 
 
@@ -143,7 +144,8 @@ class MockModuleProvider(ModuleProvider):
                 'versions': {},
                 'repo_base_url_template': None,
                 'repo_clone_url_template': None,
-                'repo_browse_url_template': None
+                'repo_browse_url_template': None,
+                'internal': False
             }
         return cls(module=module, name=name)
 

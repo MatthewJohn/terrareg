@@ -376,3 +376,34 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
         for expected_module_provider in expected_module_provider_ids:
             assert expected_module_provider in resulting_module_provider_ids
 
+    def test_search_in_description(self):
+        """Search for module providers based on value in description."""
+        result = ModuleSearch.search_module_providers(
+            offset=0, limit=10,
+            query='DESCRIPTION-Search',
+            namespaces=['modulesearch']
+        )
+
+        # Ensure that only one result is returned
+        assert result.count == 1
+        assert result.module_providers[0].id == 'modulesearch/contributedmodule-oneversion/aws'
+
+    @pytest.mark.parametrize('search_query', [
+        # Search by description of non-latest version of module
+        'DESCRIPTION-Search-OLDVERSION',
+        # Search by description of beta version of module
+        'DESCRIPTION-Search-BETAVERSION',
+        # Search by description of unpublished version of module
+        'DESCRIPTION-Search-UNPUBLISHED'
+    ])
+    def test_search_in_description_non_latest(self, search_query):
+        """Search for module providers based on value in description, expecting description
+           of non-latest versions to be ignored."""
+        result = ModuleSearch.search_module_providers(
+            offset=0, limit=10,
+            query=search_query,
+            namespaces=['modulesearch']
+        )
+
+        # Ensure that no results are returned
+        assert result.count == 0

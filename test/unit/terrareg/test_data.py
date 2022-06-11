@@ -36,6 +36,12 @@ test_data_full = {
             'latest_version': '1.2.3',
             'versions': {'1.2.3': {}}
         }},
+        'internalmodule': {'testprovider': {
+            'id': 17,
+            'verified': False,
+            'latest_version': '5.2.0',
+            'versions': {'5.2.0': {'internal': True}}
+        }},
         'modulenorepourl': {'testprovider': {
             'id': 5,
             'latest_version': '2.2.4',

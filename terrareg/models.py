@@ -607,6 +607,10 @@ class ModuleProvider(object):
 
     def delete(self):
         """DELETE module provider, all module version and all associated subversions."""
+        # Delete all versions
+        for module_version in self.get_versions(include_beta=True, include_unpublished=True):
+            module_version.delete()
+
         db = Database.get()
 
         with db.get_connection() as conn:
@@ -802,7 +806,25 @@ class ModuleProvider(object):
         )
 
     def get_latest_version(self):
-        """Get latest version of module."""
+        """Return latest published version of module."""
+        db = Database.get()
+        select = sqlalchemy.select(db.module_version.c.version).select_from(db.module_provider).join(
+            db.module_version,
+            db.module_provider.c.latest_version_id==db.module_version.c.id
+        ).where(
+            db.module_provider.c.id==self.pk
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(select)
+            version = res.fetchone()
+
+        if version is None:
+            return None
+
+        return ModuleVersion(module_provider=self, version=version['version'])
+
+    def calculate_latest_version(self):
+        """Obtain all versions of module and sort by semantec version numbers to obtain latest version."""
         db = Database.get()
         select = db.select_module_version_joined_module_provider(
             db.module_version.c.version
@@ -816,7 +838,7 @@ class ModuleProvider(object):
         with db.get_connection() as conn:
             res = conn.execute(select)
 
-        # Convert to list
+            # Convert to list
             rows = [r for r in res]
 
         # Sort rows by semantec versioning
@@ -824,7 +846,7 @@ class ModuleProvider(object):
 
         # Ensure at least one row
         if not rows:
-            raise NoModuleVersionAvailableError('No module version available.')
+            return None
 
         # Obtain latest row
         return ModuleVersion(module_provider=self, version=rows[0]['version'])
@@ -838,7 +860,7 @@ class ModuleProvider(object):
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
 
-    def get_versions(self, include_beta=True):
+    def get_versions(self, include_beta=True, include_unpublished=False):
         """Return all module provider versions."""
         db = Database.get()
 
@@ -847,9 +869,13 @@ class ModuleProvider(object):
         ).where(
             db.module_provider.c.namespace == self._module._namespace.name,
             db.module_provider.c.module == self._module.name,
-            db.module_provider.c.provider == self.name,
-            db.module_version.c.published == True
+            db.module_provider.c.provider == self.name
         )
+        # Remove unpublished versions, it not including them
+        if not include_unpublished:
+            select = select.where(
+                db.module_version.c.published == True
+            )
         # Remove beta versions if not including them
         if not include_beta:
             select = select.where(
@@ -1306,6 +1332,18 @@ class ModuleVersion(TerraformSpecsObject):
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
 
+    def publish(self):
+        """Publish module version."""
+        # Mark module version as published
+        self.update_attributes(published=True)
+
+        # Calculate latest version will take beta flag into account and will only match
+        # the current version if the current version is latest and is capable of being the
+        # latest version.
+        if (self._module_provider.calculate_latest_version() is not None and
+                self._module_provider.calculate_latest_version().version == self.version):
+            self._module_provider.update_attributes(latest_version_id=self.pk)
+
     def get_api_outline(self):
         """Return dict of basic version details for API response."""
         row = self._get_db_row()
@@ -1321,6 +1359,7 @@ class ModuleVersion(TerraformSpecsObject):
             "published_at": row['published_at'].isoformat(),
             "downloads": self.get_total_downloads(),
             "verified": self._module_provider.verified,
+            "internal": self._get_db_row()['internal'],
             "trusted": self._module_provider._module._namespace.trusted
         }
 
@@ -1370,45 +1409,42 @@ class ModuleVersion(TerraformSpecsObject):
         # Clear cached DB row
         self._cache_db_row = None
 
+    def delete(self):
+        """Delete module version and all associated submodules."""
+        for example in self.get_examples():
+            example.delete()
+
+        for submodule in self.get_submodules():
+            submodule.delete()
+
+        db = Database.get()
+
+        with db.get_connection() as conn:
+            # Delete module from module_version table
+            delete_statement = db.module_version.delete().where(
+                db.module_version.c.id == self.pk
+            )
+            conn.execute(delete_statement)
+
+            # Invalidate cache for previous DB row
+            self._cache_db_row = None
+
     def _create_db_row(self):
         """Insert into datadabase, removing any existing duplicate versions."""
         db = Database.get()
 
-        previous_db_row = self._get_db_row()
+        # Delete pre-existing version, if it exists
+        if self._get_db_row():
+            self.delete()
 
         with db.get_connection() as conn:
-            if previous_db_row:
-                # Delete module from module_version table
-                delete_statement = db.module_version.delete().where(
-                    db.module_version.c.id == previous_db_row['id']
-                )
-                conn.execute(delete_statement)
-
-                # Invalidate cache for previous DB row
-                self._cache_db_row = None
-
-                # Delete any example files
-                # Obtain all example IDs
-                res = conn.execute(
-                    db.sub_module.select().where(
-                        db.sub_module.c.parent_module_version == previous_db_row['id']))
-                delete_statement = db.example_file.delete().where(
-                    db.example_file.c.submodule_id.in_([r['id'] for r in res])
-                )
-                conn.execute(delete_statement)
-
-                # Delete any submodules/examples
-                delete_statement = db.sub_module.delete().where(
-                    db.sub_module.c.parent_module_version == previous_db_row['id']
-                )
-                conn.execute(delete_statement)
-
             # Insert new module into table
             insert_statement = db.module_version.insert().values(
                 module_provider_id=self._module_provider.pk,
                 version=self.version,
                 published=False,
-                beta=self._extracted_beta_flag
+                beta=self._extracted_beta_flag,
+                internal=False
             )
             conn.execute(insert_statement)
 
@@ -1458,13 +1494,17 @@ class BaseSubmodule(TerraformSpecsObject):
             db.sub_module.c.id == pk,
             db.sub_module.c.type == cls.TYPE
         )
-        print("Finding " + cls.TYPE + " by pk: " + str(pk))
         with db.get_connection() as conn:
             row = conn.execute(select).fetchone()
         if row is None:
             return None
 
         return cls(module_version=module_version, module_path=row['path'])
+
+    @property
+    def pk(self):
+        """Return DB primary key."""
+        return self._get_db_row()['id']
 
     @property
     def path(self):
@@ -1505,6 +1545,19 @@ class BaseSubmodule(TerraformSpecsObject):
                 res = conn.execute(select)
                 self._cache_db_row = res.fetchone()
         return self._cache_db_row
+
+    def delete(self):
+        """Delete submodule from DB."""
+        db = Database.get()
+
+        with db.get_connection() as conn:
+            delete_statement = db.sub_module.delete().where(
+                db.sub_module.c.id == self.pk
+            )
+            conn.execute(delete_statement)
+
+        # Invalidate DB row cache
+        self._cache_db_row = None
 
     def get_source_browse_url(self):
         """Get formatted source browse URL"""
@@ -1547,6 +1600,15 @@ class Example(BaseSubmodule):
             res = conn.execute(select)
             return [ExampleFile(example=self, path=row['path']) for row in res]
 
+    def delete(self):
+        """Delete any example files and self."""
+        # Delete any example files
+        for example_file in self.get_files():
+            example_file.delete()
+
+        # Call super method to delete self
+        super(Example, self).delete()
+
 
 class ExampleFile:
 
@@ -1579,6 +1641,11 @@ class ExampleFile:
     def path(self):
         """Return path of example file."""
         return self._path
+
+    @property
+    def pk(self):
+        """Get ID from DB row"""
+        return self._get_db_row()['id']
 
     @property
     def content(self):
@@ -1642,6 +1709,19 @@ class ExampleFile:
                 version_string=self._example._module_version.get_terraform_example_version_string()
             )
         return callback
+
+    def delete(self):
+        """Delete example file from DB."""
+        db = Database.get()
+
+        with db.get_connection() as conn:
+            delete_statement = db.example_file.delete().where(
+                db.example_file.c.id == self.pk
+            )
+            conn.execute(delete_statement)
+
+        # Invalidate DB row cache
+        self._cache_db_row = None
 
     def get_content(self, server_hostname):
         """Return content with source replaced"""

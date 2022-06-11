@@ -151,7 +151,8 @@ class ModuleExtractor:
             repo_browse_url_template=terrareg_metadata.get('repo_browse_url', None),
             repo_base_url_template=terrareg_metadata.get('repo_base_url', None),
             variable_template=json.dumps(terrareg_metadata.get('variable_template', {})),
-            published=Config().AUTO_PUBLISH_MODULE_VERSIONS
+            published=Config().AUTO_PUBLISH_MODULE_VERSIONS,
+            internal=terrareg_metadata.get('internal', False)
         )
 
     def _process_submodule(self, submodule: BaseSubmodule):
@@ -349,7 +350,6 @@ class GitModuleExtractor(ModuleExtractor):
         except subprocess.CalledProcessError as exc:
             error = 'Unknown error occurred during git clone'
             for line in exc.output.decode('ascii').split('\n'):
-                print(line)
                 if line.startswith('fatal:'):
                     error = 'Error occurred during git clone: {}'.format(line)
             raise GitCloneError(error)

@@ -41,7 +41,8 @@ class TestApiModuleDetails(TerraregUnitTest):
                 'namespace': 'testnamespace', 'name': 'lonelymodule', 'version': '1.0.0',
                 'provider': 'testprovider', 'description': 'Mock description',
                 'source': None,
-                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True, 'trusted': False}
+                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True, 'trusted': False,
+                'internal': False}
             ]
         }
         assert res.status_code == 200
@@ -75,7 +76,8 @@ class TestApiModuleDetails(TerraregUnitTest):
                 'namespace': 'testnamespace', 'name': 'unverifiedmodule', 'version': '1.2.3',
                 'provider': 'testprovider', 'description': 'Mock description',
                 'source': None,
-                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': False, 'trusted': False}
+                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': False, 'trusted': False,
+                'internal': False}
             ]
         }
         assert res.status_code == 200
@@ -140,7 +142,8 @@ class TestApiModuleDetails(TerraregUnitTest):
                 'namespace': 'testnamespace', 'name': 'lonelymodule', 'version': '1.0.0',
                 'provider': 'testprovider', 'description': 'Mock description',
                 'source': None,
-                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True, 'trusted': True}
+                'published_at': '2020-01-01T23:18:12', 'downloads': 0, 'verified': True, 'trusted': True,
+                'internal': False}
             ]
         }
         assert res.status_code == 200

@@ -176,4 +176,15 @@ async function addModuleLabels(module, parentDiv) {
             </span>
         `));
     }
+
+    if (module.internal) {
+        parentDiv.append($(`
+            <span class="tag is-warning is-light result-card-label result-card-label-internal">
+                <span class="panel-icon">
+                    <i class="fa fa-eye-slash" aria-hidden="true"></i>
+                </span>
+                Internal
+            </span>
+        `));
+    }
 }
