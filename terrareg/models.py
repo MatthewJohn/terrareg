@@ -1359,6 +1359,7 @@ class ModuleVersion(TerraformSpecsObject):
             "published_at": row['published_at'].isoformat(),
             "downloads": self.get_total_downloads(),
             "verified": self._module_provider.verified,
+            "internal": self._get_db_row()['internal'],
             "trusted": self._module_provider._module._namespace.trusted
         }
 
