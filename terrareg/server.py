@@ -1065,7 +1065,8 @@ class ApiNamespaceModules(ErrorCatchingResource):
         search_results = ModuleSearch.search_module_providers(
             offset=args.offset,
             limit=args.limit,
-            namespaces=[namespace]
+            namespaces=[namespace],
+            include_internal=True
         )
 
         if not search_results.module_providers:
