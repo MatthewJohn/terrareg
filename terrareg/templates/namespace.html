@@ -10,39 +10,52 @@
 </nav>
 
 <script>
-    $(document).ready(function() {
-        $.get('/v1/modules/{{ namespace }}', function(data) {
-            console.log(data);
+    let currentSearchMeta = undefined;
+
+    function prevResults() {
+        if (currentSearchMeta && currentSearchMeta.prev_offset !== undefined) {
+            getResults(currentSearchMeta.prev_offset);
+        }
+    }
+    function nextResults() {
+        if (currentSearchMeta && currentSearchMeta.next_offset !== undefined) {
+            getResults(currentSearchMeta.next_offset);
+        }
+    }
+    function getResults(offset) {
+        $.get(`/v1/modules/{{ namespace }}?offset=${offset}`, function(data) {
+            // Update current meta data
+            currentSearchMeta = data.meta;
+
+            // Clear any existing modules
+            $('#module-list-table').html('');
+
+            // Disable/activate next/previous buttons
+            $('#prevButton').prop('disabled', (data.meta.prev_offset === undefined));
+            $('#nextButton').prop('disabled', (data.meta.next_offset === undefined));
+
+            // Add each of the modules to the page
+            $.each(data.modules, (itx, module_data) => {
+                createSearchResultCard('module-list-table', module_data, {});
+            });
         });
+    }
+    $(document).ready(function() {
+        getResults(0);
     });
 </script>
 
-<nav class="level">
-    <div class="level-item">
+<div class="columns">
+    <div class="column is-three-fifths is-offset-one-fifth">
 
-    {% if modules %}
+        <section id="module-list-table">
+        </section>
+        <section>
+            <button class="button" id="prevButton" onclick="prevResults();">Prev</button>
+            <button class="button" id="nextButton" onclick="nextResults();">Next</button>
+        </section>
 
-        <table class="table" style="width: 50%">
-            <thead>
-                <th>Module name</th>
-            </thead>
-            <tbody>
-                {% for module in modules %}
-                <tr>
-                    <td>
-                        <a href="{{ module.get_view_url() }}">{{ module.name }}</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-    {% else %}
-
-    This namespace has no modules.
-
-    {% endif %}
     </div>
-</nav>
+</div>
 
 {% endblock %}
