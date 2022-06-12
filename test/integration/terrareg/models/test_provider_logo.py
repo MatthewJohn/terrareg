@@ -9,6 +9,7 @@ class TestProviderLogo(TerraregIntegrationTest):
     @pytest.mark.parametrize('provider_name,expect_exists', [
         ('aws', True),
         ('gcp', True),
+        ('null', True),
         ('doesnotexist', False),
     ])
     def test_logo_exists(self, provider_name, expect_exists):
@@ -22,6 +23,7 @@ class TestProviderLogo(TerraregIntegrationTest):
     @pytest.mark.parametrize('provider_name,expected_tos', [
         ('aws', 'Amazon Web Services, AWS, the Powered by AWS logo are trademarks of Amazon.com, Inc. or its affiliates.'),
         ('gcp', 'Google Cloud and the Google Cloud logo are trademarks of Google LLC.'),
+        ('null', ' '),
         ('doesnotexist', None),
     ])
     def test_logo_tos(self, provider_name, expected_tos):
@@ -35,6 +37,7 @@ class TestProviderLogo(TerraregIntegrationTest):
     @pytest.mark.parametrize('provider_name,expected_alt', [
         ('aws', 'Powered by AWS Cloud Computing'),
         ('gcp', 'Google Cloud'),
+        ('null', 'Null Provider'),
         ('doesnotexist', None),
     ])
     def test_logo_alt(self, provider_name, expected_alt):
@@ -48,6 +51,7 @@ class TestProviderLogo(TerraregIntegrationTest):
     @pytest.mark.parametrize('provider_name,expected_link', [
         ('aws', 'https://aws.amazon.com/'),
         ('gcp', 'https://cloud.google.com/'),
+        ('null', '#'),
         ('doesnotexist', None),
     ])
     def test_logo_link(self, provider_name, expected_link):
@@ -61,6 +65,7 @@ class TestProviderLogo(TerraregIntegrationTest):
     @pytest.mark.parametrize('provider_name,expected_source', [
         ('aws', '/static/images/PB_AWS_logo_RGB_stacked.547f032d90171cdea4dd90c258f47373c5573db5.png'),
         ('gcp', '/static/images/gcp.png'),
+        ('null', '/static/images/null.png'),
         ('doesnotexist', None),
     ])
     def test_logo_source(self, provider_name, expected_source):

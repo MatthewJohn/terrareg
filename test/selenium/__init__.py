@@ -11,7 +11,7 @@ from flask import request
 
 
 from pyvirtualdisplay import Display
-from selenium import webdriver
+import selenium
 import pytest
 import werkzeug
 
@@ -54,7 +54,7 @@ class SeleniumTest(BaseTest):
 
         cls.display_instance = Display(visible=0, size=SeleniumTest.DEFAULT_RESOLUTION)
         cls.display_instance.start()
-        cls.selenium_instance = webdriver.Firefox()
+        cls.selenium_instance = selenium.webdriver.Firefox()
         cls.selenium_instance.delete_all_cookies()
         cls.selenium_instance.implicitly_wait(1)
 
@@ -100,4 +100,24 @@ class SeleniumTest(BaseTest):
                     sleep(0.5)
                 else:
                     print('Failed asserting that {} == {}'.format(actual, value))
+                    raise
+
+    def wait_for_element(self, by, val, parent=None):
+        """Attempt to find element and wait, if it does not exist yet."""
+        if parent is None:
+            parent = self.selenium_instance
+
+        max_attempts = 5
+        for itx in range(max_attempts):
+            try:
+                # Attempt to find element
+                return parent.find_element(by, val)
+            except selenium.common.exceptions.NoSuchElementException:
+                # If it fails the assertion,
+                # sleep and retry until last attmept
+                # and then re-raise
+                if itx < (max_attempts - 1):
+                    sleep(0.5)
+                else:
+                    print('Failed to find element')
                     raise

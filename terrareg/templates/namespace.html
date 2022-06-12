@@ -5,37 +5,57 @@
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
         <li><a href="/modules">Modules</a></li>
-        <li class="is-active"><a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></li>
+        <li class="is-active"><a href="/modules/{{ namespace }}">{{ namespace }}</a></li>
     </ul>
 </nav>
 
+<script>
+    let currentSearchMeta = undefined;
 
-<nav class="level">
-    <div class="level-item">
+    function prevResults() {
+        if (currentSearchMeta && currentSearchMeta.prev_offset !== undefined) {
+            getResults(currentSearchMeta.prev_offset);
+        }
+    }
+    function nextResults() {
+        if (currentSearchMeta && currentSearchMeta.next_offset !== undefined) {
+            getResults(currentSearchMeta.next_offset);
+        }
+    }
+    function getResults(offset) {
+        $.get(`/v1/modules/{{ namespace }}?offset=${offset}`, function(data) {
+            // Update current meta data
+            currentSearchMeta = data.meta;
 
-    {% if modules %}
+            // Clear any existing modules
+            $('#module-list-table').html('');
 
-        <table class="table" style="width: 50%">
-            <thead>
-                <th>Module name</th>
-            </thead>
-            <tbody>
-                {% for module in modules %}
-                <tr>
-                    <td>
-                        <a href="{{ module.get_view_url() }}">{{ module.name }}</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+            // Disable/activate next/previous buttons
+            $('#prevButton').prop('disabled', (data.meta.prev_offset === undefined));
+            $('#nextButton').prop('disabled', (data.meta.next_offset === undefined));
 
-    {% else %}
+            // Add each of the modules to the page
+            $.each(data.modules, (itx, module_data) => {
+                createSearchResultCard('module-list-table', module_data);
+            });
+        });
+    }
+    $(document).ready(function() {
+        getResults(0);
+    });
+</script>
 
-    This namespace has no modules.
+<div class="columns">
+    <div class="column is-three-fifths is-offset-one-fifth">
 
-    {% endif %}
+        <section id="module-list-table">
+        </section>
+        <section>
+            <button class="button" id="prevButton" onclick="prevResults();">Prev</button>
+            <button class="button" id="nextButton" onclick="nextResults();">Next</button>
+        </section>
+
     </div>
-</nav>
+</div>
 
 {% endblock %}

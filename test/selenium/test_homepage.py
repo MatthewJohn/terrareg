@@ -45,9 +45,9 @@ class TestHomepage(SeleniumTest):
         self.selenium_instance.get(self.get_url('/'))
 
         # Ensure counts on page are correct
-        assert self.selenium_instance.find_element(By.ID, 'namespace-count').text == '11'
-        assert self.selenium_instance.find_element(By.ID, 'module-count').text == '45'
-        assert self.selenium_instance.find_element(By.ID, 'version-count').text == '58'
+        assert self.selenium_instance.find_element(By.ID, 'namespace-count').text == '12'
+        assert self.selenium_instance.find_element(By.ID, 'module-count').text == '47'
+        assert self.selenium_instance.find_element(By.ID, 'version-count').text == '60'
         assert self.selenium_instance.find_element(By.ID, 'download-count').text == '2005'
 
     def test_latest_module_version(self):
