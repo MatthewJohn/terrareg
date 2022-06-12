@@ -24,6 +24,7 @@
     }
     function getResults(offset) {
         $.get(`/v1/modules/{{ namespace }}?offset=${offset}`, function(data) {
+
             // Update current meta data
             currentSearchMeta = data.meta;
 
@@ -38,6 +39,12 @@
             $.each(data.modules, (itx, module_data) => {
                 createSearchResultCard('module-list-table', module_data);
             });
+        }).fail(() => {
+            // Check for no modules
+            $('#module-list-table').append('<p>There is no such namespace or no modules that contain published versions');
+
+            $('#prevButton').hide();
+            $('#nextButton').hide();
         });
     }
     $(document).ready(function() {
