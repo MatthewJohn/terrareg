@@ -459,11 +459,7 @@ class Server(object):
                 module_provider_name=provider)
 
         if version is None:
-            try:
-                module_version = module_provider.get_latest_version()
-            except NoModuleVersionAvailableError:
-                # If no version was provided, show page anyway
-                module_version = None
+            module_version = module_provider.get_latest_version()
 
         else:
             module_version = ModuleVersion.get(module_provider=module_provider, version=version)
@@ -860,8 +856,6 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
                 else:
                     return self._get_401_response()
 
-            print(request.headers)
-            print(request.json)
             if not module_provider.get_git_clone_url():
                 return {'message': 'Module provider is not configured with a repository'}, 400
 
@@ -1699,7 +1693,7 @@ class ApiTerraregModuleVersionPublish(ErrorCatchingResource):
         if not module_version:
             return {'message': 'Module version does not exist'}, 400
 
-        module_version.update_attributes(published=True)
+        module_version.publish()
         return {
             'status': 'Success'
         }

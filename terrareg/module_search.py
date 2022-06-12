@@ -95,6 +95,7 @@ class ModuleSearch(object):
         modules: list=None,
         providers: list=None,
         verified: bool=False,
+        include_internal: bool=False,
         namespace_trust_filters: list=NamespaceTrustFilter.UNSPECIFIED):
 
         # Limit the limits
@@ -103,7 +104,7 @@ class ModuleSearch(object):
         offset = 0 if offset < 0 else offset
 
         db = Database.get()
-        select = db.select_module_version_joined_module_provider(
+        select = db.select_module_provider_joined_latest_module_version(
             db.module_provider
         )
 
@@ -131,6 +132,12 @@ class ModuleSearch(object):
         if verified:
             select = select.where(
                 db.module_provider.c.verified == True
+            )
+
+        # Filter internal modules, if not being included
+        if not include_internal:
+            select = select.where(
+                db.module_version.c.internal == False
             )
 
         if namespace_trust_filters is not NamespaceTrustFilter.UNSPECIFIED:
@@ -179,11 +186,16 @@ class ModuleSearch(object):
     def get_search_filters(cls, query):
         """Get list of search filters and filter counts."""
         db = Database.get()
-        select = db.select_module_version_joined_module_provider(
+        select = db.select_module_provider_joined_latest_module_version(
             db.module_provider
         )
 
         main_select = cls._get_search_query_filter(select, query)
+
+        # Remove any internal modules
+        main_select = main_select.where(
+            db.module_version.c.internal == False
+        )
 
         with db.get_connection() as conn:
             verified_count = conn.execute(
@@ -260,12 +272,13 @@ class ModuleSearch(object):
     def get_most_recently_published():
         """Return module with most recent published date."""
         db = Database.get()
-        select = db.select_module_version_joined_module_provider(
+        select = db.select_module_provider_joined_latest_module_version(
             db.module_version,
             db.module_provider
         ).where(
             db.module_version.c.published == True,
-            db.module_version.c.beta == False
+            db.module_version.c.beta == False,
+            db.module_version.c.internal == False
         ).order_by(db.module_version.c.published_at.desc(), 
         ).limit(1)
 
@@ -310,7 +323,9 @@ class ModuleSearch(object):
                 datetime.datetime.now() -
                 datetime.timedelta(days=7)
             ),
-            db.module_version.c.published == True
+            db.module_version.c.published == True,
+            db.module_version.c.beta == False,
+            db.module_version.c.internal == False
         ).group_by(
             db.module_provider.c.namespace,
             db.module_provider.c.module,
@@ -324,7 +339,6 @@ class ModuleSearch(object):
         with db.get_connection() as conn:
             res = conn.execute(select)
             row = res.fetchone()
-        print(row)
 
         # If there are no rows, return None
         if not row:
