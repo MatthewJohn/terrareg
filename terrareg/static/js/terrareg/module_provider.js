@@ -65,7 +65,10 @@ function timeDifference(previous) {
     }
 }
 
-async function createSearchResultCard(parent_id, module, provider_logos) {
+async function createSearchResultCard(parent_id, module) {
+
+    let provider_logos = await getProviderLogos();
+
     let display_published = timeDifference(new Date(module.published_at));
     let provider_logo_html = '';
     if (provider_logos[module.provider] !== undefined) {

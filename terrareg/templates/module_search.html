@@ -86,12 +86,6 @@
         }
     }
 
-    // Obtain map of all provider logos
-    provider_logos = {};
-    $.get('/v1/terrareg/provider_logos', (data) => {
-        provider_logos = data;
-    })
-
     function getFilterProviders() {
         let providers = [];
         // Iterate over provider filter checkboxes and generate
@@ -184,7 +178,7 @@
 
                 // Iterate through modules
                 data.modules.forEach((module) => {
-                    createSearchResultCard('results', module, provider_logos);
+                    createSearchResultCard('results', module);
                 });
             }
         });
@@ -254,10 +248,4 @@
     });
 </script>
 
-{% endblock %}
-
-{% block additional_footer %}
-<p id="provider-tos">
-
-</p>
 {% endblock %}
