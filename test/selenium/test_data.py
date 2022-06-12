@@ -87,19 +87,25 @@ integration_test_data = {
             'aws': {
                 'id': 22,
                 'versions': {
-                    '1.0.0': {}
+                    '1.0.0': {'published': True}
                 }
             },
             'gcp': {
                 'id': 23,
                 'versions': {
-                    '1.0.0': {}
+                    '1.0.0': {'published': True}
+                }
+            },
+            'null': {
+                'id': 55,
+                'versions': {
+                    '1.0.0': {'published': True}
                 }
             },
             'doesnotexist': {
                 'id': 24,
                 'versions': {
-                    '1.0.0': {}
+                    '1.0.0': {'published': True}
                 }
             }
         }
