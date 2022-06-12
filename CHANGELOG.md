@@ -1,5 +1,19 @@
 # Changelog
 
+# [2.11.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.10.1...v2.11.0) (2022-06-12)
+
+
+### Bug Fixes
+
+* Update most downloaded and most recently uploaded module functions to exclude internal modules ([411209e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/411209e4971b8d4ae540c4d15ec8adefc1b4421e)), closes [#137](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/137)
+* Update mostdownloaded endpoint to not return download statistics for beta versions ([ac98f6c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ac98f6c491cc6acf1ee9d5116f48e945a06f04ec)), closes [#137](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/137)
+
+
+### Features
+
+* Add 'internal' tag to internal modules ui module provider UI view. ([59f96ee](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/59f96eea0fc7b8b9fc7f74002d10f87eaf344dda)), closes [#137](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/137)
+* Update module search and query filter data to exclude internal modules. ([266344f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/266344fd0c0847f3c4ade1a64b654e0dd782c959)), closes [#137](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/137)
+
 ## [2.10.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.10.0...v2.10.1) (2022-06-10)
 
 
