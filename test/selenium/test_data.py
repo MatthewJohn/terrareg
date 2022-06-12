@@ -345,6 +345,21 @@ integration_test_data = {
             'versions': {'5.5.5': {'published': True}}
         }}
     },
+    'moduledetails': {
+        'fullypopulated': {'testprovider': {
+            'id': 56,
+            'versions': {
+                '1.5.0': {
+                    'description': 'This is a test module version for tests.',
+                    'owner': 'This is the owner of the module',
+                    'repo_base_url_template': 'https://link-to.com/source-code-here',
+                    'published': True
+                },
+            }
+        }}
+    },
+
+    ## THESE MUST BE AT THE BOTTOM
     'mostrecent': {
         'modulename': {'providername': {
             'id': 48,
@@ -357,19 +372,6 @@ integration_test_data = {
             'versions': {
                 '1.2.3': {'published': False},
                 '1.5.3-beta': {'published': True, 'beta': True}
-            }
-        }}
-    },
-    'moduledetails': {
-        'fullypopulated': {'testprovider': {
-            'id': 56,
-            'versions': {
-                '1.5.0': {
-                    'description': 'This is a test module version for tests.',
-                    'owner': 'This is the owner of the module',
-                    'repo_base_url_template': 'https://link-to.com/source-code-here',
-                    'published': True
-                },
             }
         }}
     }
