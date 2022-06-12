@@ -1429,6 +1429,12 @@ class ModuleVersion(TerraformSpecsObject):
             # Invalidate cache for previous DB row
             self._cache_db_row = None
 
+        # Update latest version of parent module
+        new_latest_version = self._module_provider.calculate_latest_version()
+        self._module_provider.update_attributes(
+            latest_version_id=(new_latest_version.pk if new_latest_version is not None else None)
+        )
+
     def _create_db_row(self):
         """Insert into datadabase, removing any existing duplicate versions."""
         db = Database.get()
