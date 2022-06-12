@@ -87,19 +87,25 @@ integration_test_data = {
             'aws': {
                 'id': 22,
                 'versions': {
-                    '1.0.0': {}
+                    '1.0.0': {'published': True}
                 }
             },
             'gcp': {
                 'id': 23,
                 'versions': {
-                    '1.0.0': {}
+                    '1.0.0': {'published': True}
+                }
+            },
+            'null': {
+                'id': 55,
+                'versions': {
+                    '1.0.0': {'published': True}
                 }
             },
             'doesnotexist': {
                 'id': 24,
                 'versions': {
-                    '1.0.0': {}
+                    '1.0.0': {'published': True}
                 }
             }
         }
@@ -339,6 +345,21 @@ integration_test_data = {
             'versions': {'5.5.5': {'published': True}}
         }}
     },
+    'moduledetails': {
+        'fullypopulated': {'testprovider': {
+            'id': 56,
+            'versions': {
+                '1.5.0': {
+                    'description': 'This is a test module version for tests.',
+                    'owner': 'This is the owner of the module',
+                    'repo_base_url_template': 'https://link-to.com/source-code-here',
+                    'published': True
+                },
+            }
+        }}
+    },
+
+    ## THESE MUST BE AT THE BOTTOM
     'mostrecent': {
         'modulename': {'providername': {
             'id': 48,

@@ -65,7 +65,10 @@ function timeDifference(previous) {
     }
 }
 
-async function createSearchResultCard(parent_id, module, provider_logos) {
+async function createSearchResultCard(parent_id, module) {
+
+    let provider_logos = await getProviderLogos();
+
     let display_published = timeDifference(new Date(module.published_at));
     let provider_logo_html = '';
     if (provider_logos[module.provider] !== undefined) {
@@ -85,10 +88,13 @@ async function createSearchResultCard(parent_id, module, provider_logos) {
         }
     }
 
+    // Replace slashes in ID with full stops
+    let card_id = module.id.replace(/\//g, '.');
+
     // Add module to search results
     let result_card = $(
         `  
-        <div class="card">
+        <div id="${card_id}" class="card">
             <header class="card-header">
                 <p class="card-header-title">
                     ${provider_logo_html}
@@ -112,9 +118,9 @@ async function createSearchResultCard(parent_id, module, provider_logos) {
                     </div>
                 </div>
                 <footer class="card-footer">
-                    <p class="card-footer-item">${module.source? "Source: " + module.source : "No source provided"}</p>
+                    <p class="card-footer-item card-source-link">${module.source? "Source: " + module.source : "No source provided"}</p>
                     <br />
-                    <p class="card-footer-item">Last updated: ${display_published}</p>
+                    <p class="card-footer-item card-last-updated">Last updated: ${display_published}</p>
                 </footer>
             </a>
         </div>

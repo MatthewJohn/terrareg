@@ -111,6 +111,12 @@ integration_test_data = {
                     '1.0.0': {}
                 }
             },
+            'null': {
+                'id': 56,
+                'versions': {
+                    '1.0.0': {}
+                }
+            },
             'doesnotexist': {
                 'id': 24,
                 'versions': {
