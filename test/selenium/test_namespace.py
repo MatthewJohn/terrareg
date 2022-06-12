@@ -20,6 +20,7 @@ class TestNamespace(SeleniumTest):
         cls._mocks.append(mock.patch('terrareg.config.Config.CONTRIBUTED_NAMESPACE_LABEL', 'unittest contributed module'))
         cls._mocks.append(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACE_LABEL', 'unittest trusted namespace'))
         cls._mocks.append(mock.patch('terrareg.config.Config.VERIFIED_MODULE_LABEL', 'unittest verified label'))
+        cls._mocks.append(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['trustednamespace']))
         for mock_ in cls._mocks:
             mock_.start()
         super(TestNamespace, cls).setup_class()
@@ -103,3 +104,36 @@ class TestNamespace(SeleniumTest):
         # Check that verified label is displayed
         verified_label = verified_module.find_element(By.CLASS_NAME, 'result-card-label-verified')
         assert verified_label.text == 'unittest verified label'
+
+        # Check non-verified module does not contain the element
+        unverified_module = self.wait_for_element(By.ID, 'modulesearch.contributedmodule-oneversion.aws.1.0.0')
+        with pytest.raises(selenium.common.exceptions.NoSuchElementException):
+            unverified_module.find_element(By.CLASS_NAME, 'result-card-label-verified')
+
+    def test_trusted_module(self):
+        """Check that trusted modules just have trusted label."""
+        self.selenium_instance.get(self.get_url('/modules/trustednamespace'))
+
+        trusted_module = self.wait_for_element(By.ID, 'trustednamespace.searchbymodulename4.aws.5.5.5')
+
+        # Check that verified label is displayed
+        trusted_label = trusted_module.find_element(By.CLASS_NAME, 'result-card-label-trusted')
+        assert trusted_label.text == 'unittest trusted namespace'
+
+        # Ensure that the contributed tag is not shown
+        with pytest.raises(selenium.common.exceptions.NoSuchElementException):
+            trusted_module.find_element(By.CLASS_NAME, 'result-card-label-contributed')
+
+    def check_contributed_module(self):
+        """Check that contributed module just has contributed label"""
+        self.selenium_instance.get(self.get_url('/modules/modulesearch-contributed'))
+
+        contributed_module = self.wait_for_element(By.ID, 'modulesearch-contributed.mixedsearch-result.aws.1.0.0')
+
+        # Check that verified label is displayed
+        trusted_label = contributed_module.find_element(By.CLASS_NAME, 'result-card-label-contributed')
+        assert trusted_label.text == 'unittest contributed namespace'
+
+        # Ensure that the contributed tag is not shown
+        with pytest.raises(selenium.common.exceptions.NoSuchElementException):
+            contributed_module.find_element(By.CLASS_NAME, 'result-card-label-trusted')
