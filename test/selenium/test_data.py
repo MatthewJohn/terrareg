@@ -359,5 +359,18 @@ integration_test_data = {
                 '1.5.3-beta': {'published': True, 'beta': True}
             }
         }}
+    },
+    'moduledetails': {
+        'fullypopulated': {'testprovider': {
+            'id': 56,
+            'versions': {
+                '1.5.0': {
+                    'description': 'This is a test module version for tests.',
+                    'owner': 'This is the owner of the module',
+                    'repo_base_url_template': 'https://link-to.com/source-code-here',
+                    'published': True
+                },
+            }
+        }}
     }
 }
