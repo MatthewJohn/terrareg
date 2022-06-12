@@ -160,6 +160,16 @@ class Database():
                     onupdate='CASCADE',
                     ondelete='SET NULL'),
                 nullable=True
+            ),
+            sqlalchemy.Column(
+                'latest_version_id',
+                sqlalchemy.ForeignKey(
+                    'module_version.id',
+                    onupdate='CASCADE',
+                    ondelete='SET NULL',
+                    use_alter=True
+                ),
+                nullable=True
             )
         )
 
@@ -186,6 +196,7 @@ class Database():
             sqlalchemy.Column('readme_content', Database.medium_blob()),
             sqlalchemy.Column('module_details', Database.medium_blob()),
             sqlalchemy.Column('variable_template', Database.medium_blob()),
+            sqlalchemy.Column('internal', sqlalchemy.Boolean, nullable=False),
             sqlalchemy.Column('published', sqlalchemy.Boolean)
         )
 
@@ -246,6 +257,14 @@ class Database():
             *select_args
         ).select_from(self.module_version).join(
             self.module_provider, self.module_version.c.module_provider_id == self.module_provider.c.id
+        )
+
+    def select_module_provider_joined_latest_module_version(self, *select_args):
+        """Perform select on module_provider, joined to latest version from module_version table."""
+        return sqlalchemy.select(
+            *select_args
+        ).select_from(self.module_provider).join(
+            self.module_version, self.module_provider.c.latest_version_id == self.module_version.c.id
         )
 
     @classmethod
@@ -331,3 +350,4 @@ class Transaction:
             Database.get().transaction = None
 
         self._transaction_outer.__exit__(*args, **kwargs)
+
