@@ -269,6 +269,12 @@ class Server(object):
             '/v1/terrareg/analytics/global/most_downloaded_module_provider_this_week'
         )
 
+        ## namespaces endpoint
+        self._api.add_resource(
+            ApiTerraregNamespaces,
+            '/v1/terrareg/namespaces'
+        )
+
         ## Module endpoints /v1/terreg/modules
         self._api.add_resource(
             ApiTerraregModuleProviderCreate,
@@ -1260,6 +1266,19 @@ class ApiModuleProviderDownloadsSummary(ErrorCatchingResource):
                 "attributes": AnalyticsEngine.get_module_provider_download_stats(module_provider)
             }
         }
+
+
+class ApiTerraregNamespaces(ErrorCatchingResource):
+    """Provide interface to obtain namespaces."""
+
+    def _get(self):
+        """Return list of namespaces."""
+        namespaces = Namespace.get_all(only_published=True)
+
+        return [
+            namespace.name for namespace in namespaces
+        ]
+
 
 
 class ApiTerraregProviderLogos(ErrorCatchingResource):
