@@ -1,3 +1,4 @@
+
 {% extends 'template.html' %}
 
 {% block content %}
@@ -8,33 +9,64 @@
     </ul>
 </nav>
 
+<script>
+    let currentSearchMeta = undefined;
 
-<nav class="level">
-    <div class="level-item">
+    function prevResults() {
+        if (currentSearchMeta && currentSearchMeta.prev_offset !== undefined) {
+            getResults(currentSearchMeta.prev_offset);
+        }
+    }
+    function nextResults() {
+        if (currentSearchMeta && currentSearchMeta.next_offset !== undefined) {
+            getResults(currentSearchMeta.next_offset);
+        }
+    }
+    function getResults(offset) {
+        $.get(`/v1/modules/{{ namespace }}?offset=${offset}`, function(data) {
+            // Update current meta data
+            currentSearchMeta = data.meta;
 
-    {% if namespaces %}
+            // Clear any existing modules
+            $('#module-list-table').html('');
 
-        <table class="table" style="width: 50%">
-            <thead>
-                <th>Namespace</th>
-            </thead>
-            <tbody>
-                {% for namespace in namespaces %}
-                <tr>
-                    <td>
-                        <a href="{{ namespace.get_view_url() }}">{{ namespace.name }}</a>
-                    </td>
-                </tr>
-                {% endfor %}
+            // Disable/activate next/previous buttons
+            $('#prevButton').prop('disabled', (data.meta.prev_offset === undefined));
+            $('#nextButton').prop('disabled', (data.meta.next_offset === undefined));
+
+            // Add each of the modules to the page
+            $.each(data.modules, (itx, module_data) => {
+                createSearchResultCard('module-list-table', module_data);
+            });
+        });
+    }
+    $(document).ready(function() {
+        $.get('/v1/terrareg/namespaces', (data) => {
+            if (data.length == 0) {
+                $('#namespaces-table-data').append('<tr><td>There are no namespaces with published modules.</td></tr>')
+            }
+
+            $.each(data, (itx, namespace_name) => {
+                $('#namespaces-table-data').append(
+                    `<tr><td><a href="/modules/${namespace_name}">${namespace_name}</a><td></tr>`
+                );
+            })
+        });
+    });
+</script>
+
+<div class="columns">
+    <div class="column is-three-fifths is-offset-one-fifth">
+
+        <h1 class="title">Namespaces</h1>
+
+        <table class="table is-hoverable">
+            <tbody id="namespaces-table-data">
+
             </tbody>
         </table>
 
-    {% else %}
-
-    No namespaces/modules have been uploaded yet :(
-
-    {% endif %}
     </div>
-</nav>
+</div>
 
 {% endblock %}
