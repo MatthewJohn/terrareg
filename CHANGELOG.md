@@ -1,5 +1,19 @@
 # Changelog
 
+# [2.12.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.11.0...v2.12.0) (2022-06-14)
+
+
+### Bug Fixes
+
+* **test:** Use assert_equal method in module search selenium tests to allow the counting of result cards to be retries, as the cards may not yet be populated on the page ([a4b4716](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a4b47164e6b8ea9eec1eadcb847f714fd5a3df68)), closes [#125](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/125)
+* Update namespace page to include internal modules. ([245693b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/245693b6569e7956b217279c9f3b2741b5c98b9b)), closes [#125](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/125)
+* Update namespace page to show error when no modules exist or namespace does not exist. ([4470af6](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4470af665fab5375104a145606ea0bbb0b7a99aa)), closes [#125](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/125)
+
+
+### Features
+
+* Convert namespace list page to use API calls to obtain list of namespaces. ([9d5308a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9d5308a18f62c51a77182605d65f8f0be8dbbb1c)), closes [#125](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/125)
+
 # [2.11.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.10.1...v2.11.0) (2022-06-12)
 
 
