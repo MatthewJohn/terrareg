@@ -45,16 +45,16 @@ class TestModuleSearch(SeleniumTest):
 
         assert self.selenium_instance.current_url == self.get_url('/modules/search?q=modulesearch')
 
-        result_cards = self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')
-        assert len(result_cards) == 4
+        self.assert_equals(lambda: len(self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')), 4)
 
     def test_result_cards(self):
         """Check the result cards."""
 
         self.selenium_instance.get(self.get_url('/modules/search?q=modulesearch'))
 
+        self.assert_equals(lambda: len(self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')), 4)
+
         result_cards = self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')
-        assert len(result_cards) == 4
 
         expected_card_headings = [
             'modulesearch-trusted / mixedsearch-trusted-result',
@@ -82,8 +82,7 @@ class TestModuleSearch(SeleniumTest):
 
         self.selenium_instance.get(self.get_url('/modules/search?q=modulesearch'))
 
-        result_cards = self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')
-        assert len(result_cards) == 4
+        self.assert_equals(lambda: len(self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')), 4)
 
         # Check counts of filters
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'search-verified-count').text, '3')
