@@ -126,6 +126,10 @@
         if (window_hash_value) {
             selectModuleTab(window_hash_value);
         }
+        // If file list (for example) is present, select the tab
+        else if ($('#module-tab-example-files').length) {
+            selectModuleTab('example-files');
+        }
         // If readme file is present, select the tab
         else if ($('#module-tab-link-readme').length) {
             selectModuleTab('readme');
