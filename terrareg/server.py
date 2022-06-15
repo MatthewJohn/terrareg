@@ -1745,7 +1745,7 @@ class ApiTerraregExampleFileList(ErrorCatchingResource):
                     module_version_id=module_version.id,
                     file_path=example_file.path)
             }
-            for example_file in example_obj.get_files()
+            for example_file in sorted(example_obj.get_files())
         ]
 
 

@@ -1673,6 +1673,17 @@ class ExampleFile:
         self._path = path
         self._row_cache = None
 
+    def __lt__(self, other):
+        """Implement less than for sorting example files."""
+        # If current file is main, it is always at the top, i.e. least value
+        if self.file_name == 'main.tf':
+            return True
+        # If other file is main.tf, this file is more
+        elif other.file_name == 'main.tf':
+            return False
+
+        return (self.file_name < other.file_name)
+
     def _get_db_row(self):
         """Return DB row for git provider."""
         if self._row_cache is None:
