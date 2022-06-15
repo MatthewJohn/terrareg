@@ -49,9 +49,11 @@
 {% endif %}
 
 <script>
-    function selectModuleTab(tab_name) {
-        // Set URL anchor to selected tag
-        window.location.hash = '#' + tab_name;
+    function selectModuleTab(tab_name, redirect) {
+        if (redirect !== false) {
+            // Set URL anchor to selected tag
+            window.location.hash = '#' + tab_name;
+        }
 
         let tab_content_id = "module-tab-" + tab_name;
         let tab_link_id = "module-tab-link-" + tab_name;
@@ -124,15 +126,15 @@
     $(document).ready(function () {
         let window_hash_value = $(location).attr('hash').replace('#', '');
         if (window_hash_value) {
-            selectModuleTab(window_hash_value);
+            selectModuleTab(window_hash_value, false);
         }
         // If readme file is present, select the tab
         else if ($('#module-tab-link-readme').length) {
-            selectModuleTab('readme');
+            selectModuleTab('readme', false);
 
         // otherwise, default to inputs tab
         } else {
-            selectModuleTab('inputs');
+            selectModuleTab('inputs', false);
         }
     });
 </script>
@@ -357,10 +359,6 @@ module "{{ module.name }}" {
 </pre>
                 </div>
             </div>
-
-
-
-
         </div>
         {% endif %}
         <div id="module-tab-inputs" class="module-tabs" style="display: none;">
