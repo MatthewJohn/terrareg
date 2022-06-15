@@ -1,120 +1,19 @@
 
-from distutils.command.upload import upload
-from enum import Enum
-from io import BytesIO
 import json
 import os
-import re
-import shutil
-import tempfile
+
 from unittest import mock
 import pytest
 
 import terrareg.errors
 from terrareg.models import Module, ModuleProvider, ModuleVersion, Namespace
-from terrareg.module_extractor import ApiUploadModuleExtractor
 from test.integration.terrareg import TerraregIntegrationTest
 from test import client
-
-class UploadTestModuleState(Enum):
-    NONE = 0
-    CREATED_DIRECTORIES = 1
-    READY_TO_CREATE_ZIP = 2
-    CREATED_ZIP = 3
-    DELETED_DIRECTORIES = 4
-
-class UploadTestModule:
-    """Provide interface to upload test module."""
-
-    def __init__(self):
-        """Generate temporary directories"""
-        self._source_directory = tempfile.TemporaryDirectory()  # noqa: R1732
-        self._zip_file_directory = tempfile.TemporaryDirectory()  # noqa: R1732
-        self._state = UploadTestModuleState.NONE
-        self._zip_file_name = None
-
-    def __enter__(self):
-        """Create temporary directories."""
-        if self._state is UploadTestModuleState.NONE:
-            # On first entry, create temporary directories
-            self._source_directory.__enter__()
-            self._zip_file_directory.__enter__()
-            self._zip_file_name = os.path.join(self._zip_file_directory.name, 'upload.zip')
-            self._state = UploadTestModuleState.CREATED_DIRECTORIES
-            # Return name of output zip that will be created.
-            return self._zip_file_name
-
-        elif self._state is UploadTestModuleState.CREATED_DIRECTORIES:
-            # On second entry, just change state to show that this has been entered
-            self._state = UploadTestModuleState.READY_TO_CREATE_ZIP
-            # Return directory to upload files to
-            return self._source_directory.name
-        else:
-            raise Exception('Called too many times')
-    
-    def __exit__(self, *args, **kwargs):
-        """Zip file and perform tidy up"""
-        if self._state is UploadTestModuleState.READY_TO_CREATE_ZIP:
-            # Zip source directory
-            shutil.make_archive(
-                re.sub(r'\.zip$', '', self._zip_file_name),
-                'zip',
-                self._source_directory.name)
-            self._state = UploadTestModuleState.CREATED_ZIP
-        elif self._state is UploadTestModuleState.CREATED_ZIP:
-            # On second exit, delete temporary directories
-            self._source_directory.__exit__(*args, **kwargs)
-            self._zip_file_directory.__exit__(*args, **kwargs)
+from test.integration.terrareg.module_extractor import UploadTestModule
 
 
 class TestProcessUpload(TerraregIntegrationTest):
     """Test the module extractor process_upload."""
-
-    TEST_README_CONTENT = """
-# Test terraform module
-
-## This is for a test module.
-"""
-
-    VALID_MAIN_TF_FILE = """
-variable "test_input" {
-    type        = string
-    description = "This is a test input"
-    default     = "test_default_val"
-}
-
-output "test_output" {
-    description = "test output"
-    value       = var.test_input
-}
-"""
-
-    INVALID_MAIN_TF_FILE = """
-var "test" {
-
-"""
-
-    SUB_MODULE_MAIN_TF = """
-variable "submodule_test_input_{itx}" {{
-    type        = string
-    description = "This is a test input in a submodule"
-    default     = "test_default_val"
-}}
-
-output "submodule_test_output_{itx}" {{
-    description = "test output in a submodule"
-    value       = var.test_input
-}}
-"""
-
-    def _upload_module_version(self, module_version, zip_file):
-        """Use ApiUploadModuleExtractor to upload version of module."""
-        with ApiUploadModuleExtractor(upload_file=None, module_version=module_version) as me:
-            with open(zip_file, 'rb') as zip_file_fh:
-                me._source_file = zip_file_fh
-                me._extract_archive()
-            # Perform base module upload
-            super(ApiUploadModuleExtractor, me).process_upload()
 
     def test_basic_module(self):
         """Test basic module upload with single depth."""
@@ -130,9 +29,9 @@ output "submodule_test_output_{itx}" {{
             with test_upload as upload_directory:
                 # Create main.tf
                 with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
-            self._upload_module_version(module_version=module_version, zip_file=zip_file)
+            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         # Ensure terraform docs output contains variable and output
         assert module_version.get_terraform_inputs() == [
@@ -165,7 +64,7 @@ output "submodule_test_output_{itx}" {{
             with test_upload as upload_directory:
                 # Create main.tf
                 with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
                 with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
                     metadata_fh.writelines(json.dumps({
@@ -174,7 +73,7 @@ output "submodule_test_output_{itx}" {{
                         'variable_template': [{'test_variable': {}}]
                     }))
 
-            self._upload_module_version(module_version=module_version, zip_file=zip_file)
+            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         assert module_version.description == 'unittestdescription!'
         assert module_version.owner == 'unittestowner.'
@@ -196,7 +95,7 @@ output "submodule_test_output_{itx}" {{
                 with test_upload as upload_directory:
                     # Create main.tf
                     with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                        main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+                        main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
                     with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
                         metadata_fh.writelines(json.dumps({
@@ -205,7 +104,7 @@ output "submodule_test_output_{itx}" {{
                             'variable_template': [{'test_variable': {}}]
                         }))
 
-                self._upload_module_version(module_version=module_version, zip_file=zip_file)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
             assert module_version.description == 'unittestdescription!'
             assert module_version.owner == 'unittestowner.'
@@ -232,14 +131,14 @@ output "submodule_test_output_{itx}" {{
                 with test_upload as upload_directory:
                     # Create main.tf
                     with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                        main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+                        main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
                     with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
                         metadata_fh.writelines(json.dumps(terrareg_json))
 
                 # Ensure an exception is raised about missing attributes
                 with pytest.raises(terrareg.errors.MetadataDoesNotContainRequiredAttributeError):
-                    self._upload_module_version(module_version=module_version, zip_file=zip_file)
+                    UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
 
     def test_invalid_terrareg_metadata_file(self):
@@ -256,14 +155,14 @@ output "submodule_test_output_{itx}" {{
             with test_upload as upload_directory:
                 # Create main.tf
                 with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
                 with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
                     metadata_fh.writelines('This is invalid JSON!')
 
             # Ensure an exception is raised about invalid metadata JSON
             with pytest.raises(terrareg.errors.InvalidTerraregMetadataFileError):
-                self._upload_module_version(module_version=module_version, zip_file=zip_file)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
     def test_override_repo_urls_with_metadata(self):
         """Test module upload with repo urls in metadata file."""
@@ -287,7 +186,7 @@ output "submodule_test_output_{itx}" {{
             with test_upload as upload_directory:
                 # Create main.tf
                 with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
                 with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
                     metadata_fh.writelines(json.dumps({
@@ -296,7 +195,7 @@ output "submodule_test_output_{itx}" {{
                         'repo_browse_url': 'https://base_url.com/{namespace}-{module}-{provider}-{tag}/{path}'
                     }))
 
-            self._upload_module_version(module_version=module_version, zip_file=zip_file)
+            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
             assert module_version.get_source_base_url() == 'https://realoverride.com/blah/repo_url_tests-module-provider-override-git-provider-test'
             assert module_version.get_git_clone_url() == 'ssh://overrideurl_here.com/repo_url_tests/module-provider-override-git-provider-test'
@@ -317,7 +216,7 @@ output "submodule_test_output_{itx}" {{
             with test_upload as upload_directory:
                 # Create main.tf
                 with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
                 os.mkdir(os.path.join(upload_directory, 'modules'))
 
@@ -326,9 +225,9 @@ output "submodule_test_output_{itx}" {{
                     root_dir = os.path.join(upload_directory, 'modules', 'testmodule{itx}'.format(itx=itx))
                     os.mkdir(root_dir)
                     with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
-                        main_tf_fh.writelines(self.SUB_MODULE_MAIN_TF.format(itx=itx))
+                        main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
 
-            self._upload_module_version(module_version=module_version, zip_file=zip_file)
+            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         submodules = module_version.get_submodules()
         # Order submodules by path
@@ -369,7 +268,7 @@ output "submodule_test_output_{itx}" {{
             with test_upload as upload_directory:
                 # Create main.tf
                 with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
                 os.mkdir(os.path.join(upload_directory, 'examples'))
 
@@ -378,9 +277,9 @@ output "submodule_test_output_{itx}" {{
                     root_dir = os.path.join(upload_directory, 'examples', 'testexample{itx}'.format(itx=itx))
                     os.mkdir(root_dir)
                     with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
-                        main_tf_fh.writelines(self.SUB_MODULE_MAIN_TF.format(itx=itx))
+                        main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
 
-            self._upload_module_version(module_version=module_version, zip_file=zip_file)
+            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         examples = module_version.get_examples()
         # Order submodules by path
@@ -421,16 +320,16 @@ output "submodule_test_output_{itx}" {{
             with test_upload as upload_directory:
                 # Create main.tf
                 with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
                 # Create README
                 with open(os.path.join(upload_directory, 'README.md'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(self.TEST_README_CONTENT)
+                    main_tf_fh.writelines(UploadTestModule.TEST_README_CONTENT)
 
-            self._upload_module_version(module_version=module_version, zip_file=zip_file)
+            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         # Ensure README is present in module version
-        assert module_version.get_readme_content() == self.TEST_README_CONTENT
+        assert module_version.get_readme_content() == UploadTestModule.TEST_README_CONTENT
 
     def test_all_features(self):
         """Test uploading a module with multiple features."""
@@ -446,7 +345,7 @@ output "submodule_test_output_{itx}" {{
             with test_upload as upload_directory:
                 # Create main.tf
                 with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
                 with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
                     metadata_fh.writelines(json.dumps({
@@ -460,7 +359,7 @@ output "submodule_test_output_{itx}" {{
 
                 # Create README
                 with open(os.path.join(upload_directory, 'README.md'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(self.TEST_README_CONTENT)
+                    main_tf_fh.writelines(UploadTestModule.TEST_README_CONTENT)
 
                 os.mkdir(os.path.join(upload_directory, 'modules'))
 
@@ -469,7 +368,7 @@ output "submodule_test_output_{itx}" {{
                     root_dir = os.path.join(upload_directory, 'modules', 'testmodule{itx}'.format(itx=itx))
                     os.mkdir(root_dir)
                     with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
-                        main_tf_fh.writelines(self.SUB_MODULE_MAIN_TF.format(itx=itx))
+                        main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
 
                 os.mkdir(os.path.join(upload_directory, 'examples'))
 
@@ -478,12 +377,12 @@ output "submodule_test_output_{itx}" {{
                     root_dir = os.path.join(upload_directory, 'examples', 'testexample{itx}'.format(itx=itx))
                     os.mkdir(root_dir)
                     with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
-                        main_tf_fh.writelines(self.SUB_MODULE_MAIN_TF.format(itx=itx))
+                        main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
 
-            self._upload_module_version(module_version=module_version, zip_file=zip_file)
+            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         # Ensure README is present in module version
-        assert module_version.get_readme_content() == self.TEST_README_CONTENT
+        assert module_version.get_readme_content() == UploadTestModule.TEST_README_CONTENT
 
         # Check submodules
         submodules = module_version.get_submodules()
@@ -527,7 +426,7 @@ output "submodule_test_output_{itx}" {{
                     """)
 
             with pytest.raises(terrareg.errors.UnableToProcessTerraformError):
-                self._upload_module_version(module_version=module_version, zip_file=zip_file)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
 
     def test_upload_via_server(self, client):
@@ -538,7 +437,7 @@ output "submodule_test_output_{itx}" {{
             with test_upload as upload_directory:
                 # Create main.tf
                 with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(self.VALID_MAIN_TF_FILE)
+                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
             client.post(
                 '/v1/terrareg/modules/testprocessupload/test-module/uplaodthroughserver/1.5.2/upload',
@@ -577,7 +476,7 @@ output "submodule_test_output_{itx}" {{
             with test_upload as upload_directory:
                 # Create main.tf
                 with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(self.INVALID_MAIN_TF_FILE)
+                    main_tf_fh.writelines(UploadTestModule.INVALID_MAIN_TF_FILE)
 
             res = client.post(
                 '/v1/terrareg/modules/testprocessupload/test-module/badupload/2.0.0/upload',
