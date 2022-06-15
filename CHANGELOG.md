@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.12.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.12.0...v2.12.1) (2022-06-15)
+
+
+### Bug Fixes
+
+* Update module/submodule/example pages to no longer redirect to tab anchor when loading default tab ([48a25d4](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/48a25d489745e874e37e3309ac3231890d9df59d)), closes [#144](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/144)
+
 # [2.12.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.11.0...v2.12.0) (2022-06-14)
 
 
