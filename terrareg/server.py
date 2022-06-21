@@ -314,6 +314,10 @@ class Server(object):
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/publish'
         )
         self._api.add_resource(
+            ApiTerraregModuleVersionDelete,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/delete'
+        )
+        self._api.add_resource(
             ApiTerraregExampleFileList,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/example/filelist/<path:example>'
         )
@@ -1562,6 +1566,41 @@ class ApiTerraregModuleProviderDelete(ErrorCatchingResource):
 
         module_provider.delete()
 
+class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
+    """Provide interface to delete module version."""
+
+    method_decorators = [require_admin_authentication]
+
+    def _delete(self, namespace, name, provider, version):
+        """Delete module provider."""
+        parser = reqparse.RequestParser()
+        parser.add_argument(
+            'csrf_token', type=str,
+            required=False,
+            help='CSRF token',
+            location='json',
+            default=None
+        )
+
+        args = parser.parse_args()
+
+        check_csrf_token(args.csrf_token)
+
+        # Update repository URL of module version
+        namespace_obj = Namespace(name=namespace)
+        module = Module(namespace=namespace_obj, name=name)
+
+        # Check if module provider already exists
+        module_provider_obj = ModuleProvider.get(module=module, name=provider)
+        if module_provider_obj is None:
+            return {'message': 'Module provider does not exist'}, 400
+
+        # Check if module version already exists
+        version_obj = ModuleVersion.get(proider=module_provider_obj, version=version)
+        if version_obj is None:
+            return {'message': 'Module version does not exist'}, 400
+
+        version_obj.delete()
 
 class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
     """Provide interface to update module provider settings."""
