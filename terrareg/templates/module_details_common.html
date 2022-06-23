@@ -746,10 +746,10 @@ module "{{ module.name }}" {
                             }),
                             contentType: 'application/json'
                         }).done(()=> {
-                            // Reidrect to module page.
+                            // Reidrect to module provider page.
                             // This will automatically redirect back
                             // down the path to valid existing object.
-                            window.location.href = '/modules/{{ module.id }}';
+                            window.location.href = '/modules/{{ module_provider.id }}';
                         });
                     }
                 </script>
