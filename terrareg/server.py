@@ -1596,7 +1596,7 @@ class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
             return {'message': 'Module provider does not exist'}, 400
 
         # Check if module version already exists
-        version_obj = ModuleVersion.get(proider=module_provider_obj, version=version)
+        version_obj = ModuleVersion.get(module_provider=module_provider_obj, version=version)
         if version_obj is None:
             return {'message': 'Module version does not exist'}, 400
 
