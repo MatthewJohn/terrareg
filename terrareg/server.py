@@ -1572,7 +1572,7 @@ class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
     method_decorators = [require_admin_authentication]
 
     def _delete(self, namespace, name, provider, version):
-        """Delete module provider."""
+        """Delete module version."""
         parser = reqparse.RequestParser()
         parser.add_argument(
             'csrf_token', type=str,
@@ -1601,6 +1601,11 @@ class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
             return {'message': 'Module version does not exist'}, 400
 
         version_obj.delete()
+
+        return {
+            'status': 'Success'
+        }
+
 
 class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
     """Provide interface to update module provider settings."""
