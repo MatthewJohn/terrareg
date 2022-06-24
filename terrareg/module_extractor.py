@@ -163,16 +163,10 @@ class ModuleExtractor:
         tf_docs = self._run_terraform_docs(submodule_dir)
         readme_content = self._get_readme_content(submodule_dir)
 
-        db = Database.get()
-        insert_statement = db.sub_module.insert().values(
-            parent_module_version=self._module_version.pk,
-            type=submodule.TYPE,
-            path=submodule.path,
+        submodule.update_attributes(
             readme_content=Database.encode_blob(readme_content),
             module_details=Database.encode_blob(json.dumps(tf_docs))
         )
-        with db.get_connection() as conn:
-            conn.execute(insert_statement)
 
         if isinstance(submodule, Example):
             self._extract_example_files(example=submodule)
@@ -239,7 +233,7 @@ class ModuleExtractor:
 
         # Extract all submodules
         for submodule_path in submodules:
-            obj = submodule_class(
+            obj = submodule_class.create(
                 module_version=self._module_version,
                 module_path=submodule_path)
             self._process_submodule(submodule=obj)

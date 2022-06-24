@@ -1516,6 +1516,22 @@ class BaseSubmodule(TerraformSpecsObject):
 
         return cls(module_version=module_version, module_path=row['path'])
 
+    @classmethod
+    def create(cls, module_version: ModuleVersion, module_path: str):
+        """Create instance of object in database."""
+        # Create submodule
+        db = Database.get()
+        insert_statement = db.sub_module.insert().values(
+            parent_module_version=module_version.pk,
+            type=cls.TYPE,
+            path=module_path
+        )
+        with db.get_connection() as conn:
+            conn.execute(insert_statement)
+
+        # Return instance of object
+        return cls(module_version=module_version, module_path=module_path)
+
     @property
     def pk(self):
         """Return DB primary key."""
@@ -1560,6 +1576,18 @@ class BaseSubmodule(TerraformSpecsObject):
                 res = conn.execute(select)
                 self._cache_db_row = res.fetchone()
         return self._cache_db_row
+
+    def update_attributes(self, **kwargs):
+        """Update DB row."""
+        db = Database.get()
+        update = db.sub_module.update().where(
+            db.sub_module.c.id == self.pk
+        ).values(**kwargs)
+        with db.get_connection() as conn:
+            conn.execute(update)
+
+        # Remove cached DB row
+        self._cache_db_row = None
 
     def delete(self):
         """Delete submodule from DB."""
