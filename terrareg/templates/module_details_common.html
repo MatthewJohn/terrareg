@@ -7,6 +7,7 @@
 <script>
     async function populatePageDetails() {
         let details = await getModuleDetails('{{ module_provider.id }}');
+        console.log(details);
 
         $.get(`/v1/modules/${details.module_provider_id}/downloads/summary`, function(data, status) {
             Object.keys(data.data.attributes).forEach((key) => {
@@ -729,11 +730,43 @@ module "{{ module.name }}" {
                     </div>
                 </form>
             </div>
+            {% if module_version %}
+            <div class="field is-vertical">
+                <script>
+                    function deleteModuleVersion() {
+                        $('#confirm-delete-module-version-div').css('display', 'block');
+                        if (! $('#confirm-delete-module-version').is(':checked')) {
+                            return;
+                        }
+                        $.ajax({
+                            url: '/v1/terrareg/modules/{{ module_version.id }}/delete',
+                            method: 'delete',
+                            data: JSON.stringify({
+                                csrf_token: '{{ csrf_token }}'
+                            }),
+                            contentType: 'application/json'
+                        }).done(()=> {
+                            // Reidrect to module provider page.
+                            // This will automatically redirect back
+                            // down the path to valid existing object.
+                            window.location.href = '/modules/{{ module_provider.id }}';
+                        });
+                    }
+                </script>
+                <div class="control">
+                    <button id="module-version-delete-button" onclick="deleteModuleVersion();" class="button is-link is-danger">Delete Module Version: {{ module_version.version }} </button>
+                </div>
+                <br />
+                <div id="confirm-delete-module-version-div" style="display: none;">
+                    Confirm deletion of module version {{ module_version.version }}: <input autocomplete="off" id="confirm-delete-module-version" type="checkbox" />
+                </div>
+            </div>
+            {% endif %}
             <div class="field is-vertical">
                 <script>
                     function deleteModule() {
-                        $('#confirm-delete-div').css('display', 'block');
-                        if (! $('#delete-confirm').is(':checked')) {
+                        $('#confirm-delete-module-provider-div').css('display', 'block');
+                        if (! $('#confirm-delete-module-provider').is(':checked')) {
                             return;
                         }
                         $.ajax({
@@ -752,11 +785,11 @@ module "{{ module.name }}" {
                     }
                 </script>
                 <div class="control">
-                    <button onclick="deleteModule();" class="button is-link is-danger">Delete Module Provider</button>
+                    <button id="module-provider-delete-button" onclick="deleteModule();" class="button is-link is-danger">Delete Module Provider</button>
                 </div>
                 <br />
-                <div id="confirm-delete-div" style="display: none;">
-                    Confirm deletion: <input autocomplete="off" id="delete-confirm" type="checkbox" />
+                <div id="confirm-delete-module-provider-div" style="display: none;">
+                    Confirm deletion of module provider: <input autocomplete="off" id="confirm-delete-module-provider" type="checkbox" />
                 </div>
             </div>
         </div>

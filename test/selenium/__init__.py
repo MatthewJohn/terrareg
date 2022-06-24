@@ -12,6 +12,7 @@ from flask import request
 
 from pyvirtualdisplay import Display
 import selenium
+from selenium.webdriver.common.by import By
 import pytest
 import werkzeug
 
@@ -34,6 +35,8 @@ class SeleniumTest(BaseTest):
     SELENIUM_INSTANCE = None
     RESET_COOKIES = True
 
+    RUN_INTERACTIVELY = False
+
     DEFAULT_RESOLUTION = (1280, 720)
 
     @staticmethod
@@ -52,8 +55,9 @@ class SeleniumTest(BaseTest):
 
         cls.SERVER.host = '127.0.0.1'
 
-        cls.display_instance = Display(visible=0, size=SeleniumTest.DEFAULT_RESOLUTION)
-        cls.display_instance.start()
+        if not cls.RUN_INTERACTIVELY:
+            cls.display_instance = Display(visible=0, size=SeleniumTest.DEFAULT_RESOLUTION)
+            cls.display_instance.start()
         cls.selenium_instance = selenium.webdriver.Firefox()
         cls.selenium_instance.delete_all_cookies()
         cls.selenium_instance.implicitly_wait(1)
@@ -61,7 +65,11 @@ class SeleniumTest(BaseTest):
         cls.SERVER.port = random.randint(5000, 6000)
 
         log = logging.getLogger('werkzeug')
-        log.disabled = True
+        if not cls.RUN_INTERACTIVELY:
+            log.disabled = True
+
+        # Replicate APP key setting from Server.run
+        cls.SERVER._app.secret_key = terrareg.config.Config().SECRET_KEY
 
         cls._werzeug_server = werkzeug.serving.make_server(
             "localhost",
@@ -76,7 +84,8 @@ class SeleniumTest(BaseTest):
     def teardown_class(cls):
         """Teardown display instance."""
         cls.selenium_instance.quit()
-        cls.display_instance.stop()
+        if not cls.RUN_INTERACTIVELY:
+            cls.display_instance.stop()
         # Shutdown server
         cls._werzeug_server.shutdown()
         cls._server_thread.join()
@@ -121,3 +130,14 @@ class SeleniumTest(BaseTest):
                 else:
                     print('Failed to find element')
                     raise
+
+    def perform_admin_authentication(self, password):
+        """Go to admin page and authenticate as admin"""
+        self.selenium_instance.get(self.get_url('/login'))
+        token_input_field = self.selenium_instance.find_element(By.ID, 'admin_token_input')
+        token_input_field.send_keys(password)
+        login_button = self.selenium_instance.find_element(By.ID, 'login-button')
+        login_button.click()
+
+        # Wait for homepage to load
+        self.wait_for_element(By.ID, 'title')
