@@ -12,6 +12,7 @@ from flask import request
 
 from pyvirtualdisplay import Display
 import selenium
+from selenium.webdriver.common.by import By
 import pytest
 import werkzeug
 
@@ -66,6 +67,9 @@ class SeleniumTest(BaseTest):
         log = logging.getLogger('werkzeug')
         if not cls.RUN_INTERACTIVELY:
             log.disabled = True
+
+        # Replicate APP key setting from Server.run
+        cls.SERVER._app.secret_key = terrareg.config.Config().SECRET_KEY
 
         cls._werzeug_server = werkzeug.serving.make_server(
             "localhost",
@@ -126,3 +130,14 @@ class SeleniumTest(BaseTest):
                 else:
                     print('Failed to find element')
                     raise
+
+    def perform_admin_authentication(self, password):
+        """Go to admin page and authenticate as admin"""
+        self.selenium_instance.get(self.get_url('/login'))
+        token_input_field = self.selenium_instance.find_element(By.ID, 'admin_token_input')
+        token_input_field.send_keys(password)
+        login_button = self.selenium_instance.find_element(By.ID, 'login-button')
+        login_button.click()
+
+        # Wait for homepage to load
+        self.wait_for_element(By.ID, 'title')
