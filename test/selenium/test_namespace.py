@@ -49,6 +49,10 @@ class TestNamespace(SeleniumTest):
             lambda: self.selenium_instance.find_element(By.ID, 'provider-tos-null').text,
             ''
         )
+        self.assert_equals(
+            lambda: self.selenium_instance.find_element(By.ID, 'provider-tos-datadog').text,
+            'All \'Datadog\' modules are designed to work with Datadog. Modules are in no way affiliated with nor endorsed by Datadog Inc.'
+        )
 
         # Check logo for each module
         self.assert_equals(
@@ -68,6 +72,12 @@ class TestNamespace(SeleniumTest):
                 By.ID, 'real_providers.test-module.null.1.0.0'
             ).find_element(By.TAG_NAME, 'img').get_attribute('src'),
             self.get_url('/static/images/null.png')
+        )
+        self.assert_equals(
+            lambda: self.selenium_instance.find_element(
+                By.ID, 'real_providers.test-module.datadog.1.0.0'
+            ).find_element(By.TAG_NAME, 'img').get_attribute('src'),
+            self.get_url('/static/images/dd_logo_v_rgb.png')
         )
 
         # Ensure no logo is present for unknown provider

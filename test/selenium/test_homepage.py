@@ -46,8 +46,8 @@ class TestHomepage(SeleniumTest):
 
         # Ensure counts on page are correct
         assert self.selenium_instance.find_element(By.ID, 'namespace-count').text == '12'
-        assert self.selenium_instance.find_element(By.ID, 'module-count').text == '47'
-        assert self.selenium_instance.find_element(By.ID, 'version-count').text == '60'
+        assert self.selenium_instance.find_element(By.ID, 'module-count').text == '48'
+        assert self.selenium_instance.find_element(By.ID, 'version-count').text == '61'
         assert self.selenium_instance.find_element(By.ID, 'download-count').text == '2005'
 
     def test_latest_module_version(self):
