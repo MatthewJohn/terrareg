@@ -7,7 +7,6 @@
 <script>
     async function populatePageDetails() {
         let details = await getModuleDetails('{{ module_provider.id }}');
-        console.log(details);
 
         $.get(`/v1/modules/${details.module_provider_id}/downloads/summary`, function(data, status) {
             Object.keys(data.data.attributes).forEach((key) => {
