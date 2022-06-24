@@ -157,7 +157,6 @@ class ModuleExtractor:
 
     def _process_submodule(self, submodule: BaseSubmodule):
         """Process submodule."""
-        print('Processing submodule: {0}'.format(submodule.path))
         submodule_dir = safe_join_paths(self.extract_directory, submodule.path)
 
         tf_docs = self._run_terraform_docs(submodule_dir)
