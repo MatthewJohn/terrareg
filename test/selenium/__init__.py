@@ -34,6 +34,8 @@ class SeleniumTest(BaseTest):
     SELENIUM_INSTANCE = None
     RESET_COOKIES = True
 
+    RUN_INTERACTIVELY = False
+
     DEFAULT_RESOLUTION = (1280, 720)
 
     @staticmethod
@@ -52,8 +54,9 @@ class SeleniumTest(BaseTest):
 
         cls.SERVER.host = '127.0.0.1'
 
-        cls.display_instance = Display(visible=0, size=SeleniumTest.DEFAULT_RESOLUTION)
-        cls.display_instance.start()
+        if not cls.RUN_INTERACTIVELY:
+            cls.display_instance = Display(visible=0, size=SeleniumTest.DEFAULT_RESOLUTION)
+            cls.display_instance.start()
         cls.selenium_instance = selenium.webdriver.Firefox()
         cls.selenium_instance.delete_all_cookies()
         cls.selenium_instance.implicitly_wait(1)
@@ -61,7 +64,8 @@ class SeleniumTest(BaseTest):
         cls.SERVER.port = random.randint(5000, 6000)
 
         log = logging.getLogger('werkzeug')
-        log.disabled = True
+        if not cls.RUN_INTERACTIVELY:
+            log.disabled = True
 
         cls._werzeug_server = werkzeug.serving.make_server(
             "localhost",
@@ -76,7 +80,8 @@ class SeleniumTest(BaseTest):
     def teardown_class(cls):
         """Teardown display instance."""
         cls.selenium_instance.quit()
-        cls.display_instance.stop()
+        if not cls.RUN_INTERACTIVELY:
+            cls.display_instance.stop()
         # Shutdown server
         cls._werzeug_server.shutdown()
         cls._server_thread.join()
