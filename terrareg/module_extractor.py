@@ -17,7 +17,7 @@ import pathlib
 from werkzeug.utils import secure_filename
 import magic
 
-from terrareg.models import BaseSubmodule, Example, ModuleVersion, Submodule
+from terrareg.models import BaseSubmodule, Example, ExampleFile, ModuleVersion, Submodule
 from terrareg.database import Database
 from terrareg.errors import (
     UnableToProcessTerraformError,
@@ -184,15 +184,11 @@ class ModuleExtractor:
             with open(tf_file_path, 'r') as file_fd:
                 content = ''.join(file_fd.readlines())
 
-            # Insert example file into database
-            db = Database.get()
-            insert_statement = db._example_file.insert().values(
-                submodule_id=example.pk,
-                path=tf_file,
+            # Create example file and update content attribute
+            example_file = ExampleFile.create(example=example, path=tf_file)
+            example_file.update_attributes(
                 content=Database.encode_blob(content)
             )
-            with db.get_connection() as conn:
-                conn.execute(insert_statement)
 
     def _scan_submodules(self, subdirectory: str, submodule_class: Type[BaseSubmodule]):
         """Scan for submodules and extract details."""
