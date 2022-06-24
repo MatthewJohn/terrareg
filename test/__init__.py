@@ -76,7 +76,7 @@ class BaseTest:
     @classmethod
     def teardown_class(cls):
         """Empty method for inheritting classes to call super method."""
-        pass
+        cls.SERVER = None
 
     def setup_method(self, method):
         """Empty method for inheritting classes to call super method."""
