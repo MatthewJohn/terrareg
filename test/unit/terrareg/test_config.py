@@ -114,7 +114,11 @@ class TestConfig:
         ('TRUE', True),
         ('false', False),
         ('False', False),
-        ('FALSE', False)
+        ('FALSE', False),
+        ('0', False),
+        ('1', True),
+        ('yes', True),
+        ('no', False)
     ])
     @pytest.mark.parametrize('config_name', [
         'ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER',

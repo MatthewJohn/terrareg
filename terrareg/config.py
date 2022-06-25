@@ -1,6 +1,8 @@
 
 import os
 
+from terrareg.errors import InvalidBooleanConfigurationError
+
 class Config:
 
     @property
@@ -59,12 +61,12 @@ class Config:
         without specifying an identification string in
         the namespace
         """
-        return os.environ.get('ALLOW_UNIDENTIFIED_DOWNLOADS', 'False') == 'True'
+        return self.convert_boolean(os.environ.get('ALLOW_UNIDENTIFIED_DOWNLOADS', 'False'))
 
     @property
     def DEBUG(self):
         """Whether flask and sqlalchemy is setup in debug mode."""
-        return bool(os.environ.get('DEBUG', False))
+        return self.convert_boolean(os.environ.get('DEBUG', 'False'))
 
     @property
     def ANALYTICS_TOKEN_PHRASE(self):
@@ -137,7 +139,7 @@ class Config:
 
         Set to 'True' to disable the labels.
         """
-        return os.environ.get('DISABLE_TERRAREG_EXCLUSIVE_LABELS', 'False') == 'True'
+        return self.convert_boolean(os.environ.get('DISABLE_TERRAREG_EXCLUSIVE_LABELS', 'False'))
 
     @property
     def DELETE_EXTERNALLY_HOSTED_ARTIFACTS(self):
@@ -146,7 +148,7 @@ class Config:
         should be removed after analysis.
         If enabled, module versions with externally hosted artifacts cannot be re-analysed after upload.
         """
-        return os.environ.get('DELETE_EXTERNALLY_HOSTED_ARTIFACTS', 'False') == 'True'
+        return self.convert_boolean(os.environ.get('DELETE_EXTERNALLY_HOSTED_ARTIFACTS', 'False'))
 
     @property
     def ALLOW_MODULE_HOSTING(self):
@@ -154,7 +156,7 @@ class Config:
         Whether uploaded modules can be downloaded directly.
         If disabled, all modules must be configured with a git URL.
         """
-        return os.environ.get('ALLOW_MODULE_HOSTING', 'True') == 'True'
+        return self.convert_boolean(os.environ.get('ALLOW_MODULE_HOSTING', 'True'))
 
     @property
     def REQUIRED_MODULE_METADATA_ATTRIBUTES(self):
@@ -256,7 +258,7 @@ class Config:
 
         NOTE: Even whilst in an unpublished state, the module version can still be accessed directly, but not used within terraform.
         """
-        return os.environ.get('AUTO_PUBLISH_MODULE_VERSIONS', 'True') == 'True'
+        return self.convert_boolean(os.environ.get('AUTO_PUBLISH_MODULE_VERSIONS', 'True'))
 
     @property
     def AUTO_CREATE_MODULE_PROVIDER(self):
@@ -266,7 +268,7 @@ class Config:
 
         If disabled, modules must be created using the module provider create endpoint (or via the web interface).
         """
-        return os.environ.get('AUTO_CREATE_MODULE_PROVIDER', 'True') == 'True'
+        return self.convert_boolean(os.environ.get('AUTO_CREATE_MODULE_PROVIDER', 'True'))
 
     @property
     def MODULES_DIRECTORY(self):
@@ -330,14 +332,14 @@ class Config:
         """
         Whether module providers can specify their own git repository source.
         """
-        return os.environ.get('ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', 'True') == 'True'
+        return self.convert_boolean(os.environ.get('ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', 'True'))
 
     @property
     def ALLOW_CUSTOM_GIT_URL_MODULE_VERSION(self):
         """
         Whether module versions can specify git repository in terrareg config.
         """
-        return os.environ.get('ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', 'True') == 'True'
+        return self.convert_boolean(os.environ.get('ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', 'True'))
 
     @property
     def TERRAFORM_EXAMPLE_VERSION_TEMPLATE(self):
@@ -358,3 +360,12 @@ class Config:
 
         """
         return os.environ.get('TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '{major}.{minor}.{patch}')
+
+    def convert_boolean(self, string):
+        """Convert boolean environment variable to boolean."""
+        if string.lower() in ['true', 'yes', '1']:
+            return True
+        elif string.lower() in ['false', 'no', '0']:
+            return False
+
+        raise InvalidBooleanConfigurationError('Boolean config value not valid. Must be one of: true, yes, 1, false, no, 0')
