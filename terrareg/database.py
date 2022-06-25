@@ -157,6 +157,7 @@ class Database():
                 'git_provider_id',
                 sqlalchemy.ForeignKey(
                     'git_provider.id',
+                    name='fk_module_provider_git_provider_id_git_provider_id',
                     onupdate='CASCADE',
                     ondelete='SET NULL'),
                 nullable=True
@@ -165,6 +166,7 @@ class Database():
                 'latest_version_id',
                 sqlalchemy.ForeignKey(
                     'module_version.id',
+                    name='fk_module_provider_latest_version_id_module_version_id',
                     onupdate='CASCADE',
                     ondelete='SET NULL',
                     use_alter=True
@@ -180,6 +182,7 @@ class Database():
                 'module_provider_id',
                 sqlalchemy.ForeignKey(
                     'module_provider.id',
+                    name='fk_module_version_module_provider_id_module_provider_id',
                     onupdate='CASCADE',
                     ondelete='CASCADE'),
                 nullable=False
@@ -207,6 +210,7 @@ class Database():
                 'parent_module_version',
                 sqlalchemy.ForeignKey(
                     'module_version.id',
+                    name='fk_submodule_parent_module_version_module_version_id',
                     onupdate='CASCADE',
                     ondelete='CASCADE'),
                 nullable=False
@@ -244,6 +248,7 @@ class Database():
                 'submodule_id',
                 sqlalchemy.ForeignKey(
                     'submodule.id',
+                    name='fk_example_file_submodule_id_submodule_id',
                     onupdate='CASCADE',
                     ondelete='CASCADE'),
                 nullable=False
