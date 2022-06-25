@@ -1,5 +1,20 @@
 # Changelog
 
+# [2.15.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.14.0...v2.15.0) (2022-06-25)
+
+
+### Bug Fixes
+
+* Correct name of environment variable that is used to set EXAMPLES_DIRECTORY config ([8186f40](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8186f408f72039d4e7c8cd89ca27e14320e016ea)), closes [#141](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/141)
+* Fix ALLOW_UNIDENTIFIED_DOWNLOADS configuration to respect environment variable, rather than always returning False ([c8b895e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c8b895e4ddf4a4db8b74059fdd38a4296c71499f)), closes [#141](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/141)
+* Fix environment variable used to obtain API keys to publishing module versions ([d5d8f79](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/d5d8f796f61fef9b3d5d7324d32aaecee562ff2b)), closes [#141](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/141)
+* Hide 'publish' button from integrations tab of modules page if publish API keys have been enabled. ([8757f73](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8757f730c298f27574b5cd7e61c4f34002a5b560)), closes [#141](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/141)
+
+
+### Features
+
+* Use common method for obtaining boolean environment variables configs. ([f4d1d81](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f4d1d81cc97cb1e6ecaada237b5552acba94df3f)), closes [#141](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/141)
+
 # [2.14.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.13.1...v2.14.0) (2022-06-25)
 
 
