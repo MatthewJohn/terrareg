@@ -1,5 +1,17 @@
 # Changelog
 
+# [2.14.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.13.1...v2.14.0) (2022-06-25)
+
+
+### Bug Fixes
+
+* Update analaytics foreign key to module version to perform no action when module version is removed. ([757b500](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/757b500efa9f3b2732b7f0c71ca2aea28c1a157f)), closes [#153](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/153)
+
+
+### Features
+
+* Update module version deletion to remove any analytics and update re-creation of module version to migrate analytics to new module version ID ([2ee18e9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2ee18e9665750bd845cfee1e5346e786ea7a1b47)), closes [#153](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/153)
+
 ## [2.13.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.13.0...v2.13.1) (2022-06-25)
 
 
