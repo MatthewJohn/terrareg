@@ -225,15 +225,7 @@ class Database():
         self._analytics = sqlalchemy.Table(
             'analytics', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
-            sqlalchemy.Column(
-                'parent_module_version',
-                sqlalchemy.ForeignKey(
-                    'module_version.id',
-                    name='fk_analytics_parent_module_version_module_version_id',
-                    onupdate='CASCADE',
-                    ondelete='NO ACTION'),
-                nullable=False
-            ),
+            sqlalchemy.Column('parent_module_version', sqlalchemy.Integer, nullable=False),
             sqlalchemy.Column('timestamp', sqlalchemy.DateTime),
             sqlalchemy.Column('terraform_version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('analytics_token', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
