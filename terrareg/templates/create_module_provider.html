@@ -126,11 +126,11 @@
                 <div class="field">
                     <label class="label">Git tag format</label>
                     <div class="control">
-                        <input placeholder="v{version}" class="input" type="text" id="create-module-git-tag-format">
+                        <input required placeholder="v{version}" class="input" type="text" id="create-module-git-tag-format">
                     </div>
                     This value will be converted to the expected git tag for a module version.<br />
-                    {version} will be replaced by the actual module version.<br />
-                    For example <code>v{version}</code> will translate to a git tag 'v1.1.1' for module version '1.1.1'
+                    The <code>{version}</code> template will be replaced by the actual module version.<br />
+                    For example, using <code>v{version}</code> will translate to a git tag 'v1.1.1' for module version '1.1.1'
                 </div>
 
                 <div class="field">
