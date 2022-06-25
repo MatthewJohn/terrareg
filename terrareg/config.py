@@ -59,7 +59,7 @@ class Config:
         without specifying an identification string in
         the namespace
         """
-        return False
+        return os.environ.get('ALLOW_UNIDENTIFIED_DOWNLOADS', 'False') == 'True'
 
     @property
     def DEBUG(self):
