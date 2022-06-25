@@ -17,7 +17,7 @@ import pathlib
 from werkzeug.utils import secure_filename
 import magic
 
-from terrareg.models import BaseSubmodule, Example, ModuleVersion, Submodule
+from terrareg.models import BaseSubmodule, Example, ExampleFile, ModuleVersion, Submodule
 from terrareg.database import Database
 from terrareg.errors import (
     UnableToProcessTerraformError,
@@ -157,22 +157,15 @@ class ModuleExtractor:
 
     def _process_submodule(self, submodule: BaseSubmodule):
         """Process submodule."""
-        print('Processing submodule: {0}'.format(submodule.path))
         submodule_dir = safe_join_paths(self.extract_directory, submodule.path)
 
         tf_docs = self._run_terraform_docs(submodule_dir)
         readme_content = self._get_readme_content(submodule_dir)
 
-        db = Database.get()
-        insert_statement = db.sub_module.insert().values(
-            parent_module_version=self._module_version.pk,
-            type=submodule.TYPE,
-            path=submodule.path,
+        submodule.update_attributes(
             readme_content=Database.encode_blob(readme_content),
             module_details=Database.encode_blob(json.dumps(tf_docs))
         )
-        with db.get_connection() as conn:
-            conn.execute(insert_statement)
 
         if isinstance(submodule, Example):
             self._extract_example_files(example=submodule)
@@ -191,15 +184,11 @@ class ModuleExtractor:
             with open(tf_file_path, 'r') as file_fd:
                 content = ''.join(file_fd.readlines())
 
-            # Insert example file into database
-            db = Database.get()
-            insert_statement = db._example_file.insert().values(
-                submodule_id=example.pk,
-                path=tf_file,
+            # Create example file and update content attribute
+            example_file = ExampleFile.create(example=example, path=tf_file)
+            example_file.update_attributes(
                 content=Database.encode_blob(content)
             )
-            with db.get_connection() as conn:
-                conn.execute(insert_statement)
 
     def _scan_submodules(self, subdirectory: str, submodule_class: Type[BaseSubmodule]):
         """Scan for submodules and extract details."""
@@ -239,7 +228,7 @@ class ModuleExtractor:
 
         # Extract all submodules
         for submodule_path in submodules:
-            obj = submodule_class(
+            obj = submodule_class.create(
                 module_version=self._module_version,
                 module_path=submodule_path)
             self._process_submodule(submodule=obj)

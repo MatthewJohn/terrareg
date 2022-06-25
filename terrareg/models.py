@@ -1516,6 +1516,22 @@ class BaseSubmodule(TerraformSpecsObject):
 
         return cls(module_version=module_version, module_path=row['path'])
 
+    @classmethod
+    def create(cls, module_version: ModuleVersion, module_path: str):
+        """Create instance of object in database."""
+        # Create submodule
+        db = Database.get()
+        insert_statement = db.sub_module.insert().values(
+            parent_module_version=module_version.pk,
+            type=cls.TYPE,
+            path=module_path
+        )
+        with db.get_connection() as conn:
+            conn.execute(insert_statement)
+
+        # Return instance of object
+        return cls(module_version=module_version, module_path=module_path)
+
     @property
     def pk(self):
         """Return DB primary key."""
@@ -1560,6 +1576,18 @@ class BaseSubmodule(TerraformSpecsObject):
                 res = conn.execute(select)
                 self._cache_db_row = res.fetchone()
         return self._cache_db_row
+
+    def update_attributes(self, **kwargs):
+        """Update DB row."""
+        db = Database.get()
+        update = db.sub_module.update().where(
+            db.sub_module.c.id == self.pk
+        ).values(**kwargs)
+        with db.get_connection() as conn:
+            conn.execute(update)
+
+        # Remove cached DB row
+        self._cache_db_row = None
 
     def delete(self):
         """Delete submodule from DB."""
@@ -1627,13 +1655,28 @@ class Example(BaseSubmodule):
 
 class ExampleFile:
 
+    @classmethod
+    def create(cls, example: Example, path: str):
+        """Create instance of object in database."""
+        # Insert example file into database
+        db = Database.get()
+        insert_statement = db.example_file.insert().values(
+            submodule_id=example.pk,
+            path=path
+        )
+        with db.get_connection() as conn:
+            conn.execute(insert_statement)
+
+        # Return instance of object
+        return cls(example=example, path=path)
+
     @staticmethod
     def get_by_path(module_version: ModuleVersion, file_path: str):
         """Return example file object by file path and module version"""
         db = Database.get()
-        select = db._example_file.select().where(
-            db._module_version.c.id == module_version.pk,
-            db._example_file.c.path == file_path
+        select = db.example_file.select().where(
+            db.module_version.c.id == module_version.pk,
+            db.example_file.c.path == file_path
         )
         with db.get_connection() as conn:
             row = conn.execute(select).fetchone()
@@ -1671,11 +1714,22 @@ class ExampleFile:
         """Store identifying data."""
         self._example = example
         self._path = path
-        self._row_cache = None
+        self._cache_db_row = None
+
+    def __lt__(self, other):
+        """Implement less than for sorting example files."""
+        # If current file is main, it is always at the top, i.e. least value
+        if self.file_name == 'main.tf':
+            return True
+        # If other file is main.tf, this file is more
+        elif other.file_name == 'main.tf':
+            return False
+
+        return (self.file_name < other.file_name)
 
     def _get_db_row(self):
         """Return DB row for git provider."""
-        if self._row_cache is None:
+        if self._cache_db_row is None:
             db = Database.get()
             # Obtain row from git providers table for git provider.
             select = db.example_file.select().where(
@@ -1685,7 +1739,7 @@ class ExampleFile:
             with db.get_connection() as conn:
                 res = conn.execute(select)
                 return res.fetchone()
-        return self._row_cache
+        return self._cache_db_row
 
     def _replace_example_file_source(self, server_hostname):
         """Replace single 'source' line in example file."""
@@ -1724,6 +1778,18 @@ class ExampleFile:
                 version_string=self._example._module_version.get_terraform_example_version_string()
             )
         return callback
+
+    def update_attributes(self, **kwargs):
+        """Update DB row."""
+        db = Database.get()
+        update = db.example_file.update().where(
+            db.example_file.c.id == self.pk
+        ).values(**kwargs)
+        with db.get_connection() as conn:
+            conn.execute(update)
+
+        # Remove cached DB row
+        self._cache_db_row = None
 
     def delete(self):
         """Delete example file from DB."""
