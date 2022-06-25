@@ -226,7 +226,7 @@ class Database():
                 sqlalchemy.ForeignKey(
                     'module_version.id',
                     onupdate='CASCADE',
-                    ondelete='CASCADE'),
+                    ondelete='NO ACTION'),
                 nullable=False
             ),
             sqlalchemy.Column('timestamp', sqlalchemy.DateTime),
