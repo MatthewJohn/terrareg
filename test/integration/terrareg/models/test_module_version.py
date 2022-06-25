@@ -4,7 +4,7 @@ import pytest
 import sqlalchemy
 from terrareg.database import Database
 
-from terrareg.models import Module, Namespace, ModuleProvider, ModuleVersion
+from terrareg.models import Example, ExampleFile, Module, Namespace, ModuleProvider, ModuleVersion
 import terrareg.errors
 from test.integration.terrareg import TerraregIntegrationTest
 
@@ -230,3 +230,57 @@ class TestModuleVersion(TerraregIntegrationTest):
             module_version = ModuleVersion(module_provider=module_provider, version=version)
             module_version.prepare_module()
             assert module_version.get_terraform_example_version_string() == expected_string
+
+    def test_delete(self):
+        """Test deletion of module version."""
+        namespace = Namespace(name='testnamespace')
+        module = Module(namespace=namespace, name='wrongversionorder')
+        module_provider = ModuleProvider.get(module=module, name='testprovider')
+
+        existing_module_versions = [v.version for v in module_provider.get_versions()]
+        assert '2.5.5' not in existing_module_versions
+
+        # Create test module version
+        module_version = ModuleVersion(module_provider=module_provider, version='2.5.5')
+        module_version.prepare_module()
+        module_version.publish()
+        module_version_pk = module_version.pk
+
+        new_versions = [v.version for v in module_provider.get_versions()]
+        assert '2.5.5' in new_versions
+        assert len(new_versions) == (len(existing_module_versions) + 1)
+
+        # Create example and files
+        example = Example.create(module_version=module_version, module_path='examples/test_example')
+        example_pk = example.pk
+        example_file = ExampleFile.create(example=example, path='main.tf')
+        example_file_pk = example_file.pk
+
+        # Ensure that all of the rows can be fetched
+        db = Database.get()
+        with db.get_connection() as conn:
+
+            res = conn.execute(db.module_version.select().where(db.module_version.c.id==module_version_pk))
+            assert res.fetchone() is not None
+
+            res = conn.execute(db.sub_module.select().where(db.sub_module.c.id==example_pk))
+            assert res.fetchone() is not None
+
+            res = conn.execute(db.example_file.select().where(db.example_file.c.id==example_file_pk))
+            assert res.fetchone() is not None
+
+        # Delete module version
+        module_version.delete()
+
+        # Check module_version, example and example file have been removed
+        with db.get_connection() as conn:
+
+            res = conn.execute(db.module_version.select().where(db.module_version.c.id==module_version_pk))
+            assert res.fetchone() is None
+
+            res = conn.execute(db.sub_module.select().where(db.sub_module.c.id==example_pk))
+            assert res.fetchone() is None
+
+            res = conn.execute(db.example_file.select().where(db.example_file.c.id==example_file_pk))
+            assert res.fetchone() is None
+
