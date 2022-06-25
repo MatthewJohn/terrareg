@@ -218,7 +218,7 @@ class Config:
         """
         return [
             token
-            for token in os.environ.get('UPLOAD_API_KEYS', '').split(',')
+            for token in os.environ.get('PUBLISH_API_KEYS', '').split(',')
             if token
         ]
 
