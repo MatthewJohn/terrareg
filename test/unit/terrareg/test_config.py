@@ -1,7 +1,6 @@
 
-import subprocess
-from unittest.main import MODULE_EXAMPLES
 import unittest.mock
+import re
 
 import pytest
 
@@ -10,6 +9,40 @@ import terrareg.config
 
 class TestConfig:
     """Test Config class."""
+
+    @classmethod
+    def setup_class(cls):
+        """Setup class"""
+        # Create list to hold all tested variables
+        cls.tested_variables = []
+
+    @classmethod
+    def teardown_class(cls):
+        """Ensure that all configs from Config class have been tested."""
+        valid_config_re = re.compile(r'^[A-Z]')
+
+        untested_properties = []
+
+        for prop in dir(terrareg.config.Config):
+
+            # Check if attribute looks like a config variable
+            if not valid_config_re.match(prop):
+                continue
+
+            # If property has not been tested, add to list of untested configs
+            if prop not in cls.tested_variables:
+                untested_properties.append(prop)
+
+        # Assert that there were no untested configs
+        if untested_properties:
+            print('Untested configs: ', untested_properties)
+        assert untested_properties == []
+
+    @classmethod
+    def register_checked_config(cls, config):
+        """Register a config item as having been tested."""
+        if config not in cls.tested_variables:
+            cls.tested_variables.append(config)
 
     @pytest.mark.parametrize('config_name,override_expected_value', [
         ('ADMIN_AUTHENTICATION_TOKEN', None),
@@ -33,6 +66,7 @@ class TestConfig:
     ])
     def test_string_configs(self, config_name, override_expected_value):
         """Test string configs to ensure they are overriden with environment variables."""
+        self.register_checked_config(config_name)
         with unittest.mock.patch('os.environ', {config_name: 'unittest-value'}):
             assert getattr(terrareg.config.Config(), config_name) == (override_expected_value if override_expected_value is not None else 'unittest-value')
 
@@ -42,6 +76,7 @@ class TestConfig:
     ])
     def test_integer_configs(self, config_name):
         """Test integer configs to ensure they are overriden with environment variables."""
+        self.register_checked_config(config_name)
         with unittest.mock.patch('os.environ', {config_name: '582612'}):
             assert getattr(terrareg.config.Config(), config_name) == 582612
 
@@ -68,6 +103,7 @@ class TestConfig:
     ])
     def test_list_configs(self, config_name, test_value, expected_value):
         """Test list configs to ensure they are overriden with environment variables."""
+        self.register_checked_config(config_name)
         # Check that input value produces expected list value
         with unittest.mock.patch('os.environ', {config_name: test_value}):
             assert getattr(terrareg.config.Config(), config_name) == expected_value
@@ -93,6 +129,7 @@ class TestConfig:
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
         """Test boolean configs to ensure they are overriden with environment variables."""
+        self.register_checked_config(config_name)
         # Check that input value generates the expected boolean value
         with unittest.mock.patch('os.environ', {config_name: test_value}):
             assert getattr(terrareg.config.Config(), config_name) is expected_value
