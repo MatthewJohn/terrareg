@@ -1,5 +1,21 @@
 # Changelog
 
+# [2.13.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.12.1...v2.13.0) (2022-06-25)
+
+
+### Bug Fixes
+
+* Require a value for the 'Git tag format' field and reword the description in the module creation page. ([9afb2b4](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9afb2b43bc24f114b5f6b04b4bd3f3f233ae1784)), closes [#152](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/152)
+
+
+### Features
+
+* Add ability to delete module version in UI from settings tab of module provider ([c88c24f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c88c24f6a9f1cf9df64360462f89c19892458c83)), closes [#145](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/145)
+* Add API endpoint to delete module version ([9cc5256](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9cc5256f7b6cecd52820fa408af6d075269e3fd7)), closes [#145](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/145)
+* Automatically hide the custom git/browse URL inputs in create module page when selecting a none-custom git provider ([0d5a148](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0d5a148a5be0d93bcd7b90df1e53c54b911a8294)), closes [#152](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/152)
+* Move main.tf to top of list of example files in UI. ([5a4faa2](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5a4faa2b9e6b9e28965f86983164e8e38c189687))
+* Update example UI page to default to show example files ([ffe1566](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ffe1566821ebfb1a465fabc1e8f88dc5d4394db6)), closes [#146](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/146)
+
 ## [2.12.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.12.0...v2.12.1) (2022-06-15)
 
 
