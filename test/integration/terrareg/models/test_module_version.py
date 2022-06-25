@@ -1,7 +1,9 @@
 
+from datetime import datetime
 import unittest.mock
 import pytest
 import sqlalchemy
+from terrareg.analytics import AnalyticsEngine
 from terrareg.database import Database
 
 from terrareg.models import Example, ExampleFile, Module, Namespace, ModuleProvider, ModuleVersion
@@ -154,6 +156,16 @@ class TestModuleVersion(TerraregIntegrationTest):
                 content=None
             ))
 
+            # Create download analytics
+            conn.execute(db.analytics.insert().values(
+                id=10005,
+                parent_module_version=10001,
+                timestamp=datetime.now(),
+                terraform_version='1.0.0',
+                analytics_token='unittest-download',
+                auth_token='abcefg',
+                environment='test'
+            ))
 
         namespace = Namespace(name='testcreation')
         module = Module(namespace=namespace, name='test-module')
@@ -210,6 +222,17 @@ class TestModuleVersion(TerraregIntegrationTest):
             ))
             assert [r for r in example_file_res] == []
 
+            # Ensure analytics are retained
+            analytics_res = conn.execute(db.analytics.select().where(
+                db.analytics.c.id==10005
+            ))
+            analytics_res = list(analytics_res)
+            assert len(analytics_res) == 1
+            assert analytics_res[0]['id'] == 10005
+            # Assert that analytics row has been updated to new module version ID
+            assert analytics_res[0]['parent_module_version'] == new_db_row['id']
+            assert analytics_res[0]['environment'] == 'test'
+
 
     @pytest.mark.parametrize('template,version,expected_string', [
         ('= {major}.{minor}.{patch}', '1.5.0', '= 1.5.0'),
@@ -256,6 +279,15 @@ class TestModuleVersion(TerraregIntegrationTest):
         example_file = ExampleFile.create(example=example, path='main.tf')
         example_file_pk = example_file.pk
 
+        # Create analytics
+        AnalyticsEngine.record_module_version_download(
+            module_version=module_version,
+            terraform_version='1.0.0',
+            analytics_token='unittest',
+            user_agent='',
+            auth_token=None
+        )
+
         # Ensure that all of the rows can be fetched
         db = Database.get()
         with db.get_connection() as conn:
@@ -268,6 +300,12 @@ class TestModuleVersion(TerraregIntegrationTest):
 
             res = conn.execute(db.example_file.select().where(db.example_file.c.id==example_file_pk))
             assert res.fetchone() is not None
+
+            analytics_row_id = conn.execute(
+                db.analytics.select().where(
+                    db.analytics.c.parent_module_version==module_version_pk
+                )
+            ).fetchone()['id']
 
         # Delete module version
         module_version.delete()
@@ -284,3 +322,10 @@ class TestModuleVersion(TerraregIntegrationTest):
             res = conn.execute(db.example_file.select().where(db.example_file.c.id==example_file_pk))
             assert res.fetchone() is None
 
+            # Ensure that the analytics has been removed
+            analytics_res = conn.execute(
+                db.analytics.select().where(
+                    db.analytics.c.id==analytics_row_id
+                )
+            )
+            assert analytics_res.fetchone() is None
