@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.13.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.13.0...v2.13.1) (2022-06-25)
+
+
+### Bug Fixes
+
+* Update basic usage and usage builder rendered terraform to use 2-space indentation, rather than 4, as per terraform best practices ([2c93eab](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2c93eab105bbbd907c79fc3fc3510a073e4c7369)), closes [#151](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/151)
+
 # [2.13.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.12.1...v2.13.0) (2022-06-25)
 
 
