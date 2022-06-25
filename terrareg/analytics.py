@@ -264,3 +264,25 @@ class AnalyticsEngine:
                     token_version_mapping[token]['terraform_version'] = terraform_version
 
         return token_version_mapping
+
+    @classmethod
+    def delete_analaytics_for_module_version(cls, module_version):
+        """Delete all analytics for given module version."""
+        db = Database.get()
+
+        with db.get_connection() as conn:
+            conn.execute(db.analytics.delete().where(
+                db.analytics.c.parent_module_version == module_version.pk
+            ))
+
+    @classmethod
+    def migrate_analaytics_to_new_module_version(cls, old_version_version_pk, new_module_version):
+        """Migrate all analytics for old module version ID to new module version."""
+        db = Database.get()
+
+        with db.get_connection() as conn:
+            conn.execute(db.analytics.update().where(
+                db.analytics.c.parent_module_version == old_version_version_pk
+            ).values(
+                parent_module_version=new_module_version.pk
+            ))

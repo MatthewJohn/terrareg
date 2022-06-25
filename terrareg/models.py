@@ -1418,13 +1418,16 @@ class ModuleVersion(TerraformSpecsObject):
         # Clear cached DB row
         self._cache_db_row = None
 
-    def delete(self):
+    def delete(self, delete_related_analytics=True):
         """Delete module version and all associated submodules."""
         for example in self.get_examples():
             example.delete()
 
         for submodule in self.get_submodules():
             submodule.delete()
+
+        if delete_related_analytics:
+            terrareg.analytics.AnalyticsEngine.delete_analaytics_for_module_version(self)
 
         db = Database.get()
 
@@ -1449,8 +1452,10 @@ class ModuleVersion(TerraformSpecsObject):
         db = Database.get()
 
         # Delete pre-existing version, if it exists
+        old_module_version_pk = None
         if self._get_db_row():
-            self.delete()
+            old_module_version_pk = self.pk
+            self.delete(delete_related_analytics=False)
 
         with db.get_connection() as conn:
             # Insert new module into table
@@ -1462,6 +1467,12 @@ class ModuleVersion(TerraformSpecsObject):
                 internal=False
             )
             conn.execute(insert_statement)
+
+        # Migrate analaytics from old module version ID to new module version
+        if old_module_version_pk is not None:
+            terrareg.analytics.AnalyticsEngine.migrate_analaytics_to_new_module_version(
+                old_version_version_pk=old_module_version_pk,
+                new_module_version=self)
 
     def get_submodules(self):
         """Return list of submodules."""
