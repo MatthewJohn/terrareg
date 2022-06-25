@@ -218,10 +218,10 @@
 
             <pre>
 module "{{ module.name }}" {
-    source  = "{{ server_hostname }}/{{ EXAMPLE_ANALYTICS_TOKEN }}__{{ current_module.registry_id }}"
-    version = "{{ module_version.get_terraform_example_version_string() }}"
+  source  = "{{ server_hostname }}/{{ EXAMPLE_ANALYTICS_TOKEN }}__{{ current_module.registry_id }}"
+  version = "{{ module_version.get_terraform_example_version_string() }}"
 
-    # Provide variables here
+  # Provide variables here
 }</pre>
         </div>
     </div>
@@ -869,13 +869,13 @@ module "{{ module.name }}" {
                 var_input = usageBuilderQuoteString(var_input);
             }
 
-            output_tf += `\n    ${input_variable.name} = ${var_input}`;
+            output_tf += `\n  ${input_variable.name} = ${var_input}`;
         });
 
 
         $('#usageBuilderOutput').html(`${additional_content}module "{{ module.name }}" {
-    source  = "{{ server_hostname }}/${analytics_token}__{{ current_module.registry_id }}"
-    version = "{{ module_version.get_terraform_example_version_string() }}"
+  source  = "{{ server_hostname }}/${analytics_token}__{{ current_module.registry_id }}"
+  version = "{{ module_version.get_terraform_example_version_string() }}"
 ${output_tf}
 }`);
     }
