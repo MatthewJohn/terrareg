@@ -2,6 +2,7 @@
 from datetime import datetime
 import functools
 import os
+import unittest.mock
 
 import pytest
 
@@ -57,7 +58,8 @@ class BaseTest:
         BaseTest.INSTANCE_ = cls
 
         database_url = os.environ.get('INTEGRATION_DATABASE_URL', 'sqlite:///{}'.format(cls._get_database_path()))
-        terrareg.config.Config.DATABASE_URL = database_url
+        cls.database_config_url_mock = unittest.mock.patch('terrareg.config.Config.DATABASE_URL', database_url)
+        cls.database_config_url_mock.start()
 
         # Remove any pre-existing database files
         if os.path.isfile(cls._get_database_path()):
@@ -77,6 +79,7 @@ class BaseTest:
     def teardown_class(cls):
         """Empty method for inheritting classes to call super method."""
         cls.SERVER = None
+        cls.database_config_url_mock.stop()
 
     def setup_method(self, method):
         """Empty method for inheritting classes to call super method."""

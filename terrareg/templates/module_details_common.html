@@ -619,11 +619,12 @@ module "{{ module.name }}" {
                 <div class="control">
                     <input id="indexModuleVersion" class="input is-small" type="text" size="5" placeholder="1.0.0">
                 </div>
-                <label class="checkbox">
+                <label class="checkbox" {% if config.PUBLISH_API_KEYS %}style="display: none;"{% endif %}>
                     <input id="indexModuleVersionPublish" type="checkbox" value="true">
                     Publish
                 </label>
                 <div class="control">
+                    <br />
                     <a onclick="indexModuleVersion();" class="button is-info is-small">
                     Index Version
                     </a>
