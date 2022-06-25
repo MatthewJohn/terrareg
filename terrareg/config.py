@@ -290,7 +290,7 @@ class Config:
 
         E.g. If EXAMPLES_DIRECTORY is set to `examples`, with the root module, the following would be expected for an example: `examples/myexample/main.tf`.
         """
-        return os.environ.get('MODULES_DIRECTORY', 'examples')
+        return os.environ.get('EXAMPLES_DIRECTORY', 'examples')
 
     @property
     def GIT_PROVIDER_CONFIG(self):
