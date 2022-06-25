@@ -17,44 +17,44 @@ depends_on = None
 
 foreign_keys = [
     # op.drop_constraint('example_file_ibfk_1', 'example_file', type_='foreignkey')
-    # op.create_foreign_key('fk_example_file_submodule_id_submodule_id', 'example_file', 'submodule', ['submodule_id'], ['id'], onupdate='SET NULL', ondelete='CASCADE')
+    # op.create_foreign_key('fk_example_file_submodule_id_submodule_id', 'example_file', 'submodule', ['submodule_id'], ['id'], onupdate='CASCADE', ondelete='CASCADE')
     {
         'old_name': 'example_file_ibfk_1', 'new_name': 'fk_example_file_submodule_id_submodule_id',
         'table': 'example_file', 'columns': ['submodule_id'],
         'other_table': 'submodule', 'other_columns': ['id'],
-        'onupdate': 'SET NULL', 'ondelete': 'CASCADE'
+        'onupdate': 'CASCADE', 'ondelete': 'CASCADE'
     },
     # op.drop_constraint('latest_version_id', 'module_provider', type_='foreignkey')
-    # op.create_foreign_key('fk_module_provider_latest_version_id_module_version_id', 'module_provider', 'module_version', ['latest_version_id'], ['id'], onupdate='SET NULL', ondelete='SET NULL', use_alter=True)
+    # op.create_foreign_key('fk_module_provider_latest_version_id_module_version_id', 'module_provider', 'module_version', ['latest_version_id'], ['id'], onupdate='CASCADE', ondelete='SET NULL', use_alter=True)
     {
         'old_name': 'latest_version_id', 'new_name': 'fk_module_provider_latest_version_id_module_version_id',
         'table': 'module_provider', 'columns': ['latest_version_id'],
         'other_table': 'module_version', 'other_columns': ['id'],
-        'onupdate': 'SET NULL', 'ondelete': 'SET NULL'
+        'onupdate': 'CASCADE', 'ondelete': 'SET NULL'
     },
     # op.drop_constraint('module_provider_ibfk_1', 'module_provider', type_='foreignkey')
-    # op.create_foreign_key('fk_module_provider_git_provider_id_git_provider_id', 'module_provider', 'git_provider', ['git_provider_id'], ['id'], onupdate='SET NULL', ondelete='SET NULL')
+    # op.create_foreign_key('fk_module_provider_git_provider_id_git_provider_id', 'module_provider', 'git_provider', ['git_provider_id'], ['id'], onupdate='CASCADE', ondelete='SET NULL')
     {
         'old_name': 'module_provider_ibfk_1', 'new_name': 'fk_module_provider_git_provider_id_git_provider_id',
         'table': 'module_provider', 'columns': ['git_provider_id'],
         'other_table': 'git_provider', 'other_columns': ['id'],
-        'onupdate': 'SET NULL', 'ondelete': 'SET NULL'
+        'onupdate': 'CASCADE', 'ondelete': 'SET NULL'
     },
     # op.drop_constraint('module_version_ibfk_1', 'module_version', type_='foreignkey')
-    # op.create_foreign_key('fk_module_version_module_provider_id_module_provider_id', 'module_version', 'module_provider', ['module_provider_id'], ['id'], onupdate='SET NULL', ondelete='CASCADE')
+    # op.create_foreign_key('fk_module_version_module_provider_id_module_provider_id', 'module_version', 'module_provider', ['module_provider_id'], ['id'], onupdate='CASCADE', ondelete='CASCADE')
     {
         'old_name': 'module_version_ibfk_1', 'new_name': 'fk_module_version_module_provider_id_module_provider_id',
         'table': 'module_version', 'columns': ['module_provider_id'],
         'other_table': 'module_provider', 'other_columns': ['id'],
-        'onupdate': 'SET NULL', 'ondelete': 'CASCADE'
+        'onupdate': 'CASCADE', 'ondelete': 'CASCADE'
     },
     # op.drop_constraint('submodule_ibfk_1', 'submodule', type_='foreignkey')
-    # op.create_foreign_key('fk_submodule_parent_module_version_module_version_id', 'submodule', 'module_version', ['parent_module_version'], ['id'], onupdate='SET NULL', ondelete='CASCADE')
+    # op.create_foreign_key('fk_submodule_parent_module_version_module_version_id', 'submodule', 'module_version', ['parent_module_version'], ['id'], onupdate='CASCADE', ondelete='CASCADE')
     {
         'old_name': 'submodule_ibfk_1', 'new_name': 'fk_submodule_parent_module_version_module_version_id',
         'table': 'submodule', 'columns': ['parent_module_version'],
         'other_table': 'module_version', 'other_columns': ['id'],
-        'onupdate': 'SET NULL', 'ondelete': 'CASCADE'
+        'onupdate': 'CASCADE', 'ondelete': 'CASCADE'
     }
 ]
 
