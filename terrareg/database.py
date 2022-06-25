@@ -225,6 +225,7 @@ class Database():
                 'parent_module_version',
                 sqlalchemy.ForeignKey(
                     'module_version.id',
+                    name='fk_analytics_parent_module_version_module_version_id',
                     onupdate='CASCADE',
                     ondelete='NO ACTION'),
                 nullable=False
