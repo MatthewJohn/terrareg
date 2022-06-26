@@ -1,90 +1,89 @@
-{% extends 'module_details_common.html' %}
+{% extends 'template.html' %}
 
-{% block module_breadcrumb %}
-<li class="is-active"><a href="/modules/{{ namespace.name }}/{{ module.name }}/{{ module_provider.name }}">{{ module_provider.name }}</a></li>
-{% endblock %}
+{% block content %}
 
-{% block main_details %}
+<script>
 
-    {% if module_version %}
-    <section>
-        Version
-        <div class="select is-small">
-            <select autocomplete="off" onchange="selectVersion(event);">
-                {% for module_version_itx in module_provider.get_versions(include_beta=False) %}
-                <option
-                        value="{{ module_version_itx.get_view_url() }}"
-                        {% if module_version_itx.version == module_version.version %}selected{% endif %}
-                        >
-                    {{ module_version_itx.version }}{% if module_version_itx.version == module_provider.get_latest_version().version %} (latest){% endif %}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-    </section>
-    {% endif %}
+    function renderPage() {
+        const router = new Navigo('/');
 
-    <p id="module-title" class="title">
-        {{ module.name }}
-    </p>
-    <p class="subtitle">
-        Provider: {{ module_provider.name }}
-    </p>
+        const baseRoute = '/modules/:namespace/:module/:provider';
 
-    {% if module_version %}
+        // Base module provider route
+        router.on(baseRoute, function ({ data }) {
+            let id = getCurrentObjectId(data);
 
-        {% if not module_version.published %}
-        <p class="subtitle">
-            <b>WARNING:</b> This version of the module is not published.
-        </p>
-        {% endif %}
+            createBreadcrumbs(data);
+        });
+        // Base module version route
+        router.on(baseRoute + '/:version', function ({ data }) {
+            let id = getCurrentObjectId(data);
 
-        <p class="subtitle">
-            {% if module_version.description %}{{ module_version.description }}{% else %}No description provided{% endif %}
-        </p>
-        <p>Published {{ module_version.publish_date_display }} by <a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></p>
-        <p>{% if module_version.owner %}Module managed by {{ module_version.owner }}{% endif %}</p>
-        <p>{% if module_version.get_source_browse_url() %}Source Code: <a href="{{ module_version.get_source_browse_url() }}">{{ module_version.get_source_browse_url() }}</a>{% endif %}</p>
+            createBreadcrumbs(data);
+        });
 
-        <br />
+        router.resolve();
+    }
 
-        {% if module_version.is_submodule %}
-            <button>Back to parent</button>
-        {% else %}
+    function getCurrentObjectId(data) {
+        let id = `${data.namespace}/${data.module}/${data.provider}`;
 
-            {% if module_version.get_submodules() %}
-            <section>
-                <div class="select is-small">
-                    <select autocomplete="off" onchange="selectSubmodule(event);">
-                        <option value="none">Select submodule</option>
-                        {% for submodule in module_version.get_submodules() %}
-                        <option value="{{ submodule.get_view_url() }}">{{ submodule.path }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </section>
-            {% endif %}
+        if (data.version) {
+            id += `/${data.version}`;
+        }
 
-            <br />
-            {% if module_version.get_examples() %}
-            <section>
-                <div class="select is-small">
-                    <select autocomplete="off" onchange="selectSubmodule(event);">
-                        <option value="none">Select example</option>
-                        {% for example in module_version.get_examples() %}
-                        <option value="{{ example.get_view_url() }}">{{ example.path }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </section>
-            {% endif %}
-        {% endif %}
+        return id;
+    }
 
-    {% else %}
-    <p>There are no published versions of this module.</p>
-    {% endif %}
+    async function loadModuleProviderDetails(data) {
+        let details = await getModuleDetails(getCurrentObjectId(data));
+    }
 
-    <br />
-    <br />
+    function createBreadcrumbs(data) {
+        let breadcrumbs = [
+            'Modules',
+            data.namespace,
+            data.module,
+            data.provider
+        ]
+        if (data.version) {
+            breadcrumbs.push(data.version);
+        }
+
+        let breadcrumbUl = $('#breadcrumb-ul');
+        let currentLink = '';
+        breadcrumbs.forEach((breadcrumbName, itx) => {
+            // Create UL item for breadcrumb
+            let breadcrumbLiObject = $('<li></li>');
+
+            // Create link to current breadcrumb item
+            currentLink += `/${breadcrumbName}`;
+
+            // Create link for breadcrumb
+            let breadcrumbLink = $(`<a></a>`);
+            breadcrumbLink.attr('href', currentLink);
+            breadcrumbLink.text(breadcrumbName);
+
+            // If hitting last breadcrumb, set as active
+            if (itx == (breadcrumbs.length - 1)) {
+                breadcrumbLiObject.addClass('is-active');
+            }
+
+            breadcrumbLiObject.append(breadcrumbLink);
+
+            // Add breadcrumb item to to list
+            breadcrumbUl.append(breadcrumbLiObject);
+        })
+    }
+
+    $(document).ready(function () {
+        renderPage();
+    });
+</script>
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul id="breadcrumb-ul">
+    </ul>
+</nav>
 
 {% endblock %}
