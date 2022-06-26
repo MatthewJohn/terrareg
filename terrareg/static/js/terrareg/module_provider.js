@@ -65,6 +65,18 @@ function timeDifference(previous) {
     }
 }
 
+async function addProviderLogoTos(provider) {
+    let provider_logos = await getProviderLogos();
+
+    // Add provider TOS to results, if not already there
+    if ($('#provider-tos-' + provider).length == 0) {
+        let tos_object = document.createElement('p');
+        tos_object.id = `provider-tos-${provider}`;
+        tos_object.innerHTML = provider_logos[provider].tos;
+        $('#provider-tos')[0].append(tos_object);
+    }
+}
+
 async function createSearchResultCard(parent_id, module) {
 
     let provider_logos = await getProviderLogos();
@@ -78,14 +90,7 @@ async function createSearchResultCard(parent_id, module) {
                 <img style="margin: 5px" height="40" width="40" alt="${provider_logo_details.alt}" src="${provider_logo_details.source}" />
             </a>
         `;
-
-        // Add provider TOS to results, if not already there
-        if ($('#provider-tos-' + module.provider).length == 0) {
-            let tos_object = document.createElement('p');
-            tos_object.id = `provider-tos-${module.provider}`;
-            tos_object.innerHTML = provider_logo_details.tos;
-            $('#provider-tos')[0].append(tos_object);
-        }
+        addProviderLogoTos(module.provider);
     }
 
     // Replace slashes in ID with full stops

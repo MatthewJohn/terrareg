@@ -11,15 +11,11 @@
 
         // Base module provider route
         router.on(baseRoute, function ({ data }) {
-            let id = getCurrentObjectId(data);
-
-            createBreadcrumbs(data);
+            setupBasePage(data);
         });
         // Base module version route
         router.on(baseRoute + '/:version', function ({ data }) {
-            let id = getCurrentObjectId(data);
-
-            createBreadcrumbs(data);
+            setupBasePage(data);
         });
 
         router.resolve();
@@ -35,8 +31,36 @@
         return id;
     }
 
-    async function loadModuleProviderDetails(data) {
-        let details = await getModuleDetails(getCurrentObjectId(data));
+    async function setProviderLogo(moduleDetails) {
+        let providerLogos = await getProviderLogos();
+        console.log(providerLogos);
+
+        // Check if namespace has a logo
+        if (providerLogos[moduleDetails.provider] !== undefined) {
+            let logoDetails = providerLogos[moduleDetails.provider];
+
+            let logoLink = $('#provider-logo-link');
+            logoLink.attr('href', logoDetails.link);
+
+            let logoImg = $('#provider-logo-img');
+            logoImg.attr('src', logoDetails.source);
+            logoImg.attr('alt', logoDetails.alt);
+
+            addProviderLogoTos(moduleDetails.provider);
+
+            logoLink.show();
+        }
+    }
+
+    async function setupBasePage(data) {
+        createBreadcrumbs(data);
+
+        let id = getCurrentObjectId(data);
+
+        let moduleDetails = await getModuleDetails(id);
+        //let terraregModuleDetails = await getTerraregModuleDetails(id);
+
+        setProviderLogo(moduleDetails);
     }
 
     function createBreadcrumbs(data) {
@@ -85,5 +109,80 @@
     <ul id="breadcrumb-ul">
     </ul>
 </nav>
+
+
+<div class="columns is-centered" style="background-color: #f9f9f9; padding-top: 30px; padding-bottom: 30px;">
+
+    <a id="provider-logo-link" style="margin-top: 30px; max-height: 150px; display: none;" href="">
+        <img id="provider-logo-img" height="150" width="150" alt="" src="" />
+    </a>
+
+    <div class="column is-one-third">
+        {% block main_details %}{% endblock %}
+    </div>
+
+    {% if module_version %}
+    <div class="column is-one-third">
+
+        {% if not current_module.is_submodule %}
+        <div class="box">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Module Downloads</th>
+                        <th>
+                            <span class="tag is-warning is-light">All Versions</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Downloads this week</td>
+                        <td id="downloads-week"></td>
+                    </tr>
+                    <tr>
+                        <td>Downloads this month</td>
+                        <td id="downloads-month"></td>
+                    </tr>
+                    <tr>
+                        <td>Downloads this year</td>
+                        <td id="downloads-year"></td>
+                    </tr>
+                    <tr>
+                        <td>Downloads over all time</td>
+                        <td id="downloads-total"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <script>
+
+        </script>
+        <div class="box">
+            <h5 class="title is-5">Usage</h5>
+            <div class="content">
+                To use this module:
+                <ol>
+                    <li>Add the following example to your terraform,</li>
+                    <li>Ensure the "{{ EXAMPLE_ANALYTICS_TOKEN }}" placeholder must be replaced with your '{{ ANALYTICS_TOKEN_PHRASE }}',               </li>
+                    <li>Add the required inputs - use the '<a onclick="selectModuleTab('usage-builder')">Usage Builder</a>' tab for help and 'Inputs' tab for a full list.</li>
+                </ol>
+            </div>
+
+            <pre>
+module "{{ module.name }}" {
+  source  = "{{ server_hostname }}/{{ EXAMPLE_ANALYTICS_TOKEN }}__{{ current_module.registry_id }}"
+  version = "{{ module_version.get_terraform_example_version_string() }}"
+
+  # Provide variables here
+}</pre>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+
 
 {% endblock %}
