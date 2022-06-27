@@ -335,6 +335,259 @@
     }
 
     /*
+     * Populate README tab content and tab link, if README is available
+     *
+     * @param moduleDetails Terrareg module details
+     */
+    function populateReadmeContent(moduleDetails) {
+        $.get(`/v1/terrareg/modules/${moduleDetails.id}/readme_html`, (readmeContent) => {
+            // If no README is defined, exit early
+            if (! readmeContent) {
+                return;
+            }
+
+            let readmeContentDiv = $('#module-tab-readme');
+
+            // Populate README conrtent
+            readmeContentDiv.append(readmeContent);
+
+            // Add 'table' class to all tables in README
+            readmeContentDiv.find('table').addClass('table');
+
+            // Replace size of headers
+            readmeContentDiv.find('h1').addClass('subtitle').addClass('is-3');
+            readmeContentDiv.find('h2').addClass('subtitle').addClass('is-4');
+            readmeContentDiv.find('h3').addClass('subtitle').addClass('is-5');
+            readmeContentDiv.find('h4').addClass('subtitle').addClass('is-6');
+
+            // Show README tab button
+            $('#module-tab-link-readme').show();
+        });
+    }
+
+    /*
+     * Handle tab button selection.
+     *
+     * @param tabName Name of tab to switch to
+     * @param redirect Whether to add tab anchor to page URL
+     */
+    function selectModuleTab(tabName, redirect) {
+        if (redirect !== false) {
+            // Set URL anchor to selected tag
+            window.location.hash = '#' + tabName;
+        }
+
+        let tabContentId = "module-tab-" + tabName;
+        let tabLinkId = "module-tab-link-" + tabName;
+        let i, tabContent, tabLinks;
+
+        // Hide content of all tabs
+        tabContent = document.getElementsByClassName("module-tabs");
+        for (i = 0; i < tabContent.length; i++) {
+            tabContent[i].style.display = "none";
+        }
+
+        // Remove 'active' from all tab links
+        tabLinks = document.getElementsByClassName("module-tab-link");
+        for (i = 0; i < tabLinks.length; i++) {
+            tabLinks[i].className = tabLinks[i].className.replace(" is-active", "");
+        }
+        // Show content of current tab and mark current link as active.
+        document.getElementById(tabContentId).style.display = "block";
+        document.getElementById(tabLinkId).className += " is-active";
+    }
+
+    /*
+     * Handle example file selection from example file tab
+     *
+     * @param filePath Example file path to load
+     */
+    function selectExampleFile(event) {
+        let selectedItem = $(event.target);
+        let filePath = selectedItem.data('path');
+        let moduleId = selectedItem.data('module-id');
+
+        // Disable 'is-active' flag on all files
+        $('#example-file-list-nav').find('a').each((itx, item) => {
+            let a_obj = $(item);
+            if (a_obj.data('path') == filePath) {
+                item.className = "panel-block is-active";
+            } else {
+                item.className = "panel-block";
+            }
+        });
+        $.ajax({
+            type: "GET",
+            url: `/v1/terrareg/modules/${moduleId}/example/file/${filePath}`,
+            success: function (data) {
+                $('#example-file-content').html(data);
+            }
+        });
+    }
+
+    /*
+     * Load list of example files and populate example file nav
+     *
+     * @param moduleDetails Terrareg module details
+     * @param exampleDetails Terrareg example details
+     */ 
+    function loadExampleFileList(moduleDetails, exampleDetails) {
+        $.ajax({
+            type: "GET",
+            url: `/v1/terrareg/modules/${moduleDetails.id}/example/filelist/${exampleDetails.path}`,
+            success: function (data) {
+                
+                let firstFileSelected = false;
+                data.forEach((exampleFile) => {
+                    $('#example-file-list-nav').append(`
+                        <a class="panel-block" data-module-id="${moduleDetails.id}" data-path="${exampleFile.path}" onClick="selectExampleFile(event)">
+                            <span class="panel-icon">
+                                <i class="fa-solid fa-file-code" aria-hidden="true"></i>
+                            </span>
+                            ${example_file.filename}
+                        </a>
+                    `);
+
+                    if (firstFileSelected == false) {
+                        firstFileSelected = true;
+                        selectExampleFile(exampleFile.path);
+                    }
+                });
+            }
+        });
+    }
+
+    /*
+     * Populate tabs for inputs
+     *
+     * @param moduleDetails Terrareg module details
+     */
+    function populateTerrarformInputs(moduleDetails) {
+        let inputTab = $('#module-tab-inputs');
+        let inputTabTbody = inputTab.find('tbody');
+        moduleDetails.root.inputs.forEach((input) => {
+            let inputRow = $('<tr></tr>');
+
+            let nameTd = $('<td></td>');
+            nameTd.text(input.name);
+            inputRow.append(nameTd);
+
+            let descriptionTd = $('<td></td>');
+            descriptionTd.text(input.description);
+            inputRow.append(descriptionTd);
+
+            let typeTd = $('<td></td>');
+            typeTd.text(input.type);
+            inputRow.append(typeTd);
+
+            let defaultTd = $('<td></td>');
+            defaultTd.text(input.required ? 'Required' : JSON.stringify(input.default));
+            inputRow.append(defaultTd);
+
+            inputTabTbody.append(inputRow);
+        });
+    }
+
+    /*
+     * Populate tabs for outputs
+     *
+     * @param moduleDetails Terrareg module details
+     */
+     function populateTerrarformOutputs(moduleDetails) {
+        let outputTab = $('#module-tab-outputs');
+        let outputTabTbody = outputTab.find('tbody');
+        moduleDetails.root.outputs.forEach((output) => {
+            let outputRow = $('<tr></tr>');
+
+            let nameTd = $('<td></td>');
+            nameTd.text(output.name);
+            outputRow.append(nameTd);
+
+            let descriptionTd = $('<td></td>');
+            descriptionTd.text(output.description);
+            outputRow.append(descriptionTd);
+
+            outputTabTbody.append(outputRow);
+        });
+    }
+
+    /*
+     * Populate tabs for providers
+     *
+     * @param moduleDetails Terrareg module details
+     */
+     function populateTerrarformProviders(moduleDetails) {
+        let providerTab = $('#module-tab-providers');
+        let providerTabTbody = providerTab.find('tbody');
+        moduleDetails.root.provider_dependencies.forEach((provider) => {
+            let providerRow = $('<tr></tr>');
+
+            let nameTd = $('<td></td>');
+            nameTd.text(provider.name);
+            providerRow.append(nameTd);
+
+            let namespaceTd = $('<td></td>');
+            namespaceTd.text(provider.namespace);
+            providerRow.append(namespaceTd);
+
+
+            let sourceTd = $('<td></td>');
+            sourceTd.text(provider.source);
+            providerRow.append(sourceTd);
+
+            let versionTd = $('<td></td>');
+            versionTd.text(provider.version);
+            providerRow.append(versionTd);
+
+            providerTabTbody.append(providerRow);
+        });
+    }
+
+    /*
+     * Populate tabs for resources
+     *
+     * @param moduleDetails Terrareg module details
+     */
+     function populateTerrarformResources(moduleDetails) {
+        let resourceTab = $('#module-tab-resources');
+        let resourceTabTbody = resourceTab.find('tbody');
+        moduleDetails.root.resources.forEach((resource) => {
+            let resourceRow = $('<tr></tr>');
+
+            let typeTd = $('<td></td>');
+            typeTd.text(resource.type);
+            resourceRow.append(typeTd);
+
+            let nameTd = $('<td></td>');
+            nameTd.text(resource.name);
+            resourceRow.append(nameTd);
+
+            let providerTd = $('<td></td>');
+            providerTd.text(resource.provider);
+            resourceRow.append(providerTd);
+
+
+            let sourceTd = $('<td></td>');
+            sourceTd.text(resource.source);
+            resourceRow.append(sourceTd);
+
+            let modeTd = $('<td></td>');
+            modeTd.text(resource.mode);
+            resourceRow.append(modeTd);
+
+            let versionTd = $('<td></td>');
+            versionTd.text(resource.version);
+            resourceRow.append(versionTd);
+
+            let descriptionTd = $('<td></td>');
+            descriptionTd.text(resource.description);
+            resourceRow.append(descriptionTd);
+
+            resourceTabTbody.append(resourceRow);
+        });
+    }
+
+    /*
      * Setup common elements of the page, shared between all types
      * of pages
      *
@@ -371,6 +624,12 @@
 
         addModuleLabels(moduleDetails, $('#module-title'));
 
+        populateReadmeContent(moduleDetails);
+
+        populateTerrarformInputs(moduleDetails);
+        populateTerrarformOutputs(moduleDetails);
+        populateTerrarformProviders(moduleDetails);
+        populateTerrarformResources(moduleDetails);
     }
 
     function createBreadcrumbs(data) {
@@ -542,6 +801,147 @@
     </div>
 </div>
 
+
+<div class="tabs">
+    <ul>
+        <li id="module-tab-link-readme" class="module-tab-link" style="display: none;"><a onclick="selectModuleTab('readme')">Readme</a></li>
+        <li id="module-tab-link-example-files" class="module-tab-link" style="display: none;"><a onclick="selectModuleTab('example-files')">Files</a></li>
+        <li id="module-tab-link-inputs" class="module-tab-link"><a onclick="selectModuleTab('inputs')">Inputs</a></li>
+        <li id="module-tab-link-outputs" class="module-tab-link"><a onclick="selectModuleTab('outputs')">Outputs</a></li>
+        <li id="module-tab-link-providers" class="module-tab-link"><a onclick="selectModuleTab('providers')">Provider Requirements</a></li>
+        <li id="module-tab-link-resources" class="module-tab-link">
+            <a onclick="selectModuleTab('resources')">Resources</a>
+        </li>
+
+        {% if adg and not current_module.is_submodule %}
+            <li id="module-tab-link-analytics" class="module-tab-link">
+                <a onclick="selectModuleTab('analytics')">
+                    Analytics
+                    {% if not config.DISABLE_TERRAREG_EXCLUSIVE_LABELS %}
+                    <span class="tag is-warning is-light">Terrareg Exclusive</span>
+                    {% endif %}
+                </a>
+            </li>
+            <li id="module-tab-link-usage-builder" class="module-tab-link">
+                <a onclick="selectModuleTab('usage-builder')">
+                    Usage Builder
+                    {% if not config.DISABLE_TERRAREG_EXCLUSIVE_LABELS %}
+                    <span class="tag is-warning is-light">Terrareg Exclusive</span>
+                    {% endif %}
+                </a>
+            </li>
+        {% endif %}
+        <li id="module-tab-link-integrations" class="module-tab-link">
+            <a onclick="selectModuleTab('integrations')">
+                Integrations
+            </a>
+        </li>
+        <li style="display: none" id="module-tab-link-settings" class="module-tab-link">
+            <a onclick="selectModuleTab('settings')">
+                Settings
+            </a>
+        </li>
+    </ul>
+</div>
+
+<div class="columns">
+    <div class="column is-three-fifths is-offset-one-fifth">
+        <!-- Tab content -->
+
+        <!-- README tab -->
+        <div id="module-tab-readme" class="module-tabs content" style="display: none;">
+        </div>
+        <style>
+            #module-tab-readme h1, h2, h3, h4 {
+                margin-top: 20px;
+            }
+        </style>
+
+        <!-- Example files tab -->
+        <div id="module-tab-example-files" class="module-tabs" style="display: none;">
+            <div class="columns">
+                <div class="column is-one-fifths">
+                    <nav id="example-file-list-nav" class="panel">
+                        <p class="panel-heading">
+                        Files
+                        </p>
+                    </nav>
+                </div>
+
+                <div class="column is-four-fifths">
+                    <pre><code id="example-file-content" class="language-hcl" data-lang="html"></code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inputs tab -->
+        <div id="module-tab-inputs" class="module-tabs" style="display: none;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th>Default value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Outputs tab -->
+        <div id="module-tab-outputs" class="module-tabs" style="display: none;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Providers tab -->
+        <div id="module-tab-providers" class="module-tabs" style="display: none;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Namespace</th>
+                        <th>Source</th>
+                        <th>Version</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Resources tab -->
+        <div id="module-tab-resources" class="module-tabs" style="display: none;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Name</th>
+                        <th>Provider</th>
+                        <th>Source</th>
+                        <th>Mode</th>
+                        <th>Version</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+
+    </div>
+</div>
 
 
 {% endblock %}

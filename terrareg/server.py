@@ -302,6 +302,10 @@ class Server(object):
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
         )
         self._api.add_resource(
+            ApiTerraregModuleVersionReadmeHtml,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/readme_html'
+        )
+        self._api.add_resource(
             ApiModuleVersionUpload,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload'
         )
@@ -1394,6 +1398,18 @@ class ApiTerraregModuleVersionVariableTemplate(ErrorCatchingResource):
         module_provider = ModuleProvider(module=module, name=provider)
         module_version = ModuleVersion(module_provider=module_provider, version=version)
         return module_version.variable_template
+
+
+class ApiTerraregModuleVersionReadmeHtml(ErrorCatchingResource):
+    """Provide variable template for module version."""
+
+    def _get(self, namespace, name, provider, version):
+        """Return variable template."""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        module_version = ModuleVersion(module_provider=module_provider, version=version)
+        return module_version.get_readme_html()
 
 
 class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
