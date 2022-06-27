@@ -39,26 +39,19 @@
             }
           }
 
-          function is_logged_in(callback) {
-            $.ajax({
-              url: '/v1/terrareg/auth/admin/is_authenticated',
-              statusCode: {
-                200: () => {callback(true)},
-                401: () => {callback(false)}
-              }
-            });
+          async function setupPageLogin() {
+            let loggedIn = await isLoggedIn(); 
+            if (loggedIn) {
+              $('#navbar_login_link').attr('href', '/logout');
+              $('#navbar_login_icon').removeClass('fa-lock');
+              $('#navbar_login_icon').addClass('fa-sign-out');
+              $('#navbar_login_span').html('Logout');
+              $('#navbarCreateDropdown').css('display', 'flex');
+            }
           }
 
-          $(document).ready(function() {
-            is_logged_in((status) => {
-              if (status) {
-                $('#navbar_login_link').attr('href', '/logout');
-                $('#navbar_login_icon').removeClass('fa-lock');
-                $('#navbar_login_icon').addClass('fa-sign-out');
-                $('#navbar_login_span').html('Logout');
-                $('#navbarCreateDropdown').css('display', 'flex');
-              }
-            });
+          $(document).ready(() => {
+            setupPageLogin();
           });
         </script>
 
