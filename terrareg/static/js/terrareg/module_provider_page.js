@@ -715,6 +715,17 @@ async function setupIntegrations(moduleDetails) {
 }
 
 /*
+ * Setup link to parent root module page
+ *
+ * @param moduleDetails Terrareg module details
+ */
+function enableBackToParentLink(moduleDetails) {
+    let backToParentLink = $('#submodule-back-to-parent');
+    backToParentLink.attr('href', `/modules/${moduleDetails.id}`);
+    backToParentLink.show();
+}
+
+/*
  * Setup common elements of the page, shared between all types
  * of pages
  *
@@ -800,6 +811,8 @@ async function setupSubmodulePage(data) {
     populateTerrarformOutputs(submoduleDetails);
     populateTerrarformProviders(submoduleDetails);
     populateTerrarformResources(submoduleDetails);
+
+    enableBackToParentLink(moduleDetails);
 }
 
 
