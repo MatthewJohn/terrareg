@@ -276,6 +276,13 @@ class Namespace(object):
         """Return view URL"""
         return '/modules/{namespace}'.format(namespace=self.name)
 
+    def get_details(self):
+        """Return custom terrareg details about namespace."""
+        return {
+            'is_auto_verified': self.is_auto_verified,
+            'trusted': self.trusted
+        }
+
     def get_all_modules(self):
         """Return all modules for namespace."""
         db = Database.get()
@@ -1393,11 +1400,17 @@ class ModuleVersion(TerraformSpecsObject):
         """Return dict of version details with additional attributes used by terrareg UI."""
         api_details = self.get_api_details()
         source_browse_url = self.get_source_browse_url()
+        git_provider = self._module_provider.get_git_provider()
         api_details.update({
             "published_at_display": self.publish_date_display,
             "display_source_url": source_browse_url if source_browse_url else self.get_source_base_url(),
             "terraform_example_version_string": self.get_terraform_example_version_string(),
-            "module_provider_id": self._module_provider.id
+            "module_provider_id": self._module_provider.id,
+            "git_provider_id": git_provider.pk if git_provider else None,
+            "git_tag_format": self._module_provider.git_tag_format,
+            "repo_base_url_template": self._module_provider._get_db_row()['repo_base_url_template'],
+            "repo_clone_url_template": self._module_provider._get_db_row()['repo_clone_url_template'],
+            "repo_browse_url_template": self._module_provider._get_db_row()['repo_browse_url_template']
         })
         return api_details
 

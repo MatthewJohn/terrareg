@@ -757,6 +757,180 @@ async function enableTerraregExclusiveTags() {
 }
 
 /*
+ * Setup settings tab and display
+ *
+ * @param moduleDetails Terrareg module details
+ */
+async function setupSettingsTab(moduleDetails) {
+    let loggedIn = await isLoggedIn();
+    // Return immediately if user is not logged in
+    if (! loggedIn) {
+        return;
+    }
+
+    if (moduleDetails.verified) {
+        $('#settings-verified').attr('checked', true);
+    }
+
+    // Check if namespace is auto-verified and, if so, show message
+    $.get(`/v1/terrareg/modules/${moduleDetails.namespace}`, (namespaceDetails) => {
+        if (namespaceDetails.is_auto_verified) {
+            $('#settings-verified-auto-verified-message').show();
+        }
+    });
+
+    // Setup git providers
+    let config = await getConfig();
+    let gitProviderSelect = $('#settings-git-provider');
+
+    if (config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER || config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION) {
+        let customGitProvider = $('<option></option>');
+        customGitProvider.val('');
+        customGitProvider.text('Custom');
+        if (! moduleDetails.git_provider_id) {
+            customGitProvider.attr('selected', '');
+        }
+        gitProviderSelect.append(customGitProvider);
+    }
+
+    // Obtain all git providers and add to select for settings
+    $.get('/v1/terrareg/git_providers', (gitProviders) => {
+        gitProviders.forEach((gitProvider) => {
+            let gitProviderOption = $('<option></option>');
+            gitProviderOption.val(gitProvider.id);
+            gitProviderOption.text(gitProvider.name);
+            if (moduleDetails.git_provider_id == gitProvider.id) {
+                gitProviderOption.attr('selected', '');
+            }
+            gitProviderSelect.append(gitProviderOption);
+        });
+    });
+
+    $('#settings-git-tag-format').val(moduleDetails.git_tag_format);
+
+    let baseUrlTemplate = $('#settings-base-url-template');
+    baseUrlTemplate.attr('placeholder', `https://github.com/${moduleDetails.namespace}/${moduleDetails.name}-${moduleDetails.provider}`);
+    baseUrlTemplate.val(moduleDetails.repo_base_url_template);
+
+    let cloneUrlTemplate = $('#settings-clone-url-template');
+    cloneUrlTemplate.attr('placeholder', `ssh://git@github.com/${moduleDetails.namespace}/${moduleDetails.name}-${moduleDetails.provider}.git`);
+    cloneUrlTemplate.val(moduleDetails.repo_clone_url_template);
+
+    let browseUrlTemplate = $('#settings-browse-url-template');
+    browseUrlTemplate.attr('placeholder', `https://github.com/${moduleDetails.namespace}/${moduleDetails.name}-${moduleDetails.provider}/tree/{tag}/{path}`);
+    browseUrlTemplate.val(moduleDetails.repo_browse_url_template);
+
+    // Bind module version deletion with deleteModuleVersion function
+    let moduleVersionDeleteButton = $('#module-version-delete-button');
+    moduleVersionDeleteButton.bind('click', () => {
+        deleteModuleVersion(moduleDetails);
+    });
+    moduleVersionDeleteButton.text(`Delete Module Version: ${moduleDetails.version}`);
+    // Setup confirmation checkbox for confirm deletion
+    let confirmDeleteContainer = $('#confirm-delete-module-version-div');
+    confirmDeleteContainer.append(`Confirm deletion of module version ${moduleDetails.version}: `);
+    let confirmCheckbox = $('<input />');
+    confirmCheckbox.attr('autocomplete', 'off');
+    confirmCheckbox.attr('type', 'checkbox');
+    confirmCheckbox.id = 'confirm-delete-module-version';
+    confirmDeleteContainer.append(confirmCheckbox);
+
+    // Bind module provider delete button
+    let moduleProviderDeleteButton = $('#module-provider-delete-button');
+    moduleProviderDeleteButton.bind('click', () => {
+        deleteModuleProvider(moduleDetails);
+    });
+
+    // Bind settings form submission with function
+    $('#settings-form').bind('submit', () => {
+        updateModuleProviderSettings(moduleDetails);
+    });
+
+    // Enable custom git provider inputs
+    if (config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER) {
+        $.find('.settings-custom-git-provider-container').forEach((inputContainer) => {
+            $(inputContainer).show();
+        });
+    }
+
+    // Show settings tab
+    $('#module-tab-link-settings').show();
+}
+
+function deleteModuleVersion(moduleDetails) {
+    $('#confirm-delete-module-version-div').css('display', 'block');
+    if (! $('#confirm-delete-module-version').is(':checked')) {
+        return;
+    }
+    $.ajax({
+        url: `/v1/terrareg/modules/${moduleDetails.id}/delete`,
+        method: 'delete',
+        data: JSON.stringify({
+            csrf_token: $('#settings-csrf-token').val()
+        }),
+        contentType: 'application/json'
+    }).done(()=> {
+        // Reidrect to module provider page.
+        // This will automatically redirect back
+        // down the path to valid existing object.
+        window.location.href = `/modules/${ moduleDetails.module_provider_id }`;
+    });
+    return false;
+}
+
+function deleteModuleProvider(moduleDetails) {
+    $('#confirm-delete-module-provider-div').css('display', 'block');
+    if (! $('#confirm-delete-module-provider').is(':checked')) {
+        return;
+    }
+    $.ajax({
+        url: `/v1/terrareg/modules/${moduleDetails.module_provider_id}/delete`,
+        method: 'delete',
+        data: JSON.stringify({
+            csrf_token: $('#settings-csrf-token').val()
+        }),
+        contentType: 'application/json'
+    }).done(()=> {
+        // Reidrect to module page.
+        // This will automatically redirect back
+        // down the path to valid existing object.
+        window.location.href = `/modules/${moduleDetails.id}`;
+    });
+}
+
+/*
+ * Handle form submission for changing module provider settings
+ *
+ * @param ev Event of target form
+ */
+function updateModuleProviderSettings(moduleDetails) {
+    $('#settings-status-success').css('display', 'none');
+    $('#settings-status-error').css('display', 'none');
+    $.post({
+        url: `/v1/terrareg/modules/${moduleDetails.module_provider_id}/settings`,
+        data: JSON.stringify({
+            git_provider_id: $('select[id=settings-git-provider] option').filter(':selected').val(),
+            repo_base_url_template: $('#settings-base-url-template').val(),
+            repo_clone_url_template: $('#settings-clone-url-template').val(),
+            repo_browse_url_template: $('#settings-browse-url-template').val(),
+            git_tag_format: $('#settings-git-tag-format').val(),
+            verified: $('#settings-verified').is(':checked'),
+            csrf_token: $('#settings-csrf-token').val()
+        }),
+        contentType: 'application/json'
+    }).done(() => {
+        $('#settings-status-success').css('display', 'block');
+    }).fail((res) => {
+        if (res.responseJSON && res.responseJSON.message) {
+            $('#settings-status-error').html(res.responseJSON.message);
+        } else {
+            $('#settings-status-error').html('An unexpected error occurred');
+        }
+        $('#settings-status-error').css('display', 'block');
+    });
+}
+
+/*
  * Setup common elements of the page, shared between all types
  * of pages
  *
@@ -816,6 +990,8 @@ async function setupRootModulePage(data) {
 
     populateAnalyticsTable(moduleDetails);
     setupIntegrations(moduleDetails);
+
+    setupSettingsTab(moduleDetails);
 }
 
 /*

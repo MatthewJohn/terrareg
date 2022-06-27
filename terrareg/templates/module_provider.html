@@ -323,6 +323,109 @@
 
 
 
+        <!-- Module settings tab -->
+        <div id="module-tab-settings" class="module-tabs" style="display: none;">
+            <div class="field is-vertical">
+                <div id="settings-status-success" style="display: none" class="notification is-success">
+                    Settings Updated
+                </div>
+                <div id="settings-status-error" style="display: none" class="notification is-danger">
+                </div>
+                <form id="settings-form">
+                    <input type="hidden" id="settings-csrf-token" value="{{ csrf_token }}" />
+                    <div class="field">
+                        <label class="label">Verified</label>
+                        <div class="control">
+                            <input class="checkbox" type="checkbox" value="true" id="settings-verified" />
+                        </div>
+                        <span id="settings-verified-auto-verified-message" style="display: none;">
+                            All modules within this namespace are automatically approved on creation.
+                        </span>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Git Repository Provider</label>
+                        <div class="control select">
+                            <select id="settings-git-provider">
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="field settings-custom-git-provider-container">
+                        <label class="label">Custom Repository base URL</label>
+                        <div class="control">
+                            <input class="input" type="text" id="settings-base-url-template">
+                        </div>
+                        This URL must be valid for browsing the base of the repository.<br />
+                        It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                        E.g. <code>https://github.com/{namespace}/{module}-{provider}</code><br />
+                        NOTE: Setting this field will override the repository provider configuration.
+                    </div>
+                    <div class="field settings-custom-git-provider-container">
+                        <label class="label">Custom Repository Clone URL</label>
+                        <div class="control">
+                            <input class="input" type="text" id="settings-clone-url-template">
+                        </div>
+                        This URL must be valid for cloning the repository.<br />
+                        It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>>.<br />
+                        E.g. <code>ssh://git@github.com/{namespace}/{module}-{provider}.git</code><br />
+                        NOTE: Setting this field will override the repository provider configuration.
+                    </div>
+                    <div class="field settings-custom-git-provider-container">
+                        <label class="label">Custom Repository source browse URL</label>
+                        <div class="control">
+                            <input class="input" type="text" id="settings-browse-url-template">
+                        </div>
+                        This URL must be valid for browsing the source code of the repository at a particular tag/path.<br />
+                        It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                        It must include the following template values: <code>code>{tag}</code> and {path}</code><br />
+                        E.g. <code>https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}</code><br />
+                        NOTE: Setting this field will override the repository provider configuration.
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Git tag format</label>
+                        <div class="control">
+                            <input placeholder="v{version}" class="input" type="text" id="settings-git-tag-format">
+                        </div>
+                        This value will be converted to the expected git tag for a module version.<br />
+                        {version} will be replaced by the actual module version.<br />
+                        For example <code>v{version}</code> will translate to a git tag 'v1.1.1' for module version '1.1.1'
+                    </div>
+    
+                    <div class="field">
+                        <div class="control">
+                        <button class="button is-link">Update</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="field is-vertical">
+                <div class="control">
+                    <button id="module-version-delete-button" class="button is-link is-danger"></button>
+                </div>
+                <br />
+                <div id="confirm-delete-module-version-div" style="display: none;">
+                </div>
+            </div>
+
+            <div class="field is-vertical">
+                <script>
+                </script>
+                <div class="control">
+                    <button id="module-provider-delete-button" class="button is-link is-danger">Delete Module Provider</button>
+                </div>
+                <br />
+                <div id="confirm-delete-module-provider-div" style="display: none;">
+                    Confirm deletion of module provider: <input autocomplete="off" id="confirm-delete-module-provider" type="checkbox" />
+                </div>
+            </div>
+        </div>
+        
+
+
+
+
     </div>
 </div>
 

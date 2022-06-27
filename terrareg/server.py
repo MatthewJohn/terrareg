@@ -251,6 +251,10 @@ class Server(object):
             ApiTerraregConfig,
             '/v1/terrareg/config'
         )
+        self._api.add_resource(
+            ApiTerraregGitProviders,
+            '/v1/terrareg/git_providers'
+        )
         ## Analytics URLs /v1/terrareg/analytics
         self._api.add_resource(
             ApiTerraregGlobalStatsSummary,
@@ -276,6 +280,10 @@ class Server(object):
         )
 
         ## Module endpoints /v1/terreg/modules
+        self._api.add_resource(
+            ApiTerraregNamespaceDetails,
+            '/v1/terrareg/modules/<string:namespace>'
+        )
         self._api.add_resource(
             ApiTerraregModuleVersionDetails,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>',
@@ -800,8 +808,24 @@ class ApiTerraregConfig(ErrorCatchingResource):
             'EXAMPLE_ANALYTICS_TOKEN': terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN,
             'ALLOW_MODULE_HOSTING': terrareg.config.Config().ALLOW_MODULE_HOSTING,
             'PUBLISH_API_KEYS_ENABLED': bool(terrareg.config.Config().PUBLISH_API_KEYS),
-            'DISABLE_TERRAREG_EXCLUSIVE_LABELS': terrareg.config.Config().DISABLE_TERRAREG_EXCLUSIVE_LABELS
+            'DISABLE_TERRAREG_EXCLUSIVE_LABELS': terrareg.config.Config().DISABLE_TERRAREG_EXCLUSIVE_LABELS,
+            'ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER': terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+            'ALLOW_CUSTOM_GIT_URL_MODULE_VERSION': terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         }
+
+
+class ApiTerraregGitProviders(ErrorCatchingResource):
+    """Interface to obtain git provider configurations."""
+
+    def _get(self):
+        """Return list of git providers"""
+        return [
+            {
+                'id': git_provider.pk,
+                'name': git_provider.name
+            }
+            for git_provider in GitProvider.get_all()
+        ]
 
 
 class ApiTerraregModuleProviderIntegrations(ErrorCatchingResource):
@@ -1455,7 +1479,17 @@ class ApiTerraregModuleProviderAnalyticsTokenVersions(ErrorCatchingResource):
         return AnalyticsEngine.get_module_provider_token_versions(module_provider)
 
 
+class ApiTerraregNamespaceDetails(ErrorCatchingResource):
+    """Interface to obtain custom terrareg namespace details."""
+
+    def _get(self, namespace):
+        """Return custom terrareg config for namespace."""
+        namespace = Namespace(namespace)
+        return namespace.get_details()
+
+
 class ApiTerraregModuleVersionDetails(ErrorCatchingResource):
+    """Interface to obtain module verison dertails."""
 
     def _get(self, namespace, name, provider, version=None):
         """Return details about module version."""
