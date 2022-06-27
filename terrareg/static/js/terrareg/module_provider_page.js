@@ -332,6 +332,9 @@ function populateDownloadSummary(moduleDetails) {
             $(`#downloads-${key}`).html(data.data.attributes[key]);
         });
     });
+
+    // Show download container
+    $('#module-download-stats-container').show();
 }
 
 /*
