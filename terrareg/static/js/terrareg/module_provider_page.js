@@ -832,7 +832,7 @@ async function setupSettingsTab(moduleDetails) {
     let confirmCheckbox = $('<input />');
     confirmCheckbox.attr('autocomplete', 'off');
     confirmCheckbox.attr('type', 'checkbox');
-    confirmCheckbox.id = 'confirm-delete-module-version';
+    confirmCheckbox.attr('id', 'confirm-delete-module-version');
     confirmDeleteContainer.append(confirmCheckbox);
 
     // Bind module provider delete button
