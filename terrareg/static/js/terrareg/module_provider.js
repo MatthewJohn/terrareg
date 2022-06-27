@@ -178,7 +178,7 @@ async function getSubmoduleDetails(moduleId, submodulePath) {
             });
         });
     }
-    return terraregModuleDetailsPromiseSingleton[moduleId + submodulePath];
+    return terraregSubmoduleDetailsPromiseSingleton[moduleId + submodulePath];
 }
 
 async function addModuleLabels(module, parentDiv) {

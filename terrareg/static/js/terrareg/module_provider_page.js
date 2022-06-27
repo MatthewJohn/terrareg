@@ -495,12 +495,12 @@ function loadExampleFileList(moduleDetails, exampleDetails) {
 /*
  * Populate tabs for inputs
  *
- * @param moduleDetails Terrareg module details
+ * @param rootModuleDetails Terrareg root module details
  */
-function populateTerrarformInputs(moduleDetails) {
+function populateTerrarformInputs(rootModuleDetails) {
     let inputTab = $("#module-tab-inputs");
     let inputTabTbody = inputTab.find("tbody");
-    moduleDetails.root.inputs.forEach((input) => {
+    rootModuleDetails.inputs.forEach((input) => {
         let inputRow = $("<tr></tr>");
 
         let nameTd = $("<td></td>");
@@ -526,12 +526,12 @@ function populateTerrarformInputs(moduleDetails) {
 /*
  * Populate tabs for outputs
  *
- * @param moduleDetails Terrareg module details
+ * @param rootModuleDetails Terrareg module details
  */
-function populateTerrarformOutputs(moduleDetails) {
+function populateTerrarformOutputs(rootModuleDetails) {
     let outputTab = $("#module-tab-outputs");
     let outputTabTbody = outputTab.find("tbody");
-    moduleDetails.root.outputs.forEach((output) => {
+    rootModuleDetails.outputs.forEach((output) => {
         let outputRow = $("<tr></tr>");
 
         let nameTd = $("<td></td>");
@@ -549,12 +549,12 @@ function populateTerrarformOutputs(moduleDetails) {
 /*
  * Populate tabs for providers
  *
- * @param moduleDetails Terrareg module details
+ * @param rootModuleDetails Terrareg module details
  */
-function populateTerrarformProviders(moduleDetails) {
+function populateTerrarformProviders(rootModuleDetails) {
     let providerTab = $("#module-tab-providers");
     let providerTabTbody = providerTab.find("tbody");
-    moduleDetails.root.provider_dependencies.forEach((provider) => {
+    rootModuleDetails.provider_dependencies.forEach((provider) => {
         let providerRow = $("<tr></tr>");
 
         let nameTd = $("<td></td>");
@@ -580,12 +580,12 @@ function populateTerrarformProviders(moduleDetails) {
 /*
  * Populate tabs for resources
  *
- * @param moduleDetails Terrareg module details
+ * @param rootModuleDetails Terrareg module details
  */
-function populateTerrarformResources(moduleDetails) {
+function populateTerrarformResources(rootModuleDetails) {
     let resourceTab = $("#module-tab-resources");
     let resourceTabTbody = resourceTab.find("tbody");
-    moduleDetails.root.resources.forEach((resource) => {
+    rootModuleDetails.resources.forEach((resource) => {
         let resourceRow = $("<tr></tr>");
 
         let typeTd = $("<td></td>");
@@ -766,10 +766,10 @@ async function setupRootModulePage(data) {
         populateReadmeContent(readmeContent);
     });
 
-    populateTerrarformInputs(moduleDetails);
-    populateTerrarformOutputs(moduleDetails);
-    populateTerrarformProviders(moduleDetails);
-    populateTerrarformResources(moduleDetails);
+    populateTerrarformInputs(moduleDetails.root);
+    populateTerrarformOutputs(moduleDetails.root);
+    populateTerrarformProviders(moduleDetails.root);
+    populateTerrarformResources(moduleDetails.root);
 
     populateAnalyticsTable(moduleDetails);
     setupIntegrations(moduleDetails);
@@ -796,10 +796,10 @@ async function setupSubmodulePage(data) {
         populateReadmeContent(readmeContent);
     });
 
-    populateTerrarformInputs(moduleDetails);
-    populateTerrarformOutputs(moduleDetails);
-    populateTerrarformProviders(moduleDetails);
-    populateTerrarformResources(moduleDetails);
+    populateTerrarformInputs(submoduleDetails);
+    populateTerrarformOutputs(submoduleDetails);
+    populateTerrarformProviders(submoduleDetails);
+    populateTerrarformResources(submoduleDetails);
 }
 
 
