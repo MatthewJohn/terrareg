@@ -21,6 +21,11 @@ function renderPage() {
         setupBasePage(data);
         setupSubmodulePage(data);
     });
+    // Example route
+    router.on(baseRoute + "/:version/example/(.*)", ({ data }) => {
+        setupBasePage(data);
+        setupExamplePage(data);
+    });
 
     router.resolve();
 }
@@ -263,7 +268,7 @@ function populateSubmoduleSelect(moduleDetails, currentSubmodulePath = undefined
  *
  * @param moduleDetails Terrareg module details
  */
-function populateExampleSelect(moduleDetails) {
+function populateExampleSelect(moduleDetails, currentSubmodulePath = undefined) {
     $.get(`/v1/terrareg/modules/${moduleDetails.id}/examples`, (data) => {
         if (data.length) {
             $("#example-select-container").show();
@@ -275,6 +280,12 @@ function populateExampleSelect(moduleDetails) {
             let selectOption = $("<option></option>");
             selectOption.val(example.href);
             selectOption.text(example.path);
+
+            // Check if current submodule path matches the item and mark as selected
+            if (currentSubmodulePath !== undefined && example.path == currentSubmodulePath) {
+                selectOption.attr('selected', '');
+            }
+
             exampleSelect.append(selectOption);
         });
     });
@@ -804,6 +815,33 @@ async function setupSubmodulePage(data) {
     populateTerraformUsageExample(moduleDetails, submodulePath);
 
     $.get(`/v1/terrareg/modules/${moduleDetails.id}/submodules/readme_html/${submodulePath}`, (readmeContent) => {
+        populateReadmeContent(readmeContent);
+    });
+
+    populateTerrarformInputs(submoduleDetails);
+    populateTerrarformOutputs(submoduleDetails);
+    populateTerrarformProviders(submoduleDetails);
+    populateTerrarformResources(submoduleDetails);
+
+    enableBackToParentLink(moduleDetails);
+}
+
+/*
+ * Setup elements of page for example
+ *
+ * @param data Data from router
+ */
+async function setupExamplePage(data) {
+    let moduleVersionId = getCurrentObjectId(data);
+    let moduleDetails = await getModuleDetails(moduleVersionId);
+
+    let examplePath = data.undefined;
+    let submoduleDetails = await getExampleDetails(moduleDetails.id, examplePath);
+
+    populateSubmoduleSelect(moduleDetails);
+    populateExampleSelect(moduleDetails, examplePath);
+
+    $.get(`/v1/terrareg/modules/${moduleDetails.id}/examples/readme_html/${examplePath}`, (readmeContent) => {
         populateReadmeContent(readmeContent);
     });
 

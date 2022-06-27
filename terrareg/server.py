@@ -350,6 +350,10 @@ class Server(object):
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples/details/<path:example>'
         )
         self._api.add_resource(
+            ApiTerraregExampleReadmeHtml,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples/readme_html/<path:example>'
+        )
+        self._api.add_resource(
             ApiTerraregExampleFileList,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples/filelist/<path:example>'
         )
@@ -2005,6 +2009,27 @@ class ApiTerraregExampleDetails(ErrorCatchingResource):
         example_obj = Example.get(module_version=module_version, module_path=example)
 
         return example_obj.get_api_module_specs()
+
+
+class ApiTerraregExampleReadmeHtml(ErrorCatchingResource):
+    """Interface to obtain example REAMDE in HTML format."""
+
+    def _get(self, namespace, name, provider, version, example):
+        """Return HTML formatted README of example."""
+        namespace_obj = Namespace(name=namespace)
+        module_obj = Module(namespace=namespace_obj, name=name)
+        module_provider = ModuleProvider.get(module=module_obj, name=provider)
+
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
+
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        if not module_version:
+            return {'message': 'Module version does not exist'}, 400
+
+        example_obj = Example.get(module_version=module_version, module_path=example)
+
+        return example_obj.get_readme_html()
 
 
 class ApiTerraregExampleFileList(ErrorCatchingResource):

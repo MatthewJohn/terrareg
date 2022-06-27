@@ -160,7 +160,6 @@ async function getModuleDetails(module_id) {
 }
 
 terraregSubmoduleDetailsPromiseSingleton = [];
-
 async function getSubmoduleDetails(moduleId, submodulePath) {
     // Create promise if it hasn't already been defined
     if (terraregSubmoduleDetailsPromiseSingleton[moduleId + submodulePath] === undefined) {
@@ -179,6 +178,27 @@ async function getSubmoduleDetails(moduleId, submodulePath) {
         });
     }
     return terraregSubmoduleDetailsPromiseSingleton[moduleId + submodulePath];
+}
+
+terraregExampleDetailsPromiseSingleton = [];
+async function getExampleDetails(moduleId, examplePath) {
+    // Create promise if it hasn't already been defined
+    if (terraregExampleDetailsPromiseSingleton[moduleId + examplePath] === undefined) {
+        terraregExampleDetailsPromiseSingleton[moduleId + examplePath] = new Promise((resolve, reject) => {
+            // Perform request to obtain submodule details
+            $.ajax({
+                type: "GET",
+                url: `/v1/terrareg/modules/${moduleId}/examples/details/${examplePath}`,
+                success: function (data) {
+                    resolve(data);
+                },
+                error: function () {
+                    resolve(null);
+                }
+            });
+        });
+    }
+    return terraregExampleDetailsPromiseSingleton[moduleId + examplePath];
 }
 
 async function addModuleLabels(module, parentDiv) {
