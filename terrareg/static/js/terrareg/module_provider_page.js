@@ -449,8 +449,8 @@ function selectModuleTab(tabName, redirect) {
  *
  * @param filePath Example file path to load
  */
-function selectExampleFile(event) {
-    let selectedItem = $(event.target);
+function selectExampleFile(eventTarget) {
+    let selectedItem = $(eventTarget);
     let filePath = selectedItem.data("path");
     let moduleId = selectedItem.data("module-id");
 
@@ -467,7 +467,7 @@ function selectExampleFile(event) {
         });
     $.ajax({
         type: "GET",
-        url: `/v1/terrareg/modules/${moduleId}/example/file/${filePath}`,
+        url: `/v1/terrareg/modules/${moduleId}/examples/file/${filePath}`,
         success: function (data) {
             $("#example-file-content").html(data);
         },
@@ -478,30 +478,35 @@ function selectExampleFile(event) {
  * Load list of example files and populate example file nav
  *
  * @param moduleDetails Terrareg module details
- * @param exampleDetails Terrareg example details
+ * @param examplePath Path of example
  */
 
-function loadExampleFileList(moduleDetails, exampleDetails) {
+function loadExampleFileList(moduleDetails, examplePath) {
     $.ajax({
         type: "GET",
-        url: `/v1/terrareg/modules/${moduleDetails.id}/example/filelist/${exampleDetails.path}`,
+        url: `/v1/terrareg/modules/${moduleDetails.id}/examples/filelist/${examplePath}`,
         success: function (data) {
             let firstFileSelected = false;
             data.forEach((exampleFile) => {
-                $("#example-file-list-nav").append(`
-                    <a class="panel-block" data-module-id="${moduleDetails.id}" data-path="${exampleFile.path}" onClick="selectExampleFile(event)">
+                let fileLink = $(`
+                    <a class="panel-block" data-module-id="${moduleDetails.id}" data-path="${exampleFile.path}" onClick="selectExampleFile(event.target)">
                         <span class="panel-icon">
                             <i class="fa-solid fa-file-code" aria-hidden="true"></i>
                         </span>
-                        ${example_file.filename}
+                        ${exampleFile.filename}
                     </a>
                 `);
 
+                $("#example-file-list-nav").append(fileLink);
+
                 if (firstFileSelected == false) {
                     firstFileSelected = true;
-                    selectExampleFile(exampleFile.path);
+                    selectExampleFile(fileLink);
                 }
             });
+
+            // Show example tab link
+            $('#module-tab-link-example-files').show();
         },
     });
 }
@@ -852,6 +857,8 @@ async function setupExamplePage(data) {
     populateTerrarformOutputs(submoduleDetails);
     populateTerrarformProviders(submoduleDetails);
     populateTerrarformResources(submoduleDetails);
+
+    loadExampleFileList(moduleDetails, examplePath);
 
     enableBackToParentLink(moduleDetails);
 }
