@@ -15,10 +15,12 @@
         // Base module provider route
         router.on(baseRoute, function ({ data }) {
             setupBasePage(data);
+            setupRootModulePage(data);
         });
         // Base module version route
         router.on(baseRoute + '/:version', function ({ data }) {
             setupBasePage(data);
+            setupRootModulePage(data);
         });
 
         router.resolve();
@@ -332,6 +334,9 @@
             });
             $('#analytics-table').DataTable();
         });
+
+        // Show tab link
+        $('#module-tab-link-analytics').show();
     }
 
     /*
@@ -630,6 +635,19 @@
         populateTerrarformOutputs(moduleDetails);
         populateTerrarformProviders(moduleDetails);
         populateTerrarformResources(moduleDetails);
+
+    }
+    /*
+     * Setup elements of page used by root module pages.
+     *
+     * @param data Data from router
+     */
+    async function setupRootModulePage(data) {
+        let id = getCurrentObjectId(data);
+
+        let moduleDetails = await getModuleDetails(id);
+
+        populateAnalyticsTable(moduleDetails);
     }
 
     function createBreadcrumbs(data) {
@@ -813,24 +831,22 @@
             <a onclick="selectModuleTab('resources')">Resources</a>
         </li>
 
-        {% if adg and not current_module.is_submodule %}
-            <li id="module-tab-link-analytics" class="module-tab-link">
-                <a onclick="selectModuleTab('analytics')">
-                    Analytics
-                    {% if not config.DISABLE_TERRAREG_EXCLUSIVE_LABELS %}
-                    <span class="tag is-warning is-light">Terrareg Exclusive</span>
-                    {% endif %}
-                </a>
-            </li>
-            <li id="module-tab-link-usage-builder" class="module-tab-link">
-                <a onclick="selectModuleTab('usage-builder')">
-                    Usage Builder
-                    {% if not config.DISABLE_TERRAREG_EXCLUSIVE_LABELS %}
-                    <span class="tag is-warning is-light">Terrareg Exclusive</span>
-                    {% endif %}
-                </a>
-            </li>
-        {% endif %}
+        <li id="module-tab-link-analytics" class="module-tab-link" style="display: none;">
+            <a onclick="selectModuleTab('analytics')">
+                Analytics
+                {% if not config.DISABLE_TERRAREG_EXCLUSIVE_LABELS %}
+                <span class="tag is-warning is-light">Terrareg Exclusive</span>
+                {% endif %}
+            </a>
+        </li>
+        <li id="module-tab-link-usage-builder" class="module-tab-link" style="display: none;">
+            <a onclick="selectModuleTab('usage-builder')">
+                Usage Builder
+                {% if not config.DISABLE_TERRAREG_EXCLUSIVE_LABELS %}
+                <span class="tag is-warning is-light">Terrareg Exclusive</span>
+                {% endif %}
+            </a>
+        </li>
         <li id="module-tab-link-integrations" class="module-tab-link">
             <a onclick="selectModuleTab('integrations')">
                 Integrations
@@ -935,6 +951,23 @@
                     </tr>
                 </thead>
                 <tbody>
+                </tbody>
+            </table>
+        </div>
+
+
+        <!-- Analytics tab -->
+        <div id="module-tab-analytics" class="module-tabs" style="display: none;">
+            <table id="analytics-table" class="table" style="width: 100%">
+                <thead>
+                    <tr>
+                        <th>Token</th>
+                        <th>Module Version</th>
+                        <th>Terraform Version</th>
+                        <th>Environment</th>
+                    </tr>
+                </thead>
+                <tbody id="analyticsVersionByTokenTable">
                 </tbody>
             </table>
         </div>
