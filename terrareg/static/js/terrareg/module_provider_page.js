@@ -17,7 +17,7 @@ function renderPage() {
         setupRootModulePage(data);
     });
     // Submodule route
-    router.on(baseRoute + "/:version/submodule/*", ({ data }) => {
+    router.on(baseRoute + "/:version/submodule/(.*)", ({ data }) => {
         setupBasePage(data);
         setupSubmodulePage(data);
     });
@@ -29,12 +29,34 @@ function renderPage() {
  * Generate terrareg module ID based on data from URL route
  *
  * @param data Data object from router
+ * @param stopAt Object specifiying level to stop at
  */
-function getCurrentObjectId(data) {
-    let id = `${data.namespace}/${data.module}/${data.provider}`;
+function getCurrentObjectId(data, stopAt = undefined) {
+    if (stopAt === undefined) {
+        stopAt = {};
+    }
 
-    if (data.version) {
-        id += `/${data.version}`;
+    let id = `${data.namespace}`;
+    if (stopAt.namespace) {
+        return id;
+    }
+
+    id += `/${data.module}`;
+    if (stopAt.module) {
+        return id;
+    }
+
+    id += `/${data.provider}`;
+    if (stopAt.provider) {
+        return id;
+    }
+
+    if (! data.version) {
+        return id;
+    }
+    id += `/${data.version}`;
+    if (stopAt.version) {
+        return id;
     }
 
     return id;
@@ -213,7 +235,7 @@ function setSourceUrl(sourceUrl) {
  *
  * @param moduleDetails Terrareg module details
  */
-function populateSubmoduleSelect(moduleDetails) {
+function populateSubmoduleSelect(moduleDetails, currentSubmodulePath = undefined) {
     $.get(`/v1/terrareg/modules/${moduleDetails.id}/submodules`, (data) => {
         if (data.length) {
             $("#submodule-select-container").show();
@@ -225,6 +247,12 @@ function populateSubmoduleSelect(moduleDetails) {
             let selectOption = $("<option></option>");
             selectOption.val(submodule.href);
             selectOption.text(submodule.path);
+
+            // Check if current submodule path matches the item and mark as selected
+            if (currentSubmodulePath !== undefined && submodule.path == currentSubmodulePath) {
+                selectOption.attr('selected', '');
+            }
+
             submoduleSelect.append(selectOption);
         });
     });
@@ -743,6 +771,23 @@ async function setupRootModulePage(data) {
     populateAnalyticsTable(moduleDetails);
     setupIntegrations(moduleDetails);
 }
+
+/*
+ * Setup elements of page for submodule
+ *
+ * @param data Data from router
+ */
+async function setupSubmodulePage(data) {
+    let moduleVersionId = getCurrentObjectId(data);
+    let moduleDetails = await getModuleDetails(moduleVersionId);
+
+    let submodulePath = data.undefined;
+    let submoduleDetails = await getSubmoduleDetails(moduleDetails.id, submodulePath);
+
+    populateSubmoduleSelect(moduleDetails, submodulePath);
+    populateExampleSelect(moduleDetails);
+}
+
 
 function createBreadcrumbs(data) {
     let breadcrumbs = ["Modules", data.namespace, data.module, data.provider];
