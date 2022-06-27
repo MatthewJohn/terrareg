@@ -589,17 +589,17 @@ function populateTerrarformInputs(moduleDetails) {
 /*
     * Index new module provider version
     */
-function indexModuleVersion() {
+function indexModuleVersion(moduleDetails) {
     let moduleVersionToIndex = $('#indexModuleVersion').val();
     $.post(
-        `/v1/terrareg/modules/${moduleDetails.id}/${moduleVersionToIndex}/import`
+        `/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/import`
     ).done(() => {
         $('#index-version-success').html('Successfully indexed version');
         $('#index-version-success').css('display', 'block');
         $('#index-version-error').css('display', 'none');
         if ($('#indexModuleVersionPublish').is(':checked')) {
             $.post(
-                `/v1/terrareg/modules/${moduleDetails.id}/${moduleVersionToIndex}/publish`
+                `/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/publish`
             ).done(() => {
                 $('#index-version-success').html('Successfully indexed and published version.');
             }).fail((res) => {
@@ -629,6 +629,13 @@ async function setupIntegrations(moduleDetails) {
     if (! config.PUBLISH_API_KEYS_ENABLED) {
         $('#integrations-index-module-version-publish').show();
     }
+
+    // Setup callback method for indexing a module version
+    $('#integration-index-version-button').bind('click', () => {
+        indexModuleVersion(moduleDetails);
+        return false;
+    });
+
     $.get(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/integrations`, (integrations) => {
         let integrationsTable = $('#integrations-table');
         integrations.forEach((integration) => {
