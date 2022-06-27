@@ -330,6 +330,9 @@ version = "${moduleDetails.terraform_example_version_string}"
 # Provide variables here
 }`
     );
+
+    // Show container
+    $('#usage-example-container').show();
 }
 
 /*
