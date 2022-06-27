@@ -745,6 +745,18 @@ function enableBackToParentLink(moduleDetails) {
 }
 
 /*
+ * Enable 'terrareg exclusive' tags, if enabled in the config
+ */
+async function enableTerraregExclusiveTags() {
+    let config = await getConfig();
+    if (! config.DISABLE_TERRAREG_EXCLUSIVE_LABELS) {
+        $.find('.terrareg-exclusive').forEach((tag) => {
+            $(tag).show();
+        });
+    }
+}
+
+/*
  * Setup common elements of the page, shared between all types
  * of pages
  *
@@ -764,6 +776,7 @@ async function setupBasePage(data) {
     }
 
     showModuleDetailsBody();
+    enableTerraregExclusiveTags();
     setProviderLogo(moduleDetails);
 
     createVersionDetails(moduleDetails);

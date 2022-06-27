@@ -152,17 +152,13 @@
         <li id="module-tab-link-analytics" class="module-tab-link" style="display: none;">
             <a onclick="selectModuleTab('analytics')">
                 Analytics
-                {% if not config.DISABLE_TERRAREG_EXCLUSIVE_LABELS %}
-                <span class="tag is-warning is-light">Terrareg Exclusive</span>
-                {% endif %}
+                <span class="tag is-warning is-light terrareg-exclusive" style="display: none;">Terrareg Exclusive</span>
             </a>
         </li>
         <li id="module-tab-link-usage-builder" class="module-tab-link" style="display: none;">
             <a onclick="selectModuleTab('usage-builder')">
                 Usage Builder
-                {% if not config.DISABLE_TERRAREG_EXCLUSIVE_LABELS %}
-                <span class="tag is-warning is-light">Terrareg Exclusive</span>
-                {% endif %}
+                <span class="tag is-warning is-light terrareg-exclusive" style="display: none;">Terrareg Exclusive</span>
             </a>
         </li>
         <li id="module-tab-link-integrations" class="module-tab-link" style="display: none;">
