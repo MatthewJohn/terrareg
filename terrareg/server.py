@@ -294,6 +294,10 @@ class Server(object):
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/settings'
         )
         self._api.add_resource(
+            ApiTerraregModuleProviderIntegrations,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/integrations'
+        )
+        self._api.add_resource(
             ApiModuleVersionCreateBitBucketHook,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/hooks/bitbucket'
         )
@@ -773,8 +777,68 @@ class ApiTerraregConfig(ErrorCatchingResource):
             'CONTRIBUTED_NAMESPACE_LABEL': terrareg.config.Config().CONTRIBUTED_NAMESPACE_LABEL,
             'VERIFIED_MODULE_LABEL': terrareg.config.Config().VERIFIED_MODULE_LABEL,
             'ANALYTICS_TOKEN_PHRASE': terrareg.config.Config().ANALYTICS_TOKEN_PHRASE,
-            'EXAMPLE_ANALYTICS_TOKEN': terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN
+            'EXAMPLE_ANALYTICS_TOKEN': terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN,
+            'ALLOW_MODULE_HOSTING': terrareg.config.Config().ALLOW_MODULE_HOSTING,
+            'PUBLISH_API_KEYS_ENABLED': bool(terrareg.config.Config().PUBLISH_API_KEYS)
         }
+
+
+class ApiTerraregModuleProviderIntegrations(ErrorCatchingResource):
+    """Intereface to provide list of integration URLs"""
+
+    def _get(self, namespace, name, provider):
+        """Return list of integration URLs"""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        # Get module provider and, optionally create, if it doesn't exist
+        module_provider = ModuleProvider.get(module=module, name=provider)
+
+        server_hostname = request.host
+
+        integrations = []
+        if terrareg.config.Config().ALLOW_MODULE_HOSTING:
+            integrations.append({
+                'method': 'POST',
+                'url': f'https://{server_hostname}/v1/terrareg/modules/{module_provider.id}/${{version}}/upload',
+                'description': 'Create module version using source archive',
+                'notes': 'Source ZIP file must be provided as data.'
+            })
+
+        integrations += [
+            {
+                'method': 'POST',
+                'url': f'https://{server_hostname}/v1/terrareg/modules/{module_provider.id}/${{version}}/import',
+                'description': 'Trigger module version import',
+                'notes': ''
+            },
+            {
+                'method': None,
+                'url': f'https://{server_hostname}/v1/terrareg/modules/{module_provider.id}/hooks/bitbucket',
+                'description': 'Bitbucket hook trigger',
+                'notes': ''
+            },
+            {
+                'method': None,
+                'url': f'https://{server_hostname}/v1/terrareg/modules/{module_provider.id}/hooks/github',
+                'description': 'Github hook trigger',
+                'notes': '',
+                'coming_soon': True
+            },
+            {
+                'method': None,
+                'url': f'https://{server_hostname}/v1/terrareg/modules/{module_provider.id}/hooks/gitlab',
+                'description': 'Gitlab hook trigger',
+                'notes': '',
+                'coming_soon': True
+            },
+            {
+                'method': 'POST',
+                'url': f'https://{server_hostname}/v1/terrareg/modules/{module_provider.id}/${{version}}/publish',
+                'description': 'Mark module version as published',
+                'notes': ''
+            },
+        ]
+        return integrations
 
 
 class ApiModuleVersionUpload(ErrorCatchingResource):

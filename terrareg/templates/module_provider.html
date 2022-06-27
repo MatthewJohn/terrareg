@@ -593,6 +593,91 @@
     }
 
     /*
+     * Index new module provider version
+     */
+    function indexModuleVersion() {
+        let moduleVersionToIndex = $('#indexModuleVersion').val();
+        $.post(
+            `/v1/terrareg/modules/${moduleDetails.id}/${moduleVersionToIndex}/import`
+        ).done(() => {
+            $('#index-version-success').html('Successfully indexed version');
+            $('#index-version-success').css('display', 'block');
+            $('#index-version-error').css('display', 'none');
+            if ($('#indexModuleVersionPublish').is(':checked')) {
+                $.post(
+                    `/v1/terrareg/modules/${moduleDetails.id}/${moduleVersionToIndex}/publish`
+                ).done(() => {
+                    $('#index-version-success').html('Successfully indexed and published version.');
+                }).fail((res) => {
+                    if (res.responseJSON && res.responseJSON.message) {
+                        $('#index-version-error').html(res.responseJSON.message);
+                    } else {
+                        $('#index-version-error').html('An unexpected error occurred when publishing module version');
+                    }
+                    $('#index-version-error').css('display', 'block');
+                });
+            }
+        }).fail((res) => {
+            if (res.responseJSON && res.responseJSON.message) {
+                $('#index-version-error').html(res.responseJSON.message);
+            } else {
+                $('#index-version-error').html('An unexpected error occurred when indexing module');
+            }
+            $('#index-version-error').css('display', 'block');
+        });
+    }
+
+    async function setupIntegrations(moduleDetails) {
+        let config = await getConfig();
+        if (config.ALLOW_MODULE_HOSTING) {
+            $('#module-integrations-upload-container').show();
+        }
+        if (! config.PUBLISH_API_KEYS_ENABLED) {
+            $('#integrations-index-module-version-publish').show();
+        }
+        $.get(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/integrations`, (integrations) => {
+            let integrationsTable = $('#integrations-table');
+            integrations.forEach((integration) => {
+
+                // Create tr for integration
+                let tr = $('<tr></tr>');
+
+                // Create td for description and put into row
+                let description = $('<td></td>');
+                description.text(integration.description);
+                if (integration.coming_soon) {
+                    description.append(' <b>(Coming soon)</b>');
+                }
+                tr.append(description);
+
+                // Create TD for integration details
+                let contentTd = $('<td></td>');
+                let codeBlock = $('<code></code>');
+
+                let urlCodeContent = '';
+                // If method was provided, prepend the URL with the method
+                if (integration.method) {
+                    urlCodeContent += integration.method + ' ';
+                }
+                // Add URL to code block
+                urlCodeContent += integration.url;
+                codeBlock.text(urlCodeContent);
+
+                contentTd.append(codeBlock);
+
+                // Add notes to TD on new line, if present.
+                if (integration.notes) {
+                    contentTd.append('<br />' + integration.notes);
+                }
+
+                tr.append(contentTd);
+
+                integrationsTable.append(tr);
+            });
+        })
+    }
+
+    /*
      * Setup common elements of the page, shared between all types
      * of pages
      *
@@ -648,6 +733,7 @@
         let moduleDetails = await getModuleDetails(id);
 
         populateAnalyticsTable(moduleDetails);
+        setupIntegrations(moduleDetails);
     }
 
     function createBreadcrumbs(data) {
@@ -971,6 +1057,41 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- Integrations tab -->
+        <div id="module-tab-integrations" class="module-tabs" style="display: none;">
+            <p class="subtitle">
+                Integrations
+            </p>
+
+            <table id="integrations-table" class="table">
+            </table>
+
+            <div id="index-version-success" style="display: none" class="notification is-success">
+                Successfully indexed version
+            </div>
+            <div id="index-version-error" style="display: none" class="notification is-danger">
+            </div>
+            <p class="subtitle">Manually index version</p>
+            <div class="field is-vertical">
+                <label class="label">Version</label>
+                <div class="control">
+                    <input id="indexModuleVersion" class="input is-small" type="text" size="5" placeholder="1.0.0">
+                </div>
+                <label id="integrations-index-module-version-publish" class="checkbox" style="display: none;">
+                    <input id="indexModuleVersionPublish" type="checkbox" value="true">
+                    Publish
+                </label>
+                <div class="control">
+                    <br />
+                    <a onclick="indexModuleVersion();" class="button is-info is-small">
+                    Index Version
+                    </a>
+                </div>
+            </div>
+        </div>
+
+
 
 
     </div>
