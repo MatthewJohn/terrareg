@@ -974,6 +974,12 @@ async function setupRootModulePage(data) {
 
     let moduleDetails = await getModuleDetails(id);
 
+    setupSettingsTab(moduleDetails);
+
+    if (moduleDetails == null) {
+        return;
+    }
+
     populateSubmoduleSelect(moduleDetails);
     populateExampleSelect(moduleDetails);
     populateTerraformUsageExample(moduleDetails);
@@ -990,8 +996,6 @@ async function setupRootModulePage(data) {
 
     populateAnalyticsTable(moduleDetails);
     setupIntegrations(moduleDetails);
-
-    setupSettingsTab(moduleDetails);
 }
 
 /*
