@@ -16,7 +16,7 @@ function timeDifference(previous) {
         {
             return 'approximately ' + cnt + ' year ago';
         }
-        return 'approximately ' + cnt + ' years ago';   
+        return 'approximately ' + cnt + ' years ago';
     }
     else if (elapsed > month)
     {
@@ -98,7 +98,7 @@ async function createSearchResultCard(parent_id, module) {
 
     // Add module to search results
     let result_card = $(
-        `  
+        `
         <div id="${card_id}" class="card">
             <header class="card-header">
                 <p class="card-header-title">
