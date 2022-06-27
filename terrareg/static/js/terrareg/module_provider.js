@@ -148,8 +148,6 @@ async function getModuleDetails(module_id) {
                 type: "GET",
                 url: `/v1/terrareg/modules/${module_id}`,
                 success: function (data) {
-                    // append module provider ID to data
-                    data.module_provider_id = data.id.split('/').slice(0, 3).join('/');
                     resolve(data);
                 },
                 error: function () {
