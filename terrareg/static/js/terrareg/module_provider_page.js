@@ -16,6 +16,11 @@ function renderPage() {
         setupBasePage(data);
         setupRootModulePage(data);
     });
+    // Submodule route
+    router.on(baseRoute + '/:version/submodule/*', ({data}) => {
+        setupBasePage(data);
+        setupSubmodulePage(data);
+    });
 
     router.resolve();
 }
@@ -675,7 +680,10 @@ async function setupIntegrations(moduleDetails) {
 
             integrationsTable.append(tr);
         });
-    })
+    });
+
+    // Show integrations tab link
+    $('#module-tab-link-integrations').show();
 }
 
 /*
@@ -708,19 +716,8 @@ async function setupBasePage(data) {
     setPublishedAt(moduleDetails);
     setOwner(moduleDetails);
     setSourceUrl(moduleDetails.display_source_url);
-    populateSubmoduleSelect(moduleDetails);
-    populateExampleSelect(moduleDetails);
-    populateTerraformUsageExample(moduleDetails);
-    populateDownloadSummary(moduleDetails);
 
     addModuleLabels(moduleDetails, $('#module-title'));
-
-    populateReadmeContent(moduleDetails);
-
-    populateTerrarformInputs(moduleDetails);
-    populateTerrarformOutputs(moduleDetails);
-    populateTerrarformProviders(moduleDetails);
-    populateTerrarformResources(moduleDetails);
 
 }
 /*
@@ -732,6 +729,19 @@ async function setupRootModulePage(data) {
     let id = getCurrentObjectId(data);
 
     let moduleDetails = await getModuleDetails(id);
+
+    populateSubmoduleSelect(moduleDetails);
+    populateExampleSelect(moduleDetails);
+    populateTerraformUsageExample(moduleDetails);
+    populateDownloadSummary(moduleDetails);
+
+
+    populateReadmeContent(moduleDetails);
+
+    populateTerrarformInputs(moduleDetails);
+    populateTerrarformOutputs(moduleDetails);
+    populateTerrarformProviders(moduleDetails);
+    populateTerrarformResources(moduleDetails);
 
     populateAnalyticsTable(moduleDetails);
     setupIntegrations(moduleDetails);
