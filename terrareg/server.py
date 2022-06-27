@@ -277,6 +277,11 @@ class Server(object):
 
         ## Module endpoints /v1/terreg/modules
         self._api.add_resource(
+            ApiTerraregModuleVersionDetails,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>',
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>'
+        )
+        self._api.add_resource(
             ApiTerraregModuleProviderCreate,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/create'
         )
@@ -292,7 +297,6 @@ class Server(object):
             ApiModuleVersionCreateBitBucketHook,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/hooks/bitbucket'
         )
-
         self._api.add_resource(
             ApiTerraregModuleVersionVariableTemplate,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
@@ -318,12 +322,20 @@ class Server(object):
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/delete'
         )
         self._api.add_resource(
+            ApiTerraregModuleVerisonSubmodules,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodules'
+        )
+        self._api.add_resource(
+            ApiTerraregModuleVersionExamples,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples'
+        )
+        self._api.add_resource(
             ApiTerraregExampleFileList,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/example/filelist/<path:example>'
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples/filelist/<path:example>'
         )
         self._api.add_resource(
             ApiTerraregExampleFile,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/example/file/<path:example_file>'
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples/file/<path:example_file>'
         )
 
         self._api.add_resource(
@@ -479,23 +491,26 @@ class Server(object):
                 # redirect to the module provider
                 return redirect(module_provider.get_view_url())
 
-        return self._render_template(
-            'module_provider.html',
-            namespace=namespace,
-            module=module,
-            module_provider=module_provider,
-            module_version=module_version,
-            current_module=module_version,
-            server_hostname=request.host,
-            git_providers=GitProvider.get_all(),
-            provider_logo=module_provider.get_logo(),
-            config=terrareg.config.Config(),
-            ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
-            ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
-            ANALYTICS_TOKEN_PHRASE=terrareg.config.Config().ANALYTICS_TOKEN_PHRASE,
-            ANALYTICS_TOKEN_DESCRIPTION=terrareg.config.Config().ANALYTICS_TOKEN_DESCRIPTION,
-            EXAMPLE_ANALYTICS_TOKEN=terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN
-        )
+        if namespace.name == 'hashicorp':
+            return self._render_template(
+                'module_provider-old.html',
+                namespace=namespace,
+                module=module,
+                module_provider=module_provider,
+                module_version=module_version,
+                current_module=module_version,
+                server_hostname=request.host,
+                git_providers=GitProvider.get_all(),
+                provider_logo=module_provider.get_logo(),
+                config=terrareg.config.Config(),
+                ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+                ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
+                ANALYTICS_TOKEN_PHRASE=terrareg.config.Config().ANALYTICS_TOKEN_PHRASE,
+                ANALYTICS_TOKEN_DESCRIPTION=terrareg.config.Config().ANALYTICS_TOKEN_DESCRIPTION,
+                EXAMPLE_ANALYTICS_TOKEN=terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN
+            )
+        else:
+            return self._render_template('module_provider.html')
 
     @catch_name_exceptions
     def _view_serve_submodule(self, namespace, name, provider, version, submodule_path):
@@ -1349,6 +1364,24 @@ class ApiTerraregModuleProviderAnalyticsTokenVersions(ErrorCatchingResource):
         return AnalyticsEngine.get_module_provider_token_versions(module_provider)
 
 
+class ApiTerraregModuleVersionDetails(ErrorCatchingResource):
+
+    def _get(self, namespace, name, provider, version=None):
+        """Return details about module version."""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        if version is not None:
+            module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        else:
+            module_version = module_provider.get_latest_version()
+
+        if module_version is None:
+            return self._get_404_response()
+
+        return module_version.get_terrareg_api_details()
+
+
 class ApiTerraregModuleVersionVariableTemplate(ErrorCatchingResource):
     """Provide variable template for module version."""
 
@@ -1761,6 +1794,56 @@ class ApiTerraregModuleVersionPublish(ErrorCatchingResource):
         return {
             'status': 'Success'
         }
+
+
+class ApiTerraregModuleVerisonSubmodules(ErrorCatchingResource):
+    """Interface to obtain list of submodules in module version."""
+
+    def _get(self, namespace, name, provider, version):
+        """Return list of submodules."""
+        namespace = Namespace(name=namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider.get(module=module, name=provider)
+
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
+
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        if not module_version:
+            return {'message': 'Module version does not exist'}, 400
+
+        return [
+            {
+                'path': submodule.path,
+                'href': submodule.get_view_url()
+            }
+            for submodule in module_version.get_submodules()
+        ]
+
+
+class ApiTerraregModuleVersionExamples(ErrorCatchingResource):
+    """Interface to obtain list of examples in module version."""
+
+    def _get(self, namespace, name, provider, version):
+        """Return list of examples."""
+        namespace = Namespace(name=namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider.get(module=module, name=provider)
+
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
+
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        if not module_version:
+            return {'message': 'Module version does not exist'}, 400
+
+        return [
+            {
+                'path': example.path,
+                'href': example.get_view_url()
+            }
+            for example in module_version.get_examples()
+        ]
 
 
 class ApiTerraregExampleFileList(ErrorCatchingResource):

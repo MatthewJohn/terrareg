@@ -146,11 +146,14 @@ async function getModuleDetails(module_id) {
             // Perform request to obtain module details
             $.ajax({
                 type: "GET",
-                url: `/v1/modules/${module_id}`,
+                url: `/v1/terrareg/modules/${module_id}`,
                 success: function (data) {
                     // append module provider ID to data
                     data.module_provider_id = data.id.split('/').slice(0, 3).join('/');
                     resolve(data);
+                },
+                error: function () {
+                    resolve(null);
                 }
             });
         });

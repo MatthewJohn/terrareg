@@ -4,6 +4,9 @@
 
 <script>
 
+    /*
+     * Setup router and call setup page depending on the page/module type
+     */
     function renderPage() {
         const router = new Navigo('/');
 
@@ -21,6 +24,11 @@
         router.resolve();
     }
 
+    /*
+     * Generate terrareg module ID based on data from URL route
+     *
+     * @param data Data object from router
+     */
     function getCurrentObjectId(data) {
         let id = `${data.namespace}/${data.module}/${data.provider}`;
 
@@ -31,9 +39,14 @@
         return id;
     }
 
+    /*
+     * Set the provider logo, if available and add TOS
+     * to bottom of the page
+     *
+     * @param moduleDetails Terrareg module details
+     */
     async function setProviderLogo(moduleDetails) {
         let providerLogos = await getProviderLogos();
-        console.log(providerLogos);
 
         // Check if namespace has a logo
         if (providerLogos[moduleDetails.provider] !== undefined) {
@@ -52,15 +65,242 @@
         }
     }
 
+    /*
+     * Add options to version selection dropdown.
+     * Show currently selected module and latest version
+     *
+     * @param moduleDetails Terrareg module details
+     */
+    function createVersionDetails(moduleDetails) {
+        let versionSelection = $('#version-select');
+
+        let currentVersionFound = false;
+        moduleDetails.versions.forEach((version, itx) => {
+            let versionOption = $('<option></option>');
+
+            // Set value of option to view URL of module version
+            versionOption.val(`/modules/${moduleDetails.namespace}/${moduleDetails.name}/${moduleDetails.provider}/${version}`);
+
+            let versionText = version;
+            // Add '(latest)' suffix to the first (latest) version
+            if (itx == 0) {
+                versionText += ' (latest)';
+            }
+            versionOption.text(versionText);
+
+            // Set version that matches current module to selected
+            if (version == moduleDetails.version) {
+                versionOption.attr('selected', '');
+                currentVersionFound = true;
+            }
+
+            versionSelection.append(versionOption);
+        });
+
+        // If current version has not been found, add fake version to drop-down
+        if (currentVersionFound == false) {
+            let versionOption = $('<option></option>');
+            versionOption.text(`${moduleDetails.version} (unpublished)`);
+            versionOption.attr('selected', '');
+            versionSelection.append(versionOption);
+
+            // Add warning to page about unpublished version
+            $('#unpublished-warning').show();
+        }
+    }
+
+    /*
+     * Handle version select onchange event.
+     * Redirect user to newly version module version
+     * 
+     * @param event Onchange event
+     */
+    function onVersionSelectChange(event) {
+        let target_obj = $(event.target)[0].selectedOptions[0];
+        let url = target_obj.value;
+
+        // Navigate page to version
+        window.location.href = url;
+    }
+
+    /*
+     * Set the module title text
+     *
+     * @param moduleDetails Terrareg module details
+     */
+    function setModuleTitle(moduleDetails) {
+        $('#module-title').text(moduleDetails.name);
+    }
+
+    /*
+     * Set the module provider text
+     *
+     * @param moduleDetails Terrareg module details
+     */
+    function setModuleProvider(moduleDetails) {
+        $('#module-provider').text(`Provider: ${moduleDetails.provider}`);
+    }
+
+    /*
+     * Set the module description text
+     *
+     * @param moduleDetails Terrareg module details
+     */
+    function setModuleDescription(moduleDetails) {
+        $('#module-description').text(moduleDetails.description);
+    }
+
+    function showModuleDetailsBody() {
+        $('#module-details-body').show();
+    }
+
+    /*
+     * Set warning on page that there are no available versions of the module
+     *
+     * @param moduleDetails Terrareg module details
+     */
+    function showNoAvailableVersions() {
+        $('#no-version-available').show();
+    }
+
+    /*
+     * Set text for 'published at' and link to parent namespace
+     *
+     * @param moduleDetails Terrareg module details
+     */
+    function setPublishedAt(moduleDetails) {
+        let publishedAtDiv = $('#published-at');
+
+        let namespaceLinkDiv = $('<a></a>');
+        namespaceLinkDiv.attr('href', `/modules/${moduleDetails.namespace}`);
+        namespaceLinkDiv.text(moduleDetails.namespace);
+
+        publishedAtDiv.append(`Published ${moduleDetails.published_at_display} by `);
+        publishedAtDiv.append(namespaceLinkDiv);
+    }
+
+    /*
+     * Set text for 'owner' of module, if this has been provided
+     *
+     * @param moduleDetails Terrareg module details
+     */
+    function setOwner(moduleDetails) {
+        if (moduleDetails.owner) {
+            $('#module-owner').text(`Module managed by ${moduleDetails.owner}`);
+        }
+    }
+
+    /*
+     * Set text for 'source url' of module, if this has been provided
+     *
+     * @param sourceUrl Url of the source code
+     */
+     function setSourceUrl(sourceUrl) {
+        if (sourceUrl) {
+            let sourceLink = $('<a></a>');
+            sourceLink.text(sourceUrl);
+            sourceLink.attr('href', sourceUrl);
+
+            let sourceUrlDiv = $('#source-url');
+            sourceUrlDiv.text('Source code: ');
+            sourceUrlDiv.append(sourceLink);
+        }
+    }
+
+    /*
+     * Populate submodule selection options
+     *
+     * @param moduleDetails Terrareg module details
+     */
+    function populateSubmoduleSelect(moduleDetails) {
+        $.get(`/v1/terrareg/modules/${moduleDetails.id}/submodules`, (data) => {
+            if (data.length) {
+                $('#submodule-select-container').show();
+            }
+
+            let submoduleSelect = $('#submodule-select');
+
+            data.forEach((submodule) => {
+                let selectOption = $('<option></option>');
+                selectOption.val(submodule.href);
+                selectOption.text(submodule.path);
+                submoduleSelect.append(selectOption);
+            });
+        })
+    }
+
+    /*
+     * Populate example selection options
+     *
+     * @param moduleDetails Terrareg module details
+     */
+     function populateExampleSelect(moduleDetails) {
+        $.get(`/v1/terrareg/modules/${moduleDetails.id}/examples`, (data) => {
+            if (data.length) {
+                $('#example-select-container').show();
+            }
+
+            let exampleSelect = $('#example-select');
+
+            data.forEach((example) => {
+                let selectOption = $('<option></option>');
+                selectOption.val(example.href);
+                selectOption.text(example.path);
+                exampleSelect.append(selectOption);
+            });
+        })
+    }
+
+    /*
+     * Handle submodule/example select onChange event.
+     * Redirect user to selected submodule/example
+     *
+     * @param event Target event
+     */
+    function onSubmoduleSelectChange(event) {
+        let target_obj = $(event.target)[0].selectedOptions[0];
+        let url = target_obj.value;
+
+        // Ignore selection of 'Select modules' item
+        if (url == 'none') {
+            return;
+        }
+        // Navigate page to submodule
+        window.location.href = url;
+    }
+
+    /*
+     * Setup common elements of the page, shared between all types
+     * of pages
+     *
+     * @param data Data from router
+     */
     async function setupBasePage(data) {
         createBreadcrumbs(data);
 
         let id = getCurrentObjectId(data);
 
         let moduleDetails = await getModuleDetails(id);
-        //let terraregModuleDetails = await getTerraregModuleDetails(id);
 
+        // If module does not exist, set warning and exit
+        if (moduleDetails == null) {
+            showNoAvailableVersions();
+            return;
+        }
+
+        showModuleDetailsBody();
         setProviderLogo(moduleDetails);
+
+        createVersionDetails(moduleDetails);
+
+        setModuleTitle(moduleDetails);
+        setModuleProvider(moduleDetails);
+        setModuleDescription(moduleDetails);
+        setPublishedAt(moduleDetails);
+        setOwner(moduleDetails);
+        setSourceUrl(moduleDetails.display_source_url);
+        populateSubmoduleSelect(moduleDetails);
+        populateExampleSelect(moduleDetails);
     }
 
     function createBreadcrumbs(data) {
@@ -111,76 +351,142 @@
 </nav>
 
 
-<div class="columns is-centered" style="background-color: #f9f9f9; padding-top: 30px; padding-bottom: 30px;">
+<div style="background-color: #f9f9f9; padding-top: 30px; padding-bottom: 30px;">
 
-    <a id="provider-logo-link" style="margin-top: 30px; max-height: 150px; display: none;" href="">
-        <img id="provider-logo-img" height="150" width="150" alt="" src="" />
-    </a>
-
-    <div class="column is-one-third">
-        {% block main_details %}{% endblock %}
+    <!-- Warning when no versions of module are available -->
+    <div id="no-version-available" class="columns is-centered" style="display: none;">
+        There are no versions of this module
     </div>
 
-    {% if module_version %}
-    <div class="column is-one-third">
+    <!-- Main details header body -->
+    <div id="module-details-body" class="columns is-centered" style="display: none;">
 
-        {% if not current_module.is_submodule %}
-        <div class="box">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Module Downloads</th>
-                        <th>
-                            <span class="tag is-warning is-light">All Versions</span>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Downloads this week</td>
-                        <td id="downloads-week"></td>
-                    </tr>
-                    <tr>
-                        <td>Downloads this month</td>
-                        <td id="downloads-month"></td>
-                    </tr>
-                    <tr>
-                        <td>Downloads this year</td>
-                        <td id="downloads-year"></td>
-                    </tr>
-                    <tr>
-                        <td>Downloads over all time</td>
-                        <td id="downloads-total"></td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- Provider Logo -->
+        <a id="provider-logo-link" style="margin-top: 30px; max-height: 150px; display: none;" href="">
+            <img id="provider-logo-img" height="150" width="150" alt="" src="" />
+        </a>
+
+        <!-- Module details -->
+        <div class="column is-one-third">
+
+            <section id="details-version">
+                <section id="details-version">
+                    Version
+                    <div class="select is-small">
+                        <select id="version-select" autocomplete="off" onchange="onVersionSelectChange(event);">
+                        </select>
+                    </div>
+                </section>
+            </section>
+        
+            <!-- Basic details about module -->
+            <p id="module-title" class="title">
+            </p>
+            <p id="module-provider" class="subtitle">
+            </p>
+
+            <p id="unpublished-warning" class="subtitle" style="display: none;">
+                <b>WARNING:</b> This version of the module is not published.
+            </p>
+        
+            <p id="module-description" class="subtitle">
+            </p>
+
+            <p id="published-at"></p>
+            <p id="module-owner"></p>
+            <p id="source-url"></p>
+
+            <br />
+            <a id="submodule-back-to-parent" class="buton" href="" style="display: none;">Back to parent</a>
+
+
+            <section id="submodule-select-container" style="display: none;">
+                <div class="select is-small">
+                    <select id="submodule-select" autocomplete="off" onchange="onSubmoduleSelectChange(event);">
+                        <option value="none">Select submodule</option>
+                    </select>
+                </div>
+            </section>
+
+            <br />
+            <section id="example-select-container" style="display: none;">
+                <div class="select is-small">
+                    <select id="example-select" autocomplete="off" onchange="onSubmoduleSelectChange(event);">
+                        <option value="none">Select example</option>
+                    </select>
+                </div>
+            </section>
+        
+            <br />
+            <br />
+
+
+
+
+
         </div>
-        {% endif %}
 
-        <script>
+        {% if module_version %}
+        <div class="column is-one-third">
 
-        </script>
-        <div class="box">
-            <h5 class="title is-5">Usage</h5>
-            <div class="content">
-                To use this module:
-                <ol>
-                    <li>Add the following example to your terraform,</li>
-                    <li>Ensure the "{{ EXAMPLE_ANALYTICS_TOKEN }}" placeholder must be replaced with your '{{ ANALYTICS_TOKEN_PHRASE }}',               </li>
-                    <li>Add the required inputs - use the '<a onclick="selectModuleTab('usage-builder')">Usage Builder</a>' tab for help and 'Inputs' tab for a full list.</li>
-                </ol>
+            {% if not current_module.is_submodule %}
+            <div class="box">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Module Downloads</th>
+                            <th>
+                                <span class="tag is-warning is-light">All Versions</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Downloads this week</td>
+                            <td id="downloads-week"></td>
+                        </tr>
+                        <tr>
+                            <td>Downloads this month</td>
+                            <td id="downloads-month"></td>
+                        </tr>
+                        <tr>
+                            <td>Downloads this year</td>
+                            <td id="downloads-year"></td>
+                        </tr>
+                        <tr>
+                            <td>Downloads over all time</td>
+                            <td id="downloads-total"></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
+            {% endif %}
 
-            <pre>
+            <script>
+
+            </script>
+            <div class="box">
+                <h5 class="title is-5">Usage</h5>
+                <div class="content">
+                    To use this module:
+                    <ol>
+                        <li>Add the following example to your terraform,</li>
+                        <li>Ensure the "{{ EXAMPLE_ANALYTICS_TOKEN }}" placeholder must be replaced with your '{{ ANALYTICS_TOKEN_PHRASE }}',               </li>
+                        <li>Add the required inputs - use the '<a onclick="selectModuleTab('usage-builder')">Usage Builder</a>' tab for help and 'Inputs' tab for a full list.</li>
+                    </ol>
+                </div>
+
+                <pre>
 module "{{ module.name }}" {
   source  = "{{ server_hostname }}/{{ EXAMPLE_ANALYTICS_TOKEN }}__{{ current_module.registry_id }}"
   version = "{{ module_version.get_terraform_example_version_string() }}"
 
   # Provide variables here
 }</pre>
+            </div>
         </div>
+        {% endif %}
     </div>
-    {% endif %}
 </div>
 
 

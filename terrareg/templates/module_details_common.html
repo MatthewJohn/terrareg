@@ -7,7 +7,6 @@
 <script>
     async function populatePageDetails() {
         let details = await getModuleDetails('{{ module_provider.id }}');
-        console.log(details);
 
         $.get(`/v1/modules/${details.module_provider_id}/downloads/summary`, function(data, status) {
             Object.keys(data.data.attributes).forEach((key) => {
@@ -102,26 +101,6 @@
             }
             $('#settings-status-error').css('display', 'block');
         });
-    }
-
-    function selectSubmodule(event) {
-        let target_obj = $(event.target)[0].selectedOptions[0];
-        let url = target_obj.value;
-
-        // Ignore selection of 'Select modules' item
-        if (url == 'none') {
-            return;
-        }
-        // Navigate page to submodule
-        window.location.href = url;
-    }
-
-    function selectVersion(event) {
-        let target_obj = $(event.target)[0].selectedOptions[0];
-        let url = target_obj.value;
-
-        // Navigate page to version
-        window.location.href = url;
     }
 
     $(document).ready(function () {

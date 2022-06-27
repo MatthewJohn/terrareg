@@ -1389,6 +1389,16 @@ class ModuleVersion(TerraformSpecsObject):
         })
         return api_details
 
+    def get_terrareg_api_details(self):
+        """Return dict of version details with additional attributes used by terrareg UI."""
+        api_details = self.get_api_details()
+        source_browse_url = self.get_source_browse_url()
+        api_details.update({
+            "published_at_display": self.publish_date_display,
+            "display_source_url": source_browse_url if source_browse_url else self.get_source_base_url()
+        })
+        return api_details
+
     def prepare_module(self):
         """Handle file upload of module version."""
         self.create_data_directory()
