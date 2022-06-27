@@ -1058,19 +1058,27 @@ async function setupExamplePage(data) {
 
 
 function createBreadcrumbs(data) {
-    let breadcrumbs = ["Modules", data.namespace, data.module, data.provider];
+    let breadcrumbs = [
+        ["Modules", "modules"],
+        [data.namespace, data.namespace],
+        [data.module, data.module],
+        [data.provider, data.provider]
+    ];
     if (data.version) {
-        breadcrumbs.push(data.version);
+        breadcrumbs.push([data.version, data.version]);
     }
 
     let breadcrumbUl = $("#breadcrumb-ul");
     let currentLink = "";
-    breadcrumbs.forEach((breadcrumbName, itx) => {
+    breadcrumbs.forEach((breadcrumbDetails, itx) => {
+        let breadcrumbName = breadcrumbDetails[0];
+        let breadcrumbUrlPart = breadcrumbDetails[1];
+
         // Create UL item for breadcrumb
         let breadcrumbLiObject = $("<li></li>");
 
         // Create link to current breadcrumb item
-        currentLink += `/${breadcrumbName}`;
+        currentLink += `/${breadcrumbUrlPart}`;
 
         // Create link for breadcrumb
         let breadcrumbLink = $(`<a></a>`);
