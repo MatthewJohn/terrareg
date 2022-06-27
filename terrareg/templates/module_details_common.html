@@ -5,43 +5,6 @@
 {% if module_version %}
 
 <script>
-    async function populatePageDetails() {
-        let details = await getModuleDetails('{{ module_provider.id }}');
-
-        $.get(`/v1/modules/${details.module_provider_id}/downloads/summary`, function(data, status) {
-            Object.keys(data.data.attributes).forEach((key) => {
-                $(`#downloads-${key}`).html(data.data.attributes[key]);
-            });
-        });
-
-        $.get(`/v1/terrareg/analytics/${details.module_provider_id}/token_versions`, (data, status) => {
-            Object.keys(data).forEach((token) => {
-                $('#analyticsVersionByTokenTable').append(`
-                    <tr>
-                        <td>
-                            ${token}
-                        </td>
-                        <td>
-                            ${data[token].module_version}
-                        </td>
-                        <td>
-                            ${data[token].terraform_version}
-                        </td>
-                        <td>
-                            ${data[token].environment}
-                        </td>
-                    </tr>
-                `);
-            });
-            $('#analytics-table').DataTable();
-        });
-
-        addModuleLabels(details, $('#module-title'));
-    }
-
-    $(document).ready(function() {
-        populatePageDetails();
-    });
 
 
 </script>

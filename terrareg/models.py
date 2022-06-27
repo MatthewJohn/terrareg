@@ -1395,7 +1395,8 @@ class ModuleVersion(TerraformSpecsObject):
         source_browse_url = self.get_source_browse_url()
         api_details.update({
             "published_at_display": self.publish_date_display,
-            "display_source_url": source_browse_url if source_browse_url else self.get_source_base_url()
+            "display_source_url": source_browse_url if source_browse_url else self.get_source_base_url(),
+            "terraform_example_version_string": self.get_terraform_example_version_string()
         })
         return api_details
 

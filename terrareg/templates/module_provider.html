@@ -270,6 +270,71 @@
     }
 
     /*
+     * Populate usage example
+     *
+     * @param moduleDetails Terrareg module details
+     */
+    async function populateTerraformUsageExample(moduleDetails) {
+        let config = await getConfig();
+
+        // Update labels for example analytics token and phrase
+        $('#usage-example-analytics-token').text(config.EXAMPLE_ANALYTICS_TOKEN);
+        $('#usage-example-analytics-token-phrase').text(config.ANALYTICS_TOKEN_PHRASE);
+
+        // Add example terraform call to source section
+        $('#usage-example-terraform').text(
+`module "${moduleDetails.name}" {
+  source  = "${window.location.hostname}/${config.EXAMPLE_ANALYTICS_TOKEN}__${moduleDetails.id}"
+  version = "${moduleDetails.terraform_example_version_string}"
+
+  # Provide variables here
+}`
+);
+    }
+
+    /*
+     * Populate downloads summary
+     *
+     * @param moduleDetails Terrareg module details
+     */
+    function populateDownloadSummary(moduleDetails) {
+        $.get(`/v1/modules/${moduleDetails.module_provider_id}/downloads/summary`, function(data, status) {
+            Object.keys(data.data.attributes).forEach((key) => {
+                $(`#downloads-${key}`).html(data.data.attributes[key]);
+            });
+        });
+    }
+
+    /*
+     * Populate analytics table
+     *
+     * @param moduleDetails Terrareg module details
+     */
+    function populateAnalyticsTable(moduleDetails) {
+        $.get(`/v1/terrareg/analytics/${moduleDetails.module_provider_id}/token_versions`, (data, status) => {
+            Object.keys(data).forEach((token) => {
+                $('#analyticsVersionByTokenTable').append(`
+                    <tr>
+                        <td>
+                            ${token}
+                        </td>
+                        <td>
+                            ${data[token].module_version}
+                        </td>
+                        <td>
+                            ${data[token].terraform_version}
+                        </td>
+                        <td>
+                            ${data[token].environment}
+                        </td>
+                    </tr>
+                `);
+            });
+            $('#analytics-table').DataTable();
+        });
+    }
+
+    /*
      * Setup common elements of the page, shared between all types
      * of pages
      *
@@ -301,6 +366,11 @@
         setSourceUrl(moduleDetails.display_source_url);
         populateSubmoduleSelect(moduleDetails);
         populateExampleSelect(moduleDetails);
+        populateTerraformUsageExample(moduleDetails);
+        populateDownloadSummary(moduleDetails);
+
+        addModuleLabels(moduleDetails, $('#module-title'));
+
     }
 
     function createBreadcrumbs(data) {
@@ -426,10 +496,8 @@
 
         </div>
 
-        {% if module_version %}
         <div class="column is-one-third">
 
-            {% if not current_module.is_submodule %}
             <div class="box">
                 <table class="table">
                     <thead>
@@ -460,7 +528,6 @@
                     </tbody>
                 </table>
             </div>
-            {% endif %}
 
             <script>
 
@@ -471,21 +538,14 @@
                     To use this module:
                     <ol>
                         <li>Add the following example to your terraform,</li>
-                        <li>Ensure the "{{ EXAMPLE_ANALYTICS_TOKEN }}" placeholder must be replaced with your '{{ ANALYTICS_TOKEN_PHRASE }}',               </li>
+                        <li>Ensure the "<span id="usage-example-analytics-token"></span>" placeholder must be replaced with your '<span id="usage-example-analytics-token-phrase"></span>',</li>
                         <li>Add the required inputs - use the '<a onclick="selectModuleTab('usage-builder')">Usage Builder</a>' tab for help and 'Inputs' tab for a full list.</li>
                     </ol>
                 </div>
 
-                <pre>
-module "{{ module.name }}" {
-  source  = "{{ server_hostname }}/{{ EXAMPLE_ANALYTICS_TOKEN }}__{{ current_module.registry_id }}"
-  version = "{{ module_version.get_terraform_example_version_string() }}"
-
-  # Provide variables here
-}</pre>
+                <pre id="usage-example-terraform"></pre>
             </div>
         </div>
-        {% endif %}
     </div>
 </div>
 
