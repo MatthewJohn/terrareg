@@ -338,6 +338,10 @@ class Server(object):
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodules/details/<path:submodule>'
         )
         self._api.add_resource(
+            ApiTerraregSubmoduleReadmeHtml,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodules/readme_html/<path:submodule>'
+        )
+        self._api.add_resource(
             ApiTerraregModuleVersionExamples,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples'
         )
@@ -1916,10 +1920,10 @@ class ApiTerraregModuleVerisonSubmodules(ErrorCatchingResource):
 
 
 class ApiTerraregSubmoduleDetails(ErrorCatchingResource):
-    """Interface to obtain subdmoule details."""
+    """Interface to obtain submodule details."""
 
     def _get(self, namespace, name, provider, version, submodule):
-        """Return details of example."""
+        """Return details of submodule."""
         namespace_obj = Namespace(name=namespace)
         module_obj = Module(namespace=namespace_obj, name=name)
         module_provider = ModuleProvider.get(module=module_obj, name=provider)
@@ -1934,6 +1938,27 @@ class ApiTerraregSubmoduleDetails(ErrorCatchingResource):
         submodule_obj = Submodule.get(module_version=module_version, module_path=submodule)
 
         return submodule_obj.get_api_module_specs()
+
+
+class ApiTerraregSubmoduleReadmeHtml(ErrorCatchingResource):
+    """Interface to obtain submodule REAMDE in HTML format."""
+
+    def _get(self, namespace, name, provider, version, submodule):
+        """Return HTML formatted README of submodule."""
+        namespace_obj = Namespace(name=namespace)
+        module_obj = Module(namespace=namespace_obj, name=name)
+        module_provider = ModuleProvider.get(module=module_obj, name=provider)
+
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
+
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        if not module_version:
+            return {'message': 'Module version does not exist'}, 400
+
+        submodule_obj = Submodule.get(module_version=module_version, module_path=submodule)
+
+        return submodule_obj.get_readme_html()
 
 
 class ApiTerraregModuleVersionExamples(ErrorCatchingResource):

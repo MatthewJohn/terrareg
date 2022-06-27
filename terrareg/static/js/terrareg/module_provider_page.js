@@ -374,30 +374,28 @@ function populateAnalyticsTable(moduleDetails) {
  *
  * @param moduleDetails Terrareg module details
  */
-function populateReadmeContent(moduleDetails) {
-    $.get(`/v1/terrareg/modules/${moduleDetails.id}/readme_html`, (readmeContent) => {
-        // If no README is defined, exit early
-        if (!readmeContent) {
-            return;
-        }
+function populateReadmeContent(readmeContent) {
+    // If no README is defined, exit early
+    if (!readmeContent) {
+        return;
+    }
 
-        let readmeContentDiv = $("#module-tab-readme");
+    let readmeContentDiv = $("#module-tab-readme");
 
-        // Populate README conrtent
-        readmeContentDiv.append(readmeContent);
+    // Populate README conrtent
+    readmeContentDiv.append(readmeContent);
 
-        // Add 'table' class to all tables in README
-        readmeContentDiv.find("table").addClass("table");
+    // Add 'table' class to all tables in README
+    readmeContentDiv.find("table").addClass("table");
 
-        // Replace size of headers
-        readmeContentDiv.find("h1").addClass("subtitle").addClass("is-3");
-        readmeContentDiv.find("h2").addClass("subtitle").addClass("is-4");
-        readmeContentDiv.find("h3").addClass("subtitle").addClass("is-5");
-        readmeContentDiv.find("h4").addClass("subtitle").addClass("is-6");
+    // Replace size of headers
+    readmeContentDiv.find("h1").addClass("subtitle").addClass("is-3");
+    readmeContentDiv.find("h2").addClass("subtitle").addClass("is-4");
+    readmeContentDiv.find("h3").addClass("subtitle").addClass("is-5");
+    readmeContentDiv.find("h4").addClass("subtitle").addClass("is-6");
 
-        // Show README tab button
-        $("#module-tab-link-readme").show();
-    });
+    // Show README tab button
+    $("#module-tab-link-readme").show();
 }
 
 /*
@@ -764,7 +762,9 @@ async function setupRootModulePage(data) {
     populateTerraformUsageExample(moduleDetails);
     populateDownloadSummary(moduleDetails);
 
-    populateReadmeContent(moduleDetails);
+    $.get(`/v1/terrareg/modules/${moduleDetails.id}/readme_html`, (readmeContent) => {
+        populateReadmeContent(readmeContent);
+    });
 
     populateTerrarformInputs(moduleDetails);
     populateTerrarformOutputs(moduleDetails);
@@ -792,7 +792,9 @@ async function setupSubmodulePage(data) {
 
     populateTerraformUsageExample(moduleDetails, submodulePath);
 
-    populateReadmeContent(moduleDetails);
+    $.get(`/v1/terrareg/modules/${moduleDetails.id}/submodules/readme_html/${submodulePath}`, (readmeContent) => {
+        populateReadmeContent(readmeContent);
+    });
 
     populateTerrarformInputs(moduleDetails);
     populateTerrarformOutputs(moduleDetails);
