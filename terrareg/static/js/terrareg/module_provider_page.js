@@ -303,7 +303,7 @@ function onSubmoduleSelectChange(event) {
  *
  * @param moduleDetails Terrareg module details
  */
-async function populateTerraformUsageExample(moduleDetails) {
+async function populateTerraformUsageExample(moduleDetails, additionalPath = undefined) {
     let config = await getConfig();
 
     // Update labels for example analytics token and phrase
@@ -313,7 +313,7 @@ async function populateTerraformUsageExample(moduleDetails) {
     // Add example terraform call to source section
     $("#usage-example-terraform").text(
         `module "${moduleDetails.name}" {
-source  = "${window.location.hostname}/${config.EXAMPLE_ANALYTICS_TOKEN}__${moduleDetails.module_provider_id}"
+source  = "${window.location.hostname}/${config.EXAMPLE_ANALYTICS_TOKEN}__${moduleDetails.module_provider_id}${additionalPath ? "//" + additionalPath : ""}"
 version = "${moduleDetails.terraform_example_version_string}"
 
 # Provide variables here
@@ -789,6 +789,15 @@ async function setupSubmodulePage(data) {
 
     populateSubmoduleSelect(moduleDetails, submodulePath);
     populateExampleSelect(moduleDetails);
+
+    populateTerraformUsageExample(moduleDetails, submodulePath);
+
+    populateReadmeContent(moduleDetails);
+
+    populateTerrarformInputs(moduleDetails);
+    populateTerrarformOutputs(moduleDetails);
+    populateTerrarformProviders(moduleDetails);
+    populateTerrarformResources(moduleDetails);
 }
 
 
