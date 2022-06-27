@@ -161,6 +161,28 @@ async function getModuleDetails(module_id) {
     return terraregModuleDetailsPromiseSingleton[module_id];
 }
 
+terraregSubmoduleDetailsPromiseSingleton = [];
+
+async function getSubmoduleDetails(moduleId, submodulePath) {
+    // Create promise if it hasn't already been defined
+    if (terraregSubmoduleDetailsPromiseSingleton[moduleId + submodulePath] === undefined) {
+        terraregSubmoduleDetailsPromiseSingleton[moduleId + submodulePath] = new Promise((resolve, reject) => {
+            // Perform request to obtain submodule details
+            $.ajax({
+                type: "GET",
+                url: `/v1/terrareg/modules/${moduleId}/submodules/details/${submodulePath}`,
+                success: function (data) {
+                    resolve(data);
+                },
+                error: function () {
+                    resolve(null);
+                }
+            });
+        });
+    }
+    return terraregModuleDetailsPromiseSingleton[moduleId + submodulePath];
+}
+
 async function addModuleLabels(module, parentDiv) {
     let terrareg_config = await getConfig();
     if (module.trusted) {

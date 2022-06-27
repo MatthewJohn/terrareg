@@ -334,8 +334,16 @@ class Server(object):
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodules'
         )
         self._api.add_resource(
+            ApiTerraregSubmoduleDetails,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodules/details/<path:submodule>'
+        )
+        self._api.add_resource(
             ApiTerraregModuleVersionExamples,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples'
+        )
+        self._api.add_resource(
+            ApiTerraregExampleDetails,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples/details/<path:example>'
         )
         self._api.add_resource(
             ApiTerraregExampleFileList,
@@ -1907,6 +1915,27 @@ class ApiTerraregModuleVerisonSubmodules(ErrorCatchingResource):
         ]
 
 
+class ApiTerraregSubmoduleDetails(ErrorCatchingResource):
+    """Interface to obtain subdmoule details."""
+
+    def _get(self, namespace, name, provider, version, submodule):
+        """Return details of example."""
+        namespace_obj = Namespace(name=namespace)
+        module_obj = Module(namespace=namespace_obj, name=name)
+        module_provider = ModuleProvider.get(module=module_obj, name=provider)
+
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
+
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        if not module_version:
+            return {'message': 'Module version does not exist'}, 400
+
+        submodule_obj = Submodule.get(module_version=module_version, module_path=submodule)
+
+        return submodule_obj.get_api_module_specs()
+
+
 class ApiTerraregModuleVersionExamples(ErrorCatchingResource):
     """Interface to obtain list of examples in module version."""
 
@@ -1930,6 +1959,27 @@ class ApiTerraregModuleVersionExamples(ErrorCatchingResource):
             }
             for example in module_version.get_examples()
         ]
+
+
+class ApiTerraregExampleDetails(ErrorCatchingResource):
+    """Interface to obtain example details."""
+
+    def _get(self, namespace, name, provider, version, example):
+        """Return details of example."""
+        namespace_obj = Namespace(name=namespace)
+        module_obj = Module(namespace=namespace_obj, name=name)
+        module_provider = ModuleProvider.get(module=module_obj, name=provider)
+
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
+
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        if not module_version:
+            return {'message': 'Module version does not exist'}, 400
+
+        example_obj = Example.get(module_version=module_version, module_path=example)
+
+        return example_obj.get_api_module_specs()
 
 
 class ApiTerraregExampleFileList(ErrorCatchingResource):
