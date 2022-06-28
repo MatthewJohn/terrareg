@@ -100,7 +100,7 @@ async function setProviderLogo(moduleDetails) {
  *
  * @param moduleDetails Terrareg module details
  */
-function createVersionDetails(moduleDetails) {
+function populateVersionSelect(moduleDetails) {
     let versionSelection = $("#version-select");
 
     let currentVersionFound = false;
@@ -1190,7 +1190,7 @@ async function setupBasePage(data) {
     enableTerraregExclusiveTags();
     setProviderLogo(moduleDetails);
 
-    createVersionDetails(moduleDetails);
+    populateVersionSelect(moduleDetails);
 
     setModuleTitle(moduleDetails);
     setModuleProvider(moduleDetails);
