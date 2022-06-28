@@ -8,7 +8,8 @@ function renderPage() {
 
     // Base module provider route
     router.on(baseRoute, function ({ data }) {
-        setupRootModuleNoVersions(data);
+        setupBasePage(data);
+        setupRootModulePage(data);
     });
     // Base module version route
     router.on(baseRoute + "/:version", function ({ data }) {
@@ -1166,7 +1167,7 @@ async function setupBasePage(data) {
 
     // If current version is not available or there are no
     // versions, set warning and exit
-    if (moduleDetails == null) {
+    if (! moduleDetails.versions.length) {
         showNoAvailableVersions();
         return;
     }
@@ -1187,20 +1188,6 @@ async function setupBasePage(data) {
     addModuleLabels(moduleDetails, $("#module-title"));
 }
 
-async function setupRootModuleNoVersions(data) {
-
-    createBreadcrumbs(data);
-
-    let id = getCurrentObjectId(data);
-    let moduleDetails = await getModuleDetails(id);
-
-    setupSettingsTab(moduleDetails);
-    setupIntegrations(moduleDetails);
-
-    // If current version is not available or there are no
-    // versions, set warning and exit
-    showNoAvailableVersions();
-}
 /*
  * Setup elements of page used by root module pages.
  *
@@ -1212,8 +1199,9 @@ async function setupRootModulePage(data) {
     let moduleDetails = await getModuleDetails(id);
 
     setupSettingsTab(moduleDetails);
+    setupIntegrations(moduleDetails);
 
-    if (moduleDetails == null) {
+    if (! moduleDetails.versions.length) {
         return;
     }
 

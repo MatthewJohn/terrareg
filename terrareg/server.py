@@ -1446,6 +1446,11 @@ class ApiTerraregModuleProviderDetails(ErrorCatchingResource):
         if module_provider is None:
             return self._get_404_response()
 
+        # If a version exists, obtain the details for that
+        if module_provider.get_versions():
+            return module_provider.get_latest_version().get_terrareg_api_details()
+
+        # Otherwise, return module provider details
         return module_provider.get_terrareg_api_details()
 
 

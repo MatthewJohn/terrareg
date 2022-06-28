@@ -921,10 +921,18 @@ class ModuleProvider(object):
             "trusted": self._module._namespace.trusted
         }
 
+    def get_api_details(self):
+        """Return dict of provider details for API response."""
+        api_details = self.get_api_outline()
+        api_details.update({
+            "versions": [v.version for v in self.get_versions()]
+        })
+        return api_details
+
     def get_terrareg_api_details(self):
         """Return dict of module details with additional attributes used by terrareg UI."""
         git_provider = self.get_git_provider()
-        api_details = self.get_api_outline()
+        api_details = self.get_api_details()
         api_details.update({
             "module_provider_id": self.id,
             "git_provider_id": git_provider.pk if git_provider else None,
@@ -1408,13 +1416,13 @@ class ModuleVersion(TerraformSpecsObject):
         )
 
     def get_api_details(self):
-        """Return dict of version details for API response."""
-        api_details = self.get_api_outline()
+        """Return dict of version details for API response."""#
+        api_details = self._module_provider.get_api_details()
+        api_details.update(self.get_api_outline())
         api_details.update({
             "root": self.get_api_module_specs(),
             "submodules": [sm.get_api_module_specs() for sm in self.get_submodules()],
-            "providers": [p.name for p in self._module_provider._module.get_providers()],
-            "versions": [v.version for v in self._module_provider.get_versions()]
+            "providers": [p.name for p in self._module_provider._module.get_providers()]
         })
         return api_details
 
