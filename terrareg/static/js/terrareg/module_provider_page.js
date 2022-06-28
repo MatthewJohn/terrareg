@@ -522,7 +522,6 @@ async function loadExampleFileList(moduleDetails, examplePath) {
                     resolve(false);
                     return;
                 }
-                resolve(true);
 
                 let firstFileSelected = false;
                 data.forEach((exampleFile) => {
@@ -545,6 +544,8 @@ async function loadExampleFileList(moduleDetails, examplePath) {
 
                 // Show example tab link
                 $('#module-tab-link-example-files').removeClass('default-hidden');
+
+                resolve(true);
             }
         });
     });
@@ -1240,17 +1241,14 @@ async function populateReadMeFromUrl(reamdeUrl) {
 }
 
 async function selectDefaultTab(tabOptions) {
-    await tabOptions.forEach(async (tabOption, itx) => {
+    for (const tabOption of tabOptions) {
         let tabResult = await tabOption[1];
-        tabOptions[itx][1] = tabResult;
-    });
-    let selectedTab = false;
-    tabOptions.forEach((tabOption) => {
-        if (tabOption[1] && ! selectedTab) {
-            selectedTab = true;
+
+        if (tabResult == true) {
             selectModuleTab(tabOption[0], false);
+            return;
         }
-    })
+    }
 }
 
 /*
