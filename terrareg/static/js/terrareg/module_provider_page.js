@@ -415,27 +415,32 @@ function populateAnalyticsTable(moduleDetails) {
  * @param moduleDetails Terrareg module details
  */
 function populateReadmeContent(readmeContent) {
-    // If no README is defined, exit early
-    if (!readmeContent) {
-        return;
-    }
+    return new Promise((resolve, reject) => {
+        // If no README is defined, exit early
+        if (!readmeContent) {
+            resolve(false);
+            return;
+        }
 
-    let readmeContentDiv = $("#module-tab-readme");
+        let readmeContentDiv = $("#module-tab-readme");
 
-    // Populate README conrtent
-    readmeContentDiv.append(readmeContent);
+        // Populate README conrtent
+        readmeContentDiv.append(readmeContent);
 
-    // Add 'table' class to all tables in README
-    readmeContentDiv.find("table").addClass("table");
+        // Add 'table' class to all tables in README
+        readmeContentDiv.find("table").addClass("table");
 
-    // Replace size of headers
-    readmeContentDiv.find("h1").addClass("subtitle").addClass("is-3");
-    readmeContentDiv.find("h2").addClass("subtitle").addClass("is-4");
-    readmeContentDiv.find("h3").addClass("subtitle").addClass("is-5");
-    readmeContentDiv.find("h4").addClass("subtitle").addClass("is-6");
+        // Replace size of headers
+        readmeContentDiv.find("h1").addClass("subtitle").addClass("is-3");
+        readmeContentDiv.find("h2").addClass("subtitle").addClass("is-4");
+        readmeContentDiv.find("h3").addClass("subtitle").addClass("is-5");
+        readmeContentDiv.find("h4").addClass("subtitle").addClass("is-6");
 
-    // Show README tab button
-    $("#module-tab-link-readme").removeClass('default-hidden');
+        // Show README tab button
+        $("#module-tab-link-readme").removeClass('default-hidden');
+
+        resolve(true);
+    });
 }
 
 /*
@@ -506,33 +511,42 @@ function selectExampleFile(eventTarget) {
  * @param examplePath Path of example
  */
 
-function loadExampleFileList(moduleDetails, examplePath) {
-    $.ajax({
-        type: "GET",
-        url: `/v1/terrareg/modules/${moduleDetails.id}/examples/filelist/${examplePath}`,
-        success: function (data) {
-            let firstFileSelected = false;
-            data.forEach((exampleFile) => {
-                let fileLink = $(`
-                    <a class="panel-block" data-module-id="${moduleDetails.id}" data-path="${exampleFile.path}" onClick="selectExampleFile(event.target)">
-                        <span class="panel-icon">
-                            <i class="fa-solid fa-file-code" aria-hidden="true"></i>
-                        </span>
-                        ${exampleFile.filename}
-                    </a>
-                `);
+async function loadExampleFileList(moduleDetails, examplePath) {
+    return new Promise((resolve) => {
+        $.ajax({
+            type: "GET",
+            url: `/v1/terrareg/modules/${moduleDetails.id}/examples/filelist/${examplePath}`,
+            success: function (data) {
 
-                $("#example-file-list-nav").append(fileLink);
-
-                if (firstFileSelected == false) {
-                    firstFileSelected = true;
-                    selectExampleFile(fileLink);
+                if (! data.length) {
+                    resolve(false);
+                    return;
                 }
-            });
+                resolve(true);
 
-            // Show example tab link
-            $('#module-tab-link-example-files').removeClass('default-hidden');
-        },
+                let firstFileSelected = false;
+                data.forEach((exampleFile) => {
+                    let fileLink = $(`
+                        <a class="panel-block" data-module-id="${moduleDetails.id}" data-path="${exampleFile.path}" onClick="selectExampleFile(event.target)">
+                            <span class="panel-icon">
+                                <i class="fa-solid fa-file-code" aria-hidden="true"></i>
+                            </span>
+                            ${exampleFile.filename}
+                        </a>
+                    `);
+
+                    $("#example-file-list-nav").append(fileLink);
+
+                    if (firstFileSelected == false) {
+                        firstFileSelected = true;
+                        selectExampleFile(fileLink);
+                    }
+                });
+
+                // Show example tab link
+                $('#module-tab-link-example-files').removeClass('default-hidden');
+            }
+        });
     });
 }
 
@@ -541,33 +555,36 @@ function loadExampleFileList(moduleDetails, examplePath) {
  *
  * @param rootModuleDetails Terrareg root module details
  */
-function populateTerrarformInputs(rootModuleDetails) {
-    let inputTab = $("#module-tab-inputs");
-    let inputTabTbody = inputTab.find("tbody");
-    rootModuleDetails.inputs.forEach((input) => {
-        let inputRow = $("<tr></tr>");
+async function populateTerrarformInputs(rootModuleDetails) {
+    return new Promise((resolve) => {
+        let inputTab = $("#module-tab-inputs");
+        let inputTabTbody = inputTab.find("tbody");
+        rootModuleDetails.inputs.forEach((input) => {
+            let inputRow = $("<tr></tr>");
 
-        let nameTd = $("<td></td>");
-        nameTd.text(input.name);
-        inputRow.append(nameTd);
+            let nameTd = $("<td></td>");
+            nameTd.text(input.name);
+            inputRow.append(nameTd);
 
-        let descriptionTd = $("<td></td>");
-        descriptionTd.text(input.description);
-        inputRow.append(descriptionTd);
+            let descriptionTd = $("<td></td>");
+            descriptionTd.text(input.description);
+            inputRow.append(descriptionTd);
 
-        let typeTd = $("<td></td>");
-        typeTd.text(input.type);
-        inputRow.append(typeTd);
+            let typeTd = $("<td></td>");
+            typeTd.text(input.type);
+            inputRow.append(typeTd);
 
-        let defaultTd = $("<td></td>");
-        defaultTd.text(input.required ? "Required" : JSON.stringify(input.default));
-        inputRow.append(defaultTd);
+            let defaultTd = $("<td></td>");
+            defaultTd.text(input.required ? "Required" : JSON.stringify(input.default));
+            inputRow.append(defaultTd);
 
-        inputTabTbody.append(inputRow);
+            inputTabTbody.append(inputRow);
+        });
+
+        // Show tab link
+        $('#module-tab-link-inputs').removeClass('default-hidden');
+        resolve(true);
     });
-
-    // Show tab link
-    $('#module-tab-link-inputs').removeClass('default-hidden');
 }
 
 /*
@@ -1214,6 +1231,28 @@ async function setupBasePage(data) {
     addModuleLabels(moduleDetails, $("#module-title"));
 }
 
+async function populateReadMeFromUrl(reamdeUrl) {
+    return new Promise((resolve) => {
+        $.get(reamdeUrl, async (readmeContent) => {
+            resolve(populateReadmeContent(readmeContent));
+        });
+    });
+}
+
+async function selectDefaultTab(tabOptions) {
+    await tabOptions.forEach(async (tabOption, itx) => {
+        let tabResult = await tabOption[1];
+        tabOptions[itx][1] = tabResult;
+    });
+    let selectedTab = false;
+    tabOptions.forEach((tabOption) => {
+        if (tabOption[1] && ! selectedTab) {
+            selectedTab = true;
+            selectModuleTab(tabOption[0], false);
+        }
+    })
+}
+
 /*
  * Setup elements of page used by root module pages.
  *
@@ -1238,17 +1277,19 @@ async function setupRootModulePage(data) {
     populateTerraformUsageExample(moduleDetails);
     populateDownloadSummary(moduleDetails);
 
-    $.get(`/v1/terrareg/modules/${moduleDetails.id}/readme_html`, (readmeContent) => {
-        populateReadmeContent(readmeContent);
-    });
-
-    populateTerrarformInputs(moduleDetails.root);
+    let tabs = [
+        ['readme', populateReadMeFromUrl(`/v1/terrareg/modules/${moduleDetails.id}/readme_html`)],
+        ['inputs', populateTerrarformInputs(moduleDetails.root)]
+    ];
+    
     populateTerrarformOutputs(moduleDetails.root);
     populateTerrarformProviders(moduleDetails.root);
     populateTerrarformResources(moduleDetails.root);
 
     populateAnalyticsTable(moduleDetails);
     setupUsageBuilder(moduleDetails);
+
+    selectDefaultTab(tabs);
 }
 
 /*
@@ -1267,9 +1308,10 @@ async function setupSubmodulePage(data) {
     populateVersionText(moduleDetails);
     populateTerraformUsageExample(moduleDetails, submodulePath);
 
-    $.get(`/v1/terrareg/modules/${moduleDetails.id}/submodules/readme_html/${submodulePath}`, (readmeContent) => {
-        populateReadmeContent(readmeContent);
-    });
+    let tabs = [
+        ['readme', populateReadMeFromUrl(`/v1/terrareg/modules/${moduleDetails.id}/submodules/readme_html/${submodulePath}`)],
+        ['inputs', populateTerrarformInputs(moduleDetails.root)]
+    ];
 
     populateTerrarformInputs(submoduleDetails);
     populateTerrarformOutputs(submoduleDetails);
@@ -1277,6 +1319,8 @@ async function setupSubmodulePage(data) {
     populateTerrarformResources(submoduleDetails);
 
     enableBackToParentLink(moduleDetails);
+
+    selectDefaultTab(tabs);
 }
 
 /*
@@ -1294,18 +1338,21 @@ async function setupExamplePage(data) {
     populateCurrentSubmodule(`Example: ${examplePath}`)
     populateVersionText(moduleDetails);
 
-    $.get(`/v1/terrareg/modules/${moduleDetails.id}/examples/readme_html/${examplePath}`, (readmeContent) => {
-        populateReadmeContent(readmeContent);
-    });
+    let tabs = [
+        ['readme', populateReadMeFromUrl(`/v1/terrareg/modules/${moduleDetails.id}/examples/readme_html/${examplePath}`)],
+        ['example-files', loadExampleFileList(moduleDetails, examplePath)],
+        ['inputs', populateTerrarformInputs(moduleDetails.root)]
+    ];
+
 
     populateTerrarformInputs(submoduleDetails);
     populateTerrarformOutputs(submoduleDetails);
     populateTerrarformProviders(submoduleDetails);
     populateTerrarformResources(submoduleDetails);
 
-    loadExampleFileList(moduleDetails, examplePath);
-
     enableBackToParentLink(moduleDetails);
+    
+    selectDefaultTab(tabs);
 }
 
 
