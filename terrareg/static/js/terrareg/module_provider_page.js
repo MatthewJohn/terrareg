@@ -657,8 +657,8 @@ function indexModuleVersion(moduleDetails) {
     $.post(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/import`)
         .done(() => {
             $("#index-version-success").html("Successfully indexed version");
-            $("#index-version-success").css("display", "block");
-            $("#index-version-error").css("display", "none");
+            $("#index-version-success").addClass('default-hidden');
+            $("#index-version-error").addClass('default-hidden');
             if ($("#indexModuleVersionPublish").is(":checked")) {
                 $.post(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/publish`)
                     .done(() => {
@@ -670,7 +670,7 @@ function indexModuleVersion(moduleDetails) {
                         } else {
                             $("#index-version-error").html("An unexpected error occurred when publishing module version");
                         }
-                        $("#index-version-error").css("display", "block");
+                        $("#index-version-error").removeClass('default-hidden');
                     });
             }
         })
@@ -680,7 +680,7 @@ function indexModuleVersion(moduleDetails) {
             } else {
                 $("#index-version-error").html("An unexpected error occurred when indexing module");
             }
-            $("#index-version-error").css("display", "block");
+            $("#index-version-error").removeClass('default-hidden');
         });
 }
 
@@ -782,7 +782,6 @@ async function setupSettingsTab(moduleDetails) {
         $('#settings-verified').attr('checked', true);
     }
 
-    console.log(moduleDetails);
     // Check if namespace is auto-verified and, if so, show message
     $.get(`/v1/terrareg/modules/${moduleDetails.namespace}`, (namespaceDetails) => {
         if (namespaceDetails.is_auto_verified) {
@@ -1196,6 +1195,7 @@ async function setupRootModuleNoVersions(data) {
     let moduleDetails = await getModuleDetails(id);
 
     setupSettingsTab(moduleDetails);
+    setupIntegrations(moduleDetails);
 
     // If current version is not available or there are no
     // versions, set warning and exit
