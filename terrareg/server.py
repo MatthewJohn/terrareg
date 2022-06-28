@@ -526,26 +526,7 @@ class Server(object):
                 # redirect to the module provider
                 return redirect(module_provider.get_view_url())
 
-        if namespace.name == 'hashicorp':
-            return self._render_template(
-                'module_provider-old.html',
-                namespace=namespace,
-                module=module,
-                module_provider=module_provider,
-                module_version=module_version,
-                current_module=module_version,
-                server_hostname=request.host,
-                git_providers=GitProvider.get_all(),
-                provider_logo=module_provider.get_logo(),
-                config=terrareg.config.Config(),
-                ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
-                ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
-                ANALYTICS_TOKEN_PHRASE=terrareg.config.Config().ANALYTICS_TOKEN_PHRASE,
-                ANALYTICS_TOKEN_DESCRIPTION=terrareg.config.Config().ANALYTICS_TOKEN_DESCRIPTION,
-                EXAMPLE_ANALYTICS_TOKEN=terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN
-            )
-        else:
-            return self._render_template('module_provider.html')
+        return self._render_template('module_provider.html')
 
     @catch_name_exceptions
     def _view_serve_submodule(self, namespace, name, provider, version, submodule_path):
@@ -560,26 +541,6 @@ class Server(object):
 
         submodule = Submodule(module_version=module_version, module_path=submodule_path)
 
-        if namespace.name == 'hashicorp':
-            return self._render_template(
-                'submodule.html',
-                # @TODO Merge this with _view_serve_module_provider
-                namespace=namespace,
-                module=module,
-                module_provider=module_provider,
-                module_version=module_version,
-                submodule=submodule,
-                current_module=submodule,
-                server_hostname=request.host,
-                git_providers=GitProvider.get_all(),
-                provider_logo=module_provider.get_logo(),
-                config=terrareg.config.Config(),
-                ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
-                ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
-                ANALYTICS_TOKEN_PHRASE=terrareg.config.Config().ANALYTICS_TOKEN_PHRASE,
-                ANALYTICS_TOKEN_DESCRIPTION=terrareg.config.Config().ANALYTICS_TOKEN_DESCRIPTION,
-                EXAMPLE_ANALYTICS_TOKEN=terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN
-            )
         return self._render_template('module_provider.html')
 
     @catch_name_exceptions
@@ -595,25 +556,6 @@ class Server(object):
 
         submodule = Example(module_version=module_version, module_path=submodule_path)
 
-        if namespace.name == 'hashicorp':
-            return self._render_template(
-                'submodule.html',
-                namespace=namespace,
-                module=module,
-                module_provider=module_provider,
-                module_version=module_version,
-                submodule=submodule,
-                current_module=submodule,
-                server_hostname=request.host,
-                provider_logo=module_provider.get_logo(),
-                git_providers=GitProvider.get_all(),
-                config=terrareg.config.Config(),
-                ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
-                ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
-                ANALYTICS_TOKEN_PHRASE=terrareg.config.Config().ANALYTICS_TOKEN_PHRASE,
-                ANALYTICS_TOKEN_DESCRIPTION=terrareg.config.Config().ANALYTICS_TOKEN_DESCRIPTION,
-                EXAMPLE_ANALYTICS_TOKEN=terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN
-            )
         return self._render_template('module_provider.html')
 
     def _view_serve_module_search(self):
