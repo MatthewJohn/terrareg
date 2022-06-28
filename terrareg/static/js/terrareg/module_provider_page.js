@@ -95,6 +95,18 @@ async function setProviderLogo(moduleDetails) {
 }
 
 /*
+ * Populate version paragraph, instead of
+ * version select
+ *
+ * @param moduleDetails Terrareg module details
+ */
+function populateVersionText(moduleDetails) {
+    let versionText = $("#version-text");
+    versionText.text(`Version: ${moduleDetails.version}`);
+    versionText.removeClass('default-hidden');
+}
+
+/*
  * Add options to version selection dropdown.
  * Show currently selected module and latest version
  *
@@ -136,6 +148,8 @@ function populateVersionSelect(moduleDetails) {
         // Add warning to page about unpublished version
         $("#unpublished-warning").removeClass('default-hidden');
     }
+    // Show version drop-down
+    $('#details-version').removeClass('default-hidden');
 }
 
 /*
@@ -1190,8 +1204,6 @@ async function setupBasePage(data) {
     enableTerraregExclusiveTags();
     setProviderLogo(moduleDetails);
 
-    populateVersionSelect(moduleDetails);
-
     setModuleTitle(moduleDetails);
     setModuleProvider(moduleDetails);
     setModuleDescription(moduleDetails);
@@ -1219,6 +1231,7 @@ async function setupRootModulePage(data) {
         return;
     }
 
+    populateVersionSelect(moduleDetails);
     setupModuleVersionDeletionSetting(moduleDetails);
     populateSubmoduleSelect(moduleDetails);
     populateExampleSelect(moduleDetails);
@@ -1251,7 +1264,7 @@ async function setupSubmodulePage(data) {
     let submoduleDetails = await getSubmoduleDetails(moduleDetails.id, submodulePath);
 
     populateCurrentSubmodule(`Submodule: ${submodulePath}`)
-
+    populateVersionText(moduleDetails);
     populateTerraformUsageExample(moduleDetails, submodulePath);
 
     $.get(`/v1/terrareg/modules/${moduleDetails.id}/submodules/readme_html/${submodulePath}`, (readmeContent) => {
@@ -1279,6 +1292,7 @@ async function setupExamplePage(data) {
     let submoduleDetails = await getExampleDetails(moduleDetails.id, examplePath);
 
     populateCurrentSubmodule(`Example: ${examplePath}`)
+    populateVersionText(moduleDetails);
 
     $.get(`/v1/terrareg/modules/${moduleDetails.id}/examples/readme_html/${examplePath}`, (readmeContent) => {
         populateReadmeContent(readmeContent);
