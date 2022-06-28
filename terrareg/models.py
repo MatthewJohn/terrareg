@@ -1827,7 +1827,7 @@ class ExampleFile:
                 trailing_space_count = 2
 
             return ('\n{leading_space}source{trailing_space}= "{server_hostname}/{module_provider_id}{sub_dir}"\n'
-                    '{leading_space}version{version_trailing_space}= "{version_string}"').format(
+                    '{leading_space}version{version_trailing_space}= "{version_string}"\n').format(
                 leading_space=match.group(1),
                 trailing_space=(' ' * trailing_space_count),
                 version_trailing_space=(' ' * (trailing_space_count - 1)),
