@@ -895,7 +895,7 @@ function deleteModuleVersion(moduleDetails) {
 }
 
 function deleteModuleProvider(moduleDetails) {
-    $('#confirm-delete-module-provider-div').css('display', 'block');
+    $('#confirm-delete-module-provider-div').removeClass('default-hidden');
     if (! $('#confirm-delete-module-provider').is(':checked')) {
         return;
     }
