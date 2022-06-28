@@ -1232,6 +1232,14 @@ async function setupBasePage(data) {
     addModuleLabels(moduleDetails, $("#module-title"));
 }
 
+/*
+ * Obtain README content from given URL and return promise
+ * for populating README content
+ *
+ * @param readmeUrl URL to obtain README from
+ * 
+ * @returns Promise
+ */
 async function populateReadMeFromUrl(reamdeUrl) {
     return new Promise((resolve) => {
         $.get(reamdeUrl, async (readmeContent) => {
@@ -1240,6 +1248,12 @@ async function populateReadMeFromUrl(reamdeUrl) {
     });
 }
 
+/*
+ * Iterate through list of tab loading promises
+ * and select the first tab that has a successful load
+ *
+ * @param tabOptions List of lists containing [tab name, tab load promise]
+ */
 async function selectDefaultTab(tabOptions) {
     for (const tabOption of tabOptions) {
         let tabResult = await tabOption[1];
