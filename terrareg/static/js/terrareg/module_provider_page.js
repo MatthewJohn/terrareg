@@ -955,6 +955,9 @@ function updateModuleProviderSettings(moduleDetails) {
         }
         $('#settings-status-error').removeClass('default-hidden');
     });
+
+    // Return false to present default action
+    return false;
 }
 
 /*
