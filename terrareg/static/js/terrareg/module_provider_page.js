@@ -89,7 +89,8 @@ async function setProviderLogo(moduleDetails) {
 
         addProviderLogoTos(moduleDetails.provider);
 
-        logoLink.show();
+        logoLink.removeClass('default-hidden');
+        logoImg.removeClass('default-hidden');
     }
 }
 
@@ -133,7 +134,7 @@ function createVersionDetails(moduleDetails) {
         versionSelection.append(versionOption);
 
         // Add warning to page about unpublished version
-        $("#unpublished-warning").show();
+        $("#unpublished-warning").removeClass('default-hidden');
     }
 }
 
@@ -179,7 +180,7 @@ function setModuleDescription(moduleDetails) {
 }
 
 function showModuleDetailsBody() {
-    $("#module-details-body").show();
+    $("#module-details-body").removeClass('default-hidden');
 }
 
 /*
@@ -188,7 +189,7 @@ function showModuleDetailsBody() {
  * @param moduleDetails Terrareg module details
  */
 function showNoAvailableVersions() {
-    $("#no-version-available").show();
+    $("#no-version-available").removeClass('default-hidden');
 }
 
 /*
@@ -243,7 +244,7 @@ function setSourceUrl(sourceUrl) {
 function populateSubmoduleSelect(moduleDetails, currentSubmodulePath = undefined) {
     $.get(`/v1/terrareg/modules/${moduleDetails.id}/submodules`, (data) => {
         if (data.length) {
-            $("#submodule-select-container").show();
+            $("#submodule-select-container").removeClass('default-hidden');
         }
 
         let submoduleSelect = $("#submodule-select");
@@ -271,7 +272,7 @@ function populateSubmoduleSelect(moduleDetails, currentSubmodulePath = undefined
 function populateExampleSelect(moduleDetails, currentSubmodulePath = undefined) {
     $.get(`/v1/terrareg/modules/${moduleDetails.id}/examples`, (data) => {
         if (data.length) {
-            $("#example-select-container").show();
+            $("#example-select-container").removeClass('default-hidden');
         }
 
         let exampleSelect = $("#example-select");
@@ -332,7 +333,7 @@ version = "${moduleDetails.terraform_example_version_string}"
     );
 
     // Show container
-    $('#usage-example-container').show();
+    $('#usage-example-container').removeClass('default-hidden');
 }
 
 /*
@@ -348,7 +349,7 @@ function populateDownloadSummary(moduleDetails) {
     });
 
     // Show download container
-    $('#module-download-stats-container').show();
+    $('#module-download-stats-container').removeClass('default-hidden');
 }
 
 /*
@@ -380,7 +381,7 @@ function populateAnalyticsTable(moduleDetails) {
     });
 
     // Show tab link
-    $("#module-tab-link-analytics").show();
+    $("#module-tab-link-analytics").removeClass('default-hidden');
 }
 
 /*
@@ -409,7 +410,7 @@ function populateReadmeContent(readmeContent) {
     readmeContentDiv.find("h4").addClass("subtitle").addClass("is-6");
 
     // Show README tab button
-    $("#module-tab-link-readme").show();
+    $("#module-tab-link-readme").removeClass('default-hidden');
 }
 
 /*
@@ -429,19 +430,18 @@ function selectModuleTab(tabName, redirect) {
     let i, tabContent, tabLinks;
 
     // Hide content of all tabs
-    tabContent = document.getElementsByClassName("module-tabs");
-    for (i = 0; i < tabContent.length; i++) {
-        tabContent[i].style.display = "none";
-    }
+    $.find('.module-tabs').forEach((div) => {
+        $(div).addClass('default-hidden');
+    });
 
     // Remove 'active' from all tab links
-    tabLinks = document.getElementsByClassName("module-tab-link");
-    for (i = 0; i < tabLinks.length; i++) {
-        tabLinks[i].className = tabLinks[i].className.replace(" is-active", "");
-    }
+    $.find('.module-tab-link').forEach((tabLinkDiv) => {
+        $(tabLinkDiv).removeClass('is-active');
+    });
+
     // Show content of current tab and mark current link as active.
-    document.getElementById(tabContentId).style.display = "block";
-    document.getElementById(tabLinkId).className += " is-active";
+    $(`#${tabContentId}`).removeClass('default-hidden');
+    $(`#${tabLinkId}`).addClass('is-active');
 }
 
 /*
@@ -506,7 +506,7 @@ function loadExampleFileList(moduleDetails, examplePath) {
             });
 
             // Show example tab link
-            $('#module-tab-link-example-files').show();
+            $('#module-tab-link-example-files').removeClass('default-hidden');
         },
     });
 }
@@ -540,6 +540,9 @@ function populateTerrarformInputs(rootModuleDetails) {
 
         inputTabTbody.append(inputRow);
     });
+
+    // Show tab link
+    $('#module-tab-link-inputs').removeClass('default-hidden');
 }
 
 /*
@@ -563,6 +566,8 @@ function populateTerrarformOutputs(rootModuleDetails) {
 
         outputTabTbody.append(outputRow);
     });
+    // Show tab link
+    $('#module-tab-link-outputs').removeClass('default-hidden');
 }
 
 /*
@@ -594,6 +599,9 @@ function populateTerrarformProviders(rootModuleDetails) {
 
         providerTabTbody.append(providerRow);
     });
+
+    // Show tab link
+    $('#module-tab-link-providers').removeClass('default-hidden');
 }
 
 /*
@@ -637,6 +645,9 @@ function populateTerrarformResources(rootModuleDetails) {
 
         resourceTabTbody.append(resourceRow);
     });
+
+    // Show tab link
+    $('#module-tab-link-resources').removeClass('default-hidden');
 }
 
 /*
@@ -677,10 +688,10 @@ function indexModuleVersion(moduleDetails) {
 async function setupIntegrations(moduleDetails) {
     let config = await getConfig();
     if (config.ALLOW_MODULE_HOSTING) {
-        $("#module-integrations-upload-container").show();
+        $("#module-integrations-upload-container").removeClass('default-hidden');
     }
     if (!config.PUBLISH_API_KEYS_ENABLED) {
-        $("#integrations-index-module-version-publish").show();
+        $("#integrations-index-module-version-publish").removeClass('default-hidden');
     }
 
     // Setup callback method for indexing a module version
@@ -730,7 +741,7 @@ async function setupIntegrations(moduleDetails) {
     });
 
     // Show integrations tab link
-    $("#module-tab-link-integrations").show();
+    $("#module-tab-link-integrations").removeClass('default-hidden');
 }
 
 /*
@@ -741,7 +752,7 @@ async function setupIntegrations(moduleDetails) {
 function enableBackToParentLink(moduleDetails) {
     let backToParentLink = $('#submodule-back-to-parent');
     backToParentLink.attr('href', `/modules/${moduleDetails.id}`);
-    backToParentLink.show();
+    backToParentLink.removeClass('default-hidden');
 }
 
 /*
@@ -751,7 +762,7 @@ async function enableTerraregExclusiveTags() {
     let config = await getConfig();
     if (! config.DISABLE_TERRAREG_EXCLUSIVE_LABELS) {
         $.find('.terrareg-exclusive').forEach((tag) => {
-            $(tag).show();
+            $(tag).removeClass('default-hidden');
         });
     }
 }
@@ -775,7 +786,7 @@ async function setupSettingsTab(moduleDetails) {
     // Check if namespace is auto-verified and, if so, show message
     $.get(`/v1/terrareg/modules/${moduleDetails.namespace}`, (namespaceDetails) => {
         if (namespaceDetails.is_auto_verified) {
-            $('#settings-verified-auto-verified-message').show();
+            $('#settings-verified-auto-verified-message').removeClass('default-hidden');
         }
     });
 
@@ -849,12 +860,12 @@ async function setupSettingsTab(moduleDetails) {
     // Enable custom git provider inputs
     if (config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER) {
         $.find('.settings-custom-git-provider-container').forEach((inputContainer) => {
-            $(inputContainer).show();
+            $(inputContainer).removeClass('default-hidden');
         });
     }
 
     // Show settings tab
-    $('#module-tab-link-settings').show();
+    $('#module-tab-link-settings').removeClass('default-hidden');
 }
 
 function deleteModuleVersion(moduleDetails) {
@@ -972,7 +983,7 @@ async function setupUsageBuilder(moduleDetails) {
     }
 
     // Show tab
-    $('#module-tab-link-usage-builder').show();
+    $('#module-tab-link-usage-builder').removeClass('default-hidden');
 
 
     // Build input table

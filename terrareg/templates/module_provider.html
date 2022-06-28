@@ -19,16 +19,16 @@
 <div style="background-color: #f9f9f9; padding-top: 30px; padding-bottom: 30px;">
 
     <!-- Warning when no versions of module are available -->
-    <div id="no-version-available" class="columns is-centered" style="display: none;">
+    <div id="no-version-available" class="columns is-centered default-hidden">
         There are no versions of this module
     </div>
 
     <!-- Main details header body -->
-    <div id="module-details-body" class="columns is-centered" style="display: none;">
+    <div id="module-details-body" class="columns is-centered default-hidden">
 
         <!-- Provider Logo -->
-        <a id="provider-logo-link" style="margin-top: 30px; max-height: 150px; display: none;" href="">
-            <img id="provider-logo-img" height="150" width="150" alt="" src="" />
+        <a id="provider-logo-link default-hidden" style="margin-top: 30px; max-height: 150px;" href="">
+            <img id="provider-logo-img" class="default-hidden" height="150" width="150" alt="" src="" />
         </a>
 
         <!-- Module details -->
@@ -50,7 +50,7 @@
             <p id="module-provider" class="subtitle">
             </p>
 
-            <p id="unpublished-warning" class="subtitle" style="display: none;">
+            <p id="unpublished-warning" class="subtitle default-hidden">
                 <b>WARNING:</b> This version of the module is not published.
             </p>
 
@@ -62,10 +62,10 @@
             <p id="source-url"></p>
 
             <br />
-            <a id="submodule-back-to-parent" class="buton" href="" style="display: none;">Back to parent</a>
+            <a id="submodule-back-to-parent" class="buton default-hidden" href="">Back to parent</a>
 
 
-            <section id="submodule-select-container" style="display: none;">
+            <section id="submodule-select-container" class="default-hidden">
                 <div class="select is-small">
                     <select id="submodule-select" autocomplete="off" onchange="onSubmoduleSelectChange(event);">
                         <option value="none">Select submodule</option>
@@ -74,7 +74,7 @@
             </section>
 
             <br />
-            <section id="example-select-container" style="display: none;">
+            <section id="example-select-container" class="default-hidden">
                 <div class="select is-small">
                     <select id="example-select" autocomplete="off" onchange="onSubmoduleSelectChange(event);">
                         <option value="none">Select example</option>
@@ -89,7 +89,7 @@
 
         <div class="column is-one-third">
 
-            <div id="module-download-stats-container" class="box" style="display: none;">
+            <div id="module-download-stats-container" class="box default-hidden">
                 <table class="table">
                     <thead>
                         <tr>
@@ -120,7 +120,7 @@
                 </table>
             </div>
 
-            <div id="usage-example-container" class="box" style="display: none;">
+            <div id="usage-example-container" class="box default-hidden">
                 <h5 class="title is-5">Usage</h5>
                 <div class="content">
                     To use this module:
@@ -137,36 +137,35 @@
     </div>
 </div>
 
-
 <div class="tabs">
     <ul>
-        <li id="module-tab-link-readme" class="module-tab-link" style="display: none;"><a onclick="selectModuleTab('readme')">Readme</a></li>
-        <li id="module-tab-link-example-files" class="module-tab-link" style="display: none;"><a onclick="selectModuleTab('example-files')">Files</a></li>
-        <li id="module-tab-link-inputs" class="module-tab-link"><a onclick="selectModuleTab('inputs')">Inputs</a></li>
-        <li id="module-tab-link-outputs" class="module-tab-link"><a onclick="selectModuleTab('outputs')">Outputs</a></li>
-        <li id="module-tab-link-providers" class="module-tab-link"><a onclick="selectModuleTab('providers')">Provider Requirements</a></li>
-        <li id="module-tab-link-resources" class="module-tab-link">
+        <li id="module-tab-link-readme" class="module-tab-link default-hidden"><a onclick="selectModuleTab('readme')">Readme</a></li>
+        <li id="module-tab-link-example-files" class="module-tab-link default-hidden"><a onclick="selectModuleTab('example-files')">Files</a></li>
+        <li id="module-tab-link-inputs" class="module-tab-link default-hidden"><a onclick="selectModuleTab('inputs')">Inputs</a></li>
+        <li id="module-tab-link-outputs" class="module-tab-link default-hidden"><a onclick="selectModuleTab('outputs')">Outputs</a></li>
+        <li id="module-tab-link-providers" class="module-tab-link default-hidden"><a onclick="selectModuleTab('providers')">Provider Requirements</a></li>
+        <li id="module-tab-link-resources" class="module-tab-link default-hidden">
             <a onclick="selectModuleTab('resources')">Resources</a>
         </li>
 
-        <li id="module-tab-link-analytics" class="module-tab-link" style="display: none;">
+        <li id="module-tab-link-analytics" class="module-tab-link default-hidden">
             <a onclick="selectModuleTab('analytics')">
                 Analytics
-                <span class="tag is-warning is-light terrareg-exclusive" style="display: none;">Terrareg Exclusive</span>
+                <span class="tag is-warning is-light terrareg-exclusive default-hidden">Terrareg Exclusive</span>
             </a>
         </li>
-        <li id="module-tab-link-usage-builder" class="module-tab-link" style="display: none;">
+        <li id="module-tab-link-usage-builder" class="module-tab-link default-hidden">
             <a onclick="selectModuleTab('usage-builder')">
                 Usage Builder
-                <span class="tag is-warning is-light terrareg-exclusive" style="display: none;">Terrareg Exclusive</span>
+                <span class="tag is-warning is-light terrareg-exclusive">Terrareg Exclusive</span>
             </a>
         </li>
-        <li id="module-tab-link-integrations" class="module-tab-link" style="display: none;">
+        <li id="module-tab-link-integrations" class="module-tab-link">
             <a onclick="selectModuleTab('integrations')">
                 Integrations
             </a>
         </li>
-        <li style="display: none" id="module-tab-link-settings" class="module-tab-link">
+        <li id="module-tab-link-settings" class="module-tab-link default-hidden">
             <a onclick="selectModuleTab('settings')">
                 Settings
             </a>
@@ -179,7 +178,7 @@
         <!-- Tab content -->
 
         <!-- README tab -->
-        <div id="module-tab-readme" class="module-tabs content" style="display: none;">
+        <div id="module-tab-readme" class="module-tabs content default-hidden">
         </div>
         <style>
             #module-tab-readme h1, h2, h3, h4 {
@@ -188,7 +187,7 @@
         </style>
 
         <!-- Example files tab -->
-        <div id="module-tab-example-files" class="module-tabs" style="display: none;">
+        <div id="module-tab-example-files" class="module-tabs default-hidden">
             <div class="columns">
                 <div class="column is-one-fifths">
                     <nav id="example-file-list-nav" class="panel">
@@ -205,7 +204,7 @@
         </div>
 
         <!-- Inputs tab -->
-        <div id="module-tab-inputs" class="module-tabs" style="display: none;">
+        <div id="module-tab-inputs" class="module-tabs default-hidden">
             <table class="table">
                 <thead>
                     <tr>
@@ -221,7 +220,7 @@
         </div>
 
         <!-- Outputs tab -->
-        <div id="module-tab-outputs" class="module-tabs" style="display: none;">
+        <div id="module-tab-outputs" class="module-tabs default-hidden">
             <table class="table">
                 <thead>
                     <tr>
@@ -235,7 +234,7 @@
         </div>
 
         <!-- Providers tab -->
-        <div id="module-tab-providers" class="module-tabs" style="display: none;">
+        <div id="module-tab-providers" class="module-tabs default-hidden">
             <table class="table">
                 <thead>
                     <tr>
@@ -251,7 +250,7 @@
         </div>
 
         <!-- Resources tab -->
-        <div id="module-tab-resources" class="module-tabs" style="display: none;">
+        <div id="module-tab-resources" class="module-tabs default-hidden">
             <table class="table">
                 <thead>
                     <tr>
@@ -269,9 +268,8 @@
             </table>
         </div>
 
-
         <!-- Analytics tab -->
-        <div id="module-tab-analytics" class="module-tabs" style="display: none;">
+        <div id="module-tab-analytics" class="module-tabs default-hidden">
             <table id="analytics-table" class="table" style="width: 100%">
                 <thead>
                     <tr>
@@ -287,7 +285,7 @@
         </div>
 
         <!-- Usage Builder tab -->
-        <div id="module-tab-usage-builder" class="module-tabs" style="display: none;">
+        <div id="module-tab-usage-builder" class="module-tabs default-hidden">
             <span>Provide values to the following inputs to generate terraform required to use the module.</span>
             <table id="analytics-table" class="table" style="width: 100%">
                 <thead>
@@ -304,7 +302,7 @@
         </div>
 
         <!-- Integrations tab -->
-        <div id="module-tab-integrations" class="module-tabs" style="display: none;">
+        <div id="module-tab-integrations" class="module-tabs default-hidden">
             <p class="subtitle">
                 Integrations
             </p>
@@ -312,10 +310,10 @@
             <table id="integrations-table" class="table">
             </table>
 
-            <div id="index-version-success" style="display: none" class="notification is-success">
+            <div id="index-version-success" class="notification is-success default-hidden">
                 Successfully indexed version
             </div>
-            <div id="index-version-error" style="display: none" class="notification is-danger">
+            <div id="index-version-error" class="notification is-danger default-hidden">
             </div>
             <p class="subtitle">Manually index version</p>
             <div class="field is-vertical">
@@ -323,7 +321,7 @@
                 <div class="control">
                     <input id="indexModuleVersion" class="input is-small" type="text" size="5" placeholder="1.0.0">
                 </div>
-                <label id="integrations-index-module-version-publish" class="checkbox" style="display: none;">
+                <label id="integrations-index-module-version-publish" class="checkbox default-hidden">
                     <input id="indexModuleVersionPublish" type="checkbox" value="true">
                     Publish
                 </label>
@@ -336,17 +334,13 @@
             </div>
         </div>
 
-
-
-
-
         <!-- Module settings tab -->
-        <div id="module-tab-settings" class="module-tabs" style="display: none;">
+        <div id="module-tab-settings" class="module-tabs default-hidden">
             <div class="field is-vertical">
-                <div id="settings-status-success" style="display: none" class="notification is-success">
+                <div id="settings-status-success" class="notification is-success default-hidden">
                     Settings Updated
                 </div>
-                <div id="settings-status-error" style="display: none" class="notification is-danger">
+                <div id="settings-status-error" class="notification is-danger default-hidden">
                 </div>
                 <form id="settings-form">
                     <input type="hidden" id="settings-csrf-token" value="{{ csrf_token }}" />
@@ -355,7 +349,7 @@
                         <div class="control">
                             <input class="checkbox" type="checkbox" value="true" id="settings-verified" />
                         </div>
-                        <span id="settings-verified-auto-verified-message" style="display: none;">
+                        <span id="settings-verified-auto-verified-message" class="default-hidden">
                             All modules within this namespace are automatically approved on creation.
                         </span>
                     </div>
@@ -422,7 +416,7 @@
                     <button id="module-version-delete-button" class="button is-link is-danger"></button>
                 </div>
                 <br />
-                <div id="confirm-delete-module-version-div" style="display: none;">
+                <div id="confirm-delete-module-version-div" class="default-hidden">
                 </div>
             </div>
 
@@ -433,15 +427,11 @@
                     <button id="module-provider-delete-button" class="button is-link is-danger">Delete Module Provider</button>
                 </div>
                 <br />
-                <div id="confirm-delete-module-provider-div" style="display: none;">
+                <div id="confirm-delete-module-provider-div" class="default-hidden">
                     Confirm deletion of module provider: <input autocomplete="off" id="confirm-delete-module-provider" type="checkbox" />
                 </div>
             </div>
         </div>
-
-
-
-
 
     </div>
 </div>
