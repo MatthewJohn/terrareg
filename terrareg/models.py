@@ -1004,9 +1004,7 @@ class TerraformSpecsObject(object):
                 self.get_readme_content(),
                 extensions=['fenced_code', 'tables']
             )
-        
-        # Return string when no readme is present
-        return '<h5 class="title is-5">No README present in the module</h3>'
+        return None
 
     def get_readme_content(self):
         """Get readme contents"""
