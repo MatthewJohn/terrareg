@@ -8,8 +8,7 @@ function renderPage() {
 
     // Base module provider route
     router.on(baseRoute, function ({ data }) {
-        setupBasePage(data);
-        setupRootModulePage(data);
+        setupRootModuleNoVersions(data);
     });
     // Base module version route
     router.on(baseRoute + "/:version", function ({ data }) {
@@ -783,6 +782,7 @@ async function setupSettingsTab(moduleDetails) {
         $('#settings-verified').attr('checked', true);
     }
 
+    console.log(moduleDetails);
     // Check if namespace is auto-verified and, if so, show message
     $.get(`/v1/terrareg/modules/${moduleDetails.namespace}`, (namespaceDetails) => {
         if (namespaceDetails.is_auto_verified) {
@@ -831,21 +831,6 @@ async function setupSettingsTab(moduleDetails) {
     browseUrlTemplate.attr('placeholder', `https://github.com/${moduleDetails.namespace}/${moduleDetails.name}-${moduleDetails.provider}/tree/{tag}/{path}`);
     browseUrlTemplate.val(moduleDetails.repo_browse_url_template);
 
-    // Bind module version deletion with deleteModuleVersion function
-    let moduleVersionDeleteButton = $('#module-version-delete-button');
-    moduleVersionDeleteButton.bind('click', () => {
-        deleteModuleVersion(moduleDetails);
-    });
-    moduleVersionDeleteButton.text(`Delete Module Version: ${moduleDetails.version}`);
-    // Setup confirmation checkbox for confirm deletion
-    let confirmDeleteContainer = $('#confirm-delete-module-version-div');
-    confirmDeleteContainer.append(`Confirm deletion of module version ${moduleDetails.version}: `);
-    let confirmCheckbox = $('<input />');
-    confirmCheckbox.attr('autocomplete', 'off');
-    confirmCheckbox.attr('type', 'checkbox');
-    confirmCheckbox.attr('id', 'confirm-delete-module-version');
-    confirmDeleteContainer.append(confirmCheckbox);
-
     // Bind module provider delete button
     let moduleProviderDeleteButton = $('#module-provider-delete-button');
     moduleProviderDeleteButton.bind('click', () => {
@@ -866,6 +851,26 @@ async function setupSettingsTab(moduleDetails) {
 
     // Show settings tab
     $('#module-tab-link-settings').removeClass('default-hidden');
+}
+
+function setupModuleVersionDeletionSetting(moduleDetails) {
+    // Bind module version deletion with deleteModuleVersion function
+    let moduleVersionDeleteButton = $('#module-version-delete-button');
+    moduleVersionDeleteButton.bind('click', () => {
+        deleteModuleVersion(moduleDetails);
+    });
+    moduleVersionDeleteButton.text(`Delete Module Version: ${moduleDetails.version}`);
+    // Setup confirmation checkbox for confirm deletion
+    let confirmDeleteContainer = $('#confirm-delete-module-version-div');
+    confirmDeleteContainer.append(`Confirm deletion of module version ${moduleDetails.version}: `);
+    let confirmCheckbox = $('<input />');
+    confirmCheckbox.attr('autocomplete', 'off');
+    confirmCheckbox.attr('type', 'checkbox');
+    confirmCheckbox.attr('id', 'confirm-delete-module-version');
+    confirmDeleteContainer.append(confirmCheckbox);
+
+    // Show module version deletion settings
+    $('#module-version-delete-container').removeClass('default-hidden');
 }
 
 function deleteModuleVersion(moduleDetails) {
@@ -915,8 +920,8 @@ function deleteModuleProvider(moduleDetails) {
  * @param ev Event of target form
  */
 function updateModuleProviderSettings(moduleDetails) {
-    $('#settings-status-success').css('display', 'none');
-    $('#settings-status-error').css('display', 'none');
+    $('#settings-status-success').addClass('default-hidden');
+    $('#settings-status-error').addClass('default-hidden');
     $.post({
         url: `/v1/terrareg/modules/${moduleDetails.module_provider_id}/settings`,
         data: JSON.stringify({
@@ -930,14 +935,14 @@ function updateModuleProviderSettings(moduleDetails) {
         }),
         contentType: 'application/json'
     }).done(() => {
-        $('#settings-status-success').css('display', 'block');
+        $('#settings-status-success').removeClass('default-hidden');
     }).fail((res) => {
         if (res.responseJSON && res.responseJSON.message) {
             $('#settings-status-error').html(res.responseJSON.message);
         } else {
             $('#settings-status-error').html('An unexpected error occurred');
         }
-        $('#settings-status-error').css('display', 'block');
+        $('#settings-status-error').removeClass('default-hidden');
     });
 }
 
@@ -1160,7 +1165,8 @@ async function setupBasePage(data) {
 
     let moduleDetails = await getModuleDetails(id);
 
-    // If module does not exist, set warning and exit
+    // If current version is not available or there are no
+    // versions, set warning and exit
     if (moduleDetails == null) {
         showNoAvailableVersions();
         return;
@@ -1181,6 +1187,20 @@ async function setupBasePage(data) {
 
     addModuleLabels(moduleDetails, $("#module-title"));
 }
+
+async function setupRootModuleNoVersions(data) {
+
+    createBreadcrumbs(data);
+
+    let id = getCurrentObjectId(data);
+    let moduleDetails = await getModuleDetails(id);
+
+    setupSettingsTab(moduleDetails);
+
+    // If current version is not available or there are no
+    // versions, set warning and exit
+    showNoAvailableVersions();
+}
 /*
  * Setup elements of page used by root module pages.
  *
@@ -1197,6 +1217,7 @@ async function setupRootModulePage(data) {
         return;
     }
 
+    setupModuleVersionDeletionSetting(moduleDetails);
     populateSubmoduleSelect(moduleDetails);
     populateExampleSelect(moduleDetails);
     populateTerraformUsageExample(moduleDetails);

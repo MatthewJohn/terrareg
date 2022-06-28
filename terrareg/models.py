@@ -910,6 +910,31 @@ class ModuleProvider(object):
         )
         return module_versions
 
+    def get_api_outline(self):
+        """Return dict of basic provider details for API response."""
+        return {
+            "id": self.id,
+            "namespace": self._module._namespace.name,
+            "name": self._module.name,
+            "provider": self.name,
+            "verified": self.verified,
+            "trusted": self._module._namespace.trusted
+        }
+
+    def get_terrareg_api_details(self):
+        """Return dict of module details with additional attributes used by terrareg UI."""
+        git_provider = self.get_git_provider()
+        api_details = self.get_api_outline()
+        api_details.update({
+            "module_provider_id": self.id,
+            "git_provider_id": git_provider.pk if git_provider else None,
+            "git_tag_format": self.git_tag_format,
+            "repo_base_url_template": self._get_db_row()['repo_base_url_template'],
+            "repo_clone_url_template": self._get_db_row()['repo_clone_url_template'],
+            "repo_browse_url_template": self._get_db_row()['repo_browse_url_template']
+        })
+        return api_details
+
 
 class TerraformSpecsObject(object):
     """Base terraform object, that has terraform-docs available."""
@@ -1363,21 +1388,18 @@ class ModuleVersion(TerraformSpecsObject):
     def get_api_outline(self):
         """Return dict of basic version details for API response."""
         row = self._get_db_row()
-        return {
+        api_outline = self._module_provider.get_api_outline()
+        api_outline.update({
             "id": self.id,
             "owner": row['owner'],
-            "namespace": self._module_provider._module._namespace.name,
-            "name": self._module_provider._module.name,
             "version": self.version,
-            "provider": self._module_provider.name,
             "description": row['description'],
             "source": self.get_source_base_url(),
             "published_at": row['published_at'].isoformat(),
             "downloads": self.get_total_downloads(),
-            "verified": self._module_provider.verified,
-            "internal": self._get_db_row()['internal'],
-            "trusted": self._module_provider._module._namespace.trusted
-        }
+            "internal": self._get_db_row()['internal']
+        })
+        return api_outline
 
     def get_total_downloads(self):
         """Obtain total number of downloads for module version."""
@@ -1398,19 +1420,14 @@ class ModuleVersion(TerraformSpecsObject):
 
     def get_terrareg_api_details(self):
         """Return dict of version details with additional attributes used by terrareg UI."""
-        api_details = self.get_api_details()
+        api_details = self._module_provider.get_terrareg_api_details()
+        api_details.update(self.get_api_details())
+
         source_browse_url = self.get_source_browse_url()
-        git_provider = self._module_provider.get_git_provider()
         api_details.update({
             "published_at_display": self.publish_date_display,
             "display_source_url": source_browse_url if source_browse_url else self.get_source_base_url(),
-            "terraform_example_version_string": self.get_terraform_example_version_string(),
-            "module_provider_id": self._module_provider.id,
-            "git_provider_id": git_provider.pk if git_provider else None,
-            "git_tag_format": self._module_provider.git_tag_format,
-            "repo_base_url_template": self._module_provider._get_db_row()['repo_base_url_template'],
-            "repo_clone_url_template": self._module_provider._get_db_row()['repo_clone_url_template'],
-            "repo_browse_url_template": self._module_provider._get_db_row()['repo_browse_url_template']
+            "terraform_example_version_string": self.get_terraform_example_version_string()
         })
         return api_details
 

@@ -285,8 +285,11 @@ class Server(object):
             '/v1/terrareg/modules/<string:namespace>'
         )
         self._api.add_resource(
+            ApiTerraregModuleProviderDetails,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>'
+        )
+        self._api.add_resource(
             ApiTerraregModuleVersionDetails,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>',
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>'
         )
         self._api.add_resource(
@@ -1489,14 +1492,32 @@ class ApiTerraregNamespaceDetails(ErrorCatchingResource):
         return namespace.get_details()
 
 
+class ApiTerraregModuleProviderDetails(ErrorCatchingResource):
+    """Interface to obtain module provider details."""
+
+    def _get(self, namespace, name, provider):
+        """Return details about module version."""
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider.get(module=module, name=provider)
+
+        if module_provider is None:
+            return self._get_404_response()
+
+        return module_provider.get_terrareg_api_details()
+
+
 class ApiTerraregModuleVersionDetails(ErrorCatchingResource):
-    """Interface to obtain module verison dertails."""
+    """Interface to obtain module verison details."""
 
     def _get(self, namespace, name, provider, version=None):
         """Return details about module version."""
         namespace = Namespace(namespace)
         module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
+        module_provider = ModuleProvider.get(module=module, name=provider)
+        if module_provider is None:
+            return self._get_404_response()
+
         if version is not None:
             module_version = ModuleVersion.get(module_provider=module_provider, version=version)
         else:
