@@ -50,6 +50,8 @@
             <p id="module-provider" class="subtitle">
             </p>
 
+            <p id="current-submodule" class="subtitle default-hidden"></p>
+
             <p id="unpublished-warning" class="subtitle default-hidden">
                 <b>WARNING:</b> This version of the module is not published.
             </p>
@@ -66,6 +68,7 @@
 
 
             <section id="submodule-select-container" class="default-hidden">
+                <p>Submodules: </p>
                 <div class="select is-small">
                     <select id="submodule-select" autocomplete="off" onchange="onSubmoduleSelectChange(event);">
                         <option value="none">Select submodule</option>
@@ -75,6 +78,7 @@
 
             <br />
             <section id="example-select-container" class="default-hidden">
+                <p>Examples: </p> 
                 <div class="select is-small">
                     <select id="example-select" autocomplete="off" onchange="onSubmoduleSelectChange(event);">
                         <option value="none">Select example</option>

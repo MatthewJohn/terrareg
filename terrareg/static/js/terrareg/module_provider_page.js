@@ -293,6 +293,17 @@ function populateExampleSelect(moduleDetails, currentSubmodulePath = undefined) 
 }
 
 /*
+ * Populate and show current submodule/example text
+ *
+ * @parram text Text to be shown
+ */
+function populateCurrentSubmodule(text) {
+    let currentSubmodule = $('#current-submodule');
+    currentSubmodule.text(text);
+    currentSubmodule.removeClass('default-hidden');
+}
+
+/*
  * Handle submodule/example select onChange event.
  * Redirect user to selected submodule/example
  *
@@ -1236,8 +1247,7 @@ async function setupSubmodulePage(data) {
     let submodulePath = data.undefined;
     let submoduleDetails = await getSubmoduleDetails(moduleDetails.id, submodulePath);
 
-    populateSubmoduleSelect(moduleDetails, submodulePath);
-    populateExampleSelect(moduleDetails);
+    populateCurrentSubmodule(`Submodule: ${submodulePath}`)
 
     populateTerraformUsageExample(moduleDetails, submodulePath);
 
@@ -1265,8 +1275,7 @@ async function setupExamplePage(data) {
     let examplePath = data.undefined;
     let submoduleDetails = await getExampleDetails(moduleDetails.id, examplePath);
 
-    populateSubmoduleSelect(moduleDetails);
-    populateExampleSelect(moduleDetails, examplePath);
+    populateCurrentSubmodule(`Example: ${examplePath}`)
 
     $.get(`/v1/terrareg/modules/${moduleDetails.id}/examples/readme_html/${examplePath}`, (readmeContent) => {
         populateReadmeContent(readmeContent);
