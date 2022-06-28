@@ -1221,7 +1221,6 @@ async function setupRootModulePage(data) {
     populateTerrarformResources(moduleDetails.root);
 
     populateAnalyticsTable(moduleDetails);
-    setupIntegrations(moduleDetails);
     setupUsageBuilder(moduleDetails);
 }
 
