@@ -159,6 +159,28 @@ async function getModuleDetails(module_id) {
     return terraregModuleDetailsPromiseSingleton[module_id];
 }
 
+terraregModuleUsageBuilderVariablesPromiseSingleton = [];
+function getUsageBuilderVariables(moduleId) {
+    // Create promise if it hasn't already been defined
+    if (terraregModuleUsageBuilderVariablesPromiseSingleton[moduleId] === undefined) {
+        terraregModuleUsageBuilderVariablesPromiseSingleton[moduleId] = new Promise((resolve, reject) => {
+            // Perform request to obtain usage builder variables details
+            $.ajax({
+                type: "GET",
+                url: `/v1/terrareg/modules/${moduleId}/variable_template`,
+                success: function (data) {
+                    resolve(data);
+                },
+                error: function () {
+                    resolve(null);
+                }
+            });
+        });
+    }
+    return terraregModuleUsageBuilderVariablesPromiseSingleton[moduleId];
+}
+
+
 terraregSubmoduleDetailsPromiseSingleton = [];
 async function getSubmoduleDetails(moduleId, submodulePath) {
     // Create promise if it hasn't already been defined

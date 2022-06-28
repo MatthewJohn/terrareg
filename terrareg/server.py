@@ -805,6 +805,7 @@ class ApiTerraregConfig(ErrorCatchingResource):
             'CONTRIBUTED_NAMESPACE_LABEL': terrareg.config.Config().CONTRIBUTED_NAMESPACE_LABEL,
             'VERIFIED_MODULE_LABEL': terrareg.config.Config().VERIFIED_MODULE_LABEL,
             'ANALYTICS_TOKEN_PHRASE': terrareg.config.Config().ANALYTICS_TOKEN_PHRASE,
+            'ANALYTICS_TOKEN_DESCRIPTION': terrareg.config.Config().ANALYTICS_TOKEN_DESCRIPTION,
             'EXAMPLE_ANALYTICS_TOKEN': terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN,
             'ALLOW_MODULE_HOSTING': terrareg.config.Config().ALLOW_MODULE_HOSTING,
             'PUBLISH_API_KEYS_ENABLED': bool(terrareg.config.Config().PUBLISH_API_KEYS),

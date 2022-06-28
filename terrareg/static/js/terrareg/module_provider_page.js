@@ -931,6 +931,212 @@ function updateModuleProviderSettings(moduleDetails) {
 }
 
 /*
+ * Setup usage builder input table.
+ *
+ * @param moduleDetails
+ */
+async function setupUsageBuilder(moduleDetails) {
+
+    let config = await getConfig();
+    let usageBuilderTable = $('#usageBuilderTable');
+
+    // Setup analaytics input row
+    let analyticsTokenInputRow = $('<tr></tr>');
+
+    let analyticsTokenName = $('<td></td>');
+    analyticsTokenName.text(config.ANALYTICS_TOKEN_PHRASE);
+    analyticsTokenInputRow.append(analyticsTokenName);
+
+    let analyticsTokenDescription = $('<td></td>');
+    analyticsTokenDescription.text(config.ANALYTICS_TOKEN_DESCRIPTION);
+    analyticsTokenInputRow.append(analyticsTokenDescription);
+
+    let analyticsTokenInputTd = $('<td></td>');
+    let analyticsTokenInputField = $('<input />');
+    analyticsTokenInputField.attr('class', 'input');
+    analyticsTokenInputField.attr('id', 'usageBuilderAnalyticsToken');
+    analyticsTokenInputField.attr('type', 'text');
+    analyticsTokenInputField.attr('placeholder', config.EXAMPLE_ANALYTICS_TOKEN);
+    analyticsTokenInputField.bind('keyup', () => {updateUsageBuilderOutput(moduleDetails)});
+    analyticsTokenInputTd.append(analyticsTokenInputField);
+    analyticsTokenInputRow.append(analyticsTokenInputTd);
+
+    usageBuilderTable.append(analyticsTokenInputRow);
+
+    let inputVariables = await getUsageBuilderVariables(moduleDetails.id);
+
+    if (inputVariables === null || ! inputVariables.length) {
+        // If there are no variables present in the usage builder,
+        // then exit early
+        return;
+    }
+
+    // Show tab
+    $('#module-tab-link-usage-builder').show();
+
+
+    // Build input table
+    inputVariables.forEach((inputVariable) => {
+        let inputId = `usageBuilderInput-${inputVariable.name}`;
+
+        let inputRow = $('<tr></tr>');
+        let inputNameTd = $('<td></td>');
+        inputNameTd.text(inputVariable.name);
+        inputRow.append(inputNameTd);
+
+        let additionalHelpTd = $('<td></td>');
+        additionalHelpTd.text(inputVariable.additional_help ? inputVariable.additional_help : '');
+        inputRow.append(additionalHelpTd);
+
+        let valueTd = $('<td></td>');
+
+        if (inputVariable.type == 'text') {
+            let inputDiv = $('<input />');
+            inputDiv.addClass('input');
+            inputDiv.attr('type', 'text');
+            inputDiv.attr('id', inputId);
+            inputDiv.bind('keyup', () => {updateUsageBuilderOutput(moduleDetails)});
+            valueTd.append(inputDiv);
+
+        } else if (inputVariable.type == 'boolean') {
+
+            inputDiv = $('<input />');
+            inputDiv.addClass('checkbox');
+            inputDiv.attr('type', 'checkbox');
+            inputDiv.attr('id', inputId);
+            inputDiv.attr('value', 'true');
+            inputDiv.bind('onchange', () => {updateUsageBuilderOutput(moduleDetails)});
+            valueTd.append(inputDiv);
+
+        } else if (inputVariable.type == 'select') {
+            inputDiv = $('<div></div>');
+            inputDiv.addClass('select');
+            let inputSelect = $('<select></select>');
+            inputSelect.attr('id', inputId);
+            inputSelect.bind('change', () => {updateUsageBuilderOutput(moduleDetails)});
+
+            inputVariable.choices.forEach((inputChoice, itx) => {
+                // If choices is list of strings, use the string as the name,
+                // otherwise, use name attribute of object.
+                let inputName = typeof inputChoice === 'string' ? inputChoice : inputChoice.name;
+                let option = $('<option></option>');
+                option.val(itx);
+                option.text(inputName);
+                inputSelect.append(option);
+            });
+            // If custom input is available, add to select
+            if (inputVariable.allow_custom) {
+                let option = $('<option></option>');
+                option.val('custom');
+                option.text('Custom Value');
+                inputSelect.append(option);
+            }
+            inputDiv.append(inputSelect);
+
+            valueTd.append(inputDiv);
+
+            // If custom input is available, add hidden input for custom input
+            let customInput = $('<input />');
+            customInput.addClass('input');
+            customInput.attr('type', 'text');
+            customInput.attr('id', `${inputId}-customValue`);
+            customInput.bind('keyup', () => {updateUsageBuilderOutput(moduleDetails)});
+            customInput.css('display', 'none');
+            valueTd.append(customInput);
+
+        } else {
+            // Skip displaying other types of variables in input
+            return;
+        }
+
+        inputRow.append(valueTd);
+
+        $('#usageBuilderTable').append(inputRow);
+    });
+}
+
+function usageBuilderQuoteString(input) {
+    // Place input value directly into double quotes.
+    // Escape backslashes and then escape double quotes.
+    return '"' + input.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+}
+
+async function updateUsageBuilderOutput(moduleDetails) {
+    let outputTf = '';
+    let additionalContent = '';
+
+    let analytics_token = $('#usageBuilderAnalyticsToken')[0].value;
+
+    let inputVariables = await getUsageBuilderVariables(moduleDetails.id);
+
+    inputVariables.forEach((inputVariable) => {
+        let inputId = `#usageBuilderInput-${inputVariable.name}`;
+        let varInput = '';
+
+        // Get value from
+        if (inputVariable.type == 'static')
+        {
+            varInput = inputVariable.value;
+        }
+        else if (inputVariable.type == 'text')
+        {
+            varInput = $(inputId)[0].value;
+        }
+        else if (inputVariable.type == 'boolean')
+        {
+            varInput = $(inputId).is(':checked') ? 'true' : 'false';
+        }
+        else if (inputVariable.type == 'select')
+        {
+            let selectIndex = $(inputId)[0].value;
+            let customInputId = `${inputId}-customValue`;
+
+            // Check if custom type
+            if (selectIndex == 'custom') {
+                // Display custom text input
+                $(customInputId)[0].style.display ='block';
+
+                // Use value of custom input as output
+                varInput = $(customInputId)[0].value
+            }
+            else
+            {
+                // Hide custom input and clear value
+                $(customInputId)[0].style.display = 'none';
+                $(customInputId)[0].value = '';
+
+                // If choice is a string, add the choice name to as the value
+                if (typeof inputVariable.choices[selectIndex] === 'string') {
+                    varInput = inputVariable.choices[selectIndex];
+                } else {
+                    // Otherwise, use the attribute for the value
+                    varInput = inputVariable.choices[selectIndex].value;
+
+                    // If object has additional_content, add it to the TF output
+                    if (inputVariable.choices[selectIndex].additional_content) {
+                        additionalContent += inputVariable.choices[selectIndex].additional_content + '\n\n';
+                    }
+                }
+            }
+            
+        }
+
+        if (inputVariable.quote_value) {
+            varInput = usageBuilderQuoteString(varInput);
+        }
+
+        outputTf += `\n  ${inputVariable.name} = ${varInput}`;
+    });
+
+    $('#usageBuilderOutput').html(`${additionalContent}module "${moduleDetails.name}" {
+  source  = "${window.location.hostname}/${analytics_token}__${moduleDetails.module_provider_id}"
+  version = "${moduleDetails.terraform_example_version_string}"
+${outputTf}
+}`);
+}
+
+
+/*
  * Setup common elements of the page, shared between all types
  * of pages
  *
@@ -996,6 +1202,7 @@ async function setupRootModulePage(data) {
 
     populateAnalyticsTable(moduleDetails);
     setupIntegrations(moduleDetails);
+    setupUsageBuilder(moduleDetails);
 }
 
 /*
