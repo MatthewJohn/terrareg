@@ -325,10 +325,10 @@ async function populateTerraformUsageExample(moduleDetails, additionalPath = und
     // Add example terraform call to source section
     $("#usage-example-terraform").text(
         `module "${moduleDetails.name}" {
-source  = "${window.location.hostname}/${config.EXAMPLE_ANALYTICS_TOKEN}__${moduleDetails.module_provider_id}${additionalPath ? "//" + additionalPath : ""}"
-version = "${moduleDetails.terraform_example_version_string}"
+  source  = "${window.location.hostname}/${config.EXAMPLE_ANALYTICS_TOKEN}__${moduleDetails.module_provider_id}${additionalPath ? "//" + additionalPath : ""}"
+  version = "${moduleDetails.terraform_example_version_string}"
 
-# Provide variables here
+  # Provide variables here
 }`
     );
 
