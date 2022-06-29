@@ -1641,6 +1641,11 @@ class BaseSubmodule(TerraformSpecsObject):
 
     def update_attributes(self, **kwargs):
         """Update DB row."""
+        # Encode columns that are binary blobs in the database
+        for kwarg in kwargs:
+            if kwarg in ['readme_content', 'module_details']:
+                kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
+
         db = Database.get()
         update = db.sub_module.update().where(
             db.sub_module.c.id == self.pk
@@ -1843,6 +1848,11 @@ class ExampleFile:
 
     def update_attributes(self, **kwargs):
         """Update DB row."""
+        # Encode columns that are binary blobs in the database
+        for kwarg in kwargs:
+            if kwarg in ['content']:
+                kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
+
         db = Database.get()
         update = db.example_file.update().where(
             db.example_file.c.id == self.pk
