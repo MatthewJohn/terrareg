@@ -31,6 +31,32 @@ class TestModuleProvider(SeleniumTest):
             mock_.stop()
         super(TestModuleProvider, cls).teardown_class()
 
+    def test_module_without_versions(self):
+        """Test page functionality on a module without published versions."""
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/noversion/testprovider'))
+
+        # Ensure integrations tab link is display and tab is displayed
+        self.wait_for_element(By.ID, 'module-tab-link-integrations')
+        integration_tab = self.wait_for_element(By.ID, 'module-tab-integrations')
+
+        # Ensure all other tabs aren't shown
+        for tab_name in ['readme', 'example-files', 'inputs', 'outputs', 'providers', 'resources', 'analytics', 'usage-builder', 'settings']:
+            # Ensure tab link isn't displayed
+            assert self.selenium_instance.find_element(By.ID, f'module-tab-link-{tab_name}').is_displayed() == False
+
+            # Ensure tab content isn't displayed
+            assert self.selenium_instance.find_element(By.ID, f'module-tab-{tab_name}').is_displayed() == False
+
+        # Login
+        self.perform_admin_authentication(password='unittest-password')
+
+        # Ensure settings tab link is displayed
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/noversion/testprovider'))
+
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, f'module-tab-link-settings').is_displayed(), True)
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, f'module-tab-settings').is_displayed(), False)
+
+
     def test_delete_module_version(self):
         """Check provider logos are displayed correctly."""
 
@@ -49,8 +75,7 @@ class TestModuleProvider(SeleniumTest):
         self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/2.5.5'))
 
         # Click on settings tab
-        self.wait_for_element(By.ID, 'module-tab-link-settings')
-        tab = self.selenium_instance.find_element(By.ID, 'module-tab-link-settings')
+        tab = self.wait_for_element(By.ID, 'module-tab-link-settings')
         tab.click()
 
         # Ensure the verification text is not shown

@@ -356,6 +356,10 @@ integration_test_data = {
                     'published': True
                 },
             }
+        }},
+        'noversion': {'testprovider': {
+            'id': 57,
+            'versions': {}
         }}
     },
 
