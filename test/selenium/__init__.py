@@ -111,7 +111,7 @@ class SeleniumTest(BaseTest):
                     print('Failed asserting that {} == {}'.format(actual, value))
                     raise
 
-    def wait_for_element(self, by, val, parent=None):
+    def wait_for_element(self, by, val, parent=None, ensure_displayed=True):
         """Attempt to find element and wait, if it does not exist yet."""
         if parent is None:
             parent = self.selenium_instance
@@ -121,7 +121,7 @@ class SeleniumTest(BaseTest):
             try:
                 # Attempt to find element
                 element = parent.find_element(by, val)
-                if not element.is_displayed():
+                if ensure_displayed and not element.is_displayed():
                     raise selenium.common.exceptions.NoSuchElementException('Element is not displayed')
                 return element
             except selenium.common.exceptions.NoSuchElementException:
