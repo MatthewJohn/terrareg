@@ -1356,8 +1356,8 @@ async function setupRootModulePage(data) {
         tabFactory.registerTab(new InputsTab(moduleDetails.root));
     }
 
-    tabFactory.registerTab(new SettingsTab(moduleDetails));
     tabFactory.registerTab(new IntegrationsTab(moduleDetails));
+    tabFactory.registerTab(new SettingsTab(moduleDetails));
 
     if (moduleDetails.versions.length) {
 
