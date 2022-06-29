@@ -120,7 +120,10 @@ class SeleniumTest(BaseTest):
         for itx in range(max_attempts):
             try:
                 # Attempt to find element
-                return parent.find_element(by, val)
+                element = parent.find_element(by, val)
+                if not element.is_displayed():
+                    raise selenium.common.exceptions.NoSuchElementException('Element is not displayed')
+                return element
             except selenium.common.exceptions.NoSuchElementException:
                 # If it fails the assertion,
                 # sleep and retry until last attmept
