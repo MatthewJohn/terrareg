@@ -1,4 +1,10 @@
 
+from datetime import datetime
+import json
+
+from terrareg.database import Database
+
+
 integration_git_providers = {
     1: {
         'name': 'testgitprovider',
@@ -353,7 +359,150 @@ integration_test_data = {
                     'description': 'This is a test module version for tests.',
                     'owner': 'This is the owner of the module',
                     'repo_base_url_template': 'https://link-to.com/source-code-here',
-                    'published': True
+                    'published': True,
+                    'beta': False,
+                    'internal': False,
+                    'published_at': datetime(2022, 1, 5, 22, 53, 12),
+                    'readme_content': '# This is an exaple README!',
+                    'variable_template': json.dumps([
+                        {
+                            'name': 'name_of_application',
+                            'type': 'string',
+                            'quote_value': True,
+                            'additional_help': 'Provide the name of the application'
+                        }
+
+                    ]),
+                    'module_details': json.dumps({
+                        'header': '',
+                        'footer': '',
+                        'inputs': [
+                            {
+                                'name': 'name_of_application',
+                                'type': 'string',
+                                'description': 'Enter the application name',
+                                'default': None,
+                                'required': True
+                            }
+                        ],
+                        'modules': [],
+                        'outputs': [
+                            {
+                                'name': 'generated_name',
+                                'description': 'Name with randomness'
+                            }
+                        ],
+                        'providers': [
+                            {
+                                'name': 'random',
+                                'alias': None,
+                                'version': None
+                            }
+                        ],
+                        'requirements': [],
+                        'resources': [
+                            {
+                                'type': 'string',
+                                'name': 'random_suffix',
+                                'provider': 'random',
+                                'source': 'hashicorp/random',
+                                'mode': 'managed',
+                                'version': 'latest',
+                                'description': None
+                            }
+                        ]
+                    }),
+                    'examples': {
+                        'examples/test-example': {
+                            'example_files': {
+                                'examples/test-example/main.tf': '#this is a main.tf'
+                            },
+                            'readme_content': '# Example 1 README',
+                            'module_details': json.dumps({
+                                'header': '',
+                                'footer': '',
+                                'inputs': [
+                                    {
+                                        'name': 'input_for_example',
+                                        'type': 'string',
+                                        'description': 'Enter the example name',
+                                        'default': None,
+                                        'required': True
+                                    }
+                                ],
+                                'modules': [],
+                                'outputs': [
+                                    {
+                                        'name': 'example_output',
+                                        'description': 'Example name with randomness'
+                                    }
+                                ],
+                                'providers': [
+                                    {
+                                        'name': 'example_random',
+                                        'alias': None,
+                                        'version': None
+                                    }
+                                ],
+                                'requirements': [],
+                                'resources': [
+                                    {
+                                        'type': 'string',
+                                        'name': 'example_random_suffix',
+                                        'provider': 'example_random',
+                                        'source': 'hashicorp/example_random',
+                                        'mode': 'managed',
+                                        'version': 'latest',
+                                        'description': None
+                                    }
+                                ]
+                            })
+                        }
+                    },
+                    'submodules': {
+                        'modules/example-submodule1': {
+                            'readme_content': '# Submodule 1 README',
+                            'module_details': json.dumps({
+                                'header': '',
+                                'footer': '',
+                                'inputs': [
+                                    {
+                                        'name': 'input_for_submodule',
+                                        'type': 'string',
+                                        'description': 'Enter the submodule name',
+                                        'default': None,
+                                        'required': True
+                                    }
+                                ],
+                                'modules': [],
+                                'outputs': [
+                                    {
+                                        'name': 'submodule_output',
+                                        'description': 'Submodule name with randomness'
+                                    }
+                                ],
+                                'providers': [
+                                    {
+                                        'name': 'submodule_random',
+                                        'alias': None,
+                                        'version': None
+                                    }
+                                ],
+                                'requirements': [],
+                                'resources': [
+                                    {
+                                        'type': 'string',
+                                        'name': 'submodule_random_suffix',
+                                        'provider': 'submodule_random',
+                                        'source': 'hashicorp/submodule_random',
+                                        'mode': 'managed',
+                                        'version': 'latest',
+                                        'description': None
+                                    }
+                                ]
+                            })
+                        }
+                    }
                 },
             }
         }},
