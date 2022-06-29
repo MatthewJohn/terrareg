@@ -1,3 +1,17 @@
+
+class BaseTab {
+    constructor() {}
+    render() {}
+}
+
+class ModuleDetailsTab extends BaseTab {
+    constructor(moduleDetails) {
+        super();
+        this._moduleDetails = moduleDetails;
+    }
+    render() {}
+}
+
 /*
  * Setup router and call setup page depending on the page/module type
  */
@@ -377,70 +391,42 @@ function populateDownloadSummary(moduleDetails) {
     $('#module-download-stats-container').removeClass('default-hidden');
 }
 
-/*
- * Populate analytics table
- *
- * @param moduleDetails Terrareg module details
- */
-function populateAnalyticsTable(moduleDetails) {
-    $.get(`/v1/terrareg/analytics/${moduleDetails.module_provider_id}/token_versions`, (data, status) => {
-        Object.keys(data).forEach((token) => {
-            $("#analyticsVersionByTokenTable").append(`
-                <tr>
-                    <td>
-                        ${token}
-                    </td>
-                    <td>
-                        ${data[token].module_version}
-                    </td>
-                    <td>
-                        ${data[token].terraform_version}
-                    </td>
-                    <td>
-                        ${data[token].environment}
-                    </td>
-                </tr>
-            `);
+
+
+class AnalyticsTab extends ModuleDetailsTab {
+    get name() {
+        return 'analytics';
+    }
+    async render() {
+        this._renderPromise = new Promise(async (resolve) => {
+            $.get(`/v1/terrareg/analytics/${this._moduleDetails.module_provider_id}/token_versions`, (data, status) => {
+                Object.keys(data).forEach((token) => {
+                    $("#analyticsVersionByTokenTable").append(`
+                        <tr>
+                            <td>
+                                ${token}
+                            </td>
+                            <td>
+                                ${data[token].module_version}
+                            </td>
+                            <td>
+                                ${data[token].terraform_version}
+                            </td>
+                            <td>
+                                ${data[token].environment}
+                            </td>
+                        </tr>
+                    `);
+                });
+                $("#analytics-table").DataTable();
+            });
+
+            // Show tab link
+            $("#module-tab-link-analytics").removeClass('default-hidden');
+
+            resolve(true);
         });
-        $("#analytics-table").DataTable();
-    });
-
-    // Show tab link
-    $("#module-tab-link-analytics").removeClass('default-hidden');
-}
-
-/*
- * Populate README tab content and tab link, if README is available
- *
- * @param moduleDetails Terrareg module details
- */
-function populateReadmeContent(readmeContent) {
-    return new Promise((resolve, reject) => {
-        // If no README is defined, exit early
-        if (!readmeContent) {
-            resolve(false);
-            return;
-        }
-
-        let readmeContentDiv = $("#module-tab-readme");
-
-        // Populate README conrtent
-        readmeContentDiv.append(readmeContent);
-
-        // Add 'table' class to all tables in README
-        readmeContentDiv.find("table").addClass("table");
-
-        // Replace size of headers
-        readmeContentDiv.find("h1").addClass("subtitle").addClass("is-3");
-        readmeContentDiv.find("h2").addClass("subtitle").addClass("is-4");
-        readmeContentDiv.find("h3").addClass("subtitle").addClass("is-5");
-        readmeContentDiv.find("h4").addClass("subtitle").addClass("is-6");
-
-        // Show README tab button
-        $("#module-tab-link-readme").removeClass('default-hidden');
-
-        resolve(true);
-    });
+    }
 }
 
 /*
@@ -504,193 +490,201 @@ function selectExampleFile(eventTarget) {
     });
 }
 
-/*
- * Load list of example files and populate example file nav
- *
- * @param moduleDetails Terrareg module details
- * @param examplePath Path of example
- */
+class ExampleFilesTab extends ModuleDetailsTab {
+    get name() {
+        return 'example-files';
+    }
+    async render() {
+        this._renderPromise = new Promise(async (resolve) => {
+            $.ajax({
+                type: "GET",
+                url: `/v1/terrareg/modules/${this._moduleDetails.id}/examples/filelist/${examplePath}`,
+                success: function (data) {
 
-async function loadExampleFileList(moduleDetails, examplePath) {
-    return new Promise((resolve) => {
-        $.ajax({
-            type: "GET",
-            url: `/v1/terrareg/modules/${moduleDetails.id}/examples/filelist/${examplePath}`,
-            success: function (data) {
-
-                if (! data.length) {
-                    resolve(false);
-                    return;
-                }
-
-                let firstFileSelected = false;
-                data.forEach((exampleFile) => {
-                    let fileLink = $(`
-                        <a class="panel-block" data-module-id="${moduleDetails.id}" data-path="${exampleFile.path}" onClick="selectExampleFile(event.target)">
-                            <span class="panel-icon">
-                                <i class="fa-solid fa-file-code" aria-hidden="true"></i>
-                            </span>
-                            ${exampleFile.filename}
-                        </a>
-                    `);
-
-                    $("#example-file-list-nav").append(fileLink);
-
-                    if (firstFileSelected == false) {
-                        firstFileSelected = true;
-                        selectExampleFile(fileLink);
+                    if (! data.length) {
+                        resolve(false);
+                        return;
                     }
-                });
 
-                // Show example tab link
-                $('#module-tab-link-example-files').removeClass('default-hidden');
+                    let firstFileSelected = false;
+                    data.forEach((exampleFile) => {
+                        let fileLink = $(`
+                            <a class="panel-block" data-module-id="${this._moduleDetails.id}" data-path="${exampleFile.path}" onClick="selectExampleFile(event.target)">
+                                <span class="panel-icon">
+                                    <i class="fa-solid fa-file-code" aria-hidden="true"></i>
+                                </span>
+                                ${exampleFile.filename}
+                            </a>
+                        `);
 
-                resolve(true);
-            }
+                        $("#example-file-list-nav").append(fileLink);
+
+                        if (firstFileSelected == false) {
+                            firstFileSelected = true;
+                            selectExampleFile(fileLink);
+                        }
+                    });
+
+                    // Show example tab link
+                    $('#module-tab-link-example-files').removeClass('default-hidden');
+
+                    resolve(true);
+                }
+            });
         });
-    });
+    }
 }
 
-/*
- * Populate tabs for inputs
- *
- * @param rootModuleDetails Terrareg root module details
- */
-async function populateTerrarformInputs(rootModuleDetails) {
-    return new Promise((resolve) => {
-        let inputTab = $("#module-tab-inputs");
-        let inputTabTbody = inputTab.find("tbody");
-        rootModuleDetails.inputs.forEach((input) => {
-            let inputRow = $("<tr></tr>");
+class InputsTab extends ModuleDetailsTab {
+    get name() {
+        return 'inputs';
+    }
+    async render() {
+            this._renderPromise = new Promise(async (resolve) => {
+            let inputTab = $("#module-tab-inputs");
+            let inputTabTbody = inputTab.find("tbody");
+            this._moduleDetails.inputs.forEach((input) => {
+                let inputRow = $("<tr></tr>");
 
-            let nameTd = $("<td></td>");
-            nameTd.text(input.name);
-            inputRow.append(nameTd);
+                let nameTd = $("<td></td>");
+                nameTd.text(input.name);
+                inputRow.append(nameTd);
 
-            let descriptionTd = $("<td></td>");
-            descriptionTd.text(input.description);
-            inputRow.append(descriptionTd);
+                let descriptionTd = $("<td></td>");
+                descriptionTd.text(input.description);
+                inputRow.append(descriptionTd);
 
-            let typeTd = $("<td></td>");
-            typeTd.text(input.type);
-            inputRow.append(typeTd);
+                let typeTd = $("<td></td>");
+                typeTd.text(input.type);
+                inputRow.append(typeTd);
 
-            let defaultTd = $("<td></td>");
-            defaultTd.text(input.required ? "Required" : JSON.stringify(input.default));
-            inputRow.append(defaultTd);
+                let defaultTd = $("<td></td>");
+                defaultTd.text(input.required ? "Required" : JSON.stringify(input.default));
+                inputRow.append(defaultTd);
 
-            inputTabTbody.append(inputRow);
+                inputTabTbody.append(inputRow);
+            });
+
+            // Show tab link
+            $('#module-tab-link-inputs').removeClass('default-hidden');
+            resolve(true);
         });
-
-        // Show tab link
-        $('#module-tab-link-inputs').removeClass('default-hidden');
-        resolve(true);
-    });
+    }
 }
 
-/*
- * Populate tabs for outputs
- *
- * @param rootModuleDetails Terrareg module details
- */
-function populateTerrarformOutputs(rootModuleDetails) {
-    let outputTab = $("#module-tab-outputs");
-    let outputTabTbody = outputTab.find("tbody");
-    rootModuleDetails.outputs.forEach((output) => {
-        let outputRow = $("<tr></tr>");
+class OutputsTab extends ModuleDetailsTab {
+    get name() {
+        return 'outputs';
+    }
+    async render() {
+        this._renderPromise = new Promise(async (resolve) => {
+            let outputTab = $("#module-tab-outputs");
+            let outputTabTbody = outputTab.find("tbody");
+            this._moduleDetails.outputs.forEach((output) => {
+                let outputRow = $("<tr></tr>");
 
-        let nameTd = $("<td></td>");
-        nameTd.text(output.name);
-        outputRow.append(nameTd);
+                let nameTd = $("<td></td>");
+                nameTd.text(output.name);
+                outputRow.append(nameTd);
 
-        let descriptionTd = $("<td></td>");
-        descriptionTd.text(output.description);
-        outputRow.append(descriptionTd);
+                let descriptionTd = $("<td></td>");
+                descriptionTd.text(output.description);
+                outputRow.append(descriptionTd);
 
-        outputTabTbody.append(outputRow);
-    });
-    // Show tab link
-    $('#module-tab-link-outputs').removeClass('default-hidden');
+                outputTabTbody.append(outputRow);
+            });
+            // Show tab link
+            $('#module-tab-link-outputs').removeClass('default-hidden');
+
+            resolve(true);
+        });
+    }
 }
 
-/*
- * Populate tabs for providers
- *
- * @param rootModuleDetails Terrareg module details
- */
-function populateTerrarformProviders(rootModuleDetails) {
-    let providerTab = $("#module-tab-providers");
-    let providerTabTbody = providerTab.find("tbody");
-    rootModuleDetails.provider_dependencies.forEach((provider) => {
-        let providerRow = $("<tr></tr>");
+class ProvidersTab extends ModuleDetailsTab {
+    get name() {
+        return 'providers';
+    }
+    async render() {
+        this._renderPromise = new Promise(async (resolve) => {
+            let providerTab = $("#module-tab-providers");
+            let providerTabTbody = providerTab.find("tbody");
+            this._moduleDetails.provider_dependencies.forEach((provider) => {
+                let providerRow = $("<tr></tr>");
 
-        let nameTd = $("<td></td>");
-        nameTd.text(provider.name);
-        providerRow.append(nameTd);
+                let nameTd = $("<td></td>");
+                nameTd.text(provider.name);
+                providerRow.append(nameTd);
 
-        let namespaceTd = $("<td></td>");
-        namespaceTd.text(provider.namespace);
-        providerRow.append(namespaceTd);
+                let namespaceTd = $("<td></td>");
+                namespaceTd.text(provider.namespace);
+                providerRow.append(namespaceTd);
 
-        let sourceTd = $("<td></td>");
-        sourceTd.text(provider.source);
-        providerRow.append(sourceTd);
+                let sourceTd = $("<td></td>");
+                sourceTd.text(provider.source);
+                providerRow.append(sourceTd);
 
-        let versionTd = $("<td></td>");
-        versionTd.text(provider.version);
-        providerRow.append(versionTd);
+                let versionTd = $("<td></td>");
+                versionTd.text(provider.version);
+                providerRow.append(versionTd);
 
-        providerTabTbody.append(providerRow);
-    });
+                providerTabTbody.append(providerRow);
+            });
 
-    // Show tab link
-    $('#module-tab-link-providers').removeClass('default-hidden');
+            // Show tab link
+            $('#module-tab-link-providers').removeClass('default-hidden');
+            resolve(true);
+        });
+    }
 }
 
-/*
- * Populate tabs for resources
- *
- * @param rootModuleDetails Terrareg module details
- */
-function populateTerrarformResources(rootModuleDetails) {
-    let resourceTab = $("#module-tab-resources");
-    let resourceTabTbody = resourceTab.find("tbody");
-    rootModuleDetails.resources.forEach((resource) => {
-        let resourceRow = $("<tr></tr>");
+class ResourcesTab extends ModuleDetailsTab {
+    get name() {
+        return 'resources';
+    }
+    async render() {
+        this._renderPromise = new Promise(async (resolve) => {
+            let resourceTab = $("#module-tab-resources");
+            let resourceTabTbody = resourceTab.find("tbody");
+            this._moduleDetails.resources.forEach((resource) => {
+                let resourceRow = $("<tr></tr>");
 
-        let typeTd = $("<td></td>");
-        typeTd.text(resource.type);
-        resourceRow.append(typeTd);
+                let typeTd = $("<td></td>");
+                typeTd.text(resource.type);
+                resourceRow.append(typeTd);
 
-        let nameTd = $("<td></td>");
-        nameTd.text(resource.name);
-        resourceRow.append(nameTd);
+                let nameTd = $("<td></td>");
+                nameTd.text(resource.name);
+                resourceRow.append(nameTd);
 
-        let providerTd = $("<td></td>");
-        providerTd.text(resource.provider);
-        resourceRow.append(providerTd);
+                let providerTd = $("<td></td>");
+                providerTd.text(resource.provider);
+                resourceRow.append(providerTd);
 
-        let sourceTd = $("<td></td>");
-        sourceTd.text(resource.source);
-        resourceRow.append(sourceTd);
+                let sourceTd = $("<td></td>");
+                sourceTd.text(resource.source);
+                resourceRow.append(sourceTd);
 
-        let modeTd = $("<td></td>");
-        modeTd.text(resource.mode);
-        resourceRow.append(modeTd);
+                let modeTd = $("<td></td>");
+                modeTd.text(resource.mode);
+                resourceRow.append(modeTd);
 
-        let versionTd = $("<td></td>");
-        versionTd.text(resource.version);
-        resourceRow.append(versionTd);
+                let versionTd = $("<td></td>");
+                versionTd.text(resource.version);
+                resourceRow.append(versionTd);
 
-        let descriptionTd = $("<td></td>");
-        descriptionTd.text(resource.description);
-        resourceRow.append(descriptionTd);
+                let descriptionTd = $("<td></td>");
+                descriptionTd.text(resource.description);
+                resourceRow.append(descriptionTd);
 
-        resourceTabTbody.append(resourceRow);
-    });
+                resourceTabTbody.append(resourceRow);
+            });
 
-    // Show tab link
-    $('#module-tab-link-resources').removeClass('default-hidden');
+            // Show tab link
+            $('#module-tab-link-resources').removeClass('default-hidden');
+            resolve(true);
+        });
+    }
 }
 
 /*
@@ -728,63 +722,72 @@ function indexModuleVersion(moduleDetails) {
         });
 }
 
-async function setupIntegrations(moduleDetails) {
-    let config = await getConfig();
-    if (config.ALLOW_MODULE_HOSTING) {
-        $("#module-integrations-upload-container").removeClass('default-hidden');
+class IntegrationsTab extends ModuleDetailsTab {
+    get name() {
+        return 'integrations';
     }
-    if (!config.PUBLISH_API_KEYS_ENABLED) {
-        $("#integrations-index-module-version-publish").removeClass('default-hidden');
-    }
-
-    // Setup callback method for indexing a module version
-    $("#integration-index-version-button").bind("click", () => {
-        indexModuleVersion(moduleDetails);
-        return false;
-    });
-
-    $.get(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/integrations`, (integrations) => {
-        let integrationsTable = $("#integrations-table");
-        integrations.forEach((integration) => {
-            // Create tr for integration
-            let tr = $("<tr></tr>");
-
-            // Create td for description and put into row
-            let description = $("<td></td>");
-            description.text(integration.description);
-            if (integration.coming_soon) {
-                description.append(" <b>(Coming soon)</b>");
+    async render() {
+        this._renderPromise = new Promise(async (resolve) => {
+            let config = await getConfig();
+            if (config.ALLOW_MODULE_HOSTING) {
+                $("#module-integrations-upload-container").removeClass('default-hidden');
             }
-            tr.append(description);
-
-            // Create TD for integration details
-            let contentTd = $("<td></td>");
-            let codeBlock = $("<code></code>");
-
-            let urlCodeContent = "";
-            // If method was provided, prepend the URL with the method
-            if (integration.method) {
-                urlCodeContent += integration.method + " ";
-            }
-            // Add URL to code block
-            urlCodeContent += integration.url;
-            codeBlock.text(urlCodeContent);
-
-            contentTd.append(codeBlock);
-
-            // Add notes to TD on new line, if present.
-            if (integration.notes) {
-                contentTd.append("<br />" + integration.notes);
+            if (!config.PUBLISH_API_KEYS_ENABLED) {
+                $("#integrations-index-module-version-publish").removeClass('default-hidden');
             }
 
-            tr.append(contentTd);
+            // Setup callback method for indexing a module version
+            $("#integration-index-version-button").bind("click", () => {
+                indexModuleVersion(this._moduleDetails);
+                return false;
+            });
 
-            integrationsTable.append(tr);
+            $.get(`/v1/terrareg/modules/${this._moduleDetails.module_provider_id}/integrations`, (integrations) => {
+                let integrationsTable = $("#integrations-table");
+                integrations.forEach((integration) => {
+                    // Create tr for integration
+                    let tr = $("<tr></tr>");
+
+                    // Create td for description and put into row
+                    let description = $("<td></td>");
+                    description.text(integration.description);
+                    if (integration.coming_soon) {
+                        description.append(" <b>(Coming soon)</b>");
+                    }
+                    tr.append(description);
+
+                    // Create TD for integration details
+                    let contentTd = $("<td></td>");
+                    let codeBlock = $("<code></code>");
+
+                    let urlCodeContent = "";
+                    // If method was provided, prepend the URL with the method
+                    if (integration.method) {
+                        urlCodeContent += integration.method + " ";
+                    }
+                    // Add URL to code block
+                    urlCodeContent += integration.url;
+                    codeBlock.text(urlCodeContent);
+
+                    contentTd.append(codeBlock);
+
+                    // Add notes to TD on new line, if present.
+                    if (integration.notes) {
+                        contentTd.append("<br />" + integration.notes);
+                    }
+
+                    tr.append(contentTd);
+
+                    integrationsTable.append(tr);
+                });
+            });
+
+            // Show integrations tab link
+            $("#module-tab-link-integrations").removeClass('default-hidden');
+
+            resolve(true);
         });
-    });
-
-    // Show integrations tab link
-    $("#module-tab-link-integrations").removeClass('default-hidden');
+    }
 }
 
 /*
@@ -810,90 +813,96 @@ async function enableTerraregExclusiveTags() {
     }
 }
 
-/*
- * Setup settings tab and display
- *
- * @param moduleDetails Terrareg module details
- */
-async function setupSettingsTab(moduleDetails) {
-    let loggedIn = await isLoggedIn();
-    // Return immediately if user is not logged in
-    if (! loggedIn) {
-        return;
+class SettingsTab extends ModuleDetailsTab {
+    get name() {
+        return 'settings';
     }
+    async render() {
+        this._renderPromise = new Promise(async (resolve) => {
 
-    if (moduleDetails.verified) {
-        $('#settings-verified').attr('checked', true);
-    }
-
-    // Check if namespace is auto-verified and, if so, show message
-    $.get(`/v1/terrareg/modules/${moduleDetails.namespace}`, (namespaceDetails) => {
-        if (namespaceDetails.is_auto_verified) {
-            $('#settings-verified-auto-verified-message').removeClass('default-hidden');
-        }
-    });
-
-    // Setup git providers
-    let config = await getConfig();
-    let gitProviderSelect = $('#settings-git-provider');
-
-    if (config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER || config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION) {
-        let customGitProvider = $('<option></option>');
-        customGitProvider.val('');
-        customGitProvider.text('Custom');
-        if (! moduleDetails.git_provider_id) {
-            customGitProvider.attr('selected', '');
-        }
-        gitProviderSelect.append(customGitProvider);
-    }
-
-    // Obtain all git providers and add to select for settings
-    $.get('/v1/terrareg/git_providers', (gitProviders) => {
-        gitProviders.forEach((gitProvider) => {
-            let gitProviderOption = $('<option></option>');
-            gitProviderOption.val(gitProvider.id);
-            gitProviderOption.text(gitProvider.name);
-            if (moduleDetails.git_provider_id == gitProvider.id) {
-                gitProviderOption.attr('selected', '');
+            let loggedIn = await isLoggedIn();
+            // Return immediately if user is not logged in
+            if (! loggedIn) {
+                resolve(false);
+                return;
             }
-            gitProviderSelect.append(gitProviderOption);
-        });
-    });
 
-    $('#settings-git-tag-format').val(moduleDetails.git_tag_format);
+            if (this._moduleDetails.verified) {
+                $('#settings-verified').attr('checked', true);
+            }
 
-    let baseUrlTemplate = $('#settings-base-url-template');
-    baseUrlTemplate.attr('placeholder', `https://github.com/${moduleDetails.namespace}/${moduleDetails.name}-${moduleDetails.provider}`);
-    baseUrlTemplate.val(moduleDetails.repo_base_url_template);
+            // Check if namespace is auto-verified and, if so, show message
+            $.get(`/v1/terrareg/modules/${this._moduleDetails.namespace}`, (namespaceDetails) => {
+                if (namespaceDetails.is_auto_verified) {
+                    $('#settings-verified-auto-verified-message').removeClass('default-hidden');
+                }
+            });
 
-    let cloneUrlTemplate = $('#settings-clone-url-template');
-    cloneUrlTemplate.attr('placeholder', `ssh://git@github.com/${moduleDetails.namespace}/${moduleDetails.name}-${moduleDetails.provider}.git`);
-    cloneUrlTemplate.val(moduleDetails.repo_clone_url_template);
+            // Setup git providers
+            let config = await getConfig();
+            let gitProviderSelect = $('#settings-git-provider');
 
-    let browseUrlTemplate = $('#settings-browse-url-template');
-    browseUrlTemplate.attr('placeholder', `https://github.com/${moduleDetails.namespace}/${moduleDetails.name}-${moduleDetails.provider}/tree/{tag}/{path}`);
-    browseUrlTemplate.val(moduleDetails.repo_browse_url_template);
+            if (config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER || config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION) {
+                let customGitProvider = $('<option></option>');
+                customGitProvider.val('');
+                customGitProvider.text('Custom');
+                if (! this._moduleDetails.git_provider_id) {
+                    customGitProvider.attr('selected', '');
+                }
+                gitProviderSelect.append(customGitProvider);
+            }
 
-    // Bind module provider delete button
-    let moduleProviderDeleteButton = $('#module-provider-delete-button');
-    moduleProviderDeleteButton.bind('click', () => {
-        deleteModuleProvider(moduleDetails);
-    });
+            // Obtain all git providers and add to select for settings
+            $.get('/v1/terrareg/git_providers', (gitProviders) => {
+                gitProviders.forEach((gitProvider) => {
+                    let gitProviderOption = $('<option></option>');
+                    gitProviderOption.val(gitProvider.id);
+                    gitProviderOption.text(gitProvider.name);
+                    if (this._moduleDetails.git_provider_id == gitProvider.id) {
+                        gitProviderOption.attr('selected', '');
+                    }
+                    gitProviderSelect.append(gitProviderOption);
+                });
+            });
 
-    // Bind settings form submission with function
-    $('#settings-form').bind('submit', () => {
-        updateModuleProviderSettings(moduleDetails);
-    });
+            $('#settings-git-tag-format').val(this._moduleDetails.git_tag_format);
 
-    // Enable custom git provider inputs
-    if (config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER) {
-        $.find('.settings-custom-git-provider-container').forEach((inputContainer) => {
-            $(inputContainer).removeClass('default-hidden');
+            let baseUrlTemplate = $('#settings-base-url-template');
+            baseUrlTemplate.attr('placeholder', `https://github.com/${this._moduleDetails.namespace}/${this._moduleDetails.name}-${this._moduleDetails.provider}`);
+            baseUrlTemplate.val(this._moduleDetails.repo_base_url_template);
+
+            let cloneUrlTemplate = $('#settings-clone-url-template');
+            cloneUrlTemplate.attr('placeholder', `ssh://git@github.com/${this._moduleDetails.namespace}/${this._moduleDetails.name}-${this._moduleDetails.provider}.git`);
+            cloneUrlTemplate.val(this._moduleDetails.repo_clone_url_template);
+
+            let browseUrlTemplate = $('#settings-browse-url-template');
+            browseUrlTemplate.attr('placeholder', `https://github.com/${this._moduleDetails.namespace}/${this._moduleDetails.name}-${this._moduleDetails.provider}/tree/{tag}/{path}`);
+            browseUrlTemplate.val(this._moduleDetails.repo_browse_url_template);
+
+            // Bind module provider delete button
+            let moduleProviderDeleteButton = $('#module-provider-delete-button');
+            moduleProviderDeleteButton.bind('click', () => {
+                deleteModuleProvider(this._moduleDetails);
+            });
+
+            // Bind settings form submission with function
+            $('#settings-form').submit(() => {
+                updateModuleProviderSettings(this._moduleDetails);
+                return false;
+            });
+
+            // Enable custom git provider inputs
+            if (config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER) {
+                $.find('.settings-custom-git-provider-container').forEach((inputContainer) => {
+                    $(inputContainer).removeClass('default-hidden');
+                });
+            }
+
+            // Show settings tab
+            $('#module-tab-link-settings').removeClass('default-hidden');
+            resolve(true);
         });
     }
-
-    // Show settings tab
-    $('#module-tab-link-settings').removeClass('default-hidden');
 }
 
 function setupModuleVersionDeletionSetting(moduleDetails) {
@@ -992,129 +1001,131 @@ function updateModuleProviderSettings(moduleDetails) {
     return false;
 }
 
-/*
- * Setup usage builder input table.
- *
- * @param moduleDetails
- */
-async function setupUsageBuilder(moduleDetails) {
-
-    let config = await getConfig();
-    let usageBuilderTable = $('#usageBuilderTable');
-
-    // Setup analaytics input row
-    let analyticsTokenInputRow = $('<tr></tr>');
-
-    let analyticsTokenName = $('<td></td>');
-    analyticsTokenName.text(config.ANALYTICS_TOKEN_PHRASE);
-    analyticsTokenInputRow.append(analyticsTokenName);
-
-    let analyticsTokenDescription = $('<td></td>');
-    analyticsTokenDescription.text(config.ANALYTICS_TOKEN_DESCRIPTION);
-    analyticsTokenInputRow.append(analyticsTokenDescription);
-
-    let analyticsTokenInputTd = $('<td></td>');
-    let analyticsTokenInputField = $('<input />');
-    analyticsTokenInputField.attr('class', 'input');
-    analyticsTokenInputField.attr('id', 'usageBuilderAnalyticsToken');
-    analyticsTokenInputField.attr('type', 'text');
-    analyticsTokenInputField.attr('placeholder', config.EXAMPLE_ANALYTICS_TOKEN);
-    analyticsTokenInputField.bind('keyup', () => {updateUsageBuilderOutput(moduleDetails)});
-    analyticsTokenInputTd.append(analyticsTokenInputField);
-    analyticsTokenInputRow.append(analyticsTokenInputTd);
-
-    usageBuilderTable.append(analyticsTokenInputRow);
-
-    let inputVariables = await getUsageBuilderVariables(moduleDetails.id);
-
-    if (inputVariables === null || ! inputVariables.length) {
-        // If there are no variables present in the usage builder,
-        // then exit early
-        return;
+class UsageBuilderTab extends ModuleDetailsTab {
+    get name() {
+        return 'usage-builder';
     }
+    async render() {
+        this._renderPromise = new Promise(async (resolve) => {
+            let config = await getConfig();
+            let usageBuilderTable = $('#usageBuilderTable');
 
-    // Show tab
-    $('#module-tab-link-usage-builder').removeClass('default-hidden');
+            // Setup analaytics input row
+            let analyticsTokenInputRow = $('<tr></tr>');
 
+            let analyticsTokenName = $('<td></td>');
+            analyticsTokenName.text(config.ANALYTICS_TOKEN_PHRASE);
+            analyticsTokenInputRow.append(analyticsTokenName);
 
-    // Build input table
-    inputVariables.forEach((inputVariable) => {
-        let inputId = `usageBuilderInput-${inputVariable.name}`;
+            let analyticsTokenDescription = $('<td></td>');
+            analyticsTokenDescription.text(config.ANALYTICS_TOKEN_DESCRIPTION);
+            analyticsTokenInputRow.append(analyticsTokenDescription);
 
-        let inputRow = $('<tr></tr>');
-        let inputNameTd = $('<td></td>');
-        inputNameTd.text(inputVariable.name);
-        inputRow.append(inputNameTd);
+            let analyticsTokenInputTd = $('<td></td>');
+            let analyticsTokenInputField = $('<input />');
+            analyticsTokenInputField.attr('class', 'input');
+            analyticsTokenInputField.attr('id', 'usageBuilderAnalyticsToken');
+            analyticsTokenInputField.attr('type', 'text');
+            analyticsTokenInputField.attr('placeholder', config.EXAMPLE_ANALYTICS_TOKEN);
+            analyticsTokenInputField.bind('keyup', () => {updateUsageBuilderOutput(this._moduleDetails)});
+            analyticsTokenInputTd.append(analyticsTokenInputField);
+            analyticsTokenInputRow.append(analyticsTokenInputTd);
 
-        let additionalHelpTd = $('<td></td>');
-        additionalHelpTd.text(inputVariable.additional_help ? inputVariable.additional_help : '');
-        inputRow.append(additionalHelpTd);
+            usageBuilderTable.append(analyticsTokenInputRow);
 
-        let valueTd = $('<td></td>');
+            let inputVariables = await getUsageBuilderVariables(this._moduleDetails.id);
 
-        if (inputVariable.type == 'text') {
-            let inputDiv = $('<input />');
-            inputDiv.addClass('input');
-            inputDiv.attr('type', 'text');
-            inputDiv.attr('id', inputId);
-            inputDiv.bind('keyup', () => {updateUsageBuilderOutput(moduleDetails)});
-            valueTd.append(inputDiv);
-
-        } else if (inputVariable.type == 'boolean') {
-
-            inputDiv = $('<input />');
-            inputDiv.addClass('checkbox');
-            inputDiv.attr('type', 'checkbox');
-            inputDiv.attr('id', inputId);
-            inputDiv.attr('value', 'true');
-            inputDiv.bind('onchange', () => {updateUsageBuilderOutput(moduleDetails)});
-            valueTd.append(inputDiv);
-
-        } else if (inputVariable.type == 'select') {
-            inputDiv = $('<div></div>');
-            inputDiv.addClass('select');
-            let inputSelect = $('<select></select>');
-            inputSelect.attr('id', inputId);
-            inputSelect.bind('change', () => {updateUsageBuilderOutput(moduleDetails)});
-
-            inputVariable.choices.forEach((inputChoice, itx) => {
-                // If choices is list of strings, use the string as the name,
-                // otherwise, use name attribute of object.
-                let inputName = typeof inputChoice === 'string' ? inputChoice : inputChoice.name;
-                let option = $('<option></option>');
-                option.val(itx);
-                option.text(inputName);
-                inputSelect.append(option);
-            });
-            // If custom input is available, add to select
-            if (inputVariable.allow_custom) {
-                let option = $('<option></option>');
-                option.val('custom');
-                option.text('Custom Value');
-                inputSelect.append(option);
+            if (inputVariables === null || ! inputVariables.length) {
+                // If there are no variables present in the usage builder,
+                // then exit early
+                resolve(false);
+                return;
             }
-            inputDiv.append(inputSelect);
 
-            valueTd.append(inputDiv);
+            // Show tab
+            $('#module-tab-link-usage-builder').removeClass('default-hidden');
+            resolve(true);
 
-            // If custom input is available, add hidden input for custom input
-            let customInput = $('<input />');
-            customInput.addClass('input');
-            customInput.attr('type', 'text');
-            customInput.attr('id', `${inputId}-customValue`);
-            customInput.bind('keyup', () => {updateUsageBuilderOutput(moduleDetails)});
-            customInput.css('display', 'none');
-            valueTd.append(customInput);
+            // Build input table
+            inputVariables.forEach((inputVariable) => {
+                let inputId = `usageBuilderInput-${inputVariable.name}`;
 
-        } else {
-            // Skip displaying other types of variables in input
-            return;
-        }
+                let inputRow = $('<tr></tr>');
+                let inputNameTd = $('<td></td>');
+                inputNameTd.text(inputVariable.name);
+                inputRow.append(inputNameTd);
 
-        inputRow.append(valueTd);
+                let additionalHelpTd = $('<td></td>');
+                additionalHelpTd.text(inputVariable.additional_help ? inputVariable.additional_help : '');
+                inputRow.append(additionalHelpTd);
 
-        $('#usageBuilderTable').append(inputRow);
-    });
+                let valueTd = $('<td></td>');
+
+                if (inputVariable.type == 'text') {
+                    let inputDiv = $('<input />');
+                    inputDiv.addClass('input');
+                    inputDiv.attr('type', 'text');
+                    inputDiv.attr('id', inputId);
+                    inputDiv.bind('keyup', () => {updateUsageBuilderOutput(this._moduleDetails)});
+                    valueTd.append(inputDiv);
+
+                } else if (inputVariable.type == 'boolean') {
+
+                    let inputDiv = $('<input />');
+                    inputDiv.addClass('checkbox');
+                    inputDiv.attr('type', 'checkbox');
+                    inputDiv.attr('id', inputId);
+                    inputDiv.attr('value', 'true');
+                    inputDiv.bind('onchange', () => {updateUsageBuilderOutput(this._moduleDetails)});
+                    valueTd.append(inputDiv);
+
+                } else if (inputVariable.type == 'select') {
+                    let inputDiv = $('<div></div>');
+                    inputDiv.addClass('select');
+                    let inputSelect = $('<select></select>');
+                    inputSelect.attr('id', inputId);
+                    inputSelect.bind('change', () => {updateUsageBuilderOutput(this._moduleDetails)});
+
+                    inputVariable.choices.forEach((inputChoice, itx) => {
+                        // If choices is list of strings, use the string as the name,
+                        // otherwise, use name attribute of object.
+                        let inputName = typeof inputChoice === 'string' ? inputChoice : inputChoice.name;
+                        let option = $('<option></option>');
+                        option.val(itx);
+                        option.text(inputName);
+                        inputSelect.append(option);
+                    });
+                    // If custom input is available, add to select
+                    if (inputVariable.allow_custom) {
+                        let option = $('<option></option>');
+                        option.val('custom');
+                        option.text('Custom Value');
+                        inputSelect.append(option);
+                    }
+                    inputDiv.append(inputSelect);
+
+                    valueTd.append(inputDiv);
+
+                    // If custom input is available, add hidden input for custom input
+                    let customInput = $('<input />');
+                    customInput.addClass('input');
+                    customInput.attr('type', 'text');
+                    customInput.attr('id', `${inputId}-customValue`);
+                    customInput.bind('keyup', () => {updateUsageBuilderOutput(this._moduleDetails)});
+                    customInput.css('display', 'none');
+                    valueTd.append(customInput);
+
+                } else {
+                    // Skip displaying other types of variables in input
+                    return;
+                }
+
+                inputRow.append(valueTd);
+
+                $('#usageBuilderTable').append(inputRow);
+            });
+        });
+    }
 }
 
 function usageBuilderQuoteString(input) {
@@ -1232,20 +1243,48 @@ async function setupBasePage(data) {
     addModuleLabels(moduleDetails, $("#module-title"));
 }
 
-/*
- * Obtain README content from given URL and return promise
- * for populating README content
- *
- * @param readmeUrl URL to obtain README from
- * 
- * @returns Promise
- */
-async function populateReadMeFromUrl(reamdeUrl) {
-    return new Promise((resolve) => {
-        $.get(reamdeUrl, async (readmeContent) => {
-            resolve(populateReadmeContent(readmeContent));
+class ReadmeTab extends BaseTab {
+    constructor(readmeUrl) {
+        super();
+        this._readmeUrl = readmeUrl;
+    }
+    get name() {
+        return 'readme';
+    }
+    render() {
+        this._renderPromise = new Promise((resolve) => {
+            if (!this._readmeUrl) {
+                resolve(false);
+                return;
+            }
+            $.get(this._readmeUrl, (readmeContent) => {
+                // If no README is defined, exit early
+                if (!readmeContent) {
+                    resolve(false);
+                    return;
+                }
+            
+                let readmeContentDiv = $("#module-tab-readme");
+            
+                // Populate README conrtent
+                readmeContentDiv.append(readmeContent);
+            
+                // Add 'table' class to all tables in README
+                readmeContentDiv.find("table").addClass("table");
+            
+                // Replace size of headers
+                readmeContentDiv.find("h1").addClass("subtitle").addClass("is-3");
+                readmeContentDiv.find("h2").addClass("subtitle").addClass("is-4");
+                readmeContentDiv.find("h3").addClass("subtitle").addClass("is-5");
+                readmeContentDiv.find("h4").addClass("subtitle").addClass("is-6");
+            
+                // Show README tab button
+                $("#module-tab-link-readme").removeClass('default-hidden');
+            
+                resolve(true);
+            });
         });
-    });
+    }
 }
 
 /*
@@ -1275,8 +1314,11 @@ async function setupRootModulePage(data) {
 
     let moduleDetails = await getModuleDetails(id);
 
-    setupSettingsTab(moduleDetails);
-    setupIntegrations(moduleDetails);
+    let settingsTab = new SettingsTab(moduleDetails);
+    settingsTab.render();
+
+    let integrationsTab = new IntegrationsTab(moduleDetails);
+    integrationsTab.render();
 
     if (! moduleDetails.versions.length) {
         return;
@@ -1289,19 +1331,25 @@ async function setupRootModulePage(data) {
     populateTerraformUsageExample(moduleDetails);
     populateDownloadSummary(moduleDetails);
 
-    let tabs = [
-        ['readme', populateReadMeFromUrl(`/v1/terrareg/modules/${moduleDetails.id}/readme_html`)],
-        ['inputs', populateTerrarformInputs(moduleDetails.root)]
-    ];
-    
-    populateTerrarformOutputs(moduleDetails.root);
-    populateTerrarformProviders(moduleDetails.root);
-    populateTerrarformResources(moduleDetails.root);
+    let readmeTab = new ReadmeTab(`/v1/terrareg/modules/${moduleDetails.id}/readme_html`);
+    readmeTab.render();
 
-    populateAnalyticsTable(moduleDetails);
-    setupUsageBuilder(moduleDetails);
+    let inputsTab = new InputsTab(moduleDetails.root);
+    inputsTab.render();
+    let outputsTab = new OutputsTab(moduleDetails.root);
+    outputsTab.render();
+    let providersTab = new ProvidersTab(moduleDetails.root);
+    providersTab.render();
+    let resourcesTab = new ResourcesTab(moduleDetails.root);
+    resourcesTab.render();
 
-    selectDefaultTab(tabs);
+    let analyticsTab = new AnalyticsTab(moduleDetails);
+    analyticsTab.render();
+
+    let usageBuilderTab = new UsageBuilderTab(moduleDetails);
+    usageBuilderTab.render();
+
+    //selectDefaultTab(tabs);
 }
 
 /*
