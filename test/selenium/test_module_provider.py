@@ -56,6 +56,37 @@ class TestModuleProvider(SeleniumTest):
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, f'module-tab-link-settings').is_displayed(), True)
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, f'module-tab-settings').is_displayed(), False)
 
+    @pytest.mark.parametrize('url,expected_readme_content', [
+        # Root module
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0', 'This is an exaple README!'),
+        # Module example
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example', 'Example 1 README'),
+        # Submodule
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1', 'Submodule 1 README')
+    ])
+    def test_readme_tab(self, url, expected_readme_content):
+        """Ensure README is displayed correctly."""
+        self.selenium_instance.get(self.get_url(url))
+        
+        # Ensure README link and tab is displayed by default
+        self.wait_for_element(By.ID, 'module-tab-link-readme')
+        readme_content = self.wait_for_element(By.ID, 'module-tab-readme')
+
+        # Check contents of REAMDE
+        assert readme_content.text == expected_readme_content
+
+        # Navigate to another tab
+        self.selenium_instance.find_element(By.ID, 'module-tab-link-inputs').click()
+
+        # Ensure that README content is not longer visible
+        assert self.selenium_instance.find_element(By.ID, 'module-tab-readme').is_displayed() == False
+
+        # Click on README tab again
+        self.selenium_instance.find_element(By.ID, 'module-tab-link-readme').click()
+
+        # Ensure README content is visible again and content is correct
+        assert self.selenium_instance.find_element(By.ID, 'module-tab-readme').is_displayed() == True
+        assert readme_content.text == expected_readme_content
 
     def test_delete_module_version(self):
         """Check provider logos are displayed correctly."""
