@@ -1105,7 +1105,10 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def publish_date_display(self):
         """Return display view of date of module published."""
-        return self._get_db_row()['published_at'].strftime('%B %d, %Y')
+        published_at = self._get_db_row()['published_at']
+        if published_at:
+            return published_at.strftime('%B %d, %Y')
+        return None
 
     @property
     def owner(self):
@@ -1401,7 +1404,7 @@ class ModuleVersion(TerraformSpecsObject):
             "version": self.version,
             "description": row['description'],
             "source": self.get_source_base_url(),
-            "published_at": row['published_at'].isoformat(),
+            "published_at": row['published_at'].isoformat() if row['published_at'] else None,
             "downloads": self.get_total_downloads(),
             "internal": self._get_db_row()['internal']
         })
