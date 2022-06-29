@@ -420,8 +420,13 @@ integration_test_data = {
                         'providers': [
                             {
                                 'name': 'random',
+                                'alias': 'random-alias',
+                                'version': '5.2.1'
+                            },
+                            {
+                                'name': 'someothercompany/unsafe',
                                 'alias': None,
-                                'version': None
+                                'version': '2.0.0'
                             }
                         ],
                         'requirements': [],
