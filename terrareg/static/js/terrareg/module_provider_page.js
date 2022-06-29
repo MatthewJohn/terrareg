@@ -1,7 +1,13 @@
 
 class BaseTab {
-    constructor() {}
+    constructor() {
+        this._renderPromise = undefined;
+    }
     render() {}
+    async isValid() {
+        let result = await this._renderPromise;
+        return result;
+    }
 }
 
 class ModuleDetailsTab extends BaseTab {
@@ -491,45 +497,44 @@ function selectExampleFile(eventTarget) {
 }
 
 class ExampleFilesTab extends ModuleDetailsTab {
+    constructor(moduleDetails, exampleDetails) {
+        super(moduleDetails);
+        this._exampleDetails = exampleDetails;
+    }
     get name() {
         return 'example-files';
     }
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
-            $.ajax({
-                type: "GET",
-                url: `/v1/terrareg/modules/${this._moduleDetails.id}/examples/filelist/${examplePath}`,
-                success: function (data) {
-
-                    if (! data.length) {
-                        resolve(false);
-                        return;
-                    }
-
-                    let firstFileSelected = false;
-                    data.forEach((exampleFile) => {
-                        let fileLink = $(`
-                            <a class="panel-block" data-module-id="${this._moduleDetails.id}" data-path="${exampleFile.path}" onClick="selectExampleFile(event.target)">
-                                <span class="panel-icon">
-                                    <i class="fa-solid fa-file-code" aria-hidden="true"></i>
-                                </span>
-                                ${exampleFile.filename}
-                            </a>
-                        `);
-
-                        $("#example-file-list-nav").append(fileLink);
-
-                        if (firstFileSelected == false) {
-                            firstFileSelected = true;
-                            selectExampleFile(fileLink);
-                        }
-                    });
-
-                    // Show example tab link
-                    $('#module-tab-link-example-files').removeClass('default-hidden');
-
-                    resolve(true);
+            $.get(`/v1/terrareg/modules/${this._moduleDetails.id}/examples/filelist/${this._exampleDetails.path}`, (data) => {
+                if (! data.length) {
+                    resolve(false);
+                    return;
                 }
+
+                let firstFileSelected = false;
+                data.forEach((exampleFile) => {
+                    let fileLink = $(`
+                        <a class="panel-block" data-module-id="${this._moduleDetails.id}" data-path="${exampleFile.path}" onClick="selectExampleFile(event.target)">
+                            <span class="panel-icon">
+                                <i class="fa-solid fa-file-code" aria-hidden="true"></i>
+                            </span>
+                            ${exampleFile.filename}
+                        </a>
+                    `);
+
+                    $("#example-file-list-nav").append(fileLink);
+
+                    if (firstFileSelected == false) {
+                        firstFileSelected = true;
+                        selectExampleFile(fileLink);
+                    }
+                });
+
+                // Show example tab link
+                $('#module-tab-link-example-files').removeClass('default-hidden');
+
+                resolve(true);
             });
         });
     }
@@ -1287,19 +1292,48 @@ class ReadmeTab extends BaseTab {
     }
 }
 
-/*
- * Iterate through list of tab loading promises
- * and select the first tab that has a successful load
- *
- * @param tabOptions List of lists containing [tab name, tab load promise]
- */
-async function selectDefaultTab(tabOptions) {
-    for (const tabOption of tabOptions) {
-        let tabResult = await tabOption[1];
+class TabFactory {
+    constructor() {
+        this._tabs = [];
+        this._tabsLookup = {};
+    }
+    registerTab(tab) {
+        if (this._tabs[tab.name] !== undefined) {
+            throw "Tab already registered";
+        }
+        this._tabsLookup[tab.name] = tab;
+        this._tabs.push(tab);
+    }
+    renderTabs() {
+        this._tabs.forEach((tab) => {
+            tab.render();
+        });
+    }
+    async setDefaultTab() {
 
-        if (tabResult == true) {
-            selectModuleTab(tabOption[0], false);
-            return;
+        // Check if tab is defined in page URL anchor and if it's
+        // a valid tab
+        let windowHashValue = $(location).attr('hash').replace('#', '');
+        if (windowHashValue && this._tabsLookup[windowHashValue] !== undefined) {
+            let tab = this._tabsLookup[windowHashValue];
+
+            // Check if tab has successfully loaded
+            let isValid = await tab.isValid();
+
+            if (isValid == true) {
+                // Load tab and return
+                selectModuleTab(tab.name, false);
+                return;
+            }
+        }
+
+        // Iterate through all tabs and select first valid tab
+        for (const tab of this._tabs) {
+            let isValid = await tab.isValid();
+            if (isValid == true) {
+                selectModuleTab(tab.name, false);
+                return;
+            }
         }
     }
 }
@@ -1314,42 +1348,35 @@ async function setupRootModulePage(data) {
 
     let moduleDetails = await getModuleDetails(id);
 
-    let settingsTab = new SettingsTab(moduleDetails);
-    settingsTab.render();
+    let tabFactory = new TabFactory();
 
-    let integrationsTab = new IntegrationsTab(moduleDetails);
-    integrationsTab.render();
-
-    if (! moduleDetails.versions.length) {
-        return;
+    if (moduleDetails.versions.length) {
+        // Register tabs in order of being displayed to user, by default
+        tabFactory.registerTab(new ReadmeTab(`/v1/terrareg/modules/${moduleDetails.id}/readme_html`));
+        tabFactory.registerTab(new InputsTab(moduleDetails.root));
     }
 
-    populateVersionSelect(moduleDetails);
-    setupModuleVersionDeletionSetting(moduleDetails);
-    populateSubmoduleSelect(moduleDetails);
-    populateExampleSelect(moduleDetails);
-    populateTerraformUsageExample(moduleDetails);
-    populateDownloadSummary(moduleDetails);
+    tabFactory.registerTab(new SettingsTab(moduleDetails));
+    tabFactory.registerTab(new IntegrationsTab(moduleDetails));
 
-    let readmeTab = new ReadmeTab(`/v1/terrareg/modules/${moduleDetails.id}/readme_html`);
-    readmeTab.render();
+    if (moduleDetails.versions.length) {
 
-    let inputsTab = new InputsTab(moduleDetails.root);
-    inputsTab.render();
-    let outputsTab = new OutputsTab(moduleDetails.root);
-    outputsTab.render();
-    let providersTab = new ProvidersTab(moduleDetails.root);
-    providersTab.render();
-    let resourcesTab = new ResourcesTab(moduleDetails.root);
-    resourcesTab.render();
+        tabFactory.registerTab(new OutputsTab(moduleDetails.root));
+        tabFactory.registerTab(new ProvidersTab(moduleDetails.root));
+        tabFactory.registerTab(new ResourcesTab(moduleDetails.root));
+        tabFactory.registerTab(new AnalyticsTab(moduleDetails));
+        tabFactory.registerTab(new UsageBuilderTab(moduleDetails));
 
-    let analyticsTab = new AnalyticsTab(moduleDetails);
-    analyticsTab.render();
+        populateVersionSelect(moduleDetails);
+        setupModuleVersionDeletionSetting(moduleDetails);
+        populateSubmoduleSelect(moduleDetails);
+        populateExampleSelect(moduleDetails);
+        populateTerraformUsageExample(moduleDetails);
+        populateDownloadSummary(moduleDetails);
+    }
 
-    let usageBuilderTab = new UsageBuilderTab(moduleDetails);
-    usageBuilderTab.render();
-
-    //selectDefaultTab(tabs);
+    tabFactory.renderTabs();
+    tabFactory.setDefaultTab();
 }
 
 /*
@@ -1367,20 +1394,17 @@ async function setupSubmodulePage(data) {
     populateCurrentSubmodule(`Submodule: ${submodulePath}`)
     populateVersionText(moduleDetails);
     populateTerraformUsageExample(moduleDetails, submodulePath);
-
-    let tabs = [
-        ['readme', populateReadMeFromUrl(`/v1/terrareg/modules/${moduleDetails.id}/submodules/readme_html/${submodulePath}`)],
-        ['inputs', populateTerrarformInputs(moduleDetails.root)]
-    ];
-
-    populateTerrarformInputs(submoduleDetails);
-    populateTerrarformOutputs(submoduleDetails);
-    populateTerrarformProviders(submoduleDetails);
-    populateTerrarformResources(submoduleDetails);
-
     enableBackToParentLink(moduleDetails);
 
-    selectDefaultTab(tabs);
+    let tabFactory = new TabFactory();
+
+    tabFactory.registerTab(new ReadmeTab(`/v1/terrareg/modules/${moduleDetails.id}/submodules/readme_html/${submodulePath}`));
+    tabFactory.registerTab(new InputsTab(submoduleDetails));
+    tabFactory.registerTab(new OutputsTab(submoduleDetails));
+    tabFactory.registerTab(new ProvidersTab(submoduleDetails));
+    tabFactory.registerTab(new ResourcesTab(submoduleDetails));
+    tabFactory.renderTabs();
+    tabFactory.setDefaultTab();
 }
 
 /*
@@ -1397,22 +1421,18 @@ async function setupExamplePage(data) {
 
     populateCurrentSubmodule(`Example: ${examplePath}`)
     populateVersionText(moduleDetails);
-
-    let tabs = [
-        ['readme', populateReadMeFromUrl(`/v1/terrareg/modules/${moduleDetails.id}/examples/readme_html/${examplePath}`)],
-        ['example-files', loadExampleFileList(moduleDetails, examplePath)],
-        ['inputs', populateTerrarformInputs(moduleDetails.root)]
-    ];
-
-
-    populateTerrarformInputs(submoduleDetails);
-    populateTerrarformOutputs(submoduleDetails);
-    populateTerrarformProviders(submoduleDetails);
-    populateTerrarformResources(submoduleDetails);
-
     enableBackToParentLink(moduleDetails);
-    
-    selectDefaultTab(tabs);
+
+    let tabFactory = new TabFactory();
+
+    tabFactory.registerTab(new ReadmeTab(`/v1/terrareg/modules/${moduleDetails.id}/examples/readme_html/${examplePath}`));
+    tabFactory.registerTab(new ExampleFilesTab(moduleDetails, submoduleDetails));
+    tabFactory.registerTab(new InputsTab(submoduleDetails));
+    tabFactory.registerTab(new OutputsTab(submoduleDetails));
+    tabFactory.registerTab(new ProvidersTab(submoduleDetails));
+    tabFactory.registerTab(new ResourcesTab(submoduleDetails));
+    tabFactory.renderTabs();
+    tabFactory.setDefaultTab();
 }
 
 
