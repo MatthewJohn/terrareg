@@ -1148,7 +1148,7 @@ function setupModuleVersionDeletionSetting(moduleDetails) {
 }
 
 function deleteModuleVersion(moduleDetails) {
-    $('#confirm-delete-module-version-div').css('display', 'block');
+    $('#confirm-delete-module-version-div').removeClass('default-hidden');
     if (! $('#confirm-delete-module-version').is(':checked')) {
         return;
     }
