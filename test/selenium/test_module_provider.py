@@ -67,7 +67,7 @@ class TestModuleProvider(SeleniumTest):
     def test_readme_tab(self, url, expected_readme_content):
         """Ensure README is displayed correctly."""
         self.selenium_instance.get(self.get_url(url))
-        
+
         # Ensure README link and tab is displayed by default
         self.wait_for_element(By.ID, 'module-tab-link-readme')
         readme_content = self.wait_for_element(By.ID, 'module-tab-readme')
@@ -78,15 +78,74 @@ class TestModuleProvider(SeleniumTest):
         # Navigate to another tab
         self.selenium_instance.find_element(By.ID, 'module-tab-link-inputs').click()
 
-        # Ensure that README content is not longer visible
+        # Ensure that README content is no longer visible
         assert self.selenium_instance.find_element(By.ID, 'module-tab-readme').is_displayed() == False
 
         # Click on README tab again
         self.selenium_instance.find_element(By.ID, 'module-tab-link-readme').click()
 
         # Ensure README content is visible again and content is correct
-        assert self.selenium_instance.find_element(By.ID, 'module-tab-readme').is_displayed() == True
+        readme_content = self.selenium_instance.find_element(By.ID, 'module-tab-readme')
+        assert readme_content.is_displayed() == True
         assert readme_content.text == expected_readme_content
+
+    @pytest.mark.parametrize('url,expected_inputs', [
+        # Root module
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0',
+            [
+                ['name_of_application', 'Enter the application name', 'string', 'Required'],
+                ['string_with_default_value', 'Override the default string', 'string', '"this is the default"'],
+                ['example_boolean_input', 'Override the truthful boolean', 'bool', 'true'],
+                ['example_list_input', 'Override the stringy list', 'list', '["value 1","value 2"]']
+            ]
+        ),
+        # Module example
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
+            [['input_for_example', 'Enter the example name', 'string', 'Required']]
+        ),
+        # Submodule
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+            [['input_for_submodule', 'Enter the submodule name', 'string', 'Required']]
+        )
+    ])
+    def test_inputs_tab(self, url, expected_inputs):
+        """Ensure inputs tab is displayed correctly."""
+        self.selenium_instance.get(self.get_url(url))
+
+        # Wait for input tab button to be visible
+        input_tab_button = self.wait_for_element(By.ID, 'module-tab-link-inputs')
+
+        # Ensure the inputs tab content is not visible
+        assert self.wait_for_element(By.ID, 'module-tab-inputs', ensure_displayed=False).is_displayed() == False
+
+        # Click on inputs tab
+        input_tab_button.click()
+
+        # Ensure README content is visible and content is correct
+        inputs_tab_content = self.selenium_instance.find_element(By.ID, 'module-tab-inputs')
+
+        # Ensure tab is displayed
+        self.assert_equals(lambda: inputs_tab_content.is_displayed(), True)
+
+        inputs_table = inputs_tab_content.find_element(By.TAG_NAME, 'table')
+        table_rows = inputs_table.find_elements(By.TAG_NAME, 'tr')
+
+        # Ensure table has 1 heading and 1 row per expected variable
+        assert len(table_rows) == (len(expected_inputs) + 1)
+
+        for row_itx, expected_row in enumerate([['Name', 'Description', 'Type', 'Default value']] + expected_inputs):
+            # Find all columns (heading row uses th and subsequent rows use td)
+            row_columns = table_rows[row_itx].find_elements(By.TAG_NAME, 'th' if row_itx == 0 else 'td')
+
+            ## Ensure each table row has 4 columns
+            assert len(row_columns) == 4
+
+            # Check columns of row match expected text
+            row_text = [col.text for col in row_columns]
+            assert row_text == expected_row
 
     def test_delete_module_version(self):
         """Check provider logos are displayed correctly."""
