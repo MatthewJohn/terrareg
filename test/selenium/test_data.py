@@ -411,6 +411,10 @@ integration_test_data = {
                             {
                                 'name': 'generated_name',
                                 'description': 'Name with randomness'
+                            },
+                            {
+                                'name': 'no_desc_output',
+                                'description': None
                             }
                         ],
                         'providers': [

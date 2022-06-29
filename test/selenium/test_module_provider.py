@@ -147,6 +147,65 @@ class TestModuleProvider(SeleniumTest):
             row_text = [col.text for col in row_columns]
             assert row_text == expected_row
 
+
+    @pytest.mark.parametrize('url,expected_outputs', [
+        # Root module
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0',
+            [
+                ['generated_name', 'Name with randomness'],
+                ['no_desc_output', '']
+            ]
+        ),
+        # Module example
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
+            [['example_output', 'Example name with randomness']]
+        ),
+        # Submodule
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+            [['submodule_output', 'Submodule name with randomness']]
+        )
+    ])
+    def test_outputs_tab(self, url, expected_outputs):
+        """Ensure inputs tab is displayed correctly."""
+        self.selenium_instance.get(self.get_url(url))
+
+        # Wait for outputs tab button to be visible
+        outputs_tab_button = self.wait_for_element(By.ID, 'module-tab-link-outputs')
+
+        # Ensure the outputs tab content is not visible
+        assert self.wait_for_element(By.ID, 'module-tab-outputs', ensure_displayed=False).is_displayed() == False
+
+        # Click on outputs tab
+        outputs_tab_button.click()
+
+        # Ensure README content is visible and content is correct
+        outputs_tab_content = self.selenium_instance.find_element(By.ID, 'module-tab-outputs')
+
+        # Ensure tab is displayed
+        self.assert_equals(lambda: outputs_tab_content.is_displayed(), True)
+
+        outputs_table = outputs_tab_content.find_element(By.TAG_NAME, 'table')
+        table_rows = outputs_table.find_elements(By.TAG_NAME, 'tr')
+
+        # Ensure table has 1 heading and 1 row per expected variable
+        assert len(table_rows) == (len(expected_outputs) + 1)
+
+        for row_itx, expected_row in enumerate([['Name', 'Description']] + expected_outputs):
+            # Find all columns (heading row uses th and subsequent rows use td)
+            row_columns = table_rows[row_itx].find_elements(By.TAG_NAME, 'th' if row_itx == 0 else 'td')
+
+            ## Ensure each table row has 4 columns
+            assert len(row_columns) == 2
+
+            # Check columns of row match expected text
+            row_text = [col.text for col in row_columns]
+            assert row_text == expected_row
+
+
+
     def test_delete_module_version(self):
         """Check provider logos are displayed correctly."""
 
