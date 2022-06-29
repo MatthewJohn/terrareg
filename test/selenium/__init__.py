@@ -44,9 +44,9 @@ class SeleniumTest(BaseTest):
         """Return path of database file to use."""
         return 'temp-selenium.db'
 
-    def get_url(self, path):
+    def get_url(self, path, https=False):
         """Return full URL to perform selenium request."""
-        return 'http://localhost:{port}{path}'.format(port=self.SERVER.port, path=path)
+        return f'http{"s" if https else ""}://localhost:{self.SERVER.port}{path}'
 
     @classmethod
     def setup_class(cls):

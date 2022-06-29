@@ -21,7 +21,6 @@ class TestModuleProvider(SeleniumTest):
         ]
         for mock_ in cls._mocks:
             mock_.start()
-        print('MOCKED THE STUFF')
         super(TestModuleProvider, cls).setup_class()
 
     @classmethod
@@ -124,7 +123,7 @@ class TestModuleProvider(SeleniumTest):
         # Click on inputs tab
         input_tab_button.click()
 
-        # Ensure README content is visible and content is correct
+        # Obtain tab content
         inputs_tab_content = self.selenium_instance.find_element(By.ID, 'module-tab-inputs')
 
         # Ensure tab is displayed
@@ -168,7 +167,7 @@ class TestModuleProvider(SeleniumTest):
         )
     ])
     def test_outputs_tab(self, url, expected_outputs):
-        """Ensure inputs tab is displayed correctly."""
+        """Ensure outputs tab is displayed correctly."""
         self.selenium_instance.get(self.get_url(url))
 
         # Wait for outputs tab button to be visible
@@ -180,7 +179,7 @@ class TestModuleProvider(SeleniumTest):
         # Click on outputs tab
         outputs_tab_button.click()
 
-        # Ensure README content is visible and content is correct
+        # Obtain tab content
         outputs_tab_content = self.selenium_instance.find_element(By.ID, 'module-tab-outputs')
 
         # Ensure tab is displayed
@@ -223,7 +222,7 @@ class TestModuleProvider(SeleniumTest):
         )
     ])
     def test_resources_tab(self, url, expected_resources):
-        """Ensure inputs tab is displayed correctly."""
+        """Ensure resources tab is displayed correctly."""
         self.selenium_instance.get(self.get_url(url))
 
         # Wait for resources tab button to be visible
@@ -235,7 +234,7 @@ class TestModuleProvider(SeleniumTest):
         # Click on resources tab
         resources_tab_button.click()
 
-        # Ensure README content is visible and content is correct
+        # Obtain tab content
         resources_tab_content = self.selenium_instance.find_element(By.ID, 'module-tab-resources')
 
         # Ensure tab is displayed
@@ -281,7 +280,7 @@ class TestModuleProvider(SeleniumTest):
         )
     ])
     def test_providers_tab(self, url, expected_providers):
-        """Ensure inputs tab is displayed correctly."""
+        """Ensure providers tab is displayed correctly."""
         self.selenium_instance.get(self.get_url(url))
 
         # Wait for providers tab button to be visible
@@ -293,7 +292,7 @@ class TestModuleProvider(SeleniumTest):
         # Click on providers tab
         providers_tab_button.click()
 
-        # Ensure README content is visible and content is correct
+        # Obtain tab content
         providers_tab_content = self.selenium_instance.find_element(By.ID, 'module-tab-providers')
 
         # Ensure tab is displayed
@@ -313,6 +312,69 @@ class TestModuleProvider(SeleniumTest):
 
             ## Ensure each table row has 4 columns
             assert len(row_columns) == 4
+
+            # Check columns of row match expected text
+            row_text = [col.text for col in row_columns]
+            assert row_text == expected_row
+
+    def test_integrations_tab(self):
+        """Ensure integrations tab is displayed correctly."""
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+        # Wait for integrations tab button to be visible
+        integrations_tab_button = self.wait_for_element(By.ID, 'module-tab-link-integrations')
+
+        # Ensure the integrations tab content is not visible
+        assert self.wait_for_element(By.ID, 'module-tab-integrations', ensure_displayed=False).is_displayed() == False
+
+        # Click on integrations tab
+        integrations_tab_button.click()
+
+        integrations_tab_content = self.selenium_instance.find_element(By.ID, 'module-tab-integrations')
+
+        # Ensure tab is displayed
+        self.assert_equals(lambda: integrations_tab_content.is_displayed(), True)
+
+        integrations_table = integrations_tab_content.find_element(By.TAG_NAME, 'table')
+        table_rows = integrations_table.find_elements(By.TAG_NAME, 'tr')
+
+        expected_integrations = [
+            [
+                'Create module version using source archive',
+                f'POST {self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/${version}/upload", https=True)}\n' +
+                'Source ZIP file must be provided as data.'
+            ],
+            [
+                'Trigger module version import',
+                f'POST {self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/${version}/import", https=True)}'
+            ],
+            [
+                'Bitbucket hook trigger',
+                f'{self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/hooks/bitbucket", https=True)}'
+            ],
+            [
+                'Github hook trigger (Coming soon)',
+                f'{self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/hooks/github", https=True)}'
+            ],
+            [
+                'Gitlab hook trigger (Coming soon)',
+                f'{self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/hooks/gitlab", https=True)}'
+            ],
+            [
+                'Mark module version as published',
+                f'POST {self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/${version}/publish", https=True)}'
+            ]
+        ]
+
+        # Check number of rows in tab
+        assert len(table_rows) == len(expected_integrations)
+
+        for row_itx, expected_row in enumerate(expected_integrations):
+            # Find all columns (heading row uses th and subsequent rows use td)
+            row_columns = table_rows[row_itx].find_elements(By.TAG_NAME, 'td')
+
+            ## Ensure each table row has 4 columns
+            assert len(row_columns) == 2
 
             # Check columns of row match expected text
             row_text = [col.text for col in row_columns]
