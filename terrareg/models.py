@@ -1432,13 +1432,19 @@ class ModuleVersion(TerraformSpecsObject):
     def get_terrareg_api_details(self):
         """Return dict of version details with additional attributes used by terrareg UI."""
         api_details = self._module_provider.get_terrareg_api_details()
+
+        # Capture versions from module provider API output, as this limits
+        # some versions, which are normally displayed in the Terraform APIs
+        versions = api_details['versions']
+
         api_details.update(self.get_api_details())
 
         source_browse_url = self.get_source_browse_url()
         api_details.update({
             "published_at_display": self.publish_date_display,
             "display_source_url": source_browse_url if source_browse_url else self.get_source_base_url(),
-            "terraform_example_version_string": self.get_terraform_example_version_string()
+            "terraform_example_version_string": self.get_terraform_example_version_string(),
+            "versions": versions
         })
         return api_details
 
