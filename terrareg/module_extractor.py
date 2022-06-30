@@ -1,6 +1,5 @@
 """Provide extraction method of modules."""
 
-from curses import KEY_RIGHT
 import os
 from typing import Type
 import tempfile
@@ -16,6 +15,8 @@ import pathlib
 
 from werkzeug.utils import secure_filename
 import magic
+import html2text
+import markdown
 
 from terrareg.models import BaseSubmodule, Example, ExampleFile, ModuleVersion, Submodule
 from terrareg.database import Database
@@ -133,6 +134,7 @@ class ModuleExtractor:
 
     def _insert_database(
         self,
+        description: str,
         readme_content: str,
         terraform_docs_output: dict,
         terrareg_metadata: dict) -> int:
@@ -146,7 +148,7 @@ class ModuleExtractor:
 
             # Terrareg meta-data
             owner=terrareg_metadata.get('owner', None),
-            description=terrareg_metadata.get('description', None),
+            description=description,
             repo_clone_url_template=terrareg_metadata.get('repo_clone_url', None),
             repo_browse_url_template=terrareg_metadata.get('repo_browse_url', None),
             repo_base_url_template=terrareg_metadata.get('repo_base_url', None),
@@ -233,6 +235,19 @@ class ModuleExtractor:
                 module_path=submodule_path)
             self._process_submodule(submodule=obj)
 
+    def _extract_description(self, readme_content):
+        """Extract description from README"""
+        # Convert README to HTML
+        html_readme = markdown.markdown(
+            readme_content,
+            extensions=['fenced_code', 'tables']
+        )
+
+        # Convert HTML to plain text
+        plain_text = html2text.html2text(html_readme)
+        print(plain_text)
+        return None
+
     def process_upload(self):
         """Handle data extraction from module source."""
         # Run terraform-docs on module content and obtain README
@@ -242,7 +257,14 @@ class ModuleExtractor:
         # Check for any terrareg metadata files
         terrareg_metadata = self._get_terrareg_metadata(self.extract_directory)
 
+        # Check if description is available in metadata
+        description = terrareg_metadata.get('description', None)
+        if not description:
+            # Otherwise, attempt to extract description from README
+            description = self._extract_description(readme_content)
+
         self._insert_database(
+            description=description,
             readme_content=readme_content,
             terraform_docs_output=module_details,
             terrareg_metadata=terrareg_metadata

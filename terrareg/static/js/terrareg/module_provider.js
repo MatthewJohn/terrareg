@@ -111,7 +111,7 @@ async function createSearchResultCard(parent_id, module) {
             <a href="/modules/${module.id}">
                 <div class="card-content">
                     <div class="content">
-                        ${module.description ? "Description<br />" + module.description : "No description provided"}
+                        ${module.description ? "Description<br />" + module.description : ""}
                         <br />
                         <br />
                         ${module.owner ? "Owner: " + module.owner : ""}
