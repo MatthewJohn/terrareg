@@ -1,90 +1,445 @@
-{% extends 'module_details_common.html' %}
+{% extends 'template.html' %}
 
-{% block module_breadcrumb %}
-<li class="is-active"><a href="/modules/{{ namespace.name }}/{{ module.name }}/{{ module_provider.name }}">{{ module_provider.name }}</a></li>
-{% endblock %}
+{% block content %}
 
-{% block main_details %}
+<script src="/static/js/terrareg/module_provider_page.js"></script>
+<link rel="stylesheet" href="/static/css/module_provider_page.css" />
 
-    {% if module_version %}
-    <section>
-        Version
-        <div class="select is-small">
-            <select autocomplete="off" onchange="selectVersion(event);">
-                {% for module_version_itx in module_provider.get_versions(include_beta=False) %}
-                <option
-                        value="{{ module_version_itx.get_view_url() }}"
-                        {% if module_version_itx.version == module_version.version %}selected{% endif %}
-                        >
-                    {{ module_version_itx.version }}{% if module_version_itx.version == module_provider.get_latest_version().version %} (latest){% endif %}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-    </section>
-    {% endif %}
+<script>
+    $(document).ready(function () {
+        renderPage();
+    });
+</script>
 
-    <p id="module-title" class="title">
-        {{ module.name }}
-    </p>
-    <p class="subtitle">
-        Provider: {{ module_provider.name }}
-    </p>
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul id="breadcrumb-ul">
+    </ul>
+</nav>
 
-    {% if module_version %}
 
-        {% if not module_version.published %}
-        <p class="subtitle">
-            <b>WARNING:</b> This version of the module is not published.
-        </p>
-        {% endif %}
+<div id="module-provider-header-content">
 
-        <p class="subtitle">
-            {% if module_version.description %}{{ module_version.description }}{% else %}No description provided{% endif %}
-        </p>
-        <p>Published {{ module_version.publish_date_display }} by <a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></p>
-        <p>{% if module_version.owner %}Module managed by {{ module_version.owner }}{% endif %}</p>
-        <p>{% if module_version.get_source_browse_url() %}Source Code: <a href="{{ module_version.get_source_browse_url() }}">{{ module_version.get_source_browse_url() }}</a>{% endif %}</p>
+    <!-- Warning when no versions of module are available -->
+    <div id="no-version-available" class="columns is-centered default-hidden">
+        There are no versions of this module
+    </div>
 
-        <br />
+    <!-- Main details header body -->
+    <div id="module-details-body" class="columns is-centered default-hidden">
 
-        {% if module_version.is_submodule %}
-            <button>Back to parent</button>
-        {% else %}
+        <!-- Provider Logo -->
+        <a id="provider-logo-link" class="default-hidden" href="">
+            <img id="provider-logo-img" class="default-hidden" height="150" width="150" alt="" src="" />
+        </a>
 
-            {% if module_version.get_submodules() %}
-            <section>
+        <!-- Module details -->
+        <div class="column is-one-third">
+
+            <section id="details-version" class="default-hidden">
+                Version
                 <div class="select is-small">
-                    <select autocomplete="off" onchange="selectSubmodule(event);">
-                        <option value="none">Select submodule</option>
-                        {% for submodule in module_version.get_submodules() %}
-                        <option value="{{ submodule.get_view_url() }}">{{ submodule.path }}</option>
-                        {% endfor %}
+                    <select id="version-select" autocomplete="off" onchange="onVersionSelectChange(event);">
                     </select>
                 </div>
             </section>
-            {% endif %}
+            <p id="version-text" class="subtitle"></p>
+
+            <!-- Basic details about module -->
+            <p id="module-title" class="title">
+            </p>
+            <p id="module-provider" class="subtitle">
+            </p>
+
+            <p id="current-submodule" class="subtitle default-hidden"></p>
+
+            <p id="unpublished-warning" class="subtitle default-hidden">
+                <b>WARNING:</b> This version of the module is not published.<br />
+                It cannot be used in terraform until it is published.
+            </p>
+            <p id="beta-warning" class="subtitle default-hidden">
+                <b>WARNING:</b> This is a beta module version.<br />
+                To use this version in terraform, it must be specifically pinned.<br />
+                For an example, see the 'Usage' section.
+            </p>
+
+            <p id="module-description" class="subtitle">
+            </p>
+
+            <p id="published-at"></p>
+            <p id="module-owner"></p>
+            <p id="source-url"></p>
 
             <br />
-            {% if module_version.get_examples() %}
-            <section>
+            <a id="submodule-back-to-parent" class="buton default-hidden" href="">Back to root module</a>
+
+
+            <section id="submodule-select-container" class="default-hidden">
+                <p>Submodules: </p>
                 <div class="select is-small">
-                    <select autocomplete="off" onchange="selectSubmodule(event);">
-                        <option value="none">Select example</option>
-                        {% for example in module_version.get_examples() %}
-                        <option value="{{ example.get_view_url() }}">{{ example.path }}</option>
-                        {% endfor %}
+                    <select id="submodule-select" autocomplete="off" onchange="onSubmoduleSelectChange(event);">
+                        <option value="none">Select submodule</option>
                     </select>
                 </div>
             </section>
-            {% endif %}
-        {% endif %}
 
-    {% else %}
-    <p>There are no published versions of this module.</p>
-    {% endif %}
+            <br />
+            <section id="example-select-container" class="default-hidden">
+                <p>Examples: </p> 
+                <div class="select is-small">
+                    <select id="example-select" autocomplete="off" onchange="onSubmoduleSelectChange(event);">
+                        <option value="none">Select example</option>
+                    </select>
+                </div>
+            </section>
 
-    <br />
-    <br />
+            <br />
+            <br />
+
+        </div>
+
+        <div class="column is-one-third">
+
+            <div id="module-download-stats-container" class="box default-hidden">
+                <table class="table module-provider-tab-content-table">
+                    <thead>
+                        <tr>
+                            <th>Module Downloads</th>
+                            <th>
+                                <span class="tag is-warning is-light">All Versions</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Downloads this week</td>
+                            <td id="downloads-week"></td>
+                        </tr>
+                        <tr>
+                            <td>Downloads this month</td>
+                            <td id="downloads-month"></td>
+                        </tr>
+                        <tr>
+                            <td>Downloads this year</td>
+                            <td id="downloads-year"></td>
+                        </tr>
+                        <tr>
+                            <td>Downloads over all time</td>
+                            <td id="downloads-total"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="usage-example-container" class="box default-hidden">
+                <h5 class="title is-5">Usage</h5>
+                <div class="content">
+                    To use this module:
+                    <ol>
+                        <li>Add the following example to your terraform,</li>
+                        <li>Ensure the "<span id="usage-example-analytics-token"></span>" placeholder must be replaced with your '<span id="usage-example-analytics-token-phrase"></span>',</li>
+                        <li>Add the required inputs - use the '<a onclick="selectModuleTab('usage-builder')">Usage Builder</a>' tab for help and 'Inputs' tab for a full list.</li>
+                    </ol>
+                </div>
+
+                <pre id="usage-example-terraform"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="tabs">
+    <ul>
+        <li id="module-tab-link-readme" class="module-tab-link default-hidden"><a onclick="selectModuleTab('readme')">Readme</a></li>
+        <li id="module-tab-link-example-files" class="module-tab-link default-hidden"><a onclick="selectModuleTab('example-files')">Files</a></li>
+        <li id="module-tab-link-inputs" class="module-tab-link default-hidden"><a onclick="selectModuleTab('inputs')">Inputs</a></li>
+        <li id="module-tab-link-outputs" class="module-tab-link default-hidden"><a onclick="selectModuleTab('outputs')">Outputs</a></li>
+        <li id="module-tab-link-providers" class="module-tab-link default-hidden"><a onclick="selectModuleTab('providers')">Provider Requirements</a></li>
+        <li id="module-tab-link-resources" class="module-tab-link default-hidden">
+            <a onclick="selectModuleTab('resources')">Resources</a>
+        </li>
+
+        <li id="module-tab-link-analytics" class="module-tab-link default-hidden">
+            <a onclick="selectModuleTab('analytics')">
+                Analytics
+                <span class="tag is-warning is-light terrareg-exclusive default-hidden">Terrareg Exclusive</span>
+            </a>
+        </li>
+        <li id="module-tab-link-usage-builder" class="module-tab-link default-hidden">
+            <a onclick="selectModuleTab('usage-builder')">
+                Usage Builder
+                <span class="tag is-warning is-light terrareg-exclusive">Terrareg Exclusive</span>
+            </a>
+        </li>
+        <li id="module-tab-link-integrations" class="module-tab-link default-hidden">
+            <a onclick="selectModuleTab('integrations')">
+                Integrations
+            </a>
+        </li>
+        <li id="module-tab-link-settings" class="module-tab-link default-hidden">
+            <a onclick="selectModuleTab('settings')">
+                Settings
+            </a>
+        </li>
+    </ul>
+</div>
+
+<div class="columns">
+    <div class="column is-three-fifths is-offset-one-fifth">
+        <!-- Tab content -->
+
+        <!-- README tab -->
+        <div id="module-tab-readme" class="module-tabs content default-hidden">
+        </div>
+
+        <!-- Example files tab -->
+        <div id="module-tab-example-files" class="module-tabs default-hidden">
+            <div class="columns">
+                <div class="column is-one-fifths">
+                    <nav id="example-file-list-nav" class="panel">
+                        <p class="panel-heading">
+                        Files
+                        </p>
+                    </nav>
+                </div>
+
+                <div class="column is-four-fifths">
+                    <pre><code id="example-file-content" class="language-hcl" data-lang="html"></code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inputs tab -->
+        <div id="module-tab-inputs" class="module-tabs default-hidden">
+            <table class="table module-provider-tab-content-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th>Default value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Outputs tab -->
+        <div id="module-tab-outputs" class="module-tabs default-hidden">
+            <table class="table module-provider-tab-content-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Providers tab -->
+        <div id="module-tab-providers" class="module-tabs default-hidden">
+            <table class="table module-provider-tab-content-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Namespace</th>
+                        <th>Source</th>
+                        <th>Version</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Resources tab -->
+        <div id="module-tab-resources" class="module-tabs default-hidden">
+            <table class="table module-provider-tab-content-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Name</th>
+                        <th>Provider</th>
+                        <th>Source</th>
+                        <th>Mode</th>
+                        <th>Version</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Analytics tab -->
+        <div id="module-tab-analytics" class="module-tabs default-hidden">
+            <table id="analytics-table" class="table module-provider-tab-content-table">
+                <thead>
+                    <tr>
+                        <th>Token</th>
+                        <th>Module Version</th>
+                        <th>Terraform Version</th>
+                        <th>Environment</th>
+                    </tr>
+                </thead>
+                <tbody id="analyticsVersionByTokenTable">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Usage Builder tab -->
+        <div id="module-tab-usage-builder" class="module-tabs default-hidden">
+            <span>Provide values to the following inputs to generate terraform required to use the module.</span>
+            <table id="usage-builder-table" class="table module-provider-tab-content-table">
+                <thead>
+                    <tr>
+                        <th>Variable</th>
+                        <th>Description</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody id="usageBuilderTable">
+                </tbody>
+            </table>
+            <pre id="usageBuilderOutput"></pre>
+        </div>
+
+        <!-- Integrations tab -->
+        <div id="module-tab-integrations" class="module-tabs default-hidden">
+            <p class="subtitle">
+                Integrations
+            </p>
+
+            <table id="integrations-table" class="table">
+            </table>
+
+            <div id="index-version-success" class="notification is-success default-hidden">
+                Successfully indexed version
+            </div>
+            <div id="index-version-error" class="notification is-danger default-hidden">
+            </div>
+            <p class="subtitle">Manually index version</p>
+            <div class="field is-vertical">
+                <label class="label">Version</label>
+                <div class="control">
+                    <input id="indexModuleVersion" class="input is-small" type="text" size="5" placeholder="1.0.0">
+                </div>
+                <label id="integrations-index-module-version-publish" class="checkbox default-hidden">
+                    <input id="indexModuleVersionPublish" type="checkbox" value="true">
+                    Publish
+                </label>
+                <div class="control">
+                    <br />
+                    <button id="integration-index-version-button" class="button is-info is-small">
+                    Index Version
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Module settings tab -->
+        <div id="module-tab-settings" class="module-tabs default-hidden">
+            <div class="field is-vertical">
+                <div id="settings-status-success" class="notification is-success default-hidden">
+                    Settings Updated
+                </div>
+                <div id="settings-status-error" class="notification is-danger default-hidden">
+                </div>
+                <form id="settings-form">
+                    <input type="hidden" id="settings-csrf-token" value="{{ csrf_token }}" />
+                    <div class="field">
+                        <label class="label">Verified</label>
+                        <div class="control">
+                            <input class="checkbox" type="checkbox" value="true" id="settings-verified" />
+                        </div>
+                        <span id="settings-verified-auto-verified-message" class="default-hidden">
+                            All modules within this namespace are automatically approved on creation.
+                        </span>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Git Repository Provider</label>
+                        <div class="control select">
+                            <select id="settings-git-provider">
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="field settings-custom-git-provider-container">
+                        <label class="label">Custom Repository base URL</label>
+                        <div class="control">
+                            <input class="input" type="text" id="settings-base-url-template">
+                        </div>
+                        This URL must be valid for browsing the base of the repository.<br />
+                        It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                        E.g. <code>https://github.com/{namespace}/{module}-{provider}</code><br />
+                        NOTE: Setting this field will override the repository provider configuration.
+                    </div>
+                    <div class="field settings-custom-git-provider-container">
+                        <label class="label">Custom Repository Clone URL</label>
+                        <div class="control">
+                            <input class="input" type="text" id="settings-clone-url-template">
+                        </div>
+                        This URL must be valid for cloning the repository.<br />
+                        It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>>.<br />
+                        E.g. <code>ssh://git@github.com/{namespace}/{module}-{provider}.git</code><br />
+                        NOTE: Setting this field will override the repository provider configuration.
+                    </div>
+                    <div class="field settings-custom-git-provider-container">
+                        <label class="label">Custom Repository source browse URL</label>
+                        <div class="control">
+                            <input class="input" type="text" id="settings-browse-url-template">
+                        </div>
+                        This URL must be valid for browsing the source code of the repository at a particular tag/path.<br />
+                        It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                        It must include the following template values: <code>{tag}</code> and <code>{path}</code><br />
+                        E.g. <code>https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}</code><br />
+                        NOTE: Setting this field will override the repository provider configuration.
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Git tag format</label>
+                        <div class="control">
+                            <input placeholder="v{version}" class="input" type="text" id="settings-git-tag-format">
+                        </div>
+                        This value will be converted to the expected git tag for a module version.<br />
+                        {version} will be replaced by the actual module version.<br />
+                        For example <code>v{version}</code> will translate to a git tag 'v1.1.1' for module version '1.1.1'
+                    </div>
+
+                    <div class="field">
+                        <div class="control">
+                        <button class="button is-link">Update</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div id="module-version-delete-container" class="field is-vertical default-hidden">
+                <div class="control">
+                    <button id="module-version-delete-button" class="button is-link is-danger"></button>
+                </div>
+                <br />
+                <div id="confirm-delete-module-version-div" class="default-hidden">
+                </div>
+            </div>
+
+            <div class="field is-vertical">
+                <script>
+                </script>
+                <div class="control">
+                    <button id="module-provider-delete-button" class="button is-link is-danger">Delete Module Provider</button>
+                </div>
+                <br />
+                <div id="confirm-delete-module-provider-div" class="default-hidden">
+                    Confirm deletion of module provider: <input autocomplete="off" id="confirm-delete-module-provider" type="checkbox" />
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
 
 {% endblock %}

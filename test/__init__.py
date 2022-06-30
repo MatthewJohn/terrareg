@@ -7,11 +7,11 @@ import unittest.mock
 import pytest
 
 from terrareg.models import (
-    Namespace, Module, ModuleProvider,
-    ModuleVersion, GitProvider
+    Example, ExampleFile, Namespace, Module, ModuleProvider,
+    ModuleVersion, GitProvider, Submodule
 )
 from terrareg.database import Database
-from terrareg.server import Server
+from terrareg.server import Server, require_admin_authentication
 import terrareg.config
 
 
@@ -148,6 +148,7 @@ class BaseTest:
                             module_provider_test_data['versions']
                             if 'versions' in module_provider_test_data else
                             []):
+                        version_data = module_provider_test_data['versions'][version_number]
                         data = {
                             'module_provider_id': module_provider_attributes['id'],
                             'version': version_number,
@@ -156,11 +157,6 @@ class BaseTest:
                             'published_at': datetime.now(),
                             'internal': False
                         }
-                        # Update column values from test data
-                        data.update(module_provider_test_data['versions'][version_number])
-
-                        # Reset published flag to False
-                        data['published'] = False
 
                         insert = Database.get().module_version.insert().values(
                             **data
@@ -170,6 +166,44 @@ class BaseTest:
 
                         module_version = ModuleVersion(module_provider=module_provider, version=version_number)
 
+                        values_to_update = {
+                            attr: version_data[attr]
+                            for attr in version_data
+                            if attr not in ['examples', 'submodules', 'published']
+                        }
+                        if values_to_update:
+                            module_version.update_attributes(**values_to_update)
+
                         # If module version is published, do so
-                        if module_provider_test_data['versions'][version_number].get('published', False):
+                        if version_data.get('published', False):
                             module_version.publish()
+
+                        # Iterate over submodules and create them
+                        for submodule_path in version_data.get('submodules', {}):
+                            submodule_conifg = version_data['submodules'][submodule_path]
+
+                            submodule = Submodule.create(module_version=module_version, module_path=submodule_path)
+                            attributes_to_update = {
+                                attr: submodule_conifg[attr]
+                                for attr in submodule_conifg
+                            }
+                            if attributes_to_update:
+                                submodule.update_attributes(**attributes_to_update)
+
+                        # Iterate over examples and create them
+                        for example_path in version_data.get('examples', {}):
+                            example_config = version_data['examples'][example_path]
+
+                            example = Example.create(module_version=module_version, module_path=example_path)
+                            attributes_to_update = {
+                                attr: example_config[attr]
+                                for attr in example_config
+                                if attr not in ['example_files']
+                            }
+                            if attributes_to_update:
+                                example.update_attributes(**attributes_to_update)
+
+                            for example_file_path in example_config.get('example_files', {}):
+                                example_file = ExampleFile.create(example=example, path=example_file_path)
+                                example_file.update_attributes(content=example_config['example_files'][example_file_path])
+

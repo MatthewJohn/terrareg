@@ -40,15 +40,18 @@ class TestHomepage(SeleniumTest):
         # Ensure title is injected correctly
         assert self.selenium_instance.find_element(By.ID, 'title').text == 'unittest application name'
 
-    def test_counts(self):
+    @pytest.mark.parametrize('element,count', [
+        ('namespace', 12),
+        ('module', 48),
+        ('version', 64),
+        ('download', 2005)
+    ])
+    def test_counts(self, element, count):
         """Check counters on homepage."""
         self.selenium_instance.get(self.get_url('/'))
 
         # Ensure counts on page are correct
-        assert self.selenium_instance.find_element(By.ID, 'namespace-count').text == '12'
-        assert self.selenium_instance.find_element(By.ID, 'module-count').text == '47'
-        assert self.selenium_instance.find_element(By.ID, 'version-count').text == '60'
-        assert self.selenium_instance.find_element(By.ID, 'download-count').text == '2005'
+        assert self.selenium_instance.find_element(By.ID, f'{element}-count').text == str(count)
 
     def test_latest_module_version(self):
         """Check tabs for most recent uploaded."""

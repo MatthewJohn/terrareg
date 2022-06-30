@@ -35,3 +35,20 @@ async function getProviderLogos() {
     }
     return terraregProviderLogosPromiseSingleton;
 }
+
+terraregIsLoggedInPromiseSingleton = undefined;
+async function isLoggedIn() {
+    if (terraregIsLoggedInPromiseSingleton === undefined) {
+        terraregIsLoggedInPromiseSingleton = new Promise((resolve, reject) => {
+            $.ajax({
+                url: '/v1/terrareg/auth/admin/is_authenticated',
+                statusCode: {
+                  200: () => {resolve(true)},
+                  401: () => {resolve(false)}
+                }
+            });
+        })
+    }
+
+    return terraregIsLoggedInPromiseSingleton;
+}
