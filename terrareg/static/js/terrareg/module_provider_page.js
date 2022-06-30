@@ -771,7 +771,15 @@ function populateVersionSelect(moduleDetails) {
     // If current version has not been found, add fake version to drop-down
     if (currentVersionFound == false) {
         let versionOption = $("<option></option>");
-        versionOption.text(`${moduleDetails.version} (unpublished)`);
+        let suffix = '';
+        console.log(moduleDetails);
+        if (moduleDetails.beta) {
+            suffix += ' (beta)';
+        }
+        if (! moduleDetails.published) {
+            suffix += ' (unpublished)';
+        }
+        versionOption.text(`${moduleDetails.version}${suffix}`);
         versionOption.attr("selected", "");
         versionSelection.append(versionOption);
 

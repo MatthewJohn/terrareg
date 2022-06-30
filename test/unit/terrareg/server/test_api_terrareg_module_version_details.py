@@ -37,13 +37,15 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'repo_base_url_template': None,
             'repo_browse_url_template': None,
             'repo_clone_url_template': None,
-            'terraform_example_version_string': '1.0.0'
+            'terraform_example_version_string': '1.0.0',
+            'beta': False,
+            'published': True
         }
 
         assert res.status_code == 200
 
     @setup_test_data()
-    def test_existing_module_version_with_git_provider_and_no_versions(self, client, mocked_server_namespace_fixture):
+    def test_existing_module_version_with_git_provider(self, client, mocked_server_namespace_fixture):
         """Test endpoint with module provider that is:
          - configured with a git provider
          - configured with a tag format
@@ -92,7 +94,9 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
                 'nogittagformat',
                 'complexgittagformat',
                 'norepourl'
-            ]
+            ],
+            'beta': False,
+            'published': True
         }
 
         assert res.status_code == 200
@@ -138,7 +142,9 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'source': 'https://custom-localhost.com/testnamespace/modulenotpublished-testprovider',
             'submodules': [],
             'terraform_example_version_string': '10.2.1',
-            'version': '10.2.1'
+            'version': '10.2.1',
+            'beta': False,
+            'published': False
         }
 
         assert res.status_code == 200
@@ -185,7 +191,9 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'source': None,
             'submodules': [],
             'terraform_example_version_string': '2.2.4-beta',
-            'version': '2.2.4-beta'
+            'version': '2.2.4-beta',
+            'beta': True,
+            'published': True
         }
 
         assert res.status_code == 200

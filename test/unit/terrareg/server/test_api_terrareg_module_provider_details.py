@@ -37,7 +37,9 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'repo_base_url_template': None,
             'repo_browse_url_template': None,
             'repo_clone_url_template': None,
-            'terraform_example_version_string': '1.0.0'
+            'terraform_example_version_string': '1.0.0',
+            'beta': False,
+            'published': True
         }
 
         assert res.status_code == 200
