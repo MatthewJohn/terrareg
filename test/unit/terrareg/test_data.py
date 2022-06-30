@@ -34,19 +34,19 @@ test_data_full = {
             'verified': True,
             'repo_base_url_template': 'http://github.com/{namespace}/{module}',
             'latest_version': '1.2.3',
-            'versions': {'1.2.3': {}}
+            'versions': {'1.2.3': {'published': True}}
         }},
         'unverifiedmodule': {'testprovider': {
             'id': 16,
             'verified': False,
             'latest_version': '1.2.3',
-            'versions': {'1.2.3': {}}
+            'versions': {'1.2.3': {'published': True}}
         }},
         'internalmodule': {'testprovider': {
             'id': 17,
             'verified': False,
             'latest_version': '5.2.0',
-            'versions': {'5.2.0': {'internal': True}}
+            'versions': {'5.2.0': {'internal': True, 'published': True}}
         }},
         'modulenorepourl': {'testprovider': {
             'id': 5,
