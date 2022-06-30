@@ -59,9 +59,19 @@ def setup_test_data(test_data=None):
 class MockGitProvider(GitProvider):
     """Mocked GitProvider."""
 
+    @staticmethod
+    def get_all():
+        """Return all mocked git provider."""
+        return [
+            MockGitProvider(git_provider_id)
+            for git_provider_id in TEST_GIT_PROVIDER_DATA
+        ]
+
     def _get_db_row(self):
         """Return mocked data for git provider."""
-        return TEST_GIT_PROVIDER_DATA.get(self._id, None)
+        data = TEST_GIT_PROVIDER_DATA.get(self._id, None)
+        data['id'] = self._id
+        return data
 
 class MockModule(Module):
     """Mocked module."""
