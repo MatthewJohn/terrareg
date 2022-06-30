@@ -1,5 +1,17 @@
 # Changelog
 
+# [2.16.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.15.0...v2.16.0) (2022-06-30)
+
+
+### Bug Fixes
+
+* Handle None value for published date in functions that return formatted versions of published date ([b53a447](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b53a4475f18c0986aa05f72bfd1b580d7ac5e4a0)), closes [#12](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/12)
+
+
+### Features
+
+* Convert module provider, version, submodule and example page to static page using javascript and APIs. ([598fc25](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/598fc251b08972c106599e7544d97c12981da213)), closes [#12](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/12)
+
 # [2.15.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.14.0...v2.15.0) (2022-06-25)
 
 
