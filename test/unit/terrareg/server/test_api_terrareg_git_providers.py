@@ -26,6 +26,6 @@ class TestApiTerraregHealth(TerraregUnitTest):
             assert res.status_code == 200
             assert res.json == [
                 {'id': 1, 'name': 'testgitprovider'},
-                {'id': 2, 'name': 'git-provider-only-clone'}
+                {'id': 2, 'name': 'second-git-provider'}
             ]
             mocked_git_providers_get_all.assert_called_once()

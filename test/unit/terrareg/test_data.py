@@ -7,8 +7,10 @@ test_git_providers = {
         'clone_url_template': 'ssh://localhost.com/{namespace}/{module}-{provider}'
     },
     2: {
-        'name': 'git-provider-only-clone',
-        'clone_url_template': 'https://localhost2.example/{namespace}-{module}-{provider}'
+        'name': 'second-git-provider',
+        'clone_url_template': 'https://localhost2.example/{namespace}-{module}-{provider}',
+        'browse_url_template': 'https://localhost2.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
+        'clone_url_template': 'ssh://localhost2.com/{namespace}/{module}-{provider}'
     }
 }
 
