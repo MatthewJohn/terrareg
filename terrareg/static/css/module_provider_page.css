@@ -1,0 +1,15 @@
+#provider-logo-link {
+    margin-top: 30px;
+    max-height: 150px;
+}
+#module-provider-header-content {
+    background-color: #f9f9f9;
+    padding-top: 30px;
+    padding-bottom: 30px;
+}
+#module-tab-readme h1, h2, h3, h4 {
+    margin-top: 20px;
+}
+#analytics-table, #usage-builder-table {
+    width: 100%;
+}
