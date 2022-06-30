@@ -921,18 +921,20 @@ class ModuleProvider(object):
             "trusted": self._module._namespace.trusted
         }
 
-    def get_api_details(self):
+    def get_api_details(self, include_beta=True):
         """Return dict of provider details for API response."""
         api_details = self.get_api_outline()
         api_details.update({
-            "versions": [v.version for v in self.get_versions()]
+            "versions": [v.version for v in self.get_versions(include_beta=include_beta)]
         })
         return api_details
 
     def get_terrareg_api_details(self):
         """Return dict of module details with additional attributes used by terrareg UI."""
         git_provider = self.get_git_provider()
-        api_details = self.get_api_details()
+        # Obtain base API details, but do not include beta versions,
+        # as these should not be displayed in the UI
+        api_details = self.get_api_details(include_beta=False)
         api_details.update({
             "module_provider_id": self.id,
             "git_provider_id": git_provider.pk if git_provider else None,
