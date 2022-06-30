@@ -84,12 +84,12 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'provider': 'testprovider',
             'verified': False,
             'trusted': False,
-            'git_provider_id': 1,
-            'git_tag_format': 'v{version}',
+            'git_provider_id': None,
+            'git_tag_format': '{version}',
             'module_provider_id': 'testnamespace/modulenotpublished/testprovider',
-            'repo_base_url_template': None,
-            'repo_browse_url_template': None,
-            'repo_clone_url_template': None,
+            'repo_base_url_template': 'https://custom-localhost.com/{namespace}/{module}-{provider}',
+            'repo_browse_url_template': 'https://custom-localhost.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
+            'repo_clone_url_template': 'ssh://custom-localhost.com/{namespace}/{module}-{provider}',
             'versions': []
         }
 
