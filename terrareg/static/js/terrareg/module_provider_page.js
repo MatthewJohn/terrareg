@@ -775,16 +775,22 @@ function populateVersionSelect(moduleDetails) {
         console.log(moduleDetails);
         if (moduleDetails.beta) {
             suffix += ' (beta)';
+
+            // If the beta module is published, show warning about
+            // beta version and how to use it.
+            if (moduleDetails.published) {
+                $("#beta-warning").removeClass('default-hidden');
+            }
         }
         if (! moduleDetails.published) {
             suffix += ' (unpublished)';
+
+            // Add warning to page about unpublished version
+            $("#unpublished-warning").removeClass('default-hidden');
         }
         versionOption.text(`${moduleDetails.version}${suffix}`);
         versionOption.attr("selected", "");
         versionSelection.append(versionOption);
-
-        // Add warning to page about unpublished version
-        $("#unpublished-warning").removeClass('default-hidden');
     }
     // Show version drop-down
     $('#details-version').removeClass('default-hidden');
