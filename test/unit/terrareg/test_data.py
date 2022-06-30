@@ -8,7 +8,7 @@ test_git_providers = {
     },
     2: {
         'name': 'second-git-provider',
-        'clone_url_template': 'https://localhost2.example/{namespace}-{module}-{provider}',
+        'base_url_template': 'https://localhost2.example/{namespace}-{module}-{provider}',
         'browse_url_template': 'https://localhost2.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
         'clone_url_template': 'ssh://localhost2.com/{namespace}/{module}-{provider}'
     }
@@ -27,7 +27,7 @@ test_data_full = {
             'id': 2,
             'latest_version': '1.0.0',
             'verified': True,
-            'versions': {'1.0.0': {}}
+            'versions': {'1.0.0': {'published': True}}
         }},
         'mock-module': {'testprovider': {
             'id': 3,
@@ -62,6 +62,9 @@ test_data_full = {
         'modulenotpublished': {'testprovider': {
             'id': 15,
             'latest_verison': '10.2.1',
+            'repo_base_url_template': 'https://custom-localhost.com/{namespace}/{module}-{provider}',
+            'repo_browse_url_template': 'https://custom-localhost.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
+            'repo_clone_url_template': 'ssh://custom-localhost.com/{namespace}/{module}-{provider}',
             'versions': {
                 '10.2.1': {'published': False}
             }
