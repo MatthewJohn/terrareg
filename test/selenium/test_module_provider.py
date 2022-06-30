@@ -415,6 +415,47 @@ class TestModuleProvider(SeleniumTest):
         for itx, version_item in enumerate(version_options):
             assert version_item.text == expected_versions[itx]
 
+    def test_example_file_contents(self):
+        """Check example files are displayed correctly."""
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+        # Select example from dropdown
+        select = Select(self.wait_for_element(By.ID, 'example-select'))
+        select.select_by_visible_text('examples/test-example')
+
+        # Wait for page to reload and example title to be displayed
+        self.assert_equals(
+            lambda: self.selenium_instance.find_element(By.ID, 'current-submodule').text,
+            'Example: examples/test-example'
+        )
+
+        # Ensure example files tab is displayed
+        self.wait_for_element(By.ID, 'module-tab-link-example-files').click()
+
+        file_tab_content = self.wait_for_element(By.ID, 'module-tab-example-files')
+
+        # Ensure all files are displayed in file list
+        file_list = file_tab_content.find_element(By.ID, 'example-file-list-nav').find_elements(By.TAG_NAME, 'a')
+
+        # Ensure files match expected order and name
+        assert [file.text for file in file_list] == ['main.tf', 'data.tf', 'variables.tf']
+
+        # Ensure contents of main.tf is shown in data
+        expected_main_tf_content = f'# Call root module\nmodule "root" {{\n  source  = "localhost:{self.SERVER.port}/moduledetails/fullypopulated/testprovider"\n  version = "1.5.0"\n}}'
+        assert file_tab_content.find_element(By.ID, 'example-file-content').text == expected_main_tf_content
+
+        # Select main.tf file and check content
+        file_list[0].click()
+        assert file_tab_content.find_element(By.ID, 'example-file-content').text == expected_main_tf_content
+
+        # Select data.tf and check content
+        file_list[1].click()
+        assert file_tab_content.find_element(By.ID, 'example-file-content').text == '# This contains data objects'
+
+        # Select variables.tf and check content
+        file_list[2].click()
+        assert file_tab_content.find_element(By.ID, 'example-file-content').text == 'variable "test" {\n  description = "test variable"\n  type = string\n}'
+
     def test_delete_module_version(self):
         """Check provider logos are displayed correctly."""
 

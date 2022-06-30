@@ -453,7 +453,9 @@ integration_test_data = {
                     'examples': {
                         'examples/test-example': {
                             'example_files': {
-                                'examples/test-example/main.tf': '#this is a main.tf'
+                                'examples/test-example/data.tf': '# This contains data objects',
+                                'examples/test-example/variables.tf': 'variable "test" {\n  description = "test variable"\n  type = string\n}',
+                                'examples/test-example/main.tf': '# Call root module\nmodule "root" {\n  source = "../../"\n}'
                             },
                             'readme_content': '# Example 1 README',
                             'module_details': json.dumps({
