@@ -128,7 +128,9 @@ class MockModuleVersion(ModuleVersion):
                 '{"inputs": [], "outputs": [], "providers": [], "resources": []}'
             )),
             'variable_template': Database.encode_blob(self._unittest_data.get('variable_template', '{}')),
-            'internal': self._unittest_data.get('internal', False)
+            'internal': self._unittest_data.get('internal', False),
+            'published': self._unittest_data.get('published', False),
+            'beta': self._unittest_data.get('beta', False)
         }
 
 
@@ -191,7 +193,7 @@ class MockModuleProvider(ModuleProvider):
     def get_versions(self):
         """Return all MockModuleVersion objects for ModuleProvider."""
         return [MockModuleVersion(module_provider=self, version=version)
-                for version in self._unittest_data['versions']]
+                for version in self._unittest_data.get('versions', {})]
 
 class MockNamespace(Namespace):
     """Mocked namespace."""
@@ -202,9 +204,28 @@ class MockNamespace(Namespace):
         return len(TEST_MODULE_DATA)
 
     @staticmethod
-    def get_all():
+    def get_all(only_published=False):
         """Return all namespaces."""
-        return TEST_MODULE_DATA.keys()
+        valid_namespaces = []
+        if only_published:
+            # Iterate through all module versions of each namespace
+            # to determine if the namespace has a published version
+            for namespace_name in TEST_MODULE_DATA.keys():
+                namespace = MockNamespace(namespace_name)
+                for module in namespace.get_all_modules():
+                    for provider in module.get_providers():
+                        for version in provider.get_versions():
+                            if (namespace_name not in valid_namespaces and
+                                    version.published and
+                                    version.beta == False):
+                                valid_namespaces.append(namespace_name)
+        else:
+            valid_namespaces = TEST_MODULE_DATA.keys()
+
+        return [
+            MockNamespace(namespace)
+            for namespace in valid_namespaces
+        ]
 
     def get_all_modules(self):
         """Return all modules for namespace."""

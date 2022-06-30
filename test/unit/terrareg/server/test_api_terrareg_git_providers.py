@@ -4,8 +4,8 @@ from test.unit.terrareg import MockGitProvider, TerraregUnitTest, setup_test_dat
 from test import client
 
 
-class TestApiTerraregHealth(TerraregUnitTest):
-    """Test ApiTerraregHealth resource."""
+class TestApiTerraregGitProviders(TerraregUnitTest):
+    """Test TestApiTerraregGitProviders resource."""
 
     def test_with_no_git_providers_configured(self, client):
         """Test endpoint when no git providers are configured."""
