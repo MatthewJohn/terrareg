@@ -8,12 +8,12 @@ from test.unit.terrareg import (
 from test import client
 
 
-class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
-    """Test ApiTerraregModuleProviderDetails resource."""
+class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
+    """Test ApiTerraregModuleVersionDetails resource."""
 
     @setup_test_data()
-    def test_existing_module_provider_no_custom_urls(self, client, mocked_server_namespace_fixture):
-        res = client.get('/v1/terrareg/modules/testnamespace/lonelymodule/testprovider')
+    def test_existing_module_version_no_custom_urls(self, client, mocked_server_namespace_fixture):
+        res = client.get('/v1/terrareg/modules/testnamespace/lonelymodule/testprovider/1.0.0')
 
         assert res.json == {
             'id': 'testnamespace/lonelymodule/testprovider/1.0.0', 'owner': 'Mock Owner',
@@ -49,22 +49,41 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
          - configured with a tag format
          - has no versions
         """
-        res = client.get('/v1/terrareg/modules/moduleextraction/gitextraction/usesgitprovider')
+        res = client.get('/v1/terrareg/modules/moduleextraction/gitextraction/usesgitproviderwithversions/2.2.2')
 
         assert res.json == {
-            'id': 'moduleextraction/gitextraction/usesgitprovider',
+            'id': 'moduleextraction/gitextraction/usesgitproviderwithversions/2.2.2',
             'namespace': 'moduleextraction',
             'name': 'gitextraction',
-            'provider': 'usesgitprovider',
+            'provider': 'usesgitproviderwithversions',
             'verified': False,
             'trusted': False,
             'git_provider_id': 1,
             'git_tag_format': 'v{version}',
-            'module_provider_id': 'moduleextraction/gitextraction/usesgitprovider',
+            'module_provider_id': 'moduleextraction/gitextraction/usesgitproviderwithversions',
             'repo_base_url_template': None,
             'repo_browse_url_template': None,
             'repo_clone_url_template': None,
-            'versions': []
+            'versions': [],
+            'description': 'Mock description',
+            'display_source_url': 'https://localhost.com/moduleextraction/gitextraction-usesgitproviderwithversions/browse/v2.2.2/',
+            'downloads': 0,
+            'internal': False,
+            'owner': 'Mock Owner',
+            'published_at': '2020-01-01T23:18:12',
+            'published_at_display': 'January 01, 2020',
+            'root': {'dependencies': [],
+                    'empty': False,
+                    'inputs': [],
+                    'outputs': [],
+                    'path': '',
+                    'provider_dependencies': [],
+                    'readme': 'Mock module README file',
+                    'resources': []},
+            'source': 'https://localhost.com/moduleextraction/gitextraction-usesgitproviderwithversions',
+            'submodules': [],
+            'terraform_example_version_string': '2.2.2',
+            'version': '2.2.2'
         }
 
         assert res.status_code == 200
@@ -75,10 +94,10 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
          - configured with a custom repo URLs
          - has no published versions
         """
-        res = client.get('/v1/terrareg/modules/testnamespace/modulenotpublished/testprovider')
+        res = client.get('/v1/terrareg/modules/testnamespace/modulenotpublished/testprovider/10.2.1')
 
         assert res.json == {
-            'id': 'testnamespace/modulenotpublished/testprovider',
+            'id': 'testnamespace/modulenotpublished/testprovider/10.2.1',
             'namespace': 'testnamespace',
             'name': 'modulenotpublished',
             'provider': 'testprovider',
@@ -90,7 +109,26 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'repo_base_url_template': 'https://custom-localhost.com/{namespace}/{module}-{provider}',
             'repo_browse_url_template': 'https://custom-localhost.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
             'repo_clone_url_template': 'ssh://custom-localhost.com/{namespace}/{module}-{provider}',
-            'versions': []
+            'versions': [],
+            'description': 'Mock description',
+            'display_source_url': 'https://custom-localhost.com/testnamespace/modulenotpublished-testprovider/browse/10.2.1/',
+            'downloads': 0,
+            'internal': False,
+            'owner': 'Mock Owner',
+            'published_at': '2020-01-01T23:18:12',
+            'published_at_display': 'January 01, 2020',
+            'root': {'dependencies': [],
+                    'empty': False,
+                    'inputs': [],
+                    'outputs': [],
+                    'path': '',
+                    'provider_dependencies': [],
+                    'readme': 'Mock module README file',
+                    'resources': []},
+            'source': 'https://custom-localhost.com/testnamespace/modulenotpublished-testprovider',
+            'submodules': [],
+            'terraform_example_version_string': '10.2.1',
+            'version': '10.2.1'
         }
 
         assert res.status_code == 200
@@ -102,10 +140,10 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
          - no git provider
          - only has beta version published
         """
-        res = client.get('/v1/terrareg/modules/testnamespace/onlybeta/testprovider')
+        res = client.get('/v1/terrareg/modules/testnamespace/onlybeta/testprovider/2.2.4-beta')
 
         assert res.json == {
-            'id': 'testnamespace/onlybeta/testprovider',
+            'id': 'testnamespace/onlybeta/testprovider/2.2.4-beta',
             'namespace': 'testnamespace',
             'name': 'onlybeta',
             'provider': 'testprovider',
@@ -117,7 +155,26 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'repo_base_url_template': None,
             'repo_browse_url_template': None,
             'repo_clone_url_template': None,
-            'versions': []
+            'versions': [],
+            'description': 'Mock description',
+            'display_source_url': None,
+            'downloads': 0,
+            'internal': False,
+            'owner': 'Mock Owner',
+            'published_at': '2020-01-01T23:18:12',
+            'published_at_display': 'January 01, 2020',
+            'root': {'dependencies': [],
+                    'empty': False,
+                    'inputs': [],
+                    'outputs': [],
+                    'path': '',
+                    'provider_dependencies': [],
+                    'readme': 'Mock module README file',
+                    'resources': []},
+            'source': None,
+            'submodules': [],
+            'terraform_example_version_string': '2.2.4-beta',
+            'version': '2.2.4-beta'
         }
 
         assert res.status_code == 200
@@ -125,7 +182,15 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
     def test_non_existent_module_provider(self, client, mocked_server_namespace_fixture):
         """Test endpoint with non-existent module"""
 
-        res = client.get('/v1/terrareg/modules/doesnotexist/unittestdoesnotexist/unittestproviderdoesnotexist')
+        res = client.get('/v1/terrareg/modules/doesnotexist/unittestdoesnotexist/unittestproviderdoesnotexist/1.0.0')
+
+        assert res.json == {'errors': ['Not Found']}
+        assert res.status_code == 404
+
+    def test_non_existent_module_version(self, client, mocked_server_namespace_fixture):
+        """Test endpoint with non-existent version"""
+
+        res = client.get('/v1/terrareg/modules/testnamespace/lonelymodule/testprovider/52.1.2')
 
         assert res.json == {'errors': ['Not Found']}
         assert res.status_code == 404

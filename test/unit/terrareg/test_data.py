@@ -65,7 +65,7 @@ test_data_full = {
         }},
         'modulenotpublished': {'testprovider': {
             'id': 15,
-            'latest_verison': '10.2.1',
+            'latest_verison': None,
             'repo_base_url_template': 'https://custom-localhost.com/{namespace}/{module}-{provider}',
             'repo_browse_url_template': 'https://custom-localhost.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
             'repo_clone_url_template': 'ssh://custom-localhost.com/{namespace}/{module}-{provider}',
@@ -91,7 +91,7 @@ test_data_full = {
                 'id': 8,
                 'repo_clone_url_template': 'ssh://git@localhost:7999/bla/test-module.git',
                 'git_tag_format': 'v{version}',
-                'versions': []
+                'versions': {}
             }
         },
         'gitextraction': {
@@ -99,35 +99,42 @@ test_data_full = {
                 'id': 9,
                 'repo_clone_url_template': 'ssh://git@localhost:7999/bla/test-module.git',
                 'git_tag_format': 'v{version}',
-                'versions': []
+                'versions': {}
             },
             'placeholdercloneurl': {
                 'id': 10,
                 'repo_clone_url_template': 'ssh://git@localhost:7999/{namespace}/{module}-{provider}.git',
                 'git_tag_format': 'v{version}',
-                'versions': []
+                'versions': {}
             },
             'usesgitprovider': {
                 'id': 11,
                 'git_provider_id': 1,
                 'git_tag_format': 'v{version}',
-                'versions': []
+                'versions': {}
+            },
+            'usesgitproviderwithversions': {
+                'id': 19,
+                'git_provider_id': 1,
+                'git_tag_format': 'v{version}',
+                'latest_version': '2.2.2',
+                'versions': {'2.2.2': {'published': True}}
             },
             'nogittagformat': {
                 'id': 12,
                 'git_provider_id': 1,
-                'versions': []
+                'versions': {}
             },
             'complexgittagformat': {
                 'id': 13,
                 'git_provider_id': 1,
                 'git_tag_format': 'unittest{version}value',
-                'versions': []
+                'versions': {}
             },
             'norepourl': {
                 'id': 14,
                 'git_tag_format': 'v{version}',
-                'versions': []
+                'versions': {}
             }
         }
     }
