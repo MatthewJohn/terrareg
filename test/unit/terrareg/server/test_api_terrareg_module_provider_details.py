@@ -117,7 +117,7 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'repo_base_url_template': None,
             'repo_browse_url_template': None,
             'repo_clone_url_template': None,
-            'versions': ['2.2.4-beta']
+            'versions': []
         }
 
         assert res.status_code == 200
