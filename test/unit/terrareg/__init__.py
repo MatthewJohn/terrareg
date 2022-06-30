@@ -190,10 +190,17 @@ class MockModuleProvider(ModuleProvider):
             return MockModuleVersion.get(module_provider=self, version=self._unittest_data['latest_version'])
         return None
 
-    def get_versions(self):
+    def get_versions(self, include_beta=True, include_unpublished=False):
         """Return all MockModuleVersion objects for ModuleProvider."""
-        return [MockModuleVersion(module_provider=self, version=version)
-                for version in self._unittest_data.get('versions', {})]
+        versions = []
+        for version in self._unittest_data.get('versions', {}):
+            version_obj = MockModuleVersion(module_provider=self, version=version)
+            if version_obj.beta and not include_beta:
+                continue
+            if not version_obj.published and not include_unpublished:
+                continue
+            versions.append(version_obj)
+        return versions
 
 class MockNamespace(Namespace):
     """Mocked namespace."""
