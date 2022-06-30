@@ -8,6 +8,12 @@ Provides features to aid usage and discovery of modules:
  * Interactive 'Usage builder', helping users build terraform to use the terraform modules;
  * Hooks for git SCM applications to automatically index modules;
 
+## Screenshots
+
+![Homepage](./docs/screenshots/homepage.png)
+
+![Module Provider](./docs/screenshots/module_provider.png)
+
 ## Getting started
 
 Install depdencies:
