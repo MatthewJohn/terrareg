@@ -1,10 +1,9 @@
 
-from datetime import datetime
 from unittest import mock
 
 import pytest
 from selenium.webdriver.common.by import By
-import selenium
+from selenium.webdriver.support.select import Select
 
 from test.selenium import SeleniumTest
 from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
@@ -379,6 +378,42 @@ class TestModuleProvider(SeleniumTest):
             # Check columns of row match expected text
             row_text = [col.text for col in row_columns]
             assert row_text == expected_row
+
+    @pytest.mark.parametrize('current_version,expected_versions,expected_selected_version', [
+        # On root page without version
+        (None, ['1.5.0 (latest)', '1.2.0'], '1.5.0 (latest)'),
+        # On latest version
+        ('1.5.0', ['1.5.0 (latest)', '1.2.0'], '1.5.0 (latest)'),
+        # On previous version
+        ('1.2.0', ['1.5.0 (latest)', '1.2.0'], '1.2.0'),
+        # On beta version
+        ('1.6.1-beta', ['1.5.0 (latest)', '1.2.0', '1.6.1-beta (beta)'], '1.6.1-beta (beta)'),
+        # On unpublished version
+        ('1.6.0', ['1.5.0 (latest)', '1.2.0', '1.6.0 (unpublished)'], '1.6.0 (unpublished)'),
+        # On beta unpublished version
+        ('1.0.0-beta', ['1.5.0 (latest)', '1.2.0', '1.0.0-beta (beta) (unpublished)'], '1.0.0-beta (beta) (unpublished)')
+    ])
+    def test_version_dropdown(self, current_version, expected_versions, expected_selected_version):
+        """Test version dropdown contains expected values."""
+        # Go to page
+        url = self.get_url('/modules/moduledetails/fullypopulated/testprovider')
+        if current_version:
+            url += f'/{current_version}'
+
+        self.selenium_instance.get(url)
+
+        select_dropdown = self.wait_for_element(By.ID, 'version-select')
+        version_options = select_dropdown.find_elements(By.TAG_NAME, 'option')
+
+        # Check the number of items
+        #assert len(version_options) == len(expected_versions)
+
+        # Ensure the current selected item is as expected
+        assert expected_selected_version == Select(select_dropdown).first_selected_option.text
+
+        # Check each of the select options
+        for itx, version_item in enumerate(version_options):
+            assert version_item.text == expected_versions[itx]
 
     def test_delete_module_version(self):
         """Check provider logos are displayed correctly."""

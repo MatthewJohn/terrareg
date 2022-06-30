@@ -355,6 +355,14 @@ integration_test_data = {
         'fullypopulated': {'testprovider': {
             'id': 56,
             'versions': {
+                # Older version
+                '1.2.0': {'published': True},
+                # Newer unpublished version
+                '1.6.0': {},
+                # Newer published beta version
+                '1.6.1-beta': {'published': True, 'beta': True},
+                # Unpublished and beta version
+                '1.0.0-beta': {'published': False, 'beta': True},
                 '1.5.0': {
                     'description': 'This is a test module version for tests.',
                     'owner': 'This is the owner of the module',
