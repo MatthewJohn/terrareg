@@ -16,7 +16,7 @@ function timeDifference(previous) {
         {
             return 'approximately ' + cnt + ' year ago';
         }
-        return 'approximately ' + cnt + ' years ago';   
+        return 'approximately ' + cnt + ' years ago';
     }
     else if (elapsed > month)
     {
@@ -65,6 +65,18 @@ function timeDifference(previous) {
     }
 }
 
+async function addProviderLogoTos(provider) {
+    let provider_logos = await getProviderLogos();
+
+    // Add provider TOS to results, if not already there
+    if ($('#provider-tos-' + provider).length == 0) {
+        let tos_object = document.createElement('p');
+        tos_object.id = `provider-tos-${provider}`;
+        tos_object.innerHTML = provider_logos[provider].tos;
+        $('#provider-tos')[0].append(tos_object);
+    }
+}
+
 async function createSearchResultCard(parent_id, module) {
 
     let provider_logos = await getProviderLogos();
@@ -78,14 +90,7 @@ async function createSearchResultCard(parent_id, module) {
                 <img style="margin: 5px" height="40" width="40" alt="${provider_logo_details.alt}" src="${provider_logo_details.source}" />
             </a>
         `;
-
-        // Add provider TOS to results, if not already there
-        if ($('#provider-tos-' + module.provider).length == 0) {
-            let tos_object = document.createElement('p');
-            tos_object.id = `provider-tos-${module.provider}`;
-            tos_object.innerHTML = provider_logo_details.tos;
-            $('#provider-tos')[0].append(tos_object);
-        }
+        addProviderLogoTos(module.provider);
     }
 
     // Replace slashes in ID with full stops
@@ -93,7 +98,7 @@ async function createSearchResultCard(parent_id, module) {
 
     // Add module to search results
     let result_card = $(
-        `  
+        `
         <div id="${card_id}" class="card">
             <header class="card-header">
                 <p class="card-header-title">
@@ -141,16 +146,81 @@ async function getModuleDetails(module_id) {
             // Perform request to obtain module details
             $.ajax({
                 type: "GET",
-                url: `/v1/modules/${module_id}`,
+                url: `/v1/terrareg/modules/${module_id}`,
                 success: function (data) {
-                    // append module provider ID to data
-                    data.module_provider_id = data.id.split('/').slice(0, 3).join('/');
                     resolve(data);
+                },
+                error: function () {
+                    resolve(null);
                 }
             });
         });
     }
     return terraregModuleDetailsPromiseSingleton[module_id];
+}
+
+terraregModuleUsageBuilderVariablesPromiseSingleton = [];
+function getUsageBuilderVariables(moduleId) {
+    // Create promise if it hasn't already been defined
+    if (terraregModuleUsageBuilderVariablesPromiseSingleton[moduleId] === undefined) {
+        terraregModuleUsageBuilderVariablesPromiseSingleton[moduleId] = new Promise((resolve, reject) => {
+            // Perform request to obtain usage builder variables details
+            $.ajax({
+                type: "GET",
+                url: `/v1/terrareg/modules/${moduleId}/variable_template`,
+                success: function (data) {
+                    resolve(data);
+                },
+                error: function () {
+                    resolve(null);
+                }
+            });
+        });
+    }
+    return terraregModuleUsageBuilderVariablesPromiseSingleton[moduleId];
+}
+
+
+terraregSubmoduleDetailsPromiseSingleton = [];
+async function getSubmoduleDetails(moduleId, submodulePath) {
+    // Create promise if it hasn't already been defined
+    if (terraregSubmoduleDetailsPromiseSingleton[moduleId + submodulePath] === undefined) {
+        terraregSubmoduleDetailsPromiseSingleton[moduleId + submodulePath] = new Promise((resolve, reject) => {
+            // Perform request to obtain submodule details
+            $.ajax({
+                type: "GET",
+                url: `/v1/terrareg/modules/${moduleId}/submodules/details/${submodulePath}`,
+                success: function (data) {
+                    resolve(data);
+                },
+                error: function () {
+                    resolve(null);
+                }
+            });
+        });
+    }
+    return terraregSubmoduleDetailsPromiseSingleton[moduleId + submodulePath];
+}
+
+terraregExampleDetailsPromiseSingleton = [];
+async function getExampleDetails(moduleId, examplePath) {
+    // Create promise if it hasn't already been defined
+    if (terraregExampleDetailsPromiseSingleton[moduleId + examplePath] === undefined) {
+        terraregExampleDetailsPromiseSingleton[moduleId + examplePath] = new Promise((resolve, reject) => {
+            // Perform request to obtain submodule details
+            $.ajax({
+                type: "GET",
+                url: `/v1/terrareg/modules/${moduleId}/examples/details/${examplePath}`,
+                success: function (data) {
+                    resolve(data);
+                },
+                error: function () {
+                    resolve(null);
+                }
+            });
+        });
+    }
+    return terraregExampleDetailsPromiseSingleton[moduleId + examplePath];
 }
 
 async function addModuleLabels(module, parentDiv) {
