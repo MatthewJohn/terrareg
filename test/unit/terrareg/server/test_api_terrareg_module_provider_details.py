@@ -28,7 +28,7 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
                 'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],
                 'provider_dependencies': [], 'resources': []
             },
-            'submodules': [], 'versions': ['1.0.0'],
+            'submodules': [], 'providers': ['testprovider'], 'versions': ['1.0.0'],
             'display_source_url': None,
             'git_provider_id': None,
             'git_tag_format': '{version}',
