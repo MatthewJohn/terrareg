@@ -116,7 +116,7 @@ class MockModuleVersion(ModuleVersion):
             'description': self._unittest_data.get('description', 'Mock description'),
             'repo_base_url_template': self._unittest_data.get('repo_base_url_template', None),
             'repo_clone_url_template': self._unittest_data.get('repo_clone_url_template', None),
-            'repo_browse_url_template': self._unittest_data.get('repo_clone_url_template', None),
+            'repo_browse_url_template': self._unittest_data.get('repo_browse_url_template', None),
             'published_at': self._unittest_data.get(
                 'published_at',
                 datetime.datetime(year=2020, month=1, day=1,
@@ -179,7 +179,7 @@ class MockModuleProvider(ModuleProvider):
             'verified': self._unittest_data.get('verified', False),
             'repo_base_url_template': self._unittest_data.get('repo_base_url_template', None),
             'repo_clone_url_template': self._unittest_data.get('repo_clone_url_template', None),
-            'repo_browse_url_template': self._unittest_data.get('repo_clone_url_template', None),
+            'repo_browse_url_template': self._unittest_data.get('repo_browse_url_template', None),
             'git_provider_id': self._unittest_data.get('git_provider_id', None),
             'git_tag_format': self._unittest_data.get('git_tag_format', None)
         }
