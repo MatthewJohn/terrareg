@@ -95,6 +95,33 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
 
         assert res.status_code == 200
 
+    @setup_test_data()
+    def test_existing_module_provider_with_no_git_provider_or_custom_urls_and_only_beta_version(self, client, mocked_server_namespace_fixture):
+        """Test endpoint with module provider that is:
+         - no custom repos URLS
+         - no git provider
+         - only has beta version published
+        """
+        res = client.get('/v1/terrareg/modules/testnamespace/onlybeta/testprovider')
+
+        assert res.json == {
+            'id': 'testnamespace/onlybeta/testprovider',
+            'namespace': 'testnamespace',
+            'name': 'onlybeta',
+            'provider': 'testprovider',
+            'verified': False,
+            'trusted': False,
+            'git_provider_id': None,
+            'git_tag_format': '{version}',
+            'module_provider_id': 'testnamespace/onlybeta/testprovider',
+            'repo_base_url_template': None,
+            'repo_browse_url_template': None,
+            'repo_clone_url_template': None,
+            'versions': ['2.2.4-beta']
+        }
+
+        assert res.status_code == 200
+
     def test_non_existent_module_provider(self, client, mocked_server_namespace_fixture):
         """Test endpoint with non-existent module"""
 

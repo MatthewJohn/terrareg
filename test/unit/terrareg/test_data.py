@@ -51,7 +51,11 @@ test_data_full = {
         'modulenorepourl': {'testprovider': {
             'id': 5,
             'latest_version': '2.2.4',
-            'versions': {'2.2.4': {}}
+            'versions': {'2.2.4': {'published': True}}
+        }},
+        'onlybeta': {'testprovider': {
+            'id': 18,
+            'versions': {'2.2.4-beta': {'published': True, 'beta': True}}
         }},
         'modulewithrepourl': {'testprovider': {
             'id': 6,
