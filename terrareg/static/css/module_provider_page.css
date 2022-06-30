@@ -10,6 +10,6 @@
 #module-tab-readme h1, h2, h3, h4 {
     margin-top: 20px;
 }
-#analytics-table, #usage-builder-table {
+.module-provider-tab-content-table {
     width: 100%;
 }
