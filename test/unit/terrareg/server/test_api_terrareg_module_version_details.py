@@ -64,7 +64,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'repo_base_url_template': None,
             'repo_browse_url_template': None,
             'repo_clone_url_template': None,
-            'versions': [],
+            'versions': ['2.2.2'],
             'description': 'Mock description',
             'display_source_url': 'https://localhost.com/moduleextraction/gitextraction-usesgitproviderwithversions/browse/v2.2.2/',
             'downloads': 0,
