@@ -28,7 +28,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
                 'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],
                 'provider_dependencies': [], 'resources': []
             },
-            'submodules': [], 'versions': ['1.0.0'],
+            'submodules': [], 'versions': ['1.0.0'], 'providers': ['testprovider'],
             'display_source_url': None,
             'git_provider_id': None,
             'git_tag_format': '{version}',
@@ -83,7 +83,16 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'source': 'https://localhost.com/moduleextraction/gitextraction-usesgitproviderwithversions',
             'submodules': [],
             'terraform_example_version_string': '2.2.2',
-            'version': '2.2.2'
+            'version': '2.2.2',
+            'providers': [
+                'staticrepourl',
+                'placeholdercloneurl',
+                'usesgitprovider',
+                'usesgitproviderwithversions',
+                'nogittagformat',
+                'complexgittagformat',
+                'norepourl'
+            ]
         }
 
         assert res.status_code == 200
@@ -110,6 +119,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'repo_browse_url_template': 'https://custom-localhost.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
             'repo_clone_url_template': 'ssh://custom-localhost.com/{namespace}/{module}-{provider}',
             'versions': [],
+            'providers': ['testprovider'],
             'description': 'Mock description',
             'display_source_url': 'https://custom-localhost.com/testnamespace/modulenotpublished-testprovider/browse/10.2.1/',
             'downloads': 0,
@@ -161,6 +171,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'downloads': 0,
             'internal': False,
             'owner': 'Mock Owner',
+            'providers': ['testprovider'],
             'published_at': '2020-01-01T23:18:12',
             'published_at_display': 'January 01, 2020',
             'root': {'dependencies': [],
