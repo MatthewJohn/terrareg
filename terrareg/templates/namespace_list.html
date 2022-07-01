@@ -10,36 +10,6 @@
 </nav>
 
 <script>
-    let currentSearchMeta = undefined;
-
-    function prevResults() {
-        if (currentSearchMeta && currentSearchMeta.prev_offset !== undefined) {
-            getResults(currentSearchMeta.prev_offset);
-        }
-    }
-    function nextResults() {
-        if (currentSearchMeta && currentSearchMeta.next_offset !== undefined) {
-            getResults(currentSearchMeta.next_offset);
-        }
-    }
-    function getResults(offset) {
-        $.get(`/v1/modules/{{ namespace }}?offset=${offset}`, function(data) {
-            // Update current meta data
-            currentSearchMeta = data.meta;
-
-            // Clear any existing modules
-            $('#module-list-table').html('');
-
-            // Disable/activate next/previous buttons
-            $('#prevButton').prop('disabled', (data.meta.prev_offset === undefined));
-            $('#nextButton').prop('disabled', (data.meta.next_offset === undefined));
-
-            // Add each of the modules to the page
-            $.each(data.modules, (itx, module_data) => {
-                createSearchResultCard('module-list-table', module_data);
-            });
-        });
-    }
     $(document).ready(function() {
         $.get('/v1/terrareg/namespaces', (data) => {
             if (data.length == 0) {
