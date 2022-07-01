@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 base_url=$1
 
 namespace=$2
@@ -19,7 +21,9 @@ echo Uploading module
 curl -X POST \
     "${base_url}/v1/terrareg/modules/${namespace}/${name}/${provider}/${version}/upload" \
     -F file="@${file}"
+
 echo Upload complete
+
 echo 
 echo "Would you like to 'publish' the module version? (Y/N)"
 read publish
