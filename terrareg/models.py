@@ -392,6 +392,12 @@ class ProviderLogo:
             'tos': ' ',
             'alt': 'Null Provider',
             'link': '#'
+        },
+        'datadog': {
+            'source': '/static/images/dd_logo_v_rgb.png',
+            'tos': 'All \'Datadog\' modules are designed to work with Datadog. Modules are in no way affiliated with nor endorsed by Datadog Inc.',
+            'alt': 'Works with Datadog',
+            'link': 'https://www.datadoghq.com/'
         }
     }
 

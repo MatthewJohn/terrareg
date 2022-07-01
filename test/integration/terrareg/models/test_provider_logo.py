@@ -10,6 +10,7 @@ class TestProviderLogo(TerraregIntegrationTest):
         ('aws', True),
         ('gcp', True),
         ('null', True),
+        ('datadog', True),
         ('doesnotexist', False),
     ])
     def test_logo_exists(self, provider_name, expect_exists):
@@ -24,6 +25,7 @@ class TestProviderLogo(TerraregIntegrationTest):
         ('aws', 'Amazon Web Services, AWS, the Powered by AWS logo are trademarks of Amazon.com, Inc. or its affiliates.'),
         ('gcp', 'Google Cloud and the Google Cloud logo are trademarks of Google LLC.'),
         ('null', ' '),
+        ('datadog', 'All \'Datadog\' modules are designed to work with Datadog. Modules are in no way affiliated with nor endorsed by Datadog Inc.'),
         ('doesnotexist', None),
     ])
     def test_logo_tos(self, provider_name, expected_tos):
@@ -38,6 +40,7 @@ class TestProviderLogo(TerraregIntegrationTest):
         ('aws', 'Powered by AWS Cloud Computing'),
         ('gcp', 'Google Cloud'),
         ('null', 'Null Provider'),
+        ('datadog', 'Works with Datadog'),
         ('doesnotexist', None),
     ])
     def test_logo_alt(self, provider_name, expected_alt):
@@ -52,6 +55,7 @@ class TestProviderLogo(TerraregIntegrationTest):
         ('aws', 'https://aws.amazon.com/'),
         ('gcp', 'https://cloud.google.com/'),
         ('null', '#'),
+        ('datadog', 'https://www.datadoghq.com/'),
         ('doesnotexist', None),
     ])
     def test_logo_link(self, provider_name, expected_link):
@@ -66,6 +70,7 @@ class TestProviderLogo(TerraregIntegrationTest):
         ('aws', '/static/images/PB_AWS_logo_RGB_stacked.547f032d90171cdea4dd90c258f47373c5573db5.png'),
         ('gcp', '/static/images/gcp.png'),
         ('null', '/static/images/null.png'),
+        ('datadog', '/static/images/dd_logo_v_rgb.png'),
         ('doesnotexist', None),
     ])
     def test_logo_source(self, provider_name, expected_source):
