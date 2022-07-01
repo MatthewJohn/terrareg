@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.17.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.17.1...v2.17.2) (2022-07-01)
+
+
+### Bug Fixes
+
+* Fix warning around passing a query object into value list of _IN in analytics filter query. ([992e526](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/992e526461112535f8fdece056ce1cac36980f5d)), closes [#156](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/156)
+
 ## [2.17.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.17.0...v2.17.1) (2022-07-01)
 
 
