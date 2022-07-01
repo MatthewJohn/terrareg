@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.17.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.16.0...v2.17.0) (2022-07-01)
+
+
+### Features
+
+* Add Datadog logo to available provider logos. ([556daa7](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/556daa7a6a6971a52238b369b20c607ece469c05)), closes [#148](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/148)
+
 # [2.16.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.15.0...v2.16.0) (2022-06-30)
 
 
