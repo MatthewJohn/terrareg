@@ -57,22 +57,6 @@ integration-tests:
     reports:
       cobertura: coverage.xml
 
-selenium-tests:
-  stage: test
-  extends: .test_image
-  needs:
-    - mysql-integration-tests
-  script:
-    # Perform database migration
-    - alembic upgrade head
-    # Run integration tests
-    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose ./test/selenium
-    - coverage report
-    - coverage xml
-  artifacts:
-    reports:
-      cobertura: coverage.xml
-
 mysql-integration-tests:
   stage: test
   extends: .test_image
@@ -91,6 +75,46 @@ mysql-integration-tests:
     - alembic upgrade head
     # Run integration tests
     - coverage run -m pytest --verbose ./test/integration
+    - coverage report
+    - coverage xml
+  artifacts:
+    reports:
+      cobertura: coverage.xml
+
+selenium-tests:
+  stage: test
+  extends: .test_image
+  needs:
+    - mysql-integration-tests
+  script:
+    # Perform database migration
+    - alembic upgrade head
+    # Run integration tests
+    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose ./test/selenium
+    - coverage report
+    - coverage xml
+  artifacts:
+    reports:
+      cobertura: coverage.xml
+
+mysql-selenium-tests:
+  stage: test
+  extends: .test_image
+  needs:
+    - selenium-tests
+  services:
+    - name: fare-docker-reg.dock.studios:5000/mysql:8.0.29
+      alias: mysql
+  variables:
+    # Set database url for integration tests
+    INTEGRATION_DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
+    # Set datbase URL for schema migration
+    DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
+  script:
+    # Perform database migration
+    - alembic upgrade head
+    # Run selenium tests
+    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose ./test/selenium
     - coverage report
     - coverage xml
   artifacts:
