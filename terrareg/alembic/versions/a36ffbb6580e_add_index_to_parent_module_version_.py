@@ -23,7 +23,7 @@ def upgrade():
         with op.batch_alter_table('analytics', schema=None) as batch_op:
             batch_op.drop_index('fk_analytics_parent_module_version_module_version_id')
             batch_op.create_index(op.f('ix_analytics_parent_module_version'), ['parent_module_version'], unique=False)
-    except sa.exc.OperationalError:
+    except (sa.exc.OperationalError, sa.exc.ProgrammingError):
         # For sqlite, the index would no longer exist, so simply create without deleting
         # the original
         with op.batch_alter_table('analytics', schema=None) as batch_op:
