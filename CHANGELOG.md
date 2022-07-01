@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.17.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.17.3...v2.17.4) (2022-07-01)
+
+
+### Bug Fixes
+
+* **db:** Fix DB migration error catching when index does not exist before attempting to delete it ([3df8214](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3df82145c84f0a9b4e6965839375f0abaf213026)), closes [#169](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/169)
+* **db:** Fix SQL parameter binding in DB migration ef71db86c2a1 ([8fd378d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8fd378dafef61945671836cd707dd5a838a824b2)), closes [#168](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/168)
+
 ## [2.17.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.17.2...v2.17.3) (2022-07-01)
 
 
