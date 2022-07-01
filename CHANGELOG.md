@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.17.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.17.2...v2.17.3) (2022-07-01)
+
+
+### Bug Fixes
+
+* Fix SQL error thrown in namespace list page (and Terrareg namespace list API endpoint), when using MySQL. ([e318ef0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e318ef068aa0b922f17c6106050df855707e2814)), closes [#166](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/166)
+
 ## [2.17.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.17.1...v2.17.2) (2022-07-01)
 
 
