@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.17.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.17.0...v2.17.1) (2022-07-01)
+
+
+### Bug Fixes
+
+* **docs:** Correct/update information in README about getting starting: ([c8a5879](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c8a58795921e3dca1754f4ccc0ce750f992fa7e4)), closes [#164](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/164)
+* **docs:** Update example command to upload module in README, as the namespace was too short ([f53408d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f53408d8f061b331494b92bc4372e88530bf03fe)), closes [#164](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/164)
+
 # [2.17.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.16.0...v2.17.0) (2022-07-01)
 
 
