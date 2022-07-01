@@ -108,6 +108,12 @@ integration_test_data = {
                     '1.0.0': {'published': True}
                 }
             },
+            'datadog': {
+                'id': 59,
+                'versions': {
+                    '1.0.0': {'published': True}
+                }
+            },
             'doesnotexist': {
                 'id': 24,
                 'versions': {
