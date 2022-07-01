@@ -49,11 +49,17 @@ def upgrade():
 
     # Iterate through all the module providers and update the latest_version_id column
     for module_provider_id in latest_versions:
-        c.execute("""
-        UPDATE module_provider
-        SET latest_version_id=?
-        WHERE id=?
-        """, (latest_versions[module_provider_id][0], module_provider_id))
+        c.execute(
+            sa.sql.text(
+                """
+                UPDATE module_provider
+                SET latest_version_id=:latest_version_id
+                WHERE id=:module_provider_id
+                """
+            ),
+            latest_version_id=latest_versions[module_provider_id][0],
+            module_provider_id=module_provider_id
+        )
 
     # Add internal column, allowing nullable value
     op.add_column('module_version', sa.Column('internal', sa.BOOLEAN(), nullable=True))
