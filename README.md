@@ -16,17 +16,42 @@ Provides features to aid usage and discovery of modules:
 
 ## Getting started
 
-Install depdencies:
+### Building locally and running
 
+    # Clone the repository
+    git clone https://github.com/matthewJohn/terrareg
+    cd terrareg
+
+    # Optionally create a virtualenv
+    virtualenv -ppython3 venv
+    . venv/bin/activate
+
+    # Install depdencies:
     pip install -r requirements.txt
 
-Initialise database and start server:
-
+    # Initialise database and start server:
     alembic upgrade head
+
+    # Set a secret key and admin token
+    export ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword
+    export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex())')
+
+    # Run the server
     python ./terrareg.py
 
+The site can be accessed at http://localhost:5000
 
-Upload a terraform module:
+## Running with docker
+
+    docker build . -t terrareg:latest
+
+    export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex())')
+
+    docker run -p 5000:5000 -e MIGRATE_DATABASE=True -e SECRET_KEY=$SECRET_KEY -e ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword terrareg:latest
+
+The site can be accessed at http://localhost:5000
+
+### Upload a terraform module:
 
     terrareg_root=$PWD
     
@@ -36,19 +61,22 @@ Upload a terraform module:
     echo '{ "description": "My first module", "owner": "ME!", "source": "https://github.com/me/my-tf-module" }' > ./terrareg.json
     
     # Zip up module
-    zip -r * ../my-tf-module.zip
+    zip -r ../my-tf-module.zip *
     
     # Upload to terrareg
-    bash $terrareg_root/scripts/upload_module.sh http://localhost:5000 me my-tf-module aws 1.0.0 source/of/my/my-tf-module.zip
+    bash $terrareg_root/scripts/upload_module.sh http://localhost:5000 me my-tf-module aws 1.0.0 ../my-tf-module.zip
+
+  Navigate to http://localhost:5000 to get started, or http://localhost/modules/me/my-tf-module to see the uploaded example!
 
 
-Navigate to http://localhost:5000 to get started, or http://localhost/modules/me/my-tf-module to see the uploaded example!
+ * Create a module using git:
+   * Goto https://local-dev.dock.studio/
+   * Login, using the button in the top-right hand corner
+   * Goto Modules -> Create (https://local-dev.dock.studio/create-module)
+   * Fill in the details for your module and 'Create'
+   * Use the 'Manually index version' form of your module, filling out the verison and select 'Publish' and then press 'Index Version'
 
-## Running with docker
-
-    docker build . -t terrareg:latest
-    docker run -p 5000:5000 -e MIGRATE_DATABASE=True terrareg:latest
-
+**NOTE:** To use modules from the registry in Terraform, a valid SSL certificate must be used. Terraform will not work if you supply `http://` as a protocol for the module URL, as it will treat this as a direct HTTP download, rather than treating it as a registry.
 
 ## Docker environment variables
 
