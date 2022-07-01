@@ -44,9 +44,9 @@ class SeleniumTest(BaseTest):
         """Return path of database file to use."""
         return 'temp-selenium.db'
 
-    def get_url(self, path):
+    def get_url(self, path, https=False):
         """Return full URL to perform selenium request."""
-        return 'http://localhost:{port}{path}'.format(port=self.SERVER.port, path=path)
+        return f'http{"s" if https else ""}://localhost:{self.SERVER.port}{path}'
 
     @classmethod
     def setup_class(cls):
@@ -111,7 +111,7 @@ class SeleniumTest(BaseTest):
                     print('Failed asserting that {} == {}'.format(actual, value))
                     raise
 
-    def wait_for_element(self, by, val, parent=None):
+    def wait_for_element(self, by, val, parent=None, ensure_displayed=True):
         """Attempt to find element and wait, if it does not exist yet."""
         if parent is None:
             parent = self.selenium_instance
@@ -120,7 +120,10 @@ class SeleniumTest(BaseTest):
         for itx in range(max_attempts):
             try:
                 # Attempt to find element
-                return parent.find_element(by, val)
+                element = parent.find_element(by, val)
+                if ensure_displayed and not element.is_displayed():
+                    raise selenium.common.exceptions.NoSuchElementException('Element is not displayed')
+                return element
             except selenium.common.exceptions.NoSuchElementException:
                 # If it fails the assertion,
                 # sleep and retry until last attmept

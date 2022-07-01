@@ -154,3 +154,9 @@ class GitCloneError(TerraregError):
     """An error occurred during git clone."""
 
     pass
+
+
+class InvalidBooleanConfigurationError(TerraregError):
+    """Invalid boolean environment variable."""
+
+    pass

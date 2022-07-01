@@ -59,9 +59,19 @@ def setup_test_data(test_data=None):
 class MockGitProvider(GitProvider):
     """Mocked GitProvider."""
 
+    @staticmethod
+    def get_all():
+        """Return all mocked git provider."""
+        return [
+            MockGitProvider(git_provider_id)
+            for git_provider_id in TEST_GIT_PROVIDER_DATA
+        ]
+
     def _get_db_row(self):
         """Return mocked data for git provider."""
-        return TEST_GIT_PROVIDER_DATA.get(self._id, None)
+        data = TEST_GIT_PROVIDER_DATA.get(self._id, None)
+        data['id'] = self._id
+        return data
 
 class MockModule(Module):
     """Mocked module."""
@@ -106,7 +116,7 @@ class MockModuleVersion(ModuleVersion):
             'description': self._unittest_data.get('description', 'Mock description'),
             'repo_base_url_template': self._unittest_data.get('repo_base_url_template', None),
             'repo_clone_url_template': self._unittest_data.get('repo_clone_url_template', None),
-            'repo_browse_url_template': self._unittest_data.get('repo_clone_url_template', None),
+            'repo_browse_url_template': self._unittest_data.get('repo_browse_url_template', None),
             'published_at': self._unittest_data.get(
                 'published_at',
                 datetime.datetime(year=2020, month=1, day=1,
@@ -118,7 +128,9 @@ class MockModuleVersion(ModuleVersion):
                 '{"inputs": [], "outputs": [], "providers": [], "resources": []}'
             )),
             'variable_template': Database.encode_blob(self._unittest_data.get('variable_template', '{}')),
-            'internal': self._unittest_data.get('internal', False)
+            'internal': self._unittest_data.get('internal', False),
+            'published': self._unittest_data.get('published', False),
+            'beta': self._unittest_data.get('beta', False)
         }
 
 
@@ -167,7 +179,7 @@ class MockModuleProvider(ModuleProvider):
             'verified': self._unittest_data.get('verified', False),
             'repo_base_url_template': self._unittest_data.get('repo_base_url_template', None),
             'repo_clone_url_template': self._unittest_data.get('repo_clone_url_template', None),
-            'repo_browse_url_template': self._unittest_data.get('repo_clone_url_template', None),
+            'repo_browse_url_template': self._unittest_data.get('repo_browse_url_template', None),
             'git_provider_id': self._unittest_data.get('git_provider_id', None),
             'git_tag_format': self._unittest_data.get('git_tag_format', None)
         }
@@ -178,10 +190,17 @@ class MockModuleProvider(ModuleProvider):
             return MockModuleVersion.get(module_provider=self, version=self._unittest_data['latest_version'])
         return None
 
-    def get_versions(self):
+    def get_versions(self, include_beta=True, include_unpublished=False):
         """Return all MockModuleVersion objects for ModuleProvider."""
-        return [MockModuleVersion(module_provider=self, version=version)
-                for version in self._unittest_data['versions']]
+        versions = []
+        for version in self._unittest_data.get('versions', {}):
+            version_obj = MockModuleVersion(module_provider=self, version=version)
+            if version_obj.beta and not include_beta:
+                continue
+            if not version_obj.published and not include_unpublished:
+                continue
+            versions.append(version_obj)
+        return versions
 
 class MockNamespace(Namespace):
     """Mocked namespace."""
@@ -192,9 +211,28 @@ class MockNamespace(Namespace):
         return len(TEST_MODULE_DATA)
 
     @staticmethod
-    def get_all():
+    def get_all(only_published=False):
         """Return all namespaces."""
-        return TEST_MODULE_DATA.keys()
+        valid_namespaces = []
+        if only_published:
+            # Iterate through all module versions of each namespace
+            # to determine if the namespace has a published version
+            for namespace_name in TEST_MODULE_DATA.keys():
+                namespace = MockNamespace(namespace_name)
+                for module in namespace.get_all_modules():
+                    for provider in module.get_providers():
+                        for version in provider.get_versions():
+                            if (namespace_name not in valid_namespaces and
+                                    version.published and
+                                    version.beta == False):
+                                valid_namespaces.append(namespace_name)
+        else:
+            valid_namespaces = TEST_MODULE_DATA.keys()
+
+        return [
+            MockNamespace(namespace)
+            for namespace in valid_namespaces
+        ]
 
     def get_all_modules(self):
         """Return all modules for namespace."""

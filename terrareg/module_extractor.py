@@ -163,8 +163,8 @@ class ModuleExtractor:
         readme_content = self._get_readme_content(submodule_dir)
 
         submodule.update_attributes(
-            readme_content=Database.encode_blob(readme_content),
-            module_details=Database.encode_blob(json.dumps(tf_docs))
+            readme_content=readme_content,
+            module_details=json.dumps(tf_docs)
         )
 
         if isinstance(submodule, Example):
@@ -187,7 +187,7 @@ class ModuleExtractor:
             # Create example file and update content attribute
             example_file = ExampleFile.create(example=example, path=tf_file)
             example_file.update_attributes(
-                content=Database.encode_blob(content)
+                content=content
             )
 
     def _scan_submodules(self, subdirectory: str, submodule_class: Type[BaseSubmodule]):

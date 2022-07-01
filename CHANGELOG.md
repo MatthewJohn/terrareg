@@ -1,5 +1,67 @@
 # Changelog
 
+# [2.16.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.15.0...v2.16.0) (2022-06-30)
+
+
+### Bug Fixes
+
+* Handle None value for published date in functions that return formatted versions of published date ([b53a447](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b53a4475f18c0986aa05f72bfd1b580d7ac5e4a0)), closes [#12](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/12)
+
+
+### Features
+
+* Convert module provider, version, submodule and example page to static page using javascript and APIs. ([598fc25](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/598fc251b08972c106599e7544d97c12981da213)), closes [#12](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/12)
+
+# [2.15.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.14.0...v2.15.0) (2022-06-25)
+
+
+### Bug Fixes
+
+* Correct name of environment variable that is used to set EXAMPLES_DIRECTORY config ([8186f40](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8186f408f72039d4e7c8cd89ca27e14320e016ea)), closes [#141](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/141)
+* Fix ALLOW_UNIDENTIFIED_DOWNLOADS configuration to respect environment variable, rather than always returning False ([c8b895e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c8b895e4ddf4a4db8b74059fdd38a4296c71499f)), closes [#141](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/141)
+* Fix environment variable used to obtain API keys to publishing module versions ([d5d8f79](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/d5d8f796f61fef9b3d5d7324d32aaecee562ff2b)), closes [#141](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/141)
+* Hide 'publish' button from integrations tab of modules page if publish API keys have been enabled. ([8757f73](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8757f730c298f27574b5cd7e61c4f34002a5b560)), closes [#141](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/141)
+
+
+### Features
+
+* Use common method for obtaining boolean environment variables configs. ([f4d1d81](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f4d1d81cc97cb1e6ecaada237b5552acba94df3f)), closes [#141](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/141)
+
+# [2.14.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.13.1...v2.14.0) (2022-06-25)
+
+
+### Bug Fixes
+
+* Update analaytics foreign key to module version to perform no action when module version is removed. ([757b500](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/757b500efa9f3b2732b7f0c71ca2aea28c1a157f)), closes [#153](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/153)
+
+
+### Features
+
+* Update module version deletion to remove any analytics and update re-creation of module version to migrate analytics to new module version ID ([2ee18e9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2ee18e9665750bd845cfee1e5346e786ea7a1b47)), closes [#153](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/153)
+
+## [2.13.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.13.0...v2.13.1) (2022-06-25)
+
+
+### Bug Fixes
+
+* Update basic usage and usage builder rendered terraform to use 2-space indentation, rather than 4, as per terraform best practices ([2c93eab](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2c93eab105bbbd907c79fc3fc3510a073e4c7369)), closes [#151](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/151)
+
+# [2.13.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.12.1...v2.13.0) (2022-06-25)
+
+
+### Bug Fixes
+
+* Require a value for the 'Git tag format' field and reword the description in the module creation page. ([9afb2b4](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9afb2b43bc24f114b5f6b04b4bd3f3f233ae1784)), closes [#152](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/152)
+
+
+### Features
+
+* Add ability to delete module version in UI from settings tab of module provider ([c88c24f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c88c24f6a9f1cf9df64360462f89c19892458c83)), closes [#145](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/145)
+* Add API endpoint to delete module version ([9cc5256](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9cc5256f7b6cecd52820fa408af6d075269e3fd7)), closes [#145](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/145)
+* Automatically hide the custom git/browse URL inputs in create module page when selecting a none-custom git provider ([0d5a148](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0d5a148a5be0d93bcd7b90df1e53c54b911a8294)), closes [#152](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/152)
+* Move main.tf to top of list of example files in UI. ([5a4faa2](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5a4faa2b9e6b9e28965f86983164e8e38c189687))
+* Update example UI page to default to show example files ([ffe1566](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ffe1566821ebfb1a465fabc1e8f88dc5d4394db6)), closes [#146](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/146)
+
 ## [2.12.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.12.0...v2.12.1) (2022-06-15)
 
 
