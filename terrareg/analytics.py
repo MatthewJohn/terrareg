@@ -194,7 +194,7 @@ class AnalyticsEngine:
         id_subquery = id_subquery.group_by(
             db.analytics.c.analytics_token,
             db.analytics.c.environment
-        ).subquery()
+        )
 
         # Select all required fields for the given IDs
         # obtained from subquery.
