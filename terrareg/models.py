@@ -232,9 +232,9 @@ class Namespace(object):
         modules_query = modules_query.subquery()
 
         namespace_query = sqlalchemy.select(
-            db.module_provider.c.namespace
+            modules_query.c.namespace
         ).select_from(modules_query).group_by(
-            db.module_provider.c.namespace
+            modules_query.c.namespace
         )
 
         with db.get_connection() as conn:
