@@ -7,3 +7,11 @@
 .default-hidden {
     display: none !important;
 }
+
+.module-provider-card-provider-text {
+    vertical-align: middle;
+}
+.module-provider-card-provider-text > button {
+    height: 100%;
+    vertical-align: middle;
+}
