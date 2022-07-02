@@ -7,6 +7,7 @@ import logging
 import threading
 from time import sleep
 from unittest.mock import patch
+from attr import attrib
 from flask import request
 
 
@@ -62,11 +63,32 @@ class SeleniumTest(BaseTest):
         cls.selenium_instance.delete_all_cookies()
         cls.selenium_instance.implicitly_wait(1)
 
-        cls.SERVER.port = random.randint(5000, 6000)
-
         log = logging.getLogger('werkzeug')
         if not cls.RUN_INTERACTIVELY:
             log.disabled = True
+
+        cls._setup_server()
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown display instance."""
+        cls.selenium_instance.quit()
+        if not cls.RUN_INTERACTIVELY:
+            cls.display_instance.stop()
+        # Shutdown server
+        cls._teardown_server()
+        super(SeleniumTest, cls).teardown_class()
+
+    @classmethod
+    def restart_server(cls):
+        """Restart server. This can be used when mocks are modified."""
+        cls._teardown_server()
+        cls._setup_server()
+
+    @classmethod
+    def _setup_server(cls):
+        """Setup web server."""
+        cls.SERVER.port = random.randint(5000, 6000)
 
         # Replicate APP key setting from Server.run
         cls.SERVER._app.secret_key = terrareg.config.Config().SECRET_KEY
@@ -81,15 +103,10 @@ class SeleniumTest(BaseTest):
         cls._server_thread.start()
 
     @classmethod
-    def teardown_class(cls):
-        """Teardown display instance."""
-        cls.selenium_instance.quit()
-        if not cls.RUN_INTERACTIVELY:
-            cls.display_instance.stop()
-        # Shutdown server
+    def _teardown_server(cls):
+        """Stop web server."""
         cls._werzeug_server.shutdown()
         cls._server_thread.join()
-        super(SeleniumTest, cls).teardown_class()
 
     def assert_equals(self, callback, value):
         """Attempt to verify assertion and retry on failure."""
@@ -144,3 +161,41 @@ class SeleniumTest(BaseTest):
 
         # Wait for homepage to load
         self.wait_for_element(By.ID, 'title')
+
+    def update_mock(self, *args, **kwargs):
+        """Return context-manager instance for handling updating of mock attributes during selenium test."""
+        return SeleniumMockUpdater(self, *args, **kwargs)
+
+
+class SeleniumMockUpdater:
+    """"Provide context-manager to update mock within selenium test"""
+
+    def __init__(self, test: SeleniumTest, mock: object, attribute: str, new_value):
+        """Store member variables for updating mock"""
+        self._test = test
+        self._mock = mock
+        self._attribute = attribute
+        self._new_value = new_value
+        self._original_value = None
+
+    def __enter__(self):
+        """On enter, store current mock value, update mock and restart server"""
+        self._original_value = getattr(self._mock, self._attribute)
+        setattr(self._mock, self._attribute, self._new_value)
+        # Stop/start patch, this is required when performing 
+        # something like mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', []),
+        # as the new value is pushed straight to the target, so there is no direct
+        # reference to the new target value in the mock.
+        self._restart_mock()
+        self._test.restart_server()
+
+    def __exit__(self, *args, **kwargs):
+        """On exit, set original mock value and restart server"""
+        setattr(self._mock, self._attribute, self._original_value)
+        self._restart_mock()
+        self._test.restart_server()
+
+    def _restart_mock(self):
+        """Restar the mock."""
+        self._mock.stop()
+        self._mock.start()
