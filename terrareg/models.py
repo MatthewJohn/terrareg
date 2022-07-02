@@ -1776,7 +1776,17 @@ class ExampleFile:
     def get_by_path(module_version: ModuleVersion, file_path: str):
         """Return example file object by file path and module version"""
         db = Database.get()
-        select = db.example_file.select().where(
+        select = sqlalchemy.select(
+            db.example_file.c.submodule_id
+        ).select_from(
+            db.example_file
+        ).join(
+            db.sub_module,
+            db.example_file.c.submodule_id == db.sub_module.c.id
+        ).join(
+            db.module_version,
+            db.sub_module.c.parent_module_version == db.module_version.c.id
+        ).where(
             db.module_version.c.id == module_version.pk,
             db.example_file.c.path == file_path
         )
