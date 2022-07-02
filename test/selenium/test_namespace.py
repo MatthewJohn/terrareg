@@ -15,22 +15,12 @@ class TestNamespace(SeleniumTest):
     @classmethod
     def setup_class(cls):
         """Setup required mocks."""
-        cls._mocks = []
-        cls._mocks.append(mock.patch('terrareg.analytics.AnalyticsEngine.get_total_downloads', return_value=2005))
-        cls._mocks.append(mock.patch('terrareg.config.Config.CONTRIBUTED_NAMESPACE_LABEL', 'unittest contributed module'))
-        cls._mocks.append(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACE_LABEL', 'unittest trusted namespace'))
-        cls._mocks.append(mock.patch('terrareg.config.Config.VERIFIED_MODULE_LABEL', 'unittest verified label'))
-        cls._mocks.append(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['trustednamespace']))
-        for mock_ in cls._mocks:
-            mock_.start()
+        cls.register_patch(mock.patch('terrareg.analytics.AnalyticsEngine.get_total_downloads', return_value=2005))
+        cls.register_patch(mock.patch('terrareg.config.Config.CONTRIBUTED_NAMESPACE_LABEL', 'unittest contributed module'))
+        cls.register_patch(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACE_LABEL', 'unittest trusted namespace'))
+        cls.register_patch(mock.patch('terrareg.config.Config.VERIFIED_MODULE_LABEL', 'unittest verified label'))
+        cls.register_patch(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['trustednamespace']))
         super(TestNamespace, cls).setup_class()
-
-    @classmethod
-    def teardown_class(cls):
-        """Setup required mocks."""
-        for mock_ in cls._mocks:
-            mock_.stop()
-        super(TestNamespace, cls).teardown_class()
 
     def test_provider_logos(self):
         """Check provider logos are displayed correctly."""

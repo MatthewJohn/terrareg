@@ -1,4 +1,5 @@
 
+from time import sleep
 from unittest import mock
 
 import pytest
@@ -9,25 +10,22 @@ from test.selenium import SeleniumTest
 from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
 
 class TestModuleProvider(SeleniumTest):
-    """Test homepage."""
+    """Test module provider page."""
 
     @classmethod
     def setup_class(cls):
         """Setup required mocks."""
-        cls._mocks = [
-            mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'),
-            mock.patch('terrareg.config.Config.SECRET_KEY', '354867a669ef58d17d0513a0f3d02f4403354915139422a8931661a3dbccdffe')
-        ]
-        for mock_ in cls._mocks:
-            mock_.start()
-        super(TestModuleProvider, cls).setup_class()
+        cls._api_version_create_mock = mock.Mock(return_value={'status': 'Success'})
+        cls._api_version_publish_mock = mock.Mock(return_value={'status': 'Success'})
+        cls._config_publish_api_keys_mock = mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', [])
 
-    @classmethod
-    def teardown_class(cls):
-        """Setup required mocks."""
-        for mock_ in cls._mocks:
-            mock_.stop()
-        super(TestModuleProvider, cls).teardown_class()
+        cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
+        cls.register_patch(mock.patch('terrareg.config.Config.SECRET_KEY', '354867a669ef58d17d0513a0f3d02f4403354915139422a8931661a3dbccdffe'))
+        cls.register_patch(mock.patch('terrareg.server.ApiModuleVersionCreate._post', cls._api_version_create_mock))
+        cls.register_patch(mock.patch('terrareg.server.ApiTerraregModuleVersionPublish._post', cls._api_version_publish_mock))
+        cls.register_patch(cls._config_publish_api_keys_mock)
+
+        super(TestModuleProvider, cls).setup_class()
 
     def test_module_without_versions(self):
         """Test page functionality on a module without published versions."""
@@ -378,6 +376,193 @@ class TestModuleProvider(SeleniumTest):
             # Check columns of row match expected text
             row_text = [col.text for col in row_columns]
             assert row_text == expected_row
+
+    def test_integration_tab_index_version(self):
+        """Test indexing a new module version from the integration tab"""
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+        # Wait for integrations tab button to be visible
+        integrations_tab_button = self.wait_for_element(By.ID, 'module-tab-link-integrations')
+
+        # Ensure the integrations tab content is not visible
+        assert self.wait_for_element(By.ID, 'module-tab-integrations', ensure_displayed=False).is_displayed() == False
+
+        # Click on integrations tab
+        integrations_tab_button.click()
+
+        integrations_tab_content = self.selenium_instance.find_element(By.ID, 'module-tab-integrations')
+
+        # Ensure publish button exists and is not checked
+        assert integrations_tab_content.find_element(By.ID, 'indexModuleVersionPublish').is_selected() == False
+
+        # Type version number and submit form
+        integrations_tab_content.find_element(By.ID, 'indexModuleVersion').send_keys('5.2.1')
+        integrations_tab_content.find_element(By.ID, 'integration-index-version-button').click()
+
+        # Wait for success message to be displayed
+        success_message = self.wait_for_element(By.ID, 'index-version-success', parent=integrations_tab_content)
+        self.assert_equals(lambda: success_message.is_displayed(), True)
+        self.assert_equals(lambda: success_message.text, 'Successfully indexed version')
+
+        # Check error message is not displayed
+        error_message = integrations_tab_content.find_element(By.ID, 'index-version-error')
+        assert error_message.is_displayed() == False
+
+        # Ensure version create endpoint was called and publish was not
+        self._api_version_create_mock.assert_called_once_with(namespace='moduledetails', name='fullypopulated', provider='testprovider', version='5.2.1')
+        self._api_version_publish_mock.assert_not_called()
+
+    def test_integration_tab_index_version_and_publish(self):
+        """Test indexing and publishing a new module version from the integration tab"""
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+        # Wait for integrations tab button to be visible
+        integrations_tab_button = self.wait_for_element(By.ID, 'module-tab-link-integrations')
+
+        # Ensure the integrations tab content is not visible
+        assert self.wait_for_element(By.ID, 'module-tab-integrations', ensure_displayed=False).is_displayed() == False
+
+        # Click on integrations tab
+        integrations_tab_button.click()
+
+        integrations_tab_content = self.selenium_instance.find_element(By.ID, 'module-tab-integrations')
+
+        # Ensure publish button exists and is not checked
+        publish_checkbox = integrations_tab_content.find_element(By.ID, 'indexModuleVersionPublish')
+        assert publish_checkbox.is_selected() == False
+
+        # Check publish checkbox
+        publish_checkbox.click()
+
+        # Type version number and submit form
+        integrations_tab_content.find_element(By.ID, 'indexModuleVersion').send_keys('5.2.1')
+        integrations_tab_content.find_element(By.ID, 'integration-index-version-button').click()
+
+        # Wait for success message to be displayed
+        success_message = self.wait_for_element(By.ID, 'index-version-success', parent=integrations_tab_content)
+        self.assert_equals(lambda: success_message.is_displayed(), True)
+        self.assert_equals(lambda: success_message.text, 'Successfully indexed and published version.')
+
+        # Check error message is not displayed
+        error_message = integrations_tab_content.find_element(By.ID, 'index-version-error')
+        assert error_message.is_displayed() == False
+
+        # Ensure version create and publish endpoints were called
+        self._api_version_create_mock.assert_called_once_with(namespace='moduledetails', name='fullypopulated', provider='testprovider', version='5.2.1')
+        self._api_version_publish_mock.assert_called_once_with(namespace='moduledetails', name='fullypopulated', provider='testprovider', version='5.2.1')
+
+    def test_integration_tab_index_version_with_publish_disabled(self):
+        """Test indexing a new module version from the integration tab whilst publishing is not possible"""
+        with self.update_mock(self._config_publish_api_keys_mock, 'new', ['abcdefg']):
+            self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+            # Wait for integrations tab button to be visible
+            integrations_tab_button = self.wait_for_element(By.ID, 'module-tab-link-integrations')
+
+            # Ensure the integrations tab content is not visible
+            assert self.wait_for_element(By.ID, 'module-tab-integrations', ensure_displayed=False).is_displayed() == False
+
+            # Click on integrations tab
+            integrations_tab_button.click()
+
+            integrations_tab_content = self.selenium_instance.find_element(By.ID, 'module-tab-integrations')
+
+            # Ensure publish button exists and is not disaplyed
+            assert integrations_tab_content.find_element(By.ID, 'indexModuleVersionPublish').is_displayed() == False
+
+            # Ensure publish button container is not displayed
+            assert integrations_tab_content.find_element(By.ID, 'integrations-index-module-version-publish').is_displayed() == False
+
+            # Type version number and submit form
+            integrations_tab_content.find_element(By.ID, 'indexModuleVersion').send_keys('2.2.2')
+            integrations_tab_content.find_element(By.ID, 'integration-index-version-button').click()
+
+            # Wait for success message to be displayed
+            success_message = self.wait_for_element(By.ID, 'index-version-success', parent=integrations_tab_content)
+            self.assert_equals(lambda: success_message.is_displayed(), True)
+            self.assert_equals(lambda: success_message.text, 'Successfully indexed version')
+
+            # Check error message is not displayed
+            error_message = integrations_tab_content.find_element(By.ID, 'index-version-error')
+            assert error_message.is_displayed() == False
+
+            # Ensure version create endpoint was called and publish was not
+            self._api_version_create_mock.assert_called_once_with(namespace='moduledetails', name='fullypopulated', provider='testprovider', version='2.2.2')
+            self._api_version_publish_mock.assert_not_called()
+
+    def test_integration_tab_index_version_with_indexing_failure(self):
+        """Test indexing a new module version from the integration tab with an indexing failure"""
+        # Update indexing mocks to cause indexing failure
+        with self.update_mock(
+                self._api_version_create_mock,
+                'return_value',
+                ({'status': 'Error', 'message': 'Unittest error message'}, 500)):
+            self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+            # Wait for integrations tab button to be visible
+            integrations_tab_button = self.wait_for_element(By.ID, 'module-tab-link-integrations')
+
+            # Ensure the integrations tab content is not visible
+            assert self.wait_for_element(By.ID, 'module-tab-integrations', ensure_displayed=False).is_displayed() == False
+
+            # Click on integrations tab
+            integrations_tab_button.click()
+
+            integrations_tab_content = self.selenium_instance.find_element(By.ID, 'module-tab-integrations')
+
+            # Type version number and submit form
+            integrations_tab_content.find_element(By.ID, 'indexModuleVersion').send_keys('2.2.2')
+            integrations_tab_content.find_element(By.ID, 'integration-index-version-button').click()
+
+            # Wait for error message to be displayed
+            error_message = self.wait_for_element(By.ID, 'index-version-error', parent=integrations_tab_content)
+            assert error_message.text == 'Unittest error message'
+
+            success_message = integrations_tab_content.find_element(By.ID, 'index-version-success')
+            assert success_message.is_displayed() == False
+
+            # Ensure version create endpoint was called and publish was not
+            self._api_version_create_mock.assert_called_once_with(namespace='moduledetails', name='fullypopulated', provider='testprovider', version='2.2.2')
+            self._api_version_publish_mock.assert_not_called()
+
+    def test_integration_tab_index_version_with_publishing_failure(self):
+        """Test indexing a new module version from the integration tab with a publishing failure"""
+        # Update mock to cause publishing failure
+        with self.update_mock(
+                self._api_version_publish_mock,
+                'return_value',
+                ({'status': 'Error', 'message': 'Unittest publish error message'}, 500)):
+            self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+            # Wait for integrations tab button to be visible
+            integrations_tab_button = self.wait_for_element(By.ID, 'module-tab-link-integrations')
+
+            # Ensure the integrations tab content is not visible
+            assert self.wait_for_element(By.ID, 'module-tab-integrations', ensure_displayed=False).is_displayed() == False
+
+            # Click on integrations tab
+            integrations_tab_button.click()
+
+            integrations_tab_content = self.selenium_instance.find_element(By.ID, 'module-tab-integrations')
+
+            # Type version number
+            integrations_tab_content.find_element(By.ID, 'indexModuleVersion').send_keys('2.2.2')
+            # Check publish button
+            integrations_tab_content.find_element(By.ID, 'indexModuleVersionPublish').click()
+            # Click indexing button
+            integrations_tab_content.find_element(By.ID, 'integration-index-version-button').click()
+
+            # Wait for error message to be displayed
+            error_message = self.wait_for_element(By.ID, 'index-version-error', parent=integrations_tab_content)
+            assert error_message.text == 'Unittest publish error message'
+
+            success_message = integrations_tab_content.find_element(By.ID, 'index-version-success')
+            assert success_message.is_displayed() == True
+            assert success_message.text == 'Successfully indexed version'
+
+            # Ensure version create endpoint was called and publish was not
+            self._api_version_create_mock.assert_called_once_with(namespace='moduledetails', name='fullypopulated', provider='testprovider', version='2.2.2')
+            self._api_version_publish_mock.assert_called_once_with(namespace='moduledetails', name='fullypopulated', provider='testprovider', version='2.2.2')
 
     @pytest.mark.parametrize('current_version,expected_versions,expected_selected_version', [
         # On root page without version
