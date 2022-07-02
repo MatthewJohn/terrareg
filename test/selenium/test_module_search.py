@@ -54,9 +54,15 @@ class TestModuleSearch(SeleniumTest):
         ]
         expected_card_links = [
             '/modules/modulesearch-trusted/mixedsearch-trusted-result/aws/1.0.0',
-            '/modules/modulesearch-trusted/mixedsearch-trusted-result-multiversion/aws/2.0.0',
-            '/modules/modulesearch-trusted/mixedsearch-trusted-result-verified/aws/2.0.0',
-            '/modules/modulesearch-trusted/mixedsearch-trusted-second-result/aws/5.2.1'
+            '/modules/modulesearch-trusted/mixedsearch-trusted-result-multiversion/null/2.0.0',
+            '/modules/modulesearch-trusted/mixedsearch-trusted-result-verified/gcp/2.0.0',
+            '/modules/modulesearch-trusted/mixedsearch-trusted-second-result/datadog/5.2.1'
+        ]
+        expected_card_provider_text = [
+            'Provider: aws',
+            'Provider: null',
+            'Provider: gcp',
+            'Provider: datadog'
         ]
         for card in result_cards:
             heading = card.find_element(By.CLASS_NAME, 'module-card-title')
@@ -66,6 +72,9 @@ class TestModuleSearch(SeleniumTest):
 
             # Check link
             assert heading.get_attribute('href') == self.get_url(expected_card_links.pop(0))
+
+            # Check provider
+            assert card.find_element(By.CLASS_NAME, 'module-provider-card-provider-text').text == expected_card_provider_text.pop(0)
 
     def test_search_filters(self):
         """Check value of search filters."""
