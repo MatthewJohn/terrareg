@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.17.5](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.17.4...v2.17.5) (2022-07-02)
+
+
+### Bug Fixes
+
+* Fix get_all method of Namespace class to return all namespaces when only_published is False. ([7b529c3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7b529c3a3d44f802bd302f4af6ccd4ac5f7b3f41)), closes [#167](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/167)
+* Update namespace list page to return all namespaces, including those with only module providers with non-published/beta versions of modules ([67798cc](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/67798cc9d65493551f927b1db99ef850143b6992)), closes [#161](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/161) [#167](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/167)
+
 ## [2.17.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.17.3...v2.17.4) (2022-07-01)
 
 
