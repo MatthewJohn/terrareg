@@ -1347,7 +1347,7 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
 
     def _get(self):
         """Return list of namespaces."""
-        namespaces = Namespace.get_all(only_published=True)
+        namespaces = Namespace.get_all(only_published=False)
 
         return [
             {
