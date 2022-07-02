@@ -219,23 +219,37 @@ class Namespace(object):
         """Return all namespaces."""
         db = Database.get()
 
-        modules_query = db.select_module_provider_joined_latest_module_version(
-            db.module_provider
-        )
-
         if only_published:
+            # If only getting namespaces, with published/visible versions,
+            # query module provider, joining to latest module version
+            modules_query = db.select_module_provider_joined_latest_module_version(
+                db.module_provider
+            )
+
             modules_query = modules_query.where(
                 db.module_version.c.published == True,
                 db.module_version.c.beta == False
             )
 
-        modules_query = modules_query.subquery()
+            modules_query = modules_query.subquery()
 
-        namespace_query = sqlalchemy.select(
-            modules_query.c.namespace
-        ).select_from(modules_query).group_by(
-            modules_query.c.namespace
-        )
+            namespace_query = sqlalchemy.select(
+                modules_query.c.namespace
+            ).select_from(modules_query).group_by(
+                modules_query.c.namespace
+            ).order_by(
+                modules_query.c.namespace
+            )
+        else:
+            namespace_query = sqlalchemy.select(
+                db.module_provider.c.namespace
+            ).select_from(
+                db.module_provider
+            ).group_by(
+                db.module_provider.c.namespace
+            ).order_by(
+                db.module_provider.c.namespace
+            )
 
         with db.get_connection() as conn:
             res = conn.execute(namespace_query)

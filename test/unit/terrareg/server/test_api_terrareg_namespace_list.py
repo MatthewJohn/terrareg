@@ -24,4 +24,8 @@ class TestApiTerraregNamespaceList(TerraregUnitTest):
         """Test endpoint with existing namespaces."""
         res = client.get('/v1/terrareg/namespaces')
         assert res.status_code == 200
-        assert res.json == ['testnamespace', 'moduleextraction']
+        assert res.json == [
+            {'name': 'testnamespace', 'view_href': '/modules/testnamespace'},
+            {'name': 'secondtestnamespace', 'view_href': '/modules/secondtestnamespace'},
+            {'name': 'moduleextraction', 'view_href': '/modules/moduleextraction'}
+        ]
