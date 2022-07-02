@@ -772,7 +772,6 @@ function populateVersionSelect(moduleDetails) {
     if (currentVersionFound == false) {
         let versionOption = $("<option></option>");
         let suffix = '';
-        console.log(moduleDetails);
         if (moduleDetails.beta) {
             suffix += ' (beta)';
 
