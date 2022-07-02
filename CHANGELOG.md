@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.17.6](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.17.5...v2.17.6) (2022-07-02)
+
+
+### Bug Fixes
+
+* Correctly display success message when indexing a module version on module provider page. ([3528284](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/35282845ab37a20c2551ef74f90336471bcce826)), closes [#170](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/170)
+
 ## [2.17.5](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.17.4...v2.17.5) (2022-07-02)
 
 
