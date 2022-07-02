@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.17.7](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.17.6...v2.17.7) (2022-07-02)
+
+
+### Bug Fixes
+
+* Fix SQL warning thrown during query in ExampleFile.get_by_path ([4bb50fb](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4bb50fbf5f55f310cec60b8e4fc718be5d3bbd5c)), closes [#174](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/174)
+
 ## [2.17.6](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.17.5...v2.17.6) (2022-07-02)
 
 
