@@ -18,30 +18,14 @@ class TestModuleProvider(SeleniumTest):
         cls._api_version_create_mock = mock.Mock(return_value={'status': 'Success'})
         cls._api_version_publish_mock = mock.Mock(return_value={'status': 'Success'})
         cls._config_publish_api_keys_mock = mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', [])
-        cls._mock_patches = [
-            mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'),
-            mock.patch('terrareg.config.Config.SECRET_KEY', '354867a669ef58d17d0513a0f3d02f4403354915139422a8931661a3dbccdffe'),
-            mock.patch('terrareg.server.ApiModuleVersionCreate._post', cls._api_version_create_mock),
-            mock.patch('terrareg.server.ApiTerraregModuleVersionPublish._post', cls._api_version_publish_mock),
-            cls._config_publish_api_keys_mock
-        ]
-        for patch_ in cls._mock_patches:
-            patch_.start()
+
+        cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
+        cls.register_patch(mock.patch('terrareg.config.Config.SECRET_KEY', '354867a669ef58d17d0513a0f3d02f4403354915139422a8931661a3dbccdffe'))
+        cls.register_patch(mock.patch('terrareg.server.ApiModuleVersionCreate._post', cls._api_version_create_mock))
+        cls.register_patch(mock.patch('terrareg.server.ApiTerraregModuleVersionPublish._post', cls._api_version_publish_mock))
+        cls.register_patch(cls._config_publish_api_keys_mock)
+
         super(TestModuleProvider, cls).setup_class()
-
-    @classmethod
-    def teardown_class(cls):
-        """Setup required mocks."""
-        for patch_ in cls._mock_patches:
-            patch_.stop()
-        super(TestModuleProvider, cls).teardown_class()
-
-    def setup_method(self):
-        """Reset mock call histories."""
-        for patch_ in self._mock_patches:
-            # If patch target is a Mock, reset it
-            if isinstance(patch_.new, mock.Mock):
-                patch_.new.reset_mock()
 
     def test_module_without_versions(self):
         """Test page functionality on a module without published versions."""

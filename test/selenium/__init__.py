@@ -6,7 +6,7 @@ import random
 import logging
 import threading
 from time import sleep
-from unittest.mock import patch
+import unittest.mock
 from attr import attrib
 from flask import request
 
@@ -32,6 +32,8 @@ class SeleniumTest(BaseTest):
 
     _TEST_DATA = integration_test_data
     _GIT_PROVIDER_DATA = integration_git_providers
+    _MOCK_PATCHES = []
+
     DISPLAY_INSTANCE = None
     SELENIUM_INSTANCE = None
     RESET_COOKIES = True
@@ -50,9 +52,18 @@ class SeleniumTest(BaseTest):
         return f'http{"s" if https else ""}://localhost:{self.SERVER.port}{path}'
 
     @classmethod
+    def register_patch(cls, patch):
+        """Register mock patch in test"""
+        cls._MOCK_PATCHES.append(patch)
+
+    @classmethod
     def setup_class(cls):
         """Setup host/port to host server."""
         super(SeleniumTest, cls).setup_class()
+
+        # Start all mock patches
+        for patch_ in cls._MOCK_PATCHES:
+            patch_.start()
 
         cls.SERVER.host = '127.0.0.1'
 
@@ -77,7 +88,19 @@ class SeleniumTest(BaseTest):
             cls.display_instance.stop()
         # Shutdown server
         cls._teardown_server()
+
+        # Stop all mock patches
+        for patch_ in cls._MOCK_PATCHES:
+            patch_.start()
+
         super(SeleniumTest, cls).teardown_class()
+
+    def setup_method(self):
+        """Reset mock call histories."""
+        for patch_ in self._MOCK_PATCHES:
+            # If patch target is a Mock, reset it
+            if isinstance(patch_.new, unittest.mock.Mock):
+                patch_.new.reset_mock()
 
     @classmethod
     def restart_server(cls):
