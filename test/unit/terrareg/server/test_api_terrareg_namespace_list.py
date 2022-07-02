@@ -26,5 +26,6 @@ class TestApiTerraregNamespaceList(TerraregUnitTest):
         assert res.status_code == 200
         assert res.json == [
             {'name': 'testnamespace', 'view_href': '/modules/testnamespace'},
+            {'name': 'secondtestnamespace', 'view_href': '/modules/secondtestnamespace'},
             {'name': 'moduleextraction', 'view_href': '/modules/moduleextraction'}
         ]
