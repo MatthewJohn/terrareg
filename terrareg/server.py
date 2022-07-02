@@ -465,16 +465,9 @@ class Server(object):
 
     def _view_serve_namespace_list(self):
         """Render view for display module."""
-        namespaces = Namespace.get_all()
-
-        # If only one provider for module, redirect to it.
-        if len(namespaces) == 1:
-            return redirect(namespaces[0].get_view_url())
-        else:
-            return self._render_template(
-                'namespace_list.html',
-                namespaces=namespaces
-            )
+        return self._render_template(
+            'namespace_list.html'
+        )
 
     @catch_name_exceptions
     def _view_serve_namespace(self, namespace):
@@ -1354,10 +1347,14 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
 
     def _get(self):
         """Return list of namespaces."""
-        namespaces = Namespace.get_all(only_published=True)
+        namespaces = Namespace.get_all(only_published=False)
 
         return [
-            namespace.name for namespace in namespaces
+            {
+                "name": namespace.name,
+                "view_href": namespace.get_view_url()
+            }
+            for namespace in namespaces
         ]
 
 

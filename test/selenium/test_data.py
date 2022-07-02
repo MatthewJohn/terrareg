@@ -26,6 +26,19 @@ integration_git_providers = {
     }
 }
 
+one_namespace_test_data = {
+    'testnamespace': {
+        'onemodule': {'testprovider': {
+            'id': 1,
+            'versions': {'1.5.0': {'published': True}}
+        }},
+        'module-two': {'testprovider': {
+            'id': 2,
+            'versions': {'1.8.0': {'published': True}}
+        }}
+    }
+}
+
 integration_test_data = {
     'testnamespace': {
         'wrongversionorder': {'testprovider': {
@@ -35,6 +48,22 @@ integration_test_data = {
                 '10.23.0': {'published': True}, '0.1.10': {'published': True}, '0.0.9': {'published': True},
                 '0.1.09': {'published': True}, '0.1.8': {'published': True},
                 '23.2.3-beta': {'published': True, 'beta': True}, '5.21.2': {}
+            }
+        }}
+    },
+    'onlyunpublished': {
+        'betamodule': {'test': {
+            'id': 60,
+            'versions': {
+                '1.5.0': {'published': False}
+            }
+        }}
+    },
+    'onlybeta': {
+        'betamodule': {'test': {
+            'id': 61,
+            'versions': {
+                '1.4.0-beta': {'beta': True, 'published': True}
             }
         }}
     },
