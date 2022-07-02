@@ -1090,15 +1090,20 @@ function indexModuleVersion(moduleDetails) {
     let moduleVersionToIndex = $("#indexModuleVersion").val();
     $.post(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/import`)
         .done(() => {
+            // Show success message for importing module
             $("#index-version-success").html("Successfully indexed version");
-            $("#index-version-success").addClass('default-hidden');
+            $("#index-version-success").removeClass('default-hidden');
             $("#index-version-error").addClass('default-hidden');
+
+            // If publish checkbox is checked, perform request to publish
             if ($("#indexModuleVersionPublish").is(":checked")) {
                 $.post(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/publish`)
                     .done(() => {
+                        // If successful, update success message
                         $("#index-version-success").html("Successfully indexed and published version.");
                     })
                     .fail((res) => {
+                        // Display any errors
                         if (res.responseJSON && res.responseJSON.message) {
                             $("#index-version-error").html(res.responseJSON.message);
                         } else {
