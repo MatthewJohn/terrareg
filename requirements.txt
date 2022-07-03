@@ -24,3 +24,4 @@ Werkzeug==2.0.0
 zipp==3.8.0
 alembic==1.7.7
 mysql-connector-python==8.0.29
+beautifulsoup4==4.11.1

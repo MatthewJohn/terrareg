@@ -361,6 +361,13 @@ class Config:
         """
         return os.environ.get('TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '{major}.{minor}.{patch}')
 
+    @property
+    def AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION(self):
+        """
+        Whether to automatically generate module provider descriptions, if they are not provided in terrareg metadata file of the module.
+        """
+        return self.convert_boolean(os.environ.get('AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION', 'True'))
+
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""
         if string.lower() in ['true', 'yes', '1']:
