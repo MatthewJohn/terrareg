@@ -12,7 +12,6 @@ from attr import attrib
 from flask import request
 
 
-from pyvirtualdisplay import Display
 import selenium
 from selenium.webdriver.common.by import By
 import pytest
@@ -42,23 +41,6 @@ class SeleniumTest(BaseTest):
     RUN_INTERACTIVELY = False
 
     DEFAULT_RESOLUTION = (1280, 720)
-
-    @pytest.fixture(autouse=True, scope="session")
-    def selenium(cls, request):
-        warnings.warn(UserWarning("Setting up selenium"))
-        if not SeleniumTest.RUN_INTERACTIVELY:
-            SeleniumTest.display_instance = Display(visible=0, size=SeleniumTest.DEFAULT_RESOLUTION)
-            SeleniumTest.display_instance.start()
-        SeleniumTest.selenium_instance = selenium.webdriver.Firefox()
-        SeleniumTest.selenium_instance.delete_all_cookies()
-        SeleniumTest.selenium_instance.implicitly_wait(1)
-
-        def teardown():
-            SeleniumTest.selenium_instance.quit()
-            if not SeleniumTest.RUN_INTERACTIVELY:
-                SeleniumTest.display_instance.stop()
-
-        request.addfinalizer(teardown)
 
     @staticmethod
     def _get_database_path():
