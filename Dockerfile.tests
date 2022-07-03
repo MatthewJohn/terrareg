@@ -22,8 +22,8 @@ RUN apt-get update && \
 
 
 # Install firefox and geckodriver
-#RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys EF4186FE247510BE
-#RUN add-apt-repository -y ppa:ubuntu-mozilla-daily/ppa
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys EF4186FE247510BE
+RUN add-apt-repository -y ppa:ubuntu-mozilla-daily/ppa
 RUN apt-get update && apt-get install -y firefox-esr firefox-trunk-geckodriver && apt-get clean all
 
 COPY requirements-dev.txt .
