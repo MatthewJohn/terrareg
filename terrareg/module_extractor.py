@@ -15,7 +15,7 @@ import pathlib
 
 from werkzeug.utils import secure_filename
 import magic
-import html2text
+from bs4 import BeautifulSoup
 import markdown
 
 from terrareg.models import BaseSubmodule, Example, ExampleFile, ModuleVersion, Submodule
@@ -237,6 +237,9 @@ class ModuleExtractor:
 
     def _extract_description(self, readme_content):
         """Extract description from README"""
+        if not readme_content:
+            return None
+
         # Convert README to HTML
         html_readme = markdown.markdown(
             readme_content,
@@ -244,8 +247,51 @@ class ModuleExtractor:
         )
 
         # Convert HTML to plain text
-        plain_text = html2text.html2text(html_readme)
-        print(plain_text)
+        plain_text = BeautifulSoup(html_readme, features='html.parser').get_text()
+        for line in plain_text.split('\n'):
+            # Skip if line is empty
+            if not line.strip():
+                continue
+
+            # Check number of characters in string
+            if len(re.sub(r'[^a-zA-Z]', '', line)) < 20:
+                continue
+
+            # Check number of words
+            word_match = re.findall(r'(?:([a-zA-Z]+)(?:\s|$|\.))', line)
+            if word_match is None or len(word_match) < 6:
+                continue
+
+            # Check if description line contains unwanted text
+            found_unwanted_text = False
+            for unwanted_text in ['http://', 'https://', '@']:
+                if unwanted_text in line:
+                    found_unwanted_text = True
+                    break
+            if found_unwanted_text:
+                continue
+
+            # Get sentences
+            extracted_description = ''
+            for scentence in line.split('. '):
+                new_description = extracted_description
+                if extracted_description:
+                    new_description += '. '
+                new_description += scentence.strip()
+
+                # Check length of combined sentences.
+                # For combining a new sentence, check overall description
+                # length of 100 chracters.
+                # If this is the first sentence, give a higher allowance, as it's
+                # preferable to extract a description.
+                if ((new_description and len(new_description) >= 80) or
+                        (not extracted_description and len(new_description) >= 130)):
+                    # Otherwise, break from iterations
+                    break
+                extracted_description = new_description
+         
+            return extracted_description if extracted_description else None
+
         return None
 
     def process_upload(self):

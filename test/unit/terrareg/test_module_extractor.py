@@ -91,3 +91,49 @@ class TestGitModuleExtractor(TerraregUnitTest):
                     me._clone_repository()
 
                 assert str(error.value) == 'Unknown error occurred during git clone'
+
+    @pytest.mark.parametrize('readme,expected_description', [
+        # Expect empty README produces None description
+        (None, None),
+        ('', None),
+
+        # Check with empty lines
+        ('\n  \n\t\n     \n\n', None),
+
+        # Test with invalid sentences
+        ('This line is too longThis line is too longThis line is too longThis line is '
+         'This line is too longThis line is too longThis line is too longThis line is ',
+         None),
+        ('ContainsOneWord', None),
+        ('Contains too few words', None),
+        # Not enough characters
+        ('N E C F T A G', None),
+
+        # Test invalid words
+        ('This is a good description from https://example.com check it', None),
+        ('This is a good description from http://example.com check it', None),
+        ('Do not forget to email me at test@example.com', None),
+
+        # Test skipping short scentence and picking valid one
+        ('Too short\nThis is a good description for a module.', 'This is a good description for a module.'),
+
+        # Test stripping of characters
+        ('    A terraform module to create a cluster!   ', 'A terraform module to create a cluster!'),
+
+        # Test combining first scentences
+        ('This is short. This is a little bit longer.', 'This is short. This is a little bit longer.'),
+        ('This is short. This is a bit longer. This is way waywaywaywaywaywaywaywaywaywaywaywaywaywaywaywaywaywaywayway too long',
+         'This is short. This is a bit longer'),
+
+        # Complete tests
+        ('WSA EQW Cluster\n\nDownload from https://example.com/mymodule.git\nTerraform module to create an WSA EQW Cluster. This module is written by ExampleCorp.\n',
+        'Terraform module to create an WSA EQW Cluster'),
+        ('WSA DJW Terraform module\n\nTerraform module which creates DJW resources on WSA.\n\nUsage\nResource...',
+        'Terraform module which creates DJW resources on WSA.'),
+        ('Terraform module designed to generate consistent helps and blanks for resources. Use this module to implement a test blank helps.\n\nThere are 6 inputs considered "helps" or "tests" (because the tests are used to construct the ID):',
+        'Terraform module designed to generate consistent helps and blanks for resources')
+    ])
+    def test_description_extraction(self, readme, expected_description):
+        """Test description extraction from README."""
+        module_extractor = GitModuleExtractor(module_version=None)
+        assert module_extractor._extract_description(readme) == expected_description
