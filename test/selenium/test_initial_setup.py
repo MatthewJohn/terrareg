@@ -264,7 +264,8 @@ class TestInitialSetup(SeleniumTest):
         self.selenium_instance.get(self.get_url('/initial-setup'))
         ssl_card = self.wait_for_element(By.ID, 'setup-ssl')
         self.wait_for_element(By.CLASS_NAME, 'card-content', parent=ssl_card)
-        self.check_only_card_is_displayed('ssl') 
+        self.check_only_card_is_displayed('ssl')
+        self.check_progress_bar(100)
 
     def _test_complete_step(self):
         """Test complete step."""
@@ -275,7 +276,7 @@ class TestInitialSetup(SeleniumTest):
         complete_card = self.wait_for_element(By.ID, 'setup-complete')
         self.wait_for_element(By.CLASS_NAME, 'card-content', parent=complete_card)
         self.check_only_card_is_displayed('complete')
-        self.check_progress_bar(100)
+        self.check_progress_bar(120)
 
     def test_setup_page(self):
         """Test functionality of setup page."""
