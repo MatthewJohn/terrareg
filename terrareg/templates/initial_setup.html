@@ -1,0 +1,239 @@
+{% extends 'template.html' %}
+
+{% block content %}
+
+<script src="/static/js/terrareg/initial-setup.js"></script>
+<link rel="stylesheet" href="/static/css/initial-setup.css" />
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li class="is-active"><a href="/initial-setup">Initial Setup</a></li>
+    </ul>
+</nav>
+
+<script>
+    $(document).ready(function () {
+        // Hide all cards
+        $('#setup-cards-container').find('.initial-setup-card').each((itx, card) => {
+            getSetupCardContent($(card)).hide();
+        }).promise().done(() => {
+            calculateSetupStatus();
+        });
+    });
+</script>
+
+<div class="columns">
+    <div id="setup-cards-container" class="column is-three-fifths is-offset-one-fifth">
+        <!-- Header -->
+        <h1 id="title" class="title is-2">Inital setup</h1>
+
+        <!-- Progress -->
+        Progress: <progress id="setup-progress-bar" class="progress is-link" value="0" max="120">0%</progress>
+
+        <div id="setup-auth-vars" class="card initial-setup-card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    1. Setup required authentication environment variables
+                </p>
+                <button class="card-header-icon" aria-label="more options" onclick="onSetupCardHeaderClick(event)">
+                    <span class="icon">
+                        <i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </span>
+                </button>
+            </header>
+            <div class="card-content">
+                <div class="content">
+                    The following environment variables must be setup to be able to login:
+                    <ul>
+                        <li id="setup-step-auth-vars-admin-authentication-token">
+                            <code>ADMIN_AUTHENTICATION_TOKEN</code> - Token to use for authorisation to be able to modify modules in the user interface.
+                        </li>
+                        <li id="setup-step-auth-vars-secret-key">
+                            <code>SECRET_KEY</code> - Key used for encrypting sessions. Can be generated using: <code>python -c 'import secrets; print(secrets.token_hex())'</code>
+                        </li>
+                    </ul>
+                    <br />
+                    Setup these environment variables and restart the server and return to this page.
+                </div>
+            </div>
+        </div>
+
+        <div id="setup-login" class="card initial-setup-card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    2. Login
+                </p>
+                <button class="card-header-icon" aria-label="more options" onclick="onSetupCardHeaderClick(event);">
+                    <span class="icon">
+                        <i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </span>
+                </button>
+            </header>
+            <div class="card-content">
+                <div class="content">
+                    Go to the <a href="/login">login page</a> and login using the admin token<br /><br />
+
+                    The admin authentication token is setup as the <code>ADMIN_AUTHENTICATION_TOKEN</code> environment variable.
+                </div>
+            </div>
+        </div>
+
+
+        <div id="setup-create-module" class="card initial-setup-card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    3. Create a module
+                </p>
+                <button class="card-header-icon" aria-label="more options" onclick="onSetupCardHeaderClick(event);">
+                    <span class="icon">
+                        <i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </span>
+                </button>
+            </header>
+            <div class="card-content">
+                <div class="content">
+                    Go to the <a href="/create-module">create module page</a> and fill out the details for the module.<br /><br />
+                </div>
+            </div>
+        </div>
+
+        <div id="setup-index-git" class="card initial-setup-card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    4a. Index a module version from Git
+                </p>
+                <button class="card-header-icon" aria-label="more options" onclick="onSetupCardHeaderClick(event);">
+                    <span class="icon">
+                        <i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </span>
+                </button>
+            </header>
+            <div class="card-content">
+                <div class="content">
+                    Go to the <a id="module-integrations-link" href="#">module's integration tab</a>, provide a version to index, select 'Publish' and click 'Index Version'.<br /><br />
+                </div>
+                <span id="setup-step-index-git-not-published-warning" class="default-hidden">
+                    Notice: A version has been successfully indexed, but has not been published.<br/>
+                    Either re-index the module version, ensuring the 'Publish' checkbox has been set.<br />
+                    Otherwise, follow instructions for publishing a module version in the <a onclick="onSetupCardHeaderClick($('#setup-upload-module-tab-button'))">'Upload a version</a> step.
+                </span>
+            </div>
+        </div>
+
+        <div id="setup-index-upload" class="card initial-setup-card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    4b. Upload a version of the module
+                </p>
+                <button id="setup-upload-module-tab-button" class="card-header-icon" aria-label="more options" onclick="onSetupCardHeaderClick(event);">
+                    <span class="icon">
+                        <i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </span>
+                </button>
+            </header>
+            <div class="card-content">
+                <div class="content">
+                    <ol>
+                        <li class="setup-step-upload-module-version">
+                            Create a zip/tar.gz archive with the contents of the terraform module
+                        </li>
+                        <li class="setup-step-upload-module-version">
+                            Upload the module by performing a POST request to the upload endpoint: <code class="module-upload-endpoint"></code><br />
+                            The archive file should be supplied as a file attachment.<br />
+                        </li>
+                        <li id="setup-step-publish-module-version">
+                            Publish version of the module by performing a POST request to the 'publish' endpoint: <code class="module-publish-endpoint"></code>
+                        </li>
+                    </ol>
+                    For example:<br />
+                    <pre>
+# Zip module
+cd path/to/module
+zip * ../module.zip
+
+version=1.0.0
+
+# Upload module version
+curl -X POST \
+    "<span class="module-upload-endpoint"></span>" \
+    -F file=@../module.zip
+
+# Publish module version
+curl -X POST \
+    "<span class="module-publish-endpoint"></span>"</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Secure instance step -->
+        <div id="setup-secure" class="card initial-setup-card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    5. Secure your Terrareg instance
+                </p>
+                <button class="card-header-icon" aria-label="more options" onclick="onSetupCardHeaderClick(event);">
+                    <span class="icon">
+                        <i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </span>
+                </button>
+            </header>
+            <div class="card-content">
+                <div class="content">
+                    To avoid unauthenticated access to some of the features, ensure to set the following environment variables:
+                    <ul>
+                        <li id="setup-step-secure-upload"><code>UPLOAD_API_KEYS</code> or <code>ALLOW_MODULE_HOSTING</code> - Either setup API keys for liming access to the module version upload endpoint or disable uploading modules entirely, enforcing the use of indexing from a Git repository</li>
+                        <li id="setup-step-secure-publish"><code>PUBLISH_API_KEYS</code> - Setup API keys for limiting access to the module version publishing endpoint</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Secure instance step -->
+        <div id="setup-ssl" class="card initial-setup-card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    6. Enable SSL
+                </p>
+                <button class="card-header-icon" aria-label="more options" onclick="onSetupCardHeaderClick(event);">
+                    <span class="icon">
+                        <i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </span>
+                </button>
+            </header>
+            <div class="card-content">
+                <div class="content">
+                    To be able to use modules from the registry in Terraform, the instance <b>must</b> be configured with an SSL certificate.<br />
+                    <br />
+                    Either:
+                    <ul>
+                        <li>Provide the location of an SSL certificate to Terrareg, using <code>SSL_CERT_PRIVATE_KEY</code> and <code>SSL_CERT_PUBLIC_KEY</code> environment variables;</li>
+                        <li>Place Terrareg behind a load balancer/reverse proxy that can provide the service over HTTPS.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Complete -->
+        <div id="setup-complete" class="card initial-setup-card">
+            <header class="card-header">
+                <p class="card-header-title">
+                    Complete
+                </p>
+                <button class="card-header-icon" aria-label="more options" onclick="onSetupCardHeaderClick(event);">
+                    <span class="icon">
+                        <i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </span>
+                </button>
+            </header>
+            <div class="card-content">
+                <div class="content">
+                    <b>Congratulations!</b><br /><br />
+                    <span>Your Terrareg instance is all setup &#127881;</pan>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
