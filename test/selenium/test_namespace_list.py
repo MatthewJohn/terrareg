@@ -61,9 +61,4 @@ class TestNamespaceListNoNamespaces(SeleniumTest):
         """Test namespace list page with no namespaces."""
         self.selenium_instance.get(self.get_url('/modules'))
 
-        # Ensure warning is added to table
-        table_content = self.wait_for_element(By.ID, 'namespaces-table-data')
-        warning_row = self.wait_for_element(By.TAG_NAME, 'tr', parent=table_content)
-        warning_td = warning_row.find_element(By.TAG_NAME, 'td')
-
-        assert warning_td.text == 'There are no namespaces with published modules.'
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/initial-setup'))
