@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.18.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.17.7...v2.18.0) (2022-07-03)
+
+
+### Features
+
+* Display name of provider in module provider result cards. ([862dbbd](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/862dbbdb3682f2a386fae67bf649b42756ee2951)), closes [#162](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/162)
+
 ## [2.17.7](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.17.6...v2.17.7) (2022-07-02)
 
 
