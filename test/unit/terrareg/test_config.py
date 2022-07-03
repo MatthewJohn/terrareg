@@ -129,7 +129,8 @@ class TestConfig:
         'AUTO_PUBLISH_MODULE_VERSIONS',
         'DEBUG',
         'DELETE_EXTERNALLY_HOSTED_ARTIFACTS',
-        'DISABLE_TERRAREG_EXCLUSIVE_LABELS'
+        'DISABLE_TERRAREG_EXCLUSIVE_LABELS',
+        'AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION'
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
         """Test boolean configs to ensure they are overriden with environment variables."""

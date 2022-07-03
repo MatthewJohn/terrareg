@@ -237,6 +237,11 @@ class ModuleExtractor:
 
     def _extract_description(self, readme_content):
         """Extract description from README"""
+        # If module description extraction is disabled, skip
+        if not Config().AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION:
+            return None
+
+        # If README is empty, return early
         if not readme_content:
             return None
 

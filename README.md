@@ -234,6 +234,16 @@ Default: `Terrareg`
 
 
 
+### AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION
+
+
+Whether to automatically generate module provider descriptions, if they are not provided in terrareg metadata file of the module.
+
+
+Default: `True`
+
+
+
 ### AUTO_CREATE_MODULE_PROVIDER
 
 

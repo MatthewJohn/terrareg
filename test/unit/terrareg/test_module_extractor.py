@@ -137,3 +137,12 @@ class TestGitModuleExtractor(TerraregUnitTest):
         """Test description extraction from README."""
         module_extractor = GitModuleExtractor(module_version=None)
         assert module_extractor._extract_description(readme) == expected_description
+
+    def test_description_extraction_when_disabled(self):
+        """Test that description extraction returns None when description extraction is disabled in the config"""
+        test_text = "This is a perfectly valid description"
+        module_extractor = GitModuleExtractor(module_version=None)
+        assert module_extractor._extract_description(test_text) == test_text
+
+        with unittest.mock.patch('terrareg.config.Config.AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION', False):
+            assert module_extractor._extract_description(test_text) == None
