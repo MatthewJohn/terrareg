@@ -114,7 +114,7 @@ async function calculateSetupStatus() {
         }
 
         if (secureTasksRemaining) {
-            setProgress(100 - (secureTasksRemaining * 5));
+            setProgress(100 - (secureTasksRemaining * 10));
             toggleSetupCard(getSetupCardByName('secure'));
             return;
         }
