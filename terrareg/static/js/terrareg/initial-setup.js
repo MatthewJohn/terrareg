@@ -28,7 +28,17 @@ function setProgress(percentage) {
     progressBar.val(percentage);
 }
 
+function isProtocolHttps() {
+    return 'https:' == document.location.protocol
+}
+
 async function calculateSetupStatus() {
+
+    // Hide all cards
+    await $('#setup-cards-container').find('.initial-setup-card').each((itx, card) => {
+        getSetupCardContent($(card)).hide();
+    }).promise();
+
     let config = await getConfig();
     $.get('/v1/terrareg/initial_setup', async (setupData) => {
         let progressbar = $('setup-progress-bar');
@@ -120,7 +130,7 @@ async function calculateSetupStatus() {
         }
 
         // Check if URL is HTTPs
-        if ('https:' != document.location.protocol) {
+        if (! isProtocolHttps()) {
             toggleSetupCard(getSetupCardByName('ssl'));
             setProgress(100);
             return;

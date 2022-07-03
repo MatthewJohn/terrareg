@@ -13,12 +13,7 @@
 
 <script>
     $(document).ready(function () {
-        // Hide all cards
-        $('#setup-cards-container').find('.initial-setup-card').each((itx, card) => {
-            getSetupCardContent($(card)).hide();
-        }).promise().done(() => {
-            calculateSetupStatus();
-        });
+        calculateSetupStatus();
     });
 </script>
 

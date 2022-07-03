@@ -1,4 +1,5 @@
 
+from time import sleep
 from unittest import mock
 
 import pytest
@@ -265,6 +266,23 @@ class TestInitialSetup(SeleniumTest):
         self.wait_for_element(By.CLASS_NAME, 'card-content', parent=ssl_card)
         self.check_only_card_is_displayed('ssl') 
 
+    def _test_complete_step(self):
+        """Test complete step."""
+        # Mock isProtocolHttps function in javascript and re-run function
+        # to show steps
+        self.selenium_instance.execute_script("""
+            let s = window.document.createElement('script');
+            s.innertText = 'function isProtocolHttps() { return true; }';
+            window.document.head.appendChild(s);
+            loadSetupPage();
+        """)
+
+        # Ensure setup complete step is shown
+        complete_card = self.wait_for_element(By.ID, 'setup-complete')
+        sleep(30)
+        self.wait_for_element(By.CLASS_NAME, 'card-content', parent=complete_card)
+        self.check_only_card_is_displayed('complete') 
+
     def test_setup_page(self):
         """Test functionality of setup page."""
         # Load homepage
@@ -317,4 +335,4 @@ class TestInitialSetup(SeleniumTest):
                 self._test_ssl_step()
 
                 # Step 7 - Success
-                # @TODO - Somehow need to trick the javascript into thinking it's an HTTPS URL
+                self._test_complete_step()
