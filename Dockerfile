@@ -6,9 +6,9 @@ RUN apt-get update && apt-get install --assume-yes curl unzip git && apt-get cle
 
 RUN if [ "$(uname -m)" == "aarch64" ]; \
     then \
-      arch=arm64 \
+      arch=arm64; \
     else \
-      arch=amd64 \
+      arch=amd64; \
     fi; \
     wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-linux-${arch}.tar.gz && tar -zxvf terraform-docs-v0.16.0-linux-${arch}.tar.gz && chmod +x terraform-docs && mv terraform-docs /usr/local/bin/ && rm terraform-docs-v0.16.0-linux-${arch}.tar.gz
 
