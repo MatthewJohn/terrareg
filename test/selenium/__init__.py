@@ -91,7 +91,7 @@ class SeleniumTest(BaseTest):
 
         # Stop all mock patches
         for patch_ in cls._MOCK_PATCHES:
-            patch_.start()
+            patch_.stop()
 
         super(SeleniumTest, cls).teardown_class()
 
