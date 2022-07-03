@@ -1,5 +1,17 @@
 # Changelog
 
+# [2.19.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.18.0...v2.19.0) (2022-07-03)
+
+
+### Features
+
+* Add initial-setup page, providing a step-by-step guide on setting up Terrareg ([b493dde](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b493dde6a1d72c223800926fdcc09840238c8322)), closes [#176](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/176)
+
+
+### Reverts
+
+* Revert "test: Attempt to move selenium setup to session-wide fixture to ensure display/selenium is only setup once to speed up tests" ([e10e543](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e10e5437e303b1d40277a8af5f484d1e5b145aba))
+
 # [2.18.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.17.7...v2.18.0) (2022-07-03)
 
 
