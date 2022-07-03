@@ -1,5 +1,17 @@
 # Changelog
 
+# [2.20.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.19.0...v2.20.0) (2022-07-03)
+
+
+### Bug Fixes
+
+* Remove default 'No description provided' from module blocks and from module page ([44db234](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/44db2341c7354e2aef80afb2ca01fbe11f6a2019)), closes [#154](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/154)
+
+
+### Features
+
+* Automatically generate module descriptions from README contents ([61f8fcc](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/61f8fcc84b943f9376c125376d187f8a484e5f8a)), closes [#154](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/154)
+
 # [2.19.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.18.0...v2.19.0) (2022-07-03)
 
 
