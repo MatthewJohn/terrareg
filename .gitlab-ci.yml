@@ -1,4 +1,4 @@
-image: fare-docker-reg.dock.studios:5000/python:3.10
+image: python:3.10
 
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.
@@ -63,7 +63,7 @@ mysql-integration-tests:
   needs:
     - integration-tests
   services:
-    - name: fare-docker-reg.dock.studios:5000/mysql:8.0.29
+    - name: mysql:8.0.29
       alias: mysql
   variables:
     # Set database url for integration tests
@@ -103,7 +103,7 @@ mysql-selenium-tests:
   needs:
     - selenium-tests
   services:
-    - name: fare-docker-reg.dock.studios:5000/mysql:8.0.29
+    - name: mysql:8.0.29
       alias: mysql
   variables:
     # Set database url for integration tests
@@ -143,7 +143,7 @@ build-test-docker-image:
  
 release:
   stage: deploy
-  image: fare-docker-reg.dock.studios:5000/semantic-release:latest
+  image: semantic-release:latest
   cache:
     paths:
       - node_modules/
