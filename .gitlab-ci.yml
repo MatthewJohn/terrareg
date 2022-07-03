@@ -65,7 +65,7 @@ mysql-integration-tests:
   needs:
     - integration-tests
   services:
-    - name: mysql:8.0.29
+    - name: mariadb:10.8
       alias: mysql
   variables:
     # Set database url for integration tests
@@ -105,7 +105,7 @@ mysql-selenium-tests:
   needs:
     - selenium-tests
   services:
-    - name: mysql:8.0.29
+    - name: mariadb:10.8
       alias: mysql
   variables:
     # Set database url for integration tests
