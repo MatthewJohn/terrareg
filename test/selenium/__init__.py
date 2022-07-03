@@ -91,8 +91,10 @@ class SeleniumTest(BaseTest):
         cls._teardown_server()
 
         # Stop all mock patches
-        for patch_ in cls._MOCK_PATCHES:
+        for patch_ in list(cls._MOCK_PATCHES):
             patch_.stop()
+            # Remove reference to patch
+            cls._MOCK_PATCHES.remove(patch_)
 
         super(SeleniumTest, cls).teardown_class()
 
