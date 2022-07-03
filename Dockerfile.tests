@@ -21,16 +21,10 @@ RUN apt-get update && \
     apt-get clean all
 
 
-# install geckodriver and firefox
-RUN GECKODRIVER_VERSION="v0.31.0" && \
-    wget https://github.com/mozilla/geckodriver/releases/download/$GECKODRIVER_VERSION/geckodriver-$GECKODRIVER_VERSION-linux64.tar.gz && \
-    tar -zxf geckodriver-$GECKODRIVER_VERSION-linux64.tar.gz -C /usr/local/bin && \
-    chmod +x /usr/local/bin/geckodriver
-
-# Install firefox
+# Install firefox and geckodriver
 #RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys EF4186FE247510BE
 #RUN add-apt-repository -y ppa:ubuntu-mozilla-daily/ppa
-RUN apt-get update && apt-get install -y firefox-esr && apt-get clean all
+RUN apt-get update && apt-get install -y firefox-esr firefox-geckodriver && apt-get clean all
 
 COPY requirements-dev.txt .
 RUN pip install --proxy=$http_proxy -r requirements-dev.txt
