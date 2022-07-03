@@ -32,7 +32,7 @@ function isProtocolHttps() {
     return 'https:' == document.location.protocol
 }
 
-async function calculateSetupStatus() {
+async function loadSetupPage(overrideHttpsCheck = false) {
 
     // Hide all cards
     await $('#setup-cards-container').find('.initial-setup-card').each((itx, card) => {
@@ -130,7 +130,7 @@ async function calculateSetupStatus() {
         }
 
         // Check if URL is HTTPs
-        if (! isProtocolHttps()) {
+        if (! isProtocolHttps() && !overrideHttpsCheck) {
             toggleSetupCard(getSetupCardByName('ssl'));
             setProgress(100);
             return;

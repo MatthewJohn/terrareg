@@ -268,20 +268,14 @@ class TestInitialSetup(SeleniumTest):
 
     def _test_complete_step(self):
         """Test complete step."""
-        # Mock isProtocolHttps function in javascript and re-run function
-        # to show steps
-        self.selenium_instance.execute_script("""
-            let s = window.document.createElement('script');
-            s.innertText = 'function isProtocolHttps() { return true; }';
-            window.document.head.appendChild(s);
-            loadSetupPage();
-        """)
+        # Rerun loadSetupPage with override to ignore HTTP check
+        self.selenium_instance.execute_script('loadSetupPage(true);')
 
         # Ensure setup complete step is shown
         complete_card = self.wait_for_element(By.ID, 'setup-complete')
-        sleep(30)
         self.wait_for_element(By.CLASS_NAME, 'card-content', parent=complete_card)
-        self.check_only_card_is_displayed('complete') 
+        self.check_only_card_is_displayed('complete')
+        self.check_progress_bar(100)
 
     def test_setup_page(self):
         """Test functionality of setup page."""
