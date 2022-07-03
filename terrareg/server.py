@@ -203,6 +203,9 @@ class Server(object):
             '/create-module'
         )(self._view_serve_create_module)
         self._app.route(
+            '/initial-setup'
+        )(self._view_serve_initial_setup)
+        self._app.route(
             '/modules'
         )(self._view_serve_namespace_list)
         self._app.route(
@@ -271,6 +274,12 @@ class Server(object):
         self._api.add_resource(
             ApiTerraregMostDownloadedModuleProviderThisWeek,
             '/v1/terrareg/analytics/global/most_downloaded_module_provider_this_week'
+        )
+
+        # Initial setup
+        self._api.add_resource(
+            ApiTerraregInitialSetupData,
+            '/v1/terrareg/initial_setup'
         )
 
         ## namespaces endpoint
@@ -462,6 +471,11 @@ class Server(object):
             ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
             ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
+
+
+    def _view_serve_initial_setup(self):
+        """Rendew view for initial setup."""
+        return self._render_template('initial_setup.html')
 
     def _view_serve_namespace_list(self):
         """Render view for display module."""
@@ -746,10 +760,53 @@ class ApiTerraregConfig(ErrorCatchingResource):
             'ANALYTICS_TOKEN_DESCRIPTION': terrareg.config.Config().ANALYTICS_TOKEN_DESCRIPTION,
             'EXAMPLE_ANALYTICS_TOKEN': terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN,
             'ALLOW_MODULE_HOSTING': terrareg.config.Config().ALLOW_MODULE_HOSTING,
+            'UPLOAD_API_KEYS_ENABLED': bool(terrareg.config.Config().UPLOAD_API_KEYS),
             'PUBLISH_API_KEYS_ENABLED': bool(terrareg.config.Config().PUBLISH_API_KEYS),
             'DISABLE_TERRAREG_EXCLUSIVE_LABELS': terrareg.config.Config().DISABLE_TERRAREG_EXCLUSIVE_LABELS,
             'ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER': terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
-            'ALLOW_CUSTOM_GIT_URL_MODULE_VERSION': terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
+            'ALLOW_CUSTOM_GIT_URL_MODULE_VERSION': terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
+            'ADMIN_AUTHENTICATION_TOKEN_ENABLED': bool(terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN),
+            'SECRET_KEY_SET': bool(terrareg.config.Config().SECRET_KEY)
+        }
+
+
+class ApiTerraregInitialSetupData(ErrorCatchingResource):
+    """Interface to provide data to the initial setup page."""
+
+    def _get(self):
+        """Return information for steps for setting up Terrareg."""
+        # Get first namespace, if present
+        namespace = None
+        module = None
+        module_provider = None
+        namespaces = Namespace.get_all(only_published=False)
+        version = None
+        integrations = {}
+        if namespaces:
+            namespace = namespaces[0]
+        if namespace:
+            modules = namespace.get_all_modules()
+            if modules:
+                module = modules[0]
+        if module:
+            providers = module.get_providers()
+            if providers:
+                module_provider = providers[0]
+                integrations = module_provider.get_integrations(server_hostname=request.host)
+
+        if module_provider:
+            versions = module_provider.get_versions(include_beta=True, include_unpublished=True)
+            if versions:
+                version = versions[0]
+
+        return {
+            "module_created": bool(module_provider),
+            "version_indexed": bool(version),
+            "version_published": bool(version.published) if version else False,
+            "module_configured_with_git": bool(module_provider.get_git_clone_url()) if module_provider else False,
+            "module_view_url": module_provider.get_view_url() if module_provider else None,
+            "module_upload_endpoint": integrations['upload']['url'] if 'upload' in integrations else None,
+            "module_publish_endpoint": integrations['publish']['url'] if 'publish' in integrations else None
         }
 
 
@@ -777,52 +834,13 @@ class ApiTerraregModuleProviderIntegrations(ErrorCatchingResource):
         # Get module provider and, optionally create, if it doesn't exist
         module_provider = ModuleProvider.get(module=module, name=provider)
 
-        server_hostname = request.host
+        integrations = module_provider.get_integrations(server_hostname=request.host)
 
-        integrations = []
-        if terrareg.config.Config().ALLOW_MODULE_HOSTING:
-            integrations.append({
-                'method': 'POST',
-                'url': f'https://{server_hostname}/v1/terrareg/modules/{module_provider.id}/${{version}}/upload',
-                'description': 'Create module version using source archive',
-                'notes': 'Source ZIP file must be provided as data.'
-            })
-
-        integrations += [
-            {
-                'method': 'POST',
-                'url': f'https://{server_hostname}/v1/terrareg/modules/{module_provider.id}/${{version}}/import',
-                'description': 'Trigger module version import',
-                'notes': ''
-            },
-            {
-                'method': None,
-                'url': f'https://{server_hostname}/v1/terrareg/modules/{module_provider.id}/hooks/bitbucket',
-                'description': 'Bitbucket hook trigger',
-                'notes': ''
-            },
-            {
-                'method': None,
-                'url': f'https://{server_hostname}/v1/terrareg/modules/{module_provider.id}/hooks/github',
-                'description': 'Github hook trigger',
-                'notes': '',
-                'coming_soon': True
-            },
-            {
-                'method': None,
-                'url': f'https://{server_hostname}/v1/terrareg/modules/{module_provider.id}/hooks/gitlab',
-                'description': 'Gitlab hook trigger',
-                'notes': '',
-                'coming_soon': True
-            },
-            {
-                'method': 'POST',
-                'url': f'https://{server_hostname}/v1/terrareg/modules/{module_provider.id}/${{version}}/publish',
-                'description': 'Mark module version as published',
-                'notes': ''
-            },
+        return [
+            integrations[integration]
+            for integration in ['upload', 'import', 'hooks_bitbucket', 'hooks_github', 'hooks_gitlab', 'publish']
+            if integration in integrations
         ]
-        return integrations
 
 
 class ApiModuleVersionUpload(ErrorCatchingResource):
