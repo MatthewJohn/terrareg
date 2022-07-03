@@ -51,7 +51,18 @@ The site can be accessed at http://localhost:5000
 
 The site can be accessed at http://localhost:5000
 
-### Upload a terraform module:
+## Upload a terraform module:
+
+### From a git repo
+
+
+* Goto http://localhost:5000
+* Login, using the button in the top-right hand corner
+* Goto Modules -> Create (http://localhost:5000/create-module)
+* Fill in the details for your module and 'Create'
+* Use the 'Manually index version' form of your module, filling out the verison and select 'Publish' and then press 'Index Version'
+
+### From source
 
     terrareg_root=$PWD
     
@@ -68,13 +79,6 @@ The site can be accessed at http://localhost:5000
 
   Navigate to http://localhost:5000 to get started, or http://localhost/modules/helloworld/my-tf-module to see the uploaded example!
 
-
- * Create a module using git:
-   * Goto https://local-dev.dock.studio/
-   * Login, using the button in the top-right hand corner
-   * Goto Modules -> Create (https://local-dev.dock.studio/create-module)
-   * Fill in the details for your module and 'Create'
-   * Use the 'Manually index version' form of your module, filling out the verison and select 'Publish' and then press 'Index Version'
 
 **NOTE:** To use modules from the registry in Terraform, a valid SSL certificate must be used. Terraform will not work if you supply `http://` as a protocol for the module URL, as it will treat this as a direct HTTP download, rather than treating it as a registry.
 
