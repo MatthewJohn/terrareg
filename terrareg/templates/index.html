@@ -12,6 +12,8 @@
     });
 
     $(document).ready(function () {
+        checkInitialSetup();
+
         $.get("/v1/terrareg/analytics/global/most_recently_published_module_version", function(data, status) {
             createSearchResultCard('most-recent-module-version', data);
         });

@@ -10,24 +10,27 @@
 </nav>
 
 <script>
+    async function loadNamespaces() {
+        let namespaces = await getNamespaces();
+
+        // If no namespaces exist, display message
+        if (namespaces.length == 0) {
+            checkInitialSetup();
+        }
+
+        // If there is only 1 namespace, redirect to it
+        if (namespaces.length == 1) {
+            window.location.href = namespaces[0].view_href;
+        }
+
+        $.each(namespaces, (itx, namespace) => {
+            $('#namespaces-table-data').append(
+                `<tr><td><a href="${namespace.view_href}">${namespace.name}</a><td></tr>`
+            );
+        })
+    }
     $(document).ready(function() {
-        $.get('/v1/terrareg/namespaces', (data) => {
-            // If no namespaces exist, display message
-            if (data.length == 0) {
-                $('#namespaces-table-data').append('<tr><td>There are no namespaces with published modules.</td></tr>')
-            }
-
-            // If there is only 1 namespace, redirect to it
-            if (data.length == 1) {
-                window.location.href = data[0].view_href;
-            }
-
-            $.each(data, (itx, namespace) => {
-                $('#namespaces-table-data').append(
-                    `<tr><td><a href="${namespace.view_href}">${namespace.name}</a><td></tr>`
-                );
-            })
-        });
+        loadNamespaces();
     });
 </script>
 

@@ -1,6 +1,5 @@
 
 terraregConfigPromiseSingleton = undefined;
-
 async function getConfig() {
     // Create promise if it hasn't already been defined
     if (terraregConfigPromiseSingleton === undefined) {
@@ -16,6 +15,31 @@ async function getConfig() {
         });
     }
     return terraregConfigPromiseSingleton;
+}
+
+terraregNamespacesPromiseSingleton = undefined;
+async function getNamespaces() {
+    // Create promise if it hasn't already been defined
+    if (terraregNamespacesPromiseSingleton === undefined) {
+        terraregNamespacesPromiseSingleton = new Promise((resolve, reject) => {
+            // Perform request to obtain the config
+            $.ajax({
+                type: "GET",
+                url: "/v1/terrareg/namespaces",
+                success: function (data) {
+                    resolve(data);
+                }
+            });
+        });
+    }
+    return terraregNamespacesPromiseSingleton;
+}
+
+async function checkInitialSetup() {
+    let namespaces = await getNamespaces();
+    if (! namespaces.length) {
+        window.location.href = '/initial-setup'
+    }
 }
 
 terraregProviderLogosPromiseSingleton = undefined;
