@@ -1,6 +1,5 @@
 """Provide extraction method of modules."""
 
-from curses import KEY_RIGHT
 import os
 from typing import Type
 import tempfile
@@ -16,6 +15,8 @@ import pathlib
 
 from werkzeug.utils import secure_filename
 import magic
+from bs4 import BeautifulSoup
+import markdown
 
 from terrareg.models import BaseSubmodule, Example, ExampleFile, ModuleVersion, Submodule
 from terrareg.database import Database
@@ -133,6 +134,7 @@ class ModuleExtractor:
 
     def _insert_database(
         self,
+        description: str,
         readme_content: str,
         terraform_docs_output: dict,
         terrareg_metadata: dict) -> int:
@@ -146,7 +148,7 @@ class ModuleExtractor:
 
             # Terrareg meta-data
             owner=terrareg_metadata.get('owner', None),
-            description=terrareg_metadata.get('description', None),
+            description=description,
             repo_clone_url_template=terrareg_metadata.get('repo_clone_url', None),
             repo_browse_url_template=terrareg_metadata.get('repo_browse_url', None),
             repo_base_url_template=terrareg_metadata.get('repo_base_url', None),
@@ -233,6 +235,70 @@ class ModuleExtractor:
                 module_path=submodule_path)
             self._process_submodule(submodule=obj)
 
+    def _extract_description(self, readme_content):
+        """Extract description from README"""
+        # If module description extraction is disabled, skip
+        if not Config().AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION:
+            return None
+
+        # If README is empty, return early
+        if not readme_content:
+            return None
+
+        # Convert README to HTML
+        html_readme = markdown.markdown(
+            readme_content,
+            extensions=['fenced_code', 'tables']
+        )
+
+        # Convert HTML to plain text
+        plain_text = BeautifulSoup(html_readme, features='html.parser').get_text()
+        for line in plain_text.split('\n'):
+            # Skip if line is empty
+            if not line.strip():
+                continue
+
+            # Check number of characters in string
+            if len(re.sub(r'[^a-zA-Z]', '', line)) < 20:
+                continue
+
+            # Check number of words
+            word_match = re.findall(r'(?:([a-zA-Z]+)(?:\s|$|\.))', line)
+            if word_match is None or len(word_match) < 6:
+                continue
+
+            # Check if description line contains unwanted text
+            found_unwanted_text = False
+            for unwanted_text in ['http://', 'https://', '@']:
+                if unwanted_text in line:
+                    found_unwanted_text = True
+                    break
+            if found_unwanted_text:
+                continue
+
+            # Get sentences
+            extracted_description = ''
+            for scentence in line.split('. '):
+                new_description = extracted_description
+                if extracted_description:
+                    new_description += '. '
+                new_description += scentence.strip()
+
+                # Check length of combined sentences.
+                # For combining a new sentence, check overall description
+                # length of 100 chracters.
+                # If this is the first sentence, give a higher allowance, as it's
+                # preferable to extract a description.
+                if ((new_description and len(new_description) >= 80) or
+                        (not extracted_description and len(new_description) >= 130)):
+                    # Otherwise, break from iterations
+                    break
+                extracted_description = new_description
+         
+            return extracted_description if extracted_description else None
+
+        return None
+
     def process_upload(self):
         """Handle data extraction from module source."""
         # Run terraform-docs on module content and obtain README
@@ -242,7 +308,14 @@ class ModuleExtractor:
         # Check for any terrareg metadata files
         terrareg_metadata = self._get_terrareg_metadata(self.extract_directory)
 
+        # Check if description is available in metadata
+        description = terrareg_metadata.get('description', None)
+        if not description:
+            # Otherwise, attempt to extract description from README
+            description = self._extract_description(readme_content)
+
         self._insert_database(
+            description=description,
             readme_content=readme_content,
             terraform_docs_output=module_details,
             terrareg_metadata=terrareg_metadata
