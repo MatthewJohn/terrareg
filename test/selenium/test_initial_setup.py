@@ -29,7 +29,6 @@ class TestInitialSetup(SeleniumTest):
         cls.register_patch(cls._config_publish_api_keys_mock)
         cls.register_patch(cls._config_admin_authentication_key_mock)
         cls.register_patch(cls._config_secret_key_mock)
-        cls.register_patch(cls._config_publish_api_keys_mock)
 
         super(TestInitialSetup, cls).setup_class()
 
