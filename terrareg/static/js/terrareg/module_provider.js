@@ -105,11 +105,9 @@ async function createSearchResultCard(parent_id, module) {
                     ${provider_logo_html}
                     <a class="module-card-title" href="/modules/${module.id}">${module.namespace} / ${module.name}</a>
                 </p>
-                <a href="/modules/${module.id}">
+                <a class="module-provider-card-provider-text" href="/modules/${module.id}">
                     <button class="card-header-icon" aria-label="more options">
-                        <span class="icon">
-                            <i class="fas fa-external-link" aria-hidden="true"></i>
-                        </span>
+                        Provider: ${module.provider}
                     </button>
                 </a>
             </header>

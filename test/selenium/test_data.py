@@ -319,13 +319,13 @@ integration_test_data = {
             'id': 36,
             'versions': {'1.0.0': {'published': True}}
         }},
-        'mixedsearch-trusted-second-result': {'aws': {
+        'mixedsearch-trusted-second-result': {'datadog': {
             'id': 37,
             'versions': {
                 '5.2.1': {'published': True},
             }
         }},
-        'mixedsearch-trusted-result-multiversion': {'aws': {
+        'mixedsearch-trusted-result-multiversion': {'null': {
             'id': 38,
             'versions': {
                 '1.2.3': {'published': True},
@@ -339,7 +339,7 @@ integration_test_data = {
                 '2.0.0': {}
             }
         }},
-        'mixedsearch-trusted-result-verified': {'aws': {
+        'mixedsearch-trusted-result-verified': {'gcp': {
             'id': 54,
             'verified': True,
             'versions': {
