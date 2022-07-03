@@ -7,6 +7,7 @@ import logging
 import threading
 from time import sleep
 import unittest.mock
+import warnings
 from attr import attrib
 from flask import request
 
@@ -42,6 +43,23 @@ class SeleniumTest(BaseTest):
 
     DEFAULT_RESOLUTION = (1280, 720)
 
+    @pytest.fixture(autouse=True, scope="session")
+    def selenium(cls, request):
+        warnings.warn(UserWarning("Setting up selenium"))
+        if not SeleniumTest.RUN_INTERACTIVELY:
+            SeleniumTest.display_instance = Display(visible=0, size=SeleniumTest.DEFAULT_RESOLUTION)
+            SeleniumTest.display_instance.start()
+        SeleniumTest.selenium_instance = selenium.webdriver.Firefox()
+        SeleniumTest.selenium_instance.delete_all_cookies()
+        SeleniumTest.selenium_instance.implicitly_wait(1)
+
+        def teardown():
+            SeleniumTest.selenium_instance.quit()
+            if not SeleniumTest.RUN_INTERACTIVELY:
+                SeleniumTest.display_instance.stop()
+
+        request.addfinalizer(teardown)
+
     @staticmethod
     def _get_database_path():
         """Return path of database file to use."""
@@ -68,13 +86,6 @@ class SeleniumTest(BaseTest):
 
         cls.SERVER.host = '127.0.0.1'
 
-        if not cls.RUN_INTERACTIVELY:
-            cls.display_instance = Display(visible=0, size=SeleniumTest.DEFAULT_RESOLUTION)
-            cls.display_instance.start()
-        cls.selenium_instance = selenium.webdriver.Firefox()
-        cls.selenium_instance.delete_all_cookies()
-        cls.selenium_instance.implicitly_wait(1)
-
         log = logging.getLogger('werkzeug')
         if not cls.RUN_INTERACTIVELY:
             log.disabled = True
@@ -84,9 +95,6 @@ class SeleniumTest(BaseTest):
     @classmethod
     def teardown_class(cls):
         """Teardown display instance."""
-        cls.selenium_instance.quit()
-        if not cls.RUN_INTERACTIVELY:
-            cls.display_instance.stop()
         # Shutdown server
         cls._teardown_server()
 
