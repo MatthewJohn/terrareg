@@ -45,6 +45,21 @@ class TestHomepage(SeleniumTest):
 
     def test_latest_module_version(self):
         """Check tabs for most recent uploaded."""
+        # Update latest module publish date to now
+        module_version = ModuleVersion(
+            module_provider=ModuleProvider(
+                module=Module(
+                    namespace=Namespace(name='mostrecent'),
+                    name='modulename'
+                ),
+                name='providername'
+            ),
+            version='1.2.3'
+        )
+        module_version.update_attributes(published_at=datetime.now())
+
+        self.selenium_instance.get(self.get_url('/'))
+
         most_recent_module_version_title = self.selenium_instance.find_element(
             By.ID, 'most-recent-module-version'
         ).find_element(
@@ -75,6 +90,20 @@ class TestHomepage(SeleniumTest):
 
     def test_verified_module_label(self):
         """Check verified module is shown with label"""
+        module_version = ModuleVersion(
+            module_provider=ModuleProvider(
+                module=Module(
+                    namespace=Namespace(name='mostrecent'),
+                    name='modulename'
+                ),
+                name='providername'
+            ),
+            version='1.2.3'
+        )
+        module_version.update_attributes(published_at=datetime.now())
+
+        self.selenium_instance.get(self.get_url('/'))
+
         # Make module verified and ensure tag is applied
         namespace = Namespace('mostrecent')
         module = Module(namespace=namespace, name='modulename')
