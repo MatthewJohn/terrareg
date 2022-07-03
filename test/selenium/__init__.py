@@ -54,6 +54,7 @@ class SeleniumTest(BaseTest):
     @classmethod
     def register_patch(cls, patch):
         """Register mock patch in test"""
+        assert patch not in cls._MOCK_PATCHES
         cls._MOCK_PATCHES.append(patch)
 
     @classmethod
