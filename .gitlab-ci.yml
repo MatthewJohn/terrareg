@@ -22,10 +22,12 @@ cache:
 .before_script_python:
   before_script:
     - python --version  # For debugging
-    - pip install --proxy=$http_proxy virtualenv
+      #- pip install --proxy=$http_proxy virtualenv
+    - pip install virtualenv
     - virtualenv venv
     - source venv/bin/activate
-    - pip install --proxy=$http_proxy -r requirements.txt
+    - pip install -r requirements.txt
+      #- pip install --proxy=$http_proxy -r requirements.txt
 
 .test_image:
   image: terrareg-test-image:v${CI_COMMIT_SHORT_SHA}
@@ -127,7 +129,8 @@ build-wheel:
   script:
     - python setup.py bdist_wheel
     # an alternative approach is to install and run:
-    - pip install --proxy=$http_proxy dist/*
+    - pip install dist/*
+      #- pip install --proxy=$http_proxy -r requirements.txt
     # run the command here
   artifacts:
     paths:
