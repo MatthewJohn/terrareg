@@ -2,6 +2,8 @@ FROM ubuntu:20.04
 
 WORKDIR /
 
+ENV DEBIAN_FRONTEND noninteractive
+
 RUN apt-get update && apt-get install --assume-yes python3.10 python3-pip curl unzip git && apt-get clean all
 
 RUN if [ "$(uname -m)" == "aarch64" ]; \
