@@ -76,3 +76,20 @@ async function isLoggedIn() {
 
     return terraregIsLoggedInPromiseSingleton;
 }
+
+/*
+ * Convert URL path to full URL, based on current
+ * protocol and domain
+ *
+ * @param url Absolute URL path
+ */
+function pathToUrl(urlPath) {
+    let fullUrl = `${window.location.protocol}//${window.location.hostname}`;
+    // Check if running on non-standard port
+    if (! ((window.location.protocol == 'https:' && window.location.port == 443) ||
+           (window.location.protocol == 'http:' && window.location.port == 80))) {
+        fullUrl += `:${window.location.port}`;
+    }
+    fullUrl += urlPath;
+    return fullUrl;
+}

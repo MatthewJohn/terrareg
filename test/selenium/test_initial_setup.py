@@ -160,9 +160,9 @@ class TestInitialSetup(SeleniumTest):
 
         expected_upload_instructions = [
             'Create a zip/tar.gz archive with the contents of the terraform module',
-            f'Upload the module by performing a POST request to the upload endpoint: {self.get_url("/v1/terrareg/modules/unittestnamespace/setupmodulename/setupprovider/${version}/upload", https=True)}\n'
+            f'Upload the module by performing a POST request to the upload endpoint: {self.get_url("/v1/terrareg/modules/unittestnamespace/setupmodulename/setupprovider/${version}/upload")}\n'
             'The archive file should be supplied as a file attachment.',
-            f'Publish version of the module by performing a POST request to the \'publish\' endpoint: {self.get_url("/v1/terrareg/modules/unittestnamespace/setupmodulename/setupprovider/${version}/publish", https=True)}'
+            f'Publish version of the module by performing a POST request to the \'publish\' endpoint: {self.get_url("/v1/terrareg/modules/unittestnamespace/setupmodulename/setupprovider/${version}/publish")}'
         ]
         for index_upload_li in index_upload_card_content.find_elements(By.TAG_NAME, 'li'):
             assert index_upload_li.text == expected_upload_instructions.pop(0)
@@ -176,11 +176,11 @@ class TestInitialSetup(SeleniumTest):
             'version=1.0.0\n\n'
             '# Upload module version\n'
             'curl -X POST \\\n'
-            f'    "{self.get_url("/v1/terrareg/modules/unittestnamespace/setupmodulename/setupprovider/${version}/upload", https=True)}" \\\n'
+            f'    "{self.get_url("/v1/terrareg/modules/unittestnamespace/setupmodulename/setupprovider/${version}/upload")}" \\\n'
             '    -F file=@../module.zip\n\n'
             '# Publish module version\n'
             'curl -X POST \\\n'
-            f'    "{self.get_url("/v1/terrareg/modules/unittestnamespace/setupmodulename/setupprovider/${version}/publish", https=True)}"'
+            f'    "{self.get_url("/v1/terrareg/modules/unittestnamespace/setupmodulename/setupprovider/${version}/publish")}"'
         )
 
     def _test_publish_module_version_upload_step(self, module_provider):

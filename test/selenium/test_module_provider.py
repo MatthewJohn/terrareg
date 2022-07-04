@@ -340,28 +340,28 @@ class TestModuleProvider(SeleniumTest):
         expected_integrations = [
             [
                 'Create module version using source archive',
-                f'POST {self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/${version}/upload", https=True)}\n' +
+                f'POST {self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/${version}/upload")}\n' +
                 'Source ZIP file must be provided as data.'
             ],
             [
                 'Trigger module version import',
-                f'POST {self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/${version}/import", https=True)}'
+                f'POST {self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/${version}/import")}'
             ],
             [
                 'Bitbucket hook trigger',
-                f'{self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/hooks/bitbucket", https=True)}'
+                f'{self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/hooks/bitbucket")}'
             ],
             [
                 'Github hook trigger (Coming soon)',
-                f'{self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/hooks/github", https=True)}'
+                f'{self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/hooks/github")}'
             ],
             [
                 'Gitlab hook trigger (Coming soon)',
-                f'{self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/hooks/gitlab", https=True)}'
+                f'{self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/hooks/gitlab")}'
             ],
             [
                 'Mark module version as published',
-                f'POST {self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/${version}/publish", https=True)}'
+                f'POST {self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/${version}/publish")}'
             ]
         ]
 
