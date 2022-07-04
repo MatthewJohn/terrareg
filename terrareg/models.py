@@ -428,7 +428,7 @@ class ModuleDetails:
     @property
     def tfsec(self):
         """Return tfsec data."""
-        if self._get_db_row():
+        if self._get_db_row() and self._get_db_row()['tfsec']:
             return json.loads(self._get_db_row()['tfsec'])
         return {'results': None}
 
