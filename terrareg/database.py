@@ -204,7 +204,7 @@ class Database():
             ),
             sqlalchemy.Column('version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column(
-                'module_detials_id',
+                'module_details_id',
                 sqlalchemy.ForeignKey(
                     'module_details.id',
                     name='fk_submodule_module_details_id_module_details_id',
