@@ -77,10 +77,10 @@ async function loadSetupPage(overrideHttpsCheck = false) {
         // Populat integration URLs for module's indexing
         $('#module-integrations-link').attr('href', setupData.module_view_url + '#integrations');
         $('.module-upload-endpoint').each((itx, div) => {
-            $(div).text(setupData.module_upload_endpoint);
+            $(div).text(pathToUrl(setupData.module_upload_endpoint));
         });
         $('.module-publish-endpoint').each((itx, div) => {
-            $(div).text(setupData.module_publish_endpoint);
+            $(div).text(pathToUrl(setupData.module_publish_endpoint));
         });
 
         // Check if module version has been indexed

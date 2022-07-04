@@ -384,8 +384,9 @@ class IntegrationsTab extends ModuleDetailsTab {
                     if (integration.method) {
                         urlCodeContent += integration.method + " ";
                     }
-                    // Add URL to code block
-                    urlCodeContent += integration.url;
+                    // Add URL to code block, generating from
+                    // current protocol, hostname and URL endpoint in integration.
+                    urlCodeContent += pathToUrl(integration.url);
                     codeBlock.text(urlCodeContent);
 
                     contentTd.append(codeBlock);
