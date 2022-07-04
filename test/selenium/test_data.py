@@ -416,7 +416,7 @@ integration_test_data = {
                         }
 
                     ]),
-                    'module_details': json.dumps({
+                    'terraform_docs': json.dumps({
                         'header': '',
                         'footer': '',
                         'inputs': [
@@ -493,7 +493,7 @@ integration_test_data = {
                                 'examples/test-example/main.tf': '# Call root module\nmodule "root" {\n  source = "../../"\n}'
                             },
                             'readme_content': '# Example 1 README',
-                            'module_details': json.dumps({
+                            'terraform_docs': json.dumps({
                                 'header': '',
                                 'footer': '',
                                 'inputs': [
@@ -537,7 +537,7 @@ integration_test_data = {
                     'submodules': {
                         'modules/example-submodule1': {
                             'readme_content': '# Submodule 1 README',
-                            'module_details': json.dumps({
+                            'terraform_docs': json.dumps({
                                 'header': '',
                                 'footer': '',
                                 'inputs': [
