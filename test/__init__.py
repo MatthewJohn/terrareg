@@ -203,11 +203,10 @@ class BaseTest:
                                 for attr in submodule_config
                                 if attr not in ['readme_content', 'terraform_docs']
                             }
-                            if attributes_to_update:
-                                submodule.update_attributes(
-                                    module_details_id=module_details.pk,
-                                    **attributes_to_update
-                                )
+                            attributes_to_update['module_details_id'] = module_details.pk
+                            submodule.update_attributes(
+                                **attributes_to_update
+                            )
 
                         # Iterate over examples and create them
                         for example_path in version_data.get('examples', {}):
@@ -225,11 +224,10 @@ class BaseTest:
                                 for attr in example_config
                                 if attr not in ['example_files', 'readme_content', 'terraform_docs']
                             }
-                            if attributes_to_update:
-                                example.update_attributes(
-                                    module_details_id=module_details.pk,
-                                    **attributes_to_update
-                                )
+                            attributes_to_update['module_details_id'] = module_details.pk
+                            example.update_attributes(
+                                **attributes_to_update
+                            )
 
                             for example_file_path in example_config.get('example_files', {}):
                                 example_file = ExampleFile.create(example=example, path=example_file_path)
