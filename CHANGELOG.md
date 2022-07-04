@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.20.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.20.1...v2.20.2) (2022-07-04)
+
+
+### Bug Fixes
+
+* Fix display of custom input fields on module provider page when custom module provider Git URLs have been disable. ([09c268d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/09c268dcd34d7cce843f0615ad42ef277a04fa41)), closes [#171](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/171)
+* Fix display of custom repository in git provider select on module provider page when custom module provider Git URLs have been disable. ([c068916](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c068916c459d665ee2df09f62ee751f1b62e3112)), closes [#171](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/171)
+* Fix error thrown from settings endpoint when setting custom git provider URLs to an empty string when custom git URLs is disabled. ([6bda8d6](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6bda8d6a0fd0d60711d02d525672cbcd99f0d8d4)), closes [#171](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/171)
+
 ## [2.20.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.20.0...v2.20.1) (2022-07-04)
 
 
