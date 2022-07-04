@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.20.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.20.2...v2.20.3) (2022-07-04)
+
+
+### Bug Fixes
+
+* Correctly return protocol in all integration URLs ([8a82673](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8a82673523cefd342c675b225e1bcce1fc23a5b5)), closes [#179](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/179)
+
 ## [2.20.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.20.1...v2.20.2) (2022-07-04)
 
 
