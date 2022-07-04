@@ -151,14 +151,11 @@ class BaseTest:
                             []):
                         version_data = module_provider_test_data['versions'][version_number]
 
-                        with Database.get_engine().connect() as conn:
-                            module_details_insert_res = conn.execute(Database.get().module_details.insert().values())
-                        module_details_id = module_details_insert_res.inserted_primary_key[0]
-                        ModuleDetails(module_details_id).update_attributes(
+                        module_details = ModuleDetails.create()
+                        module_details.update_attributes(
                             readme_content=version_data.get('readme_content', None),
                             terraform_docs=version_data.get('terraform_docs', None)
                         )
-
 
                         data = {
                             'module_provider_id': module_provider_attributes['id'],
@@ -167,7 +164,7 @@ class BaseTest:
                             'beta': False,
                             'published_at': datetime.now(),
                             'internal': False,
-                            'module_details_id': module_details_id
+                            'module_details_id': module_details.pk
                         }
 
                         insert = Database.get().module_version.insert().values(
@@ -194,10 +191,8 @@ class BaseTest:
                         for submodule_path in version_data.get('submodules', {}):
                             submodule_config = version_data['submodules'][submodule_path]
 
-                            with Database.get_engine().connect() as conn:
-                                module_details_insert_res = conn.execute(Database.get().module_details.insert().values())
-                            module_details_id = module_details_insert_res.inserted_primary_key[0]
-                            ModuleDetails(module_details_id).update_attributes(
+                            module_details = ModuleDetails.create()
+                            module_details.update_attributes(
                                 readme_content=submodule_config.get('readme_content', None),
                                 terraform_docs=submodule_config.get('terraform_docs', None)
                             )
@@ -210,7 +205,7 @@ class BaseTest:
                             }
                             if attributes_to_update:
                                 submodule.update_attributes(
-                                    module_details_id=module_details_id,
+                                    module_details_id=module_details.pk,
                                     **attributes_to_update
                                 )
 
@@ -218,10 +213,8 @@ class BaseTest:
                         for example_path in version_data.get('examples', {}):
                             example_config = version_data['examples'][example_path]
 
-                            with Database.get_engine().connect() as conn:
-                                module_details_insert_res = conn.execute(Database.get().module_details.insert().values())
-                            module_details_id = module_details_insert_res.inserted_primary_key[0]
-                            ModuleDetails(module_details_id).update_attributes(
+                            module_details = ModuleDetails.create()
+                            module_details.update_attributes(
                                 readme_content=example_config.get('readme_content', None),
                                 terraform_docs=example_config.get('terraform_docs', None)
                             )
@@ -234,7 +227,7 @@ class BaseTest:
                             }
                             if attributes_to_update:
                                 example.update_attributes(
-                                    module_details_id=module_details_id,
+                                    module_details_id=module_details.pk,
                                     **attributes_to_update
                                 )
 
