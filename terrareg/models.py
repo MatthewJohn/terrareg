@@ -1149,6 +1149,10 @@ class TerraformSpecsObject(object):
 
     def get_tfsec_failure_count(self):
         """Return number of tfsec failures."""
+        # Handle when results in None
+        if self.module_details.tfsec['results'] is None:
+            return 0
+
         count = 0
         # Count each of the test failures
         for result in self.module_details.tfsec['results']:
