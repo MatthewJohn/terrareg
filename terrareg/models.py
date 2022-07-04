@@ -429,8 +429,8 @@ class ModuleDetails:
     def tfsec(self):
         """Return tfsec data."""
         if self._get_db_row():
-            return self._get_db_row()['tfsec']
-        return None
+            return json.loads(self._get_db_row()['tfsec'])
+        return {'results': None}
 
     def __init__(self, id: int):
         """Store member variables."""
