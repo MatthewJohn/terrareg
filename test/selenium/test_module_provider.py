@@ -725,7 +725,7 @@ class TestModuleProvider(SeleniumTest):
 
             if allow_custom_git_url_setting:
                 # Ensure the currently selected item is custom
-                assert git_provider_select.first_selected_option.text == 'Custom'
+                assert git_provider_select_element.get_attribute('value') == ''
 
             # Select a different git provider and save
             git_provider_select.select_by_visible_text('testgitprovider')
@@ -741,11 +741,12 @@ class TestModuleProvider(SeleniumTest):
 
                 # Reload page, assert the new git provider has been set
                 self.selenium_instance.refresh()
-                git_provider_select = Select(self.selenium_instance.find_element(By.ID, 'settings-git-provider'))
-                self.assert_equals(lambda: git_provider_select.first_selected_option.text, 'testgitprovider')
+                git_provider_select_element = self.selenium_instance.find_element(By.ID, 'settings-git-provider')
+                self.assert_equals(lambda: git_provider_select_element.get_attribute('value'), '1')
 
                 # If custom git urls is enabled, reset back to custom and save
                 if allow_custom_git_url_setting:
+                    git_provider_select = Select(git_provider_select_element)
                     git_provider_select.select_by_visible_text('Custom')
                     self.selenium_instance.find_element(By.ID, 'module-provider-settings-update').click()
                     # Ensure the DB row is set to custom
