@@ -18,7 +18,7 @@ import magic
 from bs4 import BeautifulSoup
 import markdown
 
-from terrareg.models import BaseSubmodule, Example, ExampleFile, ModuleVersion, Submodule
+from terrareg.models import BaseSubmodule, Example, ExampleFile, ModuleVersion, Submodule, ModuleDetails
 from terrareg.database import Database
 from terrareg.errors import (
     UnableToProcessTerraformError,
@@ -132,6 +132,15 @@ class ModuleExtractor:
             'zip',
             self.extract_directory)
 
+    def _create_module_details(self, readme_content, terraform_docs):
+        """Create module details row."""
+        module_details = ModuleDetails.create()
+        module_details.update_attributes(
+            readme_content=readme_content,
+            terraform_docs=terraform_docs
+        )
+        return module_details
+
     def _insert_database(
         self,
         description: str,
@@ -139,10 +148,15 @@ class ModuleExtractor:
         terraform_docs_output: dict,
         terrareg_metadata: dict) -> int:
         """Insert module into DB, overwrite any pre-existing"""
+        # Create module details row
+        module_details = self._create_module_details(
+            terraform_docs=json.dumps(terraform_docs_output),
+            readme_content=readme_content
+        )
+        
         # Update attributes of module_version in database
         self._module_version.update_attributes(
-            readme_content=readme_content,
-            module_details=json.dumps(terraform_docs_output),
+            module_details_id=module_details.pk,
 
             published_at=datetime.datetime.now(),
 
@@ -164,9 +178,14 @@ class ModuleExtractor:
         tf_docs = self._run_terraform_docs(submodule_dir)
         readme_content = self._get_readme_content(submodule_dir)
 
+        # Create module details row
+        module_details = self._create_module_details(
+            terraform_docs=json.dumps(tf_docs),
+            readme_content=readme_content
+        )
+
         submodule.update_attributes(
-            readme_content=readme_content,
-            module_details=json.dumps(tf_docs)
+            module_details_id=module_details.pk
         )
 
         if isinstance(submodule, Example):
