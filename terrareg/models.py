@@ -425,6 +425,13 @@ class ModuleDetails:
             return self._get_db_row()['readme_content']
         return None
 
+    @property
+    def tfsec(self):
+        """Return tfsec data."""
+        if self._get_db_row():
+            return self._get_db_row()['tfsec']
+        return None
+
     def __init__(self, id: int):
         """Store member variables."""
         self._id = id
@@ -454,7 +461,7 @@ class ModuleDetails:
         """Update DB row."""
         # Check for any blob and encode the values
         for kwarg in kwargs:
-            if kwarg in ['readme_content', 'terraform_docs']:
+            if kwarg in ['readme_content', 'terraform_docs', 'tfsec']:
                 kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
 
         db = Database.get()
@@ -1140,6 +1147,22 @@ class TerraformSpecsObject(object):
         """Must be implemented by object. Return row from DB."""
         raise NotImplementedError
 
+    def get_tfsec_failure_count(self):
+        """Return number of tfsec failures."""
+        tfsec_output = self.module_details.tfsec
+        # If no valid tfsec output, or no tests run,
+        # return 0 failures
+        if not tfsec_output or not tfsec_output['results']:
+            return 0
+
+        count = 0
+        # Count each of the test failures
+        for result in tfsec_output['results']:
+            # TFsec status of 0 is a fail
+            if result['status'] == 0:
+                count += 1
+        return count
+
     def get_module_specs(self):
         """Return module specs"""
         if self._module_specs is None:
@@ -1611,7 +1634,8 @@ class ModuleVersion(TerraformSpecsObject):
             "terraform_example_version_string": self.get_terraform_example_version_string(),
             "versions": versions,
             "beta": self.beta,
-            "published": self.published
+            "published": self.published,
+            "security_failures": self.get_tfsec_failure_count()
         })
         return api_details
 
