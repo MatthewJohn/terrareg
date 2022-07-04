@@ -7,7 +7,7 @@ import unittest.mock
 import pytest
 
 from terrareg.models import (
-    Example, ExampleFile, Namespace, Module, ModuleProvider,
+    Example, ExampleFile, ModuleDetails, Namespace, Module, ModuleProvider,
     ModuleVersion, GitProvider, Submodule
 )
 from terrareg.database import Database
@@ -152,11 +152,12 @@ class BaseTest:
                         version_data = module_provider_test_data['versions'][version_number]
 
                         with Database.get_engine().connect() as conn:
-                            module_details_insert_res = conn.execute(Database.get().module_details.insert().values(
-                                readme_content=version_data.get('readme_content', None),
-                                terraform_docs=version_data.get('terraform_docs', None)
-                            ))
+                            module_details_insert_res = conn.execute(Database.get().module_details.insert().values())
                         module_details_id = module_details_insert_res.inserted_primary_key[0]
+                        ModuleDetails(module_details_id).update_attributes(
+                            readme_content=version_data.get('readme_content', None),
+                            terraform_docs=version_data.get('terraform_docs', None)
+                        )
 
 
                         data = {
@@ -194,12 +195,12 @@ class BaseTest:
                             submodule_config = version_data['submodules'][submodule_path]
 
                             with Database.get_engine().connect() as conn:
-                                module_details_insert_res = conn.execute(Database.get().module_details.insert().values(
-                                    readme_content=submodule_config.get('readme_content', None),
-                                    terraform_docs=submodule_config.get('terraform_docs', None)
-                                ))
-
+                                module_details_insert_res = conn.execute(Database.get().module_details.insert().values())
                             module_details_id = module_details_insert_res.inserted_primary_key[0]
+                            ModuleDetails(module_details_id).update_attributes(
+                                readme_content=submodule_config.get('readme_content', None),
+                                terraform_docs=submodule_config.get('terraform_docs', None)
+                            )
 
                             submodule = Submodule.create(module_version=module_version, module_path=submodule_path)
                             attributes_to_update = {
@@ -209,7 +210,7 @@ class BaseTest:
                             }
                             if attributes_to_update:
                                 submodule.update_attributes(
-                                    module_details_ids=module_details_id,
+                                    module_details_id=module_details_id,
                                     **attributes_to_update
                                 )
 
@@ -218,12 +219,12 @@ class BaseTest:
                             example_config = version_data['examples'][example_path]
 
                             with Database.get_engine().connect() as conn:
-                                module_details_insert_res = conn.execute(Database.get().module_details.insert().values(
-                                    readme_content=example_config.get('readme_content', None),
-                                    terraform_docs=example_config.get('terraform_docs', None)
-                                ))
-
+                                module_details_insert_res = conn.execute(Database.get().module_details.insert().values())
                             module_details_id = module_details_insert_res.inserted_primary_key[0]
+                            ModuleDetails(module_details_id).update_attributes(
+                                readme_content=example_config.get('readme_content', None),
+                                terraform_docs=example_config.get('terraform_docs', None)
+                            )
 
                             example = Example.create(module_version=module_version, module_path=example_path)
                             attributes_to_update = {
