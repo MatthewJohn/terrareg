@@ -446,6 +446,11 @@ class SettingsTab extends ModuleDetailsTab {
                     customGitProvider.attr('selected', '');
                 }
                 gitProviderSelect.append(customGitProvider);
+
+                // Enable custom git provider inputs
+                $.find('.settings-custom-git-provider-container').forEach((inputContainer) => {
+                    $(inputContainer).removeClass('default-hidden');
+                });
             }
 
             // Obtain all git providers and add to select for settings
@@ -486,13 +491,6 @@ class SettingsTab extends ModuleDetailsTab {
                 updateModuleProviderSettings(this._moduleDetails);
                 return false;
             });
-
-            // Enable custom git provider inputs
-            if (config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER) {
-                $.find('.settings-custom-git-provider-container').forEach((inputContainer) => {
-                    $(inputContainer).removeClass('default-hidden');
-                });
-            }
 
             // Show settings tab
             $('#module-tab-link-settings').removeClass('default-hidden');
