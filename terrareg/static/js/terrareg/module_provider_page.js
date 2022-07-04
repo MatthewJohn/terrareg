@@ -438,7 +438,7 @@ class SettingsTab extends ModuleDetailsTab {
             let config = await getConfig();
             let gitProviderSelect = $('#settings-git-provider');
 
-            if (config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER || config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION) {
+            if (config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER) {
                 let customGitProvider = $('<option></option>');
                 customGitProvider.val('');
                 customGitProvider.text('Custom');
