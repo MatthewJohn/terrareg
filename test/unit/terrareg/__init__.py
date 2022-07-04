@@ -52,7 +52,6 @@ def setup_test_data(test_data=None):
             TEST_MODULE_DATA = dict(test_data if test_data else test_data_full)
             TEST_MODULE_DETAILS = {}
 
-            module_details_itx = 0
             # Replace all ModuleDetails in test data with IDs and move contents to
             # TEST_MODULE_DETAILS
             default_readme = 'Mock module README file'
@@ -88,7 +87,6 @@ def setup_test_data(test_data=None):
                                     config['module_details_id'] = TEST_MODULE_DETAILS_ITX
 
                                     TEST_MODULE_DETAILS_ITX += 1
-
 
             global TEST_GIT_PROVIDER_DATA
             TEST_GIT_PROVIDER_DATA = dict(test_git_providers)
