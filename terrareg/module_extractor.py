@@ -349,7 +349,7 @@ class ModuleExtractor:
         """Handle data extraction from module source."""
         # Run terraform-docs on module content and obtain README
         terraform_docs = self._run_terraform_docs(self.extract_directory)
-        tfsec = self._run_terraform_docs(self.extract_directory)
+        tfsec = self._run_tfsec(self.extract_directory)
         readme_content = self._get_readme_content(self.extract_directory)
 
         # Check for any terrareg metadata files
