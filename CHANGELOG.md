@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.20.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.20.0...v2.20.1) (2022-07-04)
+
+
+### Bug Fixes
+
+* Fix link in initial setup to upload version tab from the git upload tab when an unpublished version has been uploaded ([57918ea](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/57918ead32156a5dbf5b3b1309db0f70267760ae))
+
 # [2.20.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.19.0...v2.20.0) (2022-07-03)
 
 
