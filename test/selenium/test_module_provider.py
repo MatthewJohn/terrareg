@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 
 from test.selenium import SeleniumTest
-from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
+from terrareg.models import GitProvider, ModuleVersion, Namespace, Module, ModuleProvider
 
 class TestModuleProvider(SeleniumTest):
     """Test module provider page."""
@@ -18,12 +18,14 @@ class TestModuleProvider(SeleniumTest):
         cls._api_version_create_mock = mock.Mock(return_value={'status': 'Success'})
         cls._api_version_publish_mock = mock.Mock(return_value={'status': 'Success'})
         cls._config_publish_api_keys_mock = mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', [])
+        cls._config_allow_custom_repo_urls_module_provider = mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', True)
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.SECRET_KEY', '354867a669ef58d17d0513a0f3d02f4403354915139422a8931661a3dbccdffe'))
         cls.register_patch(mock.patch('terrareg.server.ApiModuleVersionCreate._post', cls._api_version_create_mock))
         cls.register_patch(mock.patch('terrareg.server.ApiTerraregModuleVersionPublish._post', cls._api_version_publish_mock))
         cls.register_patch(cls._config_publish_api_keys_mock)
+        cls.register_patch(cls._config_allow_custom_repo_urls_module_provider)
 
         super(TestModuleProvider, cls).setup_class()
 
@@ -684,3 +686,78 @@ class TestModuleProvider(SeleniumTest):
 
         # Ensure module version no longer exists
         assert ModuleVersion.get(module_provider=module_provider, version='2.5.5') is None
+
+    @pytest.mark.parametrize('allow_custom_git_url_setting', [True, False])
+    def test_git_provider_config(self, allow_custom_git_url_setting):
+        """Ensure git provider configuration work as expected."""
+
+        with self.update_mock(self._config_allow_custom_repo_urls_module_provider, 'new', allow_custom_git_url_setting):
+
+            self.perform_admin_authentication(password='unittest-password')
+
+            self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/2.5.5'))
+
+            # Click on settings tab
+            tab = self.wait_for_element(By.ID, 'module-tab-link-settings')
+            tab.click()
+
+            # Check git provider dropdown
+            git_provider_select_element = self.selenium_instance.find_element(By.ID, 'settings-git-provider')
+
+            expected_git_providers = ['testgitprovider', 'repo_url_tests', 'repo_url_tests_uri_encoded']
+            if allow_custom_git_url_setting:
+                expected_git_providers.insert(0, 'Custom')
+
+            for option in git_provider_select_element.find_elements(By.TAG_NAME, 'option'):
+                # Check option name matches expected
+                expected_name = expected_git_providers.pop(0)
+                assert option.text == expected_name
+
+                # Ensure git provider pk is used for value of option, or
+                # custom option has an empty value
+                expected_value = ''
+                if expected_name != 'Custom':
+                    git_provider = GitProvider.get_by_name(expected_name)
+                    expected_value = str(git_provider.pk)
+                assert option.get_attribute('value') == expected_value
+
+            git_provider_select = Select(git_provider_select_element)
+
+            if allow_custom_git_url_setting:
+                # Ensure the currently selected item is custom
+                assert git_provider_select_element.get_attribute('value') == ''
+
+            # Select a different git provider and save
+            git_provider_select.select_by_visible_text('testgitprovider')
+
+            try:
+                # Press Update button
+                self.selenium_instance.find_element(By.ID, 'module-provider-settings-update').click()
+
+                self.assert_equals(lambda: self.wait_for_element(By.ID, 'settings-status-success').text, 'Settings Updated')
+
+                module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
+                assert module_provider._get_db_row()['git_provider_id'] == 1
+
+                # Reload page, assert the new git provider has been set
+                self.selenium_instance.refresh()
+                git_provider_select_element = self.selenium_instance.find_element(By.ID, 'settings-git-provider')
+                self.assert_equals(lambda: git_provider_select_element.get_attribute('value'), '1')
+
+                # If custom git urls is enabled, reset back to custom and save
+                if allow_custom_git_url_setting:
+                    git_provider_select = Select(git_provider_select_element)
+                    git_provider_select.select_by_visible_text('Custom')
+                    self.selenium_instance.find_element(By.ID, 'module-provider-settings-update').click()
+                    # Ensure the DB row is set to custom
+                    module_provider._cache_db_row = None
+                    assert module_provider._get_db_row()['git_provider_id'] == None
+
+            finally:
+                # Reset git provider for module
+                ModuleProvider(
+                    Module(
+                        Namespace('moduledetails'),
+                        'fullypopulated'),
+                    'testprovider'
+                ).update_attributes(git_provider_id=None)

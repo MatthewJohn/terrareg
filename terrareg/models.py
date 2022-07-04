@@ -728,12 +728,13 @@ class ModuleProvider(object):
 
     def update_repo_clone_url_template(self, repo_clone_url_template):
         """Update repository URL for module provider."""
-        if not terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
-            raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
-                'Custom module provider git repository URL cannot be set.'
-            )
-
         if repo_clone_url_template:
+            # Check whether custom URLs is disabled, if attempting to set to a URL
+            if not terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
+                raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
+                    'Custom module provider git repository URL cannot be set.'
+                )
+
             converted_template = repo_clone_url_template.format(
                 namespace=self._module._namespace.name,
                 module=self._module.name,
@@ -763,12 +764,12 @@ class ModuleProvider(object):
 
     def update_repo_browse_url_template(self, repo_browse_url_template):
         """Update browse URL template for module provider."""
-        if not terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
-            raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
-                'Custom module provider git repository URL cannot be set.'
-            )
-
         if repo_browse_url_template:
+            # Check whether custom URLs is disabled, if attempting to set to a URL
+            if not terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
+                raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
+                    'Custom module provider git repository URL cannot be set.'
+                )
             GitUrlValidator(repo_browse_url_template).validate(
                 requires_path_placeholder=True,
                 requires_tag_placeholder=True
@@ -805,12 +806,12 @@ class ModuleProvider(object):
 
     def update_repo_base_url_template(self, repo_base_url_template):
         """Update browse URL template for module provider."""
-        if not terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
-            raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
-                'Custom module provider git repository URL cannot be set.'
-            )
-
         if repo_base_url_template:
+            # Check whether custom URLs is disabled, if attempting to set to a URL
+            if not terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
+                raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
+                    'Custom module provider git repository URL cannot be set.'
+                )
 
             converted_template = repo_base_url_template.format(
                 namespace=self._module._namespace.name,
