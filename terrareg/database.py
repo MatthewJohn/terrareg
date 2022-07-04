@@ -239,7 +239,7 @@ class Database():
                 nullable=False
             ),
             sqlalchemy.Column(
-                'module_detials_id',
+                'module_details_id',
                 sqlalchemy.ForeignKey(
                     'module_details.id',
                     name='fk_submodule_module_details_id_module_details_id',
