@@ -26,7 +26,7 @@ def migrate_data_to_module_details(c, source_table):
         # Insert row into module_details
         insert_res = c.execute(
             sa.sql.text("""
-                INSERT INTO module_details(readme_content, module_details)
+                INSERT INTO module_details(readme_content, terraform_docs)
                 VALUES(:readme_content, :module_details)
             """),
             readme_content=readme_content, module_details=module_details)
@@ -43,7 +43,7 @@ def upgrade():
         'module_details',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('readme_content', sa.LargeBinary(length=16777215).with_variant(mysql.MEDIUMBLOB(), 'mysql'), nullable=True),
-        sa.Column('module_details', sa.LargeBinary(length=16777215).with_variant(mysql.MEDIUMBLOB(), 'mysql'), nullable=True),
+        sa.Column('terraform_docs', sa.LargeBinary(length=16777215).with_variant(mysql.MEDIUMBLOB(), 'mysql'), nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
     c = op.get_bind()
@@ -87,7 +87,7 @@ def downgrade():
     c.execute(sa.sql.text("""
         UPDATE submodule
         SET
-            module_details=(SELECT module_details FROM module_details WHERE id=submodule.id),
+            module_details=(SELECT terraform_docs FROM module_details WHERE id=submodule.id),
             readme_content=(SELECT readme_content FROM module_details WHERE id=submodule.id)
     """))
 
@@ -102,7 +102,7 @@ def downgrade():
     c.execute(sa.sql.text("""
         UPDATE module_version
         SET
-            module_details=(SELECT module_details FROM module_details WHERE id=module_version.id),
+            module_details=(SELECT terraform_docs FROM module_details WHERE id=module_version.id),
             readme_content=(SELECT readme_content FROM module_details WHERE id=module_version.id)
     """))
 

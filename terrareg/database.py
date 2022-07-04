@@ -187,7 +187,7 @@ class Database():
             'module_details', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
             sqlalchemy.Column('readme_content', Database.medium_blob()),
-            sqlalchemy.Column('module_details', Database.medium_blob())
+            sqlalchemy.Column('terraform_docs', Database.medium_blob())
         )
 
         self._module_version = sqlalchemy.Table(
