@@ -218,7 +218,7 @@ class TestInitialSetup(SeleniumTest):
         unpublished_version_warning.find_element(By.TAG_NAME, 'a').click()
 
         # Ensure module version upload instructions are displayed
-        assert self.selenium_instance.find_element(By.ID, 'setup-index-upload').find_element(By.CLASS_NAME, 'card-content').is_displayed() == False
+        assert self.selenium_instance.find_element(By.ID, 'setup-index-upload').find_element(By.CLASS_NAME, 'card-content').is_displayed() == True
 
     def _test_secure_instance_step(self):
         """Test secure instance step."""
