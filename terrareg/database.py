@@ -207,7 +207,7 @@ class Database():
                 'module_details_id',
                 sqlalchemy.ForeignKey(
                     'module_details.id',
-                    name='fk_submodule_module_details_id_module_details_id',
+                    name='fk_module_version_module_details_id_module_details_id',
                     onupdate='CASCADE',
                     ondelete='CASCADE'
                 ),
