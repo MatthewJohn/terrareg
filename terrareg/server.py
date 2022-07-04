@@ -792,7 +792,7 @@ class ApiTerraregInitialSetupData(ErrorCatchingResource):
             providers = module.get_providers()
             if providers:
                 module_provider = providers[0]
-                integrations = module_provider.get_integrations(server_hostname=request.host)
+                integrations = module_provider.get_integrations()
 
         if module_provider:
             versions = module_provider.get_versions(include_beta=True, include_unpublished=True)
@@ -834,7 +834,7 @@ class ApiTerraregModuleProviderIntegrations(ErrorCatchingResource):
         # Get module provider and, optionally create, if it doesn't exist
         module_provider = ModuleProvider.get(module=module, name=provider)
 
-        integrations = module_provider.get_integrations(server_hostname=request.host)
+        integrations = module_provider.get_integrations()
 
         return [
             integrations[integration]

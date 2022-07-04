@@ -971,38 +971,38 @@ class ModuleProvider(object):
         })
         return api_details
 
-    def get_integrations(self, server_hostname):
+    def get_integrations(self):
         """Return integration URL and details"""
         integrations = {
             'import': {
                 'method': 'POST',
-                'url': f'https://{server_hostname}/v1/terrareg/modules/{self.id}/${{version}}/import',
+                'url': f'/v1/terrareg/modules/{self.id}/${{version}}/import',
                 'description': 'Trigger module version import',
                 'notes': ''
             },
             'hooks_bitbucket': {
                 'method': None,
-                'url': f'https://{server_hostname}/v1/terrareg/modules/{self.id}/hooks/bitbucket',
+                'url': f'/v1/terrareg/modules/{self.id}/hooks/bitbucket',
                 'description': 'Bitbucket hook trigger',
                 'notes': ''
             },
             'hooks_github': {
                 'method': None,
-                'url': f'https://{server_hostname}/v1/terrareg/modules/{self.id}/hooks/github',
+                'url': f'/v1/terrareg/modules/{self.id}/hooks/github',
                 'description': 'Github hook trigger',
                 'notes': '',
                 'coming_soon': True
             },
             'hooks_gitlab': {
                 'method': None,
-                'url': f'https://{server_hostname}/v1/terrareg/modules/{self.id}/hooks/gitlab',
+                'url': f'/v1/terrareg/modules/{self.id}/hooks/gitlab',
                 'description': 'Gitlab hook trigger',
                 'notes': '',
                 'coming_soon': True
             },
             'publish': {
                 'method': 'POST',
-                'url': f'https://{server_hostname}/v1/terrareg/modules/{self.id}/${{version}}/publish',
+                'url': f'/v1/terrareg/modules/{self.id}/${{version}}/publish',
                 'description': 'Mark module version as published',
                 'notes': ''
             }
@@ -1010,7 +1010,7 @@ class ModuleProvider(object):
         if terrareg.config.Config().ALLOW_MODULE_HOSTING:
             integrations['upload'] = {
                 'method': 'POST',
-                'url': f'https://{server_hostname}/v1/terrareg/modules/{self.id}/${{version}}/upload',
+                'url': f'/v1/terrareg/modules/{self.id}/${{version}}/upload',
                 'description': 'Create module version using source archive',
                 'notes': 'Source ZIP file must be provided as data.'
             }
