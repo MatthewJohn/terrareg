@@ -48,8 +48,7 @@ def upgrade():
     )
     c = op.get_bind()
 
-    # Add column to module_version table for link to module details table - initially set
-    # nullable to all for None value after adding colummn
+    # Add column to module_version table for link to module details table
     with op.batch_alter_table('module_version', schema=None) as batch_op:
         batch_op.add_column(sa.Column('module_details_id', sa.Integer(), nullable=True))
         batch_op.create_foreign_key('fk_module_version_module_details_id_module_details_id', 'module_details', ['module_details_id'], ['id'], onupdate='CASCADE', ondelete='CASCADE')
@@ -61,8 +60,6 @@ def upgrade():
     with op.batch_alter_table('module_version', schema=None) as batch_op:
         batch_op.drop_column('readme_content')
         batch_op.drop_column('module_details')
-        # Set module details column non-nullable
-        batch_op.alter_column('module_details_id', nullable=False)
 
     # Add column to submodule table for link to module details table - initially set
     # nullable to all for None value after adding colummn
@@ -77,8 +74,6 @@ def upgrade():
     with op.batch_alter_table('submodule', schema=None) as batch_op:
         batch_op.drop_column('readme_content')
         batch_op.drop_column('module_details')
-        # Set module details column non-nullable
-        batch_op.alter_column('module_details_id', nullable=False)
 
 
 def downgrade():

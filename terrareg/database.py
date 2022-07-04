@@ -211,7 +211,7 @@ class Database():
                     onupdate='CASCADE',
                     ondelete='CASCADE'
                 ),
-                nullable=False
+                nullable=True
             ),
             # Whether the module version is a beta version
             sqlalchemy.Column('beta', sqlalchemy.BOOLEAN, nullable=False),
@@ -246,7 +246,7 @@ class Database():
                     onupdate='CASCADE',
                     ondelete='CASCADE'
                 ),
-                nullable=False
+                nullable=True
             ),
             sqlalchemy.Column('type', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('path', sqlalchemy.String(LARGE_COLUMN_SIZE)),
