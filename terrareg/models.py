@@ -1908,7 +1908,6 @@ class BaseSubmodule(TerraformSpecsObject):
             "display_source_url": source_browse_url if source_browse_url else None,
             "security_failures": self.get_tfsec_failure_count()
         })
-        print(api_details)
         return api_details
 
 
