@@ -474,6 +474,18 @@ class ModuleDetails:
         # Remove cached DB row
         self._cache_db_row = None
 
+    def delete(self):
+        """Delete from database."""
+        assert self.pk is not None
+        db = Database.get()
+
+        with db.get_connection() as conn:
+            # Delete module details from module_details table
+            delete_statement = db.module_details.delete().where(
+                db.module_details.c.id == self.pk
+            )
+            conn.execute(delete_statement)
+
 
 class ProviderLogo:
 
