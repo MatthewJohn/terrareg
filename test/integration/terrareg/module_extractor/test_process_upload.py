@@ -432,7 +432,7 @@ class TestProcessUpload(TerraregIntegrationTest):
                 UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
     def test_uploading_module_with_security_issue(self):
-        """Test uploading a module with invalid terraform."""
+        """Test uploading a module with security issue."""
         test_upload = UploadTestModule()
 
         namespace = Namespace(name='testprocessupload')
@@ -484,6 +484,28 @@ class TestProcessUpload(TerraregIntegrationTest):
 
         # Ensure security issue count shows the issue
         assert module_version.get_tfsec_failure_count() == 1
+
+    def test_uploading_module_with_reference_to_inaccessible_remote_module(self):
+        """Test uploading a module with reference to inaccessible external module."""
+        test_upload = UploadTestModule()
+
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='12.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines("""
+                    module "inaccessible" {
+                      source = "http://example.com/not-accessible.zip"
+                    }
+                    """)
+
+            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
     def test_upload_via_server(self, client):
         """Test basic module upload with single depth."""
