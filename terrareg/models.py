@@ -1899,6 +1899,17 @@ class BaseSubmodule(TerraformSpecsObject):
             submodule_path=self.path
         )
 
+    def get_terrareg_api_details(self):
+        """Return dict of submodule details with additional attributes used by terrareg UI."""
+        api_details = self.get_api_module_specs()
+        source_browse_url = self.get_source_browse_url()
+        api_details.update({
+            "display_source_url": source_browse_url if source_browse_url else None,
+            "security_failures": self.get_tfsec_failure_count()
+        })
+        print(api_details)
+        return api_details
+
 
 class Submodule(BaseSubmodule):
 

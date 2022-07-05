@@ -261,15 +261,4 @@ async function addModuleLabels(module, parentDiv) {
             </span>
         `));
     }
-
-    if (module.security_failures) {
-        parentDiv.append($(`
-        <span class="tag is-danger is-light result-card-label result-card-label-security-issues">
-            <span class="panel-icon">
-                <i class="fa fa-bug" aria-hidden="true"></i>
-            </span>
-            ${module.security_failures} Security issues
-        </span>
-        `));
-    }
 }
