@@ -50,7 +50,7 @@ The site can be accessed at http://localhost:5000
     # Obtain terraform-docs and tfsec
     mkdir bin
     export PATH=$PATH:`pwd`/bin
-    if [ "$(uname -m)" == "aarch64" ]; then arch=arm64; else arch=amd64;
+    if [ "$(uname -m)" == "aarch64" ]; then arch=arm64; else arch=amd64; fi
     wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-linux-${arch}.tar.gz && tar -zxvf terraform-docs-v0.16.0-linux-${arch}.tar.gz && chmod +x terraform-docs && mv terraform-docs ./bin/ && rm terraform-docs-v0.16.0-linux-${arch}.tar.gz
     wget https://github.com/aquasecurity/tfsec/releases/download/v1.26.0/tfsec-linux-${arch} -o ./bin/tfsec && chmod +x ./bin/tfsec
     
