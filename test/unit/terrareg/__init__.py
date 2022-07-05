@@ -67,12 +67,6 @@ def setup_test_data(test_data=None):
                                 'terraform_docs': Database.encode_blob(version_config.get('terraform_docs', default_terraform_docs)),
                                 'tfsec': Database.encode_blob(version_config.get('tfsec', default_tfsec))
                             }
-                            if 'readme_content' in version_config:
-                                del(version_config['readme_content'])
-                            if 'terraform_docs' in version_config:
-                                del(version_config['terraform_docs'])
-                            if 'tfsec' in version_config:
-                                del(version_config['tfsec'])
                             version_config['module_details_id'] = TEST_MODULE_DETAILS_ITX
 
                             TEST_MODULE_DETAILS_ITX += 1
@@ -85,12 +79,6 @@ def setup_test_data(test_data=None):
                                         'terraform_docs': Database.encode_blob(config.get('terraform_docs', default_terraform_docs)),
                                         'tfsec': Database.encode_blob(config.get('tfsec', default_tfsec))
                                     }
-                                    if 'readme_content' in config:
-                                        del(config['readme_content'])
-                                    if 'terraform_docs' in config:
-                                        del(config['terraform_docs'])
-                                    if 'tfsec' in config:
-                                        del(config['tfsec'])
                                     config['module_details_id'] = TEST_MODULE_DETAILS_ITX
 
                                     TEST_MODULE_DETAILS_ITX += 1
