@@ -16,7 +16,7 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
 
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     then \
-      arch=arm64 \
+      arch=arm64; \
     else \
       arch=amd64; \
     fi; \
