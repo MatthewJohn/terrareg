@@ -1198,7 +1198,7 @@ class TerraformSpecsObject(object):
     @property
     def module_details(self):
         """Return instance of ModuleDetails for object."""
-        if self._get_db_row():
+        if self._get_db_row() and self._get_db_row()['module_details_id']:
             return ModuleDetails(id=self._get_db_row()['module_details_id'])
         else:
             return None
