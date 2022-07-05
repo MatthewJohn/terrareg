@@ -428,7 +428,10 @@ class ModuleDetails:
     @property
     def tfsec(self):
         """Return tfsec data."""
-        if self._get_db_row() and self._get_db_row()['tfsec']:
+        # If module scanning is disabled, do not return the tfsec output
+        if (terrareg.config.Config().ENABLE_SECURITY_SCANNING and
+                self._get_db_row() is not None and
+                self._get_db_row()['tfsec']):
             return json.loads(self._get_db_row()['tfsec'])
         return {'results': None}
 

@@ -351,6 +351,16 @@ Default: `False`
 
 
 
+### ENABLE_SECURITY_SCANNING
+
+
+Whether to perform security scans of uploaded modules and display them against the module, submodules and examples.
+
+
+Default: `True`
+
+
+
 ### EXAMPLES_DIRECTORY
 
 
