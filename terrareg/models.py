@@ -1689,6 +1689,11 @@ class ModuleVersion(TerraformSpecsObject):
         if delete_related_analytics:
             terrareg.analytics.AnalyticsEngine.delete_analaytics_for_module_version(self)
 
+        # Delete associated module details
+        module_details = self.module_details
+        if module_details:
+            module_details.delete()
+
         db = Database.get()
 
         with db.get_connection() as conn:
@@ -1862,6 +1867,11 @@ class BaseSubmodule(TerraformSpecsObject):
 
     def delete(self):
         """Delete submodule from DB."""
+        # Delete associated module details
+        module_details = self.module_details
+        if module_details:
+            module_details.delete()
+
         db = Database.get()
 
         with db.get_connection() as conn:
