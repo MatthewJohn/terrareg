@@ -145,6 +145,47 @@ test_data_full = {
             'versions': {'3.0.0': {}}
         }}
     },
+    'smallernamespacelist': {
+        'publishedone': {
+            'testprovider': {
+                'id': 21,
+                'versions': {
+                    '2.1.1': {
+                        'published': True,
+                        'description': 'Test description'
+                    }
+                }
+            },
+            'secondnamespace': {
+                'id': 22,
+                'versions': {
+                    '2.2.2': {
+                        'published': True,
+                        'description': 'Description of second provider in module'
+                    }
+                }
+            }
+        },
+        'onlybeta': {'testprovider': {
+            'id': 23,
+            'versions': {
+                '2.2.4-beta': {
+                    'published': True,
+                    'beta': True,
+                    'description': 'Test description'
+                }
+            }
+        }},
+        'onlyunpublished': {'testprovider': {
+            'id': 24,
+            'versions': {
+                '1.0.0': {
+                    'published': False,
+                    'description': 'Test description'
+                }
+            }
+        }}
+    },
     'moduleextraction': {
         'test-module': { 'testprovider': {
             'id': 7,
