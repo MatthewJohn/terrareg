@@ -50,6 +50,9 @@ class TestProcessUpload(TerraregIntegrationTest):
             }
         ]
 
+        # Check tfsec returned no results
+        assert module_version.module_details.tfsec == {'results': None}
+
     def test_terrareg_metadata(self):
         """Test module upload with terrareg metadata file."""
         test_upload = UploadTestModule()
@@ -428,6 +431,81 @@ class TestProcessUpload(TerraregIntegrationTest):
             with pytest.raises(terrareg.errors.UnableToProcessTerraformError):
                 UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
+    def test_uploading_module_with_security_issue(self):
+        """Test uploading a module with security issue."""
+        test_upload = UploadTestModule()
+
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='11.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines("""
+                    resource "aws_secretsmanager_secret" "this" {
+                        name = "example"
+                    }
+                    """)
+
+            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+
+        # Ensure tfsec output contains security issue about missing encryption key
+        assert module_version.module_details.tfsec == {'results': [
+            {
+                'description': 'Secret explicitly uses the default key.',
+                'impact': 'Using AWS managed keys reduces the flexibility and '
+                          'control over the encryption key',
+                'links': [
+                    'https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/ssm/secret-use-customer-key/',
+                    'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret#kms_key_id'
+                ],
+                'location': {
+                    'end_line': 4,
+                    'filename': 'main.tf',
+                    'start_line': 2
+                },
+                'long_id': 'aws-ssm-secret-use-customer-key',
+                'resolution': 'Use customer managed keys',
+                'resource': 'aws_secretsmanager_secret.this',
+                'rule_description': 'Secrets Manager should use customer managed '
+                                    'keys',
+                'rule_id': 'AVD-AWS-0098',
+                'rule_provider': 'aws',
+                'rule_service': 'ssm',
+                'severity': 'LOW',
+                'status': 0,
+                'warning': False
+            }
+        ]}
+
+        # Ensure security issue count shows the issue
+        assert module_version.get_tfsec_failure_count() == 1
+
+    def test_uploading_module_with_reference_to_inaccessible_remote_module(self):
+        """Test uploading a module with reference to inaccessible external module."""
+        test_upload = UploadTestModule()
+
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='12.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines("""
+                    module "inaccessible" {
+                      source = "http://example.com/not-accessible.zip"
+                    }
+                    """)
+
+            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
     def test_upload_via_server(self, client):
         """Test basic module upload with single depth."""

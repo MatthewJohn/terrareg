@@ -1320,6 +1320,16 @@ ${outputTf}
 }`);
 }
 
+function showSecurityWarnings(moduleDetails) {
+    let securityIssuesContainer = $('#security-issues')
+    if (moduleDetails.security_failures) {
+        securityIssuesContainer.removeClass('default-hidden');
+        $('#security-issues-text').text(`${moduleDetails.security_failures} Security issues`);
+    } else {
+        securityIssuesContainer.addClass('default-hidden');
+    }
+}
+
 
 /*
  * Setup common elements of the page, shared between all types
@@ -1384,6 +1394,7 @@ async function setupRootModulePage(data) {
         tabFactory.registerTab(new AnalyticsTab(moduleDetails));
         tabFactory.registerTab(new UsageBuilderTab(moduleDetails));
 
+        showSecurityWarnings(moduleDetails);
         populateVersionSelect(moduleDetails);
         setupModuleVersionDeletionSetting(moduleDetails);
         populateSubmoduleSelect(moduleDetails);
@@ -1412,6 +1423,7 @@ async function setupSubmodulePage(data) {
     populateVersionText(moduleDetails);
     populateTerraformUsageExample(moduleDetails, submodulePath);
     enableBackToParentLink(moduleDetails);
+    showSecurityWarnings(submoduleDetails);
 
     let tabFactory = new TabFactory();
 
@@ -1439,6 +1451,7 @@ async function setupExamplePage(data) {
     populateCurrentSubmodule(`Example: ${examplePath}`)
     populateVersionText(moduleDetails);
     enableBackToParentLink(moduleDetails);
+    showSecurityWarnings(submoduleDetails);
 
     let tabFactory = new TabFactory();
 

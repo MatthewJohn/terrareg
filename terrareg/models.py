@@ -1,4 +1,5 @@
 
+from importlib.util import module_for_loader
 import os
 from distutils.version import LooseVersion
 import json
@@ -389,6 +390,104 @@ class Module(object):
         # Check if data directory exists
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
+
+
+class ModuleDetails:
+    """Object to store common details between root module, submodules and examples."""
+
+    @classmethod
+    def create(cls):
+        """Create instance of object in database."""
+        # Create module details row
+        db = Database.get()
+        module_details_insert = db.module_details.insert().values()
+        with db.get_connection() as conn:
+            insert_res = conn.execute(module_details_insert)
+
+        return cls(id=insert_res.inserted_primary_key[0])
+
+    @property
+    def pk(self):
+        """Return ID of module details row."""
+        return self._id
+
+    @property
+    def terraform_docs(self):
+        """Return terraform_docs column"""
+        if self._get_db_row():
+            return self._get_db_row()['terraform_docs']
+        return None
+
+    @property
+    def readme_content(self):
+        """Return readme_content column"""
+        if self._get_db_row():
+            return self._get_db_row()['readme_content']
+        return None
+
+    @property
+    def tfsec(self):
+        """Return tfsec data."""
+        # If module scanning is disabled, do not return the tfsec output
+        if (terrareg.config.Config().ENABLE_SECURITY_SCANNING and
+                self._get_db_row() is not None and
+                self._get_db_row()['tfsec']):
+            return json.loads(self._get_db_row()['tfsec'])
+        return {'results': None}
+
+    def __init__(self, id: int):
+        """Store member variables."""
+        self._id = id
+        self._cache_db_row = None
+
+    def _get_db_row(self):
+        """Return database row for module details."""
+        if self._cache_db_row is None:
+            db = Database.get()
+            select = db.module_details.select(
+            ).where(
+                db.module_details.c.id == self.pk
+            )
+            with db.get_connection() as conn:
+                res = conn.execute(select)
+                self._cache_db_row = res.fetchone()
+
+        return self._cache_db_row
+
+    def get_db_where(self, db: Database, statement):
+        """Return DB where statement"""
+        return statement.where(
+            db.module_details.c.id == self.pk
+        )
+
+    def update_attributes(self, **kwargs):
+        """Update DB row."""
+        # Check for any blob and encode the values
+        for kwarg in kwargs:
+            if kwarg in ['readme_content', 'terraform_docs', 'tfsec']:
+                kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
+
+        db = Database.get()
+        update = self.get_db_where(
+            db=db, statement=db.module_details.update()
+        ).values(**kwargs)
+        with db.get_connection() as conn:
+            conn.execute(update)
+
+        # Remove cached DB row
+        self._cache_db_row = None
+
+    def delete(self):
+        """Delete from database."""
+        assert self.pk is not None
+        db = Database.get()
+
+        with db.get_connection() as conn:
+            # Delete module details from module_details table
+            delete_statement = db.module_details.delete().where(
+                db.module_details.c.id == self.pk
+            )
+            conn.execute(delete_statement)
 
 
 class ProviderLogo:
@@ -1063,11 +1162,32 @@ class TerraformSpecsObject(object):
         """Must be implemented by object. Return row from DB."""
         raise NotImplementedError
 
+    def get_tfsec_failure_count(self):
+        """Return number of tfsec failures."""
+        # Handle when results in None
+        module_details = self.module_details
+        if module_details is None or module_details.tfsec['results'] is None:
+            return 0
+
+        count = 0
+        # Count each of the test failures
+        for result in self.module_details.tfsec['results']:
+            # TFsec status of 0 is a fail
+            if result['status'] == 0:
+                count += 1
+        return count
+
     def get_module_specs(self):
         """Return module specs"""
         if self._module_specs is None:
-            raw_json = Database.decode_blob(self._get_db_row()['module_details'])
-            self._module_specs = json.loads(raw_json) if raw_json else {}
+            module_specs = {}
+
+            module_details = self.module_details
+            if module_details:
+                raw_json = Database.decode_blob(module_details.terraform_docs)
+                if raw_json:
+                    module_specs = json.loads(raw_json)
+            self._module_specs = module_specs
         return self._module_specs
 
     def get_readme_html(self):
@@ -1079,9 +1199,20 @@ class TerraformSpecsObject(object):
             )
         return None
 
+    @property
+    def module_details(self):
+        """Return instance of ModuleDetails for object."""
+        if self._get_db_row() and self._get_db_row()['module_details_id']:
+            return ModuleDetails(id=self._get_db_row()['module_details_id'])
+        else:
+            return None
+
     def get_readme_content(self):
         """Get readme contents"""
-        return Database.decode_blob(self._get_db_row()['readme_content'])
+        module_details = self.module_details
+        if module_details:
+            return Database.decode_blob(module_details.readme_content)
+        return None
 
     def get_terraform_inputs(self):
         """Obtain module inputs"""
@@ -1517,7 +1648,8 @@ class ModuleVersion(TerraformSpecsObject):
             "terraform_example_version_string": self.get_terraform_example_version_string(),
             "versions": versions,
             "beta": self.beta,
-            "published": self.published
+            "published": self.published,
+            "security_failures": self.get_tfsec_failure_count()
         })
         return api_details
 
@@ -1537,7 +1669,7 @@ class ModuleVersion(TerraformSpecsObject):
         """Update attributes of module version in database row."""
         # Check for any blob and encode the values
         for kwarg in kwargs:
-            if kwarg in ['readme_content', 'module_details', 'variable_template']:
+            if kwarg in ['variable_template']:
                 kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
 
         db = Database.get()
@@ -1560,6 +1692,11 @@ class ModuleVersion(TerraformSpecsObject):
 
         if delete_related_analytics:
             terrareg.analytics.AnalyticsEngine.delete_analaytics_for_module_version(self)
+
+        # Delete associated module details
+        module_details = self.module_details
+        if module_details:
+            module_details.delete()
 
         db = Database.get()
 
@@ -1722,11 +1859,6 @@ class BaseSubmodule(TerraformSpecsObject):
 
     def update_attributes(self, **kwargs):
         """Update DB row."""
-        # Encode columns that are binary blobs in the database
-        for kwarg in kwargs:
-            if kwarg in ['readme_content', 'module_details']:
-                kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
-
         db = Database.get()
         update = db.sub_module.update().where(
             db.sub_module.c.id == self.pk
@@ -1739,6 +1871,11 @@ class BaseSubmodule(TerraformSpecsObject):
 
     def delete(self):
         """Delete submodule from DB."""
+        # Delete associated module details
+        module_details = self.module_details
+        if module_details:
+            module_details.delete()
+
         db = Database.get()
 
         with db.get_connection() as conn:
@@ -1765,6 +1902,16 @@ class BaseSubmodule(TerraformSpecsObject):
             submodules_type=self.TYPE,
             submodule_path=self.path
         )
+
+    def get_terrareg_api_details(self):
+        """Return dict of submodule details with additional attributes used by terrareg UI."""
+        api_details = self.get_api_module_specs()
+        source_browse_url = self.get_source_browse_url()
+        api_details.update({
+            "display_source_url": source_browse_url if source_browse_url else None,
+            "security_failures": self.get_tfsec_failure_count()
+        })
+        return api_details
 
 
 class Submodule(BaseSubmodule):

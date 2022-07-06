@@ -368,6 +368,13 @@ class Config:
         """
         return self.convert_boolean(os.environ.get('AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION', 'True'))
 
+    @property
+    def ENABLE_SECURITY_SCANNING(self):
+        """
+        Whether to perform security scans of uploaded modules and display them against the module, submodules and examples.
+        """
+        return self.convert_boolean(os.environ.get('ENABLE_SECURITY_SCANNING', 'True'))
+
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""
         if string.lower() in ['true', 'yes', '1']:

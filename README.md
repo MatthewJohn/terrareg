@@ -16,6 +16,17 @@ Provides features to aid usage and discovery of modules:
 
 ## Getting started
 
+## Running with docker
+
+    docker build . -t terrareg:latest
+
+    export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex())')
+
+    docker run -p 5000:5000 -e MIGRATE_DATABASE=True -e SECRET_KEY=$SECRET_KEY -e ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword terrareg:latest
+
+The site can be accessed at http://localhost:5000
+
+
 ### Building locally and running
 
     # Clone the repository
@@ -35,21 +46,21 @@ Provides features to aid usage and discovery of modules:
     # Set a secret key and admin token
     export ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword
     export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex())')
-
+    
+    # Obtain terraform-docs and tfsec
+    mkdir bin
+    export PATH=$PATH:`pwd`/bin
+    if [ "$(uname -m)" == "aarch64" ]; then arch=arm64; else arch=amd64; fi
+    wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-linux-${arch}.tar.gz && tar -zxvf terraform-docs-v0.16.0-linux-${arch}.tar.gz && chmod +x terraform-docs && mv terraform-docs ./bin/ && rm terraform-docs-v0.16.0-linux-${arch}.tar.gz
+    wget https://github.com/aquasecurity/tfsec/releases/download/v1.26.0/tfsec-linux-${arch} -O ./bin/tfsec && chmod +x ./bin/tfsec
+    
+    
     # Run the server
     python ./terrareg.py
 
-The site can be accessed at http://localhost:5000
-
-## Running with docker
-
-    docker build . -t terrareg:latest
-
-    export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex())')
-
-    docker run -p 5000:5000 -e MIGRATE_DATABASE=True -e SECRET_KEY=$SECRET_KEY -e ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword terrareg:latest
 
 The site can be accessed at http://localhost:5000
+
 
 ## Upload a terraform module:
 
@@ -337,6 +348,16 @@ Set to 'True' to disable the labels.
 
 
 Default: `False`
+
+
+
+### ENABLE_SECURITY_SCANNING
+
+
+Whether to perform security scans of uploaded modules and display them against the module, submodules and examples.
+
+
+Default: `True`
 
 
 

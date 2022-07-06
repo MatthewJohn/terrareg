@@ -18,7 +18,7 @@ import magic
 from bs4 import BeautifulSoup
 import markdown
 
-from terrareg.models import BaseSubmodule, Example, ExampleFile, ModuleVersion, Submodule
+from terrareg.models import BaseSubmodule, Example, ExampleFile, ModuleVersion, Submodule, ModuleDetails
 from terrareg.database import Database
 from terrareg.errors import (
     UnableToProcessTerraformError,
@@ -80,6 +80,28 @@ class ModuleExtractor:
         return json.loads(terradocs_output)
 
     @staticmethod
+    def _run_tfsec(module_path):
+        """Run tfsec and return output."""
+        try:
+            raw_output = subprocess.check_output([
+                'tfsec',
+                '--ignore-hcl-errors', '--format', 'json', '--no-module-downloads', '--soft-fail',
+                '--no-colour', '--include-ignored', '--include-passed', '--disable-grouping',
+                module_path
+            ])
+        except subprocess.CalledProcessError as exc:
+            raise UnableToProcessTerraformError('An error occurred whilst performing security scan of code.')
+
+        tfsec_results = json.loads(raw_output)
+
+        # Strip the extraction directory from all paths in results
+        if tfsec_results['results']:
+            for result in tfsec_results['results']:
+                result['location']['filename'] = result['location']['filename'].replace(module_path + '/', '')
+
+        return tfsec_results
+
+    @staticmethod
     def _get_readme_content(module_path):
         """Obtain README contents for given module."""
         try:
@@ -132,17 +154,34 @@ class ModuleExtractor:
             'zip',
             self.extract_directory)
 
+    def _create_module_details(self, readme_content, terraform_docs, tfsec):
+        """Create module details row."""
+        module_details = ModuleDetails.create()
+        module_details.update_attributes(
+            readme_content=readme_content,
+            terraform_docs=json.dumps(terraform_docs),
+            tfsec=json.dumps(tfsec)
+        )
+        return module_details
+
     def _insert_database(
         self,
         description: str,
         readme_content: str,
-        terraform_docs_output: dict,
+        terraform_docs: dict,
+        tfsec: dict,
         terrareg_metadata: dict) -> int:
         """Insert module into DB, overwrite any pre-existing"""
+        # Create module details row
+        module_details = self._create_module_details(
+            terraform_docs=terraform_docs,
+            readme_content=readme_content,
+            tfsec=tfsec
+        )
+        
         # Update attributes of module_version in database
         self._module_version.update_attributes(
-            readme_content=readme_content,
-            module_details=json.dumps(terraform_docs_output),
+            module_details_id=module_details.pk,
 
             published_at=datetime.datetime.now(),
 
@@ -162,11 +201,18 @@ class ModuleExtractor:
         submodule_dir = safe_join_paths(self.extract_directory, submodule.path)
 
         tf_docs = self._run_terraform_docs(submodule_dir)
+        tfsec = self._run_tfsec(submodule_dir)
         readme_content = self._get_readme_content(submodule_dir)
 
-        submodule.update_attributes(
+        # Create module details row
+        module_details = self._create_module_details(
+            terraform_docs=tf_docs,
             readme_content=readme_content,
-            module_details=json.dumps(tf_docs)
+            tfsec=tfsec
+        )
+
+        submodule.update_attributes(
+            module_details_id=module_details.pk
         )
 
         if isinstance(submodule, Example):
@@ -302,7 +348,8 @@ class ModuleExtractor:
     def process_upload(self):
         """Handle data extraction from module source."""
         # Run terraform-docs on module content and obtain README
-        module_details = self._run_terraform_docs(self.extract_directory)
+        terraform_docs = self._run_terraform_docs(self.extract_directory)
+        tfsec = self._run_tfsec(self.extract_directory)
         readme_content = self._get_readme_content(self.extract_directory)
 
         # Check for any terrareg metadata files
@@ -317,7 +364,8 @@ class ModuleExtractor:
         self._insert_database(
             description=description,
             readme_content=readme_content,
-            terraform_docs_output=module_details,
+            tfsec=tfsec,
+            terraform_docs=terraform_docs,
             terrareg_metadata=terrareg_metadata
         )
 

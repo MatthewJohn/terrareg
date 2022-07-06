@@ -1961,7 +1961,7 @@ class ApiTerraregSubmoduleDetails(ErrorCatchingResource):
 
         submodule_obj = Submodule.get(module_version=module_version, module_path=submodule)
 
-        return submodule_obj.get_api_module_specs()
+        return submodule_obj.get_terrareg_api_details()
 
 
 class ApiTerraregSubmoduleReadmeHtml(ErrorCatchingResource):
@@ -2028,7 +2028,7 @@ class ApiTerraregExampleDetails(ErrorCatchingResource):
 
         example_obj = Example.get(module_version=module_version, module_path=example)
 
-        return example_obj.get_api_module_specs()
+        return example_obj.get_terrareg_api_details()
 
 
 class ApiTerraregExampleReadmeHtml(ErrorCatchingResource):
