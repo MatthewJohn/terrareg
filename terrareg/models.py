@@ -1411,7 +1411,7 @@ class ModuleVersion(TerraformSpecsObject):
                 if input_variable['name'] not in [v['name'] for v in variables]:
                     variables.append({
                         'name': input_variable['name'],
-                        'type': 'text',
+                        'type': 'string',
                         'additional_help': input_variable['description'],
                         'quote_value': True
                     })
