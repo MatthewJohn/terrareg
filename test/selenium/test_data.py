@@ -584,6 +584,18 @@ integration_test_data = {
         'withsecurityissues': {'testprovider': {
             'id': 62,
             'versions': {
+                '1.2.0': {
+                    'published': True,
+                    'submodules': {
+                        'modules/withanotherissue': {
+                            'tfsec': json.dumps({
+                                'results': [
+                                    {'status': 0}
+                                ]
+                            })
+                        }
+                    }
+                },
                 '1.1.0': {
                     'published': True,
                     'examples': {

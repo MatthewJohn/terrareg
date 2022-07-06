@@ -164,7 +164,7 @@ module "fullypopulated" {{
         assert security_issues.text == '2 Security issues'
 
         # Go to 1.1.0 version, with no security issues
-        Select(self.selenium_instance.find_element(By.ID, 'version-select')).select_by_visible_text('1.1.0 (latest)')
+        Select(self.selenium_instance.find_element(By.ID, 'version-select')).select_by_visible_text('1.1.0')
 
         self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.1.0'))
 
@@ -182,6 +182,26 @@ module "fullypopulated" {{
         security_issues = self.wait_for_element(By.ID, 'security-issues')
         assert security_issues.is_displayed() == True
         assert security_issues.text == '3 Security issues'
+
+        # Go back to parent
+        self.selenium_instance.find_element(By.ID, 'submodule-back-to-parent').click()
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.1.0'))
+
+        # Go to 1.2.0 version, with no security issues
+        Select(self.selenium_instance.find_element(By.ID, 'version-select')).select_by_visible_text('1.2.0 (latest)')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.2.0'))
+
+        # Ensure no security issues are displayed
+        assert self.selenium_instance.find_element(By.ID, 'security-issues').is_displayed() == False
+
+        # Go to submodule
+        Select(self.selenium_instance.find_element(By.ID, 'submodule-select')).select_by_visible_text('modules/withanotherissue')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.2.0/submodule/modules/withanotherissue'))
+
+        # Ensure 3 security issues are shown
+        security_issues = self.wait_for_element(By.ID, 'security-issues')
+        assert security_issues.is_displayed() == True
+        assert security_issues.text == '1 Security issues'
 
     @pytest.mark.parametrize('url,expected_readme_content', [
         # Root module
