@@ -156,13 +156,32 @@ module "fullypopulated" {{
 
     def test_module_with_security_issues(self):
         """Test module with security issues."""
-        self.selenium_instance.get(self.get_url('/modules/moduledetails/withsecurityissues/testprovider'))
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.0.0'))
 
         # Ensure security issues are displayed
         security_issues = self.wait_for_element(By.ID, 'security-issues')
         assert security_issues.is_displayed() == True
         assert security_issues.text == '2 Security issues'
 
+        # Go to 1.1.0 version, with no security issues
+        Select(self.selenium_instance.find_element(By.ID, 'version-select')).select_by_visible_text('1.1.0 (latest)')
+
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.1.0'))
+
+        # Wait for inputs tab, to indicate page has loaded
+        self.wait_for_element(By.ID, 'module-tab-link-inputs')
+
+        # Ensure no security issues are displayed
+        assert self.selenium_instance.find_element(By.ID, 'security-issues').is_displayed() == False
+
+        # Go to example
+        Select(self.selenium_instance.find_element(By.ID, 'example-select')).select_by_visible_text('examples/withsecissue')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.1.0/example/examples/withsecissue'))
+
+        # Ensure 3 security issues are shown
+        security_issues = self.wait_for_element(By.ID, 'security-issues')
+        assert security_issues.is_displayed() == True
+        assert security_issues.text == '3 Security issues'
 
     @pytest.mark.parametrize('url,expected_readme_content', [
         # Root module

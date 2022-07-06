@@ -583,8 +583,21 @@ integration_test_data = {
         }},
         'withsecurityissues': {'testprovider': {
             'id': 62,
-            'latest_version': '1.0.0',
             'versions': {
+                '1.1.0': {
+                    'published': True,
+                    'examples': {
+                        'examples/withsecissue': {
+                            'tfsec': json.dumps({
+                                'results': [
+                                    {'status': 0},
+                                    {'status': 0},
+                                    {'status': 0}
+                                ]
+                            })
+                        }
+                    }
+                },
                 '1.0.0': {
                     'published': True,
                     'tfsec': json.dumps({
