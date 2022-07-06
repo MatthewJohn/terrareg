@@ -32,38 +32,25 @@ cache:
 .test_image:
   image: terrareg-test-image:v${CI_COMMIT_SHORT_SHA}
 
-unit-tests:
+unit-integration-selenium-tests:
   stage: test
   extends: .test_image
-  script:
-    - coverage run -m pytest --verbose ./test/unit
-    - coverage report --include='./terrareg/*'
-    - coverage xml
-  artifacts:
-    reports:
-      cobertura: coverage.xml
-
-integration-tests:
-  stage: test
-  extends: .test_image
-  needs:
-    - unit-tests
   script:
     # Perform database migration
     - alembic upgrade head
     # Run integration tests
-    - coverage run -m pytest --verbose ./test/integration
+    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose ./test
     - coverage report --include='./terrareg/*'
     - coverage xml
   artifacts:
     reports:
       cobertura: coverage.xml
 
-mysql-integration-tests:
+mysql-integration-selenium-tests:
   stage: test
   extends: .test_image
   needs:
-    - integration-tests
+    - unit-integration-selenium-tests
   services:
     - name: mariadb:10.8
       alias: mysql
@@ -76,48 +63,7 @@ mysql-integration-tests:
     # Perform database migration
     - alembic upgrade head
     # Run integration tests
-    - coverage run -m pytest --verbose ./test/integration
-    - coverage report --include='./terrareg/*'
-    - coverage report --include='./terrareg/*'
-    - coverage xml
-  artifacts:
-    reports:
-      cobertura: coverage.xml
-
-selenium-tests:
-  stage: test
-  extends: .test_image
-  needs:
-    - mysql-integration-tests
-  script:
-    # Perform database migration
-    - alembic upgrade head
-    # Run integration tests
-    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose ./test/selenium
-    - coverage report --include='./terrareg/*'
-    - coverage xml
-  artifacts:
-    reports:
-      cobertura: coverage.xml
-
-mysql-selenium-tests:
-  stage: test
-  extends: .test_image
-  needs:
-    - selenium-tests
-  services:
-    - name: mariadb:10.8
-      alias: mysql
-  variables:
-    # Set database url for integration tests
-    INTEGRATION_DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
-    # Set datbase URL for schema migration
-    DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
-  script:
-    # Perform database migration
-    - alembic upgrade head
-    # Run selenium tests
-    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose ./test/selenium
+    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose ./test/integration ./test/selenium
     - coverage report --include='./terrareg/*'
     - coverage xml
   artifacts:

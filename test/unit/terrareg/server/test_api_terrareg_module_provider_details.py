@@ -1,5 +1,7 @@
 
 from unittest import mock
+
+import pytest
 from test.unit.terrareg import (
     MockModuleProvider, MockModule, MockNamespace,
     mocked_server_namespace_fixture,
@@ -39,10 +41,55 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'repo_clone_url_template': None,
             'terraform_example_version_string': '1.0.0',
             'beta': False,
-            'published': True
+            'published': True,
+            'security_failures': 0
         }
 
         assert res.status_code == 200
+
+    @setup_test_data()
+    @pytest.mark.parametrize('security_issues_enabled,expected_security_issues', [
+        # When security issues are enabled, 2 should be returned
+        (True, 2),
+        # When security issues are disabled, 0 should be returned
+        (False, 0)
+    ])
+    def test_existing_module_provider_with_security_issues(
+            self, security_issues_enabled, expected_security_issues,
+            client, mocked_server_namespace_fixture):
+        """Test obtaining details about module provider with security issues"""
+        with mock.patch('terrareg.config.Config.ENABLE_SECURITY_SCANNING', security_issues_enabled):
+            res = client.get('/v1/terrareg/modules/testnamespace/withsecurityissues/testprovider')
+
+            assert res.json == {
+                'id': 'testnamespace/withsecurityissues/testprovider/1.0.0', 'owner': 'Mock Owner',
+                'namespace': 'testnamespace', 'name': 'withsecurityissues',
+                'version': '1.0.0', 'provider': 'testprovider',
+                'description': 'Mock description',
+                'source': None,
+                'published_at': '2020-01-01T23:18:12',
+                'downloads': 0, 'verified': False, 'trusted': False, 'internal': False,
+                'root': {
+                    'path': '', 'readme': 'Mock module README file',
+                    'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],
+                    'provider_dependencies': [], 'resources': []
+                },
+                'submodules': [], 'providers': ['testprovider'], 'versions': ['1.0.0'],
+                'display_source_url': None,
+                'git_provider_id': None,
+                'git_tag_format': '{version}',
+                'module_provider_id': 'testnamespace/withsecurityissues/testprovider',
+                'published_at_display': 'January 01, 2020',
+                'repo_base_url_template': None,
+                'repo_browse_url_template': None,
+                'repo_clone_url_template': None,
+                'terraform_example_version_string': '1.0.0',
+                'beta': False,
+                'published': True,
+                'security_failures': expected_security_issues
+            }
+
+            assert res.status_code == 200
 
     @setup_test_data()
     def test_existing_module_provider_with_git_provider_and_no_versions(self, client, mocked_server_namespace_fixture):

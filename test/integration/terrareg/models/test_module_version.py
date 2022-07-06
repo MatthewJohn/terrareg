@@ -75,8 +75,8 @@ class TestModuleVersion(TerraregIntegrationTest):
 
         assert new_db_row['beta'] == False
 
-        for attr in ['description', 'module_details', 'owner',
-                     'published_at', 'readme_content', 'repo_base_url_template',
+        for attr in ['description', 'module_details_id', 'owner',
+                     'published_at', 'repo_base_url_template',
                      'repo_browse_url_template', 'repo_clone_url_template',
                      'variable_template']:
             assert new_db_row[attr] == None
@@ -106,8 +106,8 @@ class TestModuleVersion(TerraregIntegrationTest):
 
         assert new_db_row['beta'] == True
 
-        for attr in ['description', 'module_details', 'owner',
-                     'published_at', 'readme_content', 'repo_base_url_template',
+        for attr in ['description', 'module_details_id', 'owner',
+                     'published_at', 'repo_base_url_template',
                      'repo_browse_url_template', 'repo_clone_url_template',
                      'variable_template']:
             assert new_db_row[attr] == None
@@ -190,8 +190,8 @@ class TestModuleVersion(TerraregIntegrationTest):
         assert new_db_row['published'] == False
         assert new_db_row['version'] == '1.1.0'
 
-        for attr in ['description', 'module_details', 'owner',
-                     'published_at', 'readme_content', 'repo_base_url_template',
+        for attr in ['description', 'module_details_id', 'owner',
+                     'published_at', 'repo_base_url_template',
                      'repo_browse_url_template', 'repo_clone_url_template',
                      'variable_template']:
             assert new_db_row[attr] == None

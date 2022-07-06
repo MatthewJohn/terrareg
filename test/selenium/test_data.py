@@ -416,7 +416,7 @@ integration_test_data = {
                         }
 
                     ]),
-                    'module_details': json.dumps({
+                    'terraform_docs': json.dumps({
                         'header': '',
                         'footer': '',
                         'inputs': [
@@ -493,7 +493,7 @@ integration_test_data = {
                                 'examples/test-example/main.tf': '# Call root module\nmodule "root" {\n  source = "../../"\n}'
                             },
                             'readme_content': '# Example 1 README',
-                            'module_details': json.dumps({
+                            'terraform_docs': json.dumps({
                                 'header': '',
                                 'footer': '',
                                 'inputs': [
@@ -537,7 +537,7 @@ integration_test_data = {
                     'submodules': {
                         'modules/example-submodule1': {
                             'readme_content': '# Submodule 1 README',
-                            'module_details': json.dumps({
+                            'terraform_docs': json.dumps({
                                 'header': '',
                                 'footer': '',
                                 'inputs': [
@@ -579,6 +579,92 @@ integration_test_data = {
                         }
                     }
                 },
+            }
+        }},
+        'withsecurityissues': {'testprovider': {
+            'id': 62,
+            'versions': {
+                '1.2.0': {
+                    'published': True,
+                    'submodules': {
+                        'modules/withanotherissue': {
+                            'tfsec': json.dumps({
+                                'results': [
+                                    {'status': 0}
+                                ]
+                            })
+                        }
+                    }
+                },
+                '1.1.0': {
+                    'published': True,
+                    'examples': {
+                        'examples/withsecissue': {
+                            'tfsec': json.dumps({
+                                'results': [
+                                    {'status': 0},
+                                    {'status': 0},
+                                    {'status': 0}
+                                ]
+                            })
+                        }
+                    }
+                },
+                '1.0.0': {
+                    'published': True,
+                    'tfsec': json.dumps({
+                        'results': [
+                            {
+                                'description': 'Secret explicitly uses the default key.',
+                                'impact': 'Using AWS managed keys reduces the flexibility and '
+                                        'control over the encryption key',
+                                'links': [
+                                    'https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/ssm/secret-use-customer-key/',
+                                    'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret#kms_key_id'
+                                ],
+                                'location': {
+                                    'end_line': 4,
+                                    'filename': 'main.tf',
+                                    'start_line': 2
+                                },
+                                'long_id': 'aws-ssm-secret-use-customer-key',
+                                'resolution': 'Use customer managed keys',
+                                'resource': 'aws_secretsmanager_secret.this',
+                                'rule_description': 'Secrets Manager should use customer managed '
+                                                    'keys',
+                                'rule_id': 'AVD-AWS-0098',
+                                'rule_provider': 'aws',
+                                'rule_service': 'ssm',
+                                'severity': 'LOW',
+                                'status': 0,
+                                'warning': False
+                            },
+                            {
+                                'description': 'Some security issue 2.',
+                                'impact': 'Entire project is compromised',
+                                'links': [
+                                    'https://example.com/issuehere',
+                                    'https://example.com/docshere'
+                                ],
+                                'location': {
+                                    'end_line': 1,
+                                    'filename': 'main.tf',
+                                    'start_line': 6
+                                },
+                                'long_id': 'dodgy-bad-is-bad',
+                                'resolution': 'Do not use bad code',
+                                'resource': 'some_data_resource.this',
+                                'rule_description': 'Dodgy code should be removed',
+                                'rule_id': 'DDG-ANC-001',
+                                'rule_provider': 'bad',
+                                'rule_service': 'code',
+                                'severity': 'HIGH',
+                                'status': 0,
+                                'warning': False
+                            }
+                        ]
+                    })
+                }
             }
         }},
         'noversion': {'testprovider': {

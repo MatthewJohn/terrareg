@@ -32,8 +32,8 @@ class TestHomepage(SeleniumTest):
 
     @pytest.mark.parametrize('element,count', [
         ('namespace', 14),
-        ('module', 51),
-        ('version', 67),
+        ('module', 52),
+        ('version', 70),
         ('download', 2005)
     ])
     def test_counts(self, element, count):

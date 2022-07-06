@@ -46,6 +46,7 @@ class Database():
         """Setup member variables."""
         self._git_provider = None
         self._module_provider = None
+        self._module_details = None
         self._module_version = None
         self._sub_module = None
         self._analytics = None
@@ -65,6 +66,13 @@ class Database():
         if self._module_provider is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._module_provider
+
+    @property
+    def module_details(self):
+        """Return module_details table."""
+        if self._module_details is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._module_details
 
     @property
     def module_version(self):
@@ -175,6 +183,14 @@ class Database():
             )
         )
 
+        self._module_details = sqlalchemy.Table(
+            'module_details', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('readme_content', Database.medium_blob()),
+            sqlalchemy.Column('terraform_docs', Database.medium_blob()),
+            sqlalchemy.Column('tfsec', Database.medium_blob())
+        )
+
         self._module_version = sqlalchemy.Table(
             'module_version', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
@@ -188,6 +204,16 @@ class Database():
                 nullable=False
             ),
             sqlalchemy.Column('version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column(
+                'module_details_id',
+                sqlalchemy.ForeignKey(
+                    'module_details.id',
+                    name='fk_module_version_module_details_id_module_details_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'
+                ),
+                nullable=True
+            ),
             # Whether the module version is a beta version
             sqlalchemy.Column('beta', sqlalchemy.BOOLEAN, nullable=False),
             sqlalchemy.Column('owner', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
@@ -196,8 +222,6 @@ class Database():
             sqlalchemy.Column('repo_clone_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('published_at', sqlalchemy.DateTime),
-            sqlalchemy.Column('readme_content', Database.medium_blob()),
-            sqlalchemy.Column('module_details', Database.medium_blob()),
             sqlalchemy.Column('variable_template', Database.medium_blob()),
             sqlalchemy.Column('internal', sqlalchemy.Boolean, nullable=False),
             sqlalchemy.Column('published', sqlalchemy.Boolean)
@@ -215,11 +239,19 @@ class Database():
                     ondelete='CASCADE'),
                 nullable=False
             ),
+            sqlalchemy.Column(
+                'module_details_id',
+                sqlalchemy.ForeignKey(
+                    'module_details.id',
+                    name='fk_submodule_module_details_id_module_details_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'
+                ),
+                nullable=True
+            ),
             sqlalchemy.Column('type', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('path', sqlalchemy.String(LARGE_COLUMN_SIZE)),
-            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('readme_content', Database.medium_blob()),
-            sqlalchemy.Column('module_details', Database.medium_blob())
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE))
         )
 
         self._analytics = sqlalchemy.Table(

@@ -6,7 +6,7 @@ import unittest.mock
 import pytest
 
 from terrareg.database import Database
-from terrareg.models import GitProvider, Module, ModuleProvider, ModuleVersion, Namespace
+from terrareg.models import GitProvider, Module, ModuleDetails, ModuleProvider, ModuleVersion, Namespace
 from terrareg.server import Server
 import terrareg.config
 from test import BaseTest
@@ -38,19 +38,58 @@ class TerraregUnitTest(BaseTest):
 
 TEST_MODULE_DATA = {}
 TEST_GIT_PROVIDER_DATA = {}
+TEST_MODULE_DETAILS = {}
+TEST_MODULE_DETAILS_ITX = 0
 
 def setup_test_data(test_data=None):
     """Provide decorator to setup test data to be used for mocked objects."""
     def deco(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
+            global TEST_MODULE_DETAILS
+            global TEST_MODULE_DETAILS_ITX
             global TEST_MODULE_DATA
             TEST_MODULE_DATA = dict(test_data if test_data else test_data_full)
+            TEST_MODULE_DETAILS = {}
+
+            # Replace all ModuleDetails in test data with IDs and move contents to
+            # TEST_MODULE_DETAILS
+            default_readme = 'Mock module README file'
+            default_terraform_docs = '{"inputs": [], "outputs": [], "providers": [], "resources": []}'
+            default_tfsec = '{"results": null}'
+            for namespace in TEST_MODULE_DATA:
+                for module in TEST_MODULE_DATA[namespace]:
+                    for provider in TEST_MODULE_DATA[namespace][module]:
+                        for version in TEST_MODULE_DATA[namespace][module][provider].get('versions', {}):
+                            version_config = TEST_MODULE_DATA[namespace][module][provider]['versions'][version]
+                            TEST_MODULE_DETAILS[str(TEST_MODULE_DETAILS_ITX)] = {
+                                'readme_content': Database.encode_blob(version_config.get('readme_content', default_readme)),
+                                'terraform_docs': Database.encode_blob(version_config.get('terraform_docs', default_terraform_docs)),
+                                'tfsec': Database.encode_blob(version_config.get('tfsec', default_tfsec))
+                            }
+                            version_config['module_details_id'] = TEST_MODULE_DETAILS_ITX
+
+                            TEST_MODULE_DETAILS_ITX += 1
+
+                            for type_ in ['examples', 'submodules']:
+                                for submodule_name in version_config.get(type_, {}):
+                                    config = version_config[type_][submodule_name]
+                                    TEST_MODULE_DETAILS[str(TEST_MODULE_DETAILS_ITX)] = {
+                                        'readme_content': Database.encode_blob(config.get('readme_content', default_readme)),
+                                        'terraform_docs': Database.encode_blob(config.get('terraform_docs', default_terraform_docs)),
+                                        'tfsec': Database.encode_blob(config.get('tfsec', default_tfsec))
+                                    }
+                                    config['module_details_id'] = TEST_MODULE_DETAILS_ITX
+
+                                    TEST_MODULE_DETAILS_ITX += 1
+
             global TEST_GIT_PROVIDER_DATA
             TEST_GIT_PROVIDER_DATA = dict(test_git_providers)
             res = func(*args, **kwargs)
             TEST_MODULE_DATA = {}
             TEST_GIT_PROVIDER_DATA = {}
+            TEST_MODULE_DETAILS = {}
+            TEST_MODULE_DETAILS_ITX = 0
             return res
         return wrapper
     return deco
@@ -87,8 +126,34 @@ class MockModule(Module):
                 for module_provider in self._unittest_data]
 
 
+class MockModuleDetails(ModuleDetails):
+
+    @classmethod
+    def create(cls):
+        """Mock create method"""
+        global TEST_MODULE_DETAILS_ITX
+        TEST_MODULE_DETAILS[str(TEST_MODULE_DETAILS_ITX)] = {
+            'readme_content': None,
+            'terraform_docs': None
+        }
+
+        module_details = MockModuleDetails(TEST_MODULE_DETAILS_ITX)
+        TEST_MODULE_DETAILS_ITX += 1
+        return module_details
+
+    def update_attributes(self, **kwargs):
+        TEST_MODULE_DETAILS[str(self._id)].update(**kwargs)
+
+    def _get_db_row(self):
+        return dict(TEST_MODULE_DETAILS[str(self._id)])
+
+
 class MockModuleVersion(ModuleVersion):
     """Mocked module version."""
+
+    @property
+    def module_details(self):
+        return MockModuleDetails(self._get_db_row()['module_details_id'])
 
     @property
     def _unittest_data(self):
@@ -122,15 +187,11 @@ class MockModuleVersion(ModuleVersion):
                 datetime.datetime(year=2020, month=1, day=1,
                                   hour=23, minute=18, second=12)
             ),
-            'readme_content': Database.encode_blob(self._unittest_data.get('readme_content', 'Mock module README file')),
-            'module_details': Database.encode_blob(self._unittest_data.get(
-                'module_details',
-                '{"inputs": [], "outputs": [], "providers": [], "resources": []}'
-            )),
             'variable_template': Database.encode_blob(self._unittest_data.get('variable_template', '{}')),
             'internal': self._unittest_data.get('internal', False),
             'published': self._unittest_data.get('published', False),
-            'beta': self._unittest_data.get('beta', False)
+            'beta': self._unittest_data.get('beta', False),
+            'module_details_id': self._unittest_data.get('module_details_id', None)
         }
 
 
