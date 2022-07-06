@@ -98,6 +98,8 @@ class BaseTest:
             conn.execute(db.sub_module.delete())
             conn.execute(db.module_version.delete())
             conn.execute(db.module_provider.delete())
+            conn.execute(db.example_file.delete())
+            conn.execute(db.module_details.delete())
             conn.execute(db.git_provider.delete())
             conn.execute(db.analytics.delete())
 
@@ -154,7 +156,8 @@ class BaseTest:
                         module_details = ModuleDetails.create()
                         module_details.update_attributes(
                             readme_content=version_data.get('readme_content', None),
-                            terraform_docs=version_data.get('terraform_docs', None)
+                            terraform_docs=version_data.get('terraform_docs', None),
+                            tfsec=version_data.get('tfsec')
                         )
 
                         data = {
@@ -178,7 +181,7 @@ class BaseTest:
                         values_to_update = {
                             attr: version_data[attr]
                             for attr in version_data
-                            if attr not in ['examples', 'submodules', 'published', 'readme_content', 'terraform_docs']
+                            if attr not in ['examples', 'submodules', 'published', 'readme_content', 'terraform_docs', 'tfsec']
                         }
                         if values_to_update:
                             module_version.update_attributes(**values_to_update)
@@ -194,14 +197,15 @@ class BaseTest:
                             module_details = ModuleDetails.create()
                             module_details.update_attributes(
                                 readme_content=submodule_config.get('readme_content', None),
-                                terraform_docs=submodule_config.get('terraform_docs', None)
+                                terraform_docs=submodule_config.get('terraform_docs', None),
+                                tfsec=submodule_config.get('tfsec', None)
                             )
 
                             submodule = Submodule.create(module_version=module_version, module_path=submodule_path)
                             attributes_to_update = {
                                 attr: submodule_config[attr]
                                 for attr in submodule_config
-                                if attr not in ['readme_content', 'terraform_docs']
+                                if attr not in ['readme_content', 'terraform_docs', 'tfsec']
                             }
                             attributes_to_update['module_details_id'] = module_details.pk
                             submodule.update_attributes(
@@ -215,14 +219,15 @@ class BaseTest:
                             module_details = ModuleDetails.create()
                             module_details.update_attributes(
                                 readme_content=example_config.get('readme_content', None),
-                                terraform_docs=example_config.get('terraform_docs', None)
+                                terraform_docs=example_config.get('terraform_docs', None),
+                                tfsec=example_config.get('tfsec', None)
                             )
 
                             example = Example.create(module_version=module_version, module_path=example_path)
                             attributes_to_update = {
                                 attr: example_config[attr]
                                 for attr in example_config
-                                if attr not in ['example_files', 'readme_content', 'terraform_docs']
+                                if attr not in ['example_files', 'readme_content', 'terraform_docs', 'tfsec']
                             }
                             attributes_to_update['module_details_id'] = module_details.pk
                             example.update_attributes(

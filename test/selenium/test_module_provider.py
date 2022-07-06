@@ -107,6 +107,9 @@ class TestModuleProvider(SeleniumTest):
             # Ensure exaple files tab link isn't displayed
             assert self.selenium_instance.find_element(By.ID, 'module-tab-link-example-files').is_displayed() == False
 
+            # Ensure security issues aren't displayed
+            assert self.selenium_instance.find_element(By.ID, 'security-issues').is_displayed() == False
+
             # Check basic details of module
             expected_element_details = {
                 'module-title': 'fullypopulated\nContributed',
@@ -150,6 +153,16 @@ module "fullypopulated" {{
         finally:
             if attribute_to_remove:
                 module_version.update_attributes(**{attribute_to_remove: original_value})
+
+    def test_module_with_security_issues(self):
+        """Test module with security issues."""
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/withsecurityissues/testprovider'))
+
+        # Ensure security issues are displayed
+        security_issues = self.wait_for_element(By.ID, 'security-issues')
+        assert security_issues.is_displayed() == True
+        assert security_issues.text == '2 Security issues'
+
 
     @pytest.mark.parametrize('url,expected_readme_content', [
         # Root module
