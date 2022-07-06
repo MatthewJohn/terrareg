@@ -410,7 +410,7 @@ integration_test_data = {
                     'variable_template': json.dumps([
                         {
                             'name': 'name_of_application',
-                            'type': 'string',
+                            'type': 'text',
                             'quote_value': True,
                             'additional_help': 'Provide the name of the application'
                         }

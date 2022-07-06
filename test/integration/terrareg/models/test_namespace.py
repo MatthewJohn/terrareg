@@ -41,4 +41,4 @@ class TestNamespace(TerraregIntegrationTest):
 
     def test_get_total_count(self):
         """Test get_total_count method"""
-        assert Namespace.get_total_count() == 10
+        assert Namespace.get_total_count() == 11

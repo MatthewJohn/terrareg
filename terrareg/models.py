@@ -1402,7 +1402,32 @@ class ModuleVersion(TerraformSpecsObject):
     def variable_template(self):
         """Return variable template for module version."""
         raw_json = Database.decode_blob(self._get_db_row()['variable_template'])
-        return json.loads(raw_json) if raw_json else []
+        variables = json.loads(raw_json) if raw_json else []
+
+        # Detect bad type for variable template and replace
+        # with empty array
+        if type(variables) is not list:
+            variables = []
+
+        if terrareg.config.Config().AUTOGENERATE_USAGE_BUILDER_VARIABLES:
+            for input_variable in self.get_terraform_inputs():
+                if not input_variable['required']:
+                    continue
+                if input_variable['name'] not in [v['name'] for v in variables]:
+
+                    converted_type = 'text'
+                    if input_variable['type'] == 'bool':
+                        converted_type = 'boolean'
+                    elif input_variable['type'].startswith('list('):
+                        converted_type = 'list'
+
+                    variables.append({
+                        'name': input_variable['name'],
+                        'type': converted_type,
+                        'additional_help': input_variable['description'],
+                        'quote_value': True
+                    })
+        return variables
 
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
