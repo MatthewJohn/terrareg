@@ -363,5 +363,17 @@ class TestModuleVersion(TerraregIntegrationTest):
                     'name': 'undocumented_required_variable',
                     'quote_value': True,
                     'type': 'text'
+                },
+                {
+                    'additional_help': 'required boolean variable',
+                    'name': 'example_boolean_input',
+                    'quote_value': True,
+                    'type': 'boolean'
+                },
+                {
+                    'additional_help': 'A required list',
+                    'name': 'required_list_variable',
+                    'quote_value': True,
+                    'type': 'list'
                 }
             ]

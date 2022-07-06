@@ -425,9 +425,16 @@ integration_test_data = {
                             {
                                 'name': 'example_boolean_input',
                                 'type': 'bool',
-                                'description': 'Override the truthful boolean',
-                                'default': True,
-                                'required': False
+                                'description': 'required boolean variable',
+                                'default': None,
+                                'required': True
+                            },
+                            {
+                                'name': 'required_list_variable',
+                                'type': 'list(string)',
+                                'description': 'A required list',
+                                'default': None,
+                                'required': True
                             },
                             {
                                 'name': 'example_list_input',
