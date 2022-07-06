@@ -1,5 +1,14 @@
 # Changelog
 
+# [2.22.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.21.0...v2.22.0) (2022-07-06)
+
+
+### Features
+
+* Add config to allow the auto-generated variable template variables for the usage builder to be disabled ([93a10d0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/93a10d0771100d88677f4c96c5997b053faa43e2)), closes [#135](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/135)
+* Add type 'list' to usage builder, which will generate a list with containing the input variable provided. ([25dc66e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/25dc66ed1757910f7a3f5e32fb5e39e49bccb046)), closes [#135](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/135)
+* Use required terraform input variables for module to auto-populate missing variables from 'variable_template' in terrareg metadata ([1d8a974](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1d8a974a2c29dc5de8d990d8828281a50fddeec7)), closes [#135](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/135)
+
 # [2.21.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.20.3...v2.21.0) (2022-07-06)
 
 
