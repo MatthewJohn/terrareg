@@ -1,5 +1,15 @@
 # Changelog
 
+# [2.21.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.20.3...v2.21.0) (2022-07-06)
+
+
+### Features
+
+* Add security scanning of modules during upload/indexing. ([90d6901](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/90d69014ca25362937d5aa4ccb6c36facb484762)), closes [#150](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/150)
+* **db:** Move common DB columns of module version and submodule tables into new module_details table ([94c54f1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/94c54f11a81192b26451d2015e395b22bb4e2338)), closes [#150](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/150)
+* Display number of security issues found in module version as part of labels attached to module ([853c1d1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/853c1d159f7c72942c43cc065d5977ac85608978)), closes [#150](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/150)
+* Show security issues for root module, submodules and all examples. ([16cd632](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/16cd6320d86b9da5321ad29fb9464b86b90465de)), closes [#150](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/150)
+
 ## [2.20.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.20.2...v2.20.3) (2022-07-04)
 
 
