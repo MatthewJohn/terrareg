@@ -1404,14 +1404,26 @@ class ModuleVersion(TerraformSpecsObject):
         raw_json = Database.decode_blob(self._get_db_row()['variable_template'])
         variables = json.loads(raw_json) if raw_json else []
 
+        # Detect bad type for variable template and replace
+        # with empty array
+        if type(variables) is not list:
+            variables = []
+
         if terrareg.config.Config().AUTOGENERATE_USAGE_BUILDER_VARIABLES:
             for input_variable in self.get_terraform_inputs():
-                if input_variable['default'] is not None and not input_variable['required']:
+                if not input_variable['required']:
                     continue
                 if input_variable['name'] not in [v['name'] for v in variables]:
+
+                    converted_type = 'text'
+                    if input_variable['type'] == 'bool':
+                        converted_type = 'boolean'
+                    elif input_variable['type'].startswith('list('):
+                        converted_type = 'list'
+
                     variables.append({
                         'name': input_variable['name'],
-                        'type': 'text',
+                        'type': converted_type,
                         'additional_help': input_variable['description'],
                         'quote_value': True
                     })
