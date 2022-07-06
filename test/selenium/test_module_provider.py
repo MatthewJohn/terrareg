@@ -54,6 +54,103 @@ class TestModuleProvider(SeleniumTest):
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, f'module-tab-link-settings').is_displayed(), True)
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, f'module-tab-settings').is_displayed(), False)
 
+        # Ensure warning about no available version
+        no_versions_div = self.wait_for_element(By.ID, 'no-version-available')
+        assert no_versions_div.text == 'There are no versions of this module'
+        assert no_versions_div.is_displayed() == True
+
+        # Ensure none of the following elements are displayed
+        for element_id in ['module-title', 'module-provider', 'module-description', 'published-at',
+                           'module-owner', 'source-url', 'submodule-back-to-parent',
+                           'submodule-select-container', 'example-select-container',
+                           'module-download-stats-container', 'usage-example-container']:
+            assert self.selenium_instance.find_element(By.ID, element_id).is_displayed() == False
+
+    @pytest.mark.parametrize('attribute_to_remove,related_element,expect_displayed,expected_display_value', [
+        # Without any modified fields
+        (None, None, None, None),
+
+        # Remove description
+        ('description', 'module-description', False, ''),
+
+        # Remove owner
+        ('owner', 'module-owner', False, ''),
+
+        # Remove source URL
+        ('repo_base_url_template', 'source-url', False, '')
+    ])
+    def test_module_with_versions(self, attribute_to_remove, related_element, expect_displayed, expected_display_value):
+        """Test page functionality on a module with versions."""
+        if attribute_to_remove:
+            module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
+            module_version = ModuleVersion.get(module_provider, '1.5.0')
+            original_value = module_version._get_db_row()[attribute_to_remove]
+            module_version.update_attributes(**{attribute_to_remove: None})
+
+        try:
+            self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider'))
+
+            # Ensure readme link is displayed
+            self.assert_equals(lambda: self.wait_for_element(By.ID, f'module-tab-link-readme').is_displayed(), True)
+
+            # Ensure tab content is displayed
+            assert self.selenium_instance.find_element(By.ID, f'module-tab-readme').is_displayed() == True
+
+            # Ensure all other tabs aren't shown
+            for tab_name in ['inputs', 'outputs', 'providers', 'resources', 'analytics', 'usage-builder', 'integrations']:
+                # Ensure tab links are displayed
+                self.assert_equals(lambda: self.wait_for_element(By.ID, f'module-tab-link-{tab_name}').is_displayed(), True)
+
+                # Ensure tab content isn't displayed
+                assert self.selenium_instance.find_element(By.ID, f'module-tab-{tab_name}').is_displayed() == False
+
+            # Ensure exaple files tab link isn't displayed
+            assert self.selenium_instance.find_element(By.ID, 'module-tab-link-example-files').is_displayed() == False
+
+            # Check basic details of module
+            expected_element_details = {
+                'module-title': 'fullypopulated\nContributed',
+                'module-provider': 'Provider: testprovider',
+                'module-description': 'This is a test module version for tests.',
+                'published-at': 'Published January 05, 2022 by moduledetails',
+                'module-owner': 'Module managed by This is the owner of the module',
+                'source-url': 'Source code: https://link-to.com/source-code-here',
+                'usage-example-container': f"""Usage
+To use this module:
+Add the following example to your terraform,
+Ensure the "my-tf-application" placeholder must be replaced with your 'analytics token',
+Add the required inputs - use the 'Usage Builder' tab for help and 'Inputs' tab for a full list.
+module "fullypopulated" {{
+  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"
+  version = "1.5.0"
+
+  # Provide variables here
+}}"""
+            }
+            for element_name in expected_element_details:
+                element = self.selenium_instance.find_element(By.ID, element_name)
+
+                if element_name == related_element:
+                    assert element.is_displayed() == expect_displayed
+                    assert element.text == expected_display_value
+                else:
+                    assert element.is_displayed() == True
+                    assert element.text == expected_element_details[element_name]
+
+            # Login
+            self.perform_admin_authentication(password='unittest-password')
+
+            # Ensure settings tab link is displayed
+            self.selenium_instance.get(self.get_url('/modules/moduledetails/noversion/testprovider'))
+
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, f'module-tab-link-settings').is_displayed(), True)
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, f'module-tab-settings').is_displayed(), False)
+            self.wait_for_element(By.ID, 'no-version-available', ensure_displayed=False).is_displayed == False
+
+        finally:
+            if attribute_to_remove:
+                module_version.update_attributes(**{attribute_to_remove: original_value})
+
     @pytest.mark.parametrize('url,expected_readme_content', [
         # Root module
         ('/modules/moduledetails/fullypopulated/testprovider/1.5.0', 'This is an exaple README!'),
