@@ -673,6 +673,50 @@ integration_test_data = {
         }}
     },
 
+    # Small namespace with module providers
+    # with unpublished and beta versions
+    'unpublished-beta-version-module-providers': {
+        'publishedone': {
+            'testprovider': {
+                'id': 63,
+                'versions': {
+                    '2.1.1': {
+                        'published': True,
+                        'description': 'Test description'
+                    }
+                }
+            },
+            'secondnamespace': {
+                'id': 64,
+                'versions': {
+                    '2.2.2': {
+                        'published': True,
+                        'description': 'Description of second provider in module'
+                    }
+                }
+            }
+        },
+        'onlybeta': {'testprovider': {
+            'id': 65,
+            'versions': {
+                '2.2.4-beta': {
+                    'published': True,
+                    'beta': True,
+                    'description': 'Test description'
+                }
+            }
+        }},
+        'onlyunpublished': {'testprovider': {
+            'id': 66,
+            'versions': {
+                '1.0.0': {
+                    'published': False,
+                    'description': 'Test description'
+                }
+            }
+        }}
+    },
+
     ## THESE MUST BE AT THE BOTTOM
     'mostrecent': {
         'modulename': {'providername': {

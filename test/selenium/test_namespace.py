@@ -124,7 +124,7 @@ class TestNamespace(SeleniumTest):
         with pytest.raises(selenium.common.exceptions.NoSuchElementException):
             trusted_module.find_element(By.CLASS_NAME, 'result-card-label-contributed')
 
-    def check_contributed_module(self):
+    def test_contributed_module(self):
         """Check that contributed module just has contributed label"""
         self.selenium_instance.get(self.get_url('/modules/modulesearch-contributed'))
 
@@ -137,3 +137,23 @@ class TestNamespace(SeleniumTest):
         # Ensure that the contributed tag is not shown
         with pytest.raises(selenium.common.exceptions.NoSuchElementException):
             contributed_module.find_element(By.CLASS_NAME, 'result-card-label-trusted')
+
+    def test_module_providers_with_beta_and_unpublished_versions(self):
+        """Test listing module providers with only beta and unpublished versions on namespace page."""
+        self.selenium_instance.get(self.get_url('/modules/unpublished-beta-version-module-providers'))
+
+        # Ensure card for each module is displayed
+        self.assert_equals(
+            lambda: [
+                card.find_element(By.CLASS_NAME, 'module-card-title').text
+                for card in self.selenium_instance.find_element(By.ID, 'module-list-table').find_elements(By.CLASS_NAME, 'card')
+            ],
+            [
+                'unpublished-beta-version-module-providers / onlybeta',
+                'unpublished-beta-version-module-providers / onlyunpublished',
+                # Ensure two cards for publishedone, since there are two
+                # module providers with different provider names
+                'unpublished-beta-version-module-providers / publishedone',
+                'unpublished-beta-version-module-providers / publishedone'
+            ]
+        )
