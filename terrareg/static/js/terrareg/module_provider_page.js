@@ -560,7 +560,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
 
                 let valueTd = $('<td></td>');
 
-                if (inputVariable.type == 'text') {
+                if (inputVariable.type == 'text' || inputVariable.type == 'list') {
                     let inputDiv = $('<input />');
                     inputDiv.addClass('input');
                     inputDiv.attr('type', 'text');
@@ -1240,10 +1240,14 @@ function updateModuleProviderSettings(moduleDetails) {
     return false;
 }
 
-function usageBuilderQuoteString(input) {
+function usageBuilderQuoteString(inputVariable, input) {
     // Place input value directly into double quotes.
     // Escape backslashes and then escape double quotes.
-    return '"' + input.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+    if (inputVariable.quote_value) {
+        return '"' + input.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+    } else {
+        return input;
+    }
 }
 
 async function updateUsageBuilderOutput(moduleDetails) {
@@ -1261,11 +1265,14 @@ async function updateUsageBuilderOutput(moduleDetails) {
         // Get value from
         if (inputVariable.type == 'static')
         {
-            varInput = inputVariable.value;
+            varInput = usageBuilderQuoteString(inputVariable, inputVariable.value);
         }
         else if (inputVariable.type == 'text')
         {
-            varInput = $(inputId)[0].value;
+            varInput = usageBuilderQuoteString($(inputId)[0].value);
+        }
+        else if (inputVariable.type == 'list') {
+            varInput = `[${usageBuilderQuoteString(inputVariable, $(inputId)[0].value)}]`;
         }
         else if (inputVariable.type == 'boolean')
         {
@@ -1279,10 +1286,10 @@ async function updateUsageBuilderOutput(moduleDetails) {
             // Check if custom type
             if (selectIndex == 'custom') {
                 // Display custom text input
-                $(customInputId)[0].style.display ='block';
+                $(customInputId)[0].style.display = 'block';
 
                 // Use value of custom input as output
-                varInput = $(customInputId)[0].value
+                varInput = usageBuilderQuoteString(inputVariable, $(customInputId)[0].value);
             }
             else
             {
@@ -1302,12 +1309,8 @@ async function updateUsageBuilderOutput(moduleDetails) {
                         additionalContent += inputVariable.choices[selectIndex].additional_content + '\n\n';
                     }
                 }
+                varInput = usageBuilderQuoteString(inputVariable, varInput);
             }
-            
-        }
-
-        if (inputVariable.quote_value) {
-            varInput = usageBuilderQuoteString(varInput);
         }
 
         outputTf += `\n  ${inputVariable.name} = ${varInput}`;

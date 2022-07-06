@@ -259,6 +259,18 @@ Default: `True`
 
 
 
+### AUTOGENERATE_USAGE_BUILDER_VARIABLES
+
+
+Whether to automatically generate usage builder variables from the required variables and their descriptions.
+When disabled, the usage builder will only be displayed on a module when the "variable_template" section
+of the terrareg.json metadata file is populated.
+
+
+Default: `True`
+
+
+
 ### AUTO_CREATE_MODULE_PROVIDER
 
 
