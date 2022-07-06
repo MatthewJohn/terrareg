@@ -287,10 +287,14 @@ class Server(object):
             ApiTerraregNamespaces,
             '/v1/terrareg/namespaces'
         )
+        self._api.add_resource(
+            ApiTerraregNamespaceDetails,
+            '/v1/terrareg/namespaces/<string:namespace>'
+        )
 
         ## Module endpoints /v1/terreg/modules
         self._api.add_resource(
-            ApiTerraregNamespaceDetails,
+            ApiTerraregNamespaceModules,
             '/v1/terrareg/modules/<string:namespace>'
         )
         self._api.add_resource(
@@ -1447,6 +1451,51 @@ class ApiTerraregNamespaceDetails(ErrorCatchingResource):
         """Return custom terrareg config for namespace."""
         namespace = Namespace(namespace)
         return namespace.get_details()
+
+
+class ApiTerraregNamespaceModules(ErrorCatchingResource):
+    """Interface to obtain list of modules in namespace."""
+
+    def _get(self, namespace):
+        """Return list of modules in namespace"""
+
+        parser = reqparse.RequestParser()
+        parser.add_argument(
+            'offset', type=int,
+            default=0, help='Pagination offset')
+        parser.add_argument(
+            'limit', type=int,
+            default=10, help='Pagination limit'
+        )
+        args = parser.parse_args()
+
+        namespace_obj = Namespace(name=namespace)
+        module_providers = [
+            module_provider
+            for module in namespace_obj.get_all_modules()
+            for module_provider in module.get_providers()
+        ]
+        if not module_providers:
+            return self._get_404_response()
+
+        meta = {
+            'limit': args.limit,
+            'current_offset': args.offset
+        }
+        if len(module_providers) > (args.offset + args.limit):
+            meta['next_offset'] = (args.offset + args.limit)
+        if args.offset > 0:
+            meta['prev_offset'] = max(args.offset - args.limit, 0)
+
+        return {
+            "meta": meta,
+            "modules": [
+                module_provider.get_terrareg_api_details()
+                if module_provider.get_latest_version() is None else
+                module_provider.get_latest_version().get_terrareg_api_details()
+                for module_provider in module_providers[args.offset:args.offset + args.limit]
+            ]
+        }
 
 
 class ApiTerraregModuleProviderDetails(ErrorCatchingResource):
