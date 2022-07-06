@@ -369,6 +369,15 @@ class Config:
         return self.convert_boolean(os.environ.get('AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION', 'True'))
 
     @property
+    def AUTOGENERATE_USAGE_BUILDER_VARIABLES(self):
+        """
+        Whether to automatically generate usage builder variables from the required variables and their descriptions.
+        When disabled, the usage builder will only be displayed on a module when the "variable_template" section
+        of the terrareg.json metadata file is populated.
+        """
+        return self.convert_boolean(os.environ.get('AUTOGENERATE_USAGE_BUILDER_VARIABLES', 'True'))
+
+    @property
     def ENABLE_SECURITY_SCANNING(self):
         """
         Whether to perform security scans of uploaded modules and display them against the module, submodules and examples.

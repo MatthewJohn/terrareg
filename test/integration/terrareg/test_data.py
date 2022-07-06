@@ -1,4 +1,8 @@
 
+from datetime import datetime
+import json
+
+
 integration_git_providers = {
     1: {
         'name': 'testgitprovider',
@@ -369,6 +373,108 @@ integration_test_data = {
         'modulename': {'providername': {
             'id': 48,
             'versions': {'1.2.3': {'published': True}}
+        }}
+    },
+    'moduledetails': {
+        'withterraformdocs': {'testprovider': {
+            'id': 57,
+            'versions': {
+                '1.5.0': {
+                    'description': 'This is a test module version for tests.',
+                    'owner': 'This is the owner of the module',
+                    'repo_base_url_template': 'https://link-to.com/source-code-here',
+                    'published': True,
+                    'beta': False,
+                    'internal': False,
+                    'published_at': datetime(2022, 1, 5, 22, 53, 12),
+                    'readme_content': '# This is an exaple README!',
+                    'variable_template': json.dumps([
+                        {
+                            'name': 'name_of_application',
+                            'type': 'string',
+                            'quote_value': True,
+                            'additional_help': 'Provide the name of the application'
+                        }
+
+                    ]),
+                    'terraform_docs': json.dumps({
+                        'header': '',
+                        'footer': '',
+                        'inputs': [
+                            {
+                                'name': 'name_of_application',
+                                'type': 'string',
+                                'description': 'Enter the application name',
+                                'default': None,
+                                'required': True
+                            },
+                            {
+                                'name': 'string_with_default_value',
+                                'type': 'string',
+                                'description': 'Override the default string',
+                                'default': 'this is the default',
+                                'required': False
+                            },
+                            {
+                                'name': 'undocumented_required_variable',
+                                'type': 'string',
+                                'description': 'Override the default string',
+                                'default': None,
+                                'required': True
+                            },
+                            {
+                                'name': 'example_boolean_input',
+                                'type': 'bool',
+                                'description': 'Override the truthful boolean',
+                                'default': True,
+                                'required': False
+                            },
+                            {
+                                'name': 'example_list_input',
+                                'type': 'list',
+                                'description': 'Override the stringy list',
+                                'default': ['value 1', 'value 2'],
+                                'required': False
+                            }
+                        ],
+                        'modules': [],
+                        'outputs': [
+                            {
+                                'name': 'generated_name',
+                                'description': 'Name with randomness'
+                            },
+                            {
+                                'name': 'no_desc_output',
+                                'description': None
+                            }
+                        ],
+                        'providers': [
+                            {
+                                'name': 'random',
+                                'alias': 'random-alias',
+                                'version': '5.2.1'
+                            },
+                            {
+                                'name': 'someothercompany/unsafe',
+                                'alias': None,
+                                'version': '2.0.0'
+                            }
+                        ],
+                        'requirements': [],
+                        'resources': [
+                            {
+                                'type': 'string',
+                                'name': 'random_suffix',
+                                'provider': 'random',
+                                'source': 'hashicorp/random',
+                                'mode': 'managed',
+                                'version': 'latest',
+                                'description': None
+                            }
+                        ]
+                    })
+                }
+            }
         }}
     }
 }

@@ -1403,16 +1403,18 @@ class ModuleVersion(TerraformSpecsObject):
         """Return variable template for module version."""
         raw_json = Database.decode_blob(self._get_db_row()['variable_template'])
         variables = json.loads(raw_json) if raw_json else []
-        for input_variable in self.get_terraform_inputs():
-            if input_variable['default'] is not None and not input_variable['required']:
-                continue
-            if input_variable['name'] not in [v['name'] for v in variables]:
-                variables.append({
-                    'name': input_variable['name'],
-                    'type': 'text',
-                    'additional_help': input_variable['description'],
-                    'quote_value': True
-                })
+
+        if terrareg.config.Config().AUTOGENERATE_USAGE_BUILDER_VARIABLES:
+            for input_variable in self.get_terraform_inputs():
+                if input_variable['default'] is not None and not input_variable['required']:
+                    continue
+                if input_variable['name'] not in [v['name'] for v in variables]:
+                    variables.append({
+                        'name': input_variable['name'],
+                        'type': 'text',
+                        'additional_help': input_variable['description'],
+                        'quote_value': True
+                    })
         return variables
 
     def __init__(self, module_provider: ModuleProvider, version: str):
