@@ -1,33 +1,22 @@
-image: python:3.10
 
-# Change pip's cache directory to be inside the project directory since we can
-# only cache local items.
+image: python:3.10
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   MYSQL_DATABASE: terrareg-integration
   MYSQL_ROOT_PASSWORD: password
-
-# Pip's cache doesn't store the python packages
-# https://pip.pypa.io/en/stable/reference/pip_install/#caching
-#
-# If you want to also cache the installed packages, you have to install
-# them in a virtualenv and cache it as well.
 cache:
   paths:
-    - .cache/pip
-    - venv/
-    - terraform-docs
-
+  - ".cache/pip"
+  - venv/
+  - terraform-docs
 
 .before_script_python:
   before_script:
-    - python --version  # For debugging
-      #- pip install --proxy=$http_proxy virtualenv
-    - pip install virtualenv
-    - virtualenv venv
-    - source venv/bin/activate
-    - pip install -r requirements.txt
-      #- pip install --proxy=$http_proxy -r requirements.txt
+  - python --version
+  - pip install virtualenv
+  - virtualenv venv
+  - source venv/bin/activate
+  - pip install -r requirements.txt
 
 .test_image:
   image: terrareg-test-image:v${CI_COMMIT_SHORT_SHA}
@@ -36,70 +25,77 @@ unit-integration-selenium-tests:
   stage: test
   extends: .test_image
   script:
-    # Perform database migration
-    - alembic upgrade head
-    # Run integration tests
-    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose ./test
-    - coverage report --include='./terrareg/*'
-    - coverage xml
+  - alembic upgrade head
+  - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose ./test
+  - coverage report --include='./terrareg/*'
+  - coverage xml
   artifacts:
     reports:
-      cobertura: coverage.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
 
 mysql-integration-selenium-tests:
   stage: test
   extends: .test_image
   services:
-    - name: mariadb:10.8
-      alias: mysql
+  - name: mariadb:10.8
+    alias: mysql
   variables:
-    # Set database url for integration tests
     INTEGRATION_DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
-    # Set datbase URL for schema migration
     DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
   script:
-    # Perform database migration
-    - alembic upgrade head
-    # Run integration tests
-    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose ./test/integration ./test/selenium
-    - coverage report --include='./terrareg/*'
-    - coverage xml
+  - alembic upgrade head
+  - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose ./test/integration ./test/selenium
+  - coverage report --include='./terrareg/*'
+  - coverage xml
   artifacts:
     reports:
-      cobertura: coverage.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
 
 build-wheel:
   stage: build
   extends: .before_script_python
   script:
-    - python setup.py bdist_wheel
-    # an alternative approach is to install and run:
-    - pip install dist/*
-      #- pip install --proxy=$http_proxy -r requirements.txt
-    # run the command here
+  - python setup.py bdist_wheel
+  - pip install dist/*
   artifacts:
     paths:
-      - dist/*.whl
+    - dist/*.whl
 
 build-test-docker-image:
   stage: build
   image: docker:latest
   services:
-    - docker:dind
+  - docker:dind
   script:
-    - docker build -f Dockerfile.tests -t terrareg-test-image:v${CI_COMMIT_SHORT_SHA} --build-arg http_proxy=$http_proxy --build-arg HTTP_PROXY=$http_proxy --build-arg https_proxy=$https_proxy --build-arg HTTPS_PROY=$https_proxy .
- 
+  - docker build -f Dockerfile.tests -t terrareg-test-image:v${CI_COMMIT_SHORT_SHA}
+    --build-arg http_proxy=$http_proxy --build-arg HTTP_PROXY=$http_proxy --build-arg
+    https_proxy=$https_proxy --build-arg HTTPS_PROY=$https_proxy .
+
 release:
   stage: deploy
   image: semantic-release:latest
   cache:
     paths:
-      - node_modules/
+    - node_modules/
   variables:
-    GITLAB_TOKEN: $GITLAB_TOKEN
+    GITLAB_TOKEN: "$GITLAB_TOKEN"
     GIT_STRATEGY: clone
   script:
-    - semantic-release
+  - semantic-release
   only:
-    - main
+  - main
 
+sast:
+  stage: test
+
+stages:
+- build
+- test
+- deploy
+
+include:
+- template: Security/SAST.gitlab-ci.yml
