@@ -71,7 +71,8 @@ class TestGetGlobalModuleUsage(TerraregIntegrationTest):
             ['test-application', 'dev-key', '0.11.31'],
             ['second-application', 'dev-key', '0.11.31'],
             ['second-application', 'prod-key', '0.12.5'],
-            ['duplicate-application', 'prod-key', '0.12.5']
+            ['duplicate-application', 'prod-key', '0.12.5'],
+            ['without-analytics-key', None, '2.2.2']
         ],
         'testnamespace/publishedmodule/testprovider/1.6.0-beta': [
             ['test-application', 'dev-key', '0.12.31'],
@@ -110,7 +111,7 @@ class TestGetGlobalModuleUsage(TerraregIntegrationTest):
         """Test function with no analytics recorded."""
         assert AnalyticsEngine.get_global_module_usage() == {}
 
-    def test_get_global_module_usage(self):
+    def test_get_global_module_usage_excluding_no_environment(self):
         """Test function with default functionality, excluding stats for analytics without an API token"""
         self._import_test_analaytics(self._TEST_ANALYTICS_DATA)
 
@@ -120,4 +121,17 @@ class TestGetGlobalModuleUsage(TerraregIntegrationTest):
             'testnamespace/secondmodule/testprovider': 2,
             'secondnamespace/othernamespacemodule/anotherprovider': 1
         }
+
+    def test_get_global_module_usage_including_no_environment(self):
+        """Test function including stats for analytics without an API token"""
+        self._import_test_analaytics(self._TEST_ANALYTICS_DATA)
+
+        assert AnalyticsEngine.get_global_module_usage(include_empty_environment=True) == {
+            'testnamespace/publishedmodule/testprovider': 5,
+            'testnamespace/publishedmodule/secondprovider': 2,
+            'testnamespace/secondmodule/testprovider': 2,
+            'secondnamespace/othernamespacemodule/anotherprovider': 1,
+            'testnamespace/noalaytics/testprovider': 1
+        }
+
 
