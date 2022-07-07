@@ -128,7 +128,7 @@ class AnalyticsEngine:
             return res.scalar()
 
     @staticmethod
-    def get_global_module_usage():
+    def get_global_module_usage(include_empty_environment=False):
         """Return all analytics tokens, grouped by module provider."""
         return {}
 
