@@ -268,6 +268,10 @@ class Server(object):
             '/v1/terrareg/analytics/global/most_recently_published_module_version'
         )
         self._api.add_resource(
+            ApiTerraregGlobalUsageStats,
+            '/v1/terrareg/analaytics/global/usage_stats'
+        )
+        self._api.add_resource(
             ApiTerraregModuleProviderAnalyticsTokenVersions,
             '/v1/terrareg/analytics/<string:namespace>/<string:name>/<string:provider>/token_versions'
         )
@@ -1407,6 +1411,28 @@ class ApiTerraregGlobalStatsSummary(ErrorCatchingResource):
             'modules': ModuleProvider.get_total_count(),
             'module_versions': ModuleVersion.get_total_count(),
             'downloads': AnalyticsEngine.get_total_downloads()
+        }
+
+
+class ApiTerraregGlobalUsageStats(ErrorCatchingResource):
+    """Provide interface to obtain statistics about global module usage."""
+
+    def _get(self):
+        """
+        Return stats on total module providers,
+        total unique analytics tokens per module
+        (with and without auth token).
+        """
+        module_usage_with_auth_token = AnalyticsEngine.get_global_module_usage()
+        module_usage_including_empty_auth_token = AnalyticsEngine.get_global_module_usage(include_empty_auth_token=True)
+        total_analytics_token_with_auth_token = sum(module_usage_with_auth_token.values())
+        total_analytics_token_including_empty_auth_token = sum(module_usage_including_empty_auth_token.values())
+        return {
+            'module_provider_count': ModuleProvider.get_total_count(),
+            'module_provider_usage_breakdown_with_auth_token': module_usage_with_auth_token,
+            'module_provider_usage_count_with_auth_token': total_analytics_token_with_auth_token,
+            'module_provider_usage_including_empty_auth_token': module_usage_including_empty_auth_token,
+            'module_provider_usage_count_including_empty_auth_token': total_analytics_token_including_empty_auth_token
         }
 
 
