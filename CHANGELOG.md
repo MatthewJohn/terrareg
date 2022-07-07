@@ -1,5 +1,25 @@
 # Changelog
 
+# [2.23.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.22.0...v2.23.0) (2022-07-07)
+
+
+### Bug Fixes
+
+* Display all module providers in namespace page, including those without versions or those with only beta/unpublished versions. ([803fbd5](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/803fbd5a4c5dec6d80d53e01847f921ebd6d15ff)), closes [#189](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/189)
+* Update module search API endpoint to return terrareg API details for results. ([0a39f35](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0a39f35104920d0fba4bb0b8df8efc6d48b2cb7b)), closes [#189](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/189)
+* Update most downloaded and most recent module API endpoints to return terrareg data for module/version. ([511bb35](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/511bb35fc70e3ffa49d6cc254f29f9ee95656042)), closes [#189](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/189)
+
+
+### Features
+
+* Update module card listing to exclude published time for unpublished/beta modules and to show warning in description about module being unpublished. ([a3bdc72](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a3bdc725757261e151dd581c01920b8784a0afe1)), closes [#189](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/189)
+
+
+### Reverts
+
+* Revert "fix: Update most downloaded and most recent module API endpoints to return terrareg data for module/version." ([e4ca722](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e4ca722abd1959f9fa1cdd5518d30eb8c82e8f4d))
+* Revert "fix: Update module search API endpoint to return terrareg API details for results." ([1e65e13](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1e65e133c529bb5866b362faea512fdf99faec17))
+
 # [2.22.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.21.0...v2.22.0) (2022-07-06)
 
 
