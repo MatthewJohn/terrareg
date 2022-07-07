@@ -23,7 +23,7 @@
         }
     }
     function getResults(offset) {
-        $.get(`/v1/modules/{{ namespace }}?offset=${offset}`, function(data) {
+        $.get(`/v1/terrareg/modules/{{ namespace }}?offset=${offset}`, function(data) {
 
             // Update current meta data
             currentSearchMeta = data.meta;
