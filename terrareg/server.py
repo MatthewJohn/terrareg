@@ -1418,7 +1418,7 @@ class ApiTerraregMostRecentlyPublishedModuleVersion(ErrorCatchingResource):
         module_version = ModuleSearch.get_most_recently_published()
         if not module_version:
             return {}, 404
-        return module_version.get_terrareg_api_details()
+        return module_version.get_api_outline()
 
 
 class ApiTerraregMostDownloadedModuleProviderThisWeek(ErrorCatchingResource):
@@ -1430,7 +1430,7 @@ class ApiTerraregMostDownloadedModuleProviderThisWeek(ErrorCatchingResource):
         if not module_provider:
             return {}, 404
 
-        return module_provider.get_latest_version().get_terrareg_api_details()
+        return module_provider.get_latest_version().get_api_outline()
 
 
 class ApiTerraregModuleProviderAnalyticsTokenVersions(ErrorCatchingResource):
