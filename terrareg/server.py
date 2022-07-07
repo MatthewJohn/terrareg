@@ -1490,9 +1490,9 @@ class ApiTerraregNamespaceModules(ErrorCatchingResource):
         return {
             "meta": meta,
             "modules": [
-                module_provider.get_terrareg_api_details()
+                module_provider.get_api_outline()
                 if module_provider.get_latest_version() is None else
-                module_provider.get_latest_version().get_terrareg_api_details()
+                module_provider.get_latest_version().get_api_outline()
                 for module_provider in module_providers[args.offset:args.offset + args.limit]
             ]
         }
