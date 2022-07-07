@@ -682,11 +682,11 @@ integration_test_data = {
                 'versions': {
                     '2.1.1': {
                         'published': True,
-                        'description': 'Test description'
+                        'description': 'Test module description for testprovider'
                     }
                 }
             },
-            'secondnamespace': {
+            'secondprovider': {
                 'id': 64,
                 'versions': {
                     '2.2.2': {
@@ -696,6 +696,9 @@ integration_test_data = {
                 }
             }
         },
+        'noversions': {'testprovider': {
+            'id': 67
+        }},
         'onlybeta': {'testprovider': {
             'id': 65,
             'versions': {

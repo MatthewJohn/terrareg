@@ -114,16 +114,16 @@ async function createSearchResultCard(parent_id, module) {
             <a href="/modules/${module.id}">
                 <div class="card-content">
                     <div class="content">
-                        ${module.description ? "Description<br />" + module.description : ""}
+                        ${module.description ? "Description<br />" + module.description : (module.versions.length ? '' : 'This module does not have any published versions')}
                         <br />
                         <br />
                         ${module.owner ? "Owner: " + module.owner : ""}
                     </div>
                 </div>
                 <footer class="card-footer">
-                    <p class="card-footer-item card-source-link">${module.source? "Source: " + module.source : "No source provided"}</p>
+                    <p class="card-footer-item card-source-link">${module.source ? "Source: " + module.source : "No source provided"}</p>
                     <br />
-                    <p class="card-footer-item card-last-updated">Last updated: ${display_published}</p>
+                    <p class="card-footer-item card-last-updated">${module.published_at ? ('Last updated: ' + display_published) : ''}</p>
                 </footer>
             </a>
         </div>

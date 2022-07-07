@@ -1,5 +1,6 @@
 
 from datetime import datetime
+import re
 from unittest import mock
 
 import pytest
@@ -149,7 +150,11 @@ class TestNamespace(SeleniumTest):
                 for card in self.selenium_instance.find_element(By.ID, 'module-list-table').find_elements(By.CLASS_NAME, 'card')
             ],
             [
+                # Module with no versions
+                'unpublished-beta-version-module-providers / noversions',
+                # Module with beta version
                 'unpublished-beta-version-module-providers / onlybeta',
+                # Module with unpublished version
                 'unpublished-beta-version-module-providers / onlyunpublished',
                 # Ensure two cards for publishedone, since there are two
                 # module providers with different provider names
@@ -157,3 +162,28 @@ class TestNamespace(SeleniumTest):
                 'unpublished-beta-version-module-providers / publishedone'
             ]
         )
+
+        # Check description of each card
+        card_descriptions = [
+            'This module does not have any published versions',
+            'This module does not have any published versions',
+            'This module does not have any published versions',
+            'Description\nDescription of second provider in module',
+            'Description\nTest module description for testprovider'
+        ]
+        for card in self.selenium_instance.find_element(By.ID, 'module-list-table').find_elements(By.CLASS_NAME, 'card'):
+            assert card.find_element(By.CLASS_NAME, 'card-content').text == card_descriptions.pop(0)
+
+        # Check last updated for each card
+        card_updated = [
+            # Empty for modules without a published version
+            '',
+            '',
+            '',
+            # Published versions
+            r'Last updated: \d+ seconds? ago',
+            r'Last updated: \d+ seconds? ago'
+        ]
+        for card in self.selenium_instance.find_element(By.ID, 'module-list-table').find_elements(By.CLASS_NAME, 'card'):
+            assert re.match(card_updated.pop(0), card.find_element(By.CLASS_NAME, 'card-last-updated').text)
+
