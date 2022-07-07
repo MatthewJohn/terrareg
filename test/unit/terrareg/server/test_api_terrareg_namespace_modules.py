@@ -104,6 +104,22 @@ class TestApiTerraregNamespaceModules(TerraregUnitTest):
                     'versions': ['2.2.2']
                 },
                 {
+                    # Ensure module provider with no versions is returned correctly
+                    'git_provider_id': None,
+                    'git_tag_format': '{version}',
+                    'id': 'smallernamespacelist/noversions/testprovider',
+                    'module_provider_id': 'smallernamespacelist/noversions/testprovider',
+                    'name': 'noversions',
+                    'namespace': 'smallernamespacelist',
+                    'provider': 'testprovider',
+                    'repo_base_url_template': None,
+                    'repo_browse_url_template': None,
+                    'repo_clone_url_template': None,
+                    'trusted': False,
+                    'verified': False,
+                    'versions': []
+                },
+                {
                     # Ensure published module provider that contains only a beta version is shown
                     'git_provider_id': None,
                     'git_tag_format': '{version}',

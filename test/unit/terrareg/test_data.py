@@ -168,6 +168,10 @@ test_data_full = {
                 }
             }
         },
+        'noversions': {'testprovider': {
+            'id': 25,
+            'versions': {}
+        }},
         'onlybeta': {'testprovider': {
             'id': 23,
             'versions': {
