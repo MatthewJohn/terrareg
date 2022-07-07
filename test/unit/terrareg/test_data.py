@@ -149,6 +149,7 @@ test_data_full = {
         'publishedone': {
             'testprovider': {
                 'id': 21,
+                'latest_version': '2.1.1',
                 'versions': {
                     '2.1.1': {
                         'published': True,
@@ -158,6 +159,7 @@ test_data_full = {
             },
             'secondnamespace': {
                 'id': 22,
+                'latest_version': '2.2.2',
                 'versions': {
                     '2.2.2': {
                         'published': True,
