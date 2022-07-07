@@ -132,7 +132,7 @@ class TestNamespace(SeleniumTest):
 
         # Check that verified label is displayed
         trusted_label = contributed_module.find_element(By.CLASS_NAME, 'result-card-label-contributed')
-        assert trusted_label.text == 'unittest contributed namespace'
+        assert trusted_label.text == 'unittest contributed module'
 
         # Ensure that the contributed tag is not shown
         with pytest.raises(selenium.common.exceptions.NoSuchElementException):
