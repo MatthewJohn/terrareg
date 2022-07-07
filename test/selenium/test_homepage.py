@@ -32,7 +32,7 @@ class TestHomepage(SeleniumTest):
 
     @pytest.mark.parametrize('element,count', [
         ('namespace', 15),
-        ('module', 56),
+        ('module', 57),
         ('version', 74),
         ('download', 2005)
     ])
