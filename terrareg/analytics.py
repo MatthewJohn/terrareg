@@ -130,7 +130,58 @@ class AnalyticsEngine:
     @staticmethod
     def get_global_module_usage(include_empty_environment=False):
         """Return all analytics tokens, grouped by module provider."""
-        return {}
+        db = Database.get()
+        # Initial query to select all analytics joined to module version and module provider
+        select = sqlalchemy.select(
+            db.module_provider.c.id,
+            db.module_provider.c.namespace,
+            db.module_provider.c.module,
+            db.module_provider.c.provider,
+            db.analytics.c.analytics_token
+        ).select_from(
+            db.analytics
+        ).join(
+            db.module_version,
+            db.analytics.c.parent_module_version == db.module_version.c.id
+        ).join(
+            db.module_provider,
+            db.module_version.c.module_provider_id == db.module_provider.c.id
+        ).where(
+            # Filter unpublished and beta version
+            db.module_version.c.published == True,
+            db.module_version.c.beta == False
+        )
+        # Filter empty environments, if including them is not enabled
+        if not include_empty_environment:
+            select = select.where(
+                db.analytics.c.auth_token != None
+            )
+
+        # Group select by analytics token and module provider ID
+        select = select.group_by(
+            db.analytics.c.analytics_token,
+            db.module_provider.c.id
+        ).subquery()
+
+        # Select the count for each module provider, grouping by the analytics ID
+        count_select = sqlalchemy.select(
+            sqlalchemy.func.count(),
+            select.c.namespace,
+            select.c.module,
+            select.c.provider
+        ).select_from(
+            select
+        ).group_by(
+            select.c.id
+        )
+
+        with db.get_connection() as conn:
+            res = conn.execute(count_select)
+            data = {
+                f"{row['namespace']}/{row['module']}/{row['provider']}": row['count']
+                for row in res
+            }
+        return data
 
     def get_module_version_total_downloads(module_version):
         """Return number of downloads for a given module version."""
