@@ -127,6 +127,11 @@ class AnalyticsEngine:
             res = conn.execute(select)
             return res.scalar()
 
+    @staticmethod
+    def get_global_module_usage():
+        """Return all analytics tokens, grouped by module provider."""
+        return {}
+
     def get_module_version_total_downloads(module_version):
         """Return number of downloads for a given module version."""
         db = Database.get()
