@@ -910,3 +910,58 @@ module "fullypopulated" {{
                         'fullypopulated'),
                     'testprovider'
                 ).update_attributes(git_provider_id=None)
+
+    def test_unpublished_only_module_provider(self):
+        """Test module provider page for a module provider that only has an unpublished version."""
+
+        self.selenium_instance.get(self.get_url('/modules/unpublished-beta-version-module-providers/onlyunpublished/testprovider'))
+
+        # Ensure warning about no available version
+        no_versions_div = self.wait_for_element(By.ID, 'no-version-available')
+        assert no_versions_div.text == 'There are no versions of this module'
+        assert no_versions_div.is_displayed() == True
+
+        # Load version page
+        self.selenium_instance.get(self.get_url('/modules/unpublished-beta-version-module-providers/onlyunpublished/testprovider/1.0.0'))
+
+        # Check description
+        assert self.wait_for_element(By.ID, 'module-description').text == 'Test description'
+
+        # Ensure warning exists for not published
+        assert self.wait_for_element(By.ID, 'unpublished-warning').text == (
+            'WARNING: This version of the module is not published.\n'
+            'It cannot be used in terraform until it is published.'
+        )
+
+        # Ensure no versions available is not displayed
+        no_versions_div = self.wait_for_element(By.ID, 'no-version-available', ensure_displayed=False)
+        assert no_versions_div.is_displayed() == False
+
+    def test_beta_only_module_provider(self):
+        """Test module provider page for a module provider that only has a beta version."""
+
+        self.selenium_instance.get(self.get_url('/modules/unpublished-beta-version-module-providers/onlybeta/testprovider'))
+
+        # Ensure warning about no available version
+        no_versions_div = self.wait_for_element(By.ID, 'no-version-available')
+        assert no_versions_div.text == 'There are no versions of this module'
+        assert no_versions_div.is_displayed() == True
+
+        # Load version page
+        self.selenium_instance.get(self.get_url('/modules/unpublished-beta-version-module-providers/onlybeta/testprovider/2.2.4-beta'))
+
+        # Check description
+        assert self.wait_for_element(By.ID, 'module-description').text == 'Test description'
+
+        # Ensure warning exists for not published
+        assert self.wait_for_element(By.ID, 'beta-warning').text == (
+            'WARNING: This is a beta module version.\n'
+            'To use this version in terraform, it must '
+            'be specifically pinned.\n'
+            'For an example, see the \'Usage\' section.'
+        )
+
+        # Ensure no versions available is not displayed
+        no_versions_div = self.wait_for_element(By.ID, 'no-version-available', ensure_displayed=False)
+        assert no_versions_div.is_displayed() == False
+
