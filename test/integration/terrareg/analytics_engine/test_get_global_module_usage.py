@@ -89,7 +89,7 @@ class TestGetGlobalModuleUsage(TerraregIntegrationTest):
         'testnamespace/onlybeta/testprovider/1.0.0-beta': [
             ['onlyusedbeta', 'dev-key', '0.23.21']
         ],
-        'testnamespace/noalaytics/testprovider/2.2.2': [
+        'testnamespace/noanalyticstoken/testprovider/2.2.2': [
             ['withoutanalaytics', None, '0.2.2']
         ],
         'secondnamespace/othernamespacemodule/anotherprovider/2.0.4': [
@@ -103,6 +103,7 @@ class TestGetGlobalModuleUsage(TerraregIntegrationTest):
             namespace, module, provider, version = module_key.split('/')
             module_version = ModuleVersion.get(ModuleProvider.get(Module(Namespace(namespace), module), provider), version)
             for analytics_token, auth_token, terraform_version in download_data[module_key]:
+                print('recording: ', namespace, module, provider, version, analytics_token, auth_token, terraform_version)
                 AnalyticsEngine.record_module_version_download(
                     module_version=module_version, terraform_version=terraform_version,
                     analytics_token=analytics_token, user_agent=None, auth_token=auth_token)
@@ -131,7 +132,7 @@ class TestGetGlobalModuleUsage(TerraregIntegrationTest):
             'testnamespace/publishedmodule/secondprovider': 2,
             'testnamespace/secondmodule/testprovider': 2,
             'secondnamespace/othernamespacemodule/anotherprovider': 1,
-            'testnamespace/noalaytics/testprovider': 1
+            'testnamespace/noanalyticstoken/testprovider': 1
         }
 
 
