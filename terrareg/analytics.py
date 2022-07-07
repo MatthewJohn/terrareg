@@ -128,7 +128,7 @@ class AnalyticsEngine:
             return res.scalar()
 
     @staticmethod
-    def get_global_module_usage(include_empty_environment=False):
+    def get_global_module_usage(include_empty_auth_token=False):
         """Return all analytics tokens, grouped by module provider."""
         db = Database.get()
         # Initial query to select all analytics joined to module version and module provider
@@ -151,8 +151,8 @@ class AnalyticsEngine:
             db.module_version.c.published == True,
             db.module_version.c.beta == False
         )
-        # Filter empty environments, if including them is not enabled
-        if not include_empty_environment:
+        # Filter empty auth token, if including them is not enabled
+        if not include_empty_auth_token:
             select = select.where(
                 db.analytics.c.auth_token != None
             )

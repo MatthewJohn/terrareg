@@ -123,11 +123,11 @@ class TestGetGlobalModuleUsage(TerraregIntegrationTest):
             'secondnamespace/othernamespacemodule/anotherprovider': 1
         }
 
-    def test_get_global_module_usage_including_no_environment(self):
-        """Test function including stats for analytics without an API token"""
+    def test_get_global_module_usage_including_empty_auth_token(self):
+        """Test function including stats for analytics without an auth token"""
         self._import_test_analaytics(self._TEST_ANALYTICS_DATA)
 
-        assert AnalyticsEngine.get_global_module_usage(include_empty_environment=True) == {
+        assert AnalyticsEngine.get_global_module_usage(include_empty_auth_token=True) == {
             'testnamespace/publishedmodule/testprovider': 5,
             'testnamespace/publishedmodule/secondprovider': 2,
             'testnamespace/secondmodule/testprovider': 2,
