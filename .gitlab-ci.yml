@@ -49,8 +49,6 @@ unit-integration-selenium-tests:
 mysql-integration-selenium-tests:
   stage: test
   extends: .test_image
-  needs:
-    - unit-integration-selenium-tests
   services:
     - name: mariadb:10.8
       alias: mysql

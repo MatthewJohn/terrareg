@@ -136,7 +136,7 @@ class SeleniumTest(BaseTest):
 
     def assert_equals(self, callback, value):
         """Attempt to verify assertion and retry on failure."""
-        max_attempts = 5
+        max_attempts = 20
         for itx in range(max_attempts):
             try:
                 # Attempt to call callback and assert value against expected result

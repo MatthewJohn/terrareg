@@ -1,5 +1,6 @@
 
 from datetime import datetime
+import re
 from unittest import mock
 
 import pytest
@@ -124,7 +125,7 @@ class TestNamespace(SeleniumTest):
         with pytest.raises(selenium.common.exceptions.NoSuchElementException):
             trusted_module.find_element(By.CLASS_NAME, 'result-card-label-contributed')
 
-    def check_contributed_module(self):
+    def test_contributed_module(self):
         """Check that contributed module just has contributed label"""
         self.selenium_instance.get(self.get_url('/modules/modulesearch-contributed'))
 
@@ -132,8 +133,57 @@ class TestNamespace(SeleniumTest):
 
         # Check that verified label is displayed
         trusted_label = contributed_module.find_element(By.CLASS_NAME, 'result-card-label-contributed')
-        assert trusted_label.text == 'unittest contributed namespace'
+        assert trusted_label.text == 'unittest contributed module'
 
         # Ensure that the contributed tag is not shown
         with pytest.raises(selenium.common.exceptions.NoSuchElementException):
             contributed_module.find_element(By.CLASS_NAME, 'result-card-label-trusted')
+
+    def test_module_providers_with_beta_and_unpublished_versions(self):
+        """Test listing module providers with only beta and unpublished versions on namespace page."""
+        self.selenium_instance.get(self.get_url('/modules/unpublished-beta-version-module-providers'))
+
+        # Ensure card for each module is displayed
+        self.assert_equals(
+            lambda: [
+                card.find_element(By.CLASS_NAME, 'module-card-title').text
+                for card in self.selenium_instance.find_element(By.ID, 'module-list-table').find_elements(By.CLASS_NAME, 'card')
+            ],
+            [
+                # Module with no versions
+                'unpublished-beta-version-module-providers / noversions',
+                # Module with beta version
+                'unpublished-beta-version-module-providers / onlybeta',
+                # Module with unpublished version
+                'unpublished-beta-version-module-providers / onlyunpublished',
+                # Ensure two cards for publishedone, since there are two
+                # module providers with different provider names
+                'unpublished-beta-version-module-providers / publishedone',
+                'unpublished-beta-version-module-providers / publishedone'
+            ]
+        )
+
+        # Check description of each card
+        card_descriptions = [
+            'This module does not have any published versions',
+            'This module does not have any published versions',
+            'This module does not have any published versions',
+            'Description\nDescription of second provider in module',
+            'Description\nTest module description for testprovider'
+        ]
+        for card in self.selenium_instance.find_element(By.ID, 'module-list-table').find_elements(By.CLASS_NAME, 'card'):
+            assert card.find_element(By.CLASS_NAME, 'card-content').text == card_descriptions.pop(0)
+
+        # Check last updated for each card
+        card_updated = [
+            # Empty for modules without a published version
+            '',
+            '',
+            '',
+            # Published versions
+            r'Last updated: \d+ seconds? ago',
+            r'Last updated: \d+ seconds? ago'
+        ]
+        for card in self.selenium_instance.find_element(By.ID, 'module-list-table').find_elements(By.CLASS_NAME, 'card'):
+            assert re.match(card_updated.pop(0), card.find_element(By.CLASS_NAME, 'card-last-updated').text)
+

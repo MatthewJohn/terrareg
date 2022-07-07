@@ -299,7 +299,9 @@ class MockNamespace(Namespace):
         """Return all modules for namespace."""
         return [
             MockModule(namespace=self, name=n)
-            for n in TEST_MODULE_DATA[self._name].keys()
+            for n in (TEST_MODULE_DATA[self._name].keys()
+                      if self._name in TEST_MODULE_DATA else
+                      {})
         ]
 
     @property

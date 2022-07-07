@@ -429,7 +429,7 @@ class SettingsTab extends ModuleDetailsTab {
             }
 
             // Check if namespace is auto-verified and, if so, show message
-            $.get(`/v1/terrareg/modules/${this._moduleDetails.namespace}`, (namespaceDetails) => {
+            $.get(`/v1/terrareg/namespaces/${this._moduleDetails.namespace}`, (namespaceDetails) => {
                 if (namespaceDetails.is_auto_verified) {
                     $('#settings-verified-auto-verified-message').removeClass('default-hidden');
                 }
