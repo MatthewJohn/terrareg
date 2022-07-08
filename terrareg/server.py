@@ -1562,7 +1562,7 @@ class ApiTerraregModuleVersionReadmeHtml(ErrorCatchingResource):
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
         module_version = ModuleVersion(module_provider=module_provider, version=version)
-        return module_version.get_readme_html()
+        return module_version.get_readme_html(server_hostname=request.host)
 
 
 class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
@@ -2031,7 +2031,7 @@ class ApiTerraregSubmoduleReadmeHtml(ErrorCatchingResource):
 
         submodule_obj = Submodule.get(module_version=module_version, module_path=submodule)
 
-        return submodule_obj.get_readme_html()
+        return submodule_obj.get_readme_html(server_hostname=request.host)
 
 
 class ApiTerraregModuleVersionExamples(ErrorCatchingResource):
@@ -2098,7 +2098,7 @@ class ApiTerraregExampleReadmeHtml(ErrorCatchingResource):
 
         example_obj = Example.get(module_version=module_version, module_path=example)
 
-        return example_obj.get_readme_html()
+        return example_obj.get_readme_html(server_hostname=request.host)
 
 
 class ApiTerraregExampleFileList(ErrorCatchingResource):
