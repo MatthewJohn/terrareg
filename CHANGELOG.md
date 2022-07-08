@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.26.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.25.0...v2.26.0) (2022-07-08)
+
+
+### Features
+
+* Improve confirmation when deleting a module version or module provider. ([09c6c91](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/09c6c91f55df92c84535604579c88b4092fa9508)), closes [#184](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/184) [#93](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/93)
+
 # [2.25.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.24.0...v2.25.0) (2022-07-08)
 
 
