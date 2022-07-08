@@ -490,6 +490,9 @@ integration_test_data = {
                 'readme_content': None,
                 'examples': {
                     'examples/testreadmeexample': {
+                        'example_files': {
+                            'examples/testreadmeexample/main.tf': ''
+                        }
                     }
                 }
             }}

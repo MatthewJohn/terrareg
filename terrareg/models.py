@@ -2170,7 +2170,6 @@ class ExampleFile:
     def get_content(self, server_hostname):
         """Return content with source replaced"""
         # Replace source lines that use relative paths
-        self._example.replace_source_in_file(
+        return self._example.replace_source_in_file(
             content=self.content,
-            server_hostname=server_hostname,
-            module_provider=self._example._module_version._module_provider)
+            server_hostname=server_hostname)
