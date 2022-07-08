@@ -1086,38 +1086,61 @@ function selectExampleFile(eventTarget) {
  */
 function indexModuleVersion(moduleDetails) {
     let moduleVersionToIndex = $("#indexModuleVersion").val();
+
+    let inProgressMessage = $('#index-version-in-progress');
+    let successMessage = $('#index-version-success');
+    let errorMessage = $('#index-version-error');
+    // Hide success/error and show in-progress
+    successMessage.addClass('default-hidden');
+    errorMessage.addClass('default-hidden');
+    inProgressMessage.html('Indexing module version in progress...');
+    inProgressMessage.removeClass('default-hidden');
+
     $.post(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/import`)
         .done(() => {
             // Show success message for importing module
-            $("#index-version-success").html("Successfully indexed version");
-            $("#index-version-success").removeClass('default-hidden');
-            $("#index-version-error").addClass('default-hidden');
+            successMessage.html("Successfully indexed version");
+            successMessage.removeClass('default-hidden');
+            errorMessage.addClass('default-hidden');
 
             // If publish checkbox is checked, perform request to publish
             if ($("#indexModuleVersionPublish").is(":checked")) {
+                inProgressMessage.html('Publishing module version in progress...');
                 $.post(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/publish`)
                     .done(() => {
                         // If successful, update success message
-                        $("#index-version-success").html("Successfully indexed and published version.");
+                        successMessage.html("Successfully indexed and published version.");
+
+                        // Hide in-progress
+                        inProgressMessage.addClass('default-hidden');
                     })
                     .fail((res) => {
+                        // Hide in-progress
+                        inProgressMessage.addClass('default-hidden');
+
                         // Display any errors
                         if (res.responseJSON && res.responseJSON.message) {
-                            $("#index-version-error").html(res.responseJSON.message);
+                            errorMessage.html(res.responseJSON.message);
                         } else {
-                            $("#index-version-error").html("An unexpected error occurred when publishing module version");
+                            errorMessage.html("An unexpected error occurred when publishing module version");
                         }
-                        $("#index-version-error").removeClass('default-hidden');
+                        errorMessage.removeClass('default-hidden');
                     });
+            } else {
+                // If publishing is not enabled, hide in-progress message
+                inProgressMessage.addClass('default-hidden');
             }
         })
         .fail((res) => {
+            // Render and show error
             if (res.responseJSON && res.responseJSON.message) {
-                $("#index-version-error").html(res.responseJSON.message);
+                errorMessage.html(res.responseJSON.message);
             } else {
-                $("#index-version-error").html("An unexpected error occurred when indexing module");
+                errorMessage.html("An unexpected error occurred when indexing module");
             }
-            $("#index-version-error").removeClass('default-hidden');
+            errorMessage.removeClass('default-hidden');
+            // Hide in-progress
+            inProgressMessage.addClass('default-hidden');
         });
 }
 
