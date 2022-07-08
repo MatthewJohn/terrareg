@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.25.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.24.0...v2.25.0) (2022-07-08)
+
+
+### Features
+
+* Add in-progress message when indexing/publishing a version on the module provider page. ([6e2a77d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6e2a77d3ea056ba8353fe65526e71a1762f74931)), closes [#182](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/182)
+
 # [2.24.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.23.0...v2.24.0) (2022-07-08)
 
 
