@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.27.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.27.0...v2.27.1) (2022-07-08)
+
+
+### Bug Fixes
+
+* Fix module provider page when a module provider only has a single unpublished or beta version. ([aee4ac1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/aee4ac1b2cb064475ee6f345a6f9406d59594adf)), closes [#192](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/192)
+
 # [2.27.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.26.0...v2.27.0) (2022-07-08)
 
 
