@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.24.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.23.0...v2.24.0) (2022-07-08)
+
+
+### Features
+
+* Add API endpoint to return data on total module provider usage, based on unique analytics tokens. ([e705c71](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e705c71d95311e27ea7a99733c989ffa37aaa8ec)), closes [#39](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/39)
+
 # [2.23.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.22.0...v2.23.0) (2022-07-07)
 
 
