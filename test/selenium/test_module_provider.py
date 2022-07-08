@@ -793,7 +793,7 @@ module "fullypopulated" {{
         assert file_tab_content.find_element(By.ID, 'example-file-content').text == 'variable "test" {\n  description = "test variable"\n  type = string\n}'
 
     def test_delete_module_version(self):
-        """Check provider logos are displayed correctly."""
+        """Test the delete version functionality in settings tab."""
 
         self.perform_admin_authentication(password='unittest-password')
 
@@ -806,6 +806,7 @@ module "fullypopulated" {{
         module_version = ModuleVersion(module_provider=module_provider, version='2.5.5')
         module_version.prepare_module()
         module_version.publish()
+        module_version_pk = module_version.pk
 
         self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/2.5.5'))
 
@@ -821,11 +822,26 @@ module "fullypopulated" {{
 
         # Ensure the verification text is shown
         verification_div = self.selenium_instance.find_element(By.ID, 'confirm-delete-module-version-div')
-        assert 'Confirm deletion of module version 2.5.5:' in verification_div.text
+        assert 'Type the version number of the current version to be deleted (e.g. 1.0.0) and click delete again:' in verification_div.text
 
-        # Click checkbox for verifying deletion
-        delete_checkbox = verification_div.find_element(By.ID, 'confirm-delete-module-version')
-        delete_checkbox.click()
+        # Provide incorrect version number to confirmation
+        verification_input = verification_div.find_element(By.ID, 'confirm-delete-module-version')
+        verification_input.send_keys('5.4.4')
+
+        # Click delete module version button again
+        delete_button.click()
+
+        # Wait and ensure page has not changed
+        sleep(0.2)
+        assert self.selenium_instance.current_url == self.get_url('/modules/moduledetails/fullypopulated/testprovider/2.5.5#settings')
+
+        # Ensure module version still exists
+        module_version._cache_db_row = None
+        assert module_version.pk == module_version_pk
+
+        # Update input field to correct version
+        verification_input.clear()
+        verification_input.send_keys('2.5.5')
 
         # Click delete module version button again
         delete_button.click()
@@ -835,6 +851,69 @@ module "fullypopulated" {{
 
         # Ensure module version no longer exists
         assert ModuleVersion.get(module_provider=module_provider, version='2.5.5') is None
+
+    def test_delete_module_provider(self):
+        """Test the delete provider functionality in settings tab."""
+
+        self.perform_admin_authentication(password='unittest-password')
+
+        # Create test module version
+        namespace = Namespace(name='moduledetails')
+        module = Module(namespace=namespace, name='fullypopulated')
+        module_provider = ModuleProvider.get(module=module, name='providertodelete', create=True)
+        module_provider_pk = module_provider.pk
+
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/providertodelete'))
+
+        # Click on settings tab
+        tab = self.wait_for_element(By.ID, 'module-tab-link-settings')
+        tab.click()
+
+        # Click on the delete module version button
+        delete_button = self.selenium_instance.find_element(By.ID, 'module-provider-delete-button')
+        delete_button.click()
+
+        # Ensure the verification text is shown
+        verification_div = self.selenium_instance.find_element(By.ID, 'confirm-delete-module-provider-div')
+        assert 'Type the \'id\' of the module provider (e.g. namespace/module/provider) and click delete again:' in verification_div.text
+
+        # Provide incorrect version number to confirmation
+        verification_input = verification_div.find_element(By.ID, 'confirm-delete-module-provider')
+        verification_input.send_keys('5.4.4')
+
+        # Click delete module version button again
+        delete_button.click()
+
+        # Wait and ensure page has not changed and settings tab is still displayed
+        sleep(0.2)
+        assert self.selenium_instance.current_url == self.get_url('/modules/moduledetails/fullypopulated/providertodelete#settings')
+        self.wait_for_element(By.ID, 'module-tab-link-settings')
+
+        # Ensure module version still exists
+        module_provider._cache_db_row = None
+        assert module_provider.pk == module_provider_pk
+
+        # Update input field to correct version
+        verification_input.clear()
+        verification_input.send_keys('moduledetails/fullypopulated/providertodelete')
+
+        # Click delete module version button again
+        delete_button.click()
+
+        # Ensure user is redirected to module page
+        assert self.selenium_instance.current_url == self.get_url('/modules/moduledetails/fullypopulated/providertodelete')
+
+        # Ensure warning about non-existent module provider is displayed
+        self.assert_equals(
+            lambda: self.wait_for_element(By.ID, 'error-title').text,
+            'Module/Provider does not exist')
+
+        self.assert_equals(
+            lambda: self.wait_for_element(By.ID, 'error-content').text,
+            'The module moduledetails/fullypopulated/providertodelete does not exist')
+
+        # Ensure module version no longer exists
+        assert ModuleProvider.get(module=module, name='providertodelete') is None
 
     @pytest.mark.parametrize('allow_custom_git_url_setting', [True, False])
     def test_git_provider_config(self, allow_custom_git_url_setting):

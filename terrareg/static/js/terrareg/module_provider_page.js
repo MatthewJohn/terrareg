@@ -1174,14 +1174,6 @@ function setupModuleVersionDeletionSetting(moduleDetails) {
         deleteModuleVersion(moduleDetails);
     });
     moduleVersionDeleteButton.text(`Delete Module Version: ${moduleDetails.version}`);
-    // Setup confirmation checkbox for confirm deletion
-    let confirmDeleteContainer = $('#confirm-delete-module-version-div');
-    confirmDeleteContainer.append(`Confirm deletion of module version ${moduleDetails.version}: `);
-    let confirmCheckbox = $('<input />');
-    confirmCheckbox.attr('autocomplete', 'off');
-    confirmCheckbox.attr('type', 'checkbox');
-    confirmCheckbox.attr('id', 'confirm-delete-module-version');
-    confirmDeleteContainer.append(confirmCheckbox);
 
     // Show module version deletion settings
     $('#module-version-delete-container').removeClass('default-hidden');
@@ -1189,7 +1181,7 @@ function setupModuleVersionDeletionSetting(moduleDetails) {
 
 function deleteModuleVersion(moduleDetails) {
     $('#confirm-delete-module-version-div').removeClass('default-hidden');
-    if (! $('#confirm-delete-module-version').is(':checked')) {
+    if ($('#confirm-delete-module-version').val() !== moduleDetails.version) {
         return;
     }
     $.ajax({
@@ -1210,7 +1202,7 @@ function deleteModuleVersion(moduleDetails) {
 
 function deleteModuleProvider(moduleDetails) {
     $('#confirm-delete-module-provider-div').removeClass('default-hidden');
-    if (! $('#confirm-delete-module-provider').is(':checked')) {
+    if ($('#confirm-delete-module-provider').val() !== moduleDetails.module_provider_id) {
         return;
     }
     $.ajax({
