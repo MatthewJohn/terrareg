@@ -833,7 +833,7 @@ module "fullypopulated" {{
 
         # Wait and ensure page has not changed
         sleep(0.2)
-        assert self.selenium_instance.current_url == self.get_url('/modules/moduledetails/fullypopulated/testprovider/2.5.5')
+        assert self.selenium_instance.current_url == self.get_url('/modules/moduledetails/fullypopulated/testprovider/2.5.5#settings')
 
         # Ensure module version still exists
         module_version._cache_db_row = None
