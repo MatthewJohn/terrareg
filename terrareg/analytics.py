@@ -146,11 +146,11 @@ class AnalyticsEngine:
             db.module_provider,
             db.module_version.c.module_provider_id == db.module_provider.c.id
         ).where(
-            # Filter unpublished and beta version
+            # Filter unpublished and beta versions
             db.module_version.c.published == True,
             db.module_version.c.beta == False
         )
-        # Filter empty auth token, if including them is not enabled
+        # Filter rows with empty auth token, if including them is not enabled
         if not include_empty_auth_token:
             select = select.where(
                 db.analytics.c.auth_token != None
