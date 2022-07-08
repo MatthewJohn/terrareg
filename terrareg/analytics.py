@@ -136,8 +136,7 @@ class AnalyticsEngine:
             db.module_provider.c.id,
             db.module_provider.c.namespace,
             db.module_provider.c.module,
-            db.module_provider.c.provider,
-            db.analytics.c.analytics_token
+            db.module_provider.c.provider
         ).select_from(
             db.analytics
         ).join(
