@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.27.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.26.0...v2.27.0) (2022-07-08)
+
+
+### Features
+
+* Replace example terraform module calls in READMEs for root module and sub-modules. ([b1550b3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b1550b37fe8a61e5748bb86413ce6b5f282cfacb)), closes [#128](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/128)
+
 # [2.26.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.25.0...v2.26.0) (2022-07-08)
 
 
