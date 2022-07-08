@@ -482,6 +482,20 @@ integration_test_data = {
                     })
                 }
             }
+        }},
+        'readme-tests': { 'provider': {
+            'id': '58',
+            'versions': {'1.0.0': {
+                'published': True,
+                'readme_content': None,
+                'examples': {
+                    'examples/testreadmeexample': {
+                        'example_files': {
+                            'examples/testreadmeexample/main.tf': ''
+                        }
+                    }
+                }
+            }}
         }}
     }
 }
