@@ -1135,6 +1135,11 @@ class TerraformSpecsObject(object):
         self._module_specs = None
 
     @property
+    def module_version(self):
+        """Return module version"""
+        raise NotImplementedError
+
+    @property
     def path(self):
         """Return module path"""
         raise NotImplementedError
@@ -1190,11 +1195,14 @@ class TerraformSpecsObject(object):
             self._module_specs = module_specs
         return self._module_specs
 
-    def get_readme_html(self):
-        """Convert readme markdown to HTML"""
-        if self.get_readme_content():
+    def get_readme_html(self, server_hostname):
+        """Replace examples in README and convert readme markdown to HTML"""
+        readme_md = self.get_readme_content()
+        if readme_md:
+            readme_md = self.replace_source_in_file(
+                readme_md, server_hostname)
             return markdown.markdown(
-                self.get_readme_content(),
+                readme_md,
                 extensions=['fenced_code', 'tables']
             )
         return None
@@ -1269,6 +1277,49 @@ class TerraformSpecsObject(object):
             "provider_dependencies": self.get_terraform_provider_dependencies(),
             "resources": self.get_terraform_resources(),
         }
+
+    def replace_source_in_file(self, content: str, server_hostname: str):
+        """Replace single 'source' line in example/readme files."""
+        def callback(match):
+            # Convert relative path to absolute
+            module_path = os.path.abspath(
+                # Since example path does not contain a leading slash,
+                # prepend one to perform the abspath relative to root.
+                os.path.join('/', self.path, match.group(3))
+            )
+            # If the path is empty (at root),
+            # leave the path blank
+            if module_path == '/':
+                module_path = ''
+            else:
+                # Otherwise, prepend with additional leading slash,
+                # for the terraform annotation for a sub-directory within
+                # the module
+                module_path = '/{module_path}'.format(module_path=module_path)
+
+            trailing_space_count = len(match.group(2))
+            # If only 1 leading space before source '=' character,
+            # increment by 1 to align to 'version'
+            if trailing_space_count < 2:
+                trailing_space_count = 2
+
+            return ('\n{leading_space}source{trailing_space}= "{server_hostname}/{module_provider_id}{sub_dir}"\n'
+                    '{leading_space}version{version_trailing_space}= "{version_string}"\n').format(
+                leading_space=match.group(1),
+                trailing_space=(' ' * trailing_space_count),
+                version_trailing_space=(' ' * (trailing_space_count - 1)),
+                server_hostname=server_hostname,
+                module_provider_id=self.module_version.module_provider.id,
+                sub_dir=module_path,
+                version_string=self.module_version.get_terraform_example_version_string()
+            )
+
+        return re.sub(
+            r'\n([ \t]*)source(\s+)=\s+"(\..*)"[ \t]*\n',
+            callback,
+            content,
+            re.MULTILINE
+        )
 
 
 class ModuleVersion(TerraformSpecsObject):
@@ -1428,6 +1479,16 @@ class ModuleVersion(TerraformSpecsObject):
                         'quote_value': True
                     })
         return variables
+
+    @property
+    def module_provider(self):
+        """Return module provider"""
+        return self._module_provider
+
+    @property
+    def module_version(self):
+        """Return module version"""
+        return self
 
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
@@ -1862,6 +1923,11 @@ class BaseSubmodule(TerraformSpecsObject):
         """Whether object is submodule."""
         return True
 
+    @property
+    def module_version(self):
+        """Return module version"""
+        return self._module_version
+
     def __init__(self, module_version: ModuleVersion, module_path: str):
         self._module_version = module_version
         self._module_path = module_path
@@ -2071,44 +2137,6 @@ class ExampleFile:
                 return res.fetchone()
         return self._cache_db_row
 
-    def _replace_example_file_source(self, server_hostname):
-        """Replace single 'source' line in example file."""
-        # Method that will replace the source line in context of current hostname.
-        def callback(match):
-            # Convert relative path to absolute
-            module_path = os.path.abspath(
-                # Since example path does not contain a leading slash,
-                # prepend one to perform the abspath relative to root.
-                os.path.join('/', self._example.path, match.group(3))
-            )
-            # If the path is empty (at root),
-            # leave the path blank
-            if module_path == '/':
-                module_path = ''
-            else:
-                # Otherwise, prepend with additional leading slash,
-                # for the terraform annotation for a sub-directory within
-                # the module
-                module_path = '/{module_path}'.format(module_path=module_path)
-
-            trailing_space_count = len(match.group(2))
-            # If only 1 leading space before source '=' character,
-            # increment by 1 to align to 'version'
-            if trailing_space_count < 2:
-                trailing_space_count = 2
-
-            return ('\n{leading_space}source{trailing_space}= "{server_hostname}/{module_provider_id}{sub_dir}"\n'
-                    '{leading_space}version{version_trailing_space}= "{version_string}"\n').format(
-                leading_space=match.group(1),
-                trailing_space=(' ' * trailing_space_count),
-                version_trailing_space=(' ' * (trailing_space_count - 1)),
-                server_hostname=server_hostname,
-                module_provider_id=self._example._module_version._module_provider.id,
-                sub_dir=module_path,
-                version_string=self._example._module_version.get_terraform_example_version_string()
-            )
-        return callback
-
     def update_attributes(self, **kwargs):
         """Update DB row."""
         # Encode columns that are binary blobs in the database
@@ -2142,9 +2170,6 @@ class ExampleFile:
     def get_content(self, server_hostname):
         """Return content with source replaced"""
         # Replace source lines that use relative paths
-        return re.sub(
-            r'\n([ \t]*)source(\s+)=\s+"(\..*)"[ \t]*\n',
-            self._replace_example_file_source(server_hostname=server_hostname),
-            self.content,
-            re.MULTILINE
-        )
+        return self._example.replace_source_in_file(
+            content=self.content,
+            server_hostname=server_hostname)
