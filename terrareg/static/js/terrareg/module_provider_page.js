@@ -1364,7 +1364,7 @@ async function setupBasePage(data) {
 
     // If current version is not available or there are no
     // versions, set warning and exit
-    if (! moduleDetails.versions.length) {
+    if (! moduleDetails.version) {
         showNoAvailableVersions();
         return;
     }
@@ -1395,7 +1395,7 @@ async function setupRootModulePage(data) {
 
     let tabFactory = new TabFactory();
 
-    if (moduleDetails.versions.length) {
+    if (moduleDetails.version) {
         // Register tabs in order of being displayed to user, by default
         tabFactory.registerTab(new ReadmeTab(`/v1/terrareg/modules/${moduleDetails.id}/readme_html`));
         tabFactory.registerTab(new InputsTab(moduleDetails.root));
@@ -1404,7 +1404,7 @@ async function setupRootModulePage(data) {
     tabFactory.registerTab(new IntegrationsTab(moduleDetails));
     tabFactory.registerTab(new SettingsTab(moduleDetails));
 
-    if (moduleDetails.versions.length) {
+    if (moduleDetails.version) {
 
         tabFactory.registerTab(new OutputsTab(moduleDetails.root));
         tabFactory.registerTab(new ProvidersTab(moduleDetails.root));
