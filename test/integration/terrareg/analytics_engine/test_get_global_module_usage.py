@@ -30,7 +30,7 @@ class TestGetGlobalModuleUsage(TerraregIntegrationTest):
                 'id': 3,
                 'versions': {'1.1.1': {'published': True}}
             }},
-            # Unsure a module with no analytics is not displayed
+            # Ensure a module with no analytics is not displayed
             'unusedmodule': {'testprovider': {
                 'id': 4,
                 'versions': {'1.2.0': {'published': True}}
