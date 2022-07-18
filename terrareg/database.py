@@ -152,7 +152,7 @@ class Database():
         self._session = sqlalchemy.Table(
             'session', meta,
             sqlalchemy.Column('id', sqlalchemy.String(128), primary_key=True),
-            sqlalchemy.Column('expiry', sqlalchemy.Date, nullable=False)
+            sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
         )
 
         self._git_provider = sqlalchemy.Table(
