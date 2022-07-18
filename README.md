@@ -18,11 +18,18 @@ Provides features to aid usage and discovery of modules:
 
 ## Running with docker
 
+    # Clone the repository
+    git clone https://github.com/matthewJohn/terrareg
+    cd terrareg
+
+    # Builder docker image
     docker build . -t terrareg:latest
 
+    # Create secret key for session data
     export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex())')
 
-    docker run -p 5000:5000 -e MIGRATE_DATABASE=True -e SECRET_KEY=$SECRET_KEY -e ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword terrareg:latest
+    # Run container, specifying secret key and admin password
+    docker run -ti -p 5000:5000 -e MIGRATE_DATABASE=True -e SECRET_KEY=$SECRET_KEY -e ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword terrareg:latest
 
 The site can be accessed at http://localhost:5000
 
