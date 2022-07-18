@@ -48,7 +48,7 @@ class Session:
                 expiry=(datetime.datetime.now() + datetime.timedelta(minutes=terrareg.config.Config().ADMIN_SESSION_EXPIRY_MINS))
             ))
 
-            return session_id
+            return Session(session_id=session_id)
 
     @staticmethod
     def check_session(session_id):
