@@ -51,7 +51,15 @@ class Database():
         self._sub_module = None
         self._analytics = None
         self._example_file = None
+        self._session = None
         self.transaction_connection = None
+
+    @property
+    def session(self):
+        """Return session table"""
+        if self._session is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._session
 
     @property
     def git_provider(self):
@@ -140,6 +148,12 @@ class Database():
         GENERAL_COLUMN_SIZE = 128
         LARGE_COLUMN_SIZE = 1024
         URL_COLUMN_SIZE = 1024
+
+        self._session = sqlalchemy.Table(
+            'session', meta,
+            sqlalchemy.Column('id', sqlalchemy.String(128), primary_key=True),
+            sqlalchemy.Column('expiry', sqlalchemy.Date, nullable=False)
+        )
 
         self._git_provider = sqlalchemy.Table(
             'git_provider', meta,

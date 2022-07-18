@@ -24,7 +24,7 @@ from terrareg.errors import (
 )
 from terrareg.models import (
     Example, ExampleFile, Namespace, Module, ModuleProvider,
-    ModuleVersion, ProviderLogo, Submodule,
+    ModuleVersion, ProviderLogo, Session, Submodule,
     GitProvider
 )
 from terrareg.module_search import ModuleSearch
@@ -468,6 +468,13 @@ class Server(object):
 
     def _logout(self):
         """Remove cookie and redirect."""
+        # Check if session exists in database and, if so,
+        # delete it
+        session_obj = Session.check_session(session_id=session.get('session_id', None))
+        if session_obj:
+            session_obj.delete()
+        session['session_id'] = None
+
         session['is_admin_authenticated'] = False
         return redirect('/')
 
@@ -629,9 +636,8 @@ def check_admin_authentication():
     # Check if authenticated via session
     # - Ensure session key has been setup
     if (terrareg.config.Config().SECRET_KEY and
-            session.get('is_admin_authenticated', False) and
-            'expires' in session and
-            session.get('expires').timestamp() > datetime.datetime.now().timestamp()):
+            Session.check_session(session.get('session_id', None)) and
+            session.get('is_admin_authenticated', False)):
         authenticated = True
         g.authentication_type = AuthenticationType.SESSION
 
@@ -1627,12 +1633,15 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
         if not terrareg.config.Config().SECRET_KEY:
             return {'message': 'Sessions not enabled in configuration'}, 403
 
+        # Check if a session already exists and delete it
+        if session.get('session_id', None):
+            session_obj = Session.check_session(session.get('session_id', None))
+            if session_obj:
+                session_obj.delete()
+
         session['is_admin_authenticated'] = True
-        session['expires'] = (
-            datetime.datetime.now() +
-            datetime.timedelta(minutes=terrareg.config.Config().ADMIN_SESSION_EXPIRY_MINS)
-        )
         session['csrf_token'] = hashlib.sha1(os.urandom(64)).hexdigest()
+        session['session_id'] = Session.create_session()
         session.modified = True
         return {'authenticated': True}
 
