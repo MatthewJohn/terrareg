@@ -61,7 +61,8 @@ class Session:
         db = Database.get()
         with db.get_connection() as conn:
             res = conn.execute(db.session.select().where(
-                db.session.c.id==session_id
+                db.session.c.id==session_id,
+                db.session.c.expiry >= datetime.datetime.now()
             ))
             row = res.fetchone()
         # If no rows found in database, return None
