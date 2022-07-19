@@ -426,7 +426,7 @@ class Server(object):
             TRUSTED_NAMESPACE_LABEL=terrareg.config.Config().TRUSTED_NAMESPACE_LABEL,
             CONTRIBUTED_NAMESPACE_LABEL=terrareg.config.Config().CONTRIBUTED_NAMESPACE_LABEL,
             VERIFIED_MODULE_LABEL=terrareg.config.Config().VERIFIED_MODULE_LABEL,
-            csrf_token=get_csrf_token()
+            csrf_token=RequestSecurity.get_csrf_token()
         )
 
     def run(self, debug=None):
@@ -586,96 +586,135 @@ class AuthenticationType(Enum):
     SESSION = 3
 
 
-def get_csrf_token():
-    """Return current session CSRF token."""
-    return session.get('csrf_token', '')
+
+class RequestSession:
+
+    def current_session(self):
+        """Return session object based on current request"""
+        if 'session_id' in session:
+            session_id = session['session_id']
+            session = Session.get_session(session_id)
+            if session is not None:
+                return session
+
+        session = Session.create_session()
+        return None
+
+    def create_session(self):
+        """Create session for request."""
+        session = Session.create_session()
+        session['session_id'] = session.id
 
 
-def check_csrf_token(csrf_token):
-    """Check CSRF token."""
-    # If user is authenticated using authentication token,
-    # do not required CSRF token
-    if get_current_authentication_type() is AuthenticationType.AUTHENTICATION_TOKEN:
-        return False
+class RequestSecurity(RequestSession):
+    """"""
 
-    session_token = get_csrf_token()
-    if not session_token:
-        raise NoSessionSetError('No session is presesnt to check CSRF token')
-    elif session_token != csrf_token:
-        raise IncorrectCSRFTokenError('CSRF token is incorrect')
-    else:
-        return True
-
-
-def get_current_authentication_type():
-    """Return the current authentication method of the user."""
-    return g.get('authentication_type', AuthenticationType.NOT_CHECKED)
-
-
-def check_admin_authentication():
-    """Check authorization header is present or authenticated session"""
-    authenticated = False
-    g.authentication_type = AuthenticationType.NOT_AUTHENTICATED
-
-    # Check that:
-    # - An admin authentication token has been setup
-    # - A token has neeif valid authorisation header has been passed
-    if (terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN and
-            request.headers.get('X-Terrareg-ApiKey', '') ==
-            terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN):
-        authenticated = True
-        g.authentication_type = AuthenticationType.AUTHENTICATION_TOKEN
-
-    # Check if authenticated via session
-    # - Ensure session key has been setup
-    if (terrareg.config.Config().SECRET_KEY and
-            session.get('is_admin_authenticated', False) and
-            'expires' in session and
-            session.get('expires').timestamp() > datetime.datetime.now().timestamp()):
-        authenticated = True
-        g.authentication_type = AuthenticationType.SESSION
-
-    return authenticated
-
-
-def require_admin_authentication(func):
-    """Check user is authenticated as admin and either call function or return 401, if not."""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if not check_admin_authentication():
-            abort(401)
-        else:
-            return func(*args, **kwargs)
-    return wrapper
-
-
-def check_api_key_authentication(api_keys):
-    """Check API key authentication."""
-    # If user is authenticated as admin, allow
-    if check_admin_authentication():
-        return True
-    # Check if no API keys have been configured
-    # and allow request
-    if not api_keys:
-        return True
-
-    # Check header against list of allowed API keys
-    provided_api_key = request.headers.get('X-Terrareg-ApiKey', '')
-    return provided_api_key and provided_api_key in api_keys
-
-
-def require_api_authentication(api_keys):
-    """Check user is authenticated using API key or as admin and either call function or return 401, if not."""
-    def outer_wrapper(func):
+    @classmethod
+    def require_authentication(cls, func):
+        """Wrap request methods that require authentication for request."""
         @wraps(func)
         def wrapper(*args, **kwargs):
+            request_security = cls()
+            if not request_security.check_authentication():
+                abort(401)
+            else:
+                return func(*args, **kwargs, request_security=request_security)
+        return wrapper
 
-            if not check_api_key_authentication(api_keys):
+    def check_authentication(self):
+        """Check authentication base method"""
+        raise NotImplementedError
+
+    def get_csrf_token(self):
+        """Return current session CSRF token."""
+        return self.current_session().get('csrf_token', '')
+
+    @classmethod
+    def check_csrf_token(cls, csrf_token):
+        """Check CSRF token."""
+        # If user is authenticated using authentication token,
+        # do not required CSRF token
+        if cls.get_current_authentication_type() is AuthenticationType.AUTHENTICATION_TOKEN:
+            return False
+
+        session_token = cls.get_csrf_token()
+        if not session_token:
+            raise NoSessionSetError('No session is presesnt to check CSRF token')
+        elif session_token != csrf_token:
+            raise IncorrectCSRFTokenError('CSRF token is incorrect')
+        else:
+            return True
+
+    @staticmethod
+    def get_current_authentication_type():
+        """Return the current authentication method of the user."""
+        return g.get('authentication_type', AuthenticationType.NOT_CHECKED)
+
+    @staticmethod
+    def check_admin_authentication():
+        """Check authorization header is present or authenticated session"""
+        authenticated = False
+        g.authentication_type = AuthenticationType.NOT_AUTHENTICATED
+
+        # Check that:
+        # - An admin authentication token has been setup
+        # - A token has neeif valid authorisation header has been passed
+        if (terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN and
+                request.headers.get('X-Terrareg-ApiKey', '') ==
+                terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN):
+            authenticated = True
+            g.authentication_type = AuthenticationType.AUTHENTICATION_TOKEN
+
+        # Check if authenticated via session
+        # - Ensure session key has been setup
+        if (terrareg.config.Config().SECRET_KEY and
+                session.get('is_admin_authenticated', False) and
+                'expires' in session and
+                session.get('expires').timestamp() > datetime.datetime.now().timestamp()):
+            authenticated = True
+            g.authentication_type = AuthenticationType.SESSION
+
+        return authenticated
+
+    @classmethod
+    def require_admin_authentication(cls, func):
+        """Check user is authenticated as admin and either call function or return 401, if not."""
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if not cls.check_admin_authentication():
                 abort(401)
             else:
                 return func(*args, **kwargs)
         return wrapper
-    return outer_wrapper
+
+    @classmethod
+    def check_api_key_authentication(cls, api_keys):
+        """Check API key authentication."""
+        # If user is authenticated as admin, allow
+        if cls.check_admin_authentication():
+            return True
+        # Check if no API keys have been configured
+        # and allow request
+        if not api_keys:
+            return True
+
+        # Check header against list of allowed API keys
+        provided_api_key = request.headers.get('X-Terrareg-ApiKey', '')
+        return provided_api_key and provided_api_key in api_keys
+
+    @classmethod
+    def require_api_authentication(cls, api_keys):
+        """Check user is authenticated using API key or as admin and either call function or return 401, if not."""
+        def outer_wrapper(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+
+                if not cls.check_api_key_authentication(api_keys):
+                    abort(401)
+                else:
+                    return func(*args, **kwargs)
+            return wrapper
+        return outer_wrapper
 
 
 class ApiTerraformWellKnown(Resource):
@@ -855,7 +894,7 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
 
     ALLOWED_EXTENSIONS = ['zip']
 
-    method_decorators = [require_api_authentication(terrareg.config.Config().UPLOAD_API_KEYS)]
+    method_decorators = [RequestSecurity.require_api_authentication(terrareg.config.Config().UPLOAD_API_KEYS)]
 
     def allowed_file(self, filename):
         """Check if file has allowed file-extension"""
@@ -902,7 +941,7 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
 class ApiModuleVersionCreate(ErrorCatchingResource):
     """Provide interface to create release for git-backed modules."""
 
-    method_decorators = [require_api_authentication(terrareg.config.Config().UPLOAD_API_KEYS)]
+    method_decorators = [RequestSecurity.require_api_authentication(terrareg.config.Config().UPLOAD_API_KEYS)]
 
     def _post(self, namespace, name, provider, version):
         """Handle creation of module version."""
@@ -1610,7 +1649,7 @@ class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
 class ApiTerraregIsAuthenticated(ErrorCatchingResource):
     """Interface to teturn whether user is authenticated as an admin."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [RequestSecurity.require_admin_authentication]
 
     def _get(self):
         return {'authenticated': True}
@@ -1619,7 +1658,7 @@ class ApiTerraregIsAuthenticated(ErrorCatchingResource):
 class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
     """Interface to perform authentication as an admin and set appropriate cookie."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [RequestSecurity.require_admin_authentication]
 
     def _post(self):
         """Handle POST requests to the authentication endpoint."""
@@ -1640,7 +1679,7 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
 class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
     """Provide interface to create module provider."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [RequestSecurity.require_admin_authentication]
 
     def _post(self, namespace, name, provider):
         """Handle update to settings."""
@@ -1690,7 +1729,7 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
 
         args = parser.parse_args()
 
-        check_csrf_token(args.csrf_token)
+        RequestSecurity.check_csrf_token(args.csrf_token)
 
         # Update repository URL of module version
         namespace = Namespace(name=namespace)
@@ -1768,7 +1807,7 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
 class ApiTerraregModuleProviderDelete(ErrorCatchingResource):
     """Provide interface to delete module provider."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [RequestSecurity.require_admin_authentication]
 
     def _delete(self, namespace, name, provider):
         """Delete module provider."""
@@ -1783,7 +1822,7 @@ class ApiTerraregModuleProviderDelete(ErrorCatchingResource):
 
         args = parser.parse_args()
 
-        check_csrf_token(args.csrf_token)
+        RequestSecurity.check_csrf_token(args.csrf_token)
 
         # Update repository URL of module version
         namespace = Namespace(name=namespace)
@@ -1799,7 +1838,7 @@ class ApiTerraregModuleProviderDelete(ErrorCatchingResource):
 class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
     """Provide interface to delete module version."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [RequestSecurity.require_admin_authentication]
 
     def _delete(self, namespace, name, provider, version):
         """Delete module version."""
@@ -1814,7 +1853,7 @@ class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
 
         args = parser.parse_args()
 
-        check_csrf_token(args.csrf_token)
+        RequestSecurity.check_csrf_token(args.csrf_token)
 
         # Update repository URL of module version
         namespace_obj = Namespace(name=namespace)
@@ -1840,7 +1879,7 @@ class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
 class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
     """Provide interface to update module provider settings."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [RequestSecurity.require_admin_authentication]
 
     def _post(self, namespace, name, provider):
         """Handle update to settings."""
@@ -1897,7 +1936,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
 
         args = parser.parse_args()
 
-        check_csrf_token(args.csrf_token)
+        RequestSecurity.check_csrf_token(args.csrf_token)
 
         # Update repository URL of module version
         namespace = Namespace(name=namespace)
@@ -1972,7 +2011,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
 class ApiTerraregModuleVersionPublish(ErrorCatchingResource):
     """Provide interface to publish module version."""
 
-    method_decorators = [require_api_authentication(terrareg.config.Config().PUBLISH_API_KEYS)]
+    method_decorators = [RequestSecurity.require_api_authentication(terrareg.config.Config().PUBLISH_API_KEYS)]
 
     def _post(self, namespace, name, provider, version):
         """Publish module."""

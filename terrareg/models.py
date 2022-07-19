@@ -1,9 +1,11 @@
 
+import datetime
 from importlib.util import module_for_loader
 import os
 from distutils.version import LooseVersion
 import json
 import re
+import secrets
 import sqlalchemy
 import urllib.parse
 
@@ -27,6 +29,49 @@ from terrareg.errors import (
 )
 from terrareg.utils import safe_join_paths
 from terrareg.validators import GitUrlValidator
+
+
+
+class Session:
+    """Provide interface to get and set sessions"""
+
+    SESSION_ID_LENGTH = 32
+
+    @staticmethod
+    def create_session():
+        """Create new session object."""
+        db = Database.get()
+        with db.get_connection() as conn:
+            session_id = secrets.token_urlsafe(Session.SESSION_ID_LENGTH)
+            conn.execute(db.session.insert(
+                id=session_id,
+                expiry=(datetime.datetime.now() + datetime.timedelta(minutes=terrareg.config.Config.ADMIN_SESSION_EXPIRY_MINS)),
+                data=json.dumps({})))
+
+            return session_id
+
+    @staticmethod
+    def get_session(session_id):
+        """Get session object."""
+        # Check if session exists in database and is still valid
+        return Session(session_id=session_id)
+
+    @property
+    def id(self):
+        """Return ID of session"""
+        return self._get_db_row()['id']
+
+    def __init__(self, session_id):
+        """Store current session ID."""
+        self._session_id = session_id
+
+    def get(self, attr, default):
+        """Get data attribute from session"""
+        pass
+
+    def set(self, attr, value):
+        """Set session data attribute"""
+        pass
 
 
 class GitProvider:
