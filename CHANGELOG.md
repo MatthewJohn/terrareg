@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.27.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.27.1...v2.27.2) (2022-07-19)
+
+
+### Bug Fixes
+
+* Add interactive and pseudo-terminal flags to docker run command in README ([2ff26e9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2ff26e9a36034411be944cc87998ea80f121f51c)), closes [#201](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/201) [#196](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/196)
+
 ## [2.27.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.27.0...v2.27.1) (2022-07-08)
 
 
