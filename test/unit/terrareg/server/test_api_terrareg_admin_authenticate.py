@@ -3,14 +3,14 @@ import unittest.mock
 import datetime
 
 from test.unit.terrareg import (
-    TerraregUnitTest
+    TerraregUnitTest, mocked_server_session_fixture
 )
 from test import client
 
 
 class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
 
-    def test_authenticated(self, client):
+    def test_authenticated(self, client, mocked_server_session_fixture):
         """Test endpoint when user is authenticated."""
         cookie_expiry_mins = 5
         with unittest.mock.patch('terrareg.server.check_admin_authentication') as mock_admin_authentication:
@@ -22,19 +22,16 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
                     mock_admin_authentication.return_value = True
 
                     res = client.post('/v1/terrareg/auth/admin/login')
-                    expected_cookie_expiry = datetime.datetime.now() - datetime.timedelta(minutes=cookie_expiry_mins)
 
                     assert res.status_code == 200
                     assert res.json == {'authenticated': True}
                     with client.session_transaction() as session:
-                        # Assert that the session expiry is within 2 seconds of the expected expiry
-                        assert (
-                            (expected_cookie_expiry.timestamp() - session['expires'].timestamp()) < 2
-                        )
                         assert session['is_admin_authenticated'] == True
+                        assert 'session_id' in session
+                        assert session['session_id']
                         assert len(session['csrf_token']) == 40
 
-    def test_authenticated_without_secret_key(self, client):
+    def test_authenticated_without_secret_key(self, client, mocked_server_session_fixture):
         """Test endpoint and ensure session is not provided"""
         with unittest.mock.patch('terrareg.server.check_admin_authentication') as mock_admin_authentication:
             with unittest.mock.patch('terrareg.config.Config.SECRET_KEY', ''):
@@ -50,7 +47,7 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
                 assert res.json == {'message': 'Sessions not enabled in configuration'}
                 with client.session_transaction() as session:
                     # Assert that no session cookies were provided
-                    assert 'expires' not in session
+                    assert 'session_id' not in session
                     assert 'is_admin_authenticated' not in session
                     assert 'csrf_token' not in session
 
@@ -62,7 +59,7 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
                 assert res.status_code == 403
                 assert res.json == {'message': 'Sessions not enabled in configuration'}
 
-    def test_unauthenticated(self, client):
+    def test_unauthenticated(self, client, mocked_server_session_fixture):
         """Test endpoint when user is authenticated."""
         with unittest.mock.patch('terrareg.server.check_admin_authentication') as mock_admin_authentication:
 
