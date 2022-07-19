@@ -12,12 +12,15 @@ from test.integration.terrareg import TerraregIntegrationTest
 class TestSession(TerraregIntegrationTest):
     """Test Session model class"""
 
+    def setup_method(self, method):
+        """Remove any pre-existing sessions before running each test."""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.session.delete())
+
     def test_create_session(self):
         """Test creating a session."""
         db = Database.get()
-        with db.get_connection() as conn:
-            # Delete any pre-existing sessions
-            conn.execute(db.session.delete())
 
         with mock.patch('terrareg.config.Config.ADMIN_SESSION_EXPIRY_MINS', 60):
             session_obj = Session.create_session()
