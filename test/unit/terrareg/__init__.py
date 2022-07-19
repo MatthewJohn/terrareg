@@ -326,6 +326,11 @@ class MockSession(Session):
         return cls(session_id=session_id)
 
     @classmethod
+    def cleanup_old_sessions(cls):
+        """Mock cleanup old sessions"""
+        pass
+
+    @classmethod
     def check_session(cls, session_id):
         """Get session object."""
         # Check session ID is not empty

@@ -103,7 +103,7 @@ class TestSession(TerraregIntegrationTest):
                 id=session_id,
                 expiry=(datetime.datetime.now() - datetime.timedelta(minutes=1))
             ))
-        
+
         # Check session ID using check_session method
         session_obj = Session.check_session(session_id)
 
@@ -124,3 +124,24 @@ class TestSession(TerraregIntegrationTest):
     def test_checking_invalid_session(self, session_id):
         """Test checking invalid session IDs"""
         assert Session.check_session(session_id) == None
+
+    def test_cleanup_old_sessions(self):
+        """Test cleaning up old sessions."""
+        db = Database.get()
+
+        with db.get_connection() as conn:
+            conn.execute(db.session.insert().values(
+                [
+                    {'id': 'expiredsessionid', 'expiry': datetime.datetime.now() - datetime.timedelta(minutes=10)},
+                    {'id': 'notexpired', 'expiry': datetime.datetime.now() + datetime.timedelta(minutes=1)}
+                ]
+            ))
+
+        with mock.patch('terrareg.config.Config.ADMIN_SESSION_EXPIRY_MINS', 5):
+            Session.cleanup_old_sessions()
+
+        with db.get_connection() as conn:
+            rows = conn.execute(db.session.select()).fetchall()
+
+        assert len(rows) == 1
+        assert rows[0]['id'] == 'notexpired'

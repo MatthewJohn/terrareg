@@ -71,6 +71,15 @@ class Session:
 
         return cls(session_id=session_id)
 
+    @classmethod
+    def cleanup_old_sessions(cls):
+        """Delete old sessions from database that have expired."""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.session.delete().where(
+                db.session.c.expiry < datetime.datetime.now()
+            ))
+
     @property
     def id(self):
         """Return ID of session"""

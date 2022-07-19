@@ -1644,6 +1644,11 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
         session_obj = Session.create_session()
         session['session_id'] = session_obj.id
         session.modified = True
+
+        # Whilst authenticating a user, piggyback the request
+        # to take the opportunity to delete old sessions
+        Session.cleanup_old_sessions()
+
         return {'authenticated': True}
 
 
