@@ -37,21 +37,21 @@ class Session:
 
     SESSION_ID_LENGTH = 32
 
-    @staticmethod
-    def create_session():
+    @classmethod
+    def create_session(cls):
         """Create new session object."""
         db = Database.get()
         with db.get_connection() as conn:
-            session_id = secrets.token_urlsafe(Session.SESSION_ID_LENGTH)
+            session_id = secrets.token_urlsafe(cls.SESSION_ID_LENGTH)
             conn.execute(db.session.insert().values(
                 id=session_id,
                 expiry=(datetime.datetime.now() + datetime.timedelta(minutes=terrareg.config.Config().ADMIN_SESSION_EXPIRY_MINS))
             ))
 
-            return Session(session_id=session_id)
+            return cls(session_id=session_id)
 
-    @staticmethod
-    def check_session(session_id):
+    @classmethod
+    def check_session(cls, session_id):
         """Get session object."""
         # Check session ID is not empty
         if not session_id:
@@ -69,7 +69,7 @@ class Session:
         if not row:
             return None
 
-        return Session(session_id=session_id)
+        return cls(session_id=session_id)
 
     @property
     def id(self):

@@ -1,12 +1,16 @@
 
 import datetime
 import functools
+import secrets
 import unittest.mock
 
 import pytest
 
 from terrareg.database import Database
-from terrareg.models import GitProvider, Module, ModuleDetails, ModuleProvider, ModuleVersion, Namespace
+from terrareg.models import (
+    GitProvider, Module, ModuleDetails,
+    ModuleProvider, ModuleVersion, Namespace, Session
+)
 from terrareg.server import Server
 import terrareg.config
 from test import BaseTest
@@ -310,6 +314,35 @@ class MockNamespace(Namespace):
         return TEST_MODULE_DATA[self._name] if self._name in TEST_MODULE_DATA else {}
 
 
+class MockSession(Session):
+
+    MOCK_SESSIONS = {}
+
+    @classmethod
+    def create_session(cls):
+        """Create new session object."""
+        session_id = secrets.token_urlsafe(Session.SESSION_ID_LENGTH)
+        cls.MOCK_SESSIONS[session_id] = (datetime.datetime.now() + datetime.timedelta(minutes=terrareg.config.Config().ADMIN_SESSION_EXPIRY_MINS))
+        return cls(session_id=session_id)
+
+    @classmethod
+    def check_session(cls, session_id):
+        """Get session object."""
+        # Check session ID is not empty
+        if not session_id:
+            return None
+
+        if cls.MOCK_SESSIONS.get(session_id, None) and cls.MOCK_SESSIONS[session_id] >= datetime.datetime.now():
+            return cls(session_id)
+
+        return None
+
+    def delete(self):
+        """Delete session from database"""
+        if self.id in MockSession.MOCK_SESSIONS:
+            del MockSession.MOCK_SESSIONS[self.id]
+
+
 def mocked_server_module_version(request):
     """Mock server ModuleVersion class."""
     patch = unittest.mock.patch('terrareg.server.ModuleVersion', MockModuleVersion)
@@ -378,3 +411,20 @@ def mocked_server_namespace_fixture(request):
     """Mock namespace as fixture."""
     mocked_server_namespace(request)
 
+
+def mocked_server_session(request):
+    """Mock Session model class in server module."""
+    patch = unittest.mock.patch('terrareg.server.Session', MockSession)
+
+    def cleanup_mock():
+        patch.stop()
+    request.addfinalizer(cleanup_mock)
+    patch.start()
+
+    mocked_server_module(request)
+
+
+@pytest.fixture()
+def mocked_server_session_fixture(request):
+    """Mock namespace as fixture."""
+    mocked_server_session(request)
