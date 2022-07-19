@@ -39,6 +39,7 @@
                 $('#create-error').html('An unexpected error occurred');
             }
             $('#create-error').css('display', 'block');
+            $(window).scrollTop($('#create-error').offset().top);
         });
     }
 
