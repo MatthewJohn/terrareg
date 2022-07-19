@@ -30,7 +30,6 @@
         }).done((res) => {
             window.location.href = `/modules/${res.id}`
         }).fail((res) => {
-            //if (res.code)
             if (res.status == 401) {
                 $('#create-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
             } else if (res.responseJSON && res.responseJSON.message) {
