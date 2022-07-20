@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.29.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.28.2...v2.29.0) (2022-07-20)
+
+
+### Features
+
+* Add warning to module provider page when viewing the non-latest version of the module. ([84d444a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/84d444a2e863b58f60a98bdb04843ef7d5cc5d5f)), closes [#194](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/194)
+
 ## [2.28.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.28.1...v2.28.2) (2022-07-20)
 
 
