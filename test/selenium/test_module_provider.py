@@ -1122,3 +1122,24 @@ module "fullypopulated" {{
         no_versions_div = self.wait_for_element(By.ID, 'no-version-available', ensure_displayed=False)
         assert no_versions_div.is_displayed() == False
 
+    def test_viewing_non_latest_version(self):
+        """Test viewing non-latest version of module."""
+        self.selenium_instance.get(self.get_url('/modules/testnamespace/wrongversionorder/testprovider'))
+        version_dropdown = self.wait_for_element(By.ID, 'version-select')
+        version_select = Select(version_dropdown)
+        assert version_select.first_selected_option.text == '10.23.0 (latest)'
+
+        non_latest_warning = self.wait_for_element(By.ID, 'non-latest-version-warning', ensure_displayed=False)
+        assert non_latest_warning.is_displayed() == False
+
+        # Select old version
+        version_select.select_by_visible_text('2.1.0')
+
+        # Wait for new user to be redirected
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/testnamespace/wrongversionorder/testprovider/2.1.0'))
+
+        # Ensure warning is shown
+        non_latest_warning = self.wait_for_element(By.ID, 'non-latest-version-warning')
+        assert non_latest_warning.text == ('WARNING: This is an outdated version of the module.\n'
+                                           'If you wish to view the latest version of the module,\n'
+                                           'use the version drop-down above.')
