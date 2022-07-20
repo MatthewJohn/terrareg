@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.28.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.28.0...v2.28.1) (2022-07-20)
+
+
+### Bug Fixes
+
+* Catch errors when deleting module provider and module version in module provider settings. ([f834842](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f8348424e78e40d587152fff82859f61910d15a7)), closes [#198](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/198)
+* Display user-readable error when an authentication error occurs when creating a module ([c1f7708](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c1f7708861e43ddc4a3dbb446b5de26162234aa8)), closes [#198](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/198)
+* Provider user-friendly error when attempting to update settings of module provider when not authenticated ([b95f90b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b95f90b62b1dc9bf285267a875af1f6480399dca)), closes [#198](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/198)
+* Scroll to error message on create module page when an error occurs ([bbfd60d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/bbfd60df53d8e26f2316cd7f529b7f169026651b)), closes [#198](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/198)
+
 # [2.28.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.27.2...v2.28.0) (2022-07-20)
 
 
