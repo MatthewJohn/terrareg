@@ -38,7 +38,7 @@ class SeleniumTest(BaseTest):
     SELENIUM_INSTANCE = None
     RESET_COOKIES = True
 
-    RUN_INTERACTIVELY = False
+    RUN_INTERACTIVELY = os.environ.get('RUN_INTERACTIVELY', False)
 
     DEFAULT_RESOLUTION = (1280, 720)
 
