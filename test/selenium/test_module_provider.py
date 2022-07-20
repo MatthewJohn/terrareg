@@ -923,7 +923,7 @@ module "fullypopulated" {{
 
             self.perform_admin_authentication(password='unittest-password')
 
-            self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/2.5.5'))
+            self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
 
             # Click on settings tab
             tab = self.wait_for_element(By.ID, 'module-tab-link-settings')
