@@ -245,7 +245,7 @@ class Config:
         """
         Session timeout for admin cookie sessions
         """
-        return int(os.environ.get('ADMIN_SESSION_EXPIRY_MINS', 5))
+        return int(os.environ.get('ADMIN_SESSION_EXPIRY_MINS', 60))
 
     @property
     def AUTO_PUBLISH_MODULE_VERSIONS(self):

@@ -102,6 +102,7 @@ class BaseTest:
             conn.execute(db.module_details.delete())
             conn.execute(db.git_provider.delete())
             conn.execute(db.analytics.delete())
+            conn.execute(db.session.delete())
 
         # Setup test git providers
         for git_provider_id in cls._GIT_PROVIDER_DATA:
