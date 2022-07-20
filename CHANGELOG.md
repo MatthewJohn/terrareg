@@ -1,5 +1,13 @@
 # Changelog
 
+# [2.28.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.27.2...v2.28.0) (2022-07-20)
+
+
+### Features
+
+* Increase default admin session timeout to 60 minutes from the previous default of 5. ([38ef7df](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/38ef7df8431066d4c0cdc17fbf8c5113ca86ea24)), closes [#200](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/200) [#199](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/199)
+* Store sessions in session table in database to hold active sessions. ([6cdeb8b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6cdeb8bff60d6e6c3da62c83ab909fb9847ee22e)), closes [#200](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/200)
+
 ## [2.27.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.27.1...v2.27.2) (2022-07-19)
 
 
