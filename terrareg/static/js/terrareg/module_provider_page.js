@@ -745,6 +745,7 @@ function populateVersionSelect(moduleDetails) {
     let versionSelection = $("#version-select");
 
     let currentVersionFound = false;
+    let currentIsLatestVersion = false;
     moduleDetails.versions.forEach((version, itx) => {
         let versionOption = $("<option></option>");
 
@@ -762,6 +763,12 @@ function populateVersionSelect(moduleDetails) {
         if (version == moduleDetails.version) {
             versionOption.attr("selected", "");
             currentVersionFound = true;
+
+            // Determine if the current version is the latest version
+            // (first in list of versions)
+            if (itx == 0) {
+                currentIsLatestVersion = true;
+            }
         }
 
         versionSelection.append(versionOption);
@@ -789,7 +796,13 @@ function populateVersionSelect(moduleDetails) {
         versionOption.text(`${moduleDetails.version}${suffix}`);
         versionOption.attr("selected", "");
         versionSelection.append(versionOption);
+
+    } else if (! currentIsLatestVersion) {
+        // Otherwise, if user is not viewing the latest version,
+        // display warning
+        $("#non-latest-version-warning").removeClass('default-hidden');
     }
+
     // Show version drop-down
     $('#details-version').removeClass('default-hidden');
 }
