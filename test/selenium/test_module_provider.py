@@ -5,6 +5,7 @@ from unittest import mock
 import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
+from terrareg.database import Database
 
 from test.selenium import SeleniumTest
 from terrareg.models import GitProvider, ModuleVersion, Namespace, Module, ModuleProvider
@@ -923,7 +924,7 @@ module "fullypopulated" {{
 
             self.perform_admin_authentication(password='unittest-password')
 
-            self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/2.5.5'))
+            self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
 
             # Click on settings tab
             tab = self.wait_for_element(By.ID, 'module-tab-link-settings')
@@ -989,6 +990,83 @@ module "fullypopulated" {{
                         'fullypopulated'),
                     'testprovider'
                 ).update_attributes(git_provider_id=None)
+
+    def test_updating_settings_after_logging_out(self):
+        """Test accessing settings tab, logging out and attempting to save the changes in the settings tab."""
+        self.perform_admin_authentication(password='unittest-password')
+
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+        # Click on settings tab
+        tab = self.wait_for_element(By.ID, 'module-tab-link-settings')
+        tab.click()
+
+        # Delete all sessions from the database
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.session.delete())
+
+        # Click update button
+        self.selenium_instance.find_element(By.ID, 'module-provider-settings-update').click()
+        error = self.wait_for_element(By.ID, 'settings-status-error')
+        assert error.text == ('You must be logged in to perform this action.\n'
+                              'If you were previously logged in, please re-authentication and try again.')
+
+    def test_deleting_module_version_after_logging_out(self):
+        """Test accessing settings tab, logging out and attempting to delete module version."""
+        self.perform_admin_authentication(password='unittest-password')
+
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+        # Click on settings tab
+        tab = self.wait_for_element(By.ID, 'module-tab-link-settings')
+        tab.click()
+
+        # Click delete version button
+        delete_button = self.selenium_instance.find_element(By.ID, 'module-version-delete-button')
+        delete_button.click()
+
+        # Ensure version number into verify input
+        self.selenium_instance.find_element(By.ID, 'confirm-delete-module-version').send_keys('1.5.0')
+
+        # Delete all sessions from the database
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.session.delete())
+
+        # Click delete button again
+        delete_button.click()
+        error = self.wait_for_element(By.ID, 'settings-status-error')
+        assert error.text == ('You must be logged in to perform this action.\n'
+                              'If you were previously logged in, please re-authentication and try again.')
+
+    def test_deleting_module_provider_after_logging_out(self):
+        """Test accessing settings tab, logging out and attempting to delete module provider."""
+        self.perform_admin_authentication(password='unittest-password')
+
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+        # Click on settings tab
+        tab = self.wait_for_element(By.ID, 'module-tab-link-settings')
+        tab.click()
+
+        # Click delete version button
+        delete_button = self.selenium_instance.find_element(By.ID, 'module-provider-delete-button')
+        delete_button.click()
+
+        # Ensure version number into verify input
+        self.selenium_instance.find_element(By.ID, 'confirm-delete-module-provider').send_keys('moduledetails/fullypopulated/testprovider')
+
+        # Delete all sessions from the database
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.session.delete())
+
+        # Click delete button again
+        delete_button.click()
+        error = self.wait_for_element(By.ID, 'settings-status-error')
+        assert error.text == ('You must be logged in to perform this action.\n'
+                              'If you were previously logged in, please re-authentication and try again.')
 
     def test_unpublished_only_module_provider(self):
         """Test module provider page for a module provider that only has an unpublished version."""

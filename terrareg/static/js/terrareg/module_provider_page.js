@@ -1196,6 +1196,16 @@ function deleteModuleVersion(moduleDetails) {
         // This will automatically redirect back
         // down the path to valid existing object.
         window.location.href = `/modules/${ moduleDetails.module_provider_id }`;
+    }).fail((res) => {
+        if (res.status == 401) {
+            $('#settings-status-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
+        } else if (res.responseJSON && res.responseJSON.message) {
+            $('#settings-status-error').html(res.responseJSON.message);
+        } else {
+            $('#settings-status-error').html('An unexpected error occurred');
+        }
+        $('#settings-status-error').removeClass('default-hidden');
+        $(window).scrollTop($('#settings-status-error').offset().top);
     });
     return false;
 }
@@ -1217,6 +1227,16 @@ function deleteModuleProvider(moduleDetails) {
         // This will automatically redirect back
         // down the path to valid existing object.
         window.location.href = `/modules/${moduleDetails.id}`;
+    }).fail((res) => {
+        if (res.status == 401) {
+            $('#settings-status-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
+        } else if (res.responseJSON && res.responseJSON.message) {
+            $('#settings-status-error').html(res.responseJSON.message);
+        } else {
+            $('#settings-status-error').html('An unexpected error occurred');
+        }
+        $('#settings-status-error').removeClass('default-hidden');
+        $(window).scrollTop($('#settings-status-error').offset().top);
     });
 }
 
@@ -1243,12 +1263,15 @@ function updateModuleProviderSettings(moduleDetails) {
     }).done(() => {
         $('#settings-status-success').removeClass('default-hidden');
     }).fail((res) => {
-        if (res.responseJSON && res.responseJSON.message) {
+        if (res.status == 401) {
+            $('#settings-status-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
+        } else if (res.responseJSON && res.responseJSON.message) {
             $('#settings-status-error').html(res.responseJSON.message);
         } else {
             $('#settings-status-error').html('An unexpected error occurred');
         }
         $('#settings-status-error').removeClass('default-hidden');
+        $(window).scrollTop($('#settings-status-error').offset().top);
     });
 
     // Return false to present default action
