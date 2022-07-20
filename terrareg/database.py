@@ -129,7 +129,10 @@ class Database():
         if cls._ENGINE is None:
             cls._ENGINE = sqlalchemy.create_engine(
                 terrareg.config.Config().DATABASE_URL,
-                echo=terrareg.config.Config().DEBUG)
+                echo=terrareg.config.Config().DEBUG,
+                pool_pre_ping=True,
+                pool_recycle=300
+            )
         return cls._ENGINE
 
     def initialise(self):
