@@ -1307,7 +1307,7 @@ async function updateUsageBuilderOutput(moduleDetails) {
         }
         else if (inputVariable.type == 'text')
         {
-            varInput = usageBuilderQuoteString($(inputId)[0].value);
+            varInput = usageBuilderQuoteString(inputVariable, $(inputId)[0].value);
         }
         else if (inputVariable.type == 'list') {
             varInput = `[${usageBuilderQuoteString(inputVariable, $(inputId)[0].value)}]`;
