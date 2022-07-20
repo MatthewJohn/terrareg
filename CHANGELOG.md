@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.28.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.28.1...v2.28.2) (2022-07-20)
+
+
+### Bug Fixes
+
+* Add connection pool refresh and pool pre-ping settings to avoid errors after database disconnect. ([5c677a8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5c677a8ec326e2183f64ec695678b3e575291867)), closes [#204](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/204)
+
 ## [2.28.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.28.0...v2.28.1) (2022-07-20)
 
 
