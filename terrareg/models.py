@@ -1,9 +1,11 @@
 
+import datetime
 from importlib.util import module_for_loader
 import os
 from distutils.version import LooseVersion
 import json
 import re
+import secrets
 import sqlalchemy
 import urllib.parse
 
@@ -27,6 +29,73 @@ from terrareg.errors import (
 )
 from terrareg.utils import safe_join_paths
 from terrareg.validators import GitUrlValidator
+
+
+
+class Session:
+    """Provide interface to get and set sessions"""
+
+    SESSION_ID_LENGTH = 32
+
+    @classmethod
+    def create_session(cls):
+        """Create new session object."""
+        db = Database.get()
+        with db.get_connection() as conn:
+            session_id = secrets.token_urlsafe(cls.SESSION_ID_LENGTH)
+            conn.execute(db.session.insert().values(
+                id=session_id,
+                expiry=(datetime.datetime.now() + datetime.timedelta(minutes=terrareg.config.Config().ADMIN_SESSION_EXPIRY_MINS))
+            ))
+
+            return cls(session_id=session_id)
+
+    @classmethod
+    def check_session(cls, session_id):
+        """Get session object."""
+        # Check session ID is not empty
+        if not session_id:
+            return None
+
+        # Check if session exists in database and is still valid
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(db.session.select().where(
+                db.session.c.id==session_id,
+                db.session.c.expiry >= datetime.datetime.now()
+            ))
+            row = res.fetchone()
+        # If no rows found in database, return None
+        if not row:
+            return None
+
+        return cls(session_id=session_id)
+
+    @classmethod
+    def cleanup_old_sessions(cls):
+        """Delete old sessions from database that have expired."""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.session.delete().where(
+                db.session.c.expiry < datetime.datetime.now()
+            ))
+
+    @property
+    def id(self):
+        """Return ID of session"""
+        return self._session_id
+
+    def __init__(self, session_id):
+        """Store current session ID."""
+        self._session_id = session_id
+
+    def delete(self):
+        """Delete session from database"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.session.delete().where(
+                db.session.c.id==self.id
+            ))
 
 
 class GitProvider:

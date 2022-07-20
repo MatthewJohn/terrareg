@@ -153,7 +153,7 @@ Default: ``
 Session timeout for admin cookie sessions
 
 
-Default: `5`
+Default: `60`
 
 
 
