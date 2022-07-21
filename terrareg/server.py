@@ -1716,64 +1716,69 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
         if module_provider is not None:
             return {'message': 'Module provider already exists'}, 400
 
-        module_provider = ModuleProvider.create(module=module, name=provider)
+        with Database.start_transaction() as transaction_context:
+            module_provider = ModuleProvider.create(module=module, name=provider)
 
-        # If git provider ID has been specified,
-        # validate it and update attribute of module provider.
-        if args.git_provider_id is not None:
-            git_provider = GitProvider.get(id=args.git_provider_id)
-            # If a non-empty git provider ID was provided and none
-            # were returned, return an error about invalid
-            # git provider ID
-            if args.git_provider_id and git_provider is None:
-                return {'message': 'Git provider does not exist.'}, 400
+            # If git provider ID has been specified,
+            # validate it and update attribute of module provider.
+            if args.git_provider_id is not None:
+                git_provider = GitProvider.get(id=args.git_provider_id)
+                # If a non-empty git provider ID was provided and none
+                # were returned, return an error about invalid
+                # git provider ID
+                if args.git_provider_id and git_provider is None:
+                    transaction_context.transaction.rollback()
+                    return {'message': 'Git provider does not exist.'}, 400
 
-            module_provider.update_git_provider(git_provider=git_provider)
+                module_provider.update_git_provider(git_provider=git_provider)
 
-        # Ensure base repository URL is parsable
-        repo_base_url_template = args.repo_base_url_template
-        # If the argument is None, assume it's not being updated,
-        # as this is the default value for the arg parser.
-        if repo_base_url_template is not None:
-            if repo_base_url_template == '':
-                # If repository URL is empty, set to None
-                repo_base_url_template = None
+            # Ensure base repository URL is parsable
+            repo_base_url_template = args.repo_base_url_template
+            # If the argument is None, assume it's not being updated,
+            # as this is the default value for the arg parser.
+            if repo_base_url_template is not None:
+                if repo_base_url_template == '':
+                    # If repository URL is empty, set to None
+                    repo_base_url_template = None
 
-            try:
-                module_provider.update_repo_base_url_template(repo_base_url_template=repo_base_url_template)
-            except RepositoryUrlParseError as exc:
-                return {'message': 'Repo base URL: {}'.format(str(exc))}, 400
+                try:
+                    module_provider.update_repo_base_url_template(repo_base_url_template=repo_base_url_template)
+                except RepositoryUrlParseError as exc:
+                    transaction_context.transaction.rollback()
+                    return {'message': 'Repo base URL: {}'.format(str(exc))}, 400
 
-        # Ensure repository URL is parsable
-        repo_clone_url_template = args.repo_clone_url_template
-        # If the argument is None, assume it's not being updated,
-        # as this is the default value for the arg parser.
-        if repo_clone_url_template is not None:
-            if repo_clone_url_template == '':
-                # If repository URL is empty, set to None
-                repo_clone_url_template = None
+            # Ensure repository URL is parsable
+            repo_clone_url_template = args.repo_clone_url_template
+            # If the argument is None, assume it's not being updated,
+            # as this is the default value for the arg parser.
+            if repo_clone_url_template is not None:
+                if repo_clone_url_template == '':
+                    # If repository URL is empty, set to None
+                    repo_clone_url_template = None
 
-            try:
-                module_provider.update_repo_clone_url_template(repo_clone_url_template=repo_clone_url_template)
-            except RepositoryUrlParseError as exc:
-                return {'message': 'Repo clone URL: {}'.format(str(exc))}, 400
+                try:
+                    module_provider.update_repo_clone_url_template(repo_clone_url_template=repo_clone_url_template)
+                except RepositoryUrlParseError as exc:
+                    transaction_context.transaction.rollback()
+                    return {'message': 'Repo clone URL: {}'.format(str(exc))}, 400
 
-        # Ensure repository URL is parsable
-        repo_browse_url_template = args.repo_browse_url_template
-        if repo_browse_url_template is not None:
-            if repo_browse_url_template == '':
-                # If repository URL is empty, set to None
-                repo_browse_url_template = None
+            # Ensure repository URL is parsable
+            repo_browse_url_template = args.repo_browse_url_template
+            if repo_browse_url_template is not None:
+                if repo_browse_url_template == '':
+                    # If repository URL is empty, set to None
+                    repo_browse_url_template = None
 
-            try:
-                module_provider.update_repo_browse_url_template(repo_browse_url_template=repo_browse_url_template)
-            except RepositoryUrlParseError as exc:
-                return {'message': 'Repo browse URL: {}'.format(str(exc))}, 400
+                try:
+                    module_provider.update_repo_browse_url_template(repo_browse_url_template=repo_browse_url_template)
+                except RepositoryUrlParseError as exc:
+                    transaction_context.transaction.rollback()
+                    return {'message': 'Repo browse URL: {}'.format(str(exc))}, 400
 
-        # Update git tag format of object
-        git_tag_format = args.git_tag_format
-        if git_tag_format is not None:
-            module_provider.update_git_tag_format(git_tag_format=git_tag_format)
+            # Update git tag format of object
+            git_tag_format = args.git_tag_format
+            if git_tag_format is not None:
+                module_provider.update_git_tag_format(git_tag_format=git_tag_format)
 
         return {
             'id': module_provider.id

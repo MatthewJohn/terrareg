@@ -369,6 +369,16 @@ class TransactionConnectionWrapper:
 class Transaction:
     """Custom wrapper for database tranaction."""
 
+    @property
+    def transaction(self):
+        """Return database transaction object."""
+        return self._transaction_outer
+
+    @property
+    def connection(self):
+        """Return database connection object."""
+        return self._connection
+
     def __init__(self, connection):
         """Store database connection."""
         self._connection = connection
@@ -387,7 +397,7 @@ class Transaction:
         else:
             Database.get().transaction = self._connection
 
-        return self._connection
+        return self
 
     def __exit__(self, *args, **kwargs):
         """End transaction and remove from current context."""
