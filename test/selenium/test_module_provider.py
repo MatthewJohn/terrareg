@@ -204,6 +204,30 @@ module "fullypopulated" {{
         assert security_issues.is_displayed() == True
         assert security_issues.text == '1 Security issues'
 
+
+    @pytest.mark.parametrize('url,expected_source', [
+        # Test latest version with root module
+        ('/modules/moduledetails/fullypopulated/testprovider',
+         'https://mp-browse-url.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/suffix'),
+        # Test non-latest version
+        ('/modules/moduledetails/fullypopulated/testprovider/1.2.0',
+         'https://mp-browse-url.com/moduledetails/fullypopulated-testprovider/browse/1.2.0/suffix'),
+        # Test example
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
+         'https://mp-browse-url.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/examples/test-examplesuffix'),
+        # Test submodule
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+         'https://mp-browse-url.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/modules/example-submodule1suffix')
+    ])
+    def test_source_code_urls(self, url, expected_source):
+        """Test source code URL shown."""
+        self.selenium_instance.get(self.get_url(url))
+
+        # Ensure security issues are displayed
+        security_issues = self.wait_for_element(By.ID, 'source-url')
+        assert security_issues.is_displayed() == True
+        assert security_issues.text == f'Source code: {expected_source}'
+
     @pytest.mark.parametrize('url,expected_readme_content', [
         # Root module
         ('/modules/moduledetails/fullypopulated/testprovider/1.5.0', 'This is an exaple README!'),
