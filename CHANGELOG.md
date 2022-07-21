@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.29.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.29.1...v2.29.2) (2022-07-21)
+
+
+### Bug Fixes
+
+* Use database transaction when performing module provider creation in server endpoint. ([faef873](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/faef8732a8976c8377031e43e3074615ef0fb695)), closes [#191](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/191)
+
 ## [2.29.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.29.0...v2.29.1) (2022-07-21)
 
 
