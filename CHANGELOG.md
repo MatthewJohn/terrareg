@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.29.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.29.0...v2.29.1) (2022-07-21)
+
+
+### Bug Fixes
+
+* Update module provider card widths on homepage to increase in size when window is too small to avoid text overflowing ([7bd77fc](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7bd77fcbe16f014077d3ded2508f9fd0f72ef778)), closes [#209](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/209)
+
 # [2.29.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.28.2...v2.29.0) (2022-07-20)
 
 
