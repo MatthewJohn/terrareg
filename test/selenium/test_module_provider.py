@@ -82,8 +82,13 @@ class TestModuleProvider(SeleniumTest):
     ])
     def test_module_with_versions(self, attribute_to_remove, related_element, expect_displayed, expected_display_value):
         """Test page functionality on a module with versions."""
+        # Remove custom browse/base URL from module provider
+        module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
+        original_provider_repo_base_url_template = module_provider._get_db_row()['repo_base_url_template']
+        original_provider_repo_browse_url_template = module_provider._get_db_row()['repo_browse_url_template']
+        module_provider.update_attributes(repo_base_url_template=None, repo_browse_url_template=None)
+
         if attribute_to_remove:
-            module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
             module_version = ModuleVersion.get(module_provider, '1.5.0')
             original_value = module_version._get_db_row()[attribute_to_remove]
             module_version.update_attributes(**{attribute_to_remove: None})
@@ -152,6 +157,9 @@ module "fullypopulated" {{
             self.wait_for_element(By.ID, 'no-version-available', ensure_displayed=False).is_displayed == False
 
         finally:
+            module_provider.update_attributes(
+                repo_base_url_template=original_provider_repo_base_url_template,
+                repo_browse_url_template=original_provider_repo_browse_url_template)
             if attribute_to_remove:
                 module_version.update_attributes(**{attribute_to_remove: original_value})
 
