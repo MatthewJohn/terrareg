@@ -7,6 +7,7 @@ import sqlalchemy
 
 from terrareg.database import Database
 from terrareg.config import Config
+import terrareg.models
 
 
 class AnalyticsEngine:
@@ -341,3 +342,22 @@ class AnalyticsEngine:
             ).values(
                 parent_module_version=new_module_version.pk
             ))
+
+    @classmethod
+    def get_prometheus_metrics(cls):
+        """Return prometheus metrics for modules and usage."""
+        response_lines = []
+
+        def add_prometheus_metric(key, value, type_, comment):
+            """Add line to prometheus metrics."""
+            response_lines.append(f'# HELP {key} {comment}')
+            response_lines.append(f'# TYPE {key} {type_}')
+            response_lines.append(f'{key} {value}')
+
+        add_prometheus_metric(
+            key='module_providers_count_total',
+            value=terrareg.models.ModuleProvider.get_total_count(),
+            type_='counter',
+            comment='Total number of module providers')
+
+        return '\n'.join(response_lines)
