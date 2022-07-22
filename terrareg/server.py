@@ -1435,8 +1435,8 @@ class ApiTerraregGlobalUsageStats(ErrorCatchingResource):
         total unique analytics tokens per module
         (with and without auth token).
         """
-        module_usage_with_auth_token = AnalyticsEngine.get_global_module_usage()
-        module_usage_including_empty_auth_token = AnalyticsEngine.get_global_module_usage(include_empty_auth_token=True)
+        module_usage_with_auth_token = AnalyticsEngine.get_global_module_usage_counts()
+        module_usage_including_empty_auth_token = AnalyticsEngine.get_global_module_usage_counts(include_empty_auth_token=True)
         total_analytics_token_with_auth_token = sum(module_usage_with_auth_token.values())
         total_analytics_token_including_empty_auth_token = sum(module_usage_including_empty_auth_token.values())
         return {

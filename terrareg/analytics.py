@@ -129,15 +129,16 @@ class AnalyticsEngine:
             return res.scalar()
 
     @staticmethod
-    def get_global_module_usage(include_empty_auth_token=False):
-        """Return all analytics tokens, grouped by module provider."""
+    def get_global_module_usage_base_query(include_empty_auth_token=False):
+        """Return base query for getting all analytics tokens."""
         db = Database.get()
         # Initial query to select all analytics joined to module version and module provider
         select = sqlalchemy.select(
             db.module_provider.c.id,
             db.module_provider.c.namespace,
             db.module_provider.c.module,
-            db.module_provider.c.provider
+            db.module_provider.c.provider,
+            db.analytics.c.analytics_token
         ).select_from(
             db.analytics
         ).join(
@@ -161,7 +162,16 @@ class AnalyticsEngine:
         select = select.group_by(
             db.analytics.c.analytics_token,
             db.module_provider.c.id
-        ).subquery()
+        )
+        return select
+
+    @staticmethod
+    def get_global_module_usage_counts(include_empty_auth_token=False):
+        """Return all analytics tokens, grouped by module provider."""
+        db = Database.get()
+        # Initial query to select all analytics joined to module version and module provider
+        select = AnalyticsEngine.get_global_module_usage_base_query(
+            include_empty_auth_token=include_empty_auth_token).subquery()
 
         # Select the count for each module provider, grouping by the analytics ID
         count_select = sqlalchemy.select(
@@ -349,7 +359,7 @@ class AnalyticsEngine:
         prometheus_generator = PrometheusGenerator()
         
         module_count_metric = PrometheusMetric(
-            name='module_providers_count_total',
+            name='module_providers_count',
             type_='counter',
             help='Total number of module providers'
         )
@@ -358,14 +368,17 @@ class AnalyticsEngine:
 
         module_provider_usage_metric = PrometheusMetric(
             'module_provider_usage',
-            type_='',
+            type_='counter',
             help='Analytics tokens used in a module provider'
         )
-        for module_provider_id, analytics_token in AnalyticsEngine.get_global_module_usage(include_empty_auth_token=True):
+        db = Database.get()
+        with db.get_connection() as conn:
+            rows = conn.execute(AnalyticsEngine.get_global_module_usage_base_query(include_empty_auth_token=True))
+        for row in rows:
             module_provider_usage_metric.add_data_row(
                 value='1',
-                labels={'module_provider_id': module_provider_id,
-                        'analytics_token': analytics_token}
+                labels={'module_provider_id': '{}/{}/{}'.format(row['namespace'], row['module'], row['provider']),
+                        'analytics_token': row['analytics_token']}
             )
         prometheus_generator.add_metric(module_provider_usage_metric)
 
@@ -385,7 +398,7 @@ class PrometheusMetric:
     def add_data_row(self, value, labels=None):
         """Add data row for """
         labels = {} if labels is None else labels
-        label_strings = [f'{key}={labels[key]}' for key in labels]
+        label_strings = [f'{key}="{labels[key]}"' for key in labels]
         label_string = ', '.join(label_strings)
         if label_string:
             label_string = '{' + label_string + '}'
