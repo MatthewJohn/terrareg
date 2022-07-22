@@ -373,7 +373,7 @@ class AnalyticsEngine:
         )
         db = Database.get()
         with db.get_connection() as conn:
-            rows = conn.execute(AnalyticsEngine.get_global_module_usage_base_query(include_empty_auth_token=True))
+            rows = conn.execute(AnalyticsEngine.get_global_module_usage_base_query(include_empty_auth_token=True)).fetchall()
         for row in rows:
             module_provider_usage_metric.add_data_row(
                 value='1',
