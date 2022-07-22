@@ -346,18 +346,49 @@ class AnalyticsEngine:
     @classmethod
     def get_prometheus_metrics(cls):
         """Return prometheus metrics for modules and usage."""
-        response_lines = []
-
-        def add_prometheus_metric(key, value, type_, comment):
-            """Add line to prometheus metrics."""
-            response_lines.append(f'# HELP {key} {comment}')
-            response_lines.append(f'# TYPE {key} {type_}')
-            response_lines.append(f'{key} {value}')
-
-        add_prometheus_metric(
-            key='module_providers_count_total',
-            value=terrareg.models.ModuleProvider.get_total_count(),
+        prometheus_generator = PrometheusGenerator()
+        
+        module_count_metric = PrometheusMetric(
+            name='module_providers_count_total',
             type_='counter',
-            comment='Total number of module providers')
+            help='Total number of module providers'
+        )
+        module_count_metric.add_data_row(value=terrareg.models.ModuleProvider.get_total_count())
+        prometheus_generator.add_metric(module_count_metric)
 
-        return '\n'.join(response_lines)
+        return prometheus_generator.generate()
+
+
+class PrometheusMetric:
+    def __init__(self, name, type_, help):
+        self._name = name
+        self._type = type_
+        self._help = help
+        self._lines = [
+            f'# HELP {self._name} {self._help}',
+            f'# TYPE {self._name} {self._type}'
+        ]
+
+    def add_data_row(self, value, labels=None):
+        """Add data row for """
+        labels = {} if labels is None else labels
+        label_strings = [f'{key}={labels[key]}' for key in labels]
+        label_string = ', '.join(label_strings)
+        if label_string:
+            label_string = '{' + label_string + '}'
+
+        self._lines.append(f'{self._name}{label_string} {value}')
+
+    def generate(self):
+        return self._lines
+
+class PrometheusGenerator:
+
+    def __init__(self):
+        self._lines = []
+
+    def add_metric(self, metric: PrometheusMetric):
+        self._lines += metric.generate()
+
+    def generate(self):
+        return '\n'.join(self._lines)
