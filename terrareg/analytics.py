@@ -386,7 +386,10 @@ class AnalyticsEngine:
 
 
 class PrometheusMetric:
+    """Prometheus metric"""
+
     def __init__(self, name, type_, help):
+        """Store memeber variables and initailise help and type lines."""
         self._name = name
         self._type = type_
         self._help = help
@@ -396,7 +399,7 @@ class PrometheusMetric:
         ]
 
     def add_data_row(self, value, labels=None):
-        """Add data row for """
+        """Add data row, with optional labels"""
         labels = {} if labels is None else labels
         label_strings = [f'{key}="{labels[key]}"' for key in labels]
         label_string = ', '.join(label_strings)
@@ -406,15 +409,20 @@ class PrometheusMetric:
         self._lines.append(f'{self._name}{label_string} {value}')
 
     def generate(self):
+        """Return generated lines for metric."""
         return self._lines
 
 class PrometheusGenerator:
+    """Generate prometheus metrics output"""
 
     def __init__(self):
+        """Initialise empty data"""
         self._lines = []
 
     def add_metric(self, metric: PrometheusMetric):
+        """Add metrics from a PromethiusMetric object."""
         self._lines += metric.generate()
 
     def generate(self):
+        """Generate output for prometheus metrics"""
         return '\n'.join(self._lines)
