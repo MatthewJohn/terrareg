@@ -894,6 +894,12 @@ class ModuleProvider(object):
             sanitised_git_tag_format = None
         self.update_attributes(git_tag_format=sanitised_git_tag_format)
 
+    def update_git_path(self, git_path):
+        """Update git_path attribute"""
+        # Sanity check path
+        safe_join_paths('/somepath/somesubpath', git_path)
+        self.update_attributes(git_path=git_path)
+
     def update_repo_clone_url_template(self, repo_clone_url_template):
         """Update repository URL for module provider."""
         if repo_clone_url_template:
