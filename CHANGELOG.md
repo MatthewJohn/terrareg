@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.29.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.29.2...v2.29.3) (2022-07-22)
+
+
+### Bug Fixes
+
+* Fix values in string arguments in usage builder. ([2c3e838](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2c3e8383c59f77c967c45a20b8b5c34c6e0504bd)), closes [#202](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/202)
+
 ## [2.29.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.29.1...v2.29.2) (2022-07-21)
 
 
