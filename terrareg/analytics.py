@@ -356,6 +356,19 @@ class AnalyticsEngine:
         module_count_metric.add_data_row(value=terrareg.models.ModuleProvider.get_total_count())
         prometheus_generator.add_metric(module_count_metric)
 
+        module_provider_usage_metric = PrometheusMetric(
+            'module_provider_usage',
+            type_='',
+            help='Analytics tokens used in a module provider'
+        )
+        for module_provider_id, analytics_token in AnalyticsEngine.get_global_module_usage(include_empty_auth_token=True):
+            module_provider_usage_metric.add_data_row(
+                value='1',
+                labels={'module_provider_id': module_provider_id,
+                        'analytics_token': analytics_token}
+            )
+        prometheus_generator.add_metric(module_provider_usage_metric)
+
         return prometheus_generator.generate()
 
 
