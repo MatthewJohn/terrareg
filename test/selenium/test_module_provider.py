@@ -499,7 +499,7 @@ module "fullypopulated" {{
             'https://module-version.com/{namespace}/{module}-{provider}/browse',
             False,
             False,
-            'https://base-url.com/moduledetails/fullypopulated-testprovider/browse'
+            'https://base-url.com/moduledetails/fullypopulated-testprovider'
         ),
         # - example
         (
@@ -511,7 +511,7 @@ module "fullypopulated" {{
             'https://module-version.com/{namespace}/{module}-{provider}/browse',
             False,
             False,
-            'https://base-url.com/moduledetails/fullypopulated-testprovider/browse'
+            'https://base-url.com/moduledetails/fullypopulated-testprovider'
         ),
         # - submodule
         (
@@ -523,7 +523,7 @@ module "fullypopulated" {{
             'https://module-version.com/{namespace}/{module}-{provider}/browse',
             False,
             False,
-            'https://base-url.com/moduledetails/fullypopulated-testprovider/browse'
+            'https://base-url.com/moduledetails/fullypopulated-testprovider'
         ),
         # Test with no browse URLs configured and all custom URLs disabled and not git provider
         # - base URL
