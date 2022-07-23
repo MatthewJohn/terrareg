@@ -1383,7 +1383,7 @@ module "fullypopulated" {{
             # Check git provider dropdown
             git_provider_select_element = self.selenium_instance.find_element(By.ID, 'settings-git-provider')
 
-            expected_git_providers = ['testgitprovider', 'repo_url_tests', 'repo_url_tests_uri_encoded']
+            expected_git_providers = ['testgitprovider', 'repo_url_tests', 'repo_url_tests_uri_encoded', 'no_browse_url']
             if allow_custom_git_url_setting:
                 expected_git_providers.insert(0, 'Custom')
 
