@@ -114,15 +114,22 @@ class SeleniumTest(BaseTest):
     @classmethod
     def _setup_server(cls):
         """Setup web server."""
-        cls.SERVER.port = random.randint(5000, 6000)
-
         # Replicate APP key setting from Server.run
         cls.SERVER._app.secret_key = terrareg.config.Config().SECRET_KEY
 
-        cls._werzeug_server = werkzeug.serving.make_server(
-            "localhost",
-            cls.SERVER.port,
-            cls.SERVER._app)
+        while True:
+            cls.SERVER.port = random.randint(5000, 6000)
+            try:
+                cls._werzeug_server = werkzeug.serving.make_server(
+                    "localhost",
+                    cls.SERVER.port,
+                    cls.SERVER._app)
+                break
+            except OSError as exc:
+                if '[Errno 98] Address already in use' not in str(exc):
+                    raise
+                print('Selected port already in use')
+
         cls._server_thread = threading.Thread(
             target=cls._werzeug_server.serve_forever
         )

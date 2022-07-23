@@ -897,12 +897,6 @@ class ModuleProvider(object):
     def update_repo_clone_url_template(self, repo_clone_url_template):
         """Update repository URL for module provider."""
         if repo_clone_url_template:
-            # Check whether custom URLs is disabled, if attempting to set to a URL
-            if not terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
-                raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
-                    'Custom module provider git repository URL cannot be set.'
-                )
-
             converted_template = repo_clone_url_template.format(
                 namespace=self._module._namespace.name,
                 module=self._module.name,
@@ -933,11 +927,7 @@ class ModuleProvider(object):
     def update_repo_browse_url_template(self, repo_browse_url_template):
         """Update browse URL template for module provider."""
         if repo_browse_url_template:
-            # Check whether custom URLs is disabled, if attempting to set to a URL
-            if not terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
-                raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
-                    'Custom module provider git repository URL cannot be set.'
-                )
+
             GitUrlValidator(repo_browse_url_template).validate(
                 requires_path_placeholder=True,
                 requires_tag_placeholder=True
@@ -975,11 +965,6 @@ class ModuleProvider(object):
     def update_repo_base_url_template(self, repo_base_url_template):
         """Update browse URL template for module provider."""
         if repo_base_url_template:
-            # Check whether custom URLs is disabled, if attempting to set to a URL
-            if not terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER:
-                raise ModuleProviderCustomGitRepositoryUrlNotAllowedError(
-                    'Custom module provider git repository URL cannot be set.'
-                )
 
             converted_template = repo_base_url_template.format(
                 namespace=self._module._namespace.name,
@@ -2068,7 +2053,7 @@ class BaseSubmodule(TerraformSpecsObject):
         api_details = self.get_api_module_specs()
         source_browse_url = self.get_source_browse_url()
         api_details.update({
-            "display_source_url": source_browse_url if source_browse_url else None,
+            "display_source_url": source_browse_url if source_browse_url else self._module_version.get_source_base_url(),
             "security_failures": self.get_tfsec_failure_count()
         })
         return api_details
