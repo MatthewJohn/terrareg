@@ -20,6 +20,7 @@ class TestModuleProvider(SeleniumTest):
         cls._api_version_publish_mock = mock.Mock(return_value={'status': 'Success'})
         cls._config_publish_api_keys_mock = mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', [])
         cls._config_allow_custom_repo_urls_module_provider = mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', True)
+        cls._config_allow_custom_repo_urls_module_version = mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', True)
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.SECRET_KEY', '354867a669ef58d17d0513a0f3d02f4403354915139422a8931661a3dbccdffe'))
@@ -27,6 +28,7 @@ class TestModuleProvider(SeleniumTest):
         cls.register_patch(mock.patch('terrareg.server.ApiTerraregModuleVersionPublish._post', cls._api_version_publish_mock))
         cls.register_patch(cls._config_publish_api_keys_mock)
         cls.register_patch(cls._config_allow_custom_repo_urls_module_provider)
+        cls.register_patch(cls._config_allow_custom_repo_urls_module_version)
 
         super(TestModuleProvider, cls).setup_class()
 
@@ -213,28 +215,551 @@ module "fullypopulated" {{
         assert security_issues.text == '1 Security issues'
 
 
-    @pytest.mark.parametrize('url,expected_source', [
-        # Test latest version with root module
-        ('/modules/moduledetails/fullypopulated/testprovider',
-         'https://mp-browse-url.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/suffix'),
-        # Test non-latest version
-        ('/modules/moduledetails/fullypopulated/testprovider/1.2.0',
-         'https://mp-browse-url.com/moduledetails/fullypopulated-testprovider/browse/1.2.0/suffix'),
-        # Test example
-        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
-         'https://mp-browse-url.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/examples/test-examplesuffix'),
-        # Test submodule
-        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
-         'https://mp-browse-url.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/modules/example-submodule1suffix')
+    @pytest.mark.parametrize('url,git_provider_id,module_provider_browse_url_template,module_provider_base_url_template,module_version_browse_url_template,module_version_base_url_template,allow_custom_git_urls_module_provider,allow_custom_git_urls_module_version,expected_source', [
+        # Test with all URLs configured and all custom URLs allowed
+        # - base URL
+        (
+            '/modules/moduledetails/fullypopulated/testprovider',
+            1,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            True,
+            'https://module-version.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/suffix'
+        ),
+        # - non-latest version
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
+            1,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            True,
+            'https://module-version.com/moduledetails/fullypopulated-testprovider/browse/1.2.0/suffix'
+        ),
+        # - example
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
+            1,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            True,
+            'https://module-version.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/examples/test-examplesuffix'
+        ),
+        # - submodule
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+            1,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            True,
+            'https://module-version.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/modules/example-submodule1suffix'
+        ),
+        # Test with all URLs configured and custom module version URLs disabled
+        # - base URL
+        (
+            '/modules/moduledetails/fullypopulated/testprovider',
+            1,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            False,
+            'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/suffix'
+        ),
+        # - non-latest version
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
+            1,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            False,
+            'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse/1.2.0/suffix'
+        ),
+        # - example
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
+            1,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            False,
+            'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/examples/test-examplesuffix'
+        ),
+        # - submodule
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+            1,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            False,
+            'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/modules/example-submodule1suffix'
+        ),
+        # Test with all URLs configured and all custom module URLs disabled
+        # - base URL
+        (
+            '/modules/moduledetails/fullypopulated/testprovider',
+            1,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            False,
+            False,
+            'https://localhost.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/'
+        ),
+        # - non-latest version
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
+            1,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            False,
+            False,
+            'https://localhost.com/moduledetails/fullypopulated-testprovider/browse/1.2.0/'
+        ),
+        # - example
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
+            1,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            False,
+            False,
+            'https://localhost.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/examples/test-example'
+        ),
+        # - submodule
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+            1,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            False,
+            False,
+            'https://localhost.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/modules/example-submodule1'
+        ),
+        # Test with all URLs configured except module version browse and all custom URLs enabled
+        # - base URL
+        (
+            '/modules/moduledetails/fullypopulated/testprovider',
+            1,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            True,
+            'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/suffix'
+        ),
+        # - non-latest version
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
+            1,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            True,
+            'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse/1.2.0/suffix'
+        ),
+        # - example
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
+            1,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            True,
+            'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/examples/test-examplesuffix'
+        ),
+        # - submodule
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+            1,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            True,
+            'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/modules/example-submodule1suffix'
+        ),
+        # Test with all URLs configured except module version/provider browse and all custom URLs enabled
+        # - base URL
+        (
+            '/modules/moduledetails/fullypopulated/testprovider',
+            1,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            True,
+            'https://localhost.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/'
+        ),
+        # - non-latest version
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
+            1,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            True,
+            'https://localhost.com/moduledetails/fullypopulated-testprovider/browse/1.2.0/'
+        ),
+        # - example
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
+            1,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            True,
+            'https://localhost.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/examples/test-example'
+        ),
+        # - submodule
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+            1,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            True,
+            'https://localhost.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/modules/example-submodule1'
+        ),
+        # Test with no browse URLs configured and all custom URLs enabled, testing revert to base URL
+        # - base URL
+        (
+            '/modules/moduledetails/fullypopulated/testprovider',
+            4,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            True,
+            'https://module-version.com/moduledetails/fullypopulated-testprovider/browse'
+        ),
+        # - non-latest version
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
+            4,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            True,
+            'https://module-version.com/moduledetails/fullypopulated-testprovider/browse'
+        ),
+        # - example
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
+            4,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            True,
+            'https://module-version.com/moduledetails/fullypopulated-testprovider/browse'
+        ),
+        # - submodule
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+            4,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            True,
+            'https://module-version.com/moduledetails/fullypopulated-testprovider/browse'
+        ),
+        # Test with no browse URLs configured and module version custom URLs disabled, testing revert to base URL
+        # - base URL
+        (
+            '/modules/moduledetails/fullypopulated/testprovider',
+            4,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            False,
+            'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse'
+        ),
+        # - non-latest version
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
+            4,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            False,
+            'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse'
+        ),
+        # - example
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
+            4,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            False,
+            'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse'
+        ),
+        # - submodule
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+            4,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            True,
+            False,
+            'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse'
+        ),
+        # Test with no browse URLs configured and all custom URLs disabled, testing revert to base URL
+        # - base URL
+        (
+            '/modules/moduledetails/fullypopulated/testprovider',
+            4,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            False,
+            False,
+            'https://base-url.com/moduledetails/fullypopulated-testprovider/browse'
+        ),
+        # - non-latest version
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
+            4,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            False,
+            False,
+            'https://base-url.com/moduledetails/fullypopulated-testprovider/browse'
+        ),
+        # - example
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
+            4,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            False,
+            False,
+            'https://base-url.com/moduledetails/fullypopulated-testprovider/browse'
+        ),
+        # - submodule
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+            4,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            False,
+            False,
+            'https://base-url.com/moduledetails/fullypopulated-testprovider/browse'
+        ),
+        # Test with no browse URLs configured and all custom URLs disabled and not git provider
+        # - base URL
+        (
+            '/modules/moduledetails/fullypopulated/testprovider',
+            None,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            False,
+            False,
+            None
+        ),
+        # - non-latest version
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
+            None,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            False,
+            False,
+            None
+        ),
+        # - example
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
+            None,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            False,
+            False,
+            None
+        ),
+        # - submodule
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+            None,
+            None,
+            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
+            None,
+            'https://module-version.com/{namespace}/{module}-{provider}/browse',
+            False,
+            False,
+            None
+        ),
+        # Test with no URLs configured and all custom URLs enabled and not git provider
+        # - base URL
+        (
+            '/modules/moduledetails/fullypopulated/testprovider',
+            None,
+            None,
+            None,
+            None,
+            None,
+            True,
+            True,
+            None
+        ),
+        # - non-latest version
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
+            None,
+            None,
+            None,
+            None,
+            None,
+            True,
+            True,
+            None
+        ),
+        # - example
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
+            None,
+            None,
+            None,
+            None,
+            None,
+            True,
+            True,
+            None
+        ),
+        # - submodule
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+            None,
+            None,
+            None,
+            None,
+            None,
+            True,
+            True,
+            None
+        ),
     ])
-    def test_source_code_urls(self, url, expected_source):
+    def test_source_code_urls(self, url, git_provider_id,
+                              module_provider_browse_url_template, module_provider_base_url_template,
+                              module_version_browse_url_template, module_version_base_url_template,
+                              allow_custom_git_urls_module_provider, allow_custom_git_urls_module_version,
+                              expected_source):
         """Test source code URL shown."""
-        self.selenium_instance.get(self.get_url(url))
 
-        # Ensure security issues are displayed
-        security_issues = self.wait_for_element(By.ID, 'source-url')
-        assert security_issues.is_displayed() == True
-        assert security_issues.text == f'Source code: {expected_source}'
+        module_provider = ModuleProvider.get(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
+        module_version = ModuleVersion.get(module_provider, '1.5.0')
+        module_provider_row = module_provider._get_db_row()
+        module_version_row = module_version._get_db_row()
+
+        original_git_provider_id = module_provider_row['git_provider_id']
+        original_module_provider_browse_url_template = module_provider_row['repo_browse_url_template']
+        original_module_provider_base_url_template = module_provider_row['repo_base_url_template']
+        original_module_version_browse_url_template = module_version_row['repo_browse_url_template']
+        original_module_version_base_url_template = module_version_row['repo_base_url_template']
+
+
+        try:
+            module_version.update_attributes(
+                repo_browse_url_template=module_version_browse_url_template,
+                repo_base_url_template=module_version_base_url_template)
+            module_provider.update_attributes(
+                git_provider_id=git_provider_id,
+                repo_browse_url_template=module_provider_browse_url_template,
+                repo_base_url_template=module_provider_base_url_template
+            )
+
+            with self.update_mock(self._config_allow_custom_repo_urls_module_provider, 'new', allow_custom_git_urls_module_provider), \
+                    self.update_mock(self._config_allow_custom_repo_urls_module_version, 'new', allow_custom_git_urls_module_version):
+
+                self.selenium_instance.get(self.get_url(url))
+
+                # Ensure source code URL is correct
+                source_url = self.wait_for_element(By.ID, 'source-url', ensure_displayed=False)
+                if expected_source:
+                    self.assert_equals(lambda: source_url.is_displayed(), True)
+                    assert source_url.text == f'Source code: {expected_source}'
+                else:
+                    # Wait for inputs tab
+                    self.wait_for_element(By.ID, 'module-tab-link-inputs')
+                    assert source_url.is_displayed() == False
+
+        finally:
+            module_version.update_attributes(
+                repo_browse_url_template=original_module_version_browse_url_template,
+                repo_base_url_template=original_module_version_base_url_template)
+            module_provider.update_attributes(
+                git_provider_id=original_git_provider_id,
+                repo_browse_url_template=original_module_provider_browse_url_template,
+                repo_base_url_template=original_module_provider_base_url_template
+            )
 
     @pytest.mark.parametrize('url,expected_readme_content', [
         # Root module

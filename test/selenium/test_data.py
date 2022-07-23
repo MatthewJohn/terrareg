@@ -23,6 +23,12 @@ integration_git_providers = {
         'base_url_template': 'https://base-url.com/{namespace}/{module}-{provider}',
         'browse_url_template': 'https://browse-url.com/{namespace}/{module}-{provider}/browse/{path}?at={tag_uri_encoded}',
         'clone_url_template': 'ssh://clone-url.com/{namespace}/{module}-{provider}'
+    },
+    4: {
+        'name': 'no_browse_url',
+        'base_url_template': 'https://base-url.com/{namespace}/{module}-{provider}',
+        'browse_url_template': None,
+        'clone_url_template': 'ssh://clone-url.com/{namespace}/{module}-{provider}'
     }
 }
 
