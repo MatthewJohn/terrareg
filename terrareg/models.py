@@ -2053,7 +2053,7 @@ class BaseSubmodule(TerraformSpecsObject):
         api_details = self.get_api_module_specs()
         source_browse_url = self.get_source_browse_url()
         api_details.update({
-            "display_source_url": source_browse_url if source_browse_url else None,
+            "display_source_url": source_browse_url if source_browse_url else self._module_version.get_source_base_url(),
             "security_failures": self.get_tfsec_failure_count()
         })
         return api_details
