@@ -229,7 +229,8 @@ module "fullypopulated" {{
             True,
             'https://module-version.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/suffix'
         ),
-        # - non-latest version
+        # - non-latest version, defaults to using module provider, as the module version
+        # has been configured in the latest version
         (
             '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
             1,
@@ -239,7 +240,7 @@ module "fullypopulated" {{
             'https://module-version.com/{namespace}/{module}-{provider}/browse',
             True,
             True,
-            'https://module-version.com/moduledetails/fullypopulated-testprovider/browse/1.2.0/suffix'
+            'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse/1.2.0/suffix'
         ),
         # - example
         (
@@ -278,18 +279,6 @@ module "fullypopulated" {{
             False,
             'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/suffix'
         ),
-        # - non-latest version
-        (
-            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
-            1,
-            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
-            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
-            'https://module-version.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
-            'https://module-version.com/{namespace}/{module}-{provider}/browse',
-            True,
-            False,
-            'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse/1.2.0/suffix'
-        ),
         # - example
         (
             '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
@@ -326,18 +315,6 @@ module "fullypopulated" {{
             False,
             False,
             'https://localhost.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/'
-        ),
-        # - non-latest version
-        (
-            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
-            1,
-            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
-            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
-            'https://module-version.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
-            'https://module-version.com/{namespace}/{module}-{provider}/browse',
-            False,
-            False,
-            'https://localhost.com/moduledetails/fullypopulated-testprovider/browse/1.2.0/'
         ),
         # - example
         (
@@ -376,18 +353,6 @@ module "fullypopulated" {{
             True,
             'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/suffix'
         ),
-        # - non-latest version
-        (
-            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
-            1,
-            'https://module-provider.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
-            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
-            None,
-            'https://module-version.com/{namespace}/{module}-{provider}/browse',
-            True,
-            True,
-            'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse/1.2.0/suffix'
-        ),
         # - example
         (
             '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
@@ -425,18 +390,6 @@ module "fullypopulated" {{
             True,
             'https://localhost.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/'
         ),
-        # - non-latest version
-        (
-            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
-            1,
-            None,
-            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
-            None,
-            'https://module-version.com/{namespace}/{module}-{provider}/browse',
-            True,
-            True,
-            'https://localhost.com/moduledetails/fullypopulated-testprovider/browse/1.2.0/'
-        ),
         # - example
         (
             '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
@@ -465,18 +418,6 @@ module "fullypopulated" {{
         # - base URL
         (
             '/modules/moduledetails/fullypopulated/testprovider',
-            4,
-            None,
-            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
-            None,
-            'https://module-version.com/{namespace}/{module}-{provider}/browse',
-            True,
-            True,
-            'https://module-version.com/moduledetails/fullypopulated-testprovider/browse'
-        ),
-        # - non-latest version
-        (
-            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
             4,
             None,
             'https://module-provider.com/{namespace}/{module}-{provider}/browse',
@@ -523,18 +464,6 @@ module "fullypopulated" {{
             False,
             'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse'
         ),
-        # - non-latest version
-        (
-            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
-            4,
-            None,
-            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
-            None,
-            'https://module-version.com/{namespace}/{module}-{provider}/browse',
-            True,
-            False,
-            'https://module-provider.com/moduledetails/fullypopulated-testprovider/browse'
-        ),
         # - example
         (
             '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
@@ -563,18 +492,6 @@ module "fullypopulated" {{
         # - base URL
         (
             '/modules/moduledetails/fullypopulated/testprovider',
-            4,
-            None,
-            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
-            None,
-            'https://module-version.com/{namespace}/{module}-{provider}/browse',
-            False,
-            False,
-            'https://base-url.com/moduledetails/fullypopulated-testprovider/browse'
-        ),
-        # - non-latest version
-        (
-            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
             4,
             None,
             'https://module-provider.com/{namespace}/{module}-{provider}/browse',
@@ -621,18 +538,6 @@ module "fullypopulated" {{
             False,
             None
         ),
-        # - non-latest version
-        (
-            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
-            None,
-            None,
-            'https://module-provider.com/{namespace}/{module}-{provider}/browse',
-            None,
-            'https://module-version.com/{namespace}/{module}-{provider}/browse',
-            False,
-            False,
-            None
-        ),
         # - example
         (
             '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
@@ -661,18 +566,6 @@ module "fullypopulated" {{
         # - base URL
         (
             '/modules/moduledetails/fullypopulated/testprovider',
-            None,
-            None,
-            None,
-            None,
-            None,
-            True,
-            True,
-            None
-        ),
-        # - non-latest version
-        (
-            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
             None,
             None,
             None,
