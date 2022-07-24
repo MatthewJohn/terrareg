@@ -1913,6 +1913,13 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             location='json'
         )
         parser.add_argument(
+            'git_path', type=str,
+            required=False,
+            default=None,
+            help='Path within git repository that the module exists.',
+            location='json'
+        )
+        parser.add_argument(
             'verified', type=inputs.boolean,
             required=False,
             default=None,
@@ -1994,6 +2001,11 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         git_tag_format = args.git_tag_format
         if git_tag_format is not None:
             module_provider.update_git_tag_format(git_tag_format)
+
+        # Update git path
+        git_path = args.git_path
+        if git_path is not None:
+            module_provider.update_git_path(git_path=git_path)
 
         if args.verified is not None:
             module_provider.update_attributes(verified=args.verified)

@@ -1162,6 +1162,7 @@ class ModuleProvider(object):
             "module_provider_id": self.id,
             "git_provider_id": git_provider.pk if git_provider else None,
             "git_tag_format": self.git_tag_format,
+            "git_path": self.git_path,
             "repo_base_url_template": self._get_db_row()['repo_base_url_template'],
             "repo_clone_url_template": self._get_db_row()['repo_clone_url_template'],
             "repo_browse_url_template": self._get_db_row()['repo_browse_url_template']
