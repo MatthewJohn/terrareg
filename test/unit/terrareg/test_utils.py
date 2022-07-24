@@ -23,6 +23,12 @@ class TestSafeJoinPaths(TerraregUnitTest):
         # Test with relative path within sub-directory
         ('/root_dir', ['/subdirectory', '../actualdirectory'], '/root_dir/actualdirectory'),
 
+        # Test with lots of slashes
+        ('/root_dir', ['.//lots///of//slashes/'], '/root_dir/lots/of/slashes'),
+
+        # Test starting from rooot
+        ('/', ['test_subdir'], '/test_subdir')
+
     ])
     def test_valid_paths(self, base_dir, sub_paths, expected_output):
         """Test valid path using safe_join_paths method."""
@@ -45,4 +51,23 @@ class TestSafeJoinPaths(TerraregUnitTest):
         """Test valid path using safe_join_paths method."""
         with pytest.raises(terrareg.utils.PathIsNotWithinBaseDirectoryError):
             assert terrareg.utils.safe_join_paths(base_dir, *sub_paths)
+
+    @pytest.mark.parametrize('is_allowed', [True, False])
+    @pytest.mark.parametrize('base_dir,sub_paths', [
+        ('/test', ['testsub/..']),
+        ('/testdir', ['./testsubdirectory/../']),
+        ('/testdir', ['./testsubdir', '../']),
+        ('/testdir', ['./testsubdir', '..']),
+        ('/testdir', ['/']),
+        ('/testdir', ['./']),
+        ('/testdir', ['/./']),
+        ('/', ['/./']),
+    ])
+    def test_matching_directories(self, is_allowed, base_dir, sub_paths):
+        """Test valid path using safe_join_paths method."""
+        if is_allowed:
+            assert terrareg.utils.safe_join_paths(base_dir, *sub_paths, allow_same_directory=True) == base_dir
+        else:
+            with pytest.raises(terrareg.utils.PathIsNotWithinBaseDirectoryError):
+                assert terrareg.utils.safe_join_paths(base_dir, *sub_paths)
 

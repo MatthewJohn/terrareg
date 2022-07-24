@@ -17,7 +17,7 @@ class PathIsNotWithinBaseDirectoryError(TerraregError):
     pass
 
 
-def safe_join_paths(base_dir, *sub_paths, is_dir=False, is_file=False):
+def safe_join_paths(base_dir, *sub_paths, is_dir=False, is_file=False, allow_same_directory=False):
     """Combine base_dir and sub_path and ensure directory """
 
     # Ensure all of the sub_paths start with a relative path, if they start with a slash
@@ -30,7 +30,8 @@ def safe_join_paths(base_dir, *sub_paths, is_dir=False, is_file=False):
 
     return check_subdirectory_within_base_dir(
         base_dir=base_dir, sub_dir=joined_path,
-        is_dir=is_dir, is_file=is_file)
+        is_dir=is_dir, is_file=is_file,
+        allow_same_directory=allow_same_directory)
 
 def safe_iglob(base_dir, pattern, recursive, is_file=False, is_dir=False):
     """Perform iglob, ensuring that each of the returned values is within the base directory."""
@@ -43,7 +44,7 @@ def safe_iglob(base_dir, pattern, recursive, is_file=False, is_dir=False):
         ))
     return results
 
-def check_subdirectory_within_base_dir(base_dir, sub_dir, is_dir=False, is_file=False):
+def check_subdirectory_within_base_dir(base_dir, sub_dir, is_dir=False, is_file=False, allow_same_directory=False):
     """
     Ensure directory is within base directory.
     Sub directory should be full paths - it should not be relative to the base_dir.
@@ -69,8 +70,12 @@ def check_subdirectory_within_base_dir(base_dir, sub_dir, is_dir=False, is_file=
     ## Ensure sub-path starts wtih base path.
     ## Append trailing slash to ensure, to avoid
     ## allowing /opt/test-this with a base directory of /opt/test
+    ## If allowing the sub directory to match the base directory,
+    ## optionally allow if real_sub_dir equals the base
     real_base_path_trailing_slash = '{0}/'.format(real_base_path) if real_base_path != '/' else real_base_path
-    if not real_sub_dir.startswith(real_base_path_trailing_slash):
+    if (((not allow_same_directory or real_sub_dir != real_base_path) and
+         not real_sub_dir.startswith(real_base_path_trailing_slash)) or
+        (not allow_same_directory and real_sub_dir == real_base_path)):
         raise PathIsNotWithinBaseDirectoryError('Sub path is not within base directory')
 
     if is_dir:
