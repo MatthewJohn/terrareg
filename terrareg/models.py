@@ -1732,6 +1732,10 @@ class ModuleVersion(TerraformSpecsObject):
         # Check if git_path has been set and prepend to path, if set.
         path = os.path.join(self.git_path or '', path or '')
 
+        # Remove any trailing slashses from path
+        if path and path.endswith('/'):
+            path = path[:-1]
+
         # Return rendered version of template
         if template:
             validator = GitUrlValidator(template)
