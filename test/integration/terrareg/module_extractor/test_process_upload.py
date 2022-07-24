@@ -467,6 +467,23 @@ class TestProcessUpload(TerraregIntegrationTest):
         # Ensure README is present in module version
         assert module_version.get_readme_content() == UploadTestModule.TEST_README_CONTENT
 
+        # Ensure terraform docs output contains variable and output
+        assert module_version.get_terraform_inputs() == [
+            {
+                'default': 'test_default_val',
+                'description': 'This is a test input',
+                'name': 'test_input',
+                'required': False,
+                'type': 'string'
+            }
+        ]
+        assert module_version.get_terraform_outputs() == [
+            {
+                'description': 'test output',
+                'name': 'test_output'
+            }
+        ]
+
         # Check submodules
         submodules = module_version.get_submodules()
         submodules.sort(key=lambda x: x.path)
