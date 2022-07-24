@@ -1739,7 +1739,7 @@ class ModuleVersion(TerraformSpecsObject):
                 tag=self.source_git_tag,
                 # Default path to empty string to avoid
                 # adding 'None' to string
-                path=(path if path else '')
+                path=(path if path else self.git_path)
             )
 
         return None
@@ -2099,7 +2099,7 @@ class BaseSubmodule(TerraformSpecsObject):
 
     def get_source_browse_url(self):
         """Get formatted source browse URL"""
-        return self._module_version.get_source_browse_url(path=self.path)
+        return self._module_version.get_source_browse_url(path=self.git_path)
 
     def get_source_download_url(self):
         """Get formatted source download URL"""
