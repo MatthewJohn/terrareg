@@ -634,3 +634,11 @@ module &quot;test-usage3&quot; {
             module_version.module_details.update_attributes(readme_content=readme_content)
 
             assert module_version.get_readme_html(server_hostname='example.com').strip() == expected_output.strip()
+
+    def test_git_path(self):
+        """Test git_path property"""
+        # Ensure the git_path from the module provider is returned
+        with unittest.mock.patch('terrareg.models.ModuleProvider.git_path', 'unittest-git-path'):
+            module_provider = ModuleProvider.get(Module(Namespace('moduledetails'), 'git-path'), 'provider')
+            module_version = ModuleVersion.get(module_provider, '1.0.0')
+            assert module_version.git_path == 'unittest-git-path'

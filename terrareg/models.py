@@ -767,6 +767,26 @@ class ModuleProvider(object):
         # Return copmiled regex
         return re.compile(version_re)
 
+    @property
+    def git_path(self):
+        """Return path of module within git"""
+        row_value = self._get_db_row()['git_path']
+        # Strip leading slash or dot-slash
+        if row_value:
+            # Use safe_join_path twice:
+            # - check it doesn't traverse back any paths
+            # - remove any relative paths and return absolute path against root
+            #   and then trim the leading slash
+            safe_join_paths('/test_dir', row_value, allow_same_directory=True)
+            row_value = safe_join_paths('/', row_value, allow_same_directory=True)[1:]
+
+        # If git path is empty or is a path for the root directory, return None
+        if not row_value:
+            return None
+
+        # Otherwise, return the path
+        return row_value
+
     def get_version_from_tag_ref(self, tag_ref):
         """Match tag ref against version number and return actual version number."""
         # Handle empty/None tag_ref
@@ -900,7 +920,7 @@ class ModuleProvider(object):
         # check that it doesn't contain relative paths to escape the root directory
         if git_path and git_path != '/':
             # Sanity check path
-            safe_join_paths('/somepath/somesubpath', git_path)
+            safe_join_paths('/somepath/somesubpath', git_path, allow_same_directory=True)
         self.update_attributes(git_path=git_path)
 
     def update_repo_clone_url_template(self, repo_clone_url_template):
@@ -1221,6 +1241,12 @@ class TerraformSpecsObject(object):
     def path(self):
         """Return module path"""
         raise NotImplementedError
+
+    @property
+    def git_path(self):
+        """Return path of module within git"""
+        raise NotImplementedError
+
     @property
     def is_submodule(self):
         """Whether object is submodule."""
@@ -1513,6 +1539,11 @@ class ModuleVersion(TerraformSpecsObject):
         """Return module path"""
         # Root module is always empty
         return ''
+
+    @property
+    def git_path(self):
+        """Return path of module within git"""
+        return self._module_provider.git_path
 
     @property
     def id(self):
@@ -1985,6 +2016,16 @@ class BaseSubmodule(TerraformSpecsObject):
     def path(self):
         """Return module path"""
         return self._module_path
+
+    @property
+    def git_path(self):
+        """Return path of module within git"""
+        # Join git path for root module to path of submodule
+        root_module_path = self.module_version.git_path
+        if root_module_path:
+            return safe_join_paths('/', root_module_path, self.path)[1:]
+        else:
+            return self.path
 
     @property
     def id(self):

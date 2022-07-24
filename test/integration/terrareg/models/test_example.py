@@ -8,9 +8,11 @@ from terrareg.database import Database
 
 from terrareg.models import Example, ExampleFile, Module, Namespace, ModuleProvider, ModuleVersion
 import terrareg.errors
-from test.integration.terrareg import TerraregIntegrationTest
+from test.integration.terrareg.models.test_base_submodule import CommonBaseSubmodule
 
-class TestExample(TerraregIntegrationTest):
+class TestExample(CommonBaseSubmodule):
+
+    SUBMODULE_CLASS = Example
 
     @pytest.mark.parametrize('readme_content,expected_output', [
         # Test README with basic formatting

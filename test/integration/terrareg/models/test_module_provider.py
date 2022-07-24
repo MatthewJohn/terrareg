@@ -648,3 +648,22 @@ class TestModuleProvider(TerraregIntegrationTest):
             module_provider = ModuleProvider.get(module=module, name='providername', create=True)
             assert module_provider is not None
             assert module_provider._get_db_row()['id'] == 48
+
+    @pytest.mark.parametrize('git_path,expected_git_path', [
+        (None, None),
+        ('', None),
+        ('./', None),
+        ('/', None),
+        ('subpath', 'subpath'),
+        ('/subpath', 'subpath'),
+        ('./subpath', 'subpath'),
+        ('./subpath/', 'subpath'),
+        ('./test/another/dir', 'test/another/dir'),
+        ('./test/another/dir/', 'test/another/dir'),
+        ('.//lots/of///slashes//', 'lots/of/slashes')
+    ])
+    def test_git_path(self, git_path, expected_git_path):
+        """Test git_path property"""
+        module_provider = ModuleProvider.get(Module(Namespace('moduledetails'), 'git-path'), 'provider')
+        module_provider.update_git_path(git_path)
+        assert module_provider.git_path == expected_git_path
