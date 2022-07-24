@@ -39,7 +39,7 @@ unit-integration-selenium-tests:
     # Perform database migration
     - alembic upgrade head
     # Run integration tests
-    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose ./test
+    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose --junitxml=./pytest-report.xml ./test
     - coverage report --include='./terrareg/*'
     - coverage xml
   artifacts:
@@ -47,6 +47,7 @@ unit-integration-selenium-tests:
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
+      junit: pytest-report.xml
 
 mysql-integration-selenium-tests:
   stage: test
@@ -65,7 +66,7 @@ mysql-integration-selenium-tests:
     # Perform database migration
     - alembic upgrade head
     # Run integration tests
-    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose ./test/integration ./test/selenium
+    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose --junitxml=./pytest-report.xml ./test/integration ./test/selenium
     - coverage report --include='./terrareg/*'
     - coverage xml
   artifacts:
@@ -73,7 +74,7 @@ mysql-integration-selenium-tests:
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
-
+      junit: pytest-report.xml
 
 build-wheel:
   stage: build
