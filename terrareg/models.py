@@ -1691,6 +1691,13 @@ class ModuleVersion(TerraformSpecsObject):
             if not parsed_url.scheme.startswith('git::'):
                 rendered_url = 'git::{rendered_url}'.format(rendered_url=rendered_url)
 
+            # Check if git_path has been set and prepend to path, if set.
+            path = os.path.join(self.git_path or '', path or '')
+
+            # Remove any trailing slashses from path
+            if path and path.endswith('/'):
+                path = path[:-1]
+
             # Check if path is present for module (only used for submodules)
             if path:
                 rendered_url = '{rendered_url}//{path}'.format(
