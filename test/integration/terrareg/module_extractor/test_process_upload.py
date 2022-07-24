@@ -6,7 +6,7 @@ from unittest import mock
 import pytest
 
 import terrareg.errors
-from terrareg.models import Module, ModuleProvider, ModuleVersion, Namespace
+from terrareg.models import GitProvider, Module, ModuleProvider, ModuleVersion, Namespace
 from test.integration.terrareg import TerraregIntegrationTest
 from test import client
 from test.integration.terrareg.module_extractor import UploadTestModule
@@ -409,6 +409,83 @@ class TestProcessUpload(TerraregIntegrationTest):
         assert module_version.description == 'Test unittest description'
         assert module_version.owner == 'Test unittest owner'
         assert module_version.variable_template == [{'test_variable': {}}]
+
+    def test_non_root_repo_directory(self):
+        """Test uploading a module within a sub-directory of a module."""
+        test_upload = UploadTestModule()
+
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='git-path')
+        module_provider = ModuleProvider.get(module=module, name='test', create=True)
+
+        module_provider.update_git_provider(GitProvider(2))
+        module_provider.update_git_path('subdirectory/in/repo')
+
+        module_version = ModuleVersion(module_provider=module_provider, version='1.1.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+
+                module_dir = os.path.join(upload_directory, 'subdirectory/in/repo')
+                os.makedirs(module_dir)
+
+                # Create main.tf
+                with open(os.path.join(module_dir, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
+
+                with open(os.path.join(module_dir, 'terrareg.json'), 'w') as metadata_fh:
+                    metadata_fh.writelines(json.dumps({
+                        'description': 'Test unittest description',
+                        'owner': 'Test unittest owner'
+                    }))
+
+                # Create README
+                with open(os.path.join(module_dir, 'README.md'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines(UploadTestModule.TEST_README_CONTENT)
+
+                os.mkdir(os.path.join(module_dir, 'modules'))
+
+                # Create main.tf in each of the submodules
+                for itx in [1, 2]:
+                    root_dir = os.path.join(module_dir, 'modules', 'testmodule{itx}'.format(itx=itx))
+                    os.mkdir(root_dir)
+                    with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
+
+                os.mkdir(os.path.join(module_dir, 'examples'))
+
+                # Create main.tf in each of the examples
+                for itx in [1, 2]:
+                    root_dir = os.path.join(module_dir, 'examples', 'testexample{itx}'.format(itx=itx))
+                    os.mkdir(root_dir)
+                    with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
+
+            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+
+        # Ensure README is present in module version
+        assert module_version.get_readme_content() == UploadTestModule.TEST_README_CONTENT
+
+        # Check submodules
+        submodules = module_version.get_submodules()
+        submodules.sort(key=lambda x: x.path)
+        assert len(submodules) == 2
+        assert [sm.path for sm in submodules] == ['modules/testmodule1', 'modules/testmodule2']
+
+        # Check examples
+        examples = module_version.get_examples()
+        examples.sort(key=lambda x: x.path)
+        assert len(examples) == 2
+        assert [example.path for example in examples] == ['examples/testexample1', 'examples/testexample2']
+
+        # Check repo URLs
+        assert module_version.get_source_browse_url() == 'https://browse-url.com/testprocessupload/git-path-test/browse/1.1.0/subdirectory/in/reposuffix'
+        assert module_version.get_source_browse_url(path='subdir') == 'https://browse-url.com/testprocessupload/git-path-test/browse/1.1.0/subdirectory/in/repo/subdirsuffix'
+
+        # Check attributes from terrareg
+        assert module_version.description == 'Test unittest description'
+        assert module_version.owner == 'Test unittest owner'
 
     def test_uploading_module_with_invalid_terraform(self):
         """Test uploading a module with invalid terraform."""
