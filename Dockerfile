@@ -2,7 +2,7 @@ FROM python:3.10
 
 WORKDIR /
 
-RUN apt-get update && apt-get install --assume-yes curl unzip git && apt-get clean all
+RUN apt-get update && apt-get install --assume-yes curl unzip git libxmlsec1 libxmlsec1-openssl libffi-dev && apt-get clean all
 
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     then \
