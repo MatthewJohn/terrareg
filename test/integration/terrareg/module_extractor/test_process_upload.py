@@ -496,19 +496,6 @@ class TestProcessUpload(TerraregIntegrationTest):
         assert len(examples) == 2
         assert [example.path for example in examples] == ['examples/testexample1', 'examples/testexample2']
 
-        # Check repo URLs
-        assert module_version.get_source_browse_url() == 'https://browse-url.com/testprocessupload/git-path-test/browse/1.1.0/subdirectory/in/reposuffix'
-        assert [example.get_source_browse_url() for example in examples] == [
-            'https://browse-url.com/testprocessupload/git-path-test/browse/1.1.0/subdirectory/in/repo/examples/testexample1suffix',
-            'https://browse-url.com/testprocessupload/git-path-test/browse/1.1.0/subdirectory/in/repo/examples/testexample2suffix'
-        ]
-
-        assert module_version.get_source_download_url() == 'git::ssh://clone-url.com/testprocessupload/git-path-test//subdirectory/in/repo?ref=1.1.0'
-        assert [example.get_source_download_url() for example in examples] == [
-            'git::ssh://clone-url.com/testprocessupload/git-path-test//subdirectory/in/repo/examples/testexample1?ref=1.1.0',
-            'git::ssh://clone-url.com/testprocessupload/git-path-test//subdirectory/in/repo/examples/testexample2?ref=1.1.0',
-        ]
-
         # Check attributes from terrareg
         assert module_version.description == 'Test unittest description'
         assert module_version.owner == 'Test unittest owner'
