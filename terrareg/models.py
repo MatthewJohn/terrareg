@@ -896,8 +896,11 @@ class ModuleProvider(object):
 
     def update_git_path(self, git_path):
         """Update git_path attribute"""
-        # Sanity check path
-        safe_join_paths('/somepath/somesubpath', git_path)
+        # If git path is not empty or specifies the root directory,
+        # check that it doesn't contain relative paths to escape the root directory
+        if git_path and git_path != '/':
+            # Sanity check path
+            safe_join_paths('/somepath/somesubpath', git_path)
         self.update_attributes(git_path=git_path)
 
     def update_repo_clone_url_template(self, repo_clone_url_template):
