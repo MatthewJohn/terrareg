@@ -20,6 +20,11 @@ class PathIsNotWithinBaseDirectoryError(TerraregError):
 def safe_join_paths(base_dir, *sub_paths, is_dir=False, is_file=False):
     """Combine base_dir and sub_path and ensure directory """
 
+    # Ensure all of the sub_paths start with a relative path, if they start with a slash
+    for itx, sub_path in enumerate(sub_paths):
+        if sub_path.startswith('/'):
+            sub_paths[itx] = '.{sub_path}'.format(sub_path=sub_paths[itx])
+
     joined_path = os.path.join(base_dir, *sub_paths)
 
     return check_subdirectory_within_base_dir(
