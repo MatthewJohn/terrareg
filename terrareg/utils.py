@@ -69,7 +69,7 @@ def check_subdirectory_within_base_dir(base_dir, sub_dir, is_dir=False, is_file=
     ## Ensure sub-path starts wtih base path.
     ## Append trailing slash to ensure, to avoid
     ## allowing /opt/test-this with a base directory of /opt/test
-    real_base_path_trailing_slash = '{0}/'.format(real_base_path)
+    real_base_path_trailing_slash = '{0}/'.format(real_base_path) if real_base_path != '/' else real_base_path
     if not real_sub_dir.startswith(real_base_path_trailing_slash):
         raise PathIsNotWithinBaseDirectoryError('Sub path is not within base directory')
 
