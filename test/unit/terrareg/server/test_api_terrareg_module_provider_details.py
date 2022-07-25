@@ -42,7 +42,8 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'terraform_example_version_string': '1.0.0',
             'beta': False,
             'published': True,
-            'security_failures': 0
+            'security_failures': 0,
+            'git_path': None
         }
 
         assert res.status_code == 200
@@ -86,7 +87,8 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
                 'terraform_example_version_string': '1.0.0',
                 'beta': False,
                 'published': True,
-                'security_failures': expected_security_issues
+                'security_failures': expected_security_issues,
+                'git_path': None
             }
 
             assert res.status_code == 200
@@ -113,7 +115,8 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'repo_base_url_template': None,
             'repo_browse_url_template': None,
             'repo_clone_url_template': None,
-            'versions': []
+            'versions': [],
+            'git_path': None
         }
 
         assert res.status_code == 200
@@ -139,7 +142,8 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'repo_base_url_template': 'https://custom-localhost.com/{namespace}/{module}-{provider}',
             'repo_browse_url_template': 'https://custom-localhost.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
             'repo_clone_url_template': 'ssh://custom-localhost.com/{namespace}/{module}-{provider}',
-            'versions': []
+            'versions': [],
+            'git_path': None
         }
 
         assert res.status_code == 200
@@ -166,7 +170,8 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'repo_base_url_template': None,
             'repo_browse_url_template': None,
             'repo_clone_url_template': None,
-            'versions': []
+            'versions': [],
+            'git_path': None
         }
 
         assert res.status_code == 200

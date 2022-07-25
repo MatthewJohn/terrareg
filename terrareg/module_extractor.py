@@ -48,6 +48,14 @@ class ModuleExtractor:
         return self._extract_directory.name
 
     @property
+    def module_directory(self):
+        """Return path of module directory, based on configured git path."""
+        if self._module_version.git_path:
+            return safe_join_paths(self._extract_directory.name, self._module_version.git_path)
+        else:
+            return self._extract_directory.name
+
+    @property
     def upload_directory(self):
         """Return path of extract directory."""
         return self._upload_directory.name
@@ -198,7 +206,7 @@ class ModuleExtractor:
 
     def _process_submodule(self, submodule: BaseSubmodule):
         """Process submodule."""
-        submodule_dir = safe_join_paths(self.extract_directory, submodule.path)
+        submodule_dir = safe_join_paths(self.module_directory, submodule.path)
 
         tf_docs = self._run_terraform_docs(submodule_dir)
         tfsec = self._run_tfsec(submodule_dir)
@@ -220,13 +228,13 @@ class ModuleExtractor:
 
     def _extract_example_files(self, example: Example):
         """Extract all terraform files in example and insert into DB"""
-        example_base_dir = safe_join_paths(self.extract_directory, example.path)
+        example_base_dir = safe_join_paths(self.module_directory, example.path)
         for tf_file_path in safe_iglob(base_dir=example_base_dir,
                                        pattern='*.tf',
                                        recursive=False,
                                        is_file=True):
             # Remove extraction directory from file path
-            tf_file = re.sub('^{}/'.format(self.extract_directory), '', tf_file_path)
+            tf_file = re.sub('^{}/'.format(self.module_directory), '', tf_file_path)
 
             # Obtain contents of file
             with open(tf_file_path, 'r') as file_fd:
@@ -241,16 +249,16 @@ class ModuleExtractor:
     def _scan_submodules(self, subdirectory: str, submodule_class: Type[BaseSubmodule]):
         """Scan for submodules and extract details."""
         try:
-            submodule_base_directory = safe_join_paths(self.extract_directory, subdirectory, is_dir=True)
+            submodule_base_directory = safe_join_paths(self.module_directory, subdirectory, is_dir=True)
         except PathDoesNotExistError:
             # If the modules directory does not exist,
             # ignore and return
             print('No modules directory found')
             return
 
-        extract_directory_re = re.compile('^{}'.format(
+        module_directory_re = re.compile('^{}'.format(
             re.escape(
-                '{0}/'.format(self.extract_directory)
+                '{0}/'.format(self.module_directory)
             )
         ))
 
@@ -263,7 +271,7 @@ class ModuleExtractor:
 
             # Strip extraction directory base path from submodule directory
             # to return relative path from base of extracted module
-            submodule_name = extract_directory_re.sub('', submodule_dir)
+            submodule_name = module_directory_re.sub('', submodule_dir)
 
             # Check submodule is not in the root of the submodules
             if not submodule_name:
@@ -348,12 +356,12 @@ class ModuleExtractor:
     def process_upload(self):
         """Handle data extraction from module source."""
         # Run terraform-docs on module content and obtain README
-        terraform_docs = self._run_terraform_docs(self.extract_directory)
-        tfsec = self._run_tfsec(self.extract_directory)
-        readme_content = self._get_readme_content(self.extract_directory)
+        terraform_docs = self._run_terraform_docs(self.module_directory)
+        tfsec = self._run_tfsec(self.module_directory)
+        readme_content = self._get_readme_content(self.module_directory)
 
         # Check for any terrareg metadata files
-        terrareg_metadata = self._get_terrareg_metadata(self.extract_directory)
+        terrareg_metadata = self._get_terrareg_metadata(self.module_directory)
 
         # Check if description is available in metadata
         description = terrareg_metadata.get('description', None)

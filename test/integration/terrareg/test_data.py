@@ -484,7 +484,7 @@ integration_test_data = {
             }
         }},
         'readme-tests': { 'provider': {
-            'id': '58',
+            'id': 58,
             'versions': {'1.0.0': {
                 'published': True,
                 'readme_content': None,
@@ -496,6 +496,10 @@ integration_test_data = {
                     }
                 }
             }}
+        }},
+        'git-path': {'provider': {
+            'id': 59,
+            'versions': {'1.0.0': { }}
         }}
     }
 }

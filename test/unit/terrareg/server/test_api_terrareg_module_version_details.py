@@ -40,7 +40,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'terraform_example_version_string': '1.0.0',
             'beta': False,
             'published': True,
-            'security_failures': 0
+            'security_failures': 0,
+            'git_path': None
         }
 
         assert res.status_code == 200
@@ -98,7 +99,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             ],
             'beta': False,
             'published': True,
-            'security_failures': 0
+            'security_failures': 0,
+            'git_path': None
         }
 
         assert res.status_code == 200
@@ -147,7 +149,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'version': '10.2.1',
             'beta': False,
             'published': False,
-            'security_failures': 0
+            'security_failures': 0,
+            'git_path': None
         }
 
         assert res.status_code == 200
@@ -197,7 +200,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'version': '2.2.4-beta',
             'beta': True,
             'published': True,
-            'security_failures': 0
+            'security_failures': 0,
+            'git_path': None
         }
 
         assert res.status_code == 200
