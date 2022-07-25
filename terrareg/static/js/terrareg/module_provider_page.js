@@ -1384,6 +1384,15 @@ function showSecurityWarnings(moduleDetails) {
     }
 }
 
+/*
+ * Set HTML page title
+ *
+ * @param id Module id
+ */
+function setPageTitle(id) {
+    document.title = `${id} - Terrareg`;
+}
+
 
 /*
  * Setup common elements of the page, shared between all types
@@ -1429,6 +1438,8 @@ async function setupRootModulePage(data) {
 
     let moduleDetails = await getModuleDetails(id);
 
+    setPageTitle(moduleDetails.module_provider_id);
+
     let tabFactory = new TabFactory();
 
     if (moduleDetails.version) {
@@ -1473,6 +1484,8 @@ async function setupSubmodulePage(data) {
     let submodulePath = data.undefined;
     let submoduleDetails = await getSubmoduleDetails(moduleDetails.id, submodulePath);
 
+    setPageTitle(`${moduleDetails.module_provider_id}/${submoduleDetails.path}`);
+
     populateCurrentSubmodule(`Submodule: ${submodulePath}`)
     populateVersionText(moduleDetails);
     populateTerraformUsageExample(moduleDetails, submodulePath);
@@ -1501,6 +1514,8 @@ async function setupExamplePage(data) {
 
     let examplePath = data.undefined;
     let submoduleDetails = await getExampleDetails(moduleDetails.id, examplePath);
+
+    setPageTitle(`${moduleDetails.module_provider_id}/${submoduleDetails.path}`);
 
     populateCurrentSubmodule(`Example: ${examplePath}`)
     populateVersionText(moduleDetails);

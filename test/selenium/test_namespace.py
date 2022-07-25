@@ -23,6 +23,11 @@ class TestNamespace(SeleniumTest):
         cls.register_patch(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['trustednamespace']))
         super(TestNamespace, cls).setup_class()
 
+    def test_title(self):
+        """Test title of namespace page."""
+        self.selenium_instance.get(self.get_url('/modules/real_providers'))
+        assert self.selenium_instance.title == 'real_providers - Terrareg'
+
     def test_provider_logos(self):
         """Check provider logos are displayed correctly."""
         self.selenium_instance.get(self.get_url('/modules/real_providers'))
