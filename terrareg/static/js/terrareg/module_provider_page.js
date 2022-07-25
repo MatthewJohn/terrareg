@@ -1438,7 +1438,7 @@ async function setupRootModulePage(data) {
 
     let moduleDetails = await getModuleDetails(id);
 
-    setPageTitle(moduleDetails.id);
+    setPageTitle(moduleDetails.module_provider_id);
 
     let tabFactory = new TabFactory();
 
