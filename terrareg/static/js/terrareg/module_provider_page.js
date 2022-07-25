@@ -1484,7 +1484,7 @@ async function setupSubmodulePage(data) {
     let submodulePath = data.undefined;
     let submoduleDetails = await getSubmoduleDetails(moduleDetails.id, submodulePath);
 
-    setPageTitle(submoduleDetails.id);
+    setPageTitle(`${moduleDetails.module_provider_id}/${submoduleDetails.path}`);
 
     populateCurrentSubmodule(`Submodule: ${submodulePath}`)
     populateVersionText(moduleDetails);
