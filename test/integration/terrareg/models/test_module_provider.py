@@ -648,3 +648,49 @@ class TestModuleProvider(TerraregIntegrationTest):
             module_provider = ModuleProvider.get(module=module, name='providername', create=True)
             assert module_provider is not None
             assert module_provider._get_db_row()['id'] == 48
+
+    def test_delete(self):
+        """Test deletion of module version."""
+        existing_module_provider_count = ModuleProvider.get_total_count()
+        namespace = Namespace(name='testnamespace')
+        module = Module(namespace=namespace, name='to-delete')
+
+        # Create test module provider
+        module_provider = ModuleProvider.get(module=module, name='testprovider', create=True)
+        module_provider_pk = module_provider.pk
+
+        # Create test module versions
+        module_version_pks = []
+        for itx in ['1.0.0', '1.1.1', '1.2.3']:
+            module_version = ModuleVersion(module_provider=module_provider, version=itx)
+            module_version.prepare_module()
+            module_version.publish()
+            module_version_pks.append(module_version.pk)
+
+        assert ModuleProvider.get_total_count() == (existing_module_provider_count + 1)
+
+        # Ensure that all of the rows can be fetched
+        db = Database.get()
+        with db.get_connection() as conn:
+
+            res = conn.execute(db.module_provider.select().where(db.module_provider.c.id==module_provider_pk))
+            assert res.fetchone() is not None
+
+            for mv_pk in module_version_pks:
+                res = conn.execute(db.module_version.select().where(db.module_version.c.id==mv_pk))
+                assert res.fetchone() is not None
+
+        # Delete module provider
+        module_provider.delete()
+
+        assert ModuleProvider.get_total_count() == existing_module_provider_count
+
+        # Check module_version, example and example file have been removed
+        with db.get_connection() as conn:
+
+            res = conn.execute(db.module_provider.select().where(db.module_provider.c.id==module_provider_pk))
+            assert res.fetchone() is None
+
+            for mv_pk in module_version_pks:
+                res = conn.execute(db.module_version.select().where(db.module_version.c.id==mv_pk))
+                assert res.fetchone() is None
