@@ -1515,6 +1515,8 @@ async function setupExamplePage(data) {
     let examplePath = data.undefined;
     let submoduleDetails = await getExampleDetails(moduleDetails.id, examplePath);
 
+    setPageTitle(`${moduleDetails.module_provider_id}/${submoduleDetails.path}`);
+
     populateCurrentSubmodule(`Example: ${examplePath}`)
     populateVersionText(moduleDetails);
     enableBackToParentLink(moduleDetails);
