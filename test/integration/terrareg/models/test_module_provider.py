@@ -1,6 +1,7 @@
 
 from unittest import mock
 import pytest
+from terrareg.database import Database
 
 from terrareg.models import Module, ModuleVersion, Namespace, ModuleProvider
 import terrareg.errors
