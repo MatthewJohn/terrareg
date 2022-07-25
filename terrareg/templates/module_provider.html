@@ -1,7 +1,6 @@
 {% extends 'template.html' %}
 
-{% block content %}
-
+{% block header %}
 <script src="/static/js/terrareg/module_provider_page.js"></script>
 <link rel="stylesheet" href="/static/css/module_provider_page.css" />
 
@@ -10,6 +9,9 @@
         renderPage();
     });
 </script>
+{% endblock %}
+
+{% block content %}
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul id="breadcrumb-ul">

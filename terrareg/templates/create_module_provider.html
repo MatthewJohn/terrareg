@@ -1,13 +1,6 @@
 {% extends 'template.html' %}
 
-{% block content %}
-
-<nav class="breadcrumb" aria-label="breadcrumbs">
-    <ul>
-        <li class="is-active"><a href="/create-module">Create Module</a></li>
-    </ul>
-</nav>
-
+{% block header %}
 <script>
     function createModuleProvider() {
         if (! $('#create-module-form')[0].reportValidity()) {
@@ -63,6 +56,15 @@
         });
     }
 </script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li class="is-active"><a href="/create-module">Create Module</a></li>
+    </ul>
+</nav>
 
 <div class="columns">
     <div class="column is-one-third is-offset-one-third">

@@ -1,5 +1,14 @@
 {% extends 'template.html' %}
 
+
+{% block header %}
+<script>
+    $(document).ready(function () {
+        loadSetupPage();
+    });
+</script>
+{% endblock %}
+
 {% block content %}
 
 <script src="/static/js/terrareg/initial-setup.js"></script>
@@ -10,12 +19,6 @@
         <li class="is-active"><a href="/initial-setup">Getting started</a></li>
     </ul>
 </nav>
-
-<script>
-    $(document).ready(function () {
-        loadSetupPage();
-    });
-</script>
 
 <div class="columns">
     <div id="setup-cards-container" class="column is-three-fifths is-offset-one-fifth">
