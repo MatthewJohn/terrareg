@@ -26,6 +26,8 @@ class TestModuleSearch(SeleniumTest):
         """Check search functionality from homepage."""
         self.selenium_instance.get(self.get_url('/'))
 
+        assert self.selenium_instance.title == 'Search - Terrareg'
+
         # Enter text into search input
         self.selenium_instance.find_element(By.ID, 'navBarSearchInput').send_keys('modulesearch')
 
