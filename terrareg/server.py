@@ -148,6 +148,12 @@ class Server(object):
             '/.well-known/terraform.json'
         )
 
+        # Prometheus metrics
+        self._api.add_resource(
+            PrometheusMetrics,
+            '/metrics'
+        )
+
         self._api.add_resource(
             ApiModuleList,
             '/v1/modules',
@@ -1429,8 +1435,8 @@ class ApiTerraregGlobalUsageStats(ErrorCatchingResource):
         total unique analytics tokens per module
         (with and without auth token).
         """
-        module_usage_with_auth_token = AnalyticsEngine.get_global_module_usage()
-        module_usage_including_empty_auth_token = AnalyticsEngine.get_global_module_usage(include_empty_auth_token=True)
+        module_usage_with_auth_token = AnalyticsEngine.get_global_module_usage_counts()
+        module_usage_including_empty_auth_token = AnalyticsEngine.get_global_module_usage_counts(include_empty_auth_token=True)
         total_analytics_token_with_auth_token = sum(module_usage_with_auth_token.values())
         total_analytics_token_including_empty_auth_token = sum(module_usage_including_empty_auth_token.values())
         return {
@@ -1441,6 +1447,18 @@ class ApiTerraregGlobalUsageStats(ErrorCatchingResource):
             'module_provider_usage_count_including_empty_auth_token': total_analytics_token_including_empty_auth_token
         }
 
+
+class PrometheusMetrics(ErrorCatchingResource):
+    """Provide usage anayltics for Prometheus scraper"""
+
+    def _get(self):
+        """
+        Return Prometheus metrics for global statistics and module provider statistics
+        """
+        response = make_response(AnalyticsEngine.get_prometheus_metrics())
+        response.headers['content-type'] = 'text/plain; version=0.0.4'
+
+        return response
 
 class ApiTerraregMostRecentlyPublishedModuleVersion(ErrorCatchingResource):
     """Return data for most recently published module version."""

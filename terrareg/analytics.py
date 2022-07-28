@@ -7,6 +7,7 @@ import sqlalchemy
 
 from terrareg.database import Database
 from terrareg.config import Config
+import terrareg.models
 
 
 class AnalyticsEngine:
@@ -128,15 +129,16 @@ class AnalyticsEngine:
             return res.scalar()
 
     @staticmethod
-    def get_global_module_usage(include_empty_auth_token=False):
-        """Return all analytics tokens, grouped by module provider."""
+    def get_global_module_usage_base_query(include_empty_auth_token=False):
+        """Return base query for getting all analytics tokens."""
         db = Database.get()
         # Initial query to select all analytics joined to module version and module provider
         select = sqlalchemy.select(
             db.module_provider.c.id,
             db.module_provider.c.namespace,
             db.module_provider.c.module,
-            db.module_provider.c.provider
+            db.module_provider.c.provider,
+            db.analytics.c.analytics_token
         ).select_from(
             db.analytics
         ).join(
@@ -160,7 +162,16 @@ class AnalyticsEngine:
         select = select.group_by(
             db.analytics.c.analytics_token,
             db.module_provider.c.id
-        ).subquery()
+        )
+        return select
+
+    @staticmethod
+    def get_global_module_usage_counts(include_empty_auth_token=False):
+        """Return all analytics tokens, grouped by module provider."""
+        db = Database.get()
+        # Initial query to select all analytics joined to module version and module provider
+        select = AnalyticsEngine.get_global_module_usage_base_query(
+            include_empty_auth_token=include_empty_auth_token).subquery()
 
         # Select the count for each module provider, grouping by the analytics ID
         count_select = sqlalchemy.select(
@@ -341,3 +352,77 @@ class AnalyticsEngine:
             ).values(
                 parent_module_version=new_module_version.pk
             ))
+
+    @classmethod
+    def get_prometheus_metrics(cls):
+        """Return prometheus metrics for modules and usage."""
+        prometheus_generator = PrometheusGenerator()
+        
+        module_count_metric = PrometheusMetric(
+            name='module_providers_count',
+            type_='counter',
+            help='Total number of module providers'
+        )
+        module_count_metric.add_data_row(value=terrareg.models.ModuleProvider.get_total_count())
+        prometheus_generator.add_metric(module_count_metric)
+
+        module_provider_usage_metric = PrometheusMetric(
+            'module_provider_usage',
+            type_='counter',
+            help='Analytics tokens used in a module provider'
+        )
+        db = Database.get()
+        with db.get_connection() as conn:
+            rows = conn.execute(AnalyticsEngine.get_global_module_usage_base_query(include_empty_auth_token=True)).fetchall()
+        for row in rows:
+            module_provider_usage_metric.add_data_row(
+                value='1',
+                labels={'module_provider_id': '{}/{}/{}'.format(row['namespace'], row['module'], row['provider']),
+                        'analytics_token': row['analytics_token']}
+            )
+        prometheus_generator.add_metric(module_provider_usage_metric)
+
+        return prometheus_generator.generate()
+
+
+class PrometheusMetric:
+    """Prometheus metric"""
+
+    def __init__(self, name, type_, help):
+        """Store member variables and initailise help and type lines."""
+        self._name = name
+        self._type = type_
+        self._help = help
+        self._lines = [
+            f'# HELP {self._name} {self._help}',
+            f'# TYPE {self._name} {self._type}'
+        ]
+
+    def add_data_row(self, value, labels=None):
+        """Add data row, with optional labels"""
+        labels = {} if labels is None else labels
+        label_strings = [f'{key}="{labels[key]}"' for key in labels]
+        label_string = ', '.join(label_strings)
+        if label_string:
+            label_string = '{' + label_string + '}'
+
+        self._lines.append(f'{self._name}{label_string} {value}')
+
+    def generate(self):
+        """Return generated lines for metric."""
+        return self._lines
+
+class PrometheusGenerator:
+    """Generate prometheus metrics output"""
+
+    def __init__(self):
+        """Initialise empty data"""
+        self._lines = []
+
+    def add_metric(self, metric: PrometheusMetric):
+        """Add metrics from a PromethiusMetric object."""
+        self._lines += metric.generate()
+
+    def generate(self):
+        """Generate output for prometheus metrics"""
+        return '\n'.join(self._lines)

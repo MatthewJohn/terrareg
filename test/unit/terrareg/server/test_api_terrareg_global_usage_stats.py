@@ -21,10 +21,10 @@ class TestApiTerraregGlobalUsageStats(TerraregUnitTest):
         ):
         """Test update of repository URL."""
         with client, \
-                unittest.mock.patch('terrareg.analytics.AnalyticsEngine.get_global_module_usage') as mocked_get_global_module_usage, \
+                unittest.mock.patch('terrareg.analytics.AnalyticsEngine.get_global_module_usage_counts') as mocked_get_global_module_usage_counts, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.get_total_count') as mocked_get_total_count:
 
-            def get_global_module_usage(include_empty_auth_token=False):
+            def get_global_module_usage_counts(include_empty_auth_token=False):
                 mock_data = {
                     'namespace/testmodule1/provider': 5,
                     'namespace/testmodule2/anotherprovider': 2,
@@ -35,7 +35,7 @@ class TestApiTerraregGlobalUsageStats(TerraregUnitTest):
                     mock_data['namespace/emptyauthtoken/provider'] = 3
                 return mock_data
 
-            mocked_get_global_module_usage.side_effect = get_global_module_usage
+            mocked_get_global_module_usage_counts.side_effect = get_global_module_usage_counts
             mocked_get_total_count.return_value = 23
 
             res = client.get('/v1/terrareg/analaytics/global/usage_stats')
@@ -59,4 +59,4 @@ class TestApiTerraregGlobalUsageStats(TerraregUnitTest):
             assert res.status_code == 200
         
             mocked_get_total_count.assert_called_once_with()
-            mocked_get_global_module_usage.assert_called()
+            mocked_get_global_module_usage_counts.assert_called()
