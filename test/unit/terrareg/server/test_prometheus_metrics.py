@@ -1,5 +1,4 @@
 
-from operator import mod
 import unittest.mock
 
 import pytest
