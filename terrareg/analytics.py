@@ -389,7 +389,7 @@ class PrometheusMetric:
     """Prometheus metric"""
 
     def __init__(self, name, type_, help):
-        """Store memeber variables and initailise help and type lines."""
+        """Store member variables and initailise help and type lines."""
         self._name = name
         self._type = type_
         self._help = help
