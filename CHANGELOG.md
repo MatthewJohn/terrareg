@@ -1,5 +1,13 @@
 # Changelog
 
+# [2.30.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.29.3...v2.30.0) (2022-07-28)
+
+
+### Features
+
+* Add analytics token usage per module provider in prometheus metrics ([0aa1abb](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0aa1abbc88b74530fc359b4cac0a5d39e53cec83)), closes [#39](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/39)
+* Add basic endpoint for prometheus metrics. ([06519e1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/06519e18fef71b0e186b0b52845f22f1925de20e)), closes [#39](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/39)
+
 ## [2.29.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.29.2...v2.29.3) (2022-07-22)
 
 
