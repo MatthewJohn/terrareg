@@ -1845,7 +1845,7 @@ class ModuleVersion(TerraformSpecsObject):
             submodule.delete()
 
         if delete_related_analytics:
-            terrareg.analytics.AnalyticsEngine.delete_analaytics_for_module_version(self)
+            terrareg.analytics.AnalyticsEngine.delete_analytics_for_module_version(self)
 
         # Delete associated module details
         module_details = self.module_details
@@ -1891,9 +1891,9 @@ class ModuleVersion(TerraformSpecsObject):
             )
             conn.execute(insert_statement)
 
-        # Migrate analaytics from old module version ID to new module version
+        # Migrate analytics from old module version ID to new module version
         if old_module_version_pk is not None:
-            terrareg.analytics.AnalyticsEngine.migrate_analaytics_to_new_module_version(
+            terrareg.analytics.AnalyticsEngine.migrate_analytics_to_new_module_version(
                 old_version_version_pk=old_module_version_pk,
                 new_module_version=self)
 

@@ -1,4 +1,4 @@
-"""Update analaytics to perform no action when parent module version is deleted
+"""Update analytics to perform no action when parent module version is deleted
 
 Revision ID: 0776813feaeb
 Revises: ef71db86c2a1
