@@ -5,3 +5,5 @@ data
 modules.db
 *.db
 bin/
+.venv
+terrareg.egg-info/
