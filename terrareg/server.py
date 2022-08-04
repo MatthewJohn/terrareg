@@ -275,7 +275,7 @@ class Server(object):
         )
         self._api.add_resource(
             ApiTerraregGlobalUsageStats,
-            '/v1/terrareg/analaytics/global/usage_stats'
+            '/v1/terrareg/analytics/global/usage_stats'
         )
         self._api.add_resource(
             ApiTerraregModuleProviderAnalyticsTokenVersions,
@@ -334,6 +334,10 @@ class Server(object):
         self._api.add_resource(
             ApiModuleVersionCreateBitBucketHook,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/hooks/bitbucket'
+        )
+        self._api.add_resource(
+            ApiModuleVersionCreateGitHubHook,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/hooks/github'
         )
         self._api.add_resource(
             ApiTerraregModuleVersionVariableTemplate,
@@ -1044,6 +1048,85 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
                 'tags': imported_versions
             }
 
+
+class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
+    """Provide interface for GitHub hook to detect pushes of new tags."""
+
+    def _post(self, namespace, name, provider):
+        """Create new version based on GitHub hooks."""
+        with Database.start_transaction():
+            namespace = Namespace(name=namespace)
+            module = Module(namespace=namespace, name=name)
+            # Get module provider and optionally create, if it doesn't exist
+            module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+
+            # Validate signature
+            if terrareg.config.Config().UPLOAD_API_KEYS:
+                # Get signature from request
+                request_signature = request.headers.get('X-Hub-Signature', '')
+                # Remove 'sha256=' from beginning of header
+                request_signature = re.sub(r'^sha256=', '', request_signature)
+                # Iterate through each of the keys and test
+                for test_key in terrareg.config.Config().UPLOAD_API_KEYS:
+                    # Generate
+                    valid_signature = hmac.new(bytes(test_key, 'utf8'), b'', hashlib.sha256)
+                    valid_signature.update(request.data)
+                    # If the signatures match, break from loop
+                    if hmac.compare_digest(valid_signature.hexdigest(), request_signature):
+                        break
+                # If a valid signature wasn't found with one of the configured keys,
+                # return 401
+                else:
+                    return self._get_401_response()
+
+            if not module_provider.get_git_clone_url():
+                return {'message': 'Module provider is not configured with a repository'}, 400
+
+            github_data = request.json
+
+            imported_versions = {}
+            error = False
+
+            release = github_data['release']
+    
+            # Obtain tag name
+            tag_ref = release['tag_name']
+
+            # Attempt to match version against regex
+            version = module_provider.get_version_from_tag_ref(tag_ref)
+
+            if not version:
+                return {'message': 'Release tag does not match configured version regex'}, 400
+
+            # Create module version
+            module_version = ModuleVersion(module_provider=module_provider, version=version)
+
+
+            if github_data['action'] in ['deleted', 'unpublished']:
+                module_version.delete()
+
+                return {
+                    'status': 'Success'
+                }
+            else:
+                # Perform import from git
+                try:
+                    is_draft = bool(release['draft'])
+                    module_version.update_attributes(published=(not is_draft))
+                    module_version.prepare_module()
+                    with GitModuleExtractor(module_version=module_version) as me:
+                        me.process_upload()
+                    return {
+                        'status': 'Success',
+                        'message': 'Imported provided tag',
+                        'tag': tag_ref
+                    }
+                except TerraregError as exc:
+                    return {
+                        'status': 'Error',
+                        'message': 'Tag failed to import',
+                        'tag': tag_ref
+                    }, 500
 
 class ApiModuleList(ErrorCatchingResource):
     def _get(self):

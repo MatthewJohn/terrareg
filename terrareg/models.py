@@ -1159,7 +1159,6 @@ class ModuleProvider(object):
                 'url': f'/v1/terrareg/modules/{self.id}/hooks/github',
                 'description': 'Github hook trigger',
                 'notes': '',
-                'coming_soon': True
             },
             'hooks_gitlab': {
                 'method': None,
