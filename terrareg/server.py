@@ -1050,10 +1050,10 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
 
 
 class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
-    """Provide interface for GitHub hook to detect pushes of new tags."""
+    """Provide interface for GitHub hook to detect new and changed releases."""
 
     def _post(self, namespace, name, provider):
-        """Create new version based on GitHub hooks."""
+        """Create, update or delete new version based on GitHub release hooks."""
         with Database.start_transaction():
             namespace = Namespace(name=namespace)
             module = Module(namespace=namespace, name=name)
@@ -1084,8 +1084,8 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
 
             github_data = request.json
 
-            imported_versions = {}
-            error = False
+            if not ('release' in github_data and type(github_data['release']) == dict):
+                return {'message': 'Received hook is not triggered by a release'}, 400
 
             release = github_data['release']
     
