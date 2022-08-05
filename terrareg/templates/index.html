@@ -1,7 +1,8 @@
 {% extends 'template.html' %}
 
-{% block content %}
+{% block title %}Home{% endblock %}
 
+{% block header %}
 <script>
 
     $.get("/v1/terrareg/analytics/global/stats_summary", function(data, status) {
@@ -23,6 +24,9 @@
     });
     
 </script>
+{% endblock %}
+
+{% block content %}
 
 <nav class="level" style="margin-top: 20px; margin-bottom: 80px;">
     <div class="level-item has-text-centered">

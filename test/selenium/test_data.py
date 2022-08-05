@@ -23,6 +23,12 @@ integration_git_providers = {
         'base_url_template': 'https://base-url.com/{namespace}/{module}-{provider}',
         'browse_url_template': 'https://browse-url.com/{namespace}/{module}-{provider}/browse/{path}?at={tag_uri_encoded}',
         'clone_url_template': 'ssh://clone-url.com/{namespace}/{module}-{provider}'
+    },
+    4: {
+        'name': 'no_browse_url',
+        'base_url_template': 'https://base-url.com/{namespace}/{module}-{provider}',
+        'browse_url_template': None,
+        'clone_url_template': 'ssh://clone-url.com/{namespace}/{module}-{provider}'
     }
 }
 
@@ -389,6 +395,9 @@ integration_test_data = {
     'moduledetails': {
         'fullypopulated': {'testprovider': {
             'id': 56,
+            'repo_base_url_template': 'https://mp-base-url.com/{namespace}/{module}-{provider}',
+            'repo_browse_url_template': 'https://mp-browse-url.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
+            'repo_clone_url_template': 'ssh://mp-clone-url.com/{namespace}/{module}-{provider}',
             'versions': {
                 # Older version
                 '1.2.0': {'published': True},

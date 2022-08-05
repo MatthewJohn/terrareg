@@ -1,5 +1,35 @@
 # Changelog
 
+# [2.31.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.30.1...v2.31.0) (2022-08-05)
+
+
+### Features
+
+* Add titles to all HTML pages. ([d2d5168](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/d2d51687c810149e231197570a750b497e30f645)), closes [#147](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/147)
+
+## [2.30.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.30.0...v2.30.1) (2022-08-05)
+
+
+### Bug Fixes
+
+* Correct source code URL displayed in submodules and examples to include path to the current code ([222ba9f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/222ba9ff4caacbfc63434f1c8fe46b984107b80b)), closes [#183](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/183)
+* Update source_url in example/submodules to revert to module version browse URL when there is no templated source URL available ([63a424b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/63a424b5db01178dbf1c0cc51aefd3bdf9eeed99)), closes [#183](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/183)
+
+# [2.30.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.29.3...v2.30.0) (2022-07-28)
+
+
+### Features
+
+* Add analytics token usage per module provider in prometheus metrics ([0aa1abb](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0aa1abbc88b74530fc359b4cac0a5d39e53cec83)), closes [#39](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/39)
+* Add basic endpoint for prometheus metrics. ([06519e1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/06519e18fef71b0e186b0b52845f22f1925de20e)), closes [#39](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/39)
+
+## [2.29.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.29.2...v2.29.3) (2022-07-22)
+
+
+### Bug Fixes
+
+* Fix values in string arguments in usage builder. ([2c3e838](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2c3e8383c59f77c967c45a20b8b5c34c6e0504bd)), closes [#202](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/202)
+
 ## [2.29.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.29.1...v2.29.2) (2022-07-21)
 
 

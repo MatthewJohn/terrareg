@@ -1386,6 +1386,15 @@ function showSecurityWarnings(moduleDetails) {
     }
 }
 
+/*
+ * Set HTML page title
+ *
+ * @param id Module id
+ */
+function setPageTitle(id) {
+    document.title = `${id} - Terrareg`;
+}
+
 
 /*
  * Setup common elements of the page, shared between all types
@@ -1416,7 +1425,6 @@ async function setupBasePage(data) {
     setModuleDescription(moduleDetails);
     setPublishedAt(moduleDetails);
     setOwner(moduleDetails);
-    setSourceUrl(moduleDetails.display_source_url);
 
     addModuleLabels(moduleDetails, $("#module-title"));
 }
@@ -1430,6 +1438,8 @@ async function setupRootModulePage(data) {
     let id = getCurrentObjectId(data);
 
     let moduleDetails = await getModuleDetails(id);
+
+    setPageTitle(moduleDetails.module_provider_id);
 
     let tabFactory = new TabFactory();
 
@@ -1457,6 +1467,7 @@ async function setupRootModulePage(data) {
         populateExampleSelect(moduleDetails);
         populateTerraformUsageExample(moduleDetails);
         populateDownloadSummary(moduleDetails);
+        setSourceUrl(moduleDetails.display_source_url);
     }
 
     tabFactory.renderTabs();
@@ -1475,11 +1486,14 @@ async function setupSubmodulePage(data) {
     let submodulePath = data.undefined;
     let submoduleDetails = await getSubmoduleDetails(moduleDetails.id, submodulePath);
 
+    setPageTitle(`${moduleDetails.module_provider_id}/${submoduleDetails.path}`);
+
     populateCurrentSubmodule(`Submodule: ${submodulePath}`)
     populateVersionText(moduleDetails);
     populateTerraformUsageExample(moduleDetails, submodulePath);
     enableBackToParentLink(moduleDetails);
     showSecurityWarnings(submoduleDetails);
+    setSourceUrl(submoduleDetails.display_source_url);
 
     let tabFactory = new TabFactory();
 
@@ -1504,10 +1518,13 @@ async function setupExamplePage(data) {
     let examplePath = data.undefined;
     let submoduleDetails = await getExampleDetails(moduleDetails.id, examplePath);
 
+    setPageTitle(`${moduleDetails.module_provider_id}/${submoduleDetails.path}`);
+
     populateCurrentSubmodule(`Example: ${examplePath}`)
     populateVersionText(moduleDetails);
     enableBackToParentLink(moduleDetails);
     showSecurityWarnings(submoduleDetails);
+    setSourceUrl(submoduleDetails.display_source_url);
 
     let tabFactory = new TabFactory();
 
