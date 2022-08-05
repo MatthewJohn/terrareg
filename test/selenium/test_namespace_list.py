@@ -17,6 +17,8 @@ class TestNamespaceList(SeleniumTest):
         """Test namespace list page."""
         self.selenium_instance.get(self.get_url('/modules'))
 
+        assert self.selenium_instance.title == 'Namespaces - Terrareg'
+
         # Get content section
         content = self.wait_for_element(By.ID, 'namespace-list-content')
 
