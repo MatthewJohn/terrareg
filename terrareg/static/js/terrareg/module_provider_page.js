@@ -1414,7 +1414,6 @@ async function setupBasePage(data) {
     setModuleDescription(moduleDetails);
     setPublishedAt(moduleDetails);
     setOwner(moduleDetails);
-    setSourceUrl(moduleDetails.display_source_url);
 
     addModuleLabels(moduleDetails, $("#module-title"));
 }
@@ -1455,6 +1454,7 @@ async function setupRootModulePage(data) {
         populateExampleSelect(moduleDetails);
         populateTerraformUsageExample(moduleDetails);
         populateDownloadSummary(moduleDetails);
+        setSourceUrl(moduleDetails.display_source_url);
     }
 
     tabFactory.renderTabs();
@@ -1478,6 +1478,7 @@ async function setupSubmodulePage(data) {
     populateTerraformUsageExample(moduleDetails, submodulePath);
     enableBackToParentLink(moduleDetails);
     showSecurityWarnings(submoduleDetails);
+    setSourceUrl(submoduleDetails.display_source_url);
 
     let tabFactory = new TabFactory();
 
@@ -1506,6 +1507,7 @@ async function setupExamplePage(data) {
     populateVersionText(moduleDetails);
     enableBackToParentLink(moduleDetails);
     showSecurityWarnings(submoduleDetails);
+    setSourceUrl(submoduleDetails.display_source_url);
 
     let tabFactory = new TabFactory();
 
