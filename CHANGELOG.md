@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.31.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.30.1...v2.31.0) (2022-08-05)
+
+
+### Features
+
+* Add titles to all HTML pages. ([d2d5168](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/d2d51687c810149e231197570a750b497e30f645)), closes [#147](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/147)
+
 ## [2.30.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.30.0...v2.30.1) (2022-08-05)
 
 
