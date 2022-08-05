@@ -177,6 +177,7 @@ class Database():
             sqlalchemy.Column('repo_clone_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('git_tag_format', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('git_path', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('verified', sqlalchemy.Boolean),
             sqlalchemy.Column(
                 'git_provider_id',

@@ -19,6 +19,7 @@
                 repo_clone_url_template: $('#create-module-clone-url-template').val(),
                 repo_browse_url_template: $('#create-module-browse-url-template').val(),
                 git_tag_format: $('#create-module-git-tag-format').val(),
+                git_path: $('#create-module-git-path').val(),
                 csrf_token: '{{ csrf_token }}'
             }),
             contentType: 'application/json'
@@ -159,6 +160,15 @@
                     This value will be converted to the expected git tag for a module version.<br />
                     The <code>{version}</code> template will be replaced by the actual module version.<br />
                     For example, using <code>v{version}</code> will translate to a git tag 'v1.1.1' for module version '1.1.1'
+                </div>
+
+                <div class="field">
+                    <label class="label">Git path</label>
+                    <div class="control">
+                        <input placeholder="/" class="input" type="text" id="create-module-git-path">
+                    </div>
+                    Set the path within the repository that the module exists.<br />
+                    Defaults to th root of the repository.<br />
                 </div>
 
                 <div class="field">

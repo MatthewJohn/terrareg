@@ -33,7 +33,7 @@ class TestModuleSearch(SeleniumTest):
         assert search_button.text == 'Search'
         search_button.click()
 
-        assert self.selenium_instance.current_url == self.get_url('/modules/search?q=modulesearch')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/search?q=modulesearch'))
 
         assert self.selenium_instance.title == 'Search - Terrareg'
 

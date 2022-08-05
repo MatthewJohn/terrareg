@@ -43,6 +43,20 @@ class TestModuleProvider(SeleniumTest):
         self.selenium_instance.get(self.get_url(url))
         self.assert_equals(lambda: self.selenium_instance.title, expected_title)
 
+    def _get_settings_field_by_label(self, label):
+        """Return input element by label."""
+        form = self.wait_for_element(By.ID, 'settings-form')
+        return form.find_element(By.XPATH, ".//label[text()='{label}']/parent::*//input".format(label=label))
+
+    def _fill_out_settings_field_by_label(self, label, input):
+        """Find input field by label and fill out input."""
+        input_field = self._get_settings_field_by_label(label)
+        input_field.send_keys(input)
+
+    def _click_save_settings(self):
+        """Click save button on settings tab."""
+        self.selenium_instance.find_element(By.ID, 'module-provider-settings-update').click()
+
     def test_module_without_versions(self):
         """Test page functionality on a module without published versions."""
         self.selenium_instance.get(self.get_url('/modules/moduledetails/noversion/testprovider'))
@@ -1313,6 +1327,32 @@ module "fullypopulated" {{
 
         # Ensure module version no longer exists
         assert ModuleVersion.get(module_provider=module_provider, version='2.5.5') is None
+
+    def test_git_path_setting(self):
+        """Test setting git tag in module provider settings."""
+        self.perform_admin_authentication(password='unittest-password')
+
+        # Ensure user is redirected to module page
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider#settings'))
+
+        settings_input = self._get_settings_field_by_label('Git path')
+        assert settings_input.get_attribute('value') == ''
+
+        # Enter git path
+        settings_input.send_keys('test/sub/directory')
+        self._click_save_settings()
+
+        module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
+        assert module_provider.git_path == 'test/sub/directory'
+
+        self.selenium_instance.refresh()
+        settings_input = self._get_settings_field_by_label('Git path')
+        assert settings_input.get_attribute('value') == 'test/sub/directory'
+        settings_input.clear()
+
+        self._click_save_settings()
+        module_provider._cache_db_row = None
+        assert module_provider.git_path == None
 
     def test_delete_module_provider(self):
         """Test the delete provider functionality in settings tab."""
