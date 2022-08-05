@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.30.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.30.0...v2.30.1) (2022-08-05)
+
+
+### Bug Fixes
+
+* Correct source code URL displayed in submodules and examples to include path to the current code ([222ba9f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/222ba9ff4caacbfc63434f1c8fe46b984107b80b)), closes [#183](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/183)
+* Update source_url in example/submodules to revert to module version browse URL when there is no templated source URL available ([63a424b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/63a424b5db01178dbf1c0cc51aefd3bdf9eeed99)), closes [#183](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/183)
+
 # [2.30.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.29.3...v2.30.0) (2022-07-28)
 
 
