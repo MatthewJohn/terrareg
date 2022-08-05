@@ -32,6 +32,17 @@ class TestModuleProvider(SeleniumTest):
 
         super(TestModuleProvider, cls).setup_class()
 
+    @pytest.mark.parametrize('url,expected_title', [
+        ('/modules/moduledetails/noversion/testprovider', 'moduledetails/noversion/testprovider - Terrareg'),
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0', 'moduledetails/fullypopulated/testprovider - Terrareg'),
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example', 'moduledetails/fullypopulated/testprovider/examples/test-example - Terrareg'),
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1', 'moduledetails/fullypopulated/testprovider/modules/example-submodule1 - Terrareg'),
+    ])
+    def test_page_titles(self, url, expected_title):
+        """Check page titles on pages."""
+        self.selenium_instance.get(self.get_url(url))
+        self.assert_equals(lambda: self.selenium_instance.title, expected_title)
+
     def test_module_without_versions(self):
         """Test page functionality on a module without published versions."""
         self.selenium_instance.get(self.get_url('/modules/moduledetails/noversion/testprovider'))

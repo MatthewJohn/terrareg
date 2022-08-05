@@ -1,13 +1,8 @@
 {% extends 'template.html' %}
 
-{% block content %}
+{% block title %}Login{% endblock %}
 
-<nav class="breadcrumb" aria-label="breadcrumbs">
-    <ul>
-        <li class="is-active"><a href="/login">Login</a></li>
-    </ul>
-</nav>
-
+{% block header %}
 <script>
     function login() {
         let ajaxRes = $.ajax({
@@ -33,6 +28,15 @@
         });
     }
 </script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li class="is-active"><a href="/login">Login</a></li>
+    </ul>
+</nav>
 
 <nav class="level">
     <div class="level-item">

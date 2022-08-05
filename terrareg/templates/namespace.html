@@ -1,14 +1,8 @@
 {% extends 'template.html' %}
 
-{% block content %}
+{% block title %}{{ namespace }}{% endblock %}
 
-<nav class="breadcrumb" aria-label="breadcrumbs">
-    <ul>
-        <li><a href="/modules">Modules</a></li>
-        <li class="is-active"><a href="/modules/{{ namespace }}">{{ namespace }}</a></li>
-    </ul>
-</nav>
-
+{% block header %}
 <script>
     let currentSearchMeta = undefined;
 
@@ -51,6 +45,16 @@
         getResults(0);
     });
 </script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li><a href="/modules">Modules</a></li>
+        <li class="is-active"><a href="/modules/{{ namespace }}">{{ namespace }}</a></li>
+    </ul>
+</nav>
 
 <div class="columns">
     <div class="column is-three-fifths is-offset-one-fifth">
