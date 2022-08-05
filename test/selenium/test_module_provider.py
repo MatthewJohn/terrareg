@@ -502,7 +502,7 @@ module "fullypopulated" {{
                 f'{self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/hooks/bitbucket")}'
             ],
             [
-                'Github hook trigger (Coming soon)',
+                'Github hook trigger',
                 f'{self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/hooks/github")}'
             ],
             [
