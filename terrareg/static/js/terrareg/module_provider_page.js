@@ -467,6 +467,7 @@ class SettingsTab extends ModuleDetailsTab {
                 });
             });
 
+            $('#settings-git-path').val(this._moduleDetails.git_path);
             $('#settings-git-tag-format').val(this._moduleDetails.git_tag_format);
 
             let baseUrlTemplate = $('#settings-base-url-template');
@@ -1269,6 +1270,7 @@ function updateModuleProviderSettings(moduleDetails) {
             repo_clone_url_template: $('#settings-clone-url-template').val(),
             repo_browse_url_template: $('#settings-browse-url-template').val(),
             git_tag_format: $('#settings-git-tag-format').val(),
+            git_path: $('#settings-git-path').val(),
             verified: $('#settings-verified').is(':checked'),
             csrf_token: $('#settings-csrf-token').val()
         }),
