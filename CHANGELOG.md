@@ -1,5 +1,21 @@
 # Changelog
 
+# [2.32.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.31.0...v2.32.0) (2022-08-05)
+
+
+### Bug Fixes
+
+* Update check_subdirectory_within_base_directory to not add trailing slash if base_dir is root ([19ac2fa](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/19ac2fa84ab595d2679f3d00238ba6787c0b2644)), closes [#69](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/69)
+* Update safe_join_paths to handle sub_path argument that has a leading slash, which is now converted to a relative path ([4933a32](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4933a327ceee0f200ef2082c271f4f6f8a71018b)), closes [#69](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/69)
+* Update safe_join_paths to optionally take argument to allow sub directory to be the same as the base directory. ([112cca3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/112cca3402352eed70272a0c686a4229b9c4d113)), closes [#69](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/69)
+
+
+### Features
+
+* Add methods to return git_path for module provider, version and submodules. ([257a2f9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/257a2f99500843c2bd3fb8b7b38350211f2ec9a2)), closes [#69](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/69)
+* Allow updating git_path attribute of ModuleProvider from settings tab of module provider page. ([254c48c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/254c48cc194363ea9ded740307bd158d59e5e1b9)), closes [#69](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/69)
+* Update module extractor to use git_path directory when extracting module ([2d33739](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2d337399667cdee56aa7a19aef9fdb8d093494fc)), closes [#69](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/69)
+
 # [2.31.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.30.1...v2.31.0) (2022-08-05)
 
 
