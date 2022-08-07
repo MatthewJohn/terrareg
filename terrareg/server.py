@@ -1105,6 +1105,12 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
 
 
             if github_data['action'] in ['deleted', 'unpublished']:
+                if not terrareg.config.Config().UPLOAD_API_KEYS:
+                    return {
+                        'status': 'Error',
+                        'message': 'Version deletion requires API key authentication',
+                        'tag': tag_ref
+                    }, 400
                 module_version.delete()
 
                 return {
