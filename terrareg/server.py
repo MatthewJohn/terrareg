@@ -10,7 +10,7 @@ import hashlib
 from enum import Enum
 
 from flask import (
-    Flask, request, render_template,
+    Config, Flask, request, render_template,
     redirect, make_response, send_from_directory,
     session, g
 )
@@ -1127,6 +1127,7 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
                     module_version.prepare_module()
                     with GitModuleExtractor(module_version=module_version) as me:
                         me.process_upload()
+
                     return {
                         'status': 'Success',
                         'message': 'Imported provided tag',
