@@ -1058,7 +1058,10 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
             namespace = Namespace(name=namespace)
             module = Module(namespace=namespace, name=name)
             # Get module provider and optionally create, if it doesn't exist
-            module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+            module_provider = ModuleProvider.get(
+                module=module,
+                name=provider,
+                create=terrareg.config.Config().AUTO_CREATE_MODULE_PROVIDER)
 
             # Validate signature
             if terrareg.config.Config().UPLOAD_API_KEYS:
