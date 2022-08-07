@@ -1085,7 +1085,7 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
             github_data = request.json
 
             if not ('release' in github_data and type(github_data['release']) == dict):
-                return {'message': 'Received hook is not triggered by a release'}, 400
+                return {'message': 'Received a non-release hook request'}, 400
 
             release = github_data['release']
     
