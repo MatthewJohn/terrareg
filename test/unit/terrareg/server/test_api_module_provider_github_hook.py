@@ -327,7 +327,8 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
                 "release": {
                     "tag_name": "v6.2.0"
                 }
-            }
+            },
+            expected_error='No action present in request'
         )
 
     @setup_test_data()
