@@ -1109,8 +1109,11 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
             # Create module version
             module_version = ModuleVersion(module_provider=module_provider, version=version)
 
+            action = github_data.get('action')
+            if not action:
+                return {"status": "Error", "message": "No action present in request"}, 400
 
-            if github_data['action'] in ['deleted', 'unpublished']:
+            if action in ['deleted', 'unpublished']:
                 if not terrareg.config.Config().UPLOAD_API_KEYS:
                     return {
                         'status': 'Error',
