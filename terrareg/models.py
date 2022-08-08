@@ -779,6 +779,33 @@ class ModuleProvider(object):
         return None
 
     @property
+    def tag_version_regex(self):
+        """Return regex match for git ref to match version"""
+        # Hacky method to replace placeholder with temporary string,
+        # escape regex characters and then replace temporary string
+        # with regex for version
+        string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m153'
+        version_re = self.git_tag_format.format(version=string_does_not_exist)
+        version_re = re.escape(version_re)
+        # Add EOL and SOL characters
+        version_re = '^{version_re}$'.format(version_re=version_re)
+        # Replace temporary string with regex for symatec version
+        version_re = version_re.replace(string_does_not_exist, r'(\d+\.\d+.\d+)')
+        # Return copmiled regex
+        return re.compile(version_re)
+
+    def get_version_from_tag(self, tag):
+        """Match tag against version number and return actual version number."""
+        # Handle empty/None tag_ref
+        if not tag:
+            return None
+
+        res = self.tag_version_regex.match(tag)
+        if res:
+            return res.group(1)
+        return None
+
+    @property
     def base_directory(self):
         """Return base directory."""
         return safe_join_paths(self._module.base_directory, self._name)
