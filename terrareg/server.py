@@ -1125,8 +1125,6 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
             else:
                 # Perform import from git
                 try:
-                    is_draft = bool(release['draft'])
-                    module_version.update_attributes(published=(not is_draft))
                     module_version.prepare_module()
                     with GitModuleExtractor(module_version=module_version) as me:
                         me.process_upload()
