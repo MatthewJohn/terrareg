@@ -1101,7 +1101,7 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
                 return {'message': 'tag_name not present in request'}, 400
 
             # Attempt to match version against regex
-            version = module_provider.get_version_from_tag_ref(tag_ref)
+            version = module_provider.get_version_from_tag(tag_ref)
 
             if not version:
                 return {'message': 'Release tag does not match configured version regex'}, 400
