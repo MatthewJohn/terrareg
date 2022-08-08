@@ -1086,25 +1086,25 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
                     return self._get_401_response()
 
             if not module_provider.get_git_clone_url():
-                return {'message': 'Module provider is not configured with a repository'}, 400
+                return {'status': 'Error', 'message': 'Module provider is not configured with a repository'}, 400
 
             github_data = request.json
 
             if not ('release' in github_data and type(github_data['release']) == dict):
-                return {'message': 'Received a non-release hook request'}, 400
+                return {'status': 'Error', 'message': 'Received a non-release hook request'}, 400
 
             release = github_data['release']
     
             # Obtain tag name
             tag_ref = release.get('tag_name')
             if not tag_ref:
-                return {'message': 'tag_name not present in request'}, 400
+                return {'status': 'Error', 'message': 'tag_name not present in request'}, 400
 
             # Attempt to match version against regex
             version = module_provider.get_version_from_tag(tag_ref)
 
             if not version:
-                return {'message': 'Release tag does not match configured version regex'}, 400
+                return {'status': 'Error', 'message': 'Release tag does not match configured version regex'}, 400
 
             # Create module version
             module_version = ModuleVersion(module_provider=module_provider, version=version)
