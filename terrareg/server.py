@@ -1063,6 +1063,9 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
                 name=provider,
                 create=terrareg.config.Config().AUTO_CREATE_MODULE_PROVIDER)
 
+            if not module_provider:
+                return self._get_404_response()
+
             # Validate signature
             if terrareg.config.Config().UPLOAD_API_KEYS:
                 # Get signature from request
