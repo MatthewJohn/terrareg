@@ -297,7 +297,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
             mocked_process_upload.assert_called()
 
     def _test_github_with_client_error_expected(self, client, payload, expected_error=None):
-        """Test github call expecting no tags found."""
+        """Test github call with invalid payload."""
         if expected_error is None:
             expected_error = 'Received a non-release hook request'
         with unittest.mock.patch(
@@ -321,7 +321,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
 
     @setup_test_data()
     def test_hook_without_action(self, client, mocked_server_namespace_fixture):
-        """Test hook call with commit."""
+        """Test hook call without action."""
         self._test_github_with_client_error_expected(client,
             {
                 "release": {
@@ -333,7 +333,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
 
     @setup_test_data()
     def test_hook_without_release(self, client, mocked_server_namespace_fixture):
-        """Test hook call with with without ref type."""
+        """Test hook call with without release attribute."""
         self._test_github_with_client_error_expected(client,
             {
                 "action": "published"
@@ -342,7 +342,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
 
     @setup_test_data()
     def test_hook_without_tag_name(self, client, mocked_server_namespace_fixture):
-        """Test hook call with with without type."""
+        """Test hook call without tag name."""
         self._test_github_with_client_error_expected(client,
             {
                 "action": "published",
@@ -354,7 +354,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
 
     @setup_test_data()
     def test_hook_with_invalid_tag(self, client, mocked_server_namespace_fixture):
-        """Test hook call with with without type."""
+        """Test hook call with an invalid tag."""
         self._test_github_with_client_error_expected(client,
             {
                 "action": "published",
@@ -367,7 +367,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
 
     @setup_test_data()
     def test_hook_with_invalid_release(self, client, mocked_server_namespace_fixture):
-        """Test hook call with with deleted tag."""
+        """Test hook call with invalid release attribute."""
         self._test_github_with_client_error_expected(client,
             {
                 "action": "published",
