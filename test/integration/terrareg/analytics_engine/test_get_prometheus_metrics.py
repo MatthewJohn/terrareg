@@ -25,7 +25,7 @@ module_providers_count 0
         assert AnalyticsEngine.get_prometheus_metrics() == """
 # HELP module_providers_count Total number of module providers
 # TYPE module_providers_count counter
-module_providers_count 7
+module_providers_count 5
 # HELP module_provider_usage Analytics tokens used in a module provider
 # TYPE module_provider_usage counter
 """.strip()
