@@ -361,9 +361,9 @@ class AnalyticsEngine:
         module_count_metric = PrometheusMetric(
             name='module_providers_count',
             type_='counter',
-            help='Total number of module providers'
+            help='Total number of module providers with a published version'
         )
-        module_count_metric.add_data_row(value=terrareg.models.ModuleProvider.get_total_count())
+        module_count_metric.add_data_row(value=terrareg.models.ModuleProvider.get_total_count(only_published=True))
         prometheus_generator.add_metric(module_count_metric)
 
         module_provider_usage_metric = PrometheusMetric(

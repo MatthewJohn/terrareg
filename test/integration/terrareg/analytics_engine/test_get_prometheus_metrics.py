@@ -13,7 +13,7 @@ class TestGetPrometheusMetrics(AnalyticsIntegrationTest):
         get_total_count_mock = mock.MagicMock(return_value=0)
         with mock.patch('terrareg.models.ModuleProvider.get_total_count', get_total_count_mock):
             assert AnalyticsEngine.get_prometheus_metrics() == """
-# HELP module_providers_count Total number of module providers
+# HELP module_providers_count Total number of module providers with a published version
 # TYPE module_providers_count counter
 module_providers_count 0
 # HELP module_provider_usage Analytics tokens used in a module provider
@@ -23,9 +23,9 @@ module_providers_count 0
     def test_get_prometheus_with_no_analytics(self):
         """Test function with no analytics recorded."""
         assert AnalyticsEngine.get_prometheus_metrics() == """
-# HELP module_providers_count Total number of module providers
+# HELP module_providers_count Total number of module providers with a published version
 # TYPE module_providers_count counter
-module_providers_count 7
+module_providers_count 6
 # HELP module_provider_usage Analytics tokens used in a module provider
 # TYPE module_provider_usage counter
 """.strip()
@@ -35,9 +35,9 @@ module_providers_count 7
         self._import_test_analaytics(self._TEST_ANALYTICS_DATA)
 
         assert AnalyticsEngine.get_prometheus_metrics() == """
-# HELP module_providers_count Total number of module providers
+# HELP module_providers_count Total number of module providers with a published version
 # TYPE module_providers_count counter
-module_providers_count 7
+module_providers_count 6
 # HELP module_provider_usage Analytics tokens used in a module provider
 # TYPE module_provider_usage counter
 module_provider_usage{module_provider_id="testnamespace/publishedmodule/testprovider", analytics_token="application-using-old-version"} 1

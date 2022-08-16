@@ -156,7 +156,7 @@ class TestModuleProvider(TerraregIntegrationTest):
 
     def test_get_total_count(self):
         """Test get_total_count method"""
-        assert ModuleProvider.get_total_count() == 51
+        assert ModuleProvider.get_total_count() == 42
 
     def test_get_module_provider_existing(self):
         """Attempt to get existing module provider"""
