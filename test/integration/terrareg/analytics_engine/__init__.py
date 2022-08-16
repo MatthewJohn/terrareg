@@ -61,7 +61,7 @@ class AnalyticsIntegrationTest(TerraregIntegrationTest):
         # Ensure a second namespace is displayed
         'secondnamespace': {
             'othernamespacemodule': {'anotherprovider': {
-                'id': 7,
+                'id': 9,
                 'versions': {
                     '2.0.4': {'published': True}
                 }
