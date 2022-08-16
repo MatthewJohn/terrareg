@@ -111,8 +111,8 @@ release:
   only:
     - main
 
-release:
-  stage: test-deploy
+test-release:
+  stage: deploy
   image: semantic-release:latest
   cache:
     paths:
