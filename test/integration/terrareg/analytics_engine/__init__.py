@@ -48,12 +48,12 @@ class AnalyticsIntegrationTest(TerraregIntegrationTest):
                 'versions': {'2.2.2': {'published': True}}
             }},
             # Ensure module with no versions is not included in count
-            'noanalyticstoken': {'testprovider': {
+            'noversions': {'testprovider': {
                 'id': 7,
                 'versions': {}
             }},
             # Ensure module with unpublished version is not included in count
-            'noanalyticstoken': {'testprovider': {
+            'unpublishedversion': {'testprovider': {
                 'id': 8,
                 'versions': {'2.45.2': {'published': False}}
             }}
