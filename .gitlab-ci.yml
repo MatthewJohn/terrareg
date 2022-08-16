@@ -111,20 +111,6 @@ release:
   only:
     - main
 
-release:
-  stage: test-deploy
-  image: semantic-release:latest
-  cache:
-    paths:
-      - node_modules/
-  variables:
-    GITLAB_TOKEN: $GITLAB_TOKEN
-    GIT_STRATEGY: clone
-  script:
-    - semantic-release --dry-run
-  rules:
-    - if: $CI_COMMIT_BRANCH != "main"
-
 stages:
  - build
  - test
