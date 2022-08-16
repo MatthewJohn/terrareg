@@ -25,7 +25,7 @@ module_providers_count 0
         assert AnalyticsEngine.get_prometheus_metrics() == """
 # HELP module_providers_count Total number of module providers with a published version
 # TYPE module_providers_count counter
-module_providers_count 5
+module_providers_count 6
 # HELP module_provider_usage Analytics tokens used in a module provider
 # TYPE module_provider_usage counter
 """.strip()
@@ -37,7 +37,7 @@ module_providers_count 5
         assert AnalyticsEngine.get_prometheus_metrics() == """
 # HELP module_providers_count Total number of module providers with a published version
 # TYPE module_providers_count counter
-module_providers_count 7
+module_providers_count 6
 # HELP module_provider_usage Analytics tokens used in a module provider
 # TYPE module_provider_usage counter
 module_provider_usage{module_provider_id="testnamespace/publishedmodule/testprovider", analytics_token="application-using-old-version"} 1
