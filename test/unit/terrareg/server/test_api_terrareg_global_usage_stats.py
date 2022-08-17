@@ -38,7 +38,7 @@ class TestApiTerraregGlobalUsageStats(TerraregUnitTest):
             mocked_get_global_module_usage_counts.side_effect = get_global_module_usage_counts
             mocked_get_total_count.return_value = 23
 
-            res = client.get('/v1/terrareg/analaytics/global/usage_stats')
+            res = client.get('/v1/terrareg/analytics/global/usage_stats')
 
             assert res.json == {
                 'module_provider_count': 23,

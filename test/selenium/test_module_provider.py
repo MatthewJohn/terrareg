@@ -977,8 +977,9 @@ module "fullypopulated" {{
                 f'{self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/hooks/bitbucket")}'
             ],
             [
-                'Github hook trigger (Coming soon)',
-                f'{self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/hooks/github")}'
+                'Github hook trigger',
+                f'{self.get_url("/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/hooks/github")}\n' + 
+                'Only accepts `Releases` events, all other events will return an error.'
             ],
             [
                 'Gitlab hook trigger (Coming soon)',

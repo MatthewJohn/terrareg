@@ -809,6 +809,33 @@ class ModuleProvider(object):
         return None
 
     @property
+    def tag_version_regex(self):
+        """Return regex match for git ref to match version"""
+        # Hacky method to replace placeholder with temporary string,
+        # escape regex characters and then replace temporary string
+        # with regex for version
+        string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m153'
+        version_re = self.git_tag_format.format(version=string_does_not_exist)
+        version_re = re.escape(version_re)
+        # Add EOL and SOL characters
+        version_re = '^{version_re}$'.format(version_re=version_re)
+        # Replace temporary string with regex for symatec version
+        version_re = version_re.replace(string_does_not_exist, r'(\d+\.\d+.\d+)')
+        # Return copmiled regex
+        return re.compile(version_re)
+
+    def get_version_from_tag(self, tag):
+        """Match tag against version number and return actual version number."""
+        # Handle empty/None tag_ref
+        if not tag:
+            return None
+
+        res = self.tag_version_regex.match(tag)
+        if res:
+            return res.group(1)
+        return None
+
+    @property
     def base_directory(self):
         """Return base directory."""
         return safe_join_paths(self._module.base_directory, self._name)
@@ -1183,8 +1210,7 @@ class ModuleProvider(object):
                 'method': None,
                 'url': f'/v1/terrareg/modules/{self.id}/hooks/github',
                 'description': 'Github hook trigger',
-                'notes': '',
-                'coming_soon': True
+                'notes': 'Only accepts `Releases` events, all other events will return an error.',
             },
             'hooks_gitlab': {
                 'method': None,
@@ -1896,7 +1922,7 @@ class ModuleVersion(TerraformSpecsObject):
             submodule.delete()
 
         if delete_related_analytics:
-            terrareg.analytics.AnalyticsEngine.delete_analaytics_for_module_version(self)
+            terrareg.analytics.AnalyticsEngine.delete_analytics_for_module_version(self)
 
         # Delete associated module details
         module_details = self.module_details
@@ -1942,9 +1968,9 @@ class ModuleVersion(TerraformSpecsObject):
             )
             conn.execute(insert_statement)
 
-        # Migrate analaytics from old module version ID to new module version
+        # Migrate analytics from old module version ID to new module version
         if old_module_version_pk is not None:
-            terrareg.analytics.AnalyticsEngine.migrate_analaytics_to_new_module_version(
+            terrareg.analytics.AnalyticsEngine.migrate_analytics_to_new_module_version(
                 old_version_version_pk=old_module_version_pk,
                 new_module_version=self)
 
