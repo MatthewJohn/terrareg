@@ -44,6 +44,13 @@ The site can be accessed at http://localhost:5000
     virtualenv -ppython3 venv
     . venv/bin/activate
 
+    # Install libmagic
+    ## For OS X:
+    brew install libmagic
+
+    ## For Ubuntu
+    sudo apt-get install libmagic1
+
     # Install depdencies:
     pip install -r requirements.txt
 
