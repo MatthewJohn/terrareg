@@ -2,9 +2,13 @@
 
 Open source Terraform Registry.
 
-Provides features to aid usage and discovery of modules:
+Provides features to aid usage and discovery of modules, providing:
 
- * Provide analytics about usage of modules;
+ * Analytics about the usage of modules;
+ * All information about a module - README, inputs, outputs, provider requirements and managed resources;
+ * Security alerts for each module, submodule and examples;
+ * Cost estimation for each module example;
+ * Module example source code within the UI, with automatic rewriting of 'source' arguments;
  * Interactive 'Usage builder', helping users build terraform to use the terraform modules;
  * Hooks for git SCM applications to automatically index modules;
 
