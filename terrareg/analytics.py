@@ -62,7 +62,7 @@ class AnalyticsEngine:
 
     @staticmethod
     def get_environment_from_token(auth_token):
-        """Check if auth token matches required environment analaytics tokens."""
+        """Check if auth token matches required environment analytics tokens."""
         # If no analytics tokens have been defined, return default environment
         if not AnalyticsEngine.are_tokens_enabled():
             return AnalyticsEngine.DEFAULT_ENVIRONMENT_NAME
@@ -332,7 +332,7 @@ class AnalyticsEngine:
         return token_version_mapping
 
     @classmethod
-    def delete_analaytics_for_module_version(cls, module_version):
+    def delete_analytics_for_module_version(cls, module_version):
         """Delete all analytics for given module version."""
         db = Database.get()
 
@@ -342,7 +342,7 @@ class AnalyticsEngine:
             ))
 
     @classmethod
-    def migrate_analaytics_to_new_module_version(cls, old_version_version_pk, new_module_version):
+    def migrate_analytics_to_new_module_version(cls, old_version_version_pk, new_module_version):
         """Migrate all analytics for old module version ID to new module version."""
         db = Database.get()
 

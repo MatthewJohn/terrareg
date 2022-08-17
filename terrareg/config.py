@@ -85,7 +85,7 @@ class Config:
 
         Note that, if this token is used in a module call, it will be ignored and treated as if
         an analytics token has not been provided.
-        If analaytics tokens are required, this stops users from accidently using the example placeholder in
+        If analytics tokens are required, this stops users from accidently using the example placeholder in
         terraform projects.
         """
         return os.environ.get('EXAMPLE_ANALYTICS_TOKEN', 'my-tf-application')

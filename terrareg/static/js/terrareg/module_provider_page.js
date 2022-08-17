@@ -510,7 +510,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
             let config = await getConfig();
             let usageBuilderTable = $('#usageBuilderTable');
 
-            // Setup analaytics input row
+            // Setup analytics input row
             let analyticsTokenInputRow = $('<tr></tr>');
 
             let analyticsTokenName = $('<td></td>');

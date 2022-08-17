@@ -205,6 +205,14 @@ test_data_full = {
                 'versions': {}
             }
         },
+        'githubexample': {
+            'testprovider': {
+                'id': 8,
+                'repo_clone_url_template': 'ssh://git@localhost:7999/bla/test-module.git',
+                'git_tag_format': 'v{version}',
+                'versions': {}
+            }
+        },
         'gitextraction': {
             'staticrepourl': {
                 'id': 9,

@@ -75,7 +75,7 @@ class AnalyticsIntegrationTest(TerraregIntegrationTest):
             ['application-using-old-version', 'dev-key', '0.23.23']
         ],
         'testnamespace/publishedmodule/testprovider/1.5.0': [
-            # Usage without analaytics key
+            # Usage without analytics key
             ['test-application', None, '0.11.31'],
             # Multiple downloads by same analytics token
             ['test-application', 'dev-key', '0.11.31'],
@@ -102,15 +102,15 @@ class AnalyticsIntegrationTest(TerraregIntegrationTest):
             ['onlyusedbeta', 'dev-key', '0.23.21']
         ],
         'testnamespace/noanalyticstoken/testprovider/2.2.2': [
-            ['withoutanalaytics', None, '0.2.2']
+            ['withoutanalytics', None, '0.2.2']
         ],
         'secondnamespace/othernamespacemodule/anotherprovider/2.0.4': [
             ['duplicate-application', 'dev-key', '2.1.23']
         ]
     }
 
-    def _import_test_analaytics(self, download_data):
-        """Import test analaytics for each module"""
+    def _import_test_analytics(self, download_data):
+        """Import test analytics for each module"""
         for module_key in download_data:
             namespace, module, provider, version = module_key.split('/')
             module_version = ModuleVersion.get(ModuleProvider.get(Module(Namespace(namespace), module), provider), version)

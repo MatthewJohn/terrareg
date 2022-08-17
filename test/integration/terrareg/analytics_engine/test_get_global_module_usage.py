@@ -13,7 +13,7 @@ class TestGetGlobalModuleUsage(AnalyticsIntegrationTest):
 
     def test_get_global_module_usage_counts_excluding_no_environment(self):
         """Test function with default functionality, excluding stats for analytics without an API token"""
-        self._import_test_analaytics(self._TEST_ANALYTICS_DATA)
+        self._import_test_analytics(self._TEST_ANALYTICS_DATA)
 
         assert AnalyticsEngine.get_global_module_usage_counts() == {
             'testnamespace/publishedmodule/testprovider': 4,
@@ -24,7 +24,7 @@ class TestGetGlobalModuleUsage(AnalyticsIntegrationTest):
 
     def test_get_global_module_usage_counts_including_empty_auth_token(self):
         """Test function including stats for analytics without an auth token"""
-        self._import_test_analaytics(self._TEST_ANALYTICS_DATA)
+        self._import_test_analytics(self._TEST_ANALYTICS_DATA)
 
         assert AnalyticsEngine.get_global_module_usage_counts(include_empty_auth_token=True) == {
             'testnamespace/publishedmodule/testprovider': 5,

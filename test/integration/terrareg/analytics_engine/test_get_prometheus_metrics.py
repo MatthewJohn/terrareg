@@ -32,7 +32,7 @@ module_providers_count 6
 
     def test_get_prometheus(self):
         """Test function with data present"""
-        self._import_test_analaytics(self._TEST_ANALYTICS_DATA)
+        self._import_test_analytics(self._TEST_ANALYTICS_DATA)
 
         assert AnalyticsEngine.get_prometheus_metrics() == """
 # HELP module_providers_count Total number of module providers with a published version
@@ -50,5 +50,5 @@ module_provider_usage{module_provider_id="testnamespace/publishedmodule/secondpr
 module_provider_usage{module_provider_id="testnamespace/secondmodule/testprovider", analytics_token="test-app-using-second-module"} 1
 module_provider_usage{module_provider_id="testnamespace/publishedmodule/testprovider", analytics_token="test-application"} 1
 module_provider_usage{module_provider_id="testnamespace/publishedmodule/testprovider", analytics_token="without-analytics-key"} 1
-module_provider_usage{module_provider_id="testnamespace/noanalyticstoken/testprovider", analytics_token="withoutanalaytics"} 1
+module_provider_usage{module_provider_id="testnamespace/noanalyticstoken/testprovider", analytics_token="withoutanalytics"} 1
 """.strip()
