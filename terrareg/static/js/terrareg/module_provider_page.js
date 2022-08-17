@@ -1387,12 +1387,12 @@ function showSecurityWarnings(moduleDetails) {
 }
 
 function showCostAnalysis(moduleDetails) {
-    let monthyCostContainer = $('#monthly-cost');
-    if (moduleDetails.cost_analysis && moduleDetails.cost_analysis.monthly_cost) {
-        monthyCostContainer.removeClass('default-hidden');
-        $('#monthly-cost-text').text(moduleDetails.cost_analysis.monthly_cost);
+    let yearlyCostContainer = $('#yearly-cost');
+    if (moduleDetails.cost_analysis && moduleDetails.cost_analysis.yearly_cost) {
+        yearlyCostContainer.removeClass('default-hidden');
+        $('#yearly-cost-text').text(moduleDetails.cost_analysis.yearly_cost);
     } else {
-        monthyCostContainer.addClass('default-hidden');
+        yearlyCostContainer.addClass('default-hidden');
     }
 }
 
