@@ -69,6 +69,11 @@ class Config:
         return self.convert_boolean(os.environ.get('DEBUG', 'False'))
 
     @property
+    def THREADED(self):
+        """Whether flask is configured to enable threading"""
+        return self.convert_boolean(os.environ.get('THREADED', 'True'))
+
+    @property
     def ANALYTICS_TOKEN_PHRASE(self):
         """Name of analytics token to provide in responses (e.g. `application name`, `team name` etc.)"""
         return os.environ.get('ANALYTICS_TOKEN_PHRASE', 'analytics token')
