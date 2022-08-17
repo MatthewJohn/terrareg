@@ -2202,6 +2202,13 @@ class Example(BaseSubmodule):
         # Call super method to delete self
         super(Example, self).delete()
 
+    def get_terrareg_api_details(self):
+        api_details = super(Example, self).get_terrareg_api_details()
+        api_details['cost_analysis'] = {
+            'monthly_cost': self.module_details.infracost.get('totalMonthlyCost', None)
+        }
+        return api_details
+
 
 class ExampleFile:
 

@@ -1386,6 +1386,16 @@ function showSecurityWarnings(moduleDetails) {
     }
 }
 
+function showCostAnalysis(moduleDetails) {
+    let monthyCostContainer = $('#monthly-cost');
+    if (moduleDetails.cost_analysis && moduleDetails.cost_analysis.monthly_cost) {
+        monthyCostContainer.removeClass('default-hidden');
+        $('#monthly-cost-text').text(moduleDetails.cost_analysis.monthly_cost);
+    } else {
+        monthyCostContainer.addClass('default-hidden');
+    }
+}
+
 /*
  * Set HTML page title
  *
@@ -1524,6 +1534,7 @@ async function setupExamplePage(data) {
     populateVersionText(moduleDetails);
     enableBackToParentLink(moduleDetails);
     showSecurityWarnings(submoduleDetails);
+    showCostAnalysis(submoduleDetails);
     setSourceUrl(submoduleDetails.display_source_url);
 
     let tabFactory = new TabFactory();
