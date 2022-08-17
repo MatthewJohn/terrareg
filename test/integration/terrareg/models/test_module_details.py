@@ -33,24 +33,28 @@ class TestModuleDetails(TerraregIntegrationTest):
         assert module_details.readme_content is None
         assert module_details.terraform_docs is None
         assert module_details.tfsec == {'results': None}
+        assert module_details.infracost == {}
 
     def test_update_attributes(self):
         """Test update_attributes method of ModuleDetails"""
         test_reame_content = 'test readme content'
         test_terraform_docs = '{"test": "output"}'
         test_tfsec = '{"results": [{"test_result": 0}]}'
+        test_infracost = '{"totalMonthlyCost": "123.321"}'
 
         # Create new module details object
         module_details = ModuleDetails.create()
         module_details.update_attributes(
             readme_content=test_reame_content,
             terraform_docs=test_terraform_docs,
-            tfsec=test_tfsec
+            tfsec=test_tfsec,
+            infracost=test_infracost
         )
 
         assert module_details.readme_content == Database.encode_blob(test_reame_content)
         assert module_details.terraform_docs == Database.encode_blob(test_terraform_docs)
         assert module_details.tfsec == json.loads(test_tfsec)
+        assert module_details.infracost == json.loads(test_infracost)
 
     def test_delete(self):
         """Test delete method of ModuleDetails"""

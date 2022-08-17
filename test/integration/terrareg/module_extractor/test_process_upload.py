@@ -1,4 +1,6 @@
 
+from distutils.command.upload import upload
+import subprocess
 import json
 import os
 
@@ -52,6 +54,9 @@ class TestProcessUpload(TerraregIntegrationTest):
 
         # Check tfsec returned no results
         assert module_version.module_details.tfsec == {'results': None}
+
+        # Check infracost returned no results
+        assert module_version.module_details.infracost == {}
 
     def test_terrareg_metadata(self):
         """Test module upload with terrareg metadata file."""
@@ -574,6 +579,332 @@ class TestProcessUpload(TerraregIntegrationTest):
 
         # Ensure security issue count shows the issue
         assert module_version.get_tfsec_failure_count() == 1
+
+    def test_uploading_module_with_infracost(self):
+        """Test uploading a module with infracost."""
+        test_upload = UploadTestModule()
+
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='11.0.0')
+        module_version.prepare_module()
+
+        check_output = subprocess.check_output
+        def mock_check_ouput(command, *args, **kwargs):
+            print(command)
+            if command[0] == 'infracost':
+                output_file_name = None
+                for itx, arg in enumerate(command):
+                    if arg == '--out-file':
+                        output_file_name = command[itx + 1]
+                if not output_file_name:
+                    raise Exception('No out-file argument found in infracost command')
+                # Write example output to filename
+                with open(output_file_name, 'w') as output_file_fh:
+                    output_file_fh.write("""
+{
+    "version": "0.2",
+    "metadata": {
+        "infracostCommand": "breakdown",
+        "branch": "226-investigate-showing-costs-of-each-module-examples",
+        "commit": "4822f3af904200b26ff0a3399750c76d20007f6b",
+        "commitAuthorName": "Matthew John",
+        "commitAuthorEmail": "matthew@dockstudios.co.uk",
+        "commitTimestamp": "2022-08-17T06:58:57Z",
+        "commitMessage": "Add screenshot of example page to README",
+        "vcsRepoUrl": "https://gitlab.dockstudios.co.uk:2222/pub/terrareg.git"
+    },
+    "currency": "USD",
+    "projects": [
+        {
+            "name": "2222/pub/terrareg/example/cost_example",
+            "metadata": {
+                "path": ".",
+                "type": "terraform_dir",
+                "vcsSubPath": "example/cost_example"
+            },
+            "pastBreakdown": {
+                "resources": [],
+                "totalHourlyCost": "0",
+                "totalMonthlyCost": "0"
+            },
+            "breakdown": {
+                "resources": [
+                    {
+                        "name": "aws_instance.test",
+                        "metadata": {
+                            "calls": [
+                                {
+                                    "blockName": "aws_instance.test",
+                                    "filename": "main.tf"
+                                }
+                            ],
+                            "filename": "main.tf"
+                        },
+                        "hourlyCost": "0.0842958904109589",
+                        "monthlyCost": "61.536",
+                        "costComponents": [
+                            {
+                                "name": "Instance usage (Linux/UNIX, on-demand, t3.large)",
+                                "unit": "hours",
+                                "hourlyQuantity": "1",
+                                "monthlyQuantity": "730",
+                                "price": "0.0832",
+                                "hourlyCost": "0.0832",
+                                "monthlyCost": "60.736"
+                            },
+                            {
+                                "name": "CPU credits",
+                                "unit": "vCPU-hours",
+                                "hourlyQuantity": "0",
+                                "monthlyQuantity": "0",
+                                "price": "0.05",
+                                "hourlyCost": "0",
+                                "monthlyCost": "0"
+                            }
+                        ],
+                        "subresources": [
+                            {
+                                "name": "root_block_device",
+                                "metadata": {},
+                                "hourlyCost": "0.0010958904109589",
+                                "monthlyCost": "0.8",
+                                "costComponents": [
+                                    {
+                                        "name": "Storage (general purpose SSD, gp2)",
+                                        "unit": "GB",
+                                        "hourlyQuantity": "0.010958904109589",
+                                        "monthlyQuantity": "8",
+                                        "price": "0.1",
+                                        "hourlyCost": "0.0010958904109589",
+                                        "monthlyCost": "0.8"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "totalHourlyCost": "0.0842958904109589",
+                "totalMonthlyCost": "61.536"
+            },
+            "diff": {
+                "resources": [
+                    {
+                        "name": "aws_instance.test",
+                        "metadata": {},
+                        "hourlyCost": "0.0842958904109589",
+                        "monthlyCost": "61.536",
+                        "costComponents": [
+                            {
+                                "name": "Instance usage (Linux/UNIX, on-demand, t3.large)",
+                                "unit": "hours",
+                                "hourlyQuantity": "1",
+                                "monthlyQuantity": "730",
+                                "price": "0.0832",
+                                "hourlyCost": "0.0832",
+                                "monthlyCost": "60.736"
+                            },
+                            {
+                                "name": "CPU credits",
+                                "unit": "vCPU-hours",
+                                "hourlyQuantity": "0",
+                                "monthlyQuantity": "0",
+                                "price": "0.05",
+                                "hourlyCost": "0",
+                                "monthlyCost": "0"
+                            }
+                        ],
+                        "subresources": [
+                            {
+                                "name": "root_block_device",
+                                "metadata": {},
+                                "hourlyCost": "0.0010958904109589",
+                                "monthlyCost": "0.8",
+                                "costComponents": [
+                                    {
+                                        "name": "Storage (general purpose SSD, gp2)",
+                                        "unit": "GB",
+                                        "hourlyQuantity": "0.010958904109589",
+                                        "monthlyQuantity": "8",
+                                        "price": "0.1",
+                                        "hourlyCost": "0.0010958904109589",
+                                        "monthlyCost": "0.8"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "totalHourlyCost": "0.0842958904109589",
+                "totalMonthlyCost": "61.536"
+            },
+            "summary": {
+                "totalDetectedResources": 1,
+                "totalSupportedResources": 1,
+                "totalUnsupportedResources": 0,
+                "totalUsageBasedResources": 1,
+                "totalNoPriceResources": 0,
+                "unsupportedResourceCounts": {},
+                "noPriceResourceCounts": {}
+            }
+        }
+    ],
+    "totalHourlyCost": "0.0842958904109589",
+    "totalMonthlyCost": "61.536",
+    "pastTotalHourlyCost": "0",
+    "pastTotalMonthlyCost": "0",
+    "diffTotalHourlyCost": "0.0842958904109589",
+    "diffTotalMonthlyCost": "61.536",
+    "timeGenerated": "2022-08-17T18:39:55.964808023Z",
+    "summary": {
+        "totalDetectedResources": 1,
+        "totalSupportedResources": 1,
+        "totalUnsupportedResources": 0,
+        "totalUsageBasedResources": 1,
+        "totalNoPriceResources": 0,
+        "unsupportedResourceCounts": {},
+        "noPriceResourceCounts": {}
+    }
+}
+""")
+                return None
+            return check_output(command, *args, **kwargs)
+
+        # Mock subprocess.check_output to mock call to infracost
+        with mock.patch('terrareg.module_extractor.subprocess.check_output', mock_check_ouput) as mocked_check_output:
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    os.mkdir(os.path.join(upload_directory, 'examples'))
+                    os.mkdir(os.path.join(upload_directory, 'examples', 'test_example'))
+                    with open(os.path.join(upload_directory, 'examples', 'test_example', 'main.tf'), 'w') as fh:
+                        fh.write('#example file')
+
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+
+        # Ensure tfsec output contains security issue about missing encryption key
+        assert module_version.get_examples()[0].module_details.infracost == {
+            'currency': 'USD',
+            'diffTotalHourlyCost': '0.0842958904109589',
+            'diffTotalMonthlyCost': '61.536',
+            'metadata': {'branch': '226-investigate-showing-costs-of-each-module-examples',
+                        'commit': '4822f3af904200b26ff0a3399750c76d20007f6b',
+                        'commitAuthorEmail': 'matthew@dockstudios.co.uk',
+                        'commitAuthorName': 'Matthew John',
+                        'commitMessage': 'Add screenshot of example page to README',
+                        'commitTimestamp': '2022-08-17T06:58:57Z',
+                        'infracostCommand': 'breakdown',
+                        'vcsRepoUrl': 'https://gitlab.dockstudios.co.uk:2222/pub/terrareg.git'},
+            'pastTotalHourlyCost': '0',
+            'pastTotalMonthlyCost': '0',
+            'projects': [{'breakdown': {'resources': [{'costComponents': [{'hourlyCost': '0.0832',
+                                                                            'hourlyQuantity': '1',
+                                                                            'monthlyCost': '60.736',
+                                                                            'monthlyQuantity': '730',
+                                                                            'name': 'Instance '
+                                                                                    'usage '
+                                                                                    '(Linux/UNIX, '
+                                                                                    'on-demand, '
+                                                                                    't3.large)',
+                                                                            'price': '0.0832',
+                                                                            'unit': 'hours'},
+                                                                            {'hourlyCost': '0',
+                                                                            'hourlyQuantity': '0',
+                                                                            'monthlyCost': '0',
+                                                                            'monthlyQuantity': '0',
+                                                                            'name': 'CPU '
+                                                                                    'credits',
+                                                                            'price': '0.05',
+                                                                            'unit': 'vCPU-hours'}],
+                                                        'hourlyCost': '0.0842958904109589',
+                                                        'metadata': {'calls': [{'blockName': 'aws_instance.test',
+                                                                                'filename': 'main.tf'}],
+                                                                    'filename': 'main.tf'},
+                                                        'monthlyCost': '61.536',
+                                                        'name': 'aws_instance.test',
+                                                        'subresources': [{'costComponents': [{'hourlyCost': '0.0010958904109589',
+                                                                                            'hourlyQuantity': '0.010958904109589',
+                                                                                            'monthlyCost': '0.8',
+                                                                                            'monthlyQuantity': '8',
+                                                                                            'name': 'Storage '
+                                                                                                    '(general '
+                                                                                                    'purpose '
+                                                                                                    'SSD, '
+                                                                                                    'gp2)',
+                                                                                            'price': '0.1',
+                                                                                            'unit': 'GB'}],
+                                                                        'hourlyCost': '0.0010958904109589',
+                                                                        'metadata': {},
+                                                                        'monthlyCost': '0.8',
+                                                                        'name': 'root_block_device'}]}],
+                                        'totalHourlyCost': '0.0842958904109589',
+                                        'totalMonthlyCost': '61.536'},
+                            'diff': {'resources': [{'costComponents': [{'hourlyCost': '0.0832',
+                                                                        'hourlyQuantity': '1',
+                                                                        'monthlyCost': '60.736',
+                                                                        'monthlyQuantity': '730',
+                                                                        'name': 'Instance '
+                                                                                'usage '
+                                                                                '(Linux/UNIX, '
+                                                                                'on-demand, '
+                                                                                't3.large)',
+                                                                        'price': '0.0832',
+                                                                        'unit': 'hours'},
+                                                                    {'hourlyCost': '0',
+                                                                        'hourlyQuantity': '0',
+                                                                        'monthlyCost': '0',
+                                                                        'monthlyQuantity': '0',
+                                                                        'name': 'CPU '
+                                                                                'credits',
+                                                                        'price': '0.05',
+                                                                        'unit': 'vCPU-hours'}],
+                                                    'hourlyCost': '0.0842958904109589',
+                                                    'metadata': {},
+                                                    'monthlyCost': '61.536',
+                                                    'name': 'aws_instance.test',
+                                                    'subresources': [{'costComponents': [{'hourlyCost': '0.0010958904109589',
+                                                                                        'hourlyQuantity': '0.010958904109589',
+                                                                                        'monthlyCost': '0.8',
+                                                                                        'monthlyQuantity': '8',
+                                                                                        'name': 'Storage '
+                                                                                                '(general '
+                                                                                                'purpose '
+                                                                                                'SSD, '
+                                                                                                'gp2)',
+                                                                                        'price': '0.1',
+                                                                                        'unit': 'GB'}],
+                                                                    'hourlyCost': '0.0010958904109589',
+                                                                    'metadata': {},
+                                                                    'monthlyCost': '0.8',
+                                                                    'name': 'root_block_device'}]}],
+                                    'totalHourlyCost': '0.0842958904109589',
+                                    'totalMonthlyCost': '61.536'},
+                            'metadata': {'path': '.',
+                                        'type': 'terraform_dir',
+                                        'vcsSubPath': 'example/cost_example'},
+                            'name': '2222/pub/terrareg/example/cost_example',
+                            'pastBreakdown': {'resources': [],
+                                            'totalHourlyCost': '0',
+                                            'totalMonthlyCost': '0'},
+                            'summary': {'noPriceResourceCounts': {},
+                                        'totalDetectedResources': 1,
+                                        'totalNoPriceResources': 0,
+                                        'totalSupportedResources': 1,
+                                        'totalUnsupportedResources': 0,
+                                        'totalUsageBasedResources': 1,
+                                        'unsupportedResourceCounts': {}}}],
+            'summary': {'noPriceResourceCounts': {},
+                        'totalDetectedResources': 1,
+                        'totalNoPriceResources': 0,
+                        'totalSupportedResources': 1,
+                        'totalUnsupportedResources': 0,
+                        'totalUsageBasedResources': 1,
+                        'unsupportedResourceCounts': {}},
+            'timeGenerated': '2022-08-17T18:39:55.964808023Z',
+            'totalHourlyCost': '0.0842958904109589',
+            'totalMonthlyCost': '61.536',
+            'version': '0.2',
+        }
 
     def test_uploading_module_with_reference_to_inaccessible_remote_module(self):
         """Test uploading a module with reference to inaccessible external module."""
