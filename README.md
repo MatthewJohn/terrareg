@@ -699,3 +699,11 @@ alembic revision --autogenerate
 alembic upgrade head
 ```
 
+# Contributors
+
+ * Matt Comben <matthew@dockstudios.co.uk>
+
+## Special thanks
+
+ *  David Soff <david@soff.nl> for implementing Github hook support
+
