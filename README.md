@@ -18,6 +18,8 @@ Provides features to aid usage and discovery of modules, providing:
 
 ![Module Provider](./docs/screenshots/module_provider.png)
 
+![Example](./docs/screenshots/example.png)
+
 ## Getting started
 
 ## Running with docker
