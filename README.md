@@ -452,6 +452,43 @@ Default: `[]`
 
 
 
+### INFRACOST_API_KEY
+
+
+API key for Infracost.
+
+Set this to enable cost-analysis of module examples.
+
+To generate an API key:
+Log in at https://dashboard.infracost.io > select your organization > Settings
+
+
+Default: ``
+
+
+
+### INFRACOST_PRICING_API_ENDPOINT
+
+
+Self-hosted infracost pricing API endpoint.
+
+For information on self-hosting the infracost pricing API, see https://www.infracost.io/docs/cloud_pricing_api/self_hosted/
+
+
+Default: ``
+
+
+
+### INFRACOST_TLS_INSECURE_SKIP_VERIFY
+
+
+Whether to skip TLS verification for self-hosted pricing endpoints
+
+
+Default: `False`
+
+
+
 ### LISTEN_PORT
 
 
