@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.32.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.32.0...v2.32.1) (2022-08-17)
+
+
+### Reverts
+
+* Revert "ci: Add CI step to test dry-run release on non-main branches" ([c7a7833](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c7a78331f78a262fe862cf686102d080919b90fc))
+
 # [2.32.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.31.0...v2.32.0) (2022-08-05)
 
 
