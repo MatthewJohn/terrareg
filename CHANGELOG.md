@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.33.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.32.1...v2.33.0) (2022-08-17)
+
+
+### Features
+
+* Implement Github hook support ([32ff7c5](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/32ff7c50b83f04ca31005ff20ad98776e6322436)), closes [#58](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/58)
+
 ## [2.32.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.32.0...v2.32.1) (2022-08-17)
 
 
