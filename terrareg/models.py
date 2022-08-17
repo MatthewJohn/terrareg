@@ -652,7 +652,7 @@ class ModuleProvider(object):
             )
 
     @staticmethod
-    def get_total_count():
+    def get_total_count(only_published=False):
         """Get total number of module providers."""
         db = Database.get()
         counts = sqlalchemy.select(
@@ -660,8 +660,18 @@ class ModuleProvider(object):
             db.module_provider.c.module,
             db.module_provider.c.provider
         ).select_from(
-            db.module_provider
-        ).group_by(
+            db.module_version
+        ).join(
+            db.module_provider,
+            db.module_version.c.module_provider_id==db.module_provider.c.id
+        )
+        if only_published:
+            counts = counts.where(
+                db.module_version.c.published == True,
+                db.module_version.c.beta == False
+            )
+
+        counts = counts.group_by(
             db.module_provider.c.namespace,
             db.module_provider.c.module,
             db.module_provider.c.provider
