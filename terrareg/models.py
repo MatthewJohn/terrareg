@@ -504,6 +504,15 @@ class ModuleDetails:
             return json.loads(self._get_db_row()['tfsec'])
         return {'results': None}
 
+    @property
+    def infracost(self):
+        """Return infracost data."""
+        db_row = self._get_db_row()
+        if (db_row is not None and
+                db_row['infracost']):
+            return json.loads(db_row['infracost'])
+        return {}
+
     def __init__(self, id: int):
         """Store member variables."""
         self._id = id
@@ -533,7 +542,7 @@ class ModuleDetails:
         """Update DB row."""
         # Check for any blob and encode the values
         for kwarg in kwargs:
-            if kwarg in ['readme_content', 'terraform_docs', 'tfsec']:
+            if kwarg in ['readme_content', 'terraform_docs', 'tfsec', 'infracost']:
                 kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
 
         db = Database.get()
