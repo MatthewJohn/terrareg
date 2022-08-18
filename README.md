@@ -575,6 +575,14 @@ Default: `{major}.{minor}.{patch}`
 
 
 
+### THREADED
+
+Whether flask is configured to enable threading
+
+Default: `True`
+
+
+
 ### TRUSTED_NAMESPACES
 
 Comma-separated list of trusted namespaces.

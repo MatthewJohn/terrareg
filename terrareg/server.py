@@ -444,7 +444,8 @@ class Server(object):
         kwargs = {
             'host': self.host,
             'port': self.port,
-            'debug': terrareg.config.Config().DEBUG if debug is None else debug
+            'debug': terrareg.config.Config().DEBUG if debug is None else debug,
+            'threaded': terrareg.config.Config().THREADED
         }
         if self.ssl_public_key and self.ssl_private_key:
             kwargs['ssl_context'] = (self.ssl_public_key, self.ssl_private_key)

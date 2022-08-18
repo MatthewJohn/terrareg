@@ -132,7 +132,8 @@ class TestConfig:
         'DISABLE_TERRAREG_EXCLUSIVE_LABELS',
         'AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION',
         'ENABLE_SECURITY_SCANNING',
-        'AUTOGENERATE_USAGE_BUILDER_VARIABLES'
+        'AUTOGENERATE_USAGE_BUILDER_VARIABLES',
+        'THREADED'
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
         """Test boolean configs to ensure they are overriden with environment variables."""
