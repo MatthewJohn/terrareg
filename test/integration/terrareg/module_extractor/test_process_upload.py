@@ -657,12 +657,12 @@ resource "aws_s3_bucket" "test" {
         infracost_called = False
         def mock_check_ouput(command, *args, **kwargs):
             if command[0] == 'infracost':
-                raise subprocess.CalledProcessError('Unit test error')
+                raise subprocess.CalledProcessError(cmd='Unit test error', returncode=1)
             return check_output(command, *args, **kwargs)
 
         # Mock subprocess.check_output to mock call to infracost
         with mock.patch('terrareg.module_extractor.subprocess.check_output', mock_check_ouput) as mocked_check_output, \
-                mock.patch('terrareg.config.Config.INFRACOST_API_KEY', None):
+                mock.patch('terrareg.config.Config.INFRACOST_API_KEY', 'some-api-key'):
             with test_upload as zip_file:
                 with test_upload as upload_directory:
                     os.mkdir(os.path.join(upload_directory, 'examples'))
