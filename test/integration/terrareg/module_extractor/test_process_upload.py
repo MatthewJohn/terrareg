@@ -7,6 +7,7 @@ import os
 from unittest import mock
 import pytest
 
+import terrareg.config
 import terrareg.errors
 from terrareg.models import GitProvider, Module, ModuleProvider, ModuleVersion, Namespace
 from test.integration.terrareg import TerraregIntegrationTest
@@ -580,6 +581,33 @@ class TestProcessUpload(TerraregIntegrationTest):
         # Ensure security issue count shows the issue
         assert module_version.get_tfsec_failure_count() == 1
 
+    @pytest.mark.skipif(terrareg.config.Config().INFRACOST_API_KEY == None, reason="Requires valid infracost API key")
+    def test_uploading_module_with_infracost(self):
+        """Test uploading a module with real infracost API key."""
+        test_upload = UploadTestModule()
+
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='12.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                os.mkdir(os.path.join(upload_directory, 'examples'))
+                os.mkdir(os.path.join(upload_directory, 'examples', 'test_example'))
+                with open(os.path.join(upload_directory, 'examples', 'test_example', 'main.tf'), 'w') as fh:
+                    fh.write("""
+resource "aws_s3_bucket" "test" {
+  name = "test-s3-bucket"
+}
+""")
+
+            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+
+        # Ensure infracost output contains monthly cost
+        assert 'totalMonthlyCost' in module_version.get_examples()[0].module_details.infracost
+
     def test_uploading_module_without_infracost_api_key(self):
         """Test uploading a module without infracost API key."""
         test_upload = UploadTestModule()
@@ -647,7 +675,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         # Ensure tfsec output contains security issue about missing encryption key
         assert module_version.get_examples()[0].module_details.infracost == {}
 
-    def test_uploading_module_with_infracost(self):
+    def test_uploading_module_with_infracost_mocked(self):
         """Test uploading a module with infracost."""
         test_upload = UploadTestModule()
 
