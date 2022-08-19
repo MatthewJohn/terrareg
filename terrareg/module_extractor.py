@@ -261,11 +261,11 @@ class ModuleExtractor:
                 raise UnableToProcessTerraformError('An error occurred whilst performing cost analysis of code.')
 
             with open(output_file.name, 'r') as output_file_fh:
-                tfsec_results = json.load(output_file_fh)
+                infracost_result = json.load(output_file_fh)
 
             os.unlink(output_file.name)
 
-        return tfsec_results
+        return infracost_result
 
     def _extract_example_files(self, example: Example):
         """Extract all terraform files in example and insert into DB"""
