@@ -99,7 +99,7 @@ class TestApiModuleVersionDownload(TerraregUnitTest):
     def test_existing_module_internal_download_with_auth_token_without_analytics_token(
         self, client, mocked_server_namespace_fixture,
         mock_record_module_version_download):
-        """Test endpoint with analytics token and auth token"""
+        """Test endpoint with valid auth token and without analytics token"""
 
         res = client.get(
             '/v1/modules/testnamespace/testmodulename/testprovider/2.4.1/download',
@@ -115,7 +115,7 @@ class TestApiModuleVersionDownload(TerraregUnitTest):
     def test_existing_module_download_with_internal_auth_token(
         self, client, mocked_server_namespace_fixture,
         mock_record_module_version_download):
-        """Test endpoint with analytics token and auth token"""
+        """Test endpoint without analytics token and with an internal auth token"""
 
         with unittest.mock.patch('terrareg.config.Config._INTERNAL_EXTRACTION_ANALYITCS_TOKEN', 'unittest-internal-api-key'):
             res = client.get(
