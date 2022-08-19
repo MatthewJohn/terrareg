@@ -1387,12 +1387,15 @@ function showSecurityWarnings(moduleDetails) {
 }
 
 function showCostAnalysis(moduleDetails) {
-    let yearlyCostContainer = $('#yearly-cost');
     if (moduleDetails.cost_analysis && moduleDetails.cost_analysis.yearly_cost) {
+        let yearlyCostContainer = $('#yearly-cost');
         yearlyCostContainer.removeClass('default-hidden');
         $('#yearly-cost-text').text(moduleDetails.cost_analysis.yearly_cost);
-    } else {
-        yearlyCostContainer.addClass('default-hidden');
+
+        // Setup label at top of module
+        let yearCostLabel = $('#yearly-cost-label');
+        yearCostLabel.find('#label-text').text(`$${moduleDetails.cost_analysis.yearly_cost}/yr`);
+        yearCostLabel.removeClass('default-hidden');
     }
 }
 
