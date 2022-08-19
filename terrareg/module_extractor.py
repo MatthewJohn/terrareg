@@ -241,6 +241,11 @@ class ModuleExtractor:
         # Ensure example path is within root module
         safe_join_paths(self.module_directory, example.path)
 
+        infracost_env = dict(os.environ)
+        if Config().DOMAIN_NAME:
+            infracost_env['INFRACOST_TERRAFORM_CLOUD_TOKEN'] = Config()._INTERNAL_EXTRACTION_ANALYITCS_TOKEN
+            infracost_env['INFRACOST_TERRAFORM_CLOUD_HOST'] = Config().DOMAIN_NAME
+
         # Create temporary file safely and immediately close to
         # pass path to infracost
         with tempfile.NamedTemporaryFile(delete=False) as output_file:
@@ -250,6 +255,7 @@ class ModuleExtractor:
                     ['infracost', 'breakdown', '--path', example.path,
                      '--format', 'json', '--out-file', output_file.name],
                     cwd=self.module_directory,
+                    env=infracost_env
                 )
             except subprocess.CalledProcessError as exc:
                 raise UnableToProcessTerraformError('An error occurred whilst performing cost analysis of code.')

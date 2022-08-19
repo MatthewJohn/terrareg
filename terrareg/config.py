@@ -1,9 +1,18 @@
 
 import os
+import uuid
 
 from terrareg.errors import InvalidBooleanConfigurationError
 
 class Config:
+
+    _INTERNAL_EXTRACTION_ANALYITCS_TOKEN = str(uuid.uuid4())
+    """Analaytics token used by terraform initialised by the registry"""
+
+    @property
+    def DOMAIN_NAME(self):
+        """Domain name that the system is hosted on"""
+        return os.environ.get('DOMAIN_NAME', None)
 
     @property
     def DATA_DIRECTORY(self):

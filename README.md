@@ -383,6 +383,14 @@ Default: `False`
 
 
 
+### DOMAIN_NAME
+
+Domain name that the system is hosted on
+
+Default: ``
+
+
+
 ### ENABLE_SECURITY_SCANNING
 
 

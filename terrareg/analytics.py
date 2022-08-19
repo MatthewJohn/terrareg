@@ -92,6 +92,17 @@ class AnalyticsEngine:
         auth_token: str):
         """Store information about module version download in database."""
 
+        # Determine if auth token is for internal initialisation of modules
+        # during module extraction
+        if auth_token == Config()._INTERNAL_EXTRACTION_ANALYITCS_TOKEN:
+            # Allow download and do not record
+            return True
+
+        # Determine if module download should be rejected due to
+        # non-existent analytics token
+        if not analytics_token and not Config().ALLOW_UNIDENTIFIED_DOWNLOADS:
+            return False
+
         # If terraform version not present from header,
         # attempt to determine from user agent
         if not terraform_version:
@@ -115,6 +126,8 @@ class AnalyticsEngine:
         )
         with db.get_connection() as conn:
             conn.execute(insert_statement)
+
+        return True
 
     def get_total_downloads():
         """Return number of downloads for a given module version."""
