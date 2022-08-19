@@ -216,7 +216,10 @@ class ModuleExtractor:
         infracost = None
         # Run infracost on examples, if API key is set
         if isinstance(submodule, Example) and Config().INFRACOST_API_KEY:
-            infracost = self._run_infracost(example=submodule)
+            try:
+                infracost = self._run_infracost(example=submodule)
+            except UnableToProcessTerraformError as exc:
+                print('An error occured whilst running infracost against example')
 
         # Create module details row
         module_details = self._create_module_details(

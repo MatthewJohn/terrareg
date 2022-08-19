@@ -587,7 +587,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         namespace = Namespace(name='testprocessupload')
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
-        module_version = ModuleVersion(module_provider=module_provider, version='11.0.0')
+        module_version = ModuleVersion(module_provider=module_provider, version='12.0.0')
         module_version.prepare_module()
 
         check_output = subprocess.check_output
@@ -615,6 +615,38 @@ class TestProcessUpload(TerraregIntegrationTest):
 
         assert infracost_called == False
 
+    def test_uploading_module_with_infracost_run_error(self):
+        """Test uploading a module with infracost throwing an error."""
+        test_upload = UploadTestModule()
+
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='13.0.0')
+        module_version.prepare_module()
+
+        check_output = subprocess.check_output
+        infracost_called = False
+        def mock_check_ouput(command, *args, **kwargs):
+            if command[0] == 'infracost':
+                raise subprocess.CalledProcessError('Unit test error')
+            return check_output(command, *args, **kwargs)
+
+        # Mock subprocess.check_output to mock call to infracost
+        with mock.patch('terrareg.module_extractor.subprocess.check_output', mock_check_ouput) as mocked_check_output, \
+                mock.patch('terrareg.config.Config.INFRACOST_API_KEY', None):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    os.mkdir(os.path.join(upload_directory, 'examples'))
+                    os.mkdir(os.path.join(upload_directory, 'examples', 'test_example'))
+                    with open(os.path.join(upload_directory, 'examples', 'test_example', 'main.tf'), 'w') as fh:
+                        fh.write('#example file')
+
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+
+        # Ensure tfsec output contains security issue about missing encryption key
+        assert module_version.get_examples()[0].module_details.infracost == {}
+
     def test_uploading_module_with_infracost(self):
         """Test uploading a module with infracost."""
         test_upload = UploadTestModule()
@@ -622,7 +654,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         namespace = Namespace(name='testprocessupload')
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
-        module_version = ModuleVersion(module_provider=module_provider, version='11.0.0')
+        module_version = ModuleVersion(module_provider=module_provider, version='14.0.0')
         module_version.prepare_module()
 
         check_output = subprocess.check_output
@@ -948,7 +980,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         namespace = Namespace(name='testprocessupload')
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
-        module_version = ModuleVersion(module_provider=module_provider, version='12.0.0')
+        module_version = ModuleVersion(module_provider=module_provider, version='15.0.0')
         module_version.prepare_module()
 
         with test_upload as zip_file:
