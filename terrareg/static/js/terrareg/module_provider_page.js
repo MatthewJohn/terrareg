@@ -1435,9 +1435,6 @@ async function setupBasePage(data) {
 
     setModuleTitle(moduleDetails);
     setModuleProvider(moduleDetails);
-    setModuleDescription(moduleDetails);
-    setPublishedAt(moduleDetails);
-    setOwner(moduleDetails);
 
     addModuleLabels(moduleDetails, $("#module-labels"));
 }
@@ -1453,6 +1450,9 @@ async function setupRootModulePage(data) {
     let moduleDetails = await getModuleDetails(id);
 
     setPageTitle(moduleDetails.module_provider_id);
+    setModuleDescription(moduleDetails);
+    setPublishedAt(moduleDetails);
+    setOwner(moduleDetails);
 
     let tabFactory = new TabFactory();
 
@@ -1501,6 +1501,9 @@ async function setupSubmodulePage(data) {
 
     setPageTitle(`${moduleDetails.module_provider_id}/${submoduleDetails.path}`);
 
+    setModuleDescription(moduleDetails);
+    setPublishedAt(moduleDetails);
+    setOwner(moduleDetails);
     populateCurrentSubmodule(`Submodule: ${submodulePath}`)
     populateVersionText(moduleDetails);
     populateTerraformUsageExample(moduleDetails, submodulePath);
