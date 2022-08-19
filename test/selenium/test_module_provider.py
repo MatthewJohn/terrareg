@@ -148,7 +148,8 @@ class TestModuleProvider(SeleniumTest):
 
             # Check basic details of module
             expected_element_details = {
-                'module-title': 'fullypopulated\nContributed',
+                'module-title': 'fullypopulated',
+                'module-labels': 'Contributed',
                 'module-provider': 'Provider: testprovider',
                 'module-description': 'This is a test module version for tests.',
                 'published-at': 'Published January 05, 2022 by moduledetails',
