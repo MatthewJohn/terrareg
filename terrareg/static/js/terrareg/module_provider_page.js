@@ -1436,7 +1436,7 @@ async function setupBasePage(data) {
     setPublishedAt(moduleDetails);
     setOwner(moduleDetails);
 
-    addModuleLabels(moduleDetails, $("#module-title"));
+    addModuleLabels(moduleDetails, $("#module-labels"));
 }
 
 /*

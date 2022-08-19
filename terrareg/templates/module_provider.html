@@ -47,12 +47,14 @@
                 </div>
             </section>
             <p id="version-text" class="subtitle"></p>
-            <span id="security-issues" class="tag is-danger is-light result-card-label result-card-label-security-issues default-hidden">
-                <span class="panel-icon">
-                    <i class="fa fa-bug" aria-hidden="true"></i>
+            <div id="module-labels">
+                <span id="security-issues" class="tag is-danger is-light result-card-label result-card-label-security-issues default-hidden">
+                    <span class="panel-icon">
+                        <i class="fa fa-bug" aria-hidden="true"></i>
+                    </span>
+                    <p id="security-issues-text">${module.security_failures} Security issues</p>
                 </span>
-                <p id="security-issues-text">${module.security_failures} Security issues</p>
-            </span>
+            </div>
 
             <!-- Basic details about module -->
             <p id="module-title" class="title">
