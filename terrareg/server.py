@@ -1409,9 +1409,18 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
         if module_version is None:
             return self._get_404_response()
 
-        # Determine if module download should be rejected due to
+        auth_token = None
+        auth_token_match = re.match(r'Bearer (.*)', request.headers.get('Authorization', ''))
+        if auth_token_match:
+            auth_token = auth_token_match.group(1)
+
+        # Determine if auth token is for internal initialisation of modules
+        # during module extraction
+        if auth_token == terrareg.config.Config()._INTERNAL_EXTRACTION_ANALYITCS_TOKEN:
+            pass
+        # otherwise, if module download should be rejected due to
         # non-existent analytics token
-        if not analytics_token and not terrareg.config.Config().ALLOW_UNIDENTIFIED_DOWNLOADS:
+        elif not analytics_token and not terrareg.config.Config().ALLOW_UNIDENTIFIED_DOWNLOADS:
             return make_response(
                 ("\nAn {analytics_token_phrase} must be provided.\n"
                  "Please update module source to include {analytics_token_phrase}.\n"
@@ -1425,20 +1434,15 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
                 ),
                 401
             )
-
-        auth_token = None
-        auth_token_match = re.match(r'Bearer (.*)', request.headers.get('Authorization', ''))
-        if auth_token_match:
-            auth_token = auth_token_match.group(1)
-
-        # Record download
-        AnalyticsEngine.record_module_version_download(
-            module_version=module_version,
-            analytics_token=analytics_token,
-            terraform_version=request.headers.get('X-Terraform-Version', None),
-            user_agent=request.headers.get('User-Agent', None),
-            auth_token=auth_token
-        )
+        else:
+            # Otherwise, if download is allowed and not internal, record the download
+            AnalyticsEngine.record_module_version_download(
+                module_version=module_version,
+                analytics_token=analytics_token,
+                terraform_version=request.headers.get('X-Terraform-Version', None),
+                user_agent=request.headers.get('User-Agent', None),
+                auth_token=auth_token
+            )
 
         resp = make_response('', 204)
         resp.headers['X-Terraform-Get'] = module_version.get_source_download_url()

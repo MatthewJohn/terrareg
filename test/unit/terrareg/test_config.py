@@ -62,7 +62,10 @@ class TestConfig:
         ('SSL_CERT_PUBLIC_KEY', None),
         ('TERRAFORM_EXAMPLE_VERSION_TEMPLATE', None),
         ('TRUSTED_NAMESPACE_LABEL', None),
-        ('VERIFIED_MODULE_LABEL', None)
+        ('VERIFIED_MODULE_LABEL', None),
+        ('INFRACOST_API_KEY', None),
+        ('INFRACOST_PRICING_API_ENDPOINT', None),
+        ('DOMAIN_NAME', None)
     ])
     def test_string_configs(self, config_name, override_expected_value):
         """Test string configs to ensure they are overriden with environment variables."""
@@ -133,7 +136,8 @@ class TestConfig:
         'AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION',
         'ENABLE_SECURITY_SCANNING',
         'AUTOGENERATE_USAGE_BUILDER_VARIABLES',
-        'THREADED'
+        'THREADED',
+        'INFRACOST_TLS_INSECURE_SKIP_VERIFY'
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
         """Test boolean configs to ensure they are overriden with environment variables."""

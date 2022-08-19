@@ -1,9 +1,18 @@
 
 import os
+import uuid
 
 from terrareg.errors import InvalidBooleanConfigurationError
 
 class Config:
+
+    _INTERNAL_EXTRACTION_ANALYITCS_TOKEN = str(uuid.uuid4())
+    """Analaytics token used by terraform initialised by the registry"""
+
+    @property
+    def DOMAIN_NAME(self):
+        """Domain name that the system is hosted on"""
+        return os.environ.get('DOMAIN_NAME', None)
 
     @property
     def DATA_DIRECTORY(self):
@@ -388,6 +397,34 @@ class Config:
         Whether to perform security scans of uploaded modules and display them against the module, submodules and examples.
         """
         return self.convert_boolean(os.environ.get('ENABLE_SECURITY_SCANNING', 'True'))
+
+    @property
+    def INFRACOST_API_KEY(self):
+        """
+        API key for Infracost.
+
+        Set this to enable cost-analysis of module examples.
+
+        To generate an API key:
+        Log in at https://dashboard.infracost.io > select your organization > Settings
+        """
+        return os.environ.get('INFRACOST_API_KEY', None)
+
+    @property
+    def INFRACOST_PRICING_API_ENDPOINT(self):
+        """
+        Self-hosted infracost pricing API endpoint.
+
+        For information on self-hosting the infracost pricing API, see https://www.infracost.io/docs/cloud_pricing_api/self_hosted/
+        """
+        return os.environ.get('INFRACOST_PRICING_API_ENDPOINT', None)
+
+    @property
+    def INFRACOST_TLS_INSECURE_SKIP_VERIFY(self):
+        """
+        Whether to skip TLS verification for self-hosted pricing endpoints
+        """
+        return self.convert_boolean(os.environ.get('INFRACOST_TLS_INSECURE_SKIP_VERIFY', 'False'))
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""

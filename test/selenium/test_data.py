@@ -502,6 +502,172 @@ integration_test_data = {
                                 'examples/test-example/main.tf': '# Call root module\nmodule "root" {\n  source = "../../"\n}'
                             },
                             'readme_content': '# Example 1 README',
+                            'infracost': json.dumps({
+                                'totalMonthlyCost': '61.536',
+                                'totalHourlyCost': '0.0842958904109589',
+                                'timeGenerated': '2022-08-17T18:39:55.964808023Z',
+                                'currency': 'USD',
+                                'diffTotalHourlyCost':
+                                '0.0842958904109589',
+                                'version': '0.2',
+                                'pastTotalHourlyCost': '0',
+                                'pastTotalMonthlyCost': '0',
+                                'diffTotalMonthlyCost': '61.536',
+                                'summary': {
+                                    'totalNoPriceResources': 0,
+                                    'unsupportedResourceCounts': {},
+                                    'totalUsageBasedResources': 1,
+                                    'totalUnsupportedResources': 0,
+                                    'totalDetectedResources': 1,
+                                    'totalSupportedResources': 1,
+                                    'noPriceResourceCounts': {}
+                                },
+                                'projects': [
+                                    {
+                                        'pastBreakdown': {
+                                            'totalMonthlyCost': '0',
+                                            'totalHourlyCost': '0',
+                                            'resources': []
+                                        },
+                                        'breakdown': {
+                                            'totalMonthlyCost': '61.536',
+                                            'totalHourlyCost': '0.0842958904109589',
+                                            'resources': [
+                                                {
+                                                    'hourlyCost': '0.0842958904109589',
+                                                    'name': 'aws_instance.test',
+                                                    'monthlyCost': '61.536',
+                                                    'costComponents': [
+                                                        {
+                                                            'hourlyCost': '0.0832',
+                                                            'name': 'Instance usage (Linux/UNIX, on-demand, t3.large)',
+                                                            'hourlyQuantity': '1',
+                                                            'price': '0.0832',
+                                                            'monthlyCost': '60.736',
+                                                            'monthlyQuantity': '730',
+                                                            'unit': 'hours'
+                                                        },
+                                                        {
+                                                            'hourlyCost': '0',
+                                                            'name': 'CPU credits',
+                                                            'hourlyQuantity': '0',
+                                                            'price': '0.05',
+                                                            'monthlyCost': '0',
+                                                            'monthlyQuantity': '0',
+                                                            'unit': 'vCPU-hours'
+                                                        }
+                                                    ],
+                                                    'subresources': [
+                                                        {
+                                                            'costComponents': [
+                                                                {
+                                                                    'hourlyCost': '0.0010958904109589',
+                                                                    'name': 'Storage (general purpose SSD, gp2)',
+                                                                    'hourlyQuantity': '0.010958904109589',
+                                                                    'price': '0.1',
+                                                                    'monthlyCost': '0.8',
+                                                                    'monthlyQuantity': '8',
+                                                                    'unit': 'GB'
+                                                                }
+                                                            ],
+                                                            'hourlyCost': '0.0010958904109589',
+                                                            'monthlyCost': '0.8',
+                                                            'name': 'root_block_device',
+                                                            'metadata': {}
+                                                        }
+                                                    ],
+                                                    'metadata': {
+                                                        'calls': [
+                                                            {
+                                                                'filename': 'main.tf',
+                                                                'blockName': 'aws_instance.test'
+                                                            }
+                                                        ],
+                                                        'filename': 'main.tf'
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        'name': '2222/pub/terrareg/example/cost_example',
+                                        'summary': {
+                                            'totalNoPriceResources': 0,
+                                            'unsupportedResourceCounts': {},
+                                            'totalUsageBasedResources': 1,
+                                            'totalUnsupportedResources': 0,
+                                            'totalDetectedResources': 1,
+                                            'totalSupportedResources': 1,
+                                            'noPriceResourceCounts': {}
+                                        },
+                                        'diff': {
+                                            'totalMonthlyCost': '61.536',
+                                            'totalHourlyCost': '0.0842958904109589',
+                                            'resources': [
+                                                {
+                                                    'hourlyCost': '0.0842958904109589',
+                                                    'name': 'aws_instance.test',
+                                                    'monthlyCost': '61.536',
+                                                    'costComponents': [
+                                                        {
+                                                            'hourlyCost': '0.0832',
+                                                            'name': 'Instance usage (Linux/UNIX, on-demand, t3.large)',
+                                                            'hourlyQuantity': '1',
+                                                            'price': '0.0832',
+                                                            'monthlyCost': '60.736',
+                                                            'monthlyQuantity': '730',
+                                                            'unit': 'hours'
+                                                        },
+                                                        {
+                                                            'hourlyCost': '0',
+                                                            'name': 'CPU credits',
+                                                            'hourlyQuantity': '0',
+                                                            'price': '0.05',
+                                                            'monthlyCost': '0',
+                                                            'monthlyQuantity': '0',
+                                                            'unit': 'vCPU-hours'
+                                                        }
+                                                    ],
+                                                    'subresources': [
+                                                        {
+                                                            'costComponents': [
+                                                                {
+                                                                    'hourlyCost': '0.0010958904109589',
+                                                                    'name': 'Storage (general purpose SSD, gp2)',
+                                                                    'hourlyQuantity': '0.010958904109589',
+                                                                    'price': '0.1',
+                                                                    'monthlyCost': '0.8',
+                                                                    'monthlyQuantity': '8',
+                                                                    'unit': 'GB'
+                                                                }
+                                                            ],
+                                                            'hourlyCost': '0.0010958904109589',
+                                                            'monthlyCost': '0.8',
+                                                            'name': 'root_block_device',
+                                                            'metadata': {}
+                                                        }
+                                                    ],
+                                                    'metadata': {}
+                                                }
+                                            ]
+                                        },
+                                        'metadata': {
+                                            'path': '.',
+                                            'type': 'terraform_dir',
+                                            'vcsSubPath': 'example/cost_example'
+                                        }
+                                    }
+                                ],
+                                'metadata': {
+                                    'commitTimestamp': '2022-08-17T06:58:57Z',
+                                    'commitMessage': 'Add screenshot of example page to README',
+                                    'vcsRepoUrl': 'https://gitlab.dockstudios.co.uk:2222/pub/terrareg.git',
+                                    'commitAuthorName': 'Matthew John',
+                                    'infracostCommand': 'breakdown',
+                                    'branch': '226-investigate-showing-costs-of-each-module-examples',
+                                    'commit': '4822f3af904200b26ff0a3399750c76d20007f6b',
+                                    'commitAuthorEmail': 'matthew@dockstudios.co.uk'
+                                    }
+                                }
+                            ),
                             'terraform_docs': json.dumps({
                                 'header': '',
                                 'footer': '',

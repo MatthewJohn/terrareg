@@ -21,6 +21,19 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     wget https://github.com/aquasecurity/tfsec/releases/download/v1.26.0/tfsec-linux-${arch} -O /usr/local/bin/tfsec && \
     chmod +x /usr/local/bin/tfsec'
 
+# Download infracost
+RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
+    then \
+      arch=arm64; \
+    else \
+      arch=amd64; \
+    fi; \
+    wget https://github.com/infracost/infracost/releases/download/v0.10.10/infracost-linux-${arch}.tar.gz -O /tmp/infracost.tar.gz && \
+    tar -zxvf /tmp/infracost.tar.gz infracost-linux-${arch} && \
+    mv infracost-linux-${arch} /usr/local/bin/infracost && \
+    chmod +x /usr/local/bin/infracost && \
+    rm /tmp/infracost.tar.gz'
+
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt

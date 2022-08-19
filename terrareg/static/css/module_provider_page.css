@@ -13,3 +13,7 @@
 .module-provider-tab-content-table {
     width: 100%;
 }
+#yearly-cost {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}

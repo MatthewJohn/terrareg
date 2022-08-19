@@ -182,7 +182,7 @@ class BaseTest:
                         values_to_update = {
                             attr: version_data[attr]
                             for attr in version_data
-                            if attr not in ['examples', 'submodules', 'published', 'readme_content', 'terraform_docs', 'tfsec']
+                            if attr not in ['examples', 'submodules', 'published', 'readme_content', 'terraform_docs', 'tfsec', 'infracost']
                         }
                         if values_to_update:
                             module_version.update_attributes(**values_to_update)
@@ -221,14 +221,15 @@ class BaseTest:
                             module_details.update_attributes(
                                 readme_content=example_config.get('readme_content', None),
                                 terraform_docs=example_config.get('terraform_docs', None),
-                                tfsec=example_config.get('tfsec', None)
+                                tfsec=example_config.get('tfsec', None),
+                                infracost=example_config.get('infracost', None)
                             )
 
                             example = Example.create(module_version=module_version, module_path=example_path)
                             attributes_to_update = {
                                 attr: example_config[attr]
                                 for attr in example_config
-                                if attr not in ['example_files', 'readme_content', 'terraform_docs', 'tfsec']
+                                if attr not in ['example_files', 'readme_content', 'terraform_docs', 'tfsec', 'infracost']
                             }
                             attributes_to_update['module_details_id'] = module_details.pk
                             example.update_attributes(
