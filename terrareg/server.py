@@ -1414,15 +1414,13 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
         if auth_token_match:
             auth_token = auth_token_match.group(1)
 
-        # Record download
-        download_allowed = AnalyticsEngine.record_module_version_download(
-            module_version=module_version,
-            analytics_token=analytics_token,
-            terraform_version=request.headers.get('X-Terraform-Version', None),
-            user_agent=request.headers.get('User-Agent', None),
-            auth_token=auth_token
-        )
-        if not download_allowed:
+        # Determine if auth token is for internal initialisation of modules
+        # during module extraction
+        if auth_token == terrareg.config.Config()._INTERNAL_EXTRACTION_ANALYITCS_TOKEN:
+            pass
+        # otherwise, if module download should be rejected due to
+        # non-existent analytics token
+        elif not analytics_token and not terrareg.config.Config().ALLOW_UNIDENTIFIED_DOWNLOADS:
             return make_response(
                 ("\nAn {analytics_token_phrase} must be provided.\n"
                  "Please update module source to include {analytics_token_phrase}.\n"
@@ -1435,6 +1433,15 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
                     provider=module_provider.name
                 ),
                 401
+            )
+        else:
+            # Otherwise, if download is allowed and not internal, record the download
+            AnalyticsEngine.record_module_version_download(
+                module_version=module_version,
+                analytics_token=analytics_token,
+                terraform_version=request.headers.get('X-Terraform-Version', None),
+                user_agent=request.headers.get('User-Agent', None),
+                auth_token=auth_token
             )
 
         resp = make_response('', 204)

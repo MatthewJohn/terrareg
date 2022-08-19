@@ -96,6 +96,25 @@ class TestApiModuleVersionDownload(TerraregUnitTest):
         assert AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'].id == test_module_version.id
 
     @setup_test_data()
+    def test_existing_module_download_with_internal_auth_token(
+        self, client, mocked_server_namespace_fixture,
+        mock_record_module_version_download):
+        """Test endpoint with analytics token and auth token"""
+
+        with unittest.mock.patch('terrareg.config.Config._INTERNAL_EXTRACTION_ANALYITCS_TOKEN', 'unittest-internal-api-key'):
+            res = client.get(
+                '/v1/modules/testnamespace/testmodulename/testprovider/2.4.1/download',
+                headers={'X-Terraform-Version': 'TestTerraformVersion',
+                        'User-Agent': 'TestUserAgent',
+                        'Authorization': 'Bearer unittest-internal-api-key'}
+            )
+
+        assert res.headers['X-Terraform-Get'] == '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'
+        assert res.status_code == 204
+
+        AnalyticsEngine.record_module_version_download.assert_not_called()
+
+    @setup_test_data()
     def test_existing_module_internal_download_with_invalid_auth_token_header(
         self, client, mocked_server_namespace_fixture,
         mock_record_module_version_download):
