@@ -247,9 +247,15 @@ module "fullypopulated" {{
         self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example'))
 
         # Ensure security issues are displayed
-        security_issues = self.wait_for_element(By.ID, 'yearly-cost')
-        assert security_issues.is_displayed() == True
-        assert security_issues.text == 'Estimated yearly cost:\n$738.43'
+        cost_text = self.wait_for_element(By.ID, 'yearly-cost')
+        assert cost_text.is_displayed() == True
+        assert cost_text.text == 'Estimated yearly cost:\n$738.43'
+
+        # Ensure cost label is displayed
+        cost_label = self.wait_for_element(By.ID, 'yearly-cost-label')
+        assert cost_label.is_displayed() == True
+        assert cost_label.text == '$738.43/yr'
+
 
     @pytest.mark.parametrize('url,git_provider_id,module_provider_browse_url_template,module_provider_base_url_template,module_version_browse_url_template,module_version_base_url_template,allow_custom_git_urls_module_provider,allow_custom_git_urls_module_version,expected_source', [
         # Test with all URLs configured and all custom URLs allowed
