@@ -1,5 +1,22 @@
 # Changelog
 
+# [2.34.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.33.0...v2.34.0) (2022-08-20)
+
+
+### Bug Fixes
+
+* Fix ID match for CSS for yearly-cost text in module provider page ([249263a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/249263a4503d91424b03793852b80e816398c348)), closes [#226](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/226)
+* Remove module description, published date and owner from example page ([4e04eb1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4e04eb14e79dc2731695bfc40afc283f84c73e0a)), closes [#226](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/226)
+* Support examples obtaing example cost for modules that use other modules hosted in Terrareg. ([446587a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/446587ac896daa3f74d932c1da91d80156155781)), closes [#226](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/226)
+* **ui:** Move module labels in module provider page to be aligned above the name of the module ([7aad2f1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7aad2f1b525472e8319888d157f0c25a490c4b42)), closes [#226](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/226)
+
+
+### Features
+
+* Add cost label to top of module provider, showing yearly cost ([11dc075](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/11dc075452d4a120c90c8c3c0241d3e48ca8c1f4)), closes [#226](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/226)
+* Display estimated monthly cost for module examples in UI ([dad7588](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/dad7588b0744cae7dc937690154e19a8b3d4aea8)), closes [#226](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/226)
+* Implement infracost scanning of examples during extraction ([bca620a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/bca620a6fc168c28f7638dee343dbbf06a7188bc)), closes [#226](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/226)
+
 # [2.33.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.32.1...v2.33.0) (2022-08-17)
 
 
