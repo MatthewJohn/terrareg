@@ -162,13 +162,14 @@ class ModuleExtractor:
             'zip',
             self.extract_directory)
 
-    def _create_module_details(self, readme_content, terraform_docs, tfsec):
+    def _create_module_details(self, readme_content, terraform_docs, tfsec, infracost=None):
         """Create module details row."""
         module_details = ModuleDetails.create()
         module_details.update_attributes(
             readme_content=readme_content,
             terraform_docs=json.dumps(terraform_docs),
-            tfsec=json.dumps(tfsec)
+            tfsec=json.dumps(tfsec),
+            infracost=json.dumps(infracost) if infracost else None
         )
         return module_details
 
@@ -212,11 +213,20 @@ class ModuleExtractor:
         tfsec = self._run_tfsec(submodule_dir)
         readme_content = self._get_readme_content(submodule_dir)
 
+        infracost = None
+        # Run infracost on examples, if API key is set
+        if isinstance(submodule, Example) and Config().INFRACOST_API_KEY:
+            try:
+                infracost = self._run_infracost(example=submodule)
+            except UnableToProcessTerraformError as exc:
+                print('An error occured whilst running infracost against example')
+
         # Create module details row
         module_details = self._create_module_details(
             terraform_docs=tf_docs,
             readme_content=readme_content,
-            tfsec=tfsec
+            tfsec=tfsec,
+            infracost=infracost
         )
 
         submodule.update_attributes(
@@ -225,6 +235,37 @@ class ModuleExtractor:
 
         if isinstance(submodule, Example):
             self._extract_example_files(example=submodule)
+
+    def _run_infracost(self, example: Example):
+        """Run infracost to obtain cost of examples."""
+        # Ensure example path is within root module
+        safe_join_paths(self.module_directory, example.path)
+
+        infracost_env = dict(os.environ)
+        if Config().DOMAIN_NAME:
+            infracost_env['INFRACOST_TERRAFORM_CLOUD_TOKEN'] = Config()._INTERNAL_EXTRACTION_ANALYITCS_TOKEN
+            infracost_env['INFRACOST_TERRAFORM_CLOUD_HOST'] = Config().DOMAIN_NAME
+
+        # Create temporary file safely and immediately close to
+        # pass path to infracost
+        with tempfile.NamedTemporaryFile(delete=False) as output_file:
+            output_file.close()
+            try:
+                subprocess.check_output(
+                    ['infracost', 'breakdown', '--path', example.path,
+                     '--format', 'json', '--out-file', output_file.name],
+                    cwd=self.module_directory,
+                    env=infracost_env
+                )
+            except subprocess.CalledProcessError as exc:
+                raise UnableToProcessTerraformError('An error occurred whilst performing cost analysis of code.')
+
+            with open(output_file.name, 'r') as output_file_fh:
+                infracost_result = json.load(output_file_fh)
+
+            os.unlink(output_file.name)
+
+        return infracost_result
 
     def _extract_example_files(self, example: Example):
         """Extract all terraform files in example and insert into DB"""

@@ -1386,6 +1386,19 @@ function showSecurityWarnings(moduleDetails) {
     }
 }
 
+function showCostAnalysis(moduleDetails) {
+    if (moduleDetails.cost_analysis && moduleDetails.cost_analysis.yearly_cost) {
+        let yearlyCostContainer = $('#yearly-cost');
+        yearlyCostContainer.removeClass('default-hidden');
+        $('#yearly-cost-text').text(moduleDetails.cost_analysis.yearly_cost);
+
+        // Setup label at top of module
+        let yearCostLabel = $('#yearly-cost-label');
+        yearCostLabel.find('#label-text').text(`$${moduleDetails.cost_analysis.yearly_cost}/yr`);
+        yearCostLabel.removeClass('default-hidden');
+    }
+}
+
 /*
  * Set HTML page title
  *
@@ -1422,11 +1435,8 @@ async function setupBasePage(data) {
 
     setModuleTitle(moduleDetails);
     setModuleProvider(moduleDetails);
-    setModuleDescription(moduleDetails);
-    setPublishedAt(moduleDetails);
-    setOwner(moduleDetails);
 
-    addModuleLabels(moduleDetails, $("#module-title"));
+    addModuleLabels(moduleDetails, $("#module-labels"));
 }
 
 /*
@@ -1440,6 +1450,9 @@ async function setupRootModulePage(data) {
     let moduleDetails = await getModuleDetails(id);
 
     setPageTitle(moduleDetails.module_provider_id);
+    setModuleDescription(moduleDetails);
+    setPublishedAt(moduleDetails);
+    setOwner(moduleDetails);
 
     let tabFactory = new TabFactory();
 
@@ -1488,6 +1501,9 @@ async function setupSubmodulePage(data) {
 
     setPageTitle(`${moduleDetails.module_provider_id}/${submoduleDetails.path}`);
 
+    setModuleDescription(moduleDetails);
+    setPublishedAt(moduleDetails);
+    setOwner(moduleDetails);
     populateCurrentSubmodule(`Submodule: ${submodulePath}`)
     populateVersionText(moduleDetails);
     populateTerraformUsageExample(moduleDetails, submodulePath);
@@ -1524,6 +1540,7 @@ async function setupExamplePage(data) {
     populateVersionText(moduleDetails);
     enableBackToParentLink(moduleDetails);
     showSecurityWarnings(submoduleDetails);
+    showCostAnalysis(submoduleDetails);
     setSourceUrl(submoduleDetails.display_source_url);
 
     let tabFactory = new TabFactory();

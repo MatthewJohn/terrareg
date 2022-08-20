@@ -47,12 +47,21 @@
                 </div>
             </section>
             <p id="version-text" class="subtitle"></p>
-            <span id="security-issues" class="tag is-danger is-light result-card-label result-card-label-security-issues default-hidden">
-                <span class="panel-icon">
-                    <i class="fa fa-bug" aria-hidden="true"></i>
+            <div id="module-labels">
+                <span id="security-issues" class="tag is-danger is-light result-card-label result-card-label-security-issues default-hidden">
+                    <span class="panel-icon">
+                        <i class="fa fa-bug" aria-hidden="true"></i>
+                    </span>
+                    <p id="security-issues-text">${module.security_failures} Security issues</p>
                 </span>
-                <p id="security-issues-text">${module.security_failures} Security issues</p>
-            </span>
+
+                <span id="yearly-cost-label" class="tag is-warning is-light result-card-label result-card-label-security-issues default-hidden">
+                    <span class="panel-icon">
+                        <i class="fa fa-dollar" aria-hidden="true"></i>
+                    </span>
+                    <p id="label-text"></p>
+                </span>
+            </div>
 
             <!-- Basic details about module -->
             <p id="module-title" class="title">
@@ -83,6 +92,13 @@
             <p id="published-at"></p>
             <p id="module-owner"></p>
             <p id="source-url"></p>
+
+            <div id="yearly-cost" class="default-hidden">
+                Estimated yearly cost: 
+                <span class="tag is-warning result-card-label result-card-label-security-issues">
+                    <b>$<span id="yearly-cost-text"></span></b>
+                </span>
+            </div>
 
             <br />
             <a id="submodule-back-to-parent" class="buton default-hidden" href="">Back to root module</a>
