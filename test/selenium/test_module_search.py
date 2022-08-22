@@ -177,3 +177,34 @@ class TestModuleSearch(SeleniumTest):
             first_page_cards.remove(card_title)
 
         assert len(first_page_cards) == 0
+
+    def test_result_counts(self):
+        """Check result count text."""
+        self.selenium_instance.get(self.get_url('/modules/search?q=modulesearch'))
+
+        # Check total count
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'result-count').text, 'Showing results 1 - 4 of 4')
+
+        # Search for contributed modules
+        self.selenium_instance.find_element(By.ID, 'search-contributed').click()
+
+        # Check total count
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'result-count').text, 'Showing results 1 - 10 of 13')
+
+        # Select next page
+        self.selenium_instance.find_element(By.ID, 'nextButton').click()
+
+        # Check total count
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'result-count').text, 'Showing results 11 - 13 of 13')
+
+        # Select previous page
+        self.selenium_instance.find_element(By.ID, 'prevButton').click()
+
+        # Check total count
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'result-count').text, 'Showing results 1 - 10 of 13')
+
+        self.selenium_instance.get(self.get_url('/modules/search?q=doesnotexist'))
+
+        # Check total count
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'result-count').text, 'Showing results 0 - 0 of 0')
+
