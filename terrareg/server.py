@@ -1224,6 +1224,10 @@ class ApiModuleSearch(ErrorCatchingResource):
             'contributed', type=inputs.boolean,
             default=None, help='Limits modules to include contributed modules.'
         )
+        parser.add_argument(
+            'include_count', type=inputs.boolean, default=False,
+            help='Whether to include total result count. This is not part of the Terraform API spec.'
+        )
 
         args = parser.parse_args()
 
@@ -1249,13 +1253,16 @@ class ApiModuleSearch(ErrorCatchingResource):
             limit=args.limit
         )
 
-        return {
+        res = {
             "meta": search_results.meta,
             "modules": [
                 module_provider.get_latest_version().get_api_outline()
                 for module_provider in search_results.module_providers
             ]
         }
+        if args.include_count:
+            res['count'] = search_results.count
+        return res
 
 class ApiNamespaceModules(ErrorCatchingResource):
     """Interface to obtain list of modules in namespace."""

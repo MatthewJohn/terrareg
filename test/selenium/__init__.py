@@ -118,7 +118,7 @@ class SeleniumTest(BaseTest):
         cls.SERVER._app.secret_key = terrareg.config.Config().SECRET_KEY
 
         while True:
-            cls.SERVER.port = random.randint(5000, 6000)
+            cls.SERVER.port = random.randint(20000, 21000)
             try:
                 cls._werzeug_server = werkzeug.serving.make_server(
                     "localhost",

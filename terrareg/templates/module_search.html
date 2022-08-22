@@ -94,9 +94,14 @@
                 `offset=${new_offset}&` +
                 `verified=${$('#search-verified').is(':checked')}&` +
                 `trusted_namespaces=${$('#search-trusted-namespaces').is(':checked')}&` +
-                `contributed=${$('#search-contributed').is(':checked')}` +
+                `contributed=${$('#search-contributed').is(':checked')}&` +
+                'include_count=true' +
                 query_string,
-                function(data, status){
+                function(data, status) {
+
+            // Update result count
+            $('#result-count').text(`Showing results ${Math.min(data.meta.current_offset + 1, data.count)} - ${Math.min(data.meta.current_offset + data.meta.limit, data.count)} of ${data.count}`);
+
             if (data.modules.length == 0) {
                 $('#results').html(`
                     No modules match your search criteria.
@@ -242,7 +247,9 @@
         </nav>
     </div>
     <div class="column is-three-fifths">
-
+        <section id="search-results-header">
+            <span id="result-count"></span> 
+        </section>
         <section id="results">
         </section>
         <section>
