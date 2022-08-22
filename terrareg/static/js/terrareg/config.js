@@ -86,8 +86,9 @@ async function isLoggedIn() {
 function pathToUrl(urlPath) {
     let fullUrl = `${window.location.protocol}//${window.location.hostname}`;
     // Check if running on non-standard port
-    if (! ((window.location.protocol == 'https:' && window.location.port == 443) ||
-           (window.location.protocol == 'http:' && window.location.port == 80))) {
+    if (window.location.port &&
+            !((window.location.protocol == 'https:' && window.location.port == 443) ||
+              (window.location.protocol == 'http:' && window.location.port == 80))) {
         fullUrl += `:${window.location.port}`;
     }
     fullUrl += urlPath;
