@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.35.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.34.1...v2.35.0) (2022-08-22)
+
+
+### Features
+
+* Display result count and current offsets in module search ([06fb35e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/06fb35e28af30731dafd009078edd70718db2b74)), closes [#210](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/210)
+
 ## [2.34.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.34.0...v2.34.1) (2022-08-22)
 
 
