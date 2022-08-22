@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.34.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.34.0...v2.34.1) (2022-08-22)
+
+
+### Bug Fixes
+
+* Remove incorrect colon without port number in integration URLs when using standard http/https ports ([987321e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/987321e3fc5837e8ba0bd62ea5b9dd1ed35e4038)), closes [#232](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/232)
+
 # [2.34.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.33.0...v2.34.0) (2022-08-20)
 
 
