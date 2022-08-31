@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.36.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.35.0...v2.36.0) (2022-08-31)
+
+
+### Features
+
+* Update license of project to GNU GPL 3 ([1d963e6](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1d963e68955fa8545b1b899ea277b65053a4a590)), closes [#239](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/239)
+
 # [2.35.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.34.1...v2.35.0) (2022-08-22)
 
 
