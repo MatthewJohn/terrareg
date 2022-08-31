@@ -243,19 +243,31 @@ module "fullypopulated" {{
         assert security_issues.is_displayed() == True
         assert security_issues.text == '1 Security issues'
 
-    def test_example_with_cost_analysis(self):
+    @pytest.mark.parametrize('url,cost', [
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example', '738.43'),
+        ('/modules/moduledetails/infracost/testprovider/1.0.0/example/examples/with-cost', '150.15'),
+        ('/modules/moduledetails/infracost/testprovider/1.0.0/example/examples/free', '0'),
+        ('/modules/moduledetails/infracost/testprovider/1.0.0/example/examples/no-infracost-data', None),
+    ])
+    def test_example_with_cost_analysis(self, url, cost):
         """Test module with security issues."""
-        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example'))
+        self.selenium_instance.get(self.get_url(url))
 
         # Ensure security issues are displayed
-        cost_text = self.wait_for_element(By.ID, 'yearly-cost')
-        assert cost_text.is_displayed() == True
-        assert cost_text.text == 'Estimated yearly cost:\n$738.43'
+        cost_text = self.wait_for_element(By.ID, 'yearly-cost', ensure_displayed=False)
+        if cost is None:
+            self.assert_equals(lambda: cost_text.is_displayed(), False)
+        else:
+            self.assert_equals(lambda: cost_text.is_displayed(), True)
+            assert cost_text.text == f'Estimated yearly cost:\n${cost}'
 
         # Ensure cost label is displayed
-        cost_label = self.wait_for_element(By.ID, 'yearly-cost-label')
-        assert cost_label.is_displayed() == True
-        assert cost_label.text == '$738.43/yr'
+        cost_label = self.wait_for_element(By.ID, 'yearly-cost-label', ensure_displayed=False)
+        if cost is None:
+            self.assert_equals(lambda: cost_label.is_displayed(), False)
+        else:
+            self.assert_equals(lambda: cost_label.is_displayed(), True)
+            assert cost_label.text == f'${cost}/yr'
 
 
     @pytest.mark.parametrize('url,git_provider_id,module_provider_browse_url_template,module_provider_base_url_template,module_version_browse_url_template,module_version_base_url_template,allow_custom_git_urls_module_provider,allow_custom_git_urls_module_version,expected_source', [

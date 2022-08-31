@@ -756,6 +756,27 @@ integration_test_data = {
                 },
             }
         }},
+        'infracost': {'testprovider': {
+            'id': 68,
+            'versions': {'1.0.0': {
+                'published': True,
+                'examples': {
+                    'examples/with-cost': {
+                        'infracost': json.dumps({
+                            'totalMonthlyCost': '12.5123',
+                        })
+                    },
+                    'examples/free': {
+                        'infracost': json.dumps({
+                            'totalMonthlyCost': '0.000',
+                        })
+                    },
+                    'examples/no-infracost-data': {
+                        'infracost': None
+                    }
+                }
+            }}
+        }},
         'withsecurityissues': {'testprovider': {
             'id': 62,
             'versions': {

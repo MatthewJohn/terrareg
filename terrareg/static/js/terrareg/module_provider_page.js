@@ -1387,7 +1387,7 @@ function showSecurityWarnings(moduleDetails) {
 }
 
 function showCostAnalysis(moduleDetails) {
-    if (moduleDetails.cost_analysis && moduleDetails.cost_analysis.yearly_cost) {
+    if (moduleDetails.cost_analysis && moduleDetails.cost_analysis.yearly_cost != null) {
         let yearlyCostContainer = $('#yearly-cost');
         yearlyCostContainer.removeClass('default-hidden');
         $('#yearly-cost-text').text(moduleDetails.cost_analysis.yearly_cost);
