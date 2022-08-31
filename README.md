@@ -765,6 +765,12 @@ alembic revision --autogenerate
 alembic upgrade head
 ```
 
+# License
+
+This project and all associated code is covered by GNU General Public License v3.0.
+
+For full license, see [LICENSE](LICENSE)
+
 # Contributors
 
  * Matt Comben <matthew@dockstudios.co.uk>
