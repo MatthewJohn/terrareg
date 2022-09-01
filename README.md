@@ -477,6 +477,8 @@ To generate an API key:
 Log in at https://dashboard.infracost.io > select your organization > Settings
 
 
+For cost analysis to be performed on modules which utilise other modules from this registry, ensure `DOMAIN_NAME` is set.
+
 Default: ``
 
 
