@@ -2213,7 +2213,88 @@ class Example(BaseSubmodule):
         return api_details
 
 
-class ExampleFile:
+class FileObject:
+    """Base file object for example/module file in DB"""
+
+    @staticmethod
+    def get_db_table():
+        """Return DB table for class"""
+        raise NotImplementedError
+
+    @property
+    def file_name(self):
+        """Return name of file"""
+        return self._path.split('/')[-1]
+
+    @property
+    def path(self):
+        """Return path of example file."""
+        return self._path
+
+    def _get_db_row(self):
+        """Method to obtain row from database"""
+        raise NotImplementedError
+
+    @property
+    def pk(self):
+        """Get ID from DB row"""
+        return self._get_db_row()['id']
+
+    @property
+    def content(self):
+        """Return content of example file."""
+        return Database.decode_blob(self._get_db_row()['content'])
+
+    def __init__(self, path: str):
+        """Store identifying data."""
+        self._path = path
+        self._cache_db_row = None
+
+    def update_attributes(self, **kwargs):
+        """Update DB row."""
+        # Encode columns that are binary blobs in the database
+        for kwarg in kwargs:
+            if kwarg in ['content']:
+                kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
+
+        db = Database.get()
+        update = self.get_db_table().update().where(
+            self.get_db_table().c.id == self.pk
+        ).values(**kwargs)
+        with db.get_connection() as conn:
+            conn.execute(update)
+
+        # Remove cached DB row
+        self._cache_db_row = None
+
+    def delete(self):
+        """Delete example file from DB."""
+        db = Database.get()
+
+        with db.get_connection() as conn:
+            delete_statement = db.example_file.delete().where(
+                db.example_file.c.id == self.pk
+            )
+            conn.execute(delete_statement)
+
+        # Invalidate DB row cache
+        self._cache_db_row = None
+
+    def get_content(self, server_hostname):
+        """Return content with source replaced"""
+        # Replace source lines that use relative paths
+        return self._example.replace_source_in_file(
+            content=self.content,
+            server_hostname=server_hostname)
+
+
+class ExampleFile(FileObject):
+
+    @staticmethod
+    def get_db_table():
+        """Return DB table for class"""
+        db = Database.get()
+        return db.example_file
 
     @classmethod
     def create(cls, example: Example, path: str):
@@ -2260,31 +2341,10 @@ class ExampleFile:
 
         return ExampleFile(example=example, path=file_path)
 
-    @property
-    def file_name(self):
-        """Return name of file"""
-        return self._path.split('/')[-1]
-
-    @property
-    def path(self):
-        """Return path of example file."""
-        return self._path
-
-    @property
-    def pk(self):
-        """Get ID from DB row"""
-        return self._get_db_row()['id']
-
-    @property
-    def content(self):
-        """Return content of example file."""
-        return Database.decode_blob(self._get_db_row()['content'])
-
     def __init__(self, example: Example, path: str):
         """Store identifying data."""
         self._example = example
-        self._path = path
-        self._cache_db_row = None
+        super(ExampleFile, self).__init__(path)
 
     def __lt__(self, other):
         """Implement less than for sorting example files."""
@@ -2311,39 +2371,45 @@ class ExampleFile:
                 return res.fetchone()
         return self._cache_db_row
 
-    def update_attributes(self, **kwargs):
-        """Update DB row."""
-        # Encode columns that are binary blobs in the database
-        for kwarg in kwargs:
-            if kwarg in ['content']:
-                kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
 
+class ModuleVersionFile(FileObject):
+    """File associated with module version"""
+
+    @staticmethod
+    def get_db_table():
+        """Return DB table for class"""
         db = Database.get()
-        update = db.example_file.update().where(
-            db.example_file.c.id == self.pk
-        ).values(**kwargs)
-        with db.get_connection() as conn:
-            conn.execute(update)
+        return db.module_version_file
 
-        # Remove cached DB row
-        self._cache_db_row = None
-
-    def delete(self):
-        """Delete example file from DB."""
+    @classmethod
+    def create(cls, module_version: ModuleVersion, path: str):
+        """Create instance of object in database."""
+        # Insert module file into database
         db = Database.get()
-
+        insert_statement = db.module_version_file.insert().values(
+            module_version_id=module_version.pk,
+            path=path
+        )
         with db.get_connection() as conn:
-            delete_statement = db.example_file.delete().where(
-                db.example_file.c.id == self.pk
+            conn.execute(insert_statement)
+
+        # Return instance of object
+        return cls(module_version=module_version, path=path)
+
+    def __init__(self, module_version: ModuleVersion, path: str):
+        """Store identifying data."""
+        self._module_version = module_version
+        super(ModuleVersionFile, self).__init__(path)
+
+    def _get_db_row(self):
+        """Return DB row for git provider."""
+        if self._cache_db_row is None:
+            db = Database.get()
+            select = db.module_version_file.select().where(
+                db.module_version_file.c.module_version_id == self._module_version.pk,
+                db.module_version_file.c.path == self._path
             )
-            conn.execute(delete_statement)
-
-        # Invalidate DB row cache
-        self._cache_db_row = None
-
-    def get_content(self, server_hostname):
-        """Return content with source replaced"""
-        # Replace source lines that use relative paths
-        return self._example.replace_source_in_file(
-            content=self.content,
-            server_hostname=server_hostname)
+            with db.get_connection() as conn:
+                res = conn.execute(select)
+                return res.fetchone()
+        return self._cache_db_row
