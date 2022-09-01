@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.36.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.36.0...v2.36.1) (2022-09-01)
+
+
+### Bug Fixes
+
+* Show cost of example when cost of example is 0 ([51e4a0b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/51e4a0be67a073d08b762f0f4ab119d18e27692e)), closes [#233](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/233)
+
 # [2.36.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.35.0...v2.36.0) (2022-08-31)
 
 
