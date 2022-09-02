@@ -1630,6 +1630,19 @@ class ModuleVersion(TerraformSpecsObject):
         """Return module version"""
         return self
 
+    @property
+    def module_version_files(self):
+        """Return list of module version files for module version"""
+        db = Database.get()
+        select = db.module_version_file.select().join(
+            db.module_version, db.module_version_file.c.module_version_id==db.module_version.c.id
+        ).where(
+            db.module_version.c.id==self.pk
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(select)
+            return res.fetchall()
+
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
         self._extracted_beta_flag = self._validate_version(version)
@@ -1889,7 +1902,8 @@ class ModuleVersion(TerraformSpecsObject):
             "versions": versions,
             "beta": self.beta,
             "published": self.published,
-            "security_failures": self.get_tfsec_failure_count()
+            "security_failures": self.get_tfsec_failure_count(),
+            "additional_tab_files": [module_version_file.path for module_version_file in self.module_version_files]
         })
         return api_details
 
