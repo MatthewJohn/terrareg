@@ -429,13 +429,14 @@ class Config:
         return self.convert_boolean(os.environ.get('INFRACOST_TLS_INSECURE_SKIP_VERIFY', 'False'))
 
     @property
-    def ADDITIONAL_MODULE_MARKDOWN_FILES(self):
+    def ADDITIONAL_MODULE_TABS(self):
         """
         Set additional markdown files from a module to be displayed in the UI.
 
         Value must be a JSON array of objects.
         Each object of the array defines an additional tab in the module.
         The object defines the name of the tab and a list of files in the repository.
+        e.g. `[{"Tab 1 Name": ["file-to-use.md", "second-file-to-use.md"]}, {"tab 2": ["tab_2_file.md"]}]`
 
         The tabs will be displayed in order of their placement in the outer list.
         If multiple files are provided, the first file found in the repository will be used for the tab content.
@@ -447,7 +448,7 @@ class Config:
         [{"Release Notes": ["RELEASE_NOTES.md", "CHANGELOG.md"]}, {"Development Guidelines": ["CONTRIBUTING.md"]}, {"License": ["LICENSE"]}]
         ```
         """
-        return os.environ.get('ADDITIONAL_MODULE_MARKDOWN_FILES', '[{"Release Notes": ["RELEASE_NOTES.md", "CHANGELOG.md"]}]')
+        return os.environ.get('ADDITIONAL_MODULE_TABS', '[{"Release Notes": ["RELEASE_NOTES.md", "CHANGELOG.md"]}]')
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""
