@@ -33,9 +33,9 @@ class TestHomepage(SeleniumTest):
         assert self.selenium_instance.title == 'Home - Terrareg'
 
     @pytest.mark.parametrize('element,count', [
-        ('namespace', 15),
-        ('module', 48),
-        ('version', 75),
+        ('namespace', 16),
+        ('module', 49),
+        ('version', 76),
         ('download', 2005)
     ])
     def test_counts(self, element, count):
