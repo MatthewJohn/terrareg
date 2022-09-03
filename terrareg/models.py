@@ -1894,6 +1894,14 @@ class ModuleVersion(TerraformSpecsObject):
 
         api_details.update(self.get_api_details())
 
+        tab_files = [module_version_file.path for module_version_file in self.module_version_files]
+        additional_module_tabs = json.loads(terrareg.config.Config().ADDITIONAL_MODULE_TABS)
+        tab_file_mapping = {}
+        for tab_config in additional_module_tabs:
+            for file in tab_config[1]:
+                if file in tab_files:
+                    tab_file_mapping[tab_config[0]] = file
+
         source_browse_url = self.get_source_browse_url()
         api_details.update({
             "published_at_display": self.publish_date_display,
@@ -1903,7 +1911,7 @@ class ModuleVersion(TerraformSpecsObject):
             "beta": self.beta,
             "published": self.published,
             "security_failures": self.get_tfsec_failure_count(),
-            "additional_tab_files": [module_version_file.path for module_version_file in self.module_version_files]
+            "additional_tab_files": tab_file_mapping
         })
         return api_details
 

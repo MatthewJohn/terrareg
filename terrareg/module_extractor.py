@@ -158,7 +158,7 @@ class ModuleExtractor:
         files_extracted = []
         # Iterate through all files of all additionally defined tabs
         for tab_config in json.loads(config.ADDITIONAL_MODULE_TABS):
-            for file_name in [file for file_list in tab_config.values() for file in file_list]:
+            for file_name in tab_config[1]:
                 path = safe_join_paths(self.extract_directory, file_name)
                 # Check if file exists
                 if file_name in files_extracted or not os.path.exists(path):
