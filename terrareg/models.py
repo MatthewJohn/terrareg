@@ -27,7 +27,7 @@ from terrareg.errors import (
     NoModuleDownloadMethodConfiguredError,
     ProviderNameNotPermittedError
 )
-from terrareg.utils import safe_join_paths
+from terrareg.utils import safe_join_paths, santise_html_content
 from terrareg.validators import GitUrlValidator
 
 
@@ -1354,7 +1354,7 @@ class TerraformSpecsObject(object):
         """Get readme contents"""
         module_details = self.module_details
         if module_details:
-            return Database.decode_blob(module_details.readme_content)
+            return santise_html_content(Database.decode_blob(module_details.readme_content))
         return None
 
     def get_terraform_inputs(self):
@@ -1392,11 +1392,11 @@ class TerraformSpecsObject(object):
                 namespace = name_split[0]
                 name = '/'.join(name_split[1:])
 
-            providers.append(            {
-                'name': name,
-                'namespace': namespace,
+            providers.append({
+                'name': santise_html_content(name),
+                'namespace': santise_html_content(namespace),
                 'source': '',  # This data is not available
-                'version': provider['version'] if provider['version'] else ''
+                'version': santise_html_content(provider['version']) if provider['version'] else ''
             })
         return providers
 
@@ -1503,7 +1503,7 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def owner(self):
         """Return owner of module."""
-        return self._get_db_row()['owner']
+        return santise_html_content(self._get_db_row()['owner'])
 
     @property
     def published(self):
@@ -1513,7 +1513,7 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def description(self):
         """Return description."""
-        return self._get_db_row()['description']
+        return santise_html_content(self._get_db_row()['description'])
 
     @property
     def version(self):
@@ -2381,9 +2381,10 @@ class ExampleFile(FileObject):
     def get_content(self, server_hostname):
         """Return content with source replaced"""
         # Replace source lines that use relative paths
-        return self._example.replace_source_in_file(
+        file_content = self._example.replace_source_in_file(
             content=self.content,
             server_hostname=server_hostname)
+        return santise_html_content(file_content)
 
 
 class ModuleVersionFile(FileObject):

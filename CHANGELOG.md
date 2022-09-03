@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.37.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.36.1...v2.37.0) (2022-09-03)
+
+
+### Features
+
+* Sanitise data provided from module provider to ensure data is not injected into module provider page ([67d9a11](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/67d9a11146874409ae2ebc1f7add9186c57fe188)), closes [#242](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/242)
+
 ## [2.36.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.36.0...v2.36.1) (2022-09-01)
 
 
