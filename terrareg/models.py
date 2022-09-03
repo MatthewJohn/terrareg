@@ -2257,7 +2257,7 @@ class FileObject:
     @property
     def content(self):
         """Return content of example file."""
-        return Database.decode_blob(self._get_db_row()['content'])
+        return santise_html_content(Database.decode_blob(self._get_db_row()['content']))
 
     def __init__(self, path: str):
         """Store identifying data."""
@@ -2381,10 +2381,9 @@ class ExampleFile(FileObject):
     def get_content(self, server_hostname):
         """Return content with source replaced"""
         # Replace source lines that use relative paths
-        file_content = self._example.replace_source_in_file(
+        return self._example.replace_source_in_file(
             content=self.content,
             server_hostname=server_hostname)
-        return santise_html_content(file_content)
 
 
 class ModuleVersionFile(FileObject):
