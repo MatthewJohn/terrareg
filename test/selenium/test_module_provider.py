@@ -6,6 +6,7 @@ import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 from terrareg.database import Database
+import selenium.common
 
 from test.selenium import SeleniumTest
 from terrareg.models import GitProvider, ModuleVersion, Namespace, Module, ModuleProvider
@@ -1675,3 +1676,45 @@ module "fullypopulated" {{
         assert non_latest_warning.text == ('WARNING: This is an outdated version of the module.\n'
                                            'If you wish to view the latest version of the module,\n'
                                            'use the version drop-down above.')
+
+    @pytest.mark.parametrize('url', [
+        '/modules/javascriptinjection/modulename/testprovider/1.5.0',
+        '/modules/javascriptinjection/modulename/testprovider/1.5.0/submodule/modules/example-submodule1',
+        '/modules/javascriptinjection/modulename/testprovider/1.5.0/example/examples/test-example'
+    ])
+    def test_injected_html(self, url):
+        """Check for any injected HTML from module."""
+        self.selenium_instance.get(self.get_url(url))
+
+        # Wait for tabs to be displayed
+        self.wait_for_element(By.ID, 'module-tab-link-readme')
+
+        for injected_element in ['injectedDescription',
+                'injectedOwner',
+                'injectedReadme',
+                'injectedVariableTemplateName',
+                'injectedVariableTemplateType',
+                'injectedVariableAdditionalHelp',
+                'injectedTerraformDocsInputName',
+                'injectedTerraformDocsInputType',
+                'injectedTerraformDocsInputDescription',
+                'injectedTerraformDocsInputDefault',
+                'injectedTerraformDocsOutputName',
+                'injectedTerraformDocsOutputDescription',
+                'injectedTerraformProviderName',
+                'injectedTerraformDocsProviderAlias',
+                'injectedTerraformDocsProviderVersion',
+                'injectedTerraformDocsResourceType',
+                'injectedTerraformDocsResourceName',
+                'injectedTerraformDocsResourceProvider',
+                'injectedTerraformDocsResourceSource',
+                'injectedTerraformDocsResourceMode',
+                'injectedTerraformDocsResourceVersion',
+                'injectedTerraformDocsResourceDescription',
+                'injectedExampleFileContent',
+                'injectedExampleReadme',
+                'injectedSubemoduleFileContent']:
+
+            with pytest.raises(selenium.common.exceptions.NoSuchElementException):
+                print('Checking for element:', injected_element)
+                self.selenium_instance.find_element(By.ID, injected_element)

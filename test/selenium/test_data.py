@@ -916,6 +916,85 @@ integration_test_data = {
         }}
     },
 
+    'javascriptinjection': {
+        'modulename': {'testprovider': {
+            'id': 58,
+            'versions': {
+                '1.5.0': {
+                    'description': '<script>var a = document.createElement("div"); a.id = "injectedDescription"; document.body.appendChild(a);</script>',
+                    'owner': '<script>var a = document.createElement("div"); a.id = "injectedOwner"; document.body.appendChild(a);</script>',
+                    'published': True,
+                    'beta': False,
+                    'internal': False,
+                    'published_at': datetime(2022, 1, 5, 22, 53, 12),
+                    'readme_content': '# This is an exaple README!<br /><script>var a = document.createElement("div"); a.id = "injectedReadme"; document.body.appendChild(a);</script>',
+                    'variable_template': json.dumps([
+                        {
+                            'name': '<script>var a = document.createElement("div"); a.id = "injectedVariableTemplateName"; document.body.appendChild(a);</script>',
+                            'type': '<script>var a = document.createElement("div"); a.id = "injectedVariableTemplateType"; document.body.appendChild(a);</script>',
+                            'quote_value': True,
+                            'additional_help': '<script>var a = document.createElement("div"); a.id = "injectedVariableAdditionalHelp"; document.body.appendChild(a);</script>'
+                        }
+
+                    ]),
+                    'terraform_docs': json.dumps({
+                        'header': '',
+                        'footer': '',
+                        'inputs': [
+                            {
+                                'name': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsInputName"; document.body.appendChild(a);</script>',
+                                'type': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsInputType"; document.body.appendChild(a);</script>',
+                                'description': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsInputDescription"; document.body.appendChild(a);</script>',
+                                'default': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsInputDefault"; document.body.appendChild(a);</script>',
+                                'required': True
+                            }
+                        ],
+                        'modules': [],
+                        'outputs': [
+                            {
+                                'name': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsOutputName"; document.body.appendChild(a);</script>',
+                                'description': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsOutputDescription"; document.body.appendChild(a);</script>'
+                            }
+                        ],
+                        'providers': [
+                            {
+                                'name': '<script>var a = document.createElement("div"); a.id = "injectedTerraformProviderName"; document.body.appendChild(a);</script>',
+                                'alias': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsProviderAlias"; document.body.appendChild(a);</script>',
+                                'version': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsProviderVersion"; document.body.appendChild(a);</script>'
+                            }
+                        ],
+                        'requirements': [],
+                        'resources': [
+                            {
+                                'type': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsResourceType"; document.body.appendChild(a);</script>',
+                                'name': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsResourceName"; document.body.appendChild(a);</script>',
+                                'provider': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsResourceProvider"; document.body.appendChild(a);</script>',
+                                'source': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsResourceSource"; document.body.appendChild(a);</script>',
+                                'mode': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsResourceMode"; document.body.appendChild(a);</script>',
+                                'version': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsResourceVersion"; document.body.appendChild(a);</script>',
+                                'description': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsResourceDescription"; document.body.appendChild(a);</script>'
+                            }
+                        ]
+                    }),
+                    'examples': {
+                        'examples/test-example': {
+                            'example_files': {
+                                'examples/test-example/data.tf': '<script>var a = document.createElement("div"); a.id = "injectedExampleFileContent"; document.body.appendChild(a);</script>',
+                            },
+                            'readme_content': '# Example 1 README<script>var a = document.createElement("div"); a.id = "injectedExampleReadme"; document.body.appendChild(a);</script>',
+                            'infracost': None
+                        }
+                    },
+                    'submodules': {
+                        'modules/example-submodule1': {
+                            'readme_content': '# Submodule 1 README\n<script>var a = document.createElement("div"); a.id = "injectedSubemoduleFileContent"; document.body.appendChild(a);</script>'
+                        }
+                    }
+                },
+            }
+        }},
+    },
+
     ## THESE MUST BE AT THE BOTTOM
     'mostrecent': {
         'modulename': {'providername': {

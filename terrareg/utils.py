@@ -2,6 +2,8 @@
 import os
 import glob
 
+import bleach
+
 from terrareg.errors import TerraregError
 
 
@@ -87,3 +89,8 @@ def check_subdirectory_within_base_dir(base_dir, sub_dir, is_dir=False, is_file=
 
     # Return absolute path of joined paths
     return os.path.abspath(real_sub_dir)
+
+
+def santise_html_content(text):
+    """Sanitise HTML content to be returned via API to be displayed in UI"""
+    return bleach.clean(text)
