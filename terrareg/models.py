@@ -2294,13 +2294,6 @@ class FileObject:
         # Invalidate DB row cache
         self._cache_db_row = None
 
-    def get_content(self, server_hostname):
-        """Return content with source replaced"""
-        # Replace source lines that use relative paths
-        return self._example.replace_source_in_file(
-            content=self.content,
-            server_hostname=server_hostname)
-
 
 class ExampleFile(FileObject):
 
@@ -2385,9 +2378,24 @@ class ExampleFile(FileObject):
                 return res.fetchone()
         return self._cache_db_row
 
+    def get_content(self, server_hostname):
+        """Return content with source replaced"""
+        # Replace source lines that use relative paths
+        return self._example.replace_source_in_file(
+            content=self.content,
+            server_hostname=server_hostname)
+
 
 class ModuleVersionFile(FileObject):
     """File associated with module version"""
+
+    @classmethod
+    def get(cls, module_version: ModuleVersion, path: str):
+        """Obtain instance of object, if it exists in the database"""
+        module_version_file = cls(module_version=module_version, path=path)
+        if module_version_file._get_db_row() is None:
+            return None
+        return module_version_file
 
     @staticmethod
     def get_db_table():

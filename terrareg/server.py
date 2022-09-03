@@ -23,7 +23,7 @@ from terrareg.errors import (
     NoSessionSetError, IncorrectCSRFTokenError
 )
 from terrareg.models import (
-    Example, ExampleFile, Namespace, Module, ModuleProvider,
+    Example, ExampleFile, ModuleVersionFile, Namespace, Module, ModuleProvider,
     ModuleVersion, ProviderLogo, Session, Submodule,
     GitProvider
 )
@@ -342,6 +342,10 @@ class Server(object):
         self._api.add_resource(
             ApiTerraregModuleVersionVariableTemplate,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
+        )
+        self._api.add_resource(
+            ApiTerraregModuleVersionFile,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/file/<string:path>'
         )
         self._api.add_resource(
             ApiTerraregModuleVersionReadmeHtml,
@@ -2355,3 +2359,26 @@ class ApiTerraregExampleFile(ErrorCatchingResource):
 
         return example_file_obj.get_content(server_hostname=request.host)
 
+
+class ApiTerraregModuleVersionFile(ErrorCatchingResource):
+    """Interface to obtain content of module version file."""
+
+    def _get(self, namespace, name, provider, version, file):
+        """Return conent of module version file."""
+        namespace_obj = Namespace(name=namespace)
+        module_obj = Module(namespace=namespace_obj, name=name)
+        module_provider = ModuleProvider.get(module=module_obj, name=provider)
+
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
+
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        if not module_version:
+            return {'message': 'Module version does not exist'}, 400
+
+        module_version_file = ModuleVersionFile.get(module_version=module_version, path=file)
+
+        if module_version_file is None:
+            return {'message': 'Module version file does not exist.'}, 400
+
+        return module_version_file.content
