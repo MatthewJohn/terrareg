@@ -27,7 +27,7 @@ from terrareg.errors import (
     NoModuleDownloadMethodConfiguredError,
     ProviderNameNotPermittedError
 )
-from terrareg.utils import safe_join_paths, santise_html_content
+from terrareg.utils import convert_markdown_to_html, safe_join_paths, santise_html_content
 from terrareg.validators import GitUrlValidator
 
 
@@ -1336,10 +1336,7 @@ class TerraformSpecsObject(object):
         if readme_md:
             readme_md = self.replace_source_in_file(
                 readme_md, server_hostname)
-            return markdown.markdown(
-                readme_md,
-                extensions=['fenced_code', 'tables']
-            )
+            return convert_markdown_to_html(readme_md)
         return None
 
     @property
@@ -2443,3 +2440,11 @@ class ModuleVersionFile(FileObject):
                 res = conn.execute(select)
                 return res.fetchone()
         return self._cache_db_row
+
+    def get_content(self):
+        """Return content to be displayed in UI"""
+        content = self.content
+        # Convert markdown files to HTML
+        if self.path.lower().endswith('.md'):
+            content = convert_markdown_to_html(content)
+        return content

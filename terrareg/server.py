@@ -2381,4 +2381,4 @@ class ApiTerraregModuleVersionFile(ErrorCatchingResource):
         if module_version_file is None:
             return {'message': 'Module version file does not exist.'}, 400
 
-        return module_version_file.content
+        return module_version_file.get_content()
