@@ -2447,4 +2447,6 @@ class ModuleVersionFile(FileObject):
         # Convert markdown files to HTML
         if self.path.lower().endswith('.md'):
             content = convert_markdown_to_html(content)
+        else:
+            content = '<pre>' + content + '</pre>'
         return content
