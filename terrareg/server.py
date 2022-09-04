@@ -345,7 +345,7 @@ class Server(object):
         )
         self._api.add_resource(
             ApiTerraregModuleVersionFile,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/file/<string:path>'
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/files/<string:path>'
         )
         self._api.add_resource(
             ApiTerraregModuleVersionReadmeHtml,
@@ -2363,7 +2363,7 @@ class ApiTerraregExampleFile(ErrorCatchingResource):
 class ApiTerraregModuleVersionFile(ErrorCatchingResource):
     """Interface to obtain content of module version file."""
 
-    def _get(self, namespace, name, provider, version, file):
+    def _get(self, namespace, name, provider, version, path):
         """Return conent of module version file."""
         namespace_obj = Namespace(name=namespace)
         module_obj = Module(namespace=namespace_obj, name=name)
@@ -2376,7 +2376,7 @@ class ApiTerraregModuleVersionFile(ErrorCatchingResource):
         if not module_version:
             return {'message': 'Module version does not exist'}, 400
 
-        module_version_file = ModuleVersionFile.get(module_version=module_version, path=file)
+        module_version_file = ModuleVersionFile.get(module_version=module_version, path=path)
 
         if module_version_file is None:
             return {'message': 'Module version file does not exist.'}, 400
