@@ -66,7 +66,7 @@ class TestConfig:
         ('INFRACOST_API_KEY', None),
         ('INFRACOST_PRICING_API_ENDPOINT', None),
         ('DOMAIN_NAME', None),
-        ('ADDITIONAL_MODULE_MARKDOWN_FILES', None)
+        ('ADDITIONAL_MODULE_TABS', None)
     ])
     def test_string_configs(self, config_name, override_expected_value):
         """Test string configs to ensure they are overriden with environment variables."""
