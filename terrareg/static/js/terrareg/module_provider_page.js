@@ -1416,7 +1416,6 @@ function setPageTitle(id) {
  * @param data Data from router
  */
 async function setupBasePage(data) {
-    createBreadcrumbs(data);
 
     let id = getCurrentObjectId(data);
 
@@ -1448,6 +1447,8 @@ async function setupRootModulePage(data) {
     let id = getCurrentObjectId(data);
 
     let moduleDetails = await getModuleDetails(id);
+
+    createBreadcrumbs(data);
 
     setPageTitle(moduleDetails.module_provider_id);
     setModuleDescription(moduleDetails);
@@ -1499,6 +1500,8 @@ async function setupSubmodulePage(data) {
     let submodulePath = data.undefined;
     let submoduleDetails = await getSubmoduleDetails(moduleDetails.id, submodulePath);
 
+    createBreadcrumbs(data, submodulePath);
+
     setPageTitle(`${moduleDetails.module_provider_id}/${submoduleDetails.path}`);
 
     setModuleDescription(moduleDetails);
@@ -1534,6 +1537,8 @@ async function setupExamplePage(data) {
     let examplePath = data.undefined;
     let submoduleDetails = await getExampleDetails(moduleDetails.id, examplePath);
 
+    createBreadcrumbs(data, examplePath);
+
     setPageTitle(`${moduleDetails.module_provider_id}/${submoduleDetails.path}`);
 
     populateCurrentSubmodule(`Example: ${examplePath}`)
@@ -1556,7 +1561,7 @@ async function setupExamplePage(data) {
 }
 
 
-function createBreadcrumbs(data) {
+function createBreadcrumbs(data, subpath=undefined) {
     let breadcrumbs = [
         ["Modules", "modules"],
         [data.namespace, data.namespace],
@@ -1565,6 +1570,10 @@ function createBreadcrumbs(data) {
     ];
     if (data.version) {
         breadcrumbs.push([data.version, data.version]);
+    }
+
+    if (subpath !== undefined) {
+        breadcrumbs.push([subpath, subpath]);
     }
 
     let breadcrumbUl = $("#breadcrumb-ul");
