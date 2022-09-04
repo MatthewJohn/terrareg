@@ -150,6 +150,7 @@ Default: ''
 The following environment variables are available to configure the application
 
 
+
 ### ADDITIONAL_MODULE_TABS
 
 
@@ -158,7 +159,7 @@ Set additional markdown files from a module to be displayed in the UI.
 Value must be a JSON array of objects.
 Each object of the array defines an additional tab in the module.
 The object defines the name of the tab and a list of files in the repository.
-e.g. `[{"Tab 1 Name": ["file-to-use.md", "second-file-to-use.md"]}, {"tab 2": ["tab_2_file.md"]}]`
+e.g. `[["Tab 1 Name", ["file-to-use.md", "alternate-file-to-use.md"]], ["tab 2", ["tab_2_file.md"]]]`
 
 The tabs will be displayed in order of their placement in the outer list.
 If multiple files are provided, the first file found in the repository will be used for the tab content.
@@ -167,12 +168,11 @@ Filenames with an extension `.md` will be treated as markdown. All other files w
 
 E.g.
 ```
-[{"Release Notes": ["RELEASE_NOTES.md", "CHANGELOG.md"]}, {"Development Guidelines": ["CONTRIBUTING.md"]}, {"License": ["LICENSE"]}]
+[["Release Notes": ["RELEASE_NOTES.md", "CHANGELOG.md"]], ["Development Guidelines", ["CONTRIBUTING.md"]], ["License", ["LICENSE"]]]
 ```
 
 
-Default: `[{"Release Notes": ["RELEASE_NOTES.md", "CHANGELOG.md"]}]`
-
+Default: `[["Release Notes", ["RELEASE_NOTES.md", "CHANGELOG.md"]], ["License", ["LICENSE"]]]`
 
 
 ### ADMIN_AUTHENTICATION_TOKEN
@@ -184,7 +184,6 @@ Token to use for authorisation to be able to modify modules in the user interfac
 Default: ``
 
 
-
 ### ADMIN_SESSION_EXPIRY_MINS
 
 
@@ -192,7 +191,6 @@ Session timeout for admin cookie sessions
 
 
 Default: `60`
-
 
 
 ### ALLOWED_PROVIDERS
@@ -206,7 +204,6 @@ Leave empty to disable allow-list and allow all providers.
 Default: ``
 
 
-
 ### ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER
 
 
@@ -216,7 +213,6 @@ Whether module providers can specify their own git repository source.
 Default: `True`
 
 
-
 ### ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
 
 
@@ -224,7 +220,6 @@ Whether module versions can specify git repository in terrareg config.
 
 
 Default: `True`
-
 
 
 ### ALLOW_MODULE_HOSTING
@@ -237,7 +232,6 @@ If disabled, all modules must be configured with a git URL.
 Default: `True`
 
 
-
 ### ALLOW_UNIDENTIFIED_DOWNLOADS
 
 
@@ -247,7 +241,6 @@ the namespace
 
 
 Default: `False`
-
 
 
 ### ANALYTICS_AUTH_KEYS
@@ -269,13 +262,11 @@ For information on using these API keys, please see Terraform: https://docs.w3cu
 Default: ``
 
 
-
 ### ANALYTICS_TOKEN_DESCRIPTION
 
 Describe to be provided to user about analytics token (e.g. `The name of your application`)
 
 Default: ``
-
 
 
 ### ANALYTICS_TOKEN_PHRASE
@@ -285,13 +276,11 @@ Name of analytics token to provide in responses (e.g. `application name`, `team 
 Default: `analytics token`
 
 
-
 ### APPLICATION_NAME
 
 Name of application to be displayed in web interface.
 
 Default: `Terrareg`
-
 
 
 ### AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION
@@ -301,7 +290,6 @@ Whether to automatically generate module provider descriptions, if they are not 
 
 
 Default: `True`
-
 
 
 ### AUTOGENERATE_USAGE_BUILDER_VARIABLES
@@ -315,7 +303,6 @@ of the terrareg.json metadata file is populated.
 Default: `True`
 
 
-
 ### AUTO_CREATE_MODULE_PROVIDER
 
 
@@ -326,7 +313,6 @@ If disabled, modules must be created using the module provider create endpoint (
 
 
 Default: `True`
-
 
 
 ### AUTO_PUBLISH_MODULE_VERSIONS
@@ -344,13 +330,11 @@ NOTE: Even whilst in an unpublished state, the module version can still be acces
 Default: `True`
 
 
-
 ### CONTRIBUTED_NAMESPACE_LABEL
 
 Custom name for 'contributed namespace' in UI.
 
 Default: `Contributed`
-
 
 
 ### DATABASE_URL
@@ -367,7 +351,6 @@ To setup MySQL, use `mysql+mysqlconnector://<user>:<password>@<host>[:<port>]/<d
 Default: `sqlite:///modules.db`
 
 
-
 ### DATA_DIRECTORY
 
 
@@ -375,13 +358,11 @@ Default: `sqlite:///modules.db`
 Default: `./data`
 
 
-
 ### DEBUG
 
 Whether flask and sqlalchemy is setup in debug mode.
 
 Default: `False`
-
 
 
 ### DELETE_EXTERNALLY_HOSTED_ARTIFACTS
@@ -395,7 +376,6 @@ If enabled, module versions with externally hosted artifacts cannot be re-analys
 Default: `False`
 
 
-
 ### DISABLE_TERRAREG_EXCLUSIVE_LABELS
 
 
@@ -407,13 +387,11 @@ Set to 'True' to disable the labels.
 Default: `False`
 
 
-
 ### DOMAIN_NAME
 
 Domain name that the system is hosted on
 
 Default: ``
-
 
 
 ### ENABLE_SECURITY_SCANNING
@@ -423,7 +401,6 @@ Whether to perform security scans of uploaded modules and display them against t
 
 
 Default: `True`
-
 
 
 ### EXAMPLES_DIRECTORY
@@ -439,7 +416,6 @@ E.g. If EXAMPLES_DIRECTORY is set to `examples`, with the root module, the follo
 Default: `examples`
 
 
-
 ### EXAMPLE_ANALYTICS_TOKEN
 
 
@@ -452,7 +428,6 @@ terraform projects.
 
 
 Default: `my-tf-application`
-
 
 
 ### GIT_PROVIDER_CONFIG
@@ -490,7 +465,6 @@ An example for public repositories might be:
 Default: `[]`
 
 
-
 ### INFRACOST_API_KEY
 
 
@@ -501,11 +475,10 @@ Set this to enable cost-analysis of module examples.
 To generate an API key:
 Log in at https://dashboard.infracost.io > select your organization > Settings
 
-
 For cost analysis to be performed on modules which utilise other modules from this registry, ensure `DOMAIN_NAME` is set.
 
-Default: ``
 
+Default: ``
 
 
 ### INFRACOST_PRICING_API_ENDPOINT
@@ -519,7 +492,6 @@ For information on self-hosting the infracost pricing API, see https://www.infra
 Default: ``
 
 
-
 ### INFRACOST_TLS_INSECURE_SKIP_VERIFY
 
 
@@ -527,7 +499,6 @@ Whether to skip TLS verification for self-hosted pricing endpoints
 
 
 Default: `False`
-
 
 
 ### LISTEN_PORT
@@ -539,13 +510,11 @@ Port for server to listen on.
 Default: `5000`
 
 
-
 ### LOGO_URL
 
 URL of logo to be used in web interface.
 
 Default: `/static/images/logo.png`
-
 
 
 ### MODULES_DIRECTORY
@@ -563,7 +532,6 @@ This can be set to an empty string, to expected submodules to be in the root dir
 Default: `modules`
 
 
-
 ### PUBLISH_API_KEYS
 
 
@@ -575,7 +543,6 @@ To disable authentication for publish endpoint, leave empty.
 Default: ``
 
 
-
 ### REQUIRED_MODULE_METADATA_ATTRIBUTES
 
 
@@ -583,7 +550,6 @@ Comma-seperated list of metadata attributes that each uploaded module _must_ con
 
 
 Default: ``
-
 
 
 ### SECRET_KEY
@@ -595,7 +561,6 @@ Can be generated using: `python -c 'import secrets; print(secrets.token_hex())'`
 
 
 Default: ``
-
 
 
 ### SSL_CERT_PRIVATE_KEY
@@ -613,7 +578,6 @@ set or left empty.
 Default: ``
 
 
-
 ### SSL_CERT_PUBLIC_KEY
 
 
@@ -627,7 +591,6 @@ set or left empty.
 
 
 Default: ``
-
 
 
 ### TERRAFORM_EXAMPLE_VERSION_TEMPLATE
@@ -652,13 +615,11 @@ For more information, see terraform documentation: https://www.terraform.io/lang
 Default: `{major}.{minor}.{patch}`
 
 
-
 ### THREADED
 
 Whether flask is configured to enable threading
 
 Default: `True`
-
 
 
 ### TRUSTED_NAMESPACES
@@ -668,13 +629,11 @@ Comma-separated list of trusted namespaces.
 Default: ``
 
 
-
 ### TRUSTED_NAMESPACE_LABEL
 
 Custom name for 'trusted namespace' in UI.
 
 Default: `Trusted`
-
 
 
 ### UPLOAD_API_KEYS
@@ -690,13 +649,11 @@ To disable authentication for upload endpoint, leave empty.
 Default: ``
 
 
-
 ### VERIFIED_MODULE_LABEL
 
 Custom name for 'verified module' in UI.
 
 Default: `Verified`
-
 
 
 ### VERIFIED_MODULE_NAMESPACES
@@ -706,6 +663,8 @@ List of namespaces, who's modules will be automatically set to verified.
 
 
 Default: ``
+
+
 
 
 ## Terrareg module metadata
@@ -805,4 +764,3 @@ For full license, see [LICENSE](LICENSE)
 ## Special thanks
 
  *  David Soff <david@soff.nl> for implementing Github hook support
-
