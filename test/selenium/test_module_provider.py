@@ -1722,7 +1722,7 @@ module "fullypopulated" {{
 
     def test_additional_tabs(self):
         """Test additional tabs"""
-        self.selenium_instance.get(self.get_url('/modules/javascriptinjection/modulename/testprovider/1.5.0'))
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
 
         self.wait_for_element(By.ID, 'module-tab-link-analytics')
 

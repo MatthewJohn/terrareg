@@ -494,6 +494,11 @@ integration_test_data = {
                             }
                         ]
                     }),
+                    'files': {
+                        'LICENSE': 'This is a license file\nAll rights are not reserved for this example file content',
+                        'CHANGELOG.md': '# Changelog\n## 1.0.0\n * This is an initial release',
+                        'NOT_REFERENCED': 'This file is not referenced by a tab'
+                    },
                     'examples': {
                         'examples/test-example': {
                             'example_files': {
@@ -937,11 +942,6 @@ integration_test_data = {
                         }
 
                     ]),
-                    'files': {
-                        'LICENSE': 'This is a license file\nAll rights are not reserved for this example file content',
-                        'CHANGELOG.md': '# Changelog\n## 1.0.0\n * This is an initial release',
-                        'NOT_REFERENCED': 'This file is not referenced by a tab'
-                    },
                     'terraform_docs': json.dumps({
                         'header': '',
                         'footer': '',
