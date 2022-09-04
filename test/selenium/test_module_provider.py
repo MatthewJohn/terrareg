@@ -25,6 +25,7 @@ class TestModuleProvider(SeleniumTest):
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.SECRET_KEY', '354867a669ef58d17d0513a0f3d02f4403354915139422a8931661a3dbccdffe'))
+        cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
         cls.register_patch(mock.patch('terrareg.server.ApiModuleVersionCreate._post', cls._api_version_create_mock))
         cls.register_patch(mock.patch('terrareg.server.ApiTerraregModuleVersionPublish._post', cls._api_version_publish_mock))
         cls.register_patch(cls._config_publish_api_keys_mock)
@@ -1731,3 +1732,44 @@ module "fullypopulated" {{
             with pytest.raises(selenium.common.exceptions.NoSuchElementException):
                 print('Checking for element:', injected_element)
                 self.selenium_instance.find_element(By.ID, injected_element)
+
+    def test_additional_tabs(self):
+        """Test additional tabs"""
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+        self.wait_for_element(By.ID, 'module-tab-link-analytics')
+
+        # Ensure tab for non-existent file isn't displayed
+        with pytest.raises(selenium.common.exceptions.NoSuchElementException):
+            self.selenium_instance.find_element(By.ID, 'module-tab-link-custom-doesnotexist')
+        with pytest.raises(selenium.common.exceptions.NoSuchElementException):
+            self.selenium_instance.find_element(By.ID, 'module-tab-custom-doesnotexist')
+
+        # Ensure tabs exist
+        license_tab_link = self.wait_for_element(By.ID, 'module-tab-link-custom-License')
+        changelog_tab_link = self.wait_for_element(By.ID, 'module-tab-link-custom-Changelog')
+
+        # Ensure tab content is not shown
+        assert self.selenium_instance.find_element(By.ID, 'module-tab-custom-License').is_displayed() == False
+        assert self.selenium_instance.find_element(By.ID, 'module-tab-custom-Changelog').is_displayed() == False
+
+        # Click license tab and check it's displayed and content is correct
+        license_tab_link.click()
+        license_content = self.wait_for_element(By.ID, 'module-tab-custom-License')
+        # Check license content has been put into pre tags
+        assert license_content.get_attribute('innerHTML') == """
+<pre>This is a license file
+All rights are not reserved for this example file content</pre>
+        """.strip()
+
+        # Click license tab and check it's displayed and content is correct
+        changelog_tab_link.click()
+        changelog_content = self.wait_for_element(By.ID, 'module-tab-custom-Changelog')
+        # Check changelog has been converted from markdown to HTML
+        assert changelog_content.get_attribute('innerHTML') == """
+<h1 class="subtitle is-3">Changelog</h1>
+<h2 class="subtitle is-4">1.0.0</h2>
+<ul>
+<li>This is an initial release</li>
+</ul>
+        """.strip()

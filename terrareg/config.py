@@ -407,6 +407,8 @@ class Config:
 
         To generate an API key:
         Log in at https://dashboard.infracost.io > select your organization > Settings
+
+        For cost analysis to be performed on modules which utilise other modules from this registry, ensure `DOMAIN_NAME` is set.
         """
         return os.environ.get('INFRACOST_API_KEY', None)
 
@@ -425,6 +427,28 @@ class Config:
         Whether to skip TLS verification for self-hosted pricing endpoints
         """
         return self.convert_boolean(os.environ.get('INFRACOST_TLS_INSECURE_SKIP_VERIFY', 'False'))
+
+    @property
+    def ADDITIONAL_MODULE_TABS(self):
+        """
+        Set additional markdown files from a module to be displayed in the UI.
+
+        Value must be a JSON array of objects.
+        Each object of the array defines an additional tab in the module.
+        The object defines the name of the tab and a list of files in the repository.
+        e.g. `[["Tab 1 Name", ["file-to-use.md", "alternate-file-to-use.md"]], ["tab 2", ["tab_2_file.md"]]]`
+
+        The tabs will be displayed in order of their placement in the outer list.
+        If multiple files are provided, the first file found in the repository will be used for the tab content.
+
+        Filenames with an extension `.md` will be treated as markdown. All other files will be treated as plain-text.
+
+        E.g.
+        ```
+        [["Release Notes": ["RELEASE_NOTES.md", "CHANGELOG.md"]], ["Development Guidelines", ["CONTRIBUTING.md"]], ["License", ["LICENSE"]]]
+        ```
+        """
+        return os.environ.get('ADDITIONAL_MODULE_TABS', '[["Release Notes", ["RELEASE_NOTES.md", "CHANGELOG.md"]], ["License", ["LICENSE"]]]')
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""

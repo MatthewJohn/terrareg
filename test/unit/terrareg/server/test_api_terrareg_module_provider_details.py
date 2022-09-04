@@ -43,7 +43,8 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'beta': False,
             'published': True,
             'security_failures': 0,
-            'git_path': None
+            'git_path': None,
+            'additional_tab_files': {}
         }
 
         assert res.status_code == 200
@@ -88,7 +89,8 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
                 'beta': False,
                 'published': True,
                 'security_failures': expected_security_issues,
-                'git_path': None
+                'git_path': None,
+                'additional_tab_files': {}
             }
 
             assert res.status_code == 200

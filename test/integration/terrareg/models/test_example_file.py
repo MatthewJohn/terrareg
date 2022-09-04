@@ -58,7 +58,7 @@ module "test-module" {
 """
 module "test-module" {
     source  = "example.com/moduledetails/readme-tests/provider//examples/testreadmeexample"
-    version = "&gt;= 1.0.0, &lt; 1.1.0"
+    version = ">= 1.0.0, < 1.1.0"
 }
 """
         ),
@@ -75,7 +75,7 @@ module "test-module" {
 """
 module "test-module" {
     source  = "example.com/moduledetails/readme-tests/provider"
-    version = "&gt;= 1.0.0, &lt; 1.1.0"
+    version = ">= 1.0.0, < 1.1.0"
 
     some_attribute = "test"
 }

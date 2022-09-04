@@ -4,6 +4,8 @@ import re
 import sys
 import os
 
+import jinja2
+
 sys.path.append('.')
 
 from terrareg.config import Config
@@ -11,6 +13,8 @@ from terrareg.config import Config
 
 valid_config_re = re.compile(r'^[A-Z]')
 strip_leading_space_re = re.compile(r'^ +', re.MULTILINE)
+
+config_contents = ""
 
 for prop in dir(Config):
 
@@ -39,7 +43,7 @@ for prop in dir(Config):
     description = getattr(Config, prop).__doc__ or ''
     description = strip_leading_space_re.sub('', description)
 
-    print("""
+    config_contents += """
 ### {name}
 
 {description}
@@ -49,4 +53,13 @@ Default: `{documented_default_value}`
 """.format(
     name=prop,
     description=description,
-    documented_default_value=documented_default_value))
+    documented_default_value=documented_default_value)
+
+with open('README.in', 'r') as readme_in:
+    readme_template = ''.join(readme_in.readlines())
+
+template = jinja2.Template(readme_template)
+readme_out = template.render(CONFIG_CONTENTS=config_contents)
+
+with open('README.md', 'w') as readme:
+    readme.write(readme_out)

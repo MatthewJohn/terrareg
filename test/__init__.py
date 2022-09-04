@@ -7,7 +7,7 @@ import unittest.mock
 import pytest
 
 from terrareg.models import (
-    Example, ExampleFile, ModuleDetails, Namespace, Module, ModuleProvider,
+    Example, ExampleFile, ModuleDetails, ModuleVersionFile, Namespace, Module, ModuleProvider,
     ModuleVersion, GitProvider, Submodule
 )
 from terrareg.database import Database
@@ -103,6 +103,7 @@ class BaseTest:
             conn.execute(db.git_provider.delete())
             conn.execute(db.analytics.delete())
             conn.execute(db.session.delete())
+            conn.execute(db.module_version_file.delete())
 
         # Setup test git providers
         for git_provider_id in cls._GIT_PROVIDER_DATA:
@@ -182,7 +183,7 @@ class BaseTest:
                         values_to_update = {
                             attr: version_data[attr]
                             for attr in version_data
-                            if attr not in ['examples', 'submodules', 'published', 'readme_content', 'terraform_docs', 'tfsec', 'infracost']
+                            if attr not in ['examples', 'submodules', 'published', 'readme_content', 'terraform_docs', 'tfsec', 'infracost', 'files']
                         }
                         if values_to_update:
                             module_version.update_attributes(**values_to_update)
@@ -190,6 +191,11 @@ class BaseTest:
                         # If module version is published, do so
                         if version_data.get('published', False):
                             module_version.publish()
+
+                        # Iterate over module version files
+                        for file_path, content in version_data.get('files', {}).items():
+                            module_version_file = ModuleVersionFile.create(module_version=module_version, path=file_path)
+                            module_version_file.update_attributes(content=content)
 
                         # Iterate over submodules and create them
                         for submodule_path in version_data.get('submodules', {}):
