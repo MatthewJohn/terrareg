@@ -132,7 +132,7 @@ class AdditionalTab extends BaseTab {
                     return;
                 }
             
-                let tab = $(`<div id="module-tab-${this.name}" class="module-tabs content"></div>`);
+                let tab = $(`<div id="module-tab-${this.name}" class="module-tabs content default-hidden"></div>`);
             
                 // Populate file conrtent
                 tab.append(fileContent);
