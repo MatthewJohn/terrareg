@@ -747,65 +747,80 @@ function populateVersionSelect(moduleDetails) {
 
     let currentVersionFound = false;
     let currentIsLatestVersion = false;
-    moduleDetails.versions.forEach((version, itx) => {
-        let versionOption = $("<option></option>");
 
-        // Set value of option to view URL of module version
-        versionOption.val(`/modules/${moduleDetails.namespace}/${moduleDetails.name}/${moduleDetails.provider}/${version}`);
+    let userPreferences = getUserPreferences();
 
-        let versionText = version;
-        // Add '(latest)' suffix to the first (latest) version
-        if (itx == 0) {
-            versionText += " (latest)";
+    $.get(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/versions` +
+          `?include-beta=${userPreferences["show-beta-versions"]}&` +
+          `include-unpublished=${userPreferences["show-unpublished-versions"]}`).then((versions) => {
+        let foundLatest = false;
+        for (let versionDetails of versions) {
+            let versionOption = $("<option></option>");
+            let isLatest = false;
+
+            // Set value of option to view URL of module version
+            versionOption.val(`/modules/${moduleDetails.namespace}/${moduleDetails.name}/${moduleDetails.provider}/${versionDetails.version}`);
+
+            let versionText = versionDetails.version;
+            // Add '(latest)' suffix to the first (latest) version
+            if (foundLatest == false && versionDetails.beta == false && versionDetails.published == true) {
+                versionText += " (latest)";
+                foundLatest = true;
+                isLatest = true;
+            } else if (versionDetails.beta) {
+                versionText += ' (beta)';
+            } else if (versionDetails.published == false) {
+                versionText += ' (unpublished)';
+            }
+            versionOption.text(versionText);
+
+            // Set version that matches current module to selected
+            if (versionDetails.version == moduleDetails.version) {
+                versionOption.attr("selected", "");
+                currentVersionFound = true;
+
+                // Determine if the current version is the latest version
+                // (first in list of versions)
+                if (isLatest) {
+                    currentIsLatestVersion = true;
+                }
+            }
+
+            versionSelection.append(versionOption);
         }
-        versionOption.text(versionText);
 
-        // Set version that matches current module to selected
-        if (version == moduleDetails.version) {
+        // If current version has not been found, add fake version to drop-down
+        if (currentVersionFound == false) {
+            let versionOption = $("<option></option>");
+            let suffix = '';
+            if (moduleDetails.beta) {
+                suffix += ' (beta)';
+
+                // If the beta module is published, show warning about
+                // beta version and how to use it.
+                if (moduleDetails.published) {
+                    $("#beta-warning").removeClass('default-hidden');
+                }
+            }
+            if (! moduleDetails.published) {
+                suffix += ' (unpublished)';
+
+                // Add warning to page about unpublished version
+                $("#unpublished-warning").removeClass('default-hidden');
+            }
+            versionOption.text(`${moduleDetails.version}${suffix}`);
             versionOption.attr("selected", "");
-            currentVersionFound = true;
+            versionSelection.append(versionOption);
 
-            // Determine if the current version is the latest version
-            // (first in list of versions)
-            if (itx == 0) {
-                currentIsLatestVersion = true;
-            }
+        } else if (! currentIsLatestVersion) {
+            // Otherwise, if user is not viewing the latest version,
+            // display warning
+            $("#non-latest-version-warning").removeClass('default-hidden');
         }
 
-        versionSelection.append(versionOption);
+        // Show version drop-down
+        $('#details-version').removeClass('default-hidden');
     });
-
-    // If current version has not been found, add fake version to drop-down
-    if (currentVersionFound == false) {
-        let versionOption = $("<option></option>");
-        let suffix = '';
-        if (moduleDetails.beta) {
-            suffix += ' (beta)';
-
-            // If the beta module is published, show warning about
-            // beta version and how to use it.
-            if (moduleDetails.published) {
-                $("#beta-warning").removeClass('default-hidden');
-            }
-        }
-        if (! moduleDetails.published) {
-            suffix += ' (unpublished)';
-
-            // Add warning to page about unpublished version
-            $("#unpublished-warning").removeClass('default-hidden');
-        }
-        versionOption.text(`${moduleDetails.version}${suffix}`);
-        versionOption.attr("selected", "");
-        versionSelection.append(versionOption);
-
-    } else if (! currentIsLatestVersion) {
-        // Otherwise, if user is not viewing the latest version,
-        // display warning
-        $("#non-latest-version-warning").removeClass('default-hidden');
-    }
-
-    // Show version drop-down
-    $('#details-version').removeClass('default-hidden');
 }
 
 /*
