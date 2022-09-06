@@ -1,7 +1,7 @@
 
 function getLocalStorageValue(key, defaultValue, type) {
     let localStorageValue = localStorage.getItem(key);
-    let value = localStorageValue === undefined ? defaultValue : localStorageValue;
+    let value = localStorageValue === null ? defaultValue : localStorageValue;
 
     if (type === Boolean) {
         if (value == "false") {
