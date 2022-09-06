@@ -19,7 +19,7 @@ module_providers_count 0
 # HELP module_version_major_count Total number of major versions released
 # TYPE module_version_major_count counter
 module_version_major_count 0
-# HELP module_version_minor_count Total number of major versions released
+# HELP module_version_minor_count Total number of minor versions released
 # TYPE module_version_minor_count counter
 module_version_minor_count 0
 # HELP module_version_patch_count Total number of patch versions released
@@ -38,7 +38,7 @@ module_providers_count 6
 # HELP module_version_major_count Total number of major versions released
 # TYPE module_version_major_count counter
 module_version_major_count 8
-# HELP module_version_minor_count Total number of major versions released
+# HELP module_version_minor_count Total number of minor versions released
 # TYPE module_version_minor_count counter
 module_version_minor_count 3
 # HELP module_version_patch_count Total number of patch versions released
@@ -59,7 +59,7 @@ module_providers_count 6
 # HELP module_version_major_count Total number of major versions released
 # TYPE module_version_major_count counter
 module_version_major_count 8
-# HELP module_version_minor_count Total number of major versions released
+# HELP module_version_minor_count Total number of minor versions released
 # TYPE module_version_minor_count counter
 module_version_minor_count 3
 # HELP module_version_patch_count Total number of patch versions released
