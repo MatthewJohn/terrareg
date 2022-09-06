@@ -16,6 +16,15 @@ class TestGetPrometheusMetrics(AnalyticsIntegrationTest):
 # HELP module_providers_count Total number of module providers with a published version
 # TYPE module_providers_count counter
 module_providers_count 0
+# HELP module_version_major_count Total number of major versions released
+# TYPE module_version_major_count counter
+module_version_major_count 0
+# HELP module_version_minor_count Total number of major versions released
+# TYPE module_version_minor_count counter
+module_version_minor_count 0
+# HELP module_version_patch_count Total number of patch versions released
+# TYPE module_version_patch_count counter
+module_version_patch_count 0
 # HELP module_provider_usage Analytics tokens used in a module provider
 # TYPE module_provider_usage counter
 """.strip()
@@ -26,6 +35,15 @@ module_providers_count 0
 # HELP module_providers_count Total number of module providers with a published version
 # TYPE module_providers_count counter
 module_providers_count 6
+# HELP module_version_major_count Total number of major versions released
+# TYPE module_version_major_count counter
+module_version_major_count 8
+# HELP module_version_minor_count Total number of major versions released
+# TYPE module_version_minor_count counter
+module_version_minor_count 3
+# HELP module_version_patch_count Total number of patch versions released
+# TYPE module_version_patch_count counter
+module_version_patch_count 2
 # HELP module_provider_usage Analytics tokens used in a module provider
 # TYPE module_provider_usage counter
 """.strip()
@@ -38,6 +56,15 @@ module_providers_count 6
 # HELP module_providers_count Total number of module providers with a published version
 # TYPE module_providers_count counter
 module_providers_count 6
+# HELP module_version_major_count Total number of major versions released
+# TYPE module_version_major_count counter
+module_version_major_count 8
+# HELP module_version_minor_count Total number of major versions released
+# TYPE module_version_minor_count counter
+module_version_minor_count 3
+# HELP module_version_patch_count Total number of patch versions released
+# TYPE module_version_patch_count counter
+module_version_patch_count 2
 # HELP module_provider_usage Analytics tokens used in a module provider
 # TYPE module_provider_usage counter
 module_provider_usage{module_provider_id="testnamespace/publishedmodule/testprovider", analytics_token="application-using-old-version"} 1
