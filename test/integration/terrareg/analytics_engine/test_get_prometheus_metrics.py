@@ -11,7 +11,9 @@ class TestGetPrometheusMetrics(AnalyticsIntegrationTest):
     def test_get_prometheus_with_no_modules(self):
         """Test function with no analytics recorded or module providers."""
         get_total_count_mock = mock.MagicMock(return_value=0)
-        with mock.patch('terrareg.models.ModuleProvider.get_total_count', get_total_count_mock):
+        get_module_provider_version_statistics_mock = mock.MagicMock(return_value=(0, 0, 0))
+        with mock.patch('terrareg.models.ModuleProvider.get_total_count', get_total_count_mock), \
+                mock.patch('terrareg.analytics.AnalyticsEngine.get_module_provider_version_statistics', get_module_provider_version_statistics_mock):
             assert AnalyticsEngine.get_prometheus_metrics() == """
 # HELP module_providers_count Total number of module providers with a published version
 # TYPE module_providers_count counter
