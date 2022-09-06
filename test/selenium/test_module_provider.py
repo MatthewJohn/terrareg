@@ -1731,3 +1731,95 @@ module "fullypopulated" {{
             with pytest.raises(selenium.common.exceptions.NoSuchElementException):
                 print('Checking for element:', injected_element)
                 self.selenium_instance.find_element(By.ID, injected_element)
+
+    @pytest.mark.parametrize('enable_beta,enable_unpublished,expected_versions', [
+        (False, False, ['1.5.0 (latest)', '1.2.0']),
+        (True, False, ['1.6.1-beta (beta)', '1.5.0 (latest)', '1.2.0']),
+        (False, True, ['1.6.0 (unpublished)', '1.5.0 (latest)', '1.2.0']),
+        (True, True, ['1.6.1-beta (beta)', '1.6.0 (unpublished)', '1.5.0 (latest)', '1.2.0', '1.0.0-beta (beta)']),
+    ])
+    def test_user_preferences(self, enable_beta, enable_unpublished, expected_versions):
+        """Test user preferences"""
+
+        def get_select_names(element_id):
+            select = Select(self.wait_for_element(By.ID, element_id))
+            options = select.options
+            return [option.text for option in options]
+
+
+        def open_modal():
+            # Ensure user preferences modal is not visible
+            preferences_modal = self.selenium_instance.find_element(By.ID, 'user-preferences-modal')
+            assert preferences_modal.is_displayed() == False
+
+            # Open user preferences
+            button = self.selenium_instance.find_element(By.ID, 'navbar-user-preferences-link')
+            assert button.text == 'Preferences'
+            button.click()
+            assert preferences_modal.is_displayed() == True     
+            return preferences_modal
+
+
+        def save_modal():
+            # Click save
+            preferences_modal.find_element(By.XPATH, "//button[contains(text(), 'Save')]").click()
+
+            # Ensure modal is no longer displayed
+            assert self.selenium_instance.find_element(By.ID, 'user-preferences-modal').is_displayed() == False
+
+
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+        # Clear local storage
+        self.selenium_instance.execute_script("window.localStorage.clear();")
+    
+        # Wait for version select
+        assert get_select_names('version-select') == ['1.5.0 (latest)', '1.2.0']
+
+        preferences_modal = open_modal()
+
+        # Ensure checkboxes are unchecked
+        beta_checkbox = preferences_modal.find_element(By.XPATH, "//label[contains(text(),\"Show 'beta' versions\")]//input")
+        unpublished_checkbox = preferences_modal.find_element(By.XPATH, "//label[contains(text(),\"Show 'unpublished' versions\")]//input")
+
+        assert beta_checkbox.is_selected() == False
+        assert unpublished_checkbox.is_selected() == False
+
+        # Enable preferences
+        if enable_beta:
+            beta_checkbox.click()
+        if enable_unpublished:
+            unpublished_checkbox.click()
+
+
+        # Click save
+        save_modal()
+
+        # Reload page and ensure beta versions are displayed
+        self.selenium_instance.refresh()
+        assert get_select_names('version-select') == expected_versions
+
+        # Reset options and ensure versions go back to original
+        preferences_modal = open_modal()
+
+        # Ensure checkboxes are the same checked state
+        beta_checkbox = preferences_modal.find_element(By.XPATH, "//label[contains(text(),\"Show 'beta' versions\")]//input")
+        unpublished_checkbox = preferences_modal.find_element(By.XPATH, "//label[contains(text(),\"Show 'unpublished' versions\")]//input")
+
+        assert beta_checkbox.is_selected() == enable_beta
+        assert unpublished_checkbox.is_selected() == enable_unpublished
+
+        if enable_beta:
+            beta_checkbox.click()
+        if enable_unpublished:
+            unpublished_checkbox.click()
+        
+        # Save changes again
+        save_modal()
+
+        # Reload and check versions go back to no longer including any additional versions
+        self.selenium_instance.refresh()
+        assert get_select_names('version-select') == ['1.5.0 (latest)', '1.2.0']
+
+        # Clear local storage
+        self.selenium_instance.execute_script("window.localStorage.clear();")
