@@ -11,7 +11,11 @@ class Config:
 
     @property
     def DOMAIN_NAME(self):
-        """Domain name that the system is hosted on"""
+        """
+        Domain name that the system is hosted on.
+
+        This should be setup for all installations, but is required for infracost and OpenID authentication.
+        """
         return os.environ.get('DOMAIN_NAME', None)
 
     @property
@@ -449,6 +453,27 @@ class Config:
         ```
         """
         return os.environ.get('ADDITIONAL_MODULE_TABS', '[["Release Notes", ["RELEASE_NOTES.md", "CHANGELOG.md"]], ["License", ["LICENSE"]]]')
+
+    @property
+    def OPENID_CONNECT_CLIENT_ID(self):
+        """
+        Client ID for OpenID conect authentication
+        """
+        return os.environ.get('OPENID_CONNECT_CLIENT_ID', None)
+
+    @property
+    def OPENID_CONNECT_CLIENT_SECRET(self):
+        """
+        Client secret for OpenID conect authentication
+        """
+        return os.environ.get('OPENID_CONNECT_CLIENT_SECRET', None)
+
+    @property
+    def OPENID_CONNECT_AUTH_URL(self):
+        """
+        Authentication URL for OpenID conect authentication
+        """
+        return os.environ.get('OPENID_CONNECT_AUTH_URL', None)
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""
