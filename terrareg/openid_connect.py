@@ -67,12 +67,15 @@ class OpenidConnect:
         ), state
 
     @classmethod
-    def fetch_access_token(cls, code):
+    def fetch_access_token(cls, uri, valid_state):
         """Fetch access token from OpenID issuer"""
         client = cls.get_client()
         config = terrareg.config.Config()
+
+        callback_response = client.parse_request_uri_response(uri=uri, state=valid_state)
+
         token_request_body = client.prepare_request_body(
-            code=code,
+            code=callback_response.get('code'),
             client_id=config.OPENID_CONNECT_CLIENT_ID,
             client_secret=config.OPENID_CONNECT_CLIENT_SECRET,
             redirect_uri=cls.get_redirect_url()
@@ -81,9 +84,10 @@ class OpenidConnect:
         token_endpoint = cls.obtain_issuer_metadata().get('token_endpoint', None)
         if not token_endpoint:
             return None
-        response = requests.post(token_endpoint, token_request_body)
-        print(response.text)
+
+        response = requests.post(
+            token_endpoint,
+            token_request_body,
+            headers={'Content-Type': 'application/x-www-form-urlencoded'})
 
         return client.parse_request_body_response(response.text)
-
-

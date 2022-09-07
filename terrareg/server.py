@@ -2427,12 +2427,19 @@ class ApiOpenIdCallback(ErrorCatchingResource):
 
     def _get(self):
         """Handle response from OpenID callback"""
-        code = request.args.get('code', None)
-        state = request.args.get('state', None)
+        # If session state has not been set, return 
+        state = session.get('openid_connect_state')
+        if not state:
+            return {}, 400
 
-        # Check that code and state are provided
-        # and state matches the sent state
-        if not code or not state or state != session['openid_connect_state']:
+        # Fetch access token
+        try:
+            print(OpenidConnect.fetch_access_token(uri=request.url, valid_state=state))
+        except Exception as exc:
+            # In dev, reraise exception
+            if terrareg.config.Config().DEBUG:
+                raise
+
             res = make_response(render_template(
                 'error.html',
                 error_title='Login error',
@@ -2440,6 +2447,3 @@ class ApiOpenIdCallback(ErrorCatchingResource):
             ))
             res.headers['Content-Type'] = 'text/html'
             return res
-
-        # Fetch access token
-        print(OpenidConnect.fetch_access_token(code))
