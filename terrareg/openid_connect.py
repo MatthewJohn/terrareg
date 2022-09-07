@@ -2,7 +2,7 @@ import random
 import string
 
 import requests
-from oauthlib.oauth2 import WebApplicationClient
+import oauthlib.oauth2
 
 import terrareg.config
 
@@ -18,7 +18,7 @@ class OpenidConnect:
 
     def get_client():
         """Return oauth2 web application client"""
-        return WebApplicationClient(terrareg.config.Config().OPENID_CONNECT_CLIENT_ID)
+        return oauthlib.oauth2.WebApplicationClient(terrareg.config.Config().OPENID_CONNECT_CLIENT_ID)
 
     @staticmethod
     def get_redirect_url():
@@ -79,7 +79,11 @@ class OpenidConnect:
             redirect_uri=cls.get_redirect_url()
         )
 
-        token_endpoint = cls.obtain_issuer_metadata().get('token_endpoint', None)
+        metadata = cls.obtain_issuer_metadata()
+        if metadata is None:
+            return None
+
+        token_endpoint = metadata.get('token_endpoint', None)
         if not token_endpoint:
             return None
 
