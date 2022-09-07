@@ -97,7 +97,8 @@ class TestRequireAdminAuthenticationWrapper(TerraregUnitTest):
             expect_fail=True,
             mock_session={
                 'session_id': 'unittestssessionid',
-                'is_admin_authenticated': True
+                'is_admin_authenticated': True,
+                'authentication_type': AuthenticationType.SESSION_PASSWORD.value
             },
             mock_sessions={
                 'unittestssessionid': datetime.datetime.now() - datetime.timedelta(minutes=1)
@@ -114,7 +115,8 @@ class TestRequireAdminAuthenticationWrapper(TerraregUnitTest):
             expect_fail=True,
             mock_session={
                 'session_id': 'nonexistentsessionid',
-                'is_admin_authenticated': True
+                'is_admin_authenticated': True,
+                'authentication_type': AuthenticationType.SESSION_PASSWORD.value
             },
             mock_sessions={
             }
@@ -134,6 +136,24 @@ class TestRequireAdminAuthenticationWrapper(TerraregUnitTest):
             }
         )
 
+    def test_authentication_with_mock_session_without_authentication_type(self, app_context, test_request_context, mocked_server_session_fixture):
+        """Ensure resource is called with valid mock_session."""
+        self._run_authentication_test(
+            app_context=app_context,
+            test_request_context=test_request_context,
+            config_secret_key='testsecret',
+            config_admin_authentication_token='testpassword',
+            expect_fail=True,
+            expected_authentication_type=AuthenticationType.SESSION_PASSWORD,
+            mock_session={
+                'session_id': 'unittestsessionid',
+                'is_admin_authenticated': True
+            },
+            mock_sessions={
+                'unittestsessionid': datetime.datetime.now() + datetime.timedelta(hours=5)
+            }
+        )
+
     def test_authentication_with_mock_session(self, app_context, test_request_context, mocked_server_session_fixture):
         """Ensure resource is called with valid mock_session."""
         self._run_authentication_test(
@@ -145,7 +165,67 @@ class TestRequireAdminAuthenticationWrapper(TerraregUnitTest):
             expected_authentication_type=AuthenticationType.SESSION_PASSWORD,
             mock_session={
                 'session_id': 'unittestsessionid',
-                'is_admin_authenticated': True
+                'is_admin_authenticated': True,
+                'authentication_type': AuthenticationType.SESSION_PASSWORD.value
+            },
+            mock_sessions={
+                'unittestsessionid': datetime.datetime.now() + datetime.timedelta(hours=5)
+            }
+        )
+
+    def test_authentication_openid_without_expiry_session(self, app_context, test_request_context, mocked_server_session_fixture):
+        """Ensure resource is called with valid mock_session."""
+        self._run_authentication_test(
+            app_context=app_context,
+            test_request_context=test_request_context,
+            config_secret_key='testsecret',
+            config_admin_authentication_token='testpassword',
+            expect_fail=True,
+            expected_authentication_type=AuthenticationType.SESSION_OPENID_CONNECT,
+            mock_session={
+                'session_id': 'unittestsessionid',
+                'is_admin_authenticated': True,
+                'authentication_type': AuthenticationType.SESSION_OPENID_CONNECT.value
+            },
+            mock_sessions={
+                'unittestsessionid': datetime.datetime.now() + datetime.timedelta(hours=5)
+            }
+        )
+
+    def test_authentication_with_expired_openid_session(self, app_context, test_request_context, mocked_server_session_fixture):
+        """Ensure resource is called with valid mock_session."""
+        self._run_authentication_test(
+            app_context=app_context,
+            test_request_context=test_request_context,
+            config_secret_key='testsecret',
+            config_admin_authentication_token='testpassword',
+            expect_fail=True,
+            expected_authentication_type=AuthenticationType.SESSION_OPENID_CONNECT,
+            mock_session={
+                'session_id': 'unittestsessionid',
+                'is_admin_authenticated': True,
+                'authentication_type': AuthenticationType.SESSION_OPENID_CONNECT.value,
+                'openid_expires_at': 500
+            },
+            mock_sessions={
+                'unittestsessionid': datetime.datetime.now() + datetime.timedelta(hours=5)
+            }
+        )
+
+    def test_authentication_with_openid_session(self, app_context, test_request_context, mocked_server_session_fixture):
+        """Ensure resource is called with valid mock_session."""
+        self._run_authentication_test(
+            app_context=app_context,
+            test_request_context=test_request_context,
+            config_secret_key='testsecret',
+            config_admin_authentication_token='testpassword',
+            expect_fail=True,
+            expected_authentication_type=AuthenticationType.SESSION_OPENID_CONNECT,
+            mock_session={
+                'session_id': 'unittestsessionid',
+                'is_admin_authenticated': True,
+                'authentication_type': AuthenticationType.SESSION_OPENID_CONNECT.value,
+                'openid_expires_at': 99999999999
             },
             mock_sessions={
                 'unittestsessionid': datetime.datetime.now() + datetime.timedelta(hours=5)
