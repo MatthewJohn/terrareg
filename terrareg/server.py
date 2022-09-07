@@ -133,6 +133,28 @@ class BaseHandler:
             module_provider_name=module_provider_name
         ), 404
 
+    def create_session(self):
+        """Create session for user"""
+        if not terrareg.config.Config().SECRET_KEY:
+            return {'message': 'Sessions not enabled in configuration'}, 403
+
+        # Check if a session already exists and delete it
+        if session.get('session_id', None):
+            session_obj = Session.check_session(session.get('session_id', None))
+            if session_obj:
+                session_obj.delete()
+
+        session['csrf_token'] = hashlib.sha1(os.urandom(64)).hexdigest()
+        session_obj = Session.create_session()
+        session['session_id'] = session_obj.id
+        session.modified = True
+
+        # Whilst authenticating a user, piggyback the request
+        # to take the opportunity to delete old sessions
+        Session.cleanup_old_sessions()
+
+        return session_obj
+
 
 class Server(BaseHandler):
     """Manage web server and route requests"""
@@ -507,6 +529,11 @@ class Server(BaseHandler):
         session['session_id'] = None
 
         session['is_admin_authenticated'] = False
+        session['openid_connect_state'] = None
+        session['openid_connect_access_token'] = None
+        session['openid_connect_id_token'] = None
+        session['openid_connect_expires_at'] = None
+        session.modified = True
         return redirect('/')
 
     def _view_serve_create_module(self):
@@ -621,7 +648,8 @@ class AuthenticationType(Enum):
     NOT_CHECKED = 0
     NOT_AUTHENTICATED = 1
     AUTHENTICATION_TOKEN = 2
-    SESSION = 3
+    SESSION_PASSWORD = 3
+    SESSION_OPENID_CONNECT = 4
 
 
 def get_csrf_token():
@@ -669,8 +697,21 @@ def check_admin_authentication():
     if (terrareg.config.Config().SECRET_KEY and
             Session.check_session(session.get('session_id', None)) and
             session.get('is_admin_authenticated', False)):
-        authenticated = True
-        g.authentication_type = AuthenticationType.SESSION
+
+        session_authentication_type = AuthenticationType(
+            session.get('authentication_type',
+                        AuthenticationType.NOT_AUTHENTICATED.value))
+
+        if session_authentication_type is AuthenticationType.SESSION_PASSWORD:
+            authenticated = True
+            g.authentication_type = AuthenticationType.SESSION_PASSWORD
+
+        # If authentication type is OpenID connect,
+        # ensure the OpenID token has not expired
+        elif (session_authentication_type is AuthenticationType.SESSION_OPENID_CONNECT
+                and datetime.datetime.now() < datetime.datetime.fromtimestamp(session.get('openid_connect_expires_at', 0))):
+            authenticated = True
+            g.authentication_type = AuthenticationType.SESSION_OPENID_CONNECT
 
     return authenticated
 
@@ -1782,24 +1823,13 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
     def _post(self):
         """Handle POST requests to the authentication endpoint."""
 
-        if not terrareg.config.Config().SECRET_KEY:
+        session_obj = self.create_session()
+        if not session_obj:
             return {'message': 'Sessions not enabled in configuration'}, 403
 
-        # Check if a session already exists and delete it
-        if session.get('session_id', None):
-            session_obj = Session.check_session(session.get('session_id', None))
-            if session_obj:
-                session_obj.delete()
-
         session['is_admin_authenticated'] = True
-        session['csrf_token'] = hashlib.sha1(os.urandom(64)).hexdigest()
-        session_obj = Session.create_session()
-        session['session_id'] = session_obj.id
+        session['authentication_type'] = AuthenticationType.SESSION_PASSWORD.value
         session.modified = True
-
-        # Whilst authenticating a user, piggyback the request
-        # to take the opportunity to delete old sessions
-        Session.cleanup_old_sessions()
 
         return {'authenticated': True}
 
@@ -2418,6 +2448,7 @@ class ApiOpenIdInitiate(ErrorCatchingResource):
             return res
 
         session['openid_connect_state'] = state
+        session.modified = True
 
         return redirect(redirect_url, code=302)
 
@@ -2434,7 +2465,7 @@ class ApiOpenIdCallback(ErrorCatchingResource):
 
         # Fetch access token
         try:
-            print(OpenidConnect.fetch_access_token(uri=request.url, valid_state=state))
+            access_token = OpenidConnect.fetch_access_token(uri=request.url, valid_state=state)
         except Exception as exc:
             # In dev, reraise exception
             if terrareg.config.Config().DEBUG:
@@ -2447,3 +2478,25 @@ class ApiOpenIdCallback(ErrorCatchingResource):
             ))
             res.headers['Content-Type'] = 'text/html'
             return res
+
+        session_obj = self.create_session()
+        if not session_obj:
+            res = make_response(render_template(
+                'error.html',
+                error_title='Login error',
+                error_description='Sessions are not available'
+            ))
+            res.headers['Content-Type'] = 'text/html'
+            return res
+
+        session['openid_connect_access_token'] = access_token['access_token']
+        session['openid_connect_id_token'] = access_token['id_token']
+        session['is_admin_authenticated'] = True
+        session['authentication_type'] = AuthenticationType.SESSION_OPENID_CONNECT.value
+
+        # Manually calcualte expires at, to avoid timezone issues
+        session['openid_connect_expires_at'] = datetime.datetime.now().timestamp() + access_token['expires_in']
+        session.modified = True
+
+        # Redirect to homepage
+        return redirect('/')
