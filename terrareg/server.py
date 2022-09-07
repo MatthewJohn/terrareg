@@ -2466,6 +2466,8 @@ class ApiOpenIdCallback(ErrorCatchingResource):
         # Fetch access token
         try:
             access_token = OpenidConnect.fetch_access_token(uri=request.url, valid_state=state)
+            if access_token is None:
+                raise Exception('Error getting access token')
         except Exception as exc:
             # In dev, reraise exception
             if terrareg.config.Config().DEBUG:
@@ -2478,6 +2480,7 @@ class ApiOpenIdCallback(ErrorCatchingResource):
             ))
             res.headers['Content-Type'] = 'text/html'
             return res
+
 
         session_obj = self.create_session()
         if not session_obj:
