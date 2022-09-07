@@ -469,11 +469,11 @@ class Config:
         return os.environ.get('OPENID_CONNECT_CLIENT_SECRET', None)
 
     @property
-    def OPENID_CONNECT_AUTH_URL(self):
+    def OPENID_CONNECT_ISSUER(self):
         """
-        Authentication URL for OpenID conect authentication
+        Base Issuer URL for OpenID conect authentication
         """
-        return os.environ.get('OPENID_CONNECT_AUTH_URL', None)
+        return os.environ.get('OPENID_CONNECT_ISSUER', None)
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""

@@ -12,7 +12,7 @@ from enum import Enum
 from flask import (
     Config, Flask, request, render_template,
     redirect, make_response, send_from_directory,
-    session, g
+    session, g, redirect
 )
 from flask_restful import Resource, Api, reqparse, inputs, abort
 
@@ -31,6 +31,7 @@ from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ApiUploadModuleExtractor, GitModuleExtractor
 from terrareg.analytics import AnalyticsEngine
 from terrareg.filters import NamespaceTrustFilter
+from terrareg.openid_connect import OpenidConnect
 
 
 def catch_name_exceptions(f):
@@ -101,7 +102,39 @@ def catch_name_exceptions(f):
     return decorated_function
 
 
-class Server(object):
+class BaseHandler:
+    """Provide base methods for handling requests and serving pages."""
+
+    def _render_template(self, *args, **kwargs):
+        """Override render_template, passing in base variables."""
+        return render_template(
+            *args, **kwargs,
+            terrareg_application_name=terrareg.config.Config().APPLICATION_NAME,
+            terrareg_logo_url=terrareg.config.Config().LOGO_URL,
+            ALLOW_MODULE_HOSTING=terrareg.config.Config().ALLOW_MODULE_HOSTING,
+            TRUSTED_NAMESPACE_LABEL=terrareg.config.Config().TRUSTED_NAMESPACE_LABEL,
+            CONTRIBUTED_NAMESPACE_LABEL=terrareg.config.Config().CONTRIBUTED_NAMESPACE_LABEL,
+            VERIFIED_MODULE_LABEL=terrareg.config.Config().VERIFIED_MODULE_LABEL,
+            csrf_token=get_csrf_token()
+        )
+
+    def _module_provider_404(self, namespace: Namespace, module: Module,
+                             module_provider_name: str):
+        return self._render_template(
+            'error.html',
+            error_title='Module/Provider does not exist',
+            error_description='The module {namespace}/{module}/{module_provider_name} does not exist'.format(
+                namespace=namespace.name,
+                module=module.name,
+                module_provider_name=module_provider_name
+            ),
+            namespace=namespace,
+            module=module,
+            module_provider_name=module_provider_name
+        ), 404
+
+
+class Server(BaseHandler):
     """Manage web server and route requests"""
 
     def __init__(self, ssl_public_key=None, ssl_private_key=None):
@@ -253,6 +286,17 @@ class Server(object):
         self._app.route(
             '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/example/<path:submodule_path>'
         )(self._view_serve_example)
+
+
+        # OpenID connect endpoints
+        self._api.add_resource(
+            ApiOpenIdInitiate,
+            '/openid/login'
+        )
+        self._api.add_resource(
+            ApiOpenIdCallback,
+            '/openid/callback'
+        )
 
         # Terrareg APIs
         ## Config endpoint
@@ -430,19 +474,6 @@ class Server(object):
             '/v1/terrareg/health'
         )
 
-    def _render_template(self, *args, **kwargs):
-        """Override render_template, passing in base variables."""
-        return render_template(
-            *args, **kwargs,
-            terrareg_application_name=terrareg.config.Config().APPLICATION_NAME,
-            terrareg_logo_url=terrareg.config.Config().LOGO_URL,
-            ALLOW_MODULE_HOSTING=terrareg.config.Config().ALLOW_MODULE_HOSTING,
-            TRUSTED_NAMESPACE_LABEL=terrareg.config.Config().TRUSTED_NAMESPACE_LABEL,
-            CONTRIBUTED_NAMESPACE_LABEL=terrareg.config.Config().CONTRIBUTED_NAMESPACE_LABEL,
-            VERIFIED_MODULE_LABEL=terrareg.config.Config().VERIFIED_MODULE_LABEL,
-            csrf_token=get_csrf_token()
-        )
-
     def run(self, debug=None):
         """Run flask server."""
         kwargs = {
@@ -457,21 +488,6 @@ class Server(object):
         self._app.secret_key = terrareg.config.Config().SECRET_KEY
 
         self._app.run(**kwargs)
-
-    def _module_provider_404(self, namespace: Namespace, module: Module,
-                             module_provider_name: str):
-        return self._render_template(
-            'error.html',
-            error_title='Module/Provider does not exist',
-            error_description='The module {namespace}/{module}/{module_provider_name} does not exist'.format(
-                namespace=namespace.name,
-                module=module.name,
-                module_provider_name=module_provider_name
-            ),
-            namespace=namespace,
-            module=module,
-            module_provider_name=module_provider_name
-        ), 404
 
     def _view_serve_static_index(self):
         """Serve static index"""
@@ -709,7 +725,7 @@ class ApiTerraformWellKnown(Resource):
         }
 
 
-class ErrorCatchingResource(Resource):
+class ErrorCatchingResource(Resource, BaseHandler):
     """Provide resource that catches terrareg errors."""
 
     def _get(self, *args, **kwargs):
@@ -797,7 +813,8 @@ class ApiTerraregConfig(ErrorCatchingResource):
             'ALLOW_CUSTOM_GIT_URL_MODULE_VERSION': config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
             'ADMIN_AUTHENTICATION_TOKEN_ENABLED': bool(config.ADMIN_AUTHENTICATION_TOKEN),
             'SECRET_KEY_SET': bool(config.SECRET_KEY),
-            'ADDITIONAL_MODULE_TABS': config.ADDITIONAL_MODULE_TABS
+            'ADDITIONAL_MODULE_TABS': config.ADDITIONAL_MODULE_TABS,
+            'OPENID_CONNECT_ENABLED': OpenidConnect.is_enabled()
         }
 
 
@@ -2382,3 +2399,47 @@ class ApiTerraregModuleVersionFile(ErrorCatchingResource):
             return {'message': 'Module version file does not exist.'}, 400
 
         return module_version_file.get_content()
+
+
+class ApiOpenIdInitiate(ErrorCatchingResource):
+    """Interface to initiate authentication via OpenID connect"""
+
+    def _get(self):
+        """Generate session for storing OpenID state token and redirect to openid login provider."""
+        redirect_url, state = OpenidConnect.get_authorize_redirect_url()
+
+        if redirect_url is None:
+            res = make_response(render_template(
+                'error.html',
+                error_title='Login error',
+                error_description='SSO is incorrectly configured'
+            ))
+            res.headers['Content-Type'] = 'text/html'
+            return res
+
+        session['openid_connect_state'] = state
+
+        return redirect(redirect_url, code=302)
+
+
+class ApiOpenIdCallback(ErrorCatchingResource):
+    """Interface to handle callback from authorization flow from OpenID connect"""
+
+    def _get(self):
+        """Handle response from OpenID callback"""
+        code = request.args.get('code', None)
+        state = request.args.get('state', None)
+
+        # Check that code and state are provided
+        # and state matches the sent state
+        if not code or not state or state != session['openid_connect_state']:
+            res = make_response(render_template(
+                'error.html',
+                error_title='Login error',
+                error_description='Invalid repsonse from SSO'
+            ))
+            res.headers['Content-Type'] = 'text/html'
+            return res
+
+        # Fetch access token
+        print(OpenidConnect.fetch_access_token(code))
