@@ -142,7 +142,7 @@ class TestRequireAdminAuthenticationWrapper(TerraregUnitTest):
             config_secret_key='testsecret',
             config_admin_authentication_token='testpassword',
             expect_fail=False,
-            expected_authentication_type=AuthenticationType.SESSION,
+            expected_authentication_type=AuthenticationType.SESSION_PASSWORD,
             mock_session={
                 'session_id': 'unittestsessionid',
                 'is_admin_authenticated': True
