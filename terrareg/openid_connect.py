@@ -55,8 +55,6 @@ class OpenidConnect:
         if not auth_url:
             return None, None
 
-        config = terrareg.config.Config()
-
         state = cls.generate_state()
 
         return cls.get_client().prepare_request_uri(
