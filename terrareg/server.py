@@ -136,7 +136,7 @@ class BaseHandler:
     def create_session(self):
         """Create session for user"""
         if not terrareg.config.Config().SECRET_KEY:
-            return {'message': 'Sessions not enabled in configuration'}, 403
+            return None
 
         # Check if a session already exists and delete it
         if session.get('session_id', None):
@@ -1824,7 +1824,7 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
         """Handle POST requests to the authentication endpoint."""
 
         session_obj = self.create_session()
-        if not session_obj:
+        if not isinstance(session_obj, Session):
             return {'message': 'Sessions not enabled in configuration'}, 403
 
         session['is_admin_authenticated'] = True
@@ -2483,7 +2483,7 @@ class ApiOpenIdCallback(ErrorCatchingResource):
 
 
         session_obj = self.create_session()
-        if not session_obj:
+        if not isinstance(session_obj, Session):
             res = make_response(render_template(
                 'error.html',
                 error_title='Login error',
