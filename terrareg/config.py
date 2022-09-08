@@ -471,7 +471,9 @@ class Config:
     @property
     def OPENID_CONNECT_ISSUER(self):
         """
-        Base Issuer URL for OpenID conect authentication
+        Base Issuer URL for OpenID conect authentication.
+
+        A well-known URL will be expected at `${OPENID_CONNECT_ISSUER}/.well-known/openid-configuration`
         """
         return os.environ.get('OPENID_CONNECT_ISSUER', None)
 

@@ -564,7 +564,9 @@ Default: ``
 ### OPENID_CONNECT_ISSUER
 
 
-Base Issuer URL for OpenID conect authentication
+Base Issuer URL for OpenID conect authentication.
+
+A well-known URL will be expected at `${OPENID_CONNECT_ISSUER}/.well-known/openid-configuration`
 
 
 Default: ``
