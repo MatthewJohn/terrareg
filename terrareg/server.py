@@ -31,7 +31,7 @@ from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ApiUploadModuleExtractor, GitModuleExtractor
 from terrareg.analytics import AnalyticsEngine
 from terrareg.filters import NamespaceTrustFilter
-from terrareg.openid_connect import OpenidConnect
+import terrareg.openid_connect
 
 
 def catch_name_exceptions(f):
@@ -855,7 +855,7 @@ class ApiTerraregConfig(ErrorCatchingResource):
             'ADMIN_AUTHENTICATION_TOKEN_ENABLED': bool(config.ADMIN_AUTHENTICATION_TOKEN),
             'SECRET_KEY_SET': bool(config.SECRET_KEY),
             'ADDITIONAL_MODULE_TABS': config.ADDITIONAL_MODULE_TABS,
-            'OPENID_CONNECT_ENABLED': OpenidConnect.is_enabled()
+            'OPENID_CONNECT_ENABLED': terrareg.openid_connect.OpenidConnect.is_enabled()
         }
 
 
@@ -2436,7 +2436,7 @@ class ApiOpenIdInitiate(ErrorCatchingResource):
 
     def _get(self):
         """Generate session for storing OpenID state token and redirect to openid login provider."""
-        redirect_url, state = OpenidConnect.get_authorize_redirect_url()
+        redirect_url, state = terrareg.openid_connect.OpenidConnect.get_authorize_redirect_url()
 
         if redirect_url is None:
             res = make_response(render_template(
@@ -2465,7 +2465,7 @@ class ApiOpenIdCallback(ErrorCatchingResource):
 
         # Fetch access token
         try:
-            access_token = OpenidConnect.fetch_access_token(uri=request.url, valid_state=state)
+            access_token = terrareg.openid_connect.OpenidConnect.fetch_access_token(uri=request.url, valid_state=state)
             if access_token is None:
                 raise Exception('Error getting access token')
         except Exception as exc:
