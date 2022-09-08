@@ -1,14 +1,23 @@
+import datetime
 import random
 import string
+import json
 
+import jwt
 import requests
 import oauthlib.oauth2
 
 import terrareg.config
 
+
 class OpenidConnect:
 
     _METADATA_CONFIG = None
+
+    _IDP_JWKS = None
+    _IDP_JWKS_REFRESH_DATE = None
+    # Retain IdP keys cache for 12 hours
+    _IDP_JWKS_REFRESH_INTERVAL = datetime.timedelta(hours=12)
 
     @classmethod
     def is_enabled(cls):
@@ -25,6 +34,30 @@ class OpenidConnect:
         """Obtain redirect URL for Terrareg instance"""
         config = terrareg.config.Config()
         return f'https://{config.DOMAIN_NAME}/openid/callback'
+
+    @classmethod
+    def get_idp_jwks(cls):
+        """Obtain JWKs from IdP"""
+        if (not cls._IDP_JWKS or
+                cls._IDP_JWKS_REFRESH_DATE is None or
+                cls._IDP_JWKS_REFRESH_DATE < datetime.datetime.now()):
+            # Obtain keys from IdP
+            metadata = cls.obtain_issuer_metadata()
+            if metadata is None:
+                return None
+
+            key_url = metadata.get('jwks_uri', None)
+            if not key_url:
+                return None
+
+            jwks_content = requests.get(key_url).json()
+            public_keys = {
+                key['kid']: jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(jwks_content['keys'][0]))
+                for key in jwks_content.get('keys', [])
+            }
+            cls._IDP_JWKS = public_keys
+            cls._IDP_JWKS_REFRESH_DATE = datetime.datetime.now()
+        return cls._IDP_JWKS
 
     @classmethod
     def obtain_issuer_metadata(cls):
@@ -93,3 +126,17 @@ class OpenidConnect:
             headers={'Content-Type': 'application/x-www-form-urlencoded'})
 
         return client.parse_request_body_response(response.text)
+
+    @classmethod
+    def validate_session_token(cls, session_id_token):
+        """Validate session token, ensuring it is valid"""
+        idp_keys = cls.get_idp_jwks()
+
+        header = jwt.get_unverified_header(jwt=session_id_token)
+        print(header)
+
+        jwt.decode(
+            session_id_token,
+            key=idp_keys[header['kid']],
+            algorithms=[header['alg']]
+        )
