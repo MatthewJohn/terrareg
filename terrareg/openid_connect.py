@@ -133,10 +133,10 @@ class OpenidConnect:
         idp_keys = cls.get_idp_jwks()
 
         header = jwt.get_unverified_header(jwt=session_id_token)
-        print(header)
 
         jwt.decode(
             session_id_token,
             key=idp_keys[header['kid']],
-            algorithms=[header['alg']]
+            algorithms=[header['alg']],
+            audience=terrareg.config.Config().OPENID_CONNECT_CLIENT_ID
         )
