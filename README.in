@@ -160,6 +160,26 @@ The following environment variables are available to configure the application
 {{ CONFIG_CONTENTS }}
 
 
+## OpenID Connect Single sign-on
+
+To configure OpenID connect, setup an application in an identity provider (IdP) with the following:
+
+| | |
+| --- | --- |
+| Grant type | Authorization Code |
+| Sign-in redirect URI | `https://<terrareg-instance-domain>/openid/callback` |
+| Sign-out URI | `https://<terrareg-instance-domain>/logout` |
+| Initiate login URI | `https://<terrareg-instance-domain>/openid/login` |
+| Login flow | Redirect to app to initiate login |
+
+Obtain the client ID, client secret and issuer URL from the IdP provider and populate the following environment variables:
+
+ * DOMAIN_NAME
+ * OPENID_CONNECT_CLIENT_ID
+ * OPENID_CONNECT_CLIENT_SECRET
+ * OPENID_CONNECT_ISSUER
+
+ (See above for details for each of these)
 
 
 ## Terrareg module metadata
