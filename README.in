@@ -179,8 +179,10 @@ Obtain the client ID, client secret and issuer URL from the IdP provider and pop
  * OPENID_CONNECT_CLIENT_SECRET
  * OPENID_CONNECT_ISSUER
 
- (See above for details for each of these)
+(See above for details for each of these)
 
+Note: Most IdP providers will require the terrareg installation to be accessed via https.
+The instance should be configured with SSL certificates (SSL_CERT_PRIVATE_KEY/SSL_CERT_PUBLIC_KEY) or be hosted behind a reverse-proxy/load balancer.
 
 ## Terrareg module metadata
 
