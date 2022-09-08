@@ -561,10 +561,14 @@ class UsageBuilderTab extends ModuleDetailsTab {
 
                 let valueTd = $('<td></td>');
 
-                if (inputVariable.type == 'text' || inputVariable.type == 'list') {
+                if (inputVariable.type == 'text' || inputVariable.type == 'list' || inputVariable.type == 'number') {
                     let inputDiv = $('<input />');
                     inputDiv.addClass('input');
-                    inputDiv.attr('type', 'text');
+                    if (inputVariable.type == 'number') {
+                        inputDiv.attr('type', 'number');
+                    } else {
+                        inputDiv.attr('type', 'text');
+                    }
                     inputDiv.attr('id', inputId);
                     inputDiv.bind('keyup', () => {updateUsageBuilderOutput(this._moduleDetails)});
                     valueTd.append(inputDiv);
@@ -1323,6 +1327,10 @@ async function updateUsageBuilderOutput(moduleDetails) {
         else if (inputVariable.type == 'text')
         {
             varInput = usageBuilderQuoteString(inputVariable, $(inputId)[0].value);
+        }
+        else if (inputVariable.type == 'number')
+        {
+            varInput = $(inputId)[0].value;
         }
         else if (inputVariable.type == 'list') {
             varInput = `[${usageBuilderQuoteString(inputVariable, $(inputId)[0].value)}]`;
