@@ -123,6 +123,13 @@ Whether to perform a database migration on container startup.
 
 Set to `True` to enable database migration
 
+*Note:* Be very careful when scaling the application. There should never be more than one instance of Terrareg running with `MIGRATE_DATABASE` set to `True` during an upgrade.
+
+When upgrading, scale the application to a single instance before upgrading to a newer version.
+
+Alternatively, set `MIGRATE_DATABASE` to `False` and run a dedicated instance for performing database upgrades.
+Use `MIGRATE_DATABASE_ONLY` to run an instance that will perform the necessary database migrations and immediately exit.
+
 Default: `False`
 
 ### MIGRATE_DATABASE_ONLY
