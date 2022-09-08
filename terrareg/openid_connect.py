@@ -56,7 +56,7 @@ class OpenidConnect:
                 for key in jwks_content.get('keys', [])
             }
             cls._IDP_JWKS = public_keys
-            cls._IDP_JWKS_REFRESH_DATE = datetime.datetime.now()
+            cls._IDP_JWKS_REFRESH_DATE = datetime.datetime.now() + cls._IDP_JWKS_REFRESH_INTERVAL
         return cls._IDP_JWKS
 
     @classmethod
