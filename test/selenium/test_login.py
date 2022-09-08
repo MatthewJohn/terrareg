@@ -53,3 +53,25 @@ class TestLogin(SeleniumTest):
 
             # Ensure user is logged in
             self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbar_login_span').text, 'Logout')
+
+    def test_invalid_sso_response(self):
+        """Ensure SSO login works"""
+        def raise_exception():
+            raise Exception('Unittest exception')
+        with self.update_mock(self._mock_openid_connect_is_enabled, 'return_value', True), \
+                self.update_mock(self._mock_openid_connect_get_authorize_redirect_url, 'return_value',
+                                 ('/openid/callback?code=abcdefg&state=unitteststate', 'unitteststate')), \
+                self.update_mock(self._mock_openid_connect_fetch_access_token, 'side_effect',
+                                 raise_exception), \
+                self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'):
+
+            self.selenium_instance.get(self.get_url('/login'))
+            # Wait for SSO login button to be displayed and click
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'sso-login').is_displayed(), True)
+            self.selenium_instance.find_element(By.ID, 'sso-login').click()
+
+            # Ensure still on callback URL and error is displayed
+            self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/openid/callback?code=abcdefg&state=unitteststate'))
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'error-title').text, 'Login error')
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'error-content').text, 'Invalid repsonse from SSO')
+
