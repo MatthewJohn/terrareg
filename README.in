@@ -153,6 +153,8 @@ The following environment variables are available to configure the application
 {{ CONFIG_CONTENTS }}
 
 
+
+
 ## Terrareg module metadata
 
 A metadata file can be provided each an uploaded module's archive to provide additional metadata to terrareg.

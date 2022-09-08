@@ -389,7 +389,11 @@ Default: `False`
 
 ### DOMAIN_NAME
 
-Domain name that the system is hosted on
+
+Domain name that the system is hosted on.
+
+This should be setup for all installations, but is required for infracost and OpenID authentication.
+
 
 Default: ``
 
@@ -532,6 +536,33 @@ This can be set to an empty string, to expected submodules to be in the root dir
 Default: `modules`
 
 
+### OPENID_CONNECT_CLIENT_ID
+
+
+Client ID for OpenID conect authentication
+
+
+Default: ``
+
+
+### OPENID_CONNECT_CLIENT_SECRET
+
+
+Client secret for OpenID conect authentication
+
+
+Default: ``
+
+
+### OPENID_CONNECT_ISSUER
+
+
+Base Issuer URL for OpenID conect authentication
+
+
+Default: ``
+
+
 ### PUBLISH_API_KEYS
 
 
@@ -663,6 +694,8 @@ List of namespaces, who's modules will be automatically set to verified.
 
 
 Default: ``
+
+
 
 
 
