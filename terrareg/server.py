@@ -710,6 +710,7 @@ def check_admin_authentication():
         # ensure the OpenID token has not expired
         elif (session_authentication_type is AuthenticationType.SESSION_OPENID_CONNECT
                 and datetime.datetime.now() < datetime.datetime.fromtimestamp(session.get('openid_connect_expires_at', 0))):
+            terrareg.openid_connect.OpenidConnect.validate_session_token(session.get('openid_connect_id_token'))
             authenticated = True
             g.authentication_type = AuthenticationType.SESSION_OPENID_CONNECT
 
@@ -2492,7 +2493,6 @@ class ApiOpenIdCallback(ErrorCatchingResource):
             res.headers['Content-Type'] = 'text/html'
             return res
 
-        session['openid_connect_access_token'] = access_token['access_token']
         session['openid_connect_id_token'] = access_token['id_token']
         session['is_admin_authenticated'] = True
         session['authentication_type'] = AuthenticationType.SESSION_OPENID_CONNECT.value
