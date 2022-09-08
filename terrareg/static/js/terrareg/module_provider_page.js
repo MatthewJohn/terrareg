@@ -576,7 +576,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
                     inputDiv.attr('type', 'checkbox');
                     inputDiv.attr('id', inputId);
                     inputDiv.attr('value', 'true');
-                    inputDiv.bind('onchange', () => {updateUsageBuilderOutput(this._moduleDetails)});
+                    inputDiv.bind('change', () => {updateUsageBuilderOutput(this._moduleDetails)});
                     valueTd.append(inputDiv);
 
                 } else if (inputVariable.type == 'select') {
