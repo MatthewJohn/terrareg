@@ -8,6 +8,16 @@ import terrareg.config
 class Saml2:
 
     @classmethod
+    def is_enabled(cls):
+        """Whether SAML auithentication is enabled"""
+        config = terrareg.config.Config()
+        return (config.DOMAIN_NAME is not None and
+                config.SAML2_ENTITY_ID is not None and
+                config.SAML2_IDP_METADATA_URL is not None and
+                config.SAML2_PUBLIC_KEY is not None and
+                config.SAML2_PRIVATE_KEY is not None)
+
+    @classmethod
     def get_settings(cls):
         """Create settings for saml2"""
         config = terrareg.config.Config()
@@ -16,60 +26,23 @@ class Saml2:
             "strict": True,
             "debug": config.DEBUG,
             "sp": {
-                # "entityId": f"https://{config.DOMAIN_NAME}/metadata/",
                 "entityId": config.SAML2_ENTITY_ID,
                 "assertionConsumerService": {
                     "url": f"https://{config.DOMAIN_NAME}/saml/login?acs",
                     "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
                 },
-                # "attributeConsumingService": {
-                #         "serviceName": "SP test",
-                #         "serviceDescription": "Test Service",
-                #         "requestedAttributes": [
-                #             # {
-                #             #     "name": "",
-                #             #     "isRequired": false,
-                #             #     "nameFormat": "",
-                #             #     "friendlyName": "",
-                #             #     "attributeValue": []
-                #             # }
-                #         ]
-                # },
                 "singleLogoutService": {
                     "url": f"https://{config.DOMAIN_NAME}/saml/login?sls",
-                    #"responseUrl": "https://<sp_domain>/?sls",
                     "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
                 },
                 "NameIDFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
                 "x509cert": config.SAML2_PUBLIC_KEY,
                 "privateKey": config.SAML2_PRIVATE_KEY
-                # 'x509certNew': '',
             },
-
-            # "idp": {
-            #     "entityId": "https://app.onelogin.com/saml/metadata/<onelogin_connector_id>",
-            #     "singleSignOnService": {
-            #         "url": "https://app.onelogin.com/trust/saml2/http-post/sso/<onelogin_connector_id>",
-            #         "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
-            #     },
-            #     "singleLogoutService": {
-            #         "url": "https://app.onelogin.com/trust/saml2/http-redirect/slo/<onelogin_connector_id>",
-            #         "responseUrl": "https://app.onelogin.com/trust/saml2/http-redirect/slo_return/<onelogin_connector_id>",
-            #         "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
-            #     },
-            #     "x509cert": "<onelogin_connector_cert>"
-            #     # 'certFingerprint': '',
-            #     # 'certFingerprintAlgorithm': 'sha1',
-            #     # 'x509certMulti': {
-            #     #      'signing': [
-            #     #          '<cert1-string>'
-            #     #      ],
-            #     #      'encryption': [
-            #     #          '<cert2-string>'
-            #     #      ]
-            #     # }
-            # }
+            "idp": {
+            }
         }
+
         idp_metadata = cls.get_idp_metadata()
         if 'idp' in idp_metadata:
             settings['idp'] = idp_metadata['idp']
@@ -90,9 +63,12 @@ class Saml2:
     @classmethod
     def initialise_request_auth_object(cls, request):
         """Initialise auth object."""
+        request_data = cls.get_request_data(request)
         auth = OneLogin_Saml2_Auth(
-            request,
+            request_data,
             cls.get_settings())
+
+        return auth
 
     @classmethod
     def get_idp_metadata(cls):
@@ -102,8 +78,13 @@ class Saml2:
         args = {}
         if config.SAML2_ISSUER_ENTITY_ID:
             args['entity_id'] = config.SAML2_ISSUER_ENTITY_ID
-        print(config.SAML2_IDP_METADATA_URL)
         idp_data = OneLogin_Saml2_IdPMetadataParser.parse_remote(
             config.SAML2_IDP_METADATA_URL,
             **args)
         return idp_data
+
+    @classmethod
+    def get_self_url(cls, request):
+        """Return self URL."""
+        request_data = cls.get_request_data(request)
+        return OneLogin_Saml2_Utils.get_self_url(request_data)
