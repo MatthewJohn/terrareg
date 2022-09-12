@@ -160,7 +160,9 @@ The following environment variables are available to configure the application
 {{ CONFIG_CONTENTS }}
 
 
-## OpenID Connect Single sign-on
+## Single Sign-On
+
+### OpenID Connect
 
 To configure OpenID connect, setup an application in an identity provider (IdP) with the following:
 
@@ -183,6 +185,21 @@ Obtain the client ID, client secret and issuer URL from the IdP provider and pop
 
 Note: Most IdP providers will require the terrareg installation to be accessed via https.
 The instance should be configured with SSL certificates (SSL_CERT_PRIVATE_KEY/SSL_CERT_PUBLIC_KEY) or be hosted behind a reverse-proxy/load balancer.
+
+### SAML2
+
+Generate a x and a private key, using:
+
+    openssl genrsa -out private.key 1024
+    openssl req -new -x509 -key private.key -out publickey.cer -days 365
+
+Set the folllowing environment variables:
+
+* SAML2_IDP_METADATA_URL (required)
+* SAML2_ENTITY_ID (required)
+* SAML2_PRIVATE_KEY (required)
+* SAML2_PUBLIC_KEY (required)
+* SAML2_IDP_ENTITY_ID (optional)
 
 ## Terrareg module metadata
 
