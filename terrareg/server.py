@@ -2530,6 +2530,8 @@ class ApiSamlInitiate(ErrorCatchingResource):
         """Setup authentication request to redirect user to SAML provider."""
         auth = terrareg.saml.Saml2.initialise_request_auth_object(request)
 
+        errors = None
+
         if 'sso' in request.args:
             session_obj = self.create_session()
             if session_obj is None:
