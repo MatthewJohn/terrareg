@@ -1,4 +1,6 @@
 
+import datetime
+
 from onelogin.saml2.auth import OneLogin_Saml2_Auth, OneLogin_Saml2_Settings
 from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
 from onelogin.saml2.utils import OneLogin_Saml2_Utils
@@ -6,6 +8,11 @@ from onelogin.saml2.utils import OneLogin_Saml2_Utils
 import terrareg.config
 
 class Saml2:
+
+    _IDP_METADATA = None
+    _IDP_METADATA_REFRESH_DATE = None
+    # Retain IdP keys cache for 12 hours
+    _IDP_METADATA_REFRESH_INTERVAL = datetime.timedelta(hours=12)
 
     @classmethod
     def is_enabled(cls):
@@ -39,13 +46,9 @@ class Saml2:
                 "x509cert": config.SAML2_PUBLIC_KEY,
                 "privateKey": config.SAML2_PRIVATE_KEY
             },
-            "idp": {
-            }
+            "idp": cls.get_idp_metadata().get('idp', {})
         }
 
-        idp_metadata = cls.get_idp_metadata()
-        if 'idp' in idp_metadata:
-            settings['idp'] = idp_metadata['idp']
         return settings
 
     @classmethod
@@ -73,15 +76,20 @@ class Saml2:
     @classmethod
     def get_idp_metadata(cls):
         """Obtain metadata from IdP"""
-        config = terrareg.config.Config()
+        if (not cls._IDP_METADATA or
+                cls._IDP_METADATA_REFRESH_DATE is None or
+                cls._IDP_METADATA_REFRESH_DATE < datetime.datetime.now()):
+            config = terrareg.config.Config()
 
-        args = {}
-        if config.SAML2_ISSUER_ENTITY_ID:
-            args['entity_id'] = config.SAML2_ISSUER_ENTITY_ID
-        idp_data = OneLogin_Saml2_IdPMetadataParser.parse_remote(
-            config.SAML2_IDP_METADATA_URL,
-            **args)
-        return idp_data
+            args = {}
+            if config.SAML2_ISSUER_ENTITY_ID:
+                args['entity_id'] = config.SAML2_ISSUER_ENTITY_ID
+            cls._IDP_METADATA = OneLogin_Saml2_IdPMetadataParser.parse_remote(
+                config.SAML2_IDP_METADATA_URL,
+                **args)
+            cls._IDP_METADATA_REFRESH_DATE = datetime.datetime.now() + cls._IDP_METADATA_REFRESH_INTERVAL
+
+        return cls._IDP_METADATA
 
     @classmethod
     def get_self_url(cls, request):
