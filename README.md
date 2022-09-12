@@ -592,6 +592,64 @@ Comma-seperated list of metadata attributes that each uploaded module _must_ con
 Default: ``
 
 
+### SAML2_ENTITY_ID
+
+
+SAML2 provider entity ID of the application.
+
+
+Default: ``
+
+
+### SAML2_IDP_METADATA_URL
+
+
+SAML2 provider metadata url
+
+
+Default: ``
+
+
+### SAML2_ISSUER_ENTITY_ID
+
+
+SAML2 provider entity ID.
+
+This is required if the SAML2 provider metadata endpoint contains multiple entities.
+
+
+Default: ``
+
+
+### SAML2_PRIVATE_KEY
+
+
+SAML2 private key for this application.
+
+To generate, run:
+```
+openssl genrsa -out private.key 1024
+openssl req -new -x509 -key private.key -out publickey.cer -days 365
+# Export values to environment variables
+export SAML2_PRIVATE_KEY="$(cat private.key)"
+export SAML2_PUBLIC_KEY="$(cat publickey.cer)"
+```
+
+
+Default: ``
+
+
+### SAML2_PUBLIC_KEY
+
+
+SAML2 public key for this application.
+
+To generate, see SAML2_PRIVATE_KEY
+
+
+Default: ``
+
+
 ### SECRET_KEY
 
 
@@ -707,7 +765,9 @@ Default: ``
 
 
 
-## OpenID Connect Single sign-on
+## Single Sign-On
+
+### OpenID Connect
 
 To configure OpenID connect, setup an application in an identity provider (IdP) with the following:
 
@@ -730,6 +790,21 @@ Obtain the client ID, client secret and issuer URL from the IdP provider and pop
 
 Note: Most IdP providers will require the terrareg installation to be accessed via https.
 The instance should be configured with SSL certificates (SSL_CERT_PRIVATE_KEY/SSL_CERT_PUBLIC_KEY) or be hosted behind a reverse-proxy/load balancer.
+
+### SAML2
+
+Generate a x and a private key, using:
+
+    openssl genrsa -out private.key 1024
+    openssl req -new -x509 -key private.key -out publickey.cer -days 365
+
+Set the folllowing environment variables:
+
+* SAML2_IDP_METADATA_URL (required)
+* SAML2_ENTITY_ID (required)
+* SAML2_PRIVATE_KEY (required)
+* SAML2_PUBLIC_KEY (required)
+* SAML2_IDP_ENTITY_ID (optional)
 
 ## Terrareg module metadata
 

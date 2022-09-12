@@ -32,6 +32,7 @@ from terrareg.module_extractor import ApiUploadModuleExtractor, GitModuleExtract
 from terrareg.analytics import AnalyticsEngine
 from terrareg.filters import NamespaceTrustFilter
 import terrareg.openid_connect
+import terrareg.saml
 
 
 def catch_name_exceptions(f):
@@ -318,6 +319,12 @@ class Server(BaseHandler):
         self._api.add_resource(
             ApiOpenIdCallback,
             '/openid/callback'
+        )
+
+        # Saml2 endpoints
+        self._api.add_resource(
+            ApiSamlInitiate,
+            '/saml/login'
         )
 
         # Terrareg APIs
@@ -2503,3 +2510,28 @@ class ApiOpenIdCallback(ErrorCatchingResource):
 
         # Redirect to homepage
         return redirect('/')
+
+
+class ApiSamlInitiate(ErrorCatchingResource):
+    """Interface to initiate authentication via OpenID connect"""
+
+    def _get(self):
+        """Setup authentication request to redirect user to SAML provider."""
+        auth = terrareg.saml.Saml2.initialise_request_auth_object(request)
+
+        if auth is None:
+            res = make_response(render_template(
+                'error.html',
+                error_title='Login error',
+                error_description='SSO is incorrectly configured'
+            ))
+            res.headers['Content-Type'] = 'text/html'
+            return res
+
+        session.modified = True
+
+        return redirect('/', code=302)
+
+    def _post(self):
+        """Handle POST request."""
+        return self._get()

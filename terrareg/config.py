@@ -477,6 +477,54 @@ class Config:
         """
         return os.environ.get('OPENID_CONNECT_ISSUER', None)
 
+    @property
+    def SAML2_IDP_METADATA_URL(self):
+        """
+        SAML2 provider metadata url
+        """
+        return os.environ.get('SAML2_IDP_METADATA_URL', None)
+
+    @property
+    def SAML2_ISSUER_ENTITY_ID(self):
+        """
+        SAML2 provider entity ID.
+        
+        This is required if the SAML2 provider metadata endpoint contains multiple entities.
+        """
+        return os.environ.get('SAML2_ISSUER_ENTITY_ID', None)
+
+    @property
+    def SAML2_ENTITY_ID(self):
+        """
+        SAML2 provider entity ID of the application.
+        """
+        return os.environ.get('SAML2_ENTITY_ID', None)
+
+    @property
+    def SAML2_PUBLIC_KEY(self):
+        """
+        SAML2 public key for this application.
+
+        To generate, see SAML2_PRIVATE_KEY
+        """
+        return os.environ.get('SAML2_PUBLIC_KEY', None)
+
+    @property
+    def SAML2_PRIVATE_KEY(self):
+        """
+        SAML2 private key for this application.
+        
+        To generate, run:
+        ```
+        openssl genrsa -out private.key 1024
+        openssl req -new -x509 -key private.key -out publickey.cer -days 365
+        # Export values to environment variables
+        export SAML2_PRIVATE_KEY="$(cat private.key)"
+        export SAML2_PUBLIC_KEY="$(cat publickey.cer)"
+        ```
+        """
+        return os.environ.get('SAML2_PRIVATE_KEY', None)
+
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""
         if string.lower() in ['true', 'yes', '1']:
