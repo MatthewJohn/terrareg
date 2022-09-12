@@ -30,9 +30,12 @@
 
     getConfig().then((config) => {
         if (config.OPENID_CONNECT_ENABLED) {
-            $('#sso-login').removeClass('default-hidden');
+            $('#openid-connect-login').removeClass('default-hidden');
         }
-        $('#login-button').removeClass('default-hidden');
+        if (config.SAML_ENABLED) {
+            $('#saml-login').removeClass('default-hidden');
+        }
+        $('#login-button').removeClass('default-hidden');        
     });
 </script>
 {% endblock %}
@@ -67,7 +70,8 @@
             </form>
 
             <br />
-            <a id="sso-login" class="button default-hidden" href="/openid/login">Login with SSO</a>
+            <a id="openid-connect-login" class="button default-hidden" href="/openid/login">Login with OpenID Connect</a>
+            <a id="saml-login" class="button default-hidden" href="/saml/login?sso">Login with SAML</a>
         </div>
 
     </div>

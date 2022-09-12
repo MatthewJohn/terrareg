@@ -326,6 +326,10 @@ class Server(BaseHandler):
             ApiSamlInitiate,
             '/saml/login'
         )
+        self._api.add_resource(
+            ApiSamlMetadata,
+            '/saml/metadata'
+        )
 
         # Terrareg APIs
         ## Config endpoint
@@ -657,6 +661,7 @@ class AuthenticationType(Enum):
     AUTHENTICATION_TOKEN = 2
     SESSION_PASSWORD = 3
     SESSION_OPENID_CONNECT = 4
+    SESSION_SAML = 5
 
 
 def get_csrf_token():
@@ -712,6 +717,11 @@ def check_admin_authentication():
         if session_authentication_type is AuthenticationType.SESSION_PASSWORD:
             authenticated = True
             g.authentication_type = AuthenticationType.SESSION_PASSWORD
+
+        # Check for SAML authentcation type
+        elif session_authentication_type is AuthenticationType.SESSION_SAML:
+            authenticated = True
+            g.authentication_type = AuthenticationType.SESSION_SAML
 
         # If authentication type is OpenID connect,
         # ensure the OpenID token has not expired
@@ -863,7 +873,8 @@ class ApiTerraregConfig(ErrorCatchingResource):
             'ADMIN_AUTHENTICATION_TOKEN_ENABLED': bool(config.ADMIN_AUTHENTICATION_TOKEN),
             'SECRET_KEY_SET': bool(config.SECRET_KEY),
             'ADDITIONAL_MODULE_TABS': config.ADDITIONAL_MODULE_TABS,
-            'OPENID_CONNECT_ENABLED': terrareg.openid_connect.OpenidConnect.is_enabled()
+            'OPENID_CONNECT_ENABLED': terrareg.openid_connect.OpenidConnect.is_enabled(),
+            'SAML_ENABLED': terrareg.saml.Saml2.is_enabled()
         }
 
 
@@ -2519,19 +2530,87 @@ class ApiSamlInitiate(ErrorCatchingResource):
         """Setup authentication request to redirect user to SAML provider."""
         auth = terrareg.saml.Saml2.initialise_request_auth_object(request)
 
-        if auth is None:
+        if 'sso' in request.args:
+            session_obj = self.create_session()
+            if session_obj is None:
+                return {"Error", "Could not create session"}, 500
+
+            idp_url = auth.login()
+
+            session['AuthNRequestID'] = auth.get_last_request_id()
+            session.modified = True
+
+            return redirect(idp_url)
+
+        elif 'acs' in request.args:
+            request_id = session.get('AuthNRequestID')
+
+            if request_id is None:
+                return {"Error": "No request ID"}, 500
+
+            auth.process_response(request_id=request_id)
+            errors = auth.get_errors()
+            if not errors and auth.is_authenticated():
+                if 'AuthNRequestID' in session:
+                    del session['AuthNRequestID']
+
+                # Setup Authentcation session
+                session['is_admin_authenticated'] = True
+                session['authentication_type'] = AuthenticationType.SESSION_SAML.value
+
+                session.modified = True
+
+        elif 'sls' in request.args:
+            request_id = None
+            if 'LogoutRequestID' in session:
+                request_id = session['LogoutRequestID']
+
+            dscb = lambda: session.clear()
+            session.modified = True
+            auth.process_slo(request_id=request_id, delete_session_cb=dscb)
+            errors = auth.get_errors()
+            if not errors:
+                return redirect('/')
+
+        elif 'slo' in request.args:
+            auth.logout(
+                name_id=session.get('samlNameId', None),
+                session_index=session.get('samlSessionIndex', None),
+                nq=session.get('samlNameIdNameQualifier', None),
+                name_id_format=session.get('samlNameIdFormat', None),
+                spnq=session.get('samlNameIdSPNameQualifier', None))
+            return redirect('/')
+
+        if errors:
             res = make_response(render_template(
                 'error.html',
                 error_title='Login error',
-                error_description='SSO is incorrectly configured'
+                error_description='An error occured whilst processing SAML login request'
             ))
             res.headers['Content-Type'] = 'text/html'
             return res
-
-        session.modified = True
 
         return redirect('/', code=302)
 
     def _post(self):
         """Handle POST request."""
         return self._get()
+
+
+class ApiSamlMetadata(ErrorCatchingResource):
+    """Meta-data endpoint for SAML"""
+
+    def _get(self):
+        """Return SAML SP metadata."""
+        auth = terrareg.saml.Saml2.initialise_request_auth_object(request)
+        settings = auth.get_settings()
+        metadata = settings.get_sp_metadata()
+        errors = settings.validate_metadata(metadata)
+
+        if len(errors) == 0:
+            resp = make_response(metadata, 200)
+            resp.headers['Content-Type'] = 'text/xml'
+        else:
+            resp = make_response(', '.join(errors), 500)
+        return resp
+
