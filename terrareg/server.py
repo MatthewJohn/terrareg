@@ -2562,27 +2562,6 @@ class ApiSamlInitiate(ErrorCatchingResource):
 
                 session.modified = True
 
-        elif 'sls' in request.args:
-            request_id = None
-            if 'LogoutRequestID' in session:
-                request_id = session['LogoutRequestID']
-
-            dscb = lambda: session.clear()
-            session.modified = True
-            auth.process_slo(request_id=request_id, delete_session_cb=dscb)
-            errors = auth.get_errors()
-            if not errors:
-                return redirect('/')
-
-        elif 'slo' in request.args:
-            auth.logout(
-                name_id=session.get('samlNameId', None),
-                session_index=session.get('samlSessionIndex', None),
-                nq=session.get('samlNameIdNameQualifier', None),
-                name_id_format=session.get('samlNameIdFormat', None),
-                spnq=session.get('samlNameIdSPNameQualifier', None))
-            return redirect('/')
-
         if errors:
             res = make_response(render_template(
                 'error.html',
