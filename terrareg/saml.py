@@ -71,6 +71,18 @@ class Saml2:
             request_data,
             cls.get_settings())
 
+        security_data = auth.get_settings().get_security_data()
+        security_data['authnRequestsSigned'] = True
+        security_data['logoutRequestSigned'] = True
+        security_data['logoutResponseSigned'] = True
+        security_data['signMetadata'] = True
+        security_data['wantMessagesSigned'] = True
+        security_data['wantAssertionsSigned'] = True
+        security_data['wantAssertionsEncrypted'] = False
+        security_data['wantNameIdEncrypted'] = False
+        security_data['rejectDeprecatedAlgorithm'] = True
+        security_data['failOnAuthnContextMismatch'] = True
+
         return auth
 
     @classmethod

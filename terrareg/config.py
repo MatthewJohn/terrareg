@@ -516,7 +516,7 @@ class Config:
         
         To generate, run:
         ```
-        openssl genrsa -out private.key 1024
+        openssl genrsa -out private.key 4096
         openssl req -new -x509 -key private.key -out publickey.cer -days 365
         # Export values to environment variables
         export SAML2_PRIVATE_KEY="$(cat private.key)"
