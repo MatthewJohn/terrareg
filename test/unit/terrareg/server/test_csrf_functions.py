@@ -77,7 +77,8 @@ class TestCSRFFunctions(TerraregUnitTest):
         (AuthenticationType.NOT_AUTHENTICATED,),
         (AuthenticationType.NOT_CHECKED, ),
         (AuthenticationType.SESSION_PASSWORD,),
-        (AuthenticationType.SESSION_OPENID_CONNECT,)]
+        (AuthenticationType.SESSION_OPENID_CONNECT,),
+        (AuthenticationType.SESSION_SAML,)]
     )
     def test_csrf_not_ignored_with_non_authentication_token(self, authentication_type, app_context, test_request_context, client):
         """Test that all authentication types throw errors when CSRF is not passed."""
