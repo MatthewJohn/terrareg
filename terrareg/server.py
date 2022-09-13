@@ -874,7 +874,9 @@ class ApiTerraregConfig(ErrorCatchingResource):
             'SECRET_KEY_SET': bool(config.SECRET_KEY),
             'ADDITIONAL_MODULE_TABS': config.ADDITIONAL_MODULE_TABS,
             'OPENID_CONNECT_ENABLED': terrareg.openid_connect.OpenidConnect.is_enabled(),
-            'SAML_ENABLED': terrareg.saml.Saml2.is_enabled()
+            'OPENID_CONNECT_LOGIN_TEXT': config.OPENID_CONNECT_LOGIN_TEXT,
+            'SAML_ENABLED': terrareg.saml.Saml2.is_enabled(),
+            'SAML_LOGIN_TEXT': config.SAML2_LOGIN_TEXT
         }
 
 

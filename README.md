@@ -546,7 +546,7 @@ Default: `modules`
 ### OPENID_CONNECT_CLIENT_ID
 
 
-Client ID for OpenID conect authentication
+Client ID for OpenID Conect authentication
 
 
 Default: ``
@@ -555,7 +555,7 @@ Default: ``
 ### OPENID_CONNECT_CLIENT_SECRET
 
 
-Client secret for OpenID conect authentication
+Client secret for OpenID Conect authentication
 
 
 Default: ``
@@ -564,12 +564,21 @@ Default: ``
 ### OPENID_CONNECT_ISSUER
 
 
-Base Issuer URL for OpenID conect authentication.
+Base Issuer URL for OpenID Conect authentication.
 
 A well-known URL will be expected at `${OPENID_CONNECT_ISSUER}/.well-known/openid-configuration`
 
 
 Default: ``
+
+
+### OPENID_CONNECT_LOGIN_TEXT
+
+
+Text for sign in button for OpenID Connect authentication
+
+
+Default: `Login using OpenID Connect`
 
 
 ### PUBLISH_API_KEYS
@@ -619,6 +628,15 @@ This is required if the SAML2 provider metadata endpoint contains multiple entit
 
 
 Default: ``
+
+
+### SAML2_LOGIN_TEXT
+
+
+Text for sign in button for SAML2 authentication
+
+
+Default: `Login using SAML`
 
 
 ### SAML2_PRIVATE_KEY
