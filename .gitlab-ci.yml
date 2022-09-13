@@ -44,9 +44,6 @@ unit-integration-selenium-tests:
     - coverage xml
   artifacts:
     reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
       junit: pytest-report.xml
 
 mysql-integration-selenium-tests:
@@ -71,9 +68,6 @@ mysql-integration-selenium-tests:
     - coverage xml
   artifacts:
     reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
       junit: pytest-report.xml
 
 build-wheel:
