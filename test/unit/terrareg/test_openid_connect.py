@@ -9,8 +9,6 @@ from test.unit.terrareg import TerraregUnitTest
 
 class TestOpenidConnect(TerraregUnitTest):
 
-    _METADATA_CONFIG = None
-
     @pytest.mark.parametrize('config_values,expected_result', [
         ({'OPENID_CONNECT_CLIENT_ID': 'testclientid',
           'OPENID_CONNECT_CLIENT_SECRET': 'testclientsecret',
@@ -28,8 +26,8 @@ class TestOpenidConnect(TerraregUnitTest):
           'DOMAIN_NAME': 'unittest.local'},
          False),
         ({'OPENID_CONNECT_CLIENT_ID': 'testclientid',
-          'OPENID_CONNECT_CLIENT_SECRET': None,
-          'OPENID_CONNECT_ISSUER': 'https://testissuer',
+          'OPENID_CONNECT_CLIENT_SECRET': 'testclientsecret',
+          'OPENID_CONNECT_ISSUER': None,
           'DOMAIN_NAME': 'unittest.local'},
          False),
         ({'OPENID_CONNECT_CLIENT_ID': 'testclientid',
