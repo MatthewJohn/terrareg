@@ -100,7 +100,7 @@ release:
     paths:
       - node_modules/
   variables:
-    GITLAB_TOKEN: $GITLAB_TOKEN
+    GITLAB_TOKEN: $CI_JOB_TOKEN
     GIT_STRATEGY: clone
   script:
     - semantic-release
