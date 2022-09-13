@@ -197,9 +197,15 @@ Set the folllowing environment variables:
 
 * SAML2_IDP_METADATA_URL (required)
 * SAML2_ENTITY_ID (required)
-* SAML2_PRIVATE_KEY (required)
-* SAML2_PUBLIC_KEY (required)
+* SAML2_PRIVATE_KEY (required) (See configuration documentation for guide to generating this)
+* SAML2_PUBLIC_KEY (required) (See configuration documentation for guide to generating this)
 * SAML2_IDP_ENTITY_ID (optional)
+
+In the IdP:
+
+* configure the Single signin URL to `https://{terrareg_installation_domain}/saml/login?sso`;
+* configure the request and response to be signed;
+* ensure at least one attribute is assigned.
 
 ## Terrareg module metadata
 
