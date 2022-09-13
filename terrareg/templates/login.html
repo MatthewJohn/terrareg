@@ -30,9 +30,11 @@
 
     getConfig().then((config) => {
         if (config.OPENID_CONNECT_ENABLED) {
+            $('#openid-connect-login').text(config.OPENID_CONNECT_LOGIN_TEXT);
             $('#openid-connect-login').removeClass('default-hidden');
         }
         if (config.SAML_ENABLED) {
+            $('#saml-login').text(config.SAML_LOGIN_TEXT);
             $('#saml-login').removeClass('default-hidden');
         }
         $('#login-button').removeClass('default-hidden');        

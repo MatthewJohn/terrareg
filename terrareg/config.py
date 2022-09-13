@@ -455,27 +455,41 @@ class Config:
         return os.environ.get('ADDITIONAL_MODULE_TABS', '[["Release Notes", ["RELEASE_NOTES.md", "CHANGELOG.md"]], ["License", ["LICENSE"]]]')
 
     @property
+    def OPENID_CONNECT_LOGIN_TEXT(self):
+        """
+        Text for sign in button for OpenID Connect authentication
+        """
+        return os.environ.get('OPENID_CONNECT_LOGIN_TEXT', 'Login using OpenID Connect')
+
+    @property
     def OPENID_CONNECT_CLIENT_ID(self):
         """
-        Client ID for OpenID conect authentication
+        Client ID for OpenID Conect authentication
         """
         return os.environ.get('OPENID_CONNECT_CLIENT_ID', None)
 
     @property
     def OPENID_CONNECT_CLIENT_SECRET(self):
         """
-        Client secret for OpenID conect authentication
+        Client secret for OpenID Conect authentication
         """
         return os.environ.get('OPENID_CONNECT_CLIENT_SECRET', None)
 
     @property
     def OPENID_CONNECT_ISSUER(self):
         """
-        Base Issuer URL for OpenID conect authentication.
+        Base Issuer URL for OpenID Conect authentication.
 
         A well-known URL will be expected at `${OPENID_CONNECT_ISSUER}/.well-known/openid-configuration`
         """
         return os.environ.get('OPENID_CONNECT_ISSUER', None)
+
+    @property
+    def SAML2_LOGIN_TEXT(self):
+        """
+        Text for sign in button for SAML2 authentication
+        """
+        return os.environ.get('SAML2_LOGIN_TEXT', 'Login using SAML')
 
     @property
     def SAML2_IDP_METADATA_URL(self):
