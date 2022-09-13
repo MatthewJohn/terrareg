@@ -720,8 +720,11 @@ def check_admin_authentication():
 
         # Check for SAML authentcation type
         elif session_authentication_type is AuthenticationType.SESSION_SAML:
-            authenticated = True
-            g.authentication_type = AuthenticationType.SESSION_SAML
+            auth = terrareg.saml.Saml2.initialise_request_auth_object(request)
+            print(session)
+            if auth.is_authenticated():
+                authenticated = True
+                g.authentication_type = AuthenticationType.SESSION_SAML
 
         # If authentication type is OpenID connect,
         # ensure the OpenID token has not expired
@@ -2562,6 +2565,12 @@ class ApiSamlInitiate(ErrorCatchingResource):
                     del session['AuthNRequestID']
 
                 # Setup Authentcation session
+                session['samlUserdata'] = auth.get_attributes()
+                session['samlNameId'] = auth.get_nameid()
+                session['samlNameIdFormat'] = auth.get_nameid_format()
+                session['samlNameIdNameQualifier'] = auth.get_nameid_nq()
+                session['samlNameIdSPNameQualifier'] = auth.get_nameid_spnq()
+                session['samlSessionIndex'] = auth.get_session_index()
                 session['is_admin_authenticated'] = True
                 session['authentication_type'] = AuthenticationType.SESSION_SAML.value
 

@@ -1,9 +1,9 @@
 
 import datetime
 
-from onelogin.saml2.auth import OneLogin_Saml2_Auth, OneLogin_Saml2_Settings
-from onelogin.saml2.idp_metadata_parser import OneLogin_Saml2_IdPMetadataParser
-from onelogin.saml2.utils import OneLogin_Saml2_Utils
+import onelogin.saml2.auth
+import onelogin.saml2.idp_metadata_parser
+import onelogin.saml2.utils
 
 import terrareg.config
 
@@ -67,7 +67,7 @@ class Saml2:
     def initialise_request_auth_object(cls, request):
         """Initialise auth object."""
         request_data = cls.get_request_data(request)
-        auth = OneLogin_Saml2_Auth(
+        auth = onelogin.saml2.auth.OneLogin_Saml2_Auth(
             request_data,
             cls.get_settings())
 
@@ -96,7 +96,7 @@ class Saml2:
             args = {}
             if config.SAML2_ISSUER_ENTITY_ID:
                 args['entity_id'] = config.SAML2_ISSUER_ENTITY_ID
-            cls._IDP_METADATA = OneLogin_Saml2_IdPMetadataParser.parse_remote(
+            cls._IDP_METADATA = onelogin.saml2.idp_metadata_parser.OneLogin_Saml2_IdPMetadataParser.parse_remote(
                 config.SAML2_IDP_METADATA_URL,
                 **args)
             cls._IDP_METADATA_REFRESH_DATE = datetime.datetime.now() + cls._IDP_METADATA_REFRESH_INTERVAL
@@ -107,4 +107,4 @@ class Saml2:
     def get_self_url(cls, request):
         """Return self URL."""
         request_data = cls.get_request_data(request)
-        return OneLogin_Saml2_Utils.get_self_url(request_data)
+        return onelogin.saml2.utils.OneLogin_Saml2_Utils.get_self_url(request_data)
