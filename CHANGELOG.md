@@ -1,5 +1,21 @@
 # Changelog
 
+# [2.38.0](https://gitlab.com/mrmattyboy/terrareg/compare/v2.37.1...v2.38.0) (2022-09-14)
+
+
+### Features
+
+* Display custom module provider tabs in UI ([2034de0](https://gitlab.com/mrmattyboy/terrareg/commit/2034de0c727a6ed3dc8f450d966e3aacf58e4be5)), closes [#225](https://gitlab.com/mrmattyboy/terrareg/issues/225)
+* Update module extractor to extract tab files into new module version files table ([dd42187](https://gitlab.com/mrmattyboy/terrareg/commit/dd42187915bd631b3a1dcc733d495be28911138e)), closes [#225](https://gitlab.com/mrmattyboy/terrareg/issues/225)
+* Update terrareg module version API to return list of module version files. ([950a831](https://gitlab.com/mrmattyboy/terrareg/commit/950a831c277c6437e8596ad11ec181c5285683cc)), closes [#225](https://gitlab.com/mrmattyboy/terrareg/issues/225)
+
+## [2.37.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.37.0...v2.37.1) (2022-09-04)
+
+
+### Bug Fixes
+
+* **ui:** Add current example/submodule to breadcrumb in module provider page ([cb1d0fb](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/cb1d0fbe9cea3f346a1fd4e030919258798eb453)), closes [#233](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/233)
+
 # [2.37.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.36.1...v2.37.0) (2022-09-03)
 
 

@@ -315,7 +315,7 @@ class Database():
             sqlalchemy.Column(
                 'module_version_id',
                 sqlalchemy.ForeignKey(
-                    'submodule.id',
+                    'module_version.id',
                     name='fk_module_version_file_module_version_id_module_version_id',
                     onupdate='CASCADE',
                     ondelete='CASCADE'),

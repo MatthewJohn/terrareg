@@ -23,7 +23,7 @@ def upgrade():
     sa.Column('module_version_id', sa.Integer(), nullable=False),
     sa.Column('path', sa.String(length=128), nullable=False),
     sa.Column('content', sa.LargeBinary(length=16777215).with_variant(mysql.MEDIUMBLOB(), 'mysql'), nullable=True),
-    sa.ForeignKeyConstraint(['module_version_id'], ['submodule.id'], name='fk_module_version_file_module_version_id_module_version_id', onupdate='CASCADE', ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['module_version_id'], ['module_version.id'], name='fk_module_version_file_module_version_id_module_version_id', onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
