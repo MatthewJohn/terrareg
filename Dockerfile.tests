@@ -4,7 +4,12 @@ WORKDIR /
 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update && apt-get install --assume-yes python3.10 python3-pip curl unzip git && apt-get clean all
+RUN apt-get update && \
+    apt-get install --assume-yes \
+        curl unzip git \
+        libxmlsec1-dev && \
+    apt-get clean all
+
 RUN apt-get update && apt-get install --assume-yes wget && apt-get clean all
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     then \
