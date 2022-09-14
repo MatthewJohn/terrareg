@@ -1,4 +1,3 @@
-
 function getLocalStorageValue(key, defaultValue, type) {
     let localStorageValue = localStorage.getItem(key);
     let value = localStorageValue === null ? defaultValue : localStorageValue;
