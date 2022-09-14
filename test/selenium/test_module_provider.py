@@ -45,6 +45,19 @@ class TestModuleProvider(SeleniumTest):
         self.selenium_instance.get(self.get_url(url))
         self.assert_equals(lambda: self.selenium_instance.title, expected_title)
 
+    @pytest.mark.parametrize('url,expected_breadcrumb', [
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0',
+         'Modules\nmoduledetails\nfullypopulated\ntestprovider\n1.5.0'),
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
+         'Modules\nmoduledetails\nfullypopulated\ntestprovider\n1.5.0\nexamples/test-example'),
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+         'Modules\nmoduledetails\nfullypopulated\ntestprovider\n1.5.0\nmodules/example-submodule1'),
+    ])
+    def test_breadcrumbs(self, url, expected_breadcrumb):
+        """Test breadcrumb displayed on page"""
+        self.selenium_instance.get(self.get_url(url))
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'breadcrumb-ul').text, expected_breadcrumb)
+
     def _get_settings_field_by_label(self, label):
         """Return input element by label."""
         form = self.wait_for_element(By.ID, 'settings-form')

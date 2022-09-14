@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.37.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.37.0...v2.37.1) (2022-09-04)
+
+
+### Bug Fixes
+
+* **ui:** Add current example/submodule to breadcrumb in module provider page ([cb1d0fb](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/cb1d0fbe9cea3f346a1fd4e030919258798eb453)), closes [#233](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/233)
+
 # [2.37.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.36.1...v2.37.0) (2022-09-03)
 
 
