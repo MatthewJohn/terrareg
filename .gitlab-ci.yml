@@ -99,7 +99,7 @@ build-test-docker-image:
     - docker:dind
   script:
       - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-      - docker pull $CI_REGISTRY/mrmattyboy/terrareg/terrareg-test-image:cache
+      - docker pull $CI_REGISTRY/mrmattyboy/terrareg/terrareg-test-image:cache || true
       - docker build -f Dockerfile.tests -t $CI_REGISTRY/mrmattyboy/terrareg/terrareg-test-image:v${CI_COMMIT_SHORT_SHA} --build-arg http_proxy=$http_proxy --build-arg HTTP_PROXY=$http_proxy --build-arg https_proxy=$https_proxy --build-arg HTTPS_PROXY=$https_proxy .
       - docker push $CI_REGISTRY/mrmattyboy/terrareg/terrareg-test-image:v${CI_COMMIT_SHORT_SHA}
       - docker tag $CI_REGISTRY/mrmattyboy/terrareg/terrareg-test-image:v${CI_COMMIT_SHORT_SHA} $CI_REGISTRY/mrmattyboy/terrareg/terrareg-test-image:cache
