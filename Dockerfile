@@ -5,7 +5,7 @@ WORKDIR /
 RUN apt-get update && \
     apt-get install --assume-yes \
         curl unzip git \
-        libxml2-dev libxmlsec1-dev && \
+        pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 && \
     apt-get clean all
 
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
