@@ -17,13 +17,15 @@ class TestLogin(SeleniumTest):
         cls._mock_openid_connect_is_enabled = mock.MagicMock(return_value=False)
         cls._mock_openid_connect_get_authorize_redirect_url = mock.MagicMock(return_value=(None, None))
         cls._mock_openid_connect_fetch_access_token = mock.MagicMock(return_value=None)
+        cls._mock_openid_connect_validate_session_token = mock.MagicMock(return_value=False)
         cls._config_secret_key_mock = mock.patch('terrareg.config.Config.SECRET_KEY', '')
         cls._config_openid_connect_button_text = mock.patch('terrareg.config.Config.OPENID_CONNECT_LOGIN_TEXT', '')
-
 
         cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.is_enabled', cls._mock_openid_connect_is_enabled))
         cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.get_authorize_redirect_url', cls._mock_openid_connect_get_authorize_redirect_url))
         cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.fetch_access_token', cls._mock_openid_connect_fetch_access_token))
+        cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.validate_session_token', cls._mock_openid_connect_validate_session_token))
+
         cls.register_patch(cls._config_secret_key_mock)
         cls.register_patch(cls._config_openid_connect_button_text)
         super(TestLogin, cls).setup_class()
@@ -45,7 +47,8 @@ class TestLogin(SeleniumTest):
                 self.update_mock(self._mock_openid_connect_fetch_access_token, 'return_value',
                                  {'access_token': 'unittestaccesstoken', 'id_token': 'unittestidtoken', 'expires_in': 6000}), \
                 self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
-                self.update_mock(self._config_openid_connect_button_text, 'new', 'Unittest OpenID Connect Login Button'):
+                self.update_mock(self._config_openid_connect_button_text, 'new', 'Unittest OpenID Connect Login Button'), \
+                self.update_mock(self._mock_openid_connect_validate_session_token, 'return_value', True):
             self.selenium_instance.get(self.get_url('/login'))
             # Wait for SSO login button to be displayed
             self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'openid-connect-login').is_displayed(), True)
@@ -60,6 +63,8 @@ class TestLogin(SeleniumTest):
 
             # Ensure user is logged in
             self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbar_login_span').text, 'Logout')
+
+            self._mock_openid_connect_validate_session_token.assert_called_with('unittestidtoken')
 
     def test_invalid_openid_connect_response(self):
         """Test handling of invalid OpenID connect authentication error"""
