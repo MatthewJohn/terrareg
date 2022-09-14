@@ -767,10 +767,13 @@ function populateVersionSelect(moduleDetails) {
                 versionText += " (latest)";
                 foundLatest = true;
                 isLatest = true;
-            } else if (versionDetails.beta) {
-                versionText += ' (beta)';
-            } else if (versionDetails.published == false) {
-                versionText += ' (unpublished)';
+            } else {
+                if (versionDetails.beta) {
+                    versionText += ' (beta)';
+                }
+                if (versionDetails.published == false) {
+                    versionText += ' (unpublished)';
+                }
             }
             versionOption.text(versionText);
 
@@ -795,27 +798,31 @@ function populateVersionSelect(moduleDetails) {
             let suffix = '';
             if (moduleDetails.beta) {
                 suffix += ' (beta)';
-
-                // If the beta module is published, show warning about
-                // beta version and how to use it.
-                if (moduleDetails.published) {
-                    $("#beta-warning").removeClass('default-hidden');
-                }
             }
             if (! moduleDetails.published) {
                 suffix += ' (unpublished)';
-
-                // Add warning to page about unpublished version
-                $("#unpublished-warning").removeClass('default-hidden');
             }
             versionOption.text(`${moduleDetails.version}${suffix}`);
             versionOption.attr("selected", "");
             versionSelection.append(versionOption);
 
-        } else if (! currentIsLatestVersion) {
+        }
+        if (! currentIsLatestVersion && ! moduleDetails.beta && moduleDetails.published) {
             // Otherwise, if user is not viewing the latest version,
             // display warning
             $("#non-latest-version-warning").removeClass('default-hidden');
+        }
+
+        if (moduleDetails.beta) {
+            // If the beta module is published, show warning about
+            // beta version and how to use it.
+            if (moduleDetails.published) {
+                $("#beta-warning").removeClass('default-hidden');
+            }
+        }
+        if (! moduleDetails.published) {
+            // Add warning to page about unpublished version
+            $("#unpublished-warning").removeClass('default-hidden');
         }
 
         // Show version drop-down
