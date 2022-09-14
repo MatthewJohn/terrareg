@@ -45,9 +45,6 @@ unit-integration-selenium-tests:
   artifacts:
     reports:
       junit: pytest-report.xml
-  only:
-    changes:
-      - terrareg/**/*
 
 mysql-integration-selenium-tests:
   stage: test
@@ -69,9 +66,6 @@ mysql-integration-selenium-tests:
     - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose --junitxml=./pytest-report.xml ./test/integration ./test/selenium
     - coverage report --include='./terrareg/*'
     - coverage xml
-  only:
-    changes:
-      - terrareg/**/*
   artifacts:
     reports:
       junit: pytest-report.xml
@@ -88,9 +82,6 @@ build-wheel:
   artifacts:
     paths:
       - dist/*.whl
-  only:
-    changes:
-      - requirements.txt
 
 build-test-docker-image:
   stage: build
