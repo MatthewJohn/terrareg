@@ -172,7 +172,7 @@ class TestModuleProvider(SeleniumTest):
                 'source-url': 'Source code: https://link-to.com/source-code-here',
                 'usage-example-container': f"""Usage
 To use this module:
-Add the following example to your terraform,
+Add the following example to your Terraform,
 Ensure the "my-tf-application" placeholder must be replaced with your 'analytics token',
 Add the required inputs - use the 'Usage Builder' tab for help and 'Inputs' tab for a full list.
 module "fullypopulated" {{
@@ -1634,7 +1634,7 @@ module "fullypopulated" {{
         # Ensure warning exists for not published
         assert self.wait_for_element(By.ID, 'unpublished-warning').text == (
             'WARNING: This version of the module is not published.\n'
-            'It cannot be used in terraform until it is published.'
+            'It cannot be used in Terraform until it is published.'
         )
 
         # Ensure no versions available is not displayed
@@ -1660,7 +1660,7 @@ module "fullypopulated" {{
         # Ensure warning exists for not published
         assert self.wait_for_element(By.ID, 'beta-warning').text == (
             'WARNING: This is a beta module version.\n'
-            'To use this version in terraform, it must '
+            'To use this version in Terraform, it must '
             'be specifically pinned.\n'
             'For an example, see the \'Usage\' section.'
         )
@@ -1865,4 +1865,3 @@ All rights are not reserved for this example file content</pre>
 <li>This is an initial release</li>
 </ul>
         """.strip()
-

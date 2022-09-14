@@ -159,7 +159,7 @@ class TestInitialSetup(SeleniumTest):
         self.check_progress_bar(60)
 
         expected_upload_instructions = [
-            'Create a zip/tar.gz archive with the contents of the terraform module',
+            'Create a zip/tar.gz archive with the contents of the Terraform module',
             f'Upload the module by performing a POST request to the upload endpoint: {self.get_url("/v1/terrareg/modules/unittestnamespace/setupmodulename/setupprovider/${version}/upload")}\n'
             'The archive file should be supplied as a file attachment.',
             f'Publish version of the module by performing a POST request to the \'publish\' endpoint: {self.get_url("/v1/terrareg/modules/unittestnamespace/setupmodulename/setupprovider/${version}/publish")}'
