@@ -8,7 +8,7 @@ RUN apt-get update && \
     apt-get install --assume-yes \
         curl unzip git \
         python3.10 python3-pip \
-        libxmlsec1-dev && \
+        libxml2-dev libxmlsec1-dev && \
     apt-get clean all
 
 RUN apt-get update && apt-get install --assume-yes wget && apt-get clean all
