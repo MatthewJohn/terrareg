@@ -1087,3 +1087,47 @@ resource "aws_s3_bucket" "test" {
         module_provider = ModuleProvider.get(module=module, name='badupload')
         
         assert module_provider is None
+
+    def test_uploading_module_with_custom_tab_files(self):
+        """Test uploading a module with custom tab files."""
+        test_upload = UploadTestModule()
+
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='16.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                with open(os.path.join(upload_directory, 'UNITTEST_NO_EXT'), 'w') as fh:
+                    fh.write("""
+# Unit test no extension
+""")
+                with open(os.path.join(upload_directory, 'unittest_backup_file'), 'w') as fh:
+                    fh.write("""
+# Unit test backup file name
+""")
+
+                with open(os.path.join(upload_directory, 'unittest_file.md'), 'w') as fh:
+                    fh.write("""
+# Unit test markdown file
+""")
+
+            with mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS',
+                            """[["Does Not Exist", ["does_not_exist"]],
+                                ["No Extension", ["UNITTEST_NO_EXT"]],
+                                ["Multiple files", ["primary_file", "unittest_backup_file"]],
+                                ["markdown file", ["unittest_file.md"]]]"""):
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+
+        # Ensure files were created correctly
+        expected_files = {
+            'UNITTEST_NO_EXT': b'\n# Unit test no extension\n',
+            'unittest_backup_file': b'\n# Unit test backup file name\n',
+            'unittest_file.md': b'\n# Unit test markdown file\n'
+        }
+        assert {
+            file.path: file.content
+            for file in module_version.module_version_files
+        } == expected_files
