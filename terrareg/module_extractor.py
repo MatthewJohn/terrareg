@@ -18,7 +18,7 @@ import magic
 from bs4 import BeautifulSoup
 import markdown
 
-from terrareg.models import BaseSubmodule, Example, ExampleFile, ModuleVersion, Submodule, ModuleDetails
+from terrareg.models import BaseSubmodule, Example, ExampleFile, ModuleVersion, Submodule, ModuleDetails, ModuleVersionFile
 from terrareg.database import Database
 from terrareg.errors import (
     UnableToProcessTerraformError,
@@ -150,6 +150,26 @@ class ModuleExtractor:
                 )
 
         return terrareg_metadata
+
+    def _extract_additional_tab_files(self):
+        """Extract addition files for populating tabs in UI"""
+        config = Config()
+
+        files_extracted = []
+        # Iterate through all files of all additionally defined tabs
+        for tab_config in json.loads(config.ADDITIONAL_MODULE_TABS):
+            for file_name in tab_config[1]:
+                path = safe_join_paths(self.extract_directory, file_name)
+                # Check if file exists
+                if file_name in files_extracted or not os.path.exists(path):
+                    continue
+
+                # Read file contents and create DB record
+                with open(path, 'r') as fh:
+                    file_content = ''.join(fh.readlines())
+
+                module_version_file = ModuleVersionFile.create(module_version=self._module_version, path=file_name)
+                module_version_file.update_attributes(content=file_content)
 
     def _generate_archive(self):
         """Generate archive of extracted module"""
@@ -423,6 +443,8 @@ class ModuleExtractor:
         if not (self._module_version.get_git_clone_url() and
                 Config().DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
             self._generate_archive()
+
+        self._extract_additional_tab_files()
 
         self._scan_submodules(
             submodule_class=Submodule,

@@ -9,7 +9,7 @@ import pytest
 from terrareg.database import Database
 from terrareg.models import (
     GitProvider, Module, ModuleDetails,
-    ModuleProvider, ModuleVersion, Namespace, Session
+    ModuleProvider, ModuleVersion, ModuleVersionFile, Namespace, Session
 )
 from terrareg.server import Server
 import terrareg.config
@@ -160,6 +160,14 @@ class MockModuleVersion(ModuleVersion):
         return MockModuleDetails(self._get_db_row()['module_details_id'])
 
     @property
+    def module_version_files(self):
+        """Return list of mocked module version files"""
+        return [
+            MockModuleVersionFile(module_version=self, path=path)
+            for path in self._unittest_data.get('files', {})
+        ]
+
+    @property
     def _unittest_data(self):
         """Return unit test data structure for namespace."""
         return (
@@ -197,6 +205,29 @@ class MockModuleVersion(ModuleVersion):
             'beta': self._unittest_data.get('beta', False),
             'module_details_id': self._unittest_data.get('module_details_id', None)
         }
+
+
+class MockModuleVersionFile(ModuleVersionFile):
+    """Mocked module version file."""
+
+    def __init__(self, *args, **kwargs):
+        """Setup unittest data"""
+        super(MockModuleVersionFile, self).__init__(*args, **kwargs)
+        content = self._module_version._unittest_data.get('files', {}).get(self._path, None)
+        self._unittest_data = None if content is None else {
+            'content': Database.encode_blob(content),
+            'path': self._path
+        }
+
+    def update_attributes(self, **kwargs):
+        """Mock updating module version attributes"""
+        self._unittest_data.update(kwargs)
+
+    def _get_db_row(self):
+        """Return mock DB row"""
+        if self._unittest_data is None:
+            return None
+        return self._unittest_data
 
 
 class MockModuleProvider(ModuleProvider):
@@ -352,11 +383,14 @@ class MockSession(Session):
 def mocked_server_module_version(request):
     """Mock server ModuleVersion class."""
     patch = unittest.mock.patch('terrareg.server.ModuleVersion', MockModuleVersion)
+    module_version_file_patch = unittest.mock.patch('terrareg.server.ModuleVersionFile', MockModuleVersionFile)
 
     def cleanup_mock():
+        module_version_file_patch.stop()
         patch.stop()
     request.addfinalizer(cleanup_mock)
     patch.start()
+    module_version_file_patch.start()
 
 
 @pytest.fixture()

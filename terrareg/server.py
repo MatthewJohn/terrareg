@@ -23,7 +23,7 @@ from terrareg.errors import (
     NoSessionSetError, IncorrectCSRFTokenError
 )
 from terrareg.models import (
-    Example, ExampleFile, Namespace, Module, ModuleProvider,
+    Example, ExampleFile, ModuleVersionFile, Namespace, Module, ModuleProvider,
     ModuleVersion, ProviderLogo, Session, Submodule,
     GitProvider
 )
@@ -346,6 +346,10 @@ class Server(object):
         self._api.add_resource(
             ApiTerraregModuleVersionVariableTemplate,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
+        )
+        self._api.add_resource(
+            ApiTerraregModuleVersionFile,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/files/<string:path>'
         )
         self._api.add_resource(
             ApiTerraregModuleVersionReadmeHtml,
@@ -781,21 +785,23 @@ class ApiTerraregConfig(ErrorCatchingResource):
 
     def _get(self):
         """Return config."""
+        config = terrareg.config.Config()
         return {
-            'TRUSTED_NAMESPACE_LABEL': terrareg.config.Config().TRUSTED_NAMESPACE_LABEL,
-            'CONTRIBUTED_NAMESPACE_LABEL': terrareg.config.Config().CONTRIBUTED_NAMESPACE_LABEL,
-            'VERIFIED_MODULE_LABEL': terrareg.config.Config().VERIFIED_MODULE_LABEL,
-            'ANALYTICS_TOKEN_PHRASE': terrareg.config.Config().ANALYTICS_TOKEN_PHRASE,
-            'ANALYTICS_TOKEN_DESCRIPTION': terrareg.config.Config().ANALYTICS_TOKEN_DESCRIPTION,
-            'EXAMPLE_ANALYTICS_TOKEN': terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN,
-            'ALLOW_MODULE_HOSTING': terrareg.config.Config().ALLOW_MODULE_HOSTING,
-            'UPLOAD_API_KEYS_ENABLED': bool(terrareg.config.Config().UPLOAD_API_KEYS),
-            'PUBLISH_API_KEYS_ENABLED': bool(terrareg.config.Config().PUBLISH_API_KEYS),
-            'DISABLE_TERRAREG_EXCLUSIVE_LABELS': terrareg.config.Config().DISABLE_TERRAREG_EXCLUSIVE_LABELS,
-            'ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER': terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
-            'ALLOW_CUSTOM_GIT_URL_MODULE_VERSION': terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
-            'ADMIN_AUTHENTICATION_TOKEN_ENABLED': bool(terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN),
-            'SECRET_KEY_SET': bool(terrareg.config.Config().SECRET_KEY)
+            'TRUSTED_NAMESPACE_LABEL': config.TRUSTED_NAMESPACE_LABEL,
+            'CONTRIBUTED_NAMESPACE_LABEL': config.CONTRIBUTED_NAMESPACE_LABEL,
+            'VERIFIED_MODULE_LABEL': config.VERIFIED_MODULE_LABEL,
+            'ANALYTICS_TOKEN_PHRASE': config.ANALYTICS_TOKEN_PHRASE,
+            'ANALYTICS_TOKEN_DESCRIPTION': config.ANALYTICS_TOKEN_DESCRIPTION,
+            'EXAMPLE_ANALYTICS_TOKEN': config.EXAMPLE_ANALYTICS_TOKEN,
+            'ALLOW_MODULE_HOSTING': config.ALLOW_MODULE_HOSTING,
+            'UPLOAD_API_KEYS_ENABLED': bool(config.UPLOAD_API_KEYS),
+            'PUBLISH_API_KEYS_ENABLED': bool(config.PUBLISH_API_KEYS),
+            'DISABLE_TERRAREG_EXCLUSIVE_LABELS': config.DISABLE_TERRAREG_EXCLUSIVE_LABELS,
+            'ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER': config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
+            'ALLOW_CUSTOM_GIT_URL_MODULE_VERSION': config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
+            'ADMIN_AUTHENTICATION_TOKEN_ENABLED': bool(config.ADMIN_AUTHENTICATION_TOKEN),
+            'SECRET_KEY_SET': bool(config.SECRET_KEY),
+            'ADDITIONAL_MODULE_TABS': config.ADDITIONAL_MODULE_TABS
         }
 
 
@@ -2387,3 +2393,26 @@ class ApiTerraregExampleFile(ErrorCatchingResource):
 
         return example_file_obj.get_content(server_hostname=request.host)
 
+
+class ApiTerraregModuleVersionFile(ErrorCatchingResource):
+    """Interface to obtain content of module version file."""
+
+    def _get(self, namespace, name, provider, version, path):
+        """Return conent of module version file."""
+        namespace_obj = Namespace(name=namespace)
+        module_obj = Module(namespace=namespace_obj, name=name)
+        module_provider = ModuleProvider.get(module=module_obj, name=provider)
+
+        if not module_provider:
+            return {'message': 'Module provider does not exist'}, 400
+
+        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        if not module_version:
+            return {'message': 'Module version does not exist'}, 400
+
+        module_version_file = ModuleVersionFile.get(module_version=module_version, path=path)
+
+        if module_version_file is None:
+            return {'message': 'Module version file does not exist.'}, 400
+
+        return module_version_file.get_content()

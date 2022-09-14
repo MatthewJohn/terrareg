@@ -109,6 +109,59 @@ class ReadmeTab extends BaseTab {
     }
 }
 
+
+class AdditionalTab extends BaseTab {
+    constructor(tabName, fileUrl) {
+        super();
+        this._tabName = tabName;
+        this._fileUrl = fileUrl;
+        this._name = 'custom-' + this._tabName.replace(/[^a-zA-Z]/i, '-');
+    }
+    get name() {
+        return this._name;
+    }
+    render() {
+        this._renderPromise = new Promise((resolve) => {
+            if (!this._fileUrl) {
+                resolve(false);
+                return;
+            }
+            $.get(this._fileUrl, (fileContent) => {
+                if (!fileContent) {
+                    resolve(false);
+                    return;
+                }
+            
+                let tab = $(`<div id="module-tab-${this.name}" class="module-tabs content default-hidden"></div>`);
+            
+                // Populate file conrtent
+                tab.append(fileContent);
+            
+                // Add 'table' class to all tables in README
+                tab.find("table").addClass("table");
+            
+                // Replace size of headers
+                tab.find("h1").addClass("subtitle").addClass("is-3");
+                tab.find("h2").addClass("subtitle").addClass("is-4");
+                tab.find("h3").addClass("subtitle").addClass("is-5");
+                tab.find("h4").addClass("subtitle").addClass("is-6");
+
+                // Insert tab link content
+                let insertAfterContent = $('#module-tab-resources')[0];
+                tab.insertAfter(insertAfterContent);
+
+                // Insert tab link
+                let tabLink = $(`<li id="module-tab-link-${this.name}" class="module-tab-link"><a onclick="selectModuleTab('${this.name}')">${this._tabName}</a></li>`);
+                let insertAfterLink = $('#module-tab-link-resources');
+                tabLink.insertAfter(insertAfterLink);
+            
+                resolve(true);
+            });
+        });
+    }
+}
+
+
 class AnalyticsTab extends ModuleDetailsTab {
     get name() {
         return 'analytics';
@@ -1483,6 +1536,11 @@ async function setupRootModulePage(data) {
         // Register tabs in order of being displayed to user, by default
         tabFactory.registerTab(new ReadmeTab(`/v1/terrareg/modules/${moduleDetails.id}/readme_html`));
         tabFactory.registerTab(new InputsTab(moduleDetails.root));
+
+        // Setup additional pages
+        for (let tab_name of Object.keys(moduleDetails.additional_tab_files)) {
+            tabFactory.registerTab(new AdditionalTab(tab_name, `/v1/terrareg/modules/${moduleDetails.id}/files/${moduleDetails.additional_tab_files[tab_name]}`));
+        }
     }
 
     tabFactory.registerTab(new IntegrationsTab(moduleDetails));

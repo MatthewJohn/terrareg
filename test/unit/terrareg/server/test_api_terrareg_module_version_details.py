@@ -41,7 +41,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'beta': False,
             'published': True,
             'security_failures': 0,
-            'git_path': None
+            'git_path': None,
+            'additional_tab_files': {}
         }
 
         assert res.status_code == 200
@@ -100,7 +101,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'beta': False,
             'published': True,
             'security_failures': 0,
-            'git_path': None
+            'git_path': None,
+            'additional_tab_files': {}
         }
 
         assert res.status_code == 200
@@ -150,7 +152,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'beta': False,
             'published': False,
             'security_failures': 0,
-            'git_path': None
+            'git_path': None,
+            'additional_tab_files': {}
         }
 
         assert res.status_code == 200
@@ -201,7 +204,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'beta': True,
             'published': True,
             'security_failures': 0,
-            'git_path': None
+            'git_path': None,
+            'additional_tab_files': {}
         }
 
         assert res.status_code == 200
@@ -244,3 +248,19 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
 
         assert res.json == test_module_version.get_terrareg_api_details()
         assert res.status_code == 200
+
+    @setup_test_data()
+    def test_additional_tab_files(self, client, mocked_server_namespace_fixture):
+        """Test additional tab files in API response"""
+
+        with mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[]'):
+            res = client.get('/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/1.5.0')
+
+            assert res.status_code == 200
+            assert res.json['additional_tab_files'] == {}
+
+        with mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'):
+            res = client.get('/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/1.5.0')
+
+            assert res.status_code == 200
+            assert res.json['additional_tab_files'] == {'Changelog': 'CHANGELOG.md', 'License': 'LICENSE'}

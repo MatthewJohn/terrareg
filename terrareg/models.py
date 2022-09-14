@@ -27,7 +27,7 @@ from terrareg.errors import (
     NoModuleDownloadMethodConfiguredError,
     ProviderNameNotPermittedError
 )
-from terrareg.utils import safe_join_paths, santise_html_content
+from terrareg.utils import convert_markdown_to_html, safe_join_paths, santise_html_content
 from terrareg.validators import GitUrlValidator
 
 
@@ -1336,10 +1336,7 @@ class TerraformSpecsObject(object):
         if readme_md:
             readme_md = self.replace_source_in_file(
                 readme_md, server_hostname)
-            return markdown.markdown(
-                readme_md,
-                extensions=['fenced_code', 'tables']
-            )
+            return convert_markdown_to_html(readme_md)
         return None
 
     @property
@@ -1630,6 +1627,19 @@ class ModuleVersion(TerraformSpecsObject):
         """Return module version"""
         return self
 
+    @property
+    def module_version_files(self):
+        """Return list of module version files for module version"""
+        db = Database.get()
+        select = db.module_version_file.select().join(
+            db.module_version, db.module_version_file.c.module_version_id==db.module_version.c.id
+        ).where(
+            db.module_version.c.id==self.pk
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(select)
+            return res.fetchall()
+
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
         self._extracted_beta_flag = self._validate_version(version)
@@ -1881,6 +1891,14 @@ class ModuleVersion(TerraformSpecsObject):
 
         api_details.update(self.get_api_details())
 
+        tab_files = [module_version_file.path for module_version_file in self.module_version_files]
+        additional_module_tabs = json.loads(terrareg.config.Config().ADDITIONAL_MODULE_TABS)
+        tab_file_mapping = {}
+        for tab_config in additional_module_tabs:
+            for file in tab_config[1]:
+                if file in tab_files:
+                    tab_file_mapping[tab_config[0]] = file
+
         source_browse_url = self.get_source_browse_url()
         api_details.update({
             "published_at_display": self.publish_date_display,
@@ -1889,7 +1907,8 @@ class ModuleVersion(TerraformSpecsObject):
             "versions": versions,
             "beta": self.beta,
             "published": self.published,
-            "security_failures": self.get_tfsec_failure_count()
+            "security_failures": self.get_tfsec_failure_count(),
+            "additional_tab_files": tab_file_mapping
         })
         return api_details
 
@@ -2213,7 +2232,81 @@ class Example(BaseSubmodule):
         return api_details
 
 
-class ExampleFile:
+class FileObject:
+    """Base file object for example/module file in DB"""
+
+    @staticmethod
+    def get_db_table():
+        """Return DB table for class"""
+        raise NotImplementedError
+
+    @property
+    def file_name(self):
+        """Return name of file"""
+        return self._path.split('/')[-1]
+
+    @property
+    def path(self):
+        """Return path of example file."""
+        return self._path
+
+    def _get_db_row(self):
+        """Method to obtain row from database"""
+        raise NotImplementedError
+
+    @property
+    def pk(self):
+        """Get ID from DB row"""
+        return self._get_db_row()['id']
+
+    @property
+    def content(self):
+        """Return content of example file."""
+        return santise_html_content(Database.decode_blob(self._get_db_row()['content']))
+
+    def __init__(self, path: str):
+        """Store identifying data."""
+        self._path = path
+        self._cache_db_row = None
+
+    def update_attributes(self, **kwargs):
+        """Update DB row."""
+        # Encode columns that are binary blobs in the database
+        for kwarg in kwargs:
+            if kwarg in ['content']:
+                kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
+
+        db = Database.get()
+        update = self.get_db_table().update().where(
+            self.get_db_table().c.id == self.pk
+        ).values(**kwargs)
+        with db.get_connection() as conn:
+            conn.execute(update)
+
+        # Remove cached DB row
+        self._cache_db_row = None
+
+    def delete(self):
+        """Delete example file from DB."""
+        db = Database.get()
+
+        with db.get_connection() as conn:
+            delete_statement = db.example_file.delete().where(
+                db.example_file.c.id == self.pk
+            )
+            conn.execute(delete_statement)
+
+        # Invalidate DB row cache
+        self._cache_db_row = None
+
+
+class ExampleFile(FileObject):
+
+    @staticmethod
+    def get_db_table():
+        """Return DB table for class"""
+        db = Database.get()
+        return db.example_file
 
     @classmethod
     def create(cls, example: Example, path: str):
@@ -2260,31 +2353,10 @@ class ExampleFile:
 
         return ExampleFile(example=example, path=file_path)
 
-    @property
-    def file_name(self):
-        """Return name of file"""
-        return self._path.split('/')[-1]
-
-    @property
-    def path(self):
-        """Return path of example file."""
-        return self._path
-
-    @property
-    def pk(self):
-        """Get ID from DB row"""
-        return self._get_db_row()['id']
-
-    @property
-    def content(self):
-        """Return content of example file."""
-        return Database.decode_blob(self._get_db_row()['content'])
-
     def __init__(self, example: Example, path: str):
         """Store identifying data."""
         self._example = example
-        self._path = path
-        self._cache_db_row = None
+        super(ExampleFile, self).__init__(path)
 
     def __lt__(self, other):
         """Implement less than for sorting example files."""
@@ -2311,40 +2383,70 @@ class ExampleFile:
                 return res.fetchone()
         return self._cache_db_row
 
-    def update_attributes(self, **kwargs):
-        """Update DB row."""
-        # Encode columns that are binary blobs in the database
-        for kwarg in kwargs:
-            if kwarg in ['content']:
-                kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
-
-        db = Database.get()
-        update = db.example_file.update().where(
-            db.example_file.c.id == self.pk
-        ).values(**kwargs)
-        with db.get_connection() as conn:
-            conn.execute(update)
-
-        # Remove cached DB row
-        self._cache_db_row = None
-
-    def delete(self):
-        """Delete example file from DB."""
-        db = Database.get()
-
-        with db.get_connection() as conn:
-            delete_statement = db.example_file.delete().where(
-                db.example_file.c.id == self.pk
-            )
-            conn.execute(delete_statement)
-
-        # Invalidate DB row cache
-        self._cache_db_row = None
-
     def get_content(self, server_hostname):
         """Return content with source replaced"""
         # Replace source lines that use relative paths
-        file_content = self._example.replace_source_in_file(
+        return self._example.replace_source_in_file(
             content=self.content,
             server_hostname=server_hostname)
-        return santise_html_content(file_content)
+
+
+class ModuleVersionFile(FileObject):
+    """File associated with module version"""
+
+    @classmethod
+    def get(cls, module_version: ModuleVersion, path: str):
+        """Obtain instance of object, if it exists in the database"""
+        module_version_file = cls(module_version=module_version, path=path)
+        if module_version_file._get_db_row() is None:
+            return None
+        return module_version_file
+
+    @staticmethod
+    def get_db_table():
+        """Return DB table for class"""
+        db = Database.get()
+        return db.module_version_file
+
+    @classmethod
+    def create(cls, module_version: ModuleVersion, path: str):
+        """Create instance of object in database."""
+        # Insert module file into database
+        db = Database.get()
+        insert_statement = db.module_version_file.insert().values(
+            module_version_id=module_version.pk,
+            path=path
+        )
+        with db.get_connection() as conn:
+            conn.execute(insert_statement)
+
+        # Return instance of object
+        return cls(module_version=module_version, path=path)
+
+    def __init__(self, module_version: ModuleVersion, path: str):
+        """Store identifying data."""
+        self._module_version = module_version
+        super(ModuleVersionFile, self).__init__(path)
+
+    def _get_db_row(self):
+        """Return DB row for git provider."""
+        if self._cache_db_row is None:
+            db = Database.get()
+            select = db.module_version_file.select().where(
+                db.module_version_file.c.module_version_id == self._module_version.pk,
+                db.module_version_file.c.path == self._path
+            )
+            with db.get_connection() as conn:
+                res = conn.execute(select)
+                return res.fetchone()
+        return self._cache_db_row
+
+    def get_content(self):
+        """Return content to be displayed in UI"""
+        content = self.content
+        # Convert markdown files to HTML
+        if self.path.lower().endswith('.md'):
+            content = convert_markdown_to_html(content)
+        else:
+            content = '<pre>' + content + '</pre>'
+        return content
