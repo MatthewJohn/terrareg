@@ -1736,7 +1736,7 @@ module "fullypopulated" {{
         (False, False, ['1.5.0 (latest)', '1.2.0']),
         (True, False, ['1.6.1-beta (beta)', '1.5.0 (latest)', '1.2.0']),
         (False, True, ['1.6.0 (unpublished)', '1.5.0 (latest)', '1.2.0']),
-        (True, True, ['1.6.1-beta (beta)', '1.6.0 (unpublished)', '1.5.0 (latest)', '1.2.0', '1.0.0-beta (beta)']),
+        (True, True, ['1.6.1-beta (beta)', '1.6.0 (unpublished)', '1.5.0 (latest)', '1.2.0', '1.0.0-beta (beta) (unpublished)']),
     ])
     def test_user_preferences(self, enable_beta, enable_unpublished, expected_versions):
         """Test user preferences"""
