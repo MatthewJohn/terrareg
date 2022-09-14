@@ -721,7 +721,6 @@ def check_admin_authentication():
         # Check for SAML authentcation type
         elif session_authentication_type is AuthenticationType.SESSION_SAML:
             auth = terrareg.saml.Saml2.initialise_request_auth_object(request)
-            print(session)
             if auth.is_authenticated():
                 authenticated = True
                 g.authentication_type = AuthenticationType.SESSION_SAML
