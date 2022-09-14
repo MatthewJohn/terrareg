@@ -45,6 +45,9 @@ unit-integration-selenium-tests:
   artifacts:
     reports:
       junit: pytest-report.xml
+  only:
+    changes:
+      - terrareg/**/*
 
 mysql-integration-selenium-tests:
   stage: test
@@ -66,6 +69,9 @@ mysql-integration-selenium-tests:
     - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose --junitxml=./pytest-report.xml ./test/integration ./test/selenium
     - coverage report --include='./terrareg/*'
     - coverage xml
+  only:
+    changes:
+      - terrareg/**/*
   artifacts:
     reports:
       junit: pytest-report.xml
@@ -82,6 +88,9 @@ build-wheel:
   artifacts:
     paths:
       - dist/*.whl
+  only:
+    changes:
+      - requirements.txt
 
 build-test-docker-image:
   stage: build
@@ -90,8 +99,11 @@ build-test-docker-image:
     - docker:dind
   script:
       - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+      - docker pull $CI_REGISTRY/mrmattyboy/terrareg/terrareg-test-image:cache
       - docker build -f Dockerfile.tests -t $CI_REGISTRY/mrmattyboy/terrareg/terrareg-test-image:v${CI_COMMIT_SHORT_SHA} --build-arg http_proxy=$http_proxy --build-arg HTTP_PROXY=$http_proxy --build-arg https_proxy=$https_proxy --build-arg HTTPS_PROXY=$https_proxy .
       - docker push $CI_REGISTRY/mrmattyboy/terrareg/terrareg-test-image:v${CI_COMMIT_SHORT_SHA}
+      - docker tag $CI_REGISTRY/mrmattyboy/terrareg/terrareg-test-image:v${CI_COMMIT_SHORT_SHA} $CI_REGISTRY/mrmattyboy/terrareg/terrareg-test-image:cache
+      - docker push $CI_REGISTRY/mrmattyboy/terrareg/terrareg-test-image:cache
 
 release:
   stage: deploy
