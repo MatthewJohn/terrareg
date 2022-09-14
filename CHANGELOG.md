@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.39.0](https://gitlab.com/mrmattyboy/terrareg/compare/v2.38.0...v2.39.0) (2022-09-14)
+
+
+### Features
+
+* Add total major, minor and patch releases in prometheus metrics endpoint. ([b20a9ce](https://gitlab.com/mrmattyboy/terrareg/commit/b20a9ce7f372453cc402a27bd9543c98cd926abf))
+
 # [2.38.0](https://gitlab.com/mrmattyboy/terrareg/compare/v2.37.1...v2.38.0) (2022-09-14)
 
 
