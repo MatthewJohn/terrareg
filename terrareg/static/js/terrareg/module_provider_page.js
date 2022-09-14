@@ -1025,7 +1025,7 @@ async function populateTerraformUsageExample(moduleDetails, additionalPath = und
     $("#usage-example-analytics-token").text(config.EXAMPLE_ANALYTICS_TOKEN);
     $("#usage-example-analytics-token-phrase").text(config.ANALYTICS_TOKEN_PHRASE);
 
-    // Add example terraform call to source section
+    // Add example Terraform call to source section
     $("#usage-example-terraform").text(
         `module "${moduleDetails.name}" {
   source  = "${window.location.hostname}/${config.EXAMPLE_ANALYTICS_TOKEN}__${moduleDetails.module_provider_id}${additionalPath ? "//" + additionalPath : ""}"
