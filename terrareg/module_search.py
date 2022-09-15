@@ -62,13 +62,17 @@ class ModuleSearch(object):
         db = Database.get()
         if query:
             query_select = None
-            for query_part in query.split():
-
-                query_part_select = None
+            selects = [
+                db.module_provider
+            ]
+            wheres = []
+            sum_columns = []
+            for itx, query_part in enumerate(query.split()):
 
                 wildcarded_query_part = '%{0}%'.format(query_part)               
-                query_part_select = sqlalchemy.select([
-                    db.module_provider,
+                part_point_column = f"searchpart_{itx}"
+                sum_columns.append(part_point_column)
+                selects.append(
                     sqlalchemy.case(
                             (db.module_provider.c.namespace.like(query_part), 10),
                             (db.module_provider.c.module.like(query_part), 9),
@@ -81,33 +85,51 @@ class ModuleSearch(object):
                             (db.module_provider.c.namespace.like(wildcarded_query_part), 2),
                             (db.module_provider.c.provider.like(wildcarded_query_part), 1),
                         else_=0
-                    ).label('p_points')
-                ])
-
-                if query_select is None:
-                    query_select = sqlalchemy.select(
-                        sqlalchemy.func.sum('p_points').label('t_points'),
-                        db.module_provider.c.id,
-                        db.module_provider.c.namespace,
-                        db.module_provider.c.module,
-                        db.module_provider.c.provider
-                    ).select_from(query_part_select)
-                else:
-                    query_select = query_select.join(
-                        query_part_select,
-                        query_part_select.c.id==query_select.c.id
+                    ).label(part_point_column)
+                )
+                wheres.append(
+                    sqlalchemy.or_(
+                        db.module_provider.c.namespace.like(query_part),
+                        db.module_provider.c.module.like(query_part),
+                        db.module_provider.c.provider.like(query_part),
+                        db.module_version.c.description.like(query_part),
+                        db.module_version.c.owner.like(query_part),
+                        db.module_provider.c.module.like(wildcarded_query_part),
+                        db.module_version.c.description.like(wildcarded_query_part),
+                        db.module_version.c.owner.like(wildcarded_query_part),
+                        db.module_provider.c.namespace.like(wildcarded_query_part),
+                        db.module_provider.c.provider.like(wildcarded_query_part)
                     )
-
-            if query_select is not None:
-                query_select = query_select.group_by(
-                    db.module_provider.c.id
                 )
 
-                select = select.join(
-                    query_select.subquery()
-                ).order_by(
-                    query_select.c.t_points
-                )
+            query_select = sqlalchemy.select(*selects)
+            for where_ in wheres:
+                query_select = query_select.where(where_)
+
+            # query_select = query_select.group_by(
+            #     db.module_provider.c.id
+            # )
+            sum_value = None
+            for sum_column in sum_columns:
+                if sum_value is None:
+                    sum_value = sqlalchemy.func.sum(sum_column)
+                else:
+                    sum_value += sqlalchemy.func.sum(sum_column)
+
+            query_select = sqlalchemy.select(
+                [query_select.subquery(), sum_value.label('relevance')])
+            query_select = query_select.where(query_select.c.relevance > 0)
+
+            query_select = query_select.subquery()
+            select = select.subquery()
+            select = sqlalchemy.select(
+                [select, query_select.c.relevance]
+            ).select_from(select).join(
+                query_select,
+                query_select.c.id==select.c.id
+            ).order_by(
+                query_select.c.relevance
+            )
 
 
         # Filter search by published module versions,
