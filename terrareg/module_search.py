@@ -61,18 +61,79 @@ class ModuleSearch(object):
 
         db = Database.get()
         if query:
+            query_select = None
             for query_part in query.split():
+
+                query_part_select = None
+
                 wildcarded_query_part = '%{0}%'.format(query_part)
-                select = select.where(
-                    sqlalchemy.or_(
-                        db.module_provider.c.namespace.like(wildcarded_query_part),
-                        db.module_provider.c.module.like(wildcarded_query_part),
+                points = 11
+                for query_part_select_condition in [
+                        # First order by exact namespace match
+                        db.module_provider.c.namespace.like(query_part),
+                        db.module_provider.c.module.like(query_part),
                         db.module_provider.c.provider.like(query_part),
-                        db.module_version.c.version.like(query_part),
+                        db.module_version.c.description.like(query_part),
+                        db.module_version.c.owner.like(query_part),
+                        db.module_provider.c.module.like(wildcarded_query_part),
                         db.module_version.c.description.like(wildcarded_query_part),
-                        db.module_version.c.owner.like(wildcarded_query_part)
+                        db.module_version.c.owner.like(wildcarded_query_part),
+                        db.module_provider.c.namespace.like(wildcarded_query_part),
+                        db.module_provider.c.provider.like(wildcarded_query_part),
+                        ]:
+
+                    points -= 1
+
+                    query_part_subquery = sqlalchemy.select(
+                        db.module_provider,
+                        sqlalchemy.sql.expression.literal(points).label('c_points')
+                    ).where(
+                        query_part_select_condition
                     )
+
+                    if query_part_select is None:
+                        query_part_select = sqlalchemy.select(
+                            sqlalchemy.func.sum('c_points').label('p_points'),
+                            db.module_provider.c.id,
+                            db.module_provider.c.namespace,
+                            db.module_provider.c.module,
+                            db.module_provider.c.provider
+                        ).select_from(query_part_subquery.subquery())
+                    else:
+                        query_part_select = query_part_select.select_from(
+                            query_part_subquery.subquery(),
+                            #full=True
+                        )
+                
+                query_part_select = query_part_select.group_by(
+                    db.module_provider.c.id
                 )
+
+                if query_select is None:
+                    query_select = sqlalchemy.select(
+                        sqlalchemy.func.sum('p_points').label('t_points'),
+                        db.module_provider.c.id,
+                        db.module_provider.c.namespace,
+                        db.module_provider.c.module,
+                        db.module_provider.c.provider
+                    ).select_from(query_part_select)
+                else:
+                    query_select = query_select.join(
+                        query_part_select,
+                        query_part_select.c.id==query_select.c.id
+                    )
+
+            if query_select is not None:
+                query_select = query_select.group_by(
+                    db.module_provider.c.id
+                )
+
+                select = select.join(
+                    query_select.subquery()
+                ).order_by(
+                    query_select.c.t_points
+                )
+
 
         # Filter search by published module versions,
         # remove beta versions
@@ -154,10 +215,6 @@ class ModuleSearch(object):
             db.module_provider.c.namespace,
             db.module_provider.c.module,
             db.module_provider.c.provider
-        ).order_by(
-            db.module_provider.c.namespace.asc(),
-            db.module_provider.c.module.asc(),
-            db.module_provider.c.provider.asc()
         )
 
         limited_search = select.limit(limit).offset(offset)
