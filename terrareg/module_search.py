@@ -104,47 +104,46 @@ class ModuleSearch(object):
 
         select = db.select_module_provider_joined_latest_module_version(
             db.module_provider,
+            db.module_version,
             *selects
         )
         for where_ in wheres:
             select = select.where(where_)
 
-        outer_selects = [db.module_provider, select.subquery()]
-        sum_value = None
-        for sum_column in sum_columns:
-            this_sum = sqlalchemy.func.sum(getattr(select.c, sum_column))
-            if sum_value is None:
-                sum_value = this_sum
-            else:
-                sum_value += this_sum
+        outer_selects = []
+        if sum_columns:
+            outer_selects.append(sqlalchemy.func.sum(*[getattr(select.c, sum_column) for sum_column in sum_columns]).label('relevance'))
 
-        if sum_value is not None:
-            outer_selects.append(sum_value.label('relevance'))
-            #outer_selects.append(sqlalchemy.func.sum(*[getattr(select.c, sum_column) for sum_column in sum_columns]).label('relevance'))
+        select = select.subquery()
+        select = sqlalchemy.select(select, *outer_selects).select_from(select)
+        if selects:
+            select = select.where(
+                select.c.relevance > 0
+            ).order_by(
+                select.c.relevance
+            )
 
-        select = sqlalchemy.select(outer_selects)
-        # if selects:
-        #     select = select.where(
-        #         select.c.relevance > 0
-        #     ).order_by(
-        #         select.c.relevance
-        #     )
+        # with db.get_connection() as conn:
+        #     res = conn.execute(select)
+        #     print('----------------- RESULTS ------------------')
+        #     print([dict(r) for r in res.fetchall()])
+        #     print('----------------- ENDRESULTS ------------------')
+
+        # Filter search by published module versions,
+        # remove beta versions
+        # and group by module provider ID
+        select = select.where(
+            select.c.published == True,
+            select.c.beta == False
+        ).group_by(
+            select.c.id
+        )
 
         with db.get_connection() as conn:
             res = conn.execute(select)
             print('----------------- RESULTS ------------------')
             print([dict(r) for r in res.fetchall()])
             print('----------------- ENDRESULTS ------------------')
-
-        # Filter search by published module versions,
-        # remove beta versions
-        # and group by module provider ID
-        select = select.where(
-            db.module_version.c.published == True,
-            db.module_version.c.beta == False
-        ).group_by(
-            db.module_provider.c.id
-        )
         return select
 
     @classmethod
