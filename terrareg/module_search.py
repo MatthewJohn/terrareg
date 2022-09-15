@@ -100,14 +100,6 @@ class ModuleSearch(object):
                         db.module_provider.c.provider.like(wildcarded_query_part)
                     )
                 )
-
-            query_select = sqlalchemy.select(*selects).select_from(db.module_provider)
-            for where_ in wheres:
-                query_select = query_select.where(where_)
-
-            query_select = query_select.group_by(
-                db.module_provider.c.id
-            )
             sum_value = None
             for sum_column in sum_columns:
                 if sum_value is None:
@@ -116,9 +108,17 @@ class ModuleSearch(object):
                     sum_value += sqlalchemy.func.sum(sum_column)
 
             query_select = sqlalchemy.select(
-                [query_select.subquery(), sum_value.label('relevance')])
+                sum_value.label('relevance'),
+                *selects
+            ).select_from(db.module_provider)
+
+            for where_ in wheres:
+                query_select = query_select.where(where_)
+
             query_select = query_select.where(
                 query_select.c.relevance > 0
+            ).group_by(
+                db.module_provider.c.id
             ).subquery()
 
             select = db.select_module_version_joined_module_provider(
