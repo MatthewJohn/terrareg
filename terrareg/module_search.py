@@ -61,7 +61,6 @@ class ModuleSearch(object):
 
         db = Database.get()
         if query:
-            query_select = None
             selects = [
                 db.module_provider
             ]
@@ -70,8 +69,8 @@ class ModuleSearch(object):
             for itx, query_part in enumerate(query.split()):
 
                 wildcarded_query_part = '%{0}%'.format(query_part)               
-                part_point_column = f"searchpart_{itx}"
-                sum_columns.append(part_point_column)
+                point_column = f"searchpart_{itx}"
+                sum_columns.append(point_column)
                 selects.append(
                     sqlalchemy.case(
                             (db.module_provider.c.namespace.like(query_part), 10),
@@ -85,7 +84,7 @@ class ModuleSearch(object):
                             (db.module_provider.c.namespace.like(wildcarded_query_part), 2),
                             (db.module_provider.c.provider.like(wildcarded_query_part), 1),
                         else_=0
-                    ).label(part_point_column)
+                    ).label(point_column)
                 )
                 wheres.append(
                     sqlalchemy.or_(
@@ -102,13 +101,13 @@ class ModuleSearch(object):
                     )
                 )
 
-            query_select = sqlalchemy.select(*selects)
+            query_select = sqlalchemy.select(*selects).select_from(db.module_provider)
             for where_ in wheres:
                 query_select = query_select.where(where_)
 
-            # query_select = query_select.group_by(
-            #     db.module_provider.c.id
-            # )
+            query_select = query_select.group_by(
+                db.module_provider.c.id
+            )
             sum_value = None
             for sum_column in sum_columns:
                 if sum_value is None:
@@ -118,19 +117,19 @@ class ModuleSearch(object):
 
             query_select = sqlalchemy.select(
                 [query_select.subquery(), sum_value.label('relevance')])
-            query_select = query_select.where(query_select.c.relevance > 0)
+            query_select = query_select.where(
+                query_select.c.relevance > 0
+            ).subquery()
 
-            query_select = query_select.subquery()
-            select = select.subquery()
-            select = sqlalchemy.select(
-                [select, query_select.c.relevance]
-            ).select_from(select).join(
+            select = db.select_module_version_joined_module_provider(
+                db.module_provider,
+                query_select.c.relevance
+            ).join(
                 query_select,
-                query_select.c.id==select.c.id
+                query_select.c.id==db.module_provider.c.id
             ).order_by(
                 query_select.c.relevance
             )
-
 
         # Filter search by published module versions,
         # remove beta versions
