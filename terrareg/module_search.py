@@ -62,31 +62,31 @@ class ModuleSearch(object):
         db = Database.get()
         selects = []
         wheres = []
-        sum_columns = []
+        point_sum = None
         if query:
             for itx, query_part in enumerate(query.split()):
 
                 wildcarded_query_part = '%{0}%'.format(query_part)               
-                point_column = f"searchpart_{itx}"
-                sum_columns.append(point_column)
-                selects.append(
-                    sqlalchemy.cast(
-                        sqlalchemy.case(
-                                (db.module_provider.c.namespace.like(query_part), 10),
-                                (db.module_provider.c.module.like(query_part), 9),
-                                (db.module_provider.c.provider.like(query_part), 8),
-                                (db.module_version.c.description.like(query_part), 7),
-                                (db.module_version.c.owner.like(query_part), 6),
-                                (db.module_provider.c.module.like(wildcarded_query_part), 5),
-                                (db.module_version.c.description.like(wildcarded_query_part), 4),
-                                (db.module_version.c.owner.like(wildcarded_query_part), 3),
-                                (db.module_provider.c.namespace.like(wildcarded_query_part), 2),
-                                (db.module_provider.c.provider.like(wildcarded_query_part), 1),
-                            else_=0
-                        ),
-                        sqlalchemy.Integer
-                    ).label(point_column)
+                point_value = sqlalchemy.cast(
+                    sqlalchemy.case(
+                            (db.module_provider.c.namespace.like(query_part), 10),
+                            (db.module_provider.c.module.like(query_part), 9),
+                            (db.module_provider.c.provider.like(query_part), 8),
+                            (db.module_version.c.description.like(query_part), 7),
+                            (db.module_version.c.owner.like(query_part), 6),
+                            (db.module_provider.c.module.like(wildcarded_query_part), 5),
+                            (db.module_version.c.description.like(wildcarded_query_part), 4),
+                            (db.module_version.c.owner.like(wildcarded_query_part), 3),
+                            (db.module_provider.c.namespace.like(wildcarded_query_part), 2),
+                            (db.module_provider.c.provider.like(wildcarded_query_part), 1),
+                        else_=0
+                    ),
+                    sqlalchemy.Integer
                 )
+                if point_sum is None:
+                    point_sum = point_value
+                else:
+                    point_sum += point_value
                 wheres.append(
                     sqlalchemy.or_(
                         db.module_provider.c.namespace.like(query_part),
@@ -105,7 +105,7 @@ class ModuleSearch(object):
         inner_select = db.select_module_provider_joined_latest_module_version(
             db.module_provider,
             db.module_version,
-            *selects
+            sqlalchemy.sql.expression.label('', *selects
         )
         for where_ in wheres:
             inner_select = inner_select.where(where_)
