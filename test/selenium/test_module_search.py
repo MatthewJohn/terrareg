@@ -19,7 +19,7 @@ class TestModuleSearch(SeleniumTest):
         cls.register_patch(mock.patch('terrareg.config.Config.CONTRIBUTED_NAMESPACE_LABEL', 'unittest contributed module'))
         cls.register_patch(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACE_LABEL', 'unittest trusted namespace'))
         cls.register_patch(mock.patch('terrareg.config.Config.VERIFIED_MODULE_LABEL', 'unittest verified label'))
-        cls.register_patch(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['modulesearch-trusted']))
+        cls.register_patch(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['modulesearch-trusted', 'relevancysearch']))
         super(TestModuleSearch, cls).setup_class()
 
     def test_search_from_homepage(self):
@@ -208,3 +208,27 @@ class TestModuleSearch(SeleniumTest):
         # Check total count
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'result-count').text, 'Showing results 0 - 0 of 0')
 
+    def test_result_relevancy_ordering(self):
+        """Test results are displayed in relevancy order"""
+        self.selenium_instance.get(self.get_url('/modules/search?q=namematch'))
+
+        self.assert_equals(lambda: len(self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')), 8)
+        result_cards = self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')
+
+        expected_card_headings = [
+            ('relevancysearch / namematch', 'namematch'),
+            ('relevancysearch / namematch', 'partialprovidernamematch'),
+            ('relevancysearch / partialmodulenamematch', 'namematch'),
+            ('relevancysearch / descriptionmatch', 'testprovider'),
+            ('relevancysearch / ownermatch', 'testprovider'),
+            ('relevancysearch / partialmodulenamematch', 'partialprovidernamematch'),
+            ('relevancysearch / partialdescriptionmatch', 'testprovider'),
+            ('relevancysearch / partialownermatch', 'testprovider')
+        ]
+
+        for expected_heading, expected_provider in expected_card_headings:
+            card = result_cards.pop(0)
+            heading = card.find_element(By.CLASS_NAME, 'module-card-title')
+
+            assert heading.text == expected_heading
+            assert card.find_element(By.CLASS_NAME, 'module-provider-card-provider-text').text == f"Provider: {expected_provider}"
