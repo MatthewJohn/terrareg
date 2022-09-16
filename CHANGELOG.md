@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.39.1](https://gitlab.com/mrmattyboy/terrareg/compare/v2.39.0...v2.39.1) (2022-09-16)
+
+
+### Bug Fixes
+
+* **ui:** Hide 'Terrareg Exclusive' tag from Usage builder tab in module provider when this tag is disabled ([1e5b396](https://gitlab.com/mrmattyboy/terrareg/commit/1e5b39609cbeaf9b2f0d8443c62c5daf9a30e402))
+
 # [2.39.0](https://gitlab.com/mrmattyboy/terrareg/compare/v2.38.0...v2.39.0) (2022-09-14)
 
 
