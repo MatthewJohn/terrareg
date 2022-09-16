@@ -102,26 +102,41 @@ class ModuleSearch(object):
                     )
                 )
 
-        select = db.select_module_provider_joined_latest_module_version(
+        inner_select = db.select_module_provider_joined_latest_module_version(
             db.module_provider,
             db.module_version,
             *selects
         )
         for where_ in wheres:
-            select = select.where(where_)
+            inner_select = inner_select.where(where_)
 
         outer_selects = []
         if sum_columns:
-            outer_selects.append(sqlalchemy.func.sum(*[getattr(select.c, sum_column) for sum_column in sum_columns]).label('relevance'))
+            outer_selects.append(sqlalchemy.func.sum(*[getattr(inner_select.c, sum_column) for sum_column in sum_columns]).label('relevance'))
 
-        select = select.subquery()
-        select = sqlalchemy.select(select, *outer_selects).select_from(select)
+        inner_select = inner_select.subquery()
+        inner_select = sqlalchemy.select(inner_select, *outer_selects).select_from(inner_select)
+
+        with db.get_connection() as conn:
+            res = conn.execute(inner_select)
+            print('----------------- RESULTS ------------------')
+            print([dict(r) for r in res.fetchall()])
+            print('----------------- ENDRESULTS ------------------')
         if selects:
-            select = select.where(
-                select.c.relevance > 0
+            inner_select = inner_select.where(
+                inner_select.c.relevance > 0
             ).order_by(
-                select.c.relevance
+                inner_select.c.relevance
             )
+        inner_select = inner_select.subquery()
+
+        select = db.select_module_provider_joined_latest_module_version(
+            db.module_provider
+        )
+        select = select.join(
+            inner_select,
+            db.module_provider.c.id==inner_select.c.id
+        )
 
         # with db.get_connection() as conn:
         #     res = conn.execute(select)
@@ -133,10 +148,10 @@ class ModuleSearch(object):
         # remove beta versions
         # and group by module provider ID
         select = select.where(
-            select.c.published == True,
-            select.c.beta == False
+            db.module_version.c.published == True,
+            db.module_version.c.beta == False
         ).group_by(
-            select.c.id
+            db.module_provider.c.id
         )
 
         with db.get_connection() as conn:
