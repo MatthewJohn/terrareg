@@ -60,11 +60,10 @@ class ModuleSearch(object):
         """Filter query based on wildcarded match of fields."""
 
         db = Database.get()
-        selects = []
         wheres = []
         point_sum = None
         if query:
-            for itx, query_part in enumerate(query.split()):
+            for query_part in query.split():
 
                 wildcarded_query_part = '%{0}%'.format(query_part)               
                 point_value = sqlalchemy.cast(
