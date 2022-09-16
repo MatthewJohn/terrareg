@@ -87,11 +87,7 @@ class ModuleSearch(object):
                     point_sum += point_value
                 wheres.append(
                     sqlalchemy.or_(
-                        db.module_provider.c.namespace.like(query_part),
-                        db.module_provider.c.module.like(query_part),
                         db.module_provider.c.provider.like(query_part),
-                        db.module_version.c.description.like(query_part),
-                        db.module_version.c.owner.like(query_part),
                         db.module_provider.c.module.like(wildcarded_query_part),
                         db.module_version.c.description.like(wildcarded_query_part),
                         db.module_version.c.owner.like(wildcarded_query_part),
