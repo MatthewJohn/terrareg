@@ -102,47 +102,14 @@ class ModuleSearch(object):
                     )
                 )
 
-        inner_select = db.select_module_provider_joined_latest_module_version(
+        relevance = sqlalchemy.sql.expression.label('relevance', point_sum)
+        select = db.select_module_provider_joined_latest_module_version(
             db.module_provider,
             db.module_version,
-            sqlalchemy.sql.expression.label('', *selects
+            relevance
         )
         for where_ in wheres:
-            inner_select = inner_select.where(where_)
-
-        outer_selects = []
-        if sum_columns:
-            outer_selects.append(sqlalchemy.func.sum(*[getattr(inner_select.c, sum_column) for sum_column in sum_columns]).label('relevance'))
-
-        inner_select = inner_select.subquery()
-        inner_select = sqlalchemy.select(inner_select, *outer_selects).select_from(inner_select)
-
-        with db.get_connection() as conn:
-            res = conn.execute(inner_select)
-            print('----------------- RESULTS ------------------')
-            print([dict(r) for r in res.fetchall()])
-            print('----------------- ENDRESULTS ------------------')
-        if selects:
-            inner_select = inner_select.where(
-                inner_select.c.relevance > 0
-            ).order_by(
-                inner_select.c.relevance
-            )
-        inner_select = inner_select.subquery()
-
-        select = db.select_module_provider_joined_latest_module_version(
-            db.module_provider
-        )
-        select = select.join(
-            inner_select,
-            db.module_provider.c.id==inner_select.c.id
-        )
-
-        # with db.get_connection() as conn:
-        #     res = conn.execute(select)
-        #     print('----------------- RESULTS ------------------')
-        #     print([dict(r) for r in res.fetchall()])
-        #     print('----------------- ENDRESULTS ------------------')
+            select = select.where(where_)
 
         # Filter search by published module versions,
         # remove beta versions
@@ -152,13 +119,10 @@ class ModuleSearch(object):
             db.module_version.c.beta == False
         ).group_by(
             db.module_provider.c.id
+        ).order_by(
+            sqlalchemy.desc(relevance)
         )
 
-        with db.get_connection() as conn:
-            res = conn.execute(select)
-            print('----------------- RESULTS ------------------')
-            print([dict(r) for r in res.fetchall()])
-            print('----------------- ENDRESULTS ------------------')
         return select
 
     @classmethod
