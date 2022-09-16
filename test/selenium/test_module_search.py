@@ -147,7 +147,7 @@ class TestModuleSearch(SeleniumTest):
                 By.ID, 'results').find_elements(
                     By.CLASS_NAME, 'card')[0].find_element(
                         By.CLASS_NAME, 'module-card-title').text,
-            'modulesearch-trusted / mixedsearch-trusted-result-multiversion'
+            'modulesearch-trusted / mixedsearch-trusted-second-result'
         )
 
         # Ensure that all cards have been updated
@@ -167,7 +167,7 @@ class TestModuleSearch(SeleniumTest):
                 By.ID, 'results').find_elements(
                     By.CLASS_NAME, 'card')[0].find_element(
                         By.CLASS_NAME, 'module-card-title').text,
-            'modulesearch / contributedmodule-differentprovider'
+            'modulesearch / contributedmodule-oneversion'
         )
 
         # Ensure that all of the original cards are displayed
