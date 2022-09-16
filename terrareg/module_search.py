@@ -69,11 +69,11 @@ class ModuleSearch(object):
                 wildcarded_query_part = '%{0}%'.format(query_part)               
                 point_value = sqlalchemy.cast(
                     sqlalchemy.case(
-                            (db.module_provider.c.namespace.like(query_part), 10),
-                            (db.module_provider.c.module.like(query_part), 9),
-                            (db.module_provider.c.provider.like(query_part), 8),
-                            (db.module_version.c.description.like(query_part), 7),
-                            (db.module_version.c.owner.like(query_part), 6),
+                            (db.module_provider.c.module.like(query_part), 20),
+                            (db.module_provider.c.namespace.like(query_part), 18),
+                            (db.module_provider.c.provider.like(query_part), 14),
+                            (db.module_version.c.description.like(query_part), 13),
+                            (db.module_version.c.owner.like(query_part), 12),
                             (db.module_provider.c.module.like(wildcarded_query_part), 5),
                             (db.module_version.c.description.like(wildcarded_query_part), 4),
                             (db.module_version.c.owner.like(wildcarded_query_part), 3),
