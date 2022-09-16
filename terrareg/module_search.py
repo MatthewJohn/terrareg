@@ -77,7 +77,6 @@ class ModuleSearch(object):
                             (db.module_version.c.description.like(wildcarded_query_part), 4),
                             (db.module_version.c.owner.like(wildcarded_query_part), 3),
                             (db.module_provider.c.namespace.like(wildcarded_query_part), 2),
-                            (db.module_provider.c.provider.like(wildcarded_query_part), 1),
                         else_=0
                     ),
                     sqlalchemy.Integer
@@ -96,8 +95,7 @@ class ModuleSearch(object):
                         db.module_provider.c.module.like(wildcarded_query_part),
                         db.module_version.c.description.like(wildcarded_query_part),
                         db.module_version.c.owner.like(wildcarded_query_part),
-                        db.module_provider.c.namespace.like(wildcarded_query_part),
-                        db.module_provider.c.provider.like(wildcarded_query_part)
+                        db.module_provider.c.namespace.like(wildcarded_query_part)
                     )
                 )
 
