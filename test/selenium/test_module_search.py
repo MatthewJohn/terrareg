@@ -49,21 +49,21 @@ class TestModuleSearch(SeleniumTest):
 
         expected_card_headings = [
             'modulesearch-trusted / mixedsearch-trusted-result',
+            'modulesearch-trusted / mixedsearch-trusted-second-result',
             'modulesearch-trusted / mixedsearch-trusted-result-multiversion',
             'modulesearch-trusted / mixedsearch-trusted-result-verified',
-            'modulesearch-trusted / mixedsearch-trusted-second-result'
         ]
         expected_card_links = [
             '/modules/modulesearch-trusted/mixedsearch-trusted-result/aws/1.0.0',
+            '/modules/modulesearch-trusted/mixedsearch-trusted-second-result/datadog/5.2.1',
             '/modules/modulesearch-trusted/mixedsearch-trusted-result-multiversion/null/2.0.0',
             '/modules/modulesearch-trusted/mixedsearch-trusted-result-verified/gcp/2.0.0',
-            '/modules/modulesearch-trusted/mixedsearch-trusted-second-result/datadog/5.2.1'
         ]
         expected_card_provider_text = [
             'Provider: aws',
+            'Provider: datadog',
             'Provider: null',
             'Provider: gcp',
-            'Provider: datadog'
         ]
         for card in result_cards:
             heading = card.find_element(By.CLASS_NAME, 'module-card-title')
