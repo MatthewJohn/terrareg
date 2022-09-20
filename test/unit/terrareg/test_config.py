@@ -66,7 +66,18 @@ class TestConfig:
         ('INFRACOST_API_KEY', None),
         ('INFRACOST_PRICING_API_ENDPOINT', None),
         ('DOMAIN_NAME', None),
-        ('ADDITIONAL_MODULE_TABS', None)
+        ('ADDITIONAL_MODULE_TABS', None),
+        ('OPENID_CONNECT_LOGIN_TEXT', None),
+        ('OPENID_CONNECT_CLIENT_ID', None),
+        ('OPENID_CONNECT_CLIENT_SECRET', None),
+        ('OPENID_CONNECT_ISSUER', None),
+        ('SAML2_LOGIN_TEXT', None),
+        ('SAML2_ENTITY_ID', None),
+        ('SAML2_IDP_METADATA_URL', None),
+        ('SAML2_ISSUER_ENTITY_ID', None),
+        ('SAML2_LOGIN_TEXT', None),
+        ('SAML2_PRIVATE_KEY', None),
+        ('SAML2_PUBLIC_KEY', None)
     ])
     def test_string_configs(self, config_name, override_expected_value):
         """Test string configs to ensure they are overriden with environment variables."""
