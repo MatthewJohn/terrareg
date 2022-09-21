@@ -14,9 +14,15 @@ class AnalyticsIntegrationTest(TerraregIntegrationTest):
                 'testprovider': {
                     'id': 1,
                     'versions': {
+                        '0.9.0': {'published': True},
+                        '0.9.1': {'published': True},
+                        '0.9.2': {'published': True},
+                        '1.3.0': {'published': True},
                         '1.4.0': {'published': True},
                         '1.5.0': {'published': True},
-                        '1.6.0-beta': {'published': True, 'beta': True}
+                        '1.6.0-beta': {'published': True, 'beta': True},
+                        '2.0.0': {'published': True},
+                        '2.1.5': {'published': True},
                     }
                 },
                 # Ensure multiple providers in the same module as treated independently
