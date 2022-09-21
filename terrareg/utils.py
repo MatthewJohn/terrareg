@@ -3,6 +3,7 @@ import os
 import glob
 
 import bleach
+import markdown
 
 from terrareg.errors import TerraregError
 
@@ -94,3 +95,11 @@ def check_subdirectory_within_base_dir(base_dir, sub_dir, is_dir=False, is_file=
 def santise_html_content(text):
     """Sanitise HTML content to be returned via API to be displayed in UI"""
     return bleach.clean(text)
+
+
+def convert_markdown_to_html(markdown_html):
+    """Convert markdown to HTML"""
+    return markdown.markdown(
+        markdown_html,
+        extensions=['fenced_code', 'tables']
+    )

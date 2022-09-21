@@ -52,6 +52,7 @@ class Database():
         self._analytics = None
         self._example_file = None
         self._session = None
+        self._module_version_file = None
         self.transaction_connection = None
 
     @property
@@ -109,6 +110,13 @@ class Database():
         if self._example_file is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._example_file
+
+    @property
+    def module_version_file(self):
+        """Return analytics table."""
+        if self._module_version_file is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._module_version_file
 
     @classmethod
     def reset(cls):
@@ -292,6 +300,23 @@ class Database():
                 sqlalchemy.ForeignKey(
                     'submodule.id',
                     name='fk_example_file_submodule_id_submodule_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            ),
+            sqlalchemy.Column('path', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('content', Database.medium_blob())
+        )
+
+        # Additional files for module provider (e.g. additional README files)
+        self._module_version_file = sqlalchemy.Table(
+            'module_version_file', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column(
+                'module_version_id',
+                sqlalchemy.ForeignKey(
+                    'module_version.id',
+                    name='fk_module_version_file_module_version_id_module_version_id',
                     onupdate='CASCADE',
                     ondelete='CASCADE'),
                 nullable=False
