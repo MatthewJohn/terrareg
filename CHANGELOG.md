@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.40.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.40.0...v2.40.1) (2022-09-22)
+
+
+### Bug Fixes
+
+* **ui:** Remove icon from yearly cost tag ([f7c3b0d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f7c3b0d3d3ae013722407260253327a4e33607c7)), closes [#235](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/235)
+
 # [2.40.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.39.2...v2.40.0) (2022-09-22)
 
 
