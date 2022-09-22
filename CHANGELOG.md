@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.40.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.39.2...v2.40.0) (2022-09-22)
+
+
+### Features
+
+* Order module search results by relevancy. ([fd9572e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fd9572edc4033c6ddf18948b07ef36dbc45a9a55)), closes [#241](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/241)
+
 ## [2.39.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.39.1...v2.39.2) (2022-09-22)
 
 
