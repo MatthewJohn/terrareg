@@ -392,6 +392,81 @@ integration_test_data = {
             'versions': {'5.5.5': {'published': True}}
         }}
     },
+    'relevancysearch': {
+        'partialmodulenamematch': {
+            'partialprovidernamematch': {
+                'id': 69,
+                'versions': {'1.0.0': {'published': True}}
+            },
+            'namematch': {
+                'id': 78,
+                'versions': {'1.0.0': {'published': True}}
+            }
+        },
+        'namematch': {
+            'namematch': {
+                'id': 70,
+                'versions': {'1.0.0': {'published': True}}
+            },
+            'partialprovidernamematch': {
+                'id': 71,
+                'versions': {'1.0.0': {'published': True}}
+            }
+        },
+        # This feels unlikely to happen
+        'descriptionmatch': {'testprovider': {
+            'id': 72,
+            'versions': {'1.0.0': {
+                'published': True,
+                'description': 'namematch'
+            }}
+        }},
+        'partialdescriptionmatch': {'testprovider': {
+            'id': 73,
+            'versions': {'1.0.0': {
+                'published': True,
+                'description': 'partialnamematch'
+            }}
+        }},
+        'olddescriptionmatch': {'testprovider': {
+            'id': 74,
+            'versions': {
+                '1.0.0': {
+                    'published': True,
+                    'description': 'namematch'
+                },
+                '1.1.0': {
+                    'published': True
+                }
+            }
+        }},
+        'ownermatch': {'testprovider': {
+            'id': 75,
+            'versions': {'1.0.0': {
+                'published': True,
+                'owner': 'namematch'
+            }}
+        }},
+        'partialownermatch': {'testprovider': {
+            'id': 76,
+            'versions': {'1.0.0': {
+                'published': True,
+                'owner': 'partialnamematch'
+            }}
+        }},
+        'oldownermatch': {'testprovider': {
+            'id': 77,
+            'versions': {
+                '1.0.0': {
+                    'published': True,
+                    'owner': 'namematch'
+                },
+                '1.1.0': {
+                    'published': True
+                }
+            }
+        }},
+    },
     'moduledetails': {
         'fullypopulated': {'testprovider': {
             'id': 56,
