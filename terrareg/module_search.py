@@ -56,23 +56,53 @@ class ModuleSearchResults(object):
 class ModuleSearch(object):
 
     @classmethod
-    def _get_search_query_filter(cls, select: sqlalchemy.sql.selectable.Select, query: str):
+    def _get_search_query_filter(cls, query: str):
         """Filter query based on wildcarded match of fields."""
 
         db = Database.get()
+        wheres = []
+        point_sum = None
         if query:
             for query_part in query.split():
-                wildcarded_query_part = '%{0}%'.format(query_part)
-                select = select.where(
+
+                wildcarded_query_part = '%{0}%'.format(query_part)               
+                point_value = sqlalchemy.cast(
+                    sqlalchemy.case(
+                            (db.module_provider.c.module.like(query_part), 20),
+                            (db.module_provider.c.namespace.like(query_part), 18),
+                            (db.module_provider.c.provider.like(query_part), 14),
+                            (db.module_version.c.description.like(query_part), 13),
+                            (db.module_version.c.owner.like(query_part), 12),
+                            (db.module_provider.c.module.like(wildcarded_query_part), 5),
+                            (db.module_version.c.description.like(wildcarded_query_part), 4),
+                            (db.module_version.c.owner.like(wildcarded_query_part), 3),
+                            (db.module_provider.c.namespace.like(wildcarded_query_part), 2),
+                        else_=0
+                    ),
+                    sqlalchemy.Integer
+                )
+                if point_sum is None:
+                    point_sum = point_value
+                else:
+                    point_sum += point_value
+                wheres.append(
                     sqlalchemy.or_(
-                        db.module_provider.c.namespace.like(wildcarded_query_part),
-                        db.module_provider.c.module.like(wildcarded_query_part),
                         db.module_provider.c.provider.like(query_part),
-                        db.module_version.c.version.like(query_part),
+                        db.module_provider.c.module.like(wildcarded_query_part),
                         db.module_version.c.description.like(wildcarded_query_part),
-                        db.module_version.c.owner.like(wildcarded_query_part)
+                        db.module_version.c.owner.like(wildcarded_query_part),
+                        db.module_provider.c.namespace.like(wildcarded_query_part)
                     )
                 )
+
+        relevance = sqlalchemy.sql.expression.label('relevance', point_sum)
+        select = db.select_module_provider_joined_latest_module_version(
+            db.module_provider,
+            db.module_version,
+            relevance
+        )
+        for where_ in wheres:
+            select = select.where(where_)
 
         # Filter search by published module versions,
         # remove beta versions
@@ -82,7 +112,10 @@ class ModuleSearch(object):
             db.module_version.c.beta == False
         ).group_by(
             db.module_provider.c.id
+        ).order_by(
+            sqlalchemy.desc(relevance)
         )
+
         return select
 
     @classmethod
@@ -104,11 +137,8 @@ class ModuleSearch(object):
         offset = 0 if offset < 0 else offset
 
         db = Database.get()
-        select = db.select_module_provider_joined_latest_module_version(
-            db.module_provider
-        )
 
-        select = cls._get_search_query_filter(select, query)
+        select = cls._get_search_query_filter(query)
 
         # If provider has been supplied, select by that
         if providers:
@@ -154,10 +184,6 @@ class ModuleSearch(object):
             db.module_provider.c.namespace,
             db.module_provider.c.module,
             db.module_provider.c.provider
-        ).order_by(
-            db.module_provider.c.namespace.asc(),
-            db.module_provider.c.module.asc(),
-            db.module_provider.c.provider.asc()
         )
 
         limited_search = select.limit(limit).offset(offset)
@@ -186,11 +212,7 @@ class ModuleSearch(object):
     def get_search_filters(cls, query):
         """Get list of search filters and filter counts."""
         db = Database.get()
-        select = db.select_module_provider_joined_latest_module_version(
-            db.module_provider
-        )
-
-        main_select = cls._get_search_query_filter(select, query)
+        main_select = cls._get_search_query_filter(query)
 
         # Remove any internal modules
         main_select = main_select.where(
