@@ -1137,7 +1137,7 @@ resource "aws_s3_bucket" "test" {
         } == expected_files
 
 
-    @pytest.mark.skipif(os.path.isfile('/usr/bin/zip'), reason="Zip must be installed on system")
+    @pytest.mark.skipif((not os.path.isfile('/usr/bin/zip')), reason="Zip must be installed on system")
     def test_upload_malicious_zip(self):
         """Test basic module upload with single depth."""
         namespace = Namespace(name='testprocessupload')
