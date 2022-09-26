@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.40.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.40.1...v2.40.2) (2022-09-26)
+
+
+### Bug Fixes
+
+* Protect against Zip file contents that contain members outside of cwd. ([ba09762](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ba09762a21415aadd8d62027d4edef006515e89c)), closes [#252](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/252)
+
 ## [2.40.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.40.0...v2.40.1) (2022-09-22)
 
 
