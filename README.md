@@ -67,6 +67,10 @@ This will set WSL2 to use the Certificate Authority File in Windows.
 Now install mkcert for Linux inside of your WSL2 instance. Once you've done this run the following command to see that mkcert is referencing the path on your C drive:
      mkcert -CAROOT
 
+After confirming the CAROOT path maps to your windows user (should look like /mnt/c/Users/YourUser/AppData/Local/mkcert) the CA Cert needs to be installed inside of WSL so that terraform recognizes your Local CA as Trusted. This can be done by running:
+
+    mkcert -install
+
 ### Generate Local Development SSL Certs
 
 Now that mkcert is installed and a Local CA has been generated it's time to generate an SSL Certificate for Traefik to use when proxying to the terrareg container. To do this run:
@@ -85,7 +89,7 @@ Make sure to change the following variables in the .env file before launching:
 
 ### Run the Stack
 
-Once mkcert has been installed & configured with a local Root CA and SSL Certificates it's time to start up the stack.
+Once mkcert has been installed & configured with a local CA and SSL Certificates it's time to start up the stack.
 
     docker-compose up -d
 
