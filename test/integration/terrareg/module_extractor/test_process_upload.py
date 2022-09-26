@@ -1137,13 +1137,13 @@ resource "aws_s3_bucket" "test" {
         } == expected_files
 
 
-    @pytest.mark.skipif(subprocess.check_call(['which', 'zip']), reason="Zip must be installed on system")
+    @pytest.mark.skipif(os.path.isfile('/usr/bin/zip'), reason="Zip must be installed on system")
     def test_upload_malicious_zip(self):
         """Test basic module upload with single depth."""
         namespace = Namespace(name='testprocessupload')
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
-        module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
+        module_version = ModuleVersion(module_provider=module_provider, version='17.0.0')
         module_version.prepare_module()
 
         # Root directory, outside of root path
