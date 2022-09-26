@@ -22,7 +22,7 @@ Provides features to aid usage and discovery of modules, providing:
 
 ## Getting started
 
-## Running with docker (Basic)
+## Running with docker
 
     # Clone the repository
     git clone https://github.com/matthewJohn/terrareg
@@ -39,7 +39,7 @@ Provides features to aid usage and discovery of modules, providing:
 
 The site can be accessed at http://localhost:5000
 
-## Running with docker (using docker-compose)
+## Running with docker-compose
 
 Using docker-compose will sping up a stack of containers including:
 
