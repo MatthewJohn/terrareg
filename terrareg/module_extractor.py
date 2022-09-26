@@ -488,6 +488,8 @@ class ApiUploadModuleExtractor(ModuleExtractor):
     def _extract_archive(self):
         """Extract uploaded archive into extract directory."""
         with zipfile.ZipFile(self.source_file, 'r') as zip_ref:
+            for name in zip_ref.namelist():
+                safe_join_paths(self.extract_directory, name)
             zip_ref.extractall(self.extract_directory)
 
     def process_upload(self):
