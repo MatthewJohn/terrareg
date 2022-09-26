@@ -22,7 +22,7 @@ Provides features to aid usage and discovery of modules, providing:
 
 ## Getting started
 
-## Running with docker
+## Running with docker (Basic)
 
     # Clone the repository
     git clone https://github.com/matthewJohn/terrareg
@@ -39,6 +39,63 @@ Provides features to aid usage and discovery of modules, providing:
 
 The site can be accessed at http://localhost:5000
 
+## Running with docker (using docker-compose)
+
+Using docker-compose will sping up a stack of containers including:
+
+* Traefik (SSL Proxy)
+* terrarreg
+* mysql
+* phpmyadmin
+
+This will let you run terrareg with an SSL certificate, allowing terraform cli to access modules while developing or testing the software.
+
+### Install mkcert
+
+mkcert can be installed on [Linux](https://github.com/FiloSottile/mkcert#linux), [MacOS](https://github.com/FiloSottile/mkcert#macos), [Windows](https://github.com/FiloSottile/mkcert#windows) & WSL (See notes below for WSL). After installing run the following command to create a new Local CA:
+
+    mkcert -install
+
+#### WSL Setup
+
+If you are using WSL2, install mkcert for Windows Then run the following in powershell:
+
+    setx CAROOT "$(mkcert -CAROOT)"; If ($Env:WSLENV -notlike "*CAROOT/up:*") { setx WSLENV "CAROOT/up:$Env:WSLENV" }
+
+This will set WSL2 to use the Certificate Authority File in Windows.
+
+Now install mkcert for Linux inside of your WSL2 instance. Once you've done this run the following command to see that mkcert is referencing the path on your C drive:
+     mkcert -CAROOT
+
+### Generate Local Development SSL Certs
+
+Now that mkcert is installed and a Local CA has been generated it's time to generate an SSL Certificate for Traefik to use when proxying to the terrareg container. To do this run:
+
+    mkdir -p certs
+    mkcert -cert-file certs/local-cert.pem -key-file certs/local-key.pem "app.localhost" "*.app.localhost" 
+
+### Container .env files
+
+You will find an EXAMPLE.env file that is used to configure the stack. Copy this to .env and adjust the configuration options as documented below. The key/value pairs in thie file are passed as Environment variables to the terrareg container.
+
+Make sure to change the following variables in the .env file before launching:
+
+* SECRET_KEY
+* ADMIN_AUTHENTICATION_TOKEN
+
+### Run the Stack
+
+Once mkcert has been installed & configured with a local Root CA and SSL Certificates it's time to start up the stack.
+
+    docker-compose up -d
+
+Wait a moment for everything to come online. You can then access the stack at the following URLs:
+
+terrareg - https://terrareg.app.localhost/
+phpmyadmin - https://phpmyadmin.app.localhost/
+traefik - https://traefik.app.localhost
+
+Because everything referencing localhost routes to 172.0.0.1 no special host file entries are required.
 
 ### Building locally and running
 
