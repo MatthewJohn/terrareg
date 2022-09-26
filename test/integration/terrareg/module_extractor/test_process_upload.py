@@ -1,8 +1,10 @@
 
 from distutils.command.upload import upload
+import shutil
 import subprocess
 import json
 import os
+from tempfile import mkdtemp
 
 from unittest import mock
 import pytest
@@ -10,9 +12,11 @@ import pytest
 import terrareg.config
 import terrareg.errors
 from terrareg.models import GitProvider, Module, ModuleProvider, ModuleVersion, Namespace
+from terrareg.module_extractor import ApiUploadModuleExtractor
 from test.integration.terrareg import TerraregIntegrationTest
 from test import client
 from test.integration.terrareg.module_extractor import UploadTestModule
+import terrareg.utils
 
 
 class TestProcessUpload(TerraregIntegrationTest):
@@ -1131,3 +1135,44 @@ resource "aws_s3_bucket" "test" {
             file.path: file.content
             for file in module_version.module_version_files
         } == expected_files
+
+
+    @pytest.mark.skipif((not os.path.isfile('/usr/bin/zip')), reason="Zip must be installed on system")
+    def test_upload_malicious_zip(self):
+        """Test basic module upload with single depth."""
+        namespace = Namespace(name='testprocessupload')
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='17.0.0')
+        module_version.prepare_module()
+
+        # Root directory, outside of root path
+        temp_directory = mkdtemp()
+        zip_source_directory = os.path.join(temp_directory, 'upload')
+        os.mkdir(zip_source_directory)
+
+        # Create secure file
+        secure_file = os.path.join(temp_directory, 'secure_file')
+        with open(secure_file, 'w'):
+            pass
+
+        subprocess.check_call(['zip', '-r', '../upload.zip', '../secure_file'], cwd=zip_source_directory)
+
+        class MockUpload:
+
+            def __init__(self, source):
+                self._source = source
+                self.filename = 'upload.zip'
+            
+            def save(self, dest):
+                shutil.copy(self._source, dest)
+
+        mock_upload = MockUpload(os.path.join(temp_directory, 'upload.zip'))
+
+        with ApiUploadModuleExtractor(upload_file=mock_upload, module_version=module_version) as me:
+
+            # Ensure the upload raises an exception due to zip member being outside
+            # the root directory
+            with pytest.raises(terrareg.utils.PathIsNotWithinBaseDirectoryError):
+                # Perform base module upload
+                me.process_upload()
