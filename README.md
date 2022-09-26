@@ -91,9 +91,9 @@ Once mkcert has been installed & configured with a local Root CA and SSL Certifi
 
 Wait a moment for everything to come online. You can then access the stack at the following URLs:
 
-terrareg - https://terrareg.app.localhost/
-phpmyadmin - https://phpmyadmin.app.localhost/
-traefik - https://traefik.app.localhost
+* terrareg - https://terrareg.app.localhost/
+* phpmyadmin - https://phpmyadmin.app.localhost/
+* traefik - https://traefik.app.localhost
 
 Because everything referencing localhost routes to 172.0.0.1 no special host file entries are required.
 
