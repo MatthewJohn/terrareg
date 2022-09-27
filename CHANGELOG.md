@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.40.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.40.2...v2.40.3) (2022-09-27)
+
+
+### Bug Fixes
+
+* Update HTML title in pages to use customised application name, rather than 'Terrareg' ([5597c7c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5597c7c8e9958db0553a794dfd5411306ec74657)), closes [#240](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/240)
+
 ## [2.40.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.40.1...v2.40.2) (2022-09-26)
 
 
