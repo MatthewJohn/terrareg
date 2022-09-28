@@ -894,7 +894,7 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
             return {'message': 'Module upload is disabled.'}, 400
 
         with Database.start_transaction():
-            namespace = Namespace(namespace)
+            namespace = Namespace.get(namespace, create=True)
             module = Module(namespace=namespace, name=name)
             # Get module provider and, optionally create, if it doesn't exist
             module_provider = ModuleProvider.get(module=module, name=provider, create=True)
@@ -930,7 +930,7 @@ class ApiModuleVersionCreate(ErrorCatchingResource):
     def _post(self, namespace, name, provider, version):
         """Handle creation of module version."""
         with Database.start_transaction():
-            namespace = Namespace(name=namespace)
+            namespace = Namespace.get(name=namespace, create=True)
             module = Module(namespace=namespace, name=name)
             # Get module provider and optionally create, if it doesn't exist
             module_provider = ModuleProvider.get(module=module, name=provider, create=True)
@@ -960,7 +960,7 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
     def _post(self, namespace, name, provider):
         """Create new version based on bitbucket hooks."""
         with Database.start_transaction():
-            namespace = Namespace(name=namespace)
+            namespace = Namespace.get(name=namespace, create=True)
             module = Module(namespace=namespace, name=name)
             # Get module provider and optionally create, if it doesn't exist
             module_provider = ModuleProvider.get(module=module, name=provider, create=True)
