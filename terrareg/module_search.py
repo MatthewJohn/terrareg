@@ -69,14 +69,14 @@ class ModuleSearch(object):
                 point_value = sqlalchemy.cast(
                     sqlalchemy.case(
                             (db.module_provider.c.module.like(query_part), 20),
-                            (db.module_provider.c.namespace.like(query_part), 18),
+                            (db.namespace.c.namespace.like(query_part), 18),
                             (db.module_provider.c.provider.like(query_part), 14),
                             (db.module_version.c.description.like(query_part), 13),
                             (db.module_version.c.owner.like(query_part), 12),
                             (db.module_provider.c.module.like(wildcarded_query_part), 5),
                             (db.module_version.c.description.like(wildcarded_query_part), 4),
                             (db.module_version.c.owner.like(wildcarded_query_part), 3),
-                            (db.module_provider.c.namespace.like(wildcarded_query_part), 2),
+                            (db.namespace.c.namespace.like(wildcarded_query_part), 2),
                         else_=0
                     ),
                     sqlalchemy.Integer
@@ -91,7 +91,7 @@ class ModuleSearch(object):
                         db.module_provider.c.module.like(wildcarded_query_part),
                         db.module_version.c.description.like(wildcarded_query_part),
                         db.module_version.c.owner.like(wildcarded_query_part),
-                        db.module_provider.c.namespace.like(wildcarded_query_part)
+                        db.namespace.c.namespace.like(wildcarded_query_part)
                     )
                 )
 
@@ -99,6 +99,7 @@ class ModuleSearch(object):
         select = db.select_module_provider_joined_latest_module_version(
             db.module_provider,
             db.module_version,
+            db.namespace,
             relevance
         )
         for where_ in wheres:
@@ -149,7 +150,7 @@ class ModuleSearch(object):
         # If namespace has been supplied, select by that
         if namespaces:
             select = select.where(
-                db.module_provider.c.namespace.in_(namespaces)
+                db.namespace.c.namespace.in_(namespaces)
             )
 
         # If namespace has been supplied, select by that
@@ -173,15 +174,15 @@ class ModuleSearch(object):
         if namespace_trust_filters is not NamespaceTrustFilter.UNSPECIFIED:
             or_query = []
             if NamespaceTrustFilter.TRUSTED_NAMESPACES in namespace_trust_filters:
-                or_query.append(db.module_provider.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES)))
+                or_query.append(db.namespace.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES)))
             if NamespaceTrustFilter.CONTRIBUTED in namespace_trust_filters:
-                or_query.append(~db.module_provider.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES)))
+                or_query.append(~db.namespace.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES)))
             select = select.where(sqlalchemy.or_(*or_query))
 
 
         # Group by and order by namespace, module and provider
         select = select.group_by(
-            db.module_provider.c.namespace,
+            db.namespace.c.namespace,
             db.module_provider.c.module,
             db.module_provider.c.provider
         )
@@ -235,7 +236,7 @@ class ModuleSearch(object):
                     [sqlalchemy.func.count().label('count')]
                 ).select_from(
                     main_select.where(
-                        db.module_provider.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES))
+                        db.namespace.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES))
                     ).subquery()
                 )
             ).fetchone()['count']
@@ -245,13 +246,13 @@ class ModuleSearch(object):
                     [sqlalchemy.func.count().label('count')]
                 ).select_from(
                     main_select.where(
-                        ~db.module_provider.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES))
+                        ~db.namespace.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES))
                     ).subquery()
                 )
             ).fetchone()['count']
 
             provider_subquery = main_select.group_by(
-                db.module_provider.c.namespace,
+                db.namespace.c.namespace,
                 db.module_provider.c.module,
                 db.module_provider.c.provider
             ).subquery()
@@ -264,7 +265,7 @@ class ModuleSearch(object):
             )
 
             namespace_subquery = main_select.group_by(
-                db.module_provider.c.namespace,
+                db.namespace.c.namespace,
                 db.module_provider.c.module,
                 db.module_provider.c.provider
             ).subquery()
@@ -296,7 +297,8 @@ class ModuleSearch(object):
         db = Database.get()
         select = db.select_module_provider_joined_latest_module_version(
             db.module_version,
-            db.module_provider
+            db.module_provider,
+            db.namespace
         ).where(
             db.module_version.c.published == True,
             db.module_version.c.beta == False,
@@ -328,7 +330,7 @@ class ModuleSearch(object):
         counts = sqlalchemy.select(
             [
                 sqlalchemy.func.count().label('download_count'),
-                db.module_provider.c.namespace,
+                db.namespace.c.namespace,
                 db.module_provider.c.module,
                 db.module_provider.c.provider
             ]
@@ -349,7 +351,7 @@ class ModuleSearch(object):
             db.module_version.c.beta == False,
             db.module_version.c.internal == False
         ).group_by(
-            db.module_provider.c.namespace,
+            db.namespace.c.id,
             db.module_provider.c.module,
             db.module_provider.c.provider
         ).subquery()
