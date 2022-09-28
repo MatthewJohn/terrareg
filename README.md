@@ -40,7 +40,9 @@ Provides features to aid usage and discovery of modules, providing:
 The site can be accessed at http://localhost:5000
 
 
-## Running with docker-compose (Development)
+## Running with docker-compose for Development
+
+A docker-compose file is avaiable to simplify launching terrareg for local testing and development. This will let you run terrareg with an SSL certificate, allowing terraform cli to access modules while developing or testing the software. In addition, the root folder is mounted in the container allowing for rapid development and testing without rebuilding the container.
 
 Using docker-compose will spin up a stack of containers including:
 
@@ -51,8 +53,6 @@ Using docker-compose will spin up a stack of containers including:
   * phpmyadmin
 
 __*NOTE: Traefik requires exposing the docker socket to thhe container. Please see [here](https://doc.traefik.io/traefik/providers/docker/#docker-api-access) for more information. This implementation utilizes [docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy) to limit the exposure*__
-
-This will let you run terrareg with an SSL certificate, allowing terraform cli to access modules while developing or testing the software. In addition, the root folder is mounted in the container allowing for rapid development and testing without rebuilding the container.
 
 ### Install mkcert
 
@@ -112,10 +112,6 @@ You can access the stack at the following URLs:
   * traefik - https://traefik.app.localhost
 
 Because everything referencing localhost routes to 172.0.0.1 no special host file entries are required.
-
-## Running with docker-compose (Production Example)
-
-Coming Soon...
 
 ### Building locally and running
 
