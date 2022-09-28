@@ -175,10 +175,24 @@ class Database():
             sqlalchemy.Column('browse_url_template', sqlalchemy.String(URL_COLUMN_SIZE))
         )
 
+        self._namespace = sqlalchemy.Table(
+            'namespace', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE))
+        )
+
         self._module_provider = sqlalchemy.Table(
             'module_provider', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
-            sqlalchemy.Column('namespace', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column(
+                'namespace_id',
+                sqlalchemy.ForeignKey(
+                    'namespace.id',
+                    name='fk_module_provider_namespace_id_namespace_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            ),
             sqlalchemy.Column('module', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('provider', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('repo_base_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
