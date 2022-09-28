@@ -243,6 +243,40 @@ class GitProvider:
 
 class Namespace(object):
 
+    @classmethod
+    def get(cls, name, create=False):
+        """Create object and ensure the object exists."""
+        obj = cls(name=name)
+
+        # If there is no row, the module provider does not exist
+        if obj._get_db_row() is None:
+
+            # If set to create and auto module-provider creation
+            # is enabled in config, create the module provider
+            if create and terrareg.config.Config().AUTO_CREATE_NAMESPACE:
+                cls.create(name=name)
+
+                return obj
+
+            # If not creating, return None
+            return None
+
+        # Otherwise, return object
+        return obj
+
+    @classmethod
+    def create(cls, name):
+        """Create instance of object in database."""
+        # Create namespace
+        db = Database.get()
+        module_provider_insert = db.namespace.insert().values(
+            namespace=name
+        )
+        with db.get_connection() as conn:
+            conn.execute(module_provider_insert)
+
+        return cls(name=name)
+
     @staticmethod
     def get_total_count():
         """Get total number of namespaces."""
@@ -356,10 +390,30 @@ class Namespace(object):
         if not re.match(r'^[0-9a-zA-Z][0-9a-zA-Z-_]+[0-9A-Za-z]$', name):
             raise InvalidNamespaceNameError('Namespace name is invalid')
 
+    @property
+    def pk(self):
+        """Return database ID of module provider."""
+        return self._get_db_row()['id']
+
     def __init__(self, name: str):
         """Validate name and store member variables"""
         self._validate_name(name)
         self._name = name
+        self._cache_db_row = None
+
+    def _get_db_row(self):
+        """Return database row for namespace."""
+        if self._cache_db_row is None:
+            db = Database.get()
+            select = db.namespace.select(
+            ).where(
+                db.namespace.c.namespace == self._name
+            )
+            with db.get_connection() as conn:
+                res = conn.execute(select)
+                self._cache_db_row = res.fetchone()
+
+        return self._cache_db_row
 
     def get_view_url(self):
         """Return view URL"""
