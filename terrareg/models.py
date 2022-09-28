@@ -731,7 +731,7 @@ class ModuleProvider(object):
             db.module_version.c.module_provider_id==db.module_provider.c.id
         ).join(
             db.namespace,
-            db.module_provider.c.namespace_id==db.namespace.id
+            db.module_provider.c.namespace_id==db.namespace.c.id
         )
         if only_published:
             counts = counts.where(

@@ -54,10 +54,11 @@ class AnalyticsEngine:
         ).join(
             db.module_provider,
             db.module_version.c.module_provider_id == db.module_provider.c.id
+        ).join(
+            db.namespace,
+            db.module_provider.c.namespace_id == db.namespace.c.id
         ).where(
-            db.module_provider.c.namespace == module_provider._module._namespace.name,
-            db.module_provider.c.module == module_provider._module.name,
-            db.module_provider.c.provider == module_provider.name
+            db.module_provider.c.id == module_provider._module.pk
         )
 
     @staticmethod
@@ -135,7 +136,7 @@ class AnalyticsEngine:
         # Initial query to select all analytics joined to module version and module provider
         select = sqlalchemy.select(
             db.module_provider.c.id,
-            db.module_provider.c.namespace,
+            db.namespace.c.namespace,
             db.module_provider.c.module,
             db.module_provider.c.provider,
             db.analytics.c.analytics_token
@@ -147,6 +148,9 @@ class AnalyticsEngine:
         ).join(
             db.module_provider,
             db.module_version.c.module_provider_id == db.module_provider.c.id
+        ).join(
+            db.namespace,
+            db.module_provider.c.namespace_id==db.namespace.c.id
         ).where(
             # Filter unpublished and beta versions
             db.module_version.c.published == True,
