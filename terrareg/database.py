@@ -45,6 +45,7 @@ class Database():
     def __init__(self):
         """Setup member variables."""
         self._git_provider = None
+        self._namespace = None
         self._module_provider = None
         self._module_details = None
         self._module_version = None
@@ -68,6 +69,13 @@ class Database():
         if self._git_provider is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._git_provider
+
+    @property
+    def namespace(self):
+        """Return namespace table."""
+        if self._namespace is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._namespace
 
     @property
     def module_provider(self):
@@ -344,7 +352,9 @@ class Database():
         return sqlalchemy.select(
             *select_args
         ).select_from(self.module_version).join(
-            self.module_provider, self.module_version.c.module_provider_id == self.module_provider.c.id
+            self.module_provider, self.module_version.c.module_provider_id==self.module_provider.c.id
+        ).join(
+            self.namespace, self.module_provider.c.namespace_id==self.namespace.c.id
         )
 
     def select_module_provider_joined_latest_module_version(self, *select_args):
@@ -352,7 +362,9 @@ class Database():
         return sqlalchemy.select(
             *select_args
         ).select_from(self.module_provider).join(
-            self.module_version, self.module_provider.c.latest_version_id == self.module_version.c.id
+            self.module_version, self.module_provider.c.latest_version_id==self.module_version.c.id
+        ).join(
+            self.namespace, self.module_provider.c.namespace_id==self.namespace.c.id
         )
 
     @classmethod
