@@ -39,18 +39,24 @@ Provides features to aid usage and discovery of modules, providing:
 
 The site can be accessed at http://localhost:5000
 
-## Running with docker-compose
 
-Using docker-compose will sping up a stack of containers including:
+## Running with docker-compose (Development)
 
-* Traefik (SSL Proxy)
-* terrarreg
-* mysql
-* phpmyadmin
+Using docker-compose will spin up a stack of containers including:
 
-This will let you run terrareg with an SSL certificate, allowing terraform cli to access modules while developing or testing the software.
+  * Traefik
+  * docker-socket-proxy
+  * terrarreg
+  * mysql
+  * phpmyadmin
+
+__*NOTE: Traefik requires exposing the docker socket to thhe container. Please see [here](https://doc.traefik.io/traefik/providers/docker/#docker-api-access) for more information. This implementation utilizes [docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy) to limit the exposure*__
+
+This will let you run terrareg with an SSL certificate, allowing terraform cli to access modules while developing or testing the software. In addition, the root folder is mounted in the container allowing for rapid development and testing without rebuilding the container.
 
 ### Install mkcert
+
+mkcert is used to create a local CA for generating self signed SSL Certificates that are automatically trusted by your local system. If you wish to manually generate the SSL Certificates and add them to your system and browser trust stores you can skip this.
 
 mkcert can be installed on [Linux](https://github.com/FiloSottile/mkcert#linux), [MacOS](https://github.com/FiloSottile/mkcert#macos), [Windows](https://github.com/FiloSottile/mkcert#windows) & WSL (See notes below for WSL). After installing run the following command to create a new Local CA:
 
@@ -71,6 +77,8 @@ After confirming the CAROOT path maps to your windows user (should look like /mn
 
     mkcert -install
 
+Once this has been completed all remaining commands should be run inside of WSL.
+
 ### Generate Local Development SSL Certs
 
 Now that mkcert is installed and a Local CA has been generated it's time to generate an SSL Certificate for Traefik to use when proxying to the terrareg container. To do this run:
@@ -87,19 +95,27 @@ Make sure to change the following variables in the .env file before launching:
 * SECRET_KEY
 * ADMIN_AUTHENTICATION_TOKEN
 
+If you wish to mount a folder containing your ssh keys into the container see the Volumes section for terrareg in _docker-compose.yml_ for an example.
+
 ### Run the Stack
 
 Once mkcert has been installed & configured with a local CA and SSL Certificates it's time to start up the stack.
 
     docker-compose up -d
 
-Wait a moment for everything to come online. You can then access the stack at the following URLs:
+Wait a moment for everything to come online. Terrareg will become available after MySQL comes online.
 
-* terrareg - https://terrareg.app.localhost/
-* phpmyadmin - https://phpmyadmin.app.localhost/
-* traefik - https://traefik.app.localhost
+You can access the stack at the following URLs:
+
+  * terrareg - https://terrareg.app.localhost/
+  * phpmyadmin - https://phpmyadmin.app.localhost/
+  * traefik - https://traefik.app.localhost
 
 Because everything referencing localhost routes to 172.0.0.1 no special host file entries are required.
+
+## Running with docker-compose (Production Example)
+
+Coming Soon...
 
 ### Building locally and running
 
@@ -129,6 +145,7 @@ Because everything referencing localhost routes to 172.0.0.1 no special host fil
     export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex())')
     
     # Obtain terraform-docs, tfsec and infracost
+    mkdir bin
     export PATH=$PATH:`pwd`/bin
     if [ "$(uname -m)" == "aarch64" ]; then arch=arm64; else arch=amd64; fi
     wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-linux-${arch}.tar.gz && tar -zxvf terraform-docs-v0.16.0-linux-${arch}.tar.gz terraform-docs && chmod +x terraform-docs && mv terraform-docs ./bin/ && rm terraform-docs-v0.16.0-linux-${arch}.tar.gz
