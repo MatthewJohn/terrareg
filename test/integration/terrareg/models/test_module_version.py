@@ -52,7 +52,7 @@ class TestModuleVersion(TerraregIntegrationTest):
 
     def test_create_db_row(self):
         """Test creating DB row"""
-        namespace = Namespace(name='testcreation')
+        namespace = Namespace.get(name='testcreation', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='testprovider', create=True)
         module_provider_row = module_provider._get_db_row()
@@ -83,7 +83,7 @@ class TestModuleVersion(TerraregIntegrationTest):
 
     def test_create_beta_version(self):
         """Test creating DB row for beta version"""
-        namespace = Namespace(name='testcreation')
+        namespace = Namespace.get(name='testcreation', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='testprovider', create=True)
         module_provider_row = module_provider._get_db_row()
@@ -118,9 +118,14 @@ class TestModuleVersion(TerraregIntegrationTest):
         db = Database.get()
 
         with db.get_engine().connect() as conn:
+            conn.execute(db.namespace.insert().values(
+                id=9999,
+                namespace='testcreationunique'
+            ))
+
             conn.execute(db.module_provider.insert().values(
                 id=10000,
-                namespace='testcreation',
+                namespace_id=9999,
                 module='test-module',
                 provider='testprovider'
             ))
@@ -167,9 +172,11 @@ class TestModuleVersion(TerraregIntegrationTest):
                 environment='test'
             ))
 
-        namespace = Namespace(name='testcreation')
+        namespace = Namespace.get(name='testcreationunique')
+        assert namespace is not None
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='testprovider')
+        assert module_provider is not None
         module_provider_row = module_provider._get_db_row()
 
         module_version = ModuleVersion(module_provider=module_provider, version='1.1.0')
@@ -233,6 +240,11 @@ class TestModuleVersion(TerraregIntegrationTest):
             assert analytics_res[0]['parent_module_version'] == new_db_row['id']
             assert analytics_res[0]['environment'] == 'test'
 
+            # Ensure namespace still exists
+            namespace = Namespace.get('testcreationunique')
+            assert namespace is not None
+            assert namespace.pk == 9999
+
 
     @pytest.mark.parametrize('template,version,expected_string', [
         ('= {major}.{minor}.{patch}', '1.5.0', '= 1.5.0'),
@@ -247,7 +259,7 @@ class TestModuleVersion(TerraregIntegrationTest):
     def test_get_terraform_example_version_string(self, template, version, expected_string):
         """Test get_terraform_example_version_string method"""
         with unittest.mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', template):
-            namespace = Namespace(name='test')
+            namespace = Namespace.get(name='test', create=True)
             module = Module(namespace=namespace, name='test')
             module_provider = ModuleProvider.get(module=module, name='test', create=True)
             module_version = ModuleVersion(module_provider=module_provider, version=version)
