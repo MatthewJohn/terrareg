@@ -292,7 +292,7 @@ class Config:
 
         If disabled, namespaces must be created using the namespace create endpoint (or via web UI)
         """
-        return self.convert_boolean(os.environ.get('AUTO_CREATE_NAMESPACE'), 'True')
+        return self.convert_boolean(os.environ.get('AUTO_CREATE_NAMESPACE', 'True'))
 
     @property
     def MODULES_DIRECTORY(self):

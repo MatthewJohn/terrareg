@@ -918,9 +918,7 @@ class ModuleProvider(object):
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
         return statement.where(
-            db.module_provider.c.namespace == self._module._namespace.name,
-            db.module_provider.c.module == self._module.name,
-            db.module_provider.c.provider == self.name
+            db.module_provider.c.id==self.pk
         )
 
     def _get_db_row(self):
