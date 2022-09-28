@@ -2,6 +2,18 @@ version: '3.9'
 
 services:
 
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: "${DOCKER_NAME}_socket-proxy"
+    hostname: docker-socket-proxy
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      CONTAINERS: 1
+    networks:
+      - dockerProxy
+      
   traefik:
     image: traefik:v2.8
     restart: always
@@ -17,9 +29,12 @@ services:
       # Define Traefik entry points to port [80] for http and port [443] for https.
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
+    depends_on:
+      - socket-proxy
     networks:
-      # Define the network on which traefik is going to operate.
+      - dockerProxy
       - web
+      - default
     ports:
       # Open traefik http [80] and https [443] ports.
       - '80:80'
@@ -51,34 +66,34 @@ services:
       - "traefik.http.routers.${DOCKER_NAME}_app.service=${DOCKER_NAME}_app"
     depends_on:
       - mysql
-    # environment:
-    #   - SAML2_PRIVATE_KEY
-    #   - SAML2_PUBLIC_KEY
+      - traefik
     env_file:
       - ./.env
     volumes:
-      - terrareg:/app/data
-      - ./keys:/app/keys
-      - ~/.ssh/:/root/.ssh/
+      - ./:/app
+      # - ~/.ssh/:/root/.ssh/:ro
     networks:
       web:
+    healthcheck:
+      test: curl --fail http://localhost:5000 || exit 1
+      interval: 5s
+      retries: 30
+      start_period: 30s
+      timeout: 10s
 
   mysql:
     container_name: "${DOCKER_NAME}_mysql"
     restart: unless-stopped
     image: docker.io/bitnami/mysql:8.0
-    # ports:
-    #   - '3306:3306'
     volumes:
       - 'mysql:/bitnami/mysql/data'
     env_file:
       - ./.env
     healthcheck:
       test: ['CMD', '/opt/bitnami/scripts/mysql/healthcheck.sh']
-      interval: 15s
+      interval: 5s
       timeout: 5s
-      retries: 6
-
+      retries: 10
     networks:
       web:
 
@@ -88,6 +103,7 @@ services:
     image: docker.io/bitnami/phpmyadmin:5
     depends_on:
       - mysql
+      - traefik
     environment:
       - DATABASE_HOST=mysql
     labels:
@@ -98,7 +114,6 @@ services:
       - "traefik.http.routers.${DOCKER_NAME}_phpmyadmin.service=${DOCKER_NAME}_phpmyadmin"
     networks:
       web:
-      
 
 volumes:
   terrareg:
@@ -109,5 +124,10 @@ volumes:
     name: "${DOCKER_NAME}_mysql"
     
 networks:
-  web:
-    external: true
+  web: 
+    name: "${DOCKER_NAME}_web"
+  dockerProxy:
+    name: "${DOCKER_NAME}_docker-proxy"
+  default:
+    name: "${DOCKER_NAME}_default"
+    driver: bridge

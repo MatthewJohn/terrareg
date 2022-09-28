@@ -7,7 +7,7 @@ api:
 
 providers:
   docker:
-    endpoint: unix:///var/run/docker.sock
+    endpoint: tcp://docker-socket-proxy:2375
     watch: true
     exposedByDefault: false
 
