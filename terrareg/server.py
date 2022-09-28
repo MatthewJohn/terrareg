@@ -994,6 +994,7 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
 
             imported_versions = {}
             error = False
+            imported_version = False
 
             for change in bitbucket_data['changes']:
 
@@ -1028,13 +1029,14 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
                 module_version = ModuleVersion(module_provider=module_provider, version=version)
 
                 # Perform import from git
+                savepoint = transaction_context.connection.begin_nested()
                 try:
                     module_version.prepare_module()
                     with GitModuleExtractor(module_version=module_version) as me:
                         me.process_upload()
                 except TerraregError as exc:
                     # Roll back the transaction for this module version
-                    transaction_context.transaction.rollback()
+                    savepoint.rollback()
 
                     imported_versions[version] = {
                         'status': 'Failed',
@@ -1042,10 +1044,19 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
                     }
                 else:
                     # Commit the transaction for this version
-                    transaction_context.transaction.commit()
+                    savepoint.commit()
                     imported_versions[version] = {
                         'status': 'Success'
                     }
+
+                    # Mark as having imported at least one version
+                    imported_version = True
+
+            # If no imported version has been sucessfully imported,
+            # rollback entire transaction, avoiding the creation
+            # of a module version, if it was being created
+            if not imported_version:
+                transaction_context.transaction.rollback()
 
             if error:
                 return {
