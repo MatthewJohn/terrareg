@@ -30,12 +30,12 @@ class TestHomepage(SeleniumTest):
         # Ensure title is injected correctly
         assert self.selenium_instance.find_element(By.ID, 'title').text == 'unittest application name'
 
-        assert self.selenium_instance.title == 'Home - Terrareg'
+        assert self.selenium_instance.title == 'Home - unittest application name'
 
     @pytest.mark.parametrize('element,count', [
-        ('namespace', 16),
-        ('module', 49),
-        ('version', 76),
+        ('namespace', 17),
+        ('module', 59),
+        ('version', 88),
         ('download', 2005)
     ])
     def test_counts(self, element, count):

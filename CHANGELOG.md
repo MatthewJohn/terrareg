@@ -1,5 +1,40 @@
 # Changelog
 
+## [2.40.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.40.2...v2.40.3) (2022-09-27)
+
+
+### Bug Fixes
+
+* Update HTML title in pages to use customised application name, rather than 'Terrareg' ([5597c7c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5597c7c8e9958db0553a794dfd5411306ec74657)), closes [#240](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/240)
+
+## [2.40.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.40.1...v2.40.2) (2022-09-26)
+
+
+### Bug Fixes
+
+* Protect against Zip file contents that contain members outside of cwd. ([ba09762](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ba09762a21415aadd8d62027d4edef006515e89c)), closes [#252](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/252)
+
+## [2.40.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.40.0...v2.40.1) (2022-09-22)
+
+
+### Bug Fixes
+
+* **ui:** Remove icon from yearly cost tag ([f7c3b0d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f7c3b0d3d3ae013722407260253327a4e33607c7)), closes [#235](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/235)
+
+# [2.40.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.39.2...v2.40.0) (2022-09-22)
+
+
+### Features
+
+* Order module search results by relevancy. ([fd9572e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fd9572edc4033c6ddf18948b07ef36dbc45a9a55)), closes [#241](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/241)
+
+## [2.39.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.39.1...v2.39.2) (2022-09-22)
+
+
+### Bug Fixes
+
+* **ui:** Update icon used for monthly example cost to money bill, rather than dollar ([2f15f37](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2f15f378de43f655e1589fe7a557a40dee04617c)), closes [#235](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/235)
+
 ## [2.39.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.39.0...v2.39.1) (2022-09-20)
 
 
