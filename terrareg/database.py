@@ -178,7 +178,7 @@ class Database():
         self._namespace = sqlalchemy.Table(
             'namespace', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
-            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE))
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False)
         )
 
         self._module_provider = sqlalchemy.Table(
