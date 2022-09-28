@@ -389,8 +389,11 @@ class Namespace(object):
 
     @property
     def pk(self):
-        """Return database ID of module provider."""
-        return self._get_db_row()['id']
+        """Return database ID of namespace."""
+        db_row = self._get_db_row()
+        if not db_row:
+            return None
+        return db_row['id']
 
     def __init__(self, name: str):
         """Validate name and store member variables"""
