@@ -300,7 +300,7 @@ class TestInitialSetup(SeleniumTest):
             self._test_create_module_step()
 
             # Create module provider
-            namespace = Namespace(name='unittestnamespace')
+            namespace = Namespace.get(name='unittestnamespace', create=True)
             module = Module(namespace=namespace, name='setupmodulename')
             module_provider = ModuleProvider.get(module=module, name='setupprovider', create=True)
 
