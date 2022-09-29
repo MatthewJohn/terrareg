@@ -160,26 +160,26 @@ class TestModuleProvider(TerraregIntegrationTest):
 
     def test_get_module_provider_existing(self):
         """Attempt to get existing module provider"""
-        namespace = Namespace.get(name='genericmodules', create=True)
+        namespace = Namespace.get(name='genericmodules')
         module = Module(namespace=namespace, name='modulename')
         module_provider = ModuleProvider.get(module=module, name='providername')
         assert module_provider is not None
         row = module_provider._get_db_row()
         assert row['id'] == 48
-        assert row['namespace'] == 'genericmodules'
+        assert row['namespace_id'] == namespace.pk
         assert row['module'] == 'modulename'
         assert row['provider'] == 'providername'
 
     def test_get_module_provider_non_existent(self):
         """Attempt to get non-existent module provider"""
-        namespace = Namespace.get(name='genericmodules', create=True)
+        namespace = Namespace.get(name='genericmodules')
         module = Module(namespace=namespace, name='modulename')
         module_provider = ModuleProvider.get(module=module, name='doesnotexist')
         assert module_provider is None
 
     def test_get_module_provider_with_create(self):
         """Attempt to get non-existent module provider with create"""
-        namespace = Namespace.get(name='genericmodules', create=True)
+        namespace = Namespace.get(name='genericmodules')
         module = Module(namespace=namespace, name='modulename')
         with mock.patch('terrareg.config.Config.AUTO_CREATE_MODULE_PROVIDER', True):
             module_provider = ModuleProvider.get(module=module, name='doesnotexistgetcreate', create=True)
@@ -188,7 +188,7 @@ class TestModuleProvider(TerraregIntegrationTest):
 
     def test_get_module_provider_with_create_auto_create_disabled(self):
         """Attempt to get non-existent module provider with auto-creation disabled"""
-        namespace = Namespace.get(name='genericmodules', create=True)
+        namespace = Namespace.get(name='genericmodules')
         module = Module(namespace=namespace, name='modulename')
         with mock.patch('terrareg.config.Config.AUTO_CREATE_MODULE_PROVIDER', False):
             module_provider = ModuleProvider.get(module=module, name='doesnotexist', create=True)
@@ -196,7 +196,7 @@ class TestModuleProvider(TerraregIntegrationTest):
 
     def test_get_module_provider_with_create_existing(self):
         """Attempt to get non-existent module provider with create"""
-        namespace = Namespace.get(name='genericmodules', create=True)
+        namespace = Namespace.get(name='genericmodules')
         module = Module(namespace=namespace, name='modulename')
         with mock.patch('terrareg.config.Config.AUTO_CREATE_MODULE_PROVIDER', True):
             module_provider = ModuleProvider.get(module=module, name='providername', create=True)
@@ -205,7 +205,7 @@ class TestModuleProvider(TerraregIntegrationTest):
 
     def test_get_module_provider_with_create_auto_create_disabled_existing(self):
         """Attempt to get non-existent module provider with auto-creation disabled"""
-        namespace = Namespace.get(name='genericmodules', create=True)
+        namespace = Namespace.get(name='genericmodules')
         module = Module(namespace=namespace, name='modulename')
         with mock.patch('terrareg.config.Config.AUTO_CREATE_MODULE_PROVIDER', False):
             module_provider = ModuleProvider.get(module=module, name='providername', create=True)
@@ -234,7 +234,7 @@ class TestModuleProvider(TerraregIntegrationTest):
     def test_delete(self):
         """Test deletion of module version."""
         existing_module_provider_count = ModuleProvider.get_total_count()
-        namespace = Namespace.get(name='testnamespace', create=True)
+        namespace = Namespace.get(name='testnamespace')
         module = Module(namespace=namespace, name='to-delete')
 
         # Create test module provider
