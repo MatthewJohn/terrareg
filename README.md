@@ -503,6 +503,19 @@ terraform projects.
 Default: `my-tf-application`
 
 
+### GIT_CLONE_TIMEOUT
+
+
+Timeout for git clone commands in seconds.
+
+Leave empty to disable timeout for clone.
+
+Warning - if a git clone is performed without a timeout set, the request may never complete and could leave locks on the database, requiring an application restart.
+
+
+Default: `300`
+
+
 ### GIT_PROVIDER_CONFIG
 
 
