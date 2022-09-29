@@ -68,6 +68,13 @@ async function loadSetupPage(overrideHttpsCheck = false) {
         setProgress(40);
 
         // Check if module has been created
+        if (! setupData.namespace_created) {
+            toggleSetupCard(getSetupCardByName('create-namespace'));
+            return;
+        }
+        setProgress(50);
+
+        // Check if module has been created
         if (! setupData.module_created) {
             toggleSetupCard(getSetupCardByName('create-module'));
             return;

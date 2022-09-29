@@ -77,11 +77,28 @@
             </div>
         </div>
 
+        <div id="setup-create-namespace" class="card initial-setup-card">
+            <header class="card-header" onclick="onSetupCardHeaderClick(event)">
+                <p class="card-header-title">
+                    3. Create a namespace
+                </p>
+                <button class="card-header-icon" aria-label="more options">
+                    <span class="icon">
+                        <i class="fas fa-angle-down" aria-hidden="true"></i>
+                    </span>
+                </button>
+            </header>
+            <div class="card-content">
+                <div class="content">
+                    Go to the <a href="/create-namespace">create namespace page</a> and fill out the details for the namespace.<br /><br />
+                </div>
+            </div>
+        </div>
 
         <div id="setup-create-module" class="card initial-setup-card">
             <header class="card-header" onclick="onSetupCardHeaderClick(event)">
                 <p class="card-header-title">
-                    3. Create a module
+                    4. Create a module
                 </p>
                 <button class="card-header-icon" aria-label="more options">
                     <span class="icon">
@@ -99,7 +116,7 @@
         <div id="setup-index-git" class="card initial-setup-card">
             <header class="card-header" onclick="onSetupCardHeaderClick(event)">
                 <p class="card-header-title">
-                    4a. Index a module version from Git
+                    5a. Index a module version from Git
                 </p>
                 <button class="card-header-icon" aria-label="more options">
                     <span class="icon">
@@ -122,7 +139,7 @@
         <div id="setup-index-upload" class="card initial-setup-card">
             <header class="card-header" onclick="onSetupCardHeaderClick(event)">
                 <p class="card-header-title">
-                    4b. Upload a version of the module
+                    5b. Upload a version of the module
                 </p>
                 <button id="setup-upload-module-tab-button" class="card-header-icon" aria-label="more options">
                     <span class="icon">
@@ -168,7 +185,7 @@ curl -X POST \
         <div id="setup-secure" class="card initial-setup-card">
             <header class="card-header" onclick="onSetupCardHeaderClick(event)">
                 <p class="card-header-title">
-                    5. Secure your Terrareg instance
+                    6. Secure your Terrareg instance
                 </p>
                 <button class="card-header-icon" aria-label="more options">
                     <span class="icon">
@@ -191,7 +208,7 @@ curl -X POST \
         <div id="setup-ssl" class="card initial-setup-card">
             <header class="card-header" onclick="onSetupCardHeaderClick(event)">
                 <p class="card-header-title">
-                    6. Enable SSL
+                    7. Enable SSL
                 </p>
                 <button class="card-header-icon" aria-label="more options">
                     <span class="icon">

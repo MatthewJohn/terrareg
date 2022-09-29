@@ -839,6 +839,7 @@ class ApiTerraregInitialSetupData(ErrorCatchingResource):
                 version = versions[0]
 
         return {
+            "namespace_created": bool(namespaces),
             "module_created": bool(module_provider),
             "version_indexed": bool(version),
             "version_published": bool(version.published) if version else False,
