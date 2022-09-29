@@ -1041,6 +1041,7 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
                         'status': 'Failed',
                         'message': str(exc)
                     }
+                    error = True
                 else:
                     # Commit the transaction for this version
                     savepoint.commit()
