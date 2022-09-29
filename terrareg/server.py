@@ -962,8 +962,8 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
         with Database.start_transaction() as transaction_context:
             namespace = Namespace(name=namespace)
             module = Module(namespace=namespace, name=name)
-            # Get module provider and optionally create, if it doesn't exist
-            module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+            # Get module provider
+            module_provider = ModuleProvider.get(module=module, name=provider)
 
             # Validate signature
             if terrareg.config.Config().UPLOAD_API_KEYS:
@@ -994,7 +994,6 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
 
             imported_versions = {}
             error = False
-            imported_version = False
 
             for change in bitbucket_data['changes']:
 
@@ -1049,15 +1048,6 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
                         'status': 'Success'
                     }
 
-                    # Mark as having imported at least one version
-                    imported_version = True
-
-            # If no imported version has been sucessfully imported,
-            # rollback entire transaction, avoiding the creation
-            # of a module version, if it was being created
-            if not imported_version:
-                transaction_context.transaction.rollback()
-
             if error:
                 return {
                     'status': 'Error',
@@ -1079,11 +1069,10 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
         with Database.start_transaction() as transaction_context:
             namespace = Namespace(name=namespace)
             module = Module(namespace=namespace, name=name)
-            # Get module provider and optionally create, if it doesn't exist
+            # Get module provider
             module_provider = ModuleProvider.get(
                 module=module,
-                name=provider,
-                create=terrareg.config.Config().AUTO_CREATE_MODULE_PROVIDER)
+                name=provider)
 
             if not module_provider:
                 return self._get_404_response()
