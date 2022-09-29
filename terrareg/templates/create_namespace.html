@@ -5,7 +5,7 @@
 {% block header %}
 <script>
     function createNamespace() {
-        if (! $('#create-module-form')[0].reportValidity()) {
+        if (! $('#create-namespace-form')[0].reportValidity()) {
             return;
         }
         $.post({
@@ -47,7 +47,7 @@
         <div class="field is-vertical">
             <div id="create-error" style="display: none" class="notification is-danger">
             </div>
-            <form id="create-module-form" onsubmit="event.preventDefault(); createNamespace();">
+            <form id="create-namespace-form" onsubmit="event.preventDefault(); createNamespace();">
                 <div class="field">
                     <label class="label">Name</label>
                     <div class="control">
