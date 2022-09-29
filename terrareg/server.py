@@ -206,6 +206,9 @@ class Server(object):
             '/logout'
         )(self._logout)
         self._app.route(
+            '/create-namespace',
+        )(self._view_serve_create_namespace)
+        self._app.route(
             '/create-module'
         )(self._view_serve_create_module)
         self._app.route(
@@ -502,6 +505,11 @@ class Server(object):
             ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
 
+    def _view_serve_create_namespace(self):
+        """Provide view to create namespace."""
+        return self._render_template(
+            'create_namespace.html'
+        )
 
     def _view_serve_initial_setup(self):
         """Rendew view for initial setup."""
@@ -1501,6 +1509,10 @@ class ApiModuleProviderDownloadsSummary(ErrorCatchingResource):
 class ApiTerraregNamespaces(ErrorCatchingResource):
     """Provide interface to obtain namespaces."""
 
+    method_decorators = {
+        "post": [require_admin_authentication]
+    }
+
     def _get(self):
         """Return list of namespaces."""
         namespaces = Namespace.get_all(only_published=False)
@@ -1513,6 +1525,14 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
             for namespace in namespaces
         ]
 
+    def _post(self):
+        """Create namespace."""
+        namespace_name = request.json.get('name')
+        namespace = Namespace.create(name=namespace_name)
+        return {
+            "name": namespace.name,
+            "view_href": namespace.get_view_url()
+        }
 
 
 class ApiTerraregProviderLogos(ErrorCatchingResource):

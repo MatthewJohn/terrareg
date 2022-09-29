@@ -1,0 +1,68 @@
+{% extends 'template.html' %}
+
+{% block title %}Create Module{% endblock %}
+
+{% block header %}
+<script>
+    function createNamespace() {
+        if (! $('#create-module-form')[0].reportValidity()) {
+            return;
+        }
+        $.post({
+            url: '/v1/terrareg/namespaces',
+            data: JSON.stringify({
+                name: $('#namespace-name').val(),
+                csrf_token: '{{ csrf_token }}'
+            }),
+            contentType: 'application/json'
+        }).done((res) => {
+            window.location.href = res.view_href
+        }).fail((res) => {
+            if (res.status == 401) {
+                $('#create-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
+            } else if (res.responseJSON && res.responseJSON.message) {
+                $('#create-error').html(res.responseJSON.message);
+            } else {
+                $('#create-error').html('An unexpected error occurred');
+            }
+            $('#create-error').css('display', 'block');
+            $(window).scrollTop($('#create-error').offset().top);
+        });
+    }
+
+</script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li class="is-active"><a href="/create-namespace">Create Namespace</a></li>
+    </ul>
+</nav>
+
+<div class="columns">
+    <div class="column is-one-third is-offset-one-third">
+
+        <div class="field is-vertical">
+            <div id="create-error" style="display: none" class="notification is-danger">
+            </div>
+            <form id="create-module-form" onsubmit="event.preventDefault(); createNamespace();">
+                <div class="field">
+                    <label class="label">Name</label>
+                    <div class="control">
+                    <input required id="namespace-name" class="input" type="text" placeholder="my-team">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="control">
+                    <button class="button is-link">Create Namespace</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</nav>
+
+{% endblock %}

@@ -16,7 +16,7 @@ from terrareg.database import Database
 import terrareg.config
 from terrareg.errors import (
     InvalidModuleNameError, InvalidModuleProviderNameError,
-    InvalidVersionError, NoModuleVersionAvailableError,
+    InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError,
     RepositoryUrlDoesNotContainValidSchemeError,
     RepositoryUrlContainsInvalidSchemeError,
@@ -267,8 +267,28 @@ class Namespace(object):
     @classmethod
     def create(cls, name):
         """Create instance of object in database."""
-        # Create namespace
+        # Validate name
+        cls._validate_name(name)
+
         db = Database.get()
+
+        # Ensure namespace doesn't already exist
+        pre_existing_select = sqlalchemy.select(
+            db.namespace
+        ).select_from(
+            db.namespace
+        ).where(
+            # Use a like to use case-insentive
+            # match for pre-existing namespaces
+            db.namespace.c.namespace.like(name)
+        )
+        with db.get_connection() as conn:
+            pre_existing = conn.execute(pre_existing_select)
+
+            if pre_existing.fetchone():
+                raise NamespaceAlreadyExistsError('A namespace already exists with this name')
+
+        # Create namespace
         module_provider_insert = db.namespace.insert().values(
             namespace=name
         )
