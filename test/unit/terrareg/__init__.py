@@ -7,6 +7,7 @@ import unittest.mock
 import pytest
 
 from terrareg.database import Database
+from terrareg.errors import NamespaceAlreadyExistsError
 from terrareg.models import (
     GitProvider, Module, ModuleDetails,
     ModuleProvider, ModuleVersion, ModuleVersionFile, Namespace, Session
@@ -62,10 +63,10 @@ def setup_test_data(test_data=None):
             default_terraform_docs = '{"inputs": [], "outputs": [], "providers": [], "resources": []}'
             default_tfsec = '{"results": null}'
             for namespace in TEST_MODULE_DATA:
-                for module in TEST_MODULE_DATA[namespace]:
-                    for provider in TEST_MODULE_DATA[namespace][module]:
-                        for version in TEST_MODULE_DATA[namespace][module][provider].get('versions', {}):
-                            version_config = TEST_MODULE_DATA[namespace][module][provider]['versions'][version]
+                for module in TEST_MODULE_DATA[namespace].get('modules', {}):
+                    for provider in TEST_MODULE_DATA[namespace]['modules'][module]:
+                        for version in TEST_MODULE_DATA[namespace]['modules'][module][provider].get('versions', {}):
+                            version_config = TEST_MODULE_DATA[namespace]['modules'][module][provider]['versions'][version]
                             TEST_MODULE_DETAILS[str(TEST_MODULE_DETAILS_ITX)] = {
                                 'readme_content': Database.encode_blob(version_config.get('readme_content', default_readme)),
                                 'terraform_docs': Database.encode_blob(version_config.get('terraform_docs', default_terraform_docs)),
@@ -122,7 +123,7 @@ class MockModule(Module):
     @property
     def _unittest_data(self):
         """Return unit test data structure for namespace."""
-        return self._namespace._unittest_data[self._name] if self._name in self._namespace._unittest_data else {}
+        return self._namespace._unittest_data['modules'][self._name] if self._name in self._namespace._unittest_data['modules'] else {}
 
     def get_providers(self):
         """Return list of mocked module providers"""
@@ -241,12 +242,13 @@ class MockModuleProvider(ModuleProvider):
     @classmethod
     def create(cls, module, name):
         """Mock version of upstream mock object"""
+        global TEST_MODULE_DATA
         if not module._namespace.name in TEST_MODULE_DATA:
-            TEST_MODULE_DATA[module._namespace.name] = {}
-        if module.name not in TEST_MODULE_DATA[module._namespace.name]:
-            TEST_MODULE_DATA[module._namespace.name][module.name] = {}
-        if name not in TEST_MODULE_DATA[module._namespace.name][module.name]:
-            TEST_MODULE_DATA[module._namespace.name][module.name][name] = {
+            raise Exception('Namespace does not exist')
+        if module.name not in TEST_MODULE_DATA[module._namespace.name]['modules']:
+            TEST_MODULE_DATA[module._namespace.name]['modules'][module.name] = {}
+        if name not in TEST_MODULE_DATA[module._namespace.name]['modules'][module.name]:
+            TEST_MODULE_DATA[module._namespace.name]['modules'][module.name][name] = {
                 'id': 99,
                 'latest_version': None,
                 'versions': {},
@@ -302,6 +304,34 @@ class MockModuleProvider(ModuleProvider):
 class MockNamespace(Namespace):
     """Mocked namespace."""
 
+    @classmethod
+    def create(cls, name):
+        """Create namespace"""
+        global TEST_MODULE_DATA
+        if name in TEST_MODULE_DATA:
+            raise NamespaceAlreadyExistsError('Unittest namespace already exists')
+        TEST_MODULE_DATA[name] = {
+            'id': len(TEST_MODULE_DATA) + 1,
+            'modules': {}
+        }
+        return cls(name)
+
+    @classmethod
+    def get(cls, name, create=False):
+        global TEST_MODULE_DATA
+        if name in TEST_MODULE_DATA:
+            return cls(name)
+        elif create:
+            return cls.create(name)
+        else:
+            return None
+
+    def _get_db_row(self):
+        return {
+            'namespace': self._name,
+            'id': self._unittest_data['id']
+        }
+
     @staticmethod
     def get_total_count():
         """Get total number of namespaces."""
@@ -335,7 +365,7 @@ class MockNamespace(Namespace):
         """Return all modules for namespace."""
         return [
             MockModule(namespace=self, name=n)
-            for n in (TEST_MODULE_DATA[self._name].keys()
+            for n in (TEST_MODULE_DATA[self._name]['modules'].keys()
                       if self._name in TEST_MODULE_DATA else
                       {})
         ]
