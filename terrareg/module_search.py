@@ -342,6 +342,9 @@ class ModuleSearch(object):
         ).join(
             db.module_provider,
             db.module_provider.c.id == db.module_version.c.module_provider_id
+        ).join(
+            db.namespace,
+            db.module_provider.c.namespace_id == db.namespace.c.id
         ).where(
             db.analytics.c.timestamp >= (
                 datetime.datetime.now() -
@@ -357,7 +360,8 @@ class ModuleSearch(object):
         ).subquery()
 
         select = counts.select(
-        ).order_by(counts.c.download_count.desc()
+        ).order_by(
+            counts.c.download_count.desc()
         ).limit(1)
 
         with db.get_connection() as conn:
