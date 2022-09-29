@@ -570,8 +570,13 @@ test_data_full = {
         }},
         'bitbucketexample': {
             'testprovider': {
-                'id': 8,
+                'id': 27,
                 'repo_clone_url_template': 'ssh://git@localhost:7999/bla/test-module.git',
+                'git_tag_format': 'v{version}',
+                'versions': {}
+            },
+            'norepourl': {
+                'id': 28,
                 'git_tag_format': 'v{version}',
                 'versions': {}
             }
@@ -580,6 +585,11 @@ test_data_full = {
             'testprovider': {
                 'id': 8,
                 'repo_clone_url_template': 'ssh://git@localhost:7999/bla/test-module.git',
+                'git_tag_format': 'v{version}',
+                'versions': {}
+            },
+            'norepourl': {
+                'id': 29,
                 'git_tag_format': 'v{version}',
                 'versions': {}
             }

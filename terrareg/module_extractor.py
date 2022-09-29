@@ -528,7 +528,8 @@ class GitModuleExtractor(ModuleExtractor):
                     self.extract_directory
                 ],
                 stderr=subprocess.STDOUT,
-                env=env
+                env=env,
+                timeout=Config().GIT_CLONE_TIMEOUT
             )
         except subprocess.CalledProcessError as exc:
             error = 'Unknown error occurred during git clone'
