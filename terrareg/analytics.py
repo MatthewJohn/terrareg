@@ -58,7 +58,7 @@ class AnalyticsEngine:
             db.namespace,
             db.module_provider.c.namespace_id == db.namespace.c.id
         ).where(
-            db.module_provider.c.id == module_provider._module.pk
+            db.module_provider.c.id == module_provider.pk
         )
 
     @staticmethod
