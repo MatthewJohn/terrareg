@@ -56,6 +56,8 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
 
+            namespace = MockNamespace.create('newnamespace')
+
             res = client.post(
                 '/v1/terrareg/modules/newnamespace/newtestmodule/newprovider/create',
                 json={
