@@ -1871,7 +1871,9 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
         check_csrf_token(args.csrf_token)
 
         # Update repository URL of module version
-        namespace = Namespace(name=namespace)
+        namespace = Namespace.get(name=namespace)
+        if not namespace:
+            return {'message': 'Namespace does not exist'}, 400
         module = Module(namespace=namespace, name=name)
 
         # Check if module provider already exists
