@@ -137,10 +137,10 @@ class TestApiModuleVersionBitbucketHook(TerraregUnitTest):
                 }
             )
 
-            assert res.status_code == 200
+            assert res.status_code == 500
             assert res.json == {
-                'status': 'Success',
-                'message': 'Imported all provided tags',
+                'status': 'Error',
+                'message': 'One or more tags failed to import',
                 'tags': {
                     '6.2.0': {'status': 'Failed', 'message': 'Unittest error'}
                 }
@@ -178,10 +178,10 @@ class TestApiModuleVersionBitbucketHook(TerraregUnitTest):
                 }
             )
 
-            assert res.status_code == 200
+            assert res.status_code == 500
             assert res.json == {
-                'status': 'Success',
-                'message': 'Imported all provided tags',
+                'status': 'Error',
+                'message': 'One or more tags failed to import',
                 'tags': {
                     '6.2.0': {'status': 'Failed', 'message': 'Unittest error'}
                 }
