@@ -784,7 +784,7 @@ class ErrorCatchingResource(Resource):
 
         module_provider_obj = ModuleProvider.get(module=module_obj, name=provider, create=create)
         if module_provider_obj is None:
-            return None, None, None, ({'message': 'Module does not exist'}, 400)
+            return None, None, None, ({'message': 'Module provider does not exist'}, 400)
 
         return namespace_obj, module_obj, module_provider_obj, None
 
