@@ -1355,7 +1355,10 @@ class ApiModuleProviderDetails(ErrorCatchingResource):
         """Return list of version."""
 
         namespace, _ = Namespace.extract_analytics_token(namespace)
-        namespace = Namespace(namespace)
+        namespace = Namespace.get(namespace)
+        if not namespace:
+            return self._get_404_response()
+
         module = Module(namespace=namespace, name=name)
         module_provider = ModuleProvider(module=module, name=provider)
         module_version = module_provider.get_latest_version()
