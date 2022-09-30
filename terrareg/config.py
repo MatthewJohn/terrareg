@@ -319,6 +319,18 @@ class Config:
         return os.environ.get('EXAMPLES_DIRECTORY', 'examples')
 
     @property
+    def GIT_CLONE_TIMEOUT(self):
+        """
+        Timeout for git clone commands in seconds.
+
+        Leave empty to disable timeout for clone.
+
+        Warning - if a git clone is performed without a timeout set, the request may never complete and could leave locks on the database, requiring an application restart.
+        """
+        val = os.environ.get('GIT_CLONE_TIMEOUT', '300')
+        return None if val is None else int(val)
+
+    @property
     def GIT_PROVIDER_CONFIG(self):
         """
         Git provider config.

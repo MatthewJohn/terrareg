@@ -110,7 +110,7 @@ class TestApiModuleVersionBitbucketHook(TerraregUnitTest):
 
     @setup_test_data()
     def test_hook_with_prepare_module_exception(self, client, mocked_server_namespace_fixture):
-        """Test hook call with multiple tag changes."""
+        """Test hook call with exception thrown by prepare_module."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
                 unittest.mock.patch(
@@ -137,10 +137,10 @@ class TestApiModuleVersionBitbucketHook(TerraregUnitTest):
                 }
             )
 
-            assert res.status_code == 200
+            assert res.status_code == 500
             assert res.json == {
-                'status': 'Success',
-                'message': 'Imported all provided tags',
+                'status': 'Error',
+                'message': 'One or more tags failed to import',
                 'tags': {
                     '6.2.0': {'status': 'Failed', 'message': 'Unittest error'}
                 }
@@ -151,7 +151,7 @@ class TestApiModuleVersionBitbucketHook(TerraregUnitTest):
 
     @setup_test_data()
     def test_hook_with_extraction_exception(self, client, mocked_server_namespace_fixture):
-        """Test hook call with multiple tag changes."""
+        """Test hook call with exception during extraction."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
                 unittest.mock.patch(
@@ -178,10 +178,10 @@ class TestApiModuleVersionBitbucketHook(TerraregUnitTest):
                 }
             )
 
-            assert res.status_code == 200
+            assert res.status_code == 500
             assert res.json == {
-                'status': 'Success',
-                'message': 'Imported all provided tags',
+                'status': 'Error',
+                'message': 'One or more tags failed to import',
                 'tags': {
                     '6.2.0': {'status': 'Failed', 'message': 'Unittest error'}
                 }
