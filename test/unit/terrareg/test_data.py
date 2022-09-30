@@ -635,7 +635,7 @@ test_data_full = {
                     'versions': {'2.2.2': {'published': True}}
                 },
                 'nogittagformat': {
-                    'id': 12,
+                    'id': 30,
                     'git_provider_id': 1,
                     'versions': {}
                 },
@@ -652,5 +652,9 @@ test_data_full = {
                 }
             }
         }
+    },
+    'emptynamespace': {
+        'id': 6,
+        'modules': {}
     }
 }

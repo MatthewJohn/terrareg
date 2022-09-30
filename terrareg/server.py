@@ -1448,7 +1448,7 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
         namespace, analytics_token = Namespace.extract_analytics_token(namespace)
         namespace, module, module_provider, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
         if error:
-            return error
+            return self._get_404_response()
 
         auth_token = None
         auth_token_match = re.match(r'Bearer (.*)', request.headers.get('Authorization', ''))

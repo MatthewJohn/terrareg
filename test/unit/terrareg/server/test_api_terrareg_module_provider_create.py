@@ -88,15 +88,17 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
 
+            namespace = MockNamespace.create('newnamespace')
+
             res = client.post(
-                '/v1/terrareg/modules/newns/newm/newp/create',
+                '/v1/terrareg/modules/newnamespace/newm/newp/create',
                 json={
                     'repo_clone_url_template': 'https://unittest.com/module.git',
                     'git_tag_format': 'unitv{version}test',
                     'csrf_token': 'unittestcsrf'
                 }
             )
-            assert res.json == {'id': 'newns/newm/newp'}
+            assert res.json == {'id': 'newnamespace/newm/newp'}
             assert res.status_code == 200
 
             # Ensure required checks are called
@@ -104,3 +106,23 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
             mocked_check_admin_authentication.assert_called()
             mock_update_repo_clone_url_template.assert_called_once_with(repo_clone_url_template='https://unittest.com/module.git')
             mock_update_git_tag_format.assert_called_once_with(git_tag_format='unitv{version}test')
+
+    @setup_test_data()
+    def test_create_module_provider_with_non_existent_namespace(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
+        """Test creation of module provider with non-existent namespace."""
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
+                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf:
+
+            res = client.post(
+                '/v1/terrareg/modules/doesnotexist/newm/newp/create',
+                json={
+                    'csrf_token': 'unittestcsrf'
+                }
+            )
+            assert res.json == {'message': 'Namespace does not exist'}
+            assert res.status_code == 400
+
+            # Ensure required checks are called
+            mock_check_csrf.assert_called_once_with('unittestcsrf')
+            mocked_check_admin_authentication.assert_called()
