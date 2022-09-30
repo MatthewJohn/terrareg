@@ -8,6 +8,7 @@ import json
 import urllib.parse
 import hashlib
 from enum import Enum
+from attr import ib
 
 from flask import (
     Config, Flask, request, render_template,
@@ -773,6 +774,32 @@ class ErrorCatchingResource(Resource):
                             'or your browser doesn\'t understand how to supply the credentials required.')
         }, 401
 
+    def get_module_provider_by_names(self, namespace, name, provider, create=False):
+        """Obtain namespace, module, provider objects by name"""
+        namespace_obj = Namespace.get(namespace, create=create)
+        if namespace_obj is None:
+            return None, None, None, ({'message': 'Namespace does not exist'}, 400)
+
+        module_obj = Module(namespace=namespace_obj, name=name)
+
+        module_provider_obj = ModuleProvider.get(module=module_obj, name=provider, create=create)
+        if module_provider_obj is None:
+            return None, None, None, ({'message': 'Module does not exist'}, 400)
+
+        return namespace_obj, module_obj, module_provider_obj, None
+
+    def get_module_version_by_name(self, namespace, name, provider, version, create=False):
+        """Obtain namespace, module, provider and module version by names"""
+        namespace_obj, module_obj, module_provider_obj, error = self.get_module_provider_by_names(namespace, name, provider, create=create)
+        if error:
+            return namespace_obj, module_obj, module_provider_obj, None, error
+
+        module_version_obj = ModuleVersion.get(module_provider=module_provider_obj, version=version)
+        if module_version_obj is None:
+            return namespace_obj, module_obj, module_provider_obj, None, ({'message': 'Module version does not exist'}, 400)
+
+        return namespace_obj, module_obj, module_provider_obj, module_version_obj, None
+
 
 class ApiTerraregHealth(ErrorCatchingResource):
     """Endpoint to return 200 when healthy."""
@@ -869,10 +896,9 @@ class ApiTerraregModuleProviderIntegrations(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider):
         """Return list of integration URLs"""
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        # Get module provider and, optionally create, if it doesn't exist
-        module_provider = ModuleProvider.get(module=module, name=provider)
+        _, _ , module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+        if error:
+            return error
 
         integrations = module_provider.get_integrations()
 
@@ -903,10 +929,12 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
             return {'message': 'Module upload is disabled.'}, 400
 
         with Database.start_transaction():
-            namespace = Namespace.get(namespace, create=True)
-            module = Module(namespace=namespace, name=name)
+
             # Get module provider and, optionally create, if it doesn't exist
-            module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+            _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider, create=True)
+            if error:
+                return error
+
             module_version = ModuleVersion(module_provider=module_provider, version=version)
 
             if len(request.files) != 1:
@@ -939,14 +967,9 @@ class ApiModuleVersionCreate(ErrorCatchingResource):
     def _post(self, namespace, name, provider, version):
         """Handle creation of module version."""
         with Database.start_transaction():
-            namespace = Namespace.get(name=namespace, create=True)
-            module = Module(namespace=namespace, name=name)
-            # Get module provider and optionally create, if it doesn't exist
-            module_provider = ModuleProvider.get(module=module, name=provider, create=True)
-
-            # Ensure module provider exists
-            if not module_provider:
-                return {'message': 'Module provider does not exist'}, 400
+            _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+            if error:
+                return error[0], 400
 
             # Ensure that the module provider has a repository url configured.
             if not module_provider.get_git_clone_url():
@@ -969,10 +992,9 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
     def _post(self, namespace, name, provider):
         """Create new version based on bitbucket hooks."""
         with Database.start_transaction() as transaction_context:
-            namespace = Namespace(name=namespace, create=True)
-            module = Module(namespace=namespace, name=name)
-            # Get module provider
-            module_provider = ModuleProvider.get(module=module, name=provider)
+            _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+            if error:
+                return error
 
             # Validate signature
             if terrareg.config.Config().UPLOAD_API_KEYS:
@@ -1077,15 +1099,9 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
     def _post(self, namespace, name, provider):
         """Create, update or delete new version based on GitHub release hooks."""
         with Database.start_transaction() as transaction_context:
-            namespace = Namespace(name=namespace)
-            module = Module(namespace=namespace, name=name)
-            # Get module provider
-            module_provider = ModuleProvider.get(
-                module=module,
-                name=provider)
-
-            if not module_provider:
-                return self._get_404_response()
+            _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+            if error:
+                return error
 
             # Validate signature
             if terrareg.config.Config().UPLOAD_API_KEYS:
@@ -1364,12 +1380,9 @@ class ApiModuleProviderDetails(ErrorCatchingResource):
         """Return list of version."""
 
         namespace, _ = Namespace.extract_analytics_token(namespace)
-        namespace = Namespace.get(namespace)
-        if not namespace:
+        _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider, create=True)
+        if error:
             return self._get_404_response()
-
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
         module_version = module_provider.get_latest_version()
 
         if not module_version:
@@ -1384,12 +1397,8 @@ class ApiModuleVersionDetails(ErrorCatchingResource):
         """Return list of version."""
 
         namespace, _ = Namespace.extract_analytics_token(namespace)
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
-        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
-
-        if module_version is None:
+        _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        if error:
             return self._get_404_response()
 
         return module_version.get_api_details()
@@ -1401,9 +1410,10 @@ class ApiModuleVersions(ErrorCatchingResource):
         """Return list of version."""
 
         namespace, _ = Namespace.extract_analytics_token(namespace)
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
+        namespace, module, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+        if error:
+            return self._get_404_response()
+
         return {
             "modules": [
                 {
@@ -1436,13 +1446,9 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
     def _get(self, namespace, name, provider, version):
         """Provide download header for location to download source."""
         namespace, analytics_token = Namespace.extract_analytics_token(namespace)
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
-        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
-
-        if module_version is None:
-            return self._get_404_response()
+        namespace, module, module_provider, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        if error:
+            return error
 
         auth_token = None
         auth_token_match = re.match(r'Bearer (.*)', request.headers.get('Authorization', ''))
@@ -1492,10 +1498,10 @@ class ApiModuleVersionSourceDownload(ErrorCatchingResource):
         if not terrareg.config.Config().ALLOW_MODULE_HOSTING:
             return {'message': 'Module hosting is disbaled'}, 500
 
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
-        module_version = ModuleVersion(module_provider=module_provider, version=version)
+        _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        if error:
+            return error
+
         return send_from_directory(module_version.base_directory, module_version.archive_name_zip)
 
 
@@ -1504,11 +1510,9 @@ class ApiModuleProviderDownloadsSummary(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider):
         """Return list of download counts for module provider."""
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider.get(module=module, name=provider)
-        if module_provider is None:
-            return self._get_404_response()
+        _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+        if error:
+            return error
 
         return {
             "data": {
@@ -1639,9 +1643,9 @@ class ApiTerraregModuleProviderAnalyticsTokenVersions(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider):
         """Return list of download counts for module provider."""
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
+        _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+        if error:
+            return error
         return AnalyticsEngine.get_module_provider_token_versions(module_provider)
 
 
@@ -1650,7 +1654,9 @@ class ApiTerraregNamespaceDetails(ErrorCatchingResource):
 
     def _get(self, namespace):
         """Return custom terrareg config for namespace."""
-        namespace = Namespace(namespace)
+        namespace = Namespace.get(namespace)
+        if namespace is None:
+            return self._get_404_response()
         return namespace.get_details()
 
 
@@ -1670,7 +1676,10 @@ class ApiTerraregNamespaceModules(ErrorCatchingResource):
         )
         args = parser.parse_args()
 
-        namespace_obj = Namespace(name=namespace)
+        namespace_obj = Namespace.get(name=namespace)
+        if namespace_obj is None:
+            return self._get_404_response()
+
         module_providers = [
             module_provider
             for module in namespace_obj.get_all_modules()
@@ -1704,12 +1713,9 @@ class ApiTerraregModuleProviderDetails(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider):
         """Return details about module version."""
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider.get(module=module, name=provider)
-
-        if module_provider is None:
-            return self._get_404_response()
+        _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+        if error:
+            return error
 
         # If a version exists, obtain the details for that
         latest_version = module_provider.get_latest_version()
@@ -1725,11 +1731,9 @@ class ApiTerraregModuleVersionDetails(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version=None):
         """Return details about module version."""
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider.get(module=module, name=provider)
-        if module_provider is None:
-            return self._get_404_response()
+        _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+        if error:
+            return error
 
         if version is not None:
             module_version = ModuleVersion.get(module_provider=module_provider, version=version)
@@ -1747,10 +1751,9 @@ class ApiTerraregModuleVersionVariableTemplate(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version):
         """Return variable template."""
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
-        module_version = ModuleVersion(module_provider=module_provider, version=version)
+        _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        if error:
+            return error
         return module_version.variable_template
 
 
@@ -1759,10 +1762,9 @@ class ApiTerraregModuleVersionReadmeHtml(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version):
         """Return variable template."""
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
-        module_version = ModuleVersion(module_provider=module_provider, version=version)
+        _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        if error:
+            return error
         return module_version.get_readme_html(server_hostname=request.host)
 
 
@@ -1885,7 +1887,7 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
 
         # Update repository URL of module version
         namespace = Namespace.get(name=namespace)
-        if not namespace:
+        if namespace is None:
             return {'message': 'Namespace does not exist'}, 400
         module = Module(namespace=namespace, name=name)
 
@@ -1988,14 +1990,9 @@ class ApiTerraregModuleProviderDelete(ErrorCatchingResource):
 
         check_csrf_token(args.csrf_token)
 
-        # Update repository URL of module version
-        namespace = Namespace(name=namespace)
-        module = Module(namespace=namespace, name=name)
-
-        # Check if module provider already exists
-        module_provider = ModuleProvider.get(module=module, name=provider)
-        if module_provider is None:
-            return {'message': 'Module provider does not exist'}, 400
+        _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+        if error:
+            return error
 
         module_provider.delete()
 
@@ -2019,21 +2016,11 @@ class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
 
         check_csrf_token(args.csrf_token)
 
-        # Update repository URL of module version
-        namespace_obj = Namespace(name=namespace)
-        module = Module(namespace=namespace_obj, name=name)
+        _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        if error:
+            return error
 
-        # Check if module provider already exists
-        module_provider_obj = ModuleProvider.get(module=module, name=provider)
-        if module_provider_obj is None:
-            return {'message': 'Module provider does not exist'}, 400
-
-        # Check if module version already exists
-        version_obj = ModuleVersion.get(module_provider=module_provider_obj, version=version)
-        if version_obj is None:
-            return {'message': 'Module version does not exist'}, 400
-
-        version_obj.delete()
+        module_version.delete()
 
         return {
             'status': 'Success'
@@ -2109,13 +2096,9 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
 
         check_csrf_token(args.csrf_token)
 
-        # Update repository URL of module version
-        namespace = Namespace(name=namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider.get(module=module, name=provider)
-    
-        if not module_provider:
-            return {'message': 'Module provider does not exist'}, 400
+        _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+        if error:
+            return error
 
         # If git provider ID has been specified,
         # validate it and update attribute of module provider.
@@ -2191,16 +2174,9 @@ class ApiTerraregModuleVersionPublish(ErrorCatchingResource):
 
     def _post(self, namespace, name, provider, version):
         """Publish module."""
-        namespace = Namespace(name=namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider.get(module=module, name=provider)
-
-        if not module_provider:
-            return {'message': 'Module provider does not exist'}, 400
-
-        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
-        if not module_version:
-            return {'message': 'Module version does not exist'}, 400
+        _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        if error:
+            return error
 
         module_version.publish()
         return {
@@ -2213,16 +2189,9 @@ class ApiTerraregModuleVerisonSubmodules(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version):
         """Return list of submodules."""
-        namespace = Namespace(name=namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider.get(module=module, name=provider)
-
-        if not module_provider:
-            return {'message': 'Module provider does not exist'}, 400
-
-        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
-        if not module_version:
-            return {'message': 'Module version does not exist'}, 400
+        _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        if error:
+            return error
 
         return [
             {
@@ -2238,16 +2207,9 @@ class ApiTerraregSubmoduleDetails(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version, submodule):
         """Return details of submodule."""
-        namespace_obj = Namespace(name=namespace)
-        module_obj = Module(namespace=namespace_obj, name=name)
-        module_provider = ModuleProvider.get(module=module_obj, name=provider)
-
-        if not module_provider:
-            return {'message': 'Module provider does not exist'}, 400
-
-        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
-        if not module_version:
-            return {'message': 'Module version does not exist'}, 400
+        _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        if error:
+            return error
 
         submodule_obj = Submodule.get(module_version=module_version, module_path=submodule)
 
@@ -2259,16 +2221,9 @@ class ApiTerraregSubmoduleReadmeHtml(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version, submodule):
         """Return HTML formatted README of submodule."""
-        namespace_obj = Namespace(name=namespace)
-        module_obj = Module(namespace=namespace_obj, name=name)
-        module_provider = ModuleProvider.get(module=module_obj, name=provider)
-
-        if not module_provider:
-            return {'message': 'Module provider does not exist'}, 400
-
-        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
-        if not module_version:
-            return {'message': 'Module version does not exist'}, 400
+        _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        if error:
+            return error
 
         submodule_obj = Submodule.get(module_version=module_version, module_path=submodule)
 
@@ -2280,16 +2235,9 @@ class ApiTerraregModuleVersionExamples(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version):
         """Return list of examples."""
-        namespace = Namespace(name=namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider.get(module=module, name=provider)
-
-        if not module_provider:
-            return {'message': 'Module provider does not exist'}, 400
-
-        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
-        if not module_version:
-            return {'message': 'Module version does not exist'}, 400
+        _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        if error:
+            return error
 
         return [
             {
@@ -2305,16 +2253,9 @@ class ApiTerraregExampleDetails(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version, example):
         """Return details of example."""
-        namespace_obj = Namespace(name=namespace)
-        module_obj = Module(namespace=namespace_obj, name=name)
-        module_provider = ModuleProvider.get(module=module_obj, name=provider)
-
-        if not module_provider:
-            return {'message': 'Module provider does not exist'}, 400
-
-        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
-        if not module_version:
-            return {'message': 'Module version does not exist'}, 400
+        _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        if error:
+            return error
 
         example_obj = Example.get(module_version=module_version, module_path=example)
 
@@ -2326,16 +2267,9 @@ class ApiTerraregExampleReadmeHtml(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version, example):
         """Return HTML formatted README of example."""
-        namespace_obj = Namespace(name=namespace)
-        module_obj = Module(namespace=namespace_obj, name=name)
-        module_provider = ModuleProvider.get(module=module_obj, name=provider)
-
-        if not module_provider:
-            return {'message': 'Module provider does not exist'}, 400
-
-        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
-        if not module_version:
-            return {'message': 'Module version does not exist'}, 400
+        _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        if error:
+            return error
 
         example_obj = Example.get(module_version=module_version, module_path=example)
 
@@ -2347,16 +2281,9 @@ class ApiTerraregExampleFileList(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version, example):
         """Return list of files available in example."""
-        namespace_obj = Namespace(name=namespace)
-        module_obj = Module(namespace=namespace_obj, name=name)
-        module_provider = ModuleProvider.get(module=module_obj, name=provider)
-
-        if not module_provider:
-            return {'message': 'Module provider does not exist'}, 400
-
-        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
-        if not module_version:
-            return {'message': 'Module version does not exist'}, 400
+        _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        if error:
+            return error
 
         example_obj = Example(module_version=module_version, module_path=example)
 
@@ -2377,16 +2304,9 @@ class ApiTerraregExampleFile(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version, example_file):
         """Return conent of example file in example module."""
-        namespace_obj = Namespace(name=namespace)
-        module_obj = Module(namespace=namespace_obj, name=name)
-        module_provider = ModuleProvider.get(module=module_obj, name=provider)
-
-        if not module_provider:
-            return {'message': 'Module provider does not exist'}, 400
-
-        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
-        if not module_version:
-            return {'message': 'Module version does not exist'}, 400
+        _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        if error:
+            return error
 
         example_file_obj = ExampleFile.get_by_path(module_version=module_version, file_path=example_file)
 
@@ -2401,16 +2321,9 @@ class ApiTerraregModuleVersionFile(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version, path):
         """Return conent of module version file."""
-        namespace_obj = Namespace(name=namespace)
-        module_obj = Module(namespace=namespace_obj, name=name)
-        module_provider = ModuleProvider.get(module=module_obj, name=provider)
-
-        if not module_provider:
-            return {'message': 'Module provider does not exist'}, 400
-
-        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
-        if not module_version:
-            return {'message': 'Module version does not exist'}, 400
+        _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        if error:
+            return error
 
         module_version_file = ModuleVersionFile.get(module_version=module_version, path=path)
 
