@@ -29,5 +29,6 @@ class TestApiTerraregNamespaceList(TerraregUnitTest):
             {'name': 'moduledetails', 'view_href': '/modules/moduledetails'},
             {'name': 'secondtestnamespace', 'view_href': '/modules/secondtestnamespace'},
             {'name': 'smallernamespacelist', 'view_href': '/modules/smallernamespacelist'},
-            {'name': 'moduleextraction', 'view_href': '/modules/moduleextraction'}
+            {'name': 'moduleextraction', 'view_href': '/modules/moduleextraction'},
+            {'name': 'emptynamespace', 'view_href': '/modules/emptynamespace'}
         ]

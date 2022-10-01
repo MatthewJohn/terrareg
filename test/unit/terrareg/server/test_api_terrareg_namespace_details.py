@@ -18,8 +18,8 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
         """Test namespace details with non-existent namespace."""
         res = client.get('/v1/terrareg/namespaces/doesnotexist')
 
-        assert res.status_code == 200
-        assert res.json == {'is_auto_verified': False, 'trusted': False}
+        assert res.status_code == 404
+        assert res.json == {'errors': ['Not Found']}
 
     @setup_test_data()
     def test_with_existing_namespace(self, client, mocked_server_namespace_fixture):

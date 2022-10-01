@@ -58,6 +58,13 @@
             }
         });
     }
+
+    // Obtain list of module providers
+    $.get('/v1/terrareg/namespaces').then((data) => {
+        data.forEach((namespace) => {
+            $('#create-module-namespace').append($(`<option value="${namespace.name}">${namespace.name}</option>`))
+        });
+    });
 </script>
 {% endblock %}
 
@@ -78,8 +85,9 @@
             <form id="create-module-form" onsubmit="event.preventDefault(); createModuleProvider();">
                 <div class="field">
                     <label class="label">Namespace</label>
-                    <div class="control">
-                    <input required id="create-module-namespace" class="input" type="text" placeholder="my-team">
+                    <div class="control select">
+                        <select id="create-module-namespace">
+                        </select>
                     </div>
                 </div>
 

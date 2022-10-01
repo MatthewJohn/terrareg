@@ -63,7 +63,7 @@ class TestApiModuleVersionCreate(TerraregUnitTest):
             res = client.post(
                 '/v1/terrareg/modules/testnamespace/moduledoesnotexist/testprovider/5.5.4/import')
             assert res.status_code == 400
-            assert res.json == {'message': 'Module provider is not configured with a repository'}
+            assert res.json == {'message': 'Module provider does not exist'}
 
             mocked_check_api_key_authentication.assert_called_once()
             mocked_prepare_module.assert_not_called()

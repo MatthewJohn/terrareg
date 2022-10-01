@@ -84,7 +84,7 @@ class TestApiModuleVersionPublish(TerraregUnitTest):
             res = client.post(
                 '/v1/terrareg/modules/namespacedoesnotexist/providerdoesnotexist/doesnotexistprovider/5.5.4/publish')
             assert res.status_code == 400
-            assert res.json == {'message': 'Module provider does not exist'}
+            assert res.json == {'message': 'Namespace does not exist'}
 
             mock_check_api_key_authentication.assert_called_once()
             mocked_update_attributes.assert_not_called()

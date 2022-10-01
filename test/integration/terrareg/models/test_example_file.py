@@ -14,7 +14,7 @@ class TestExampleFile(TerraregIntegrationTest):
         """Test uploading module with examples."""
         test_upload = UploadTestModule()
 
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-example-file')
         module_provider = ModuleProvider.get(module=module, name='testprovider', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')

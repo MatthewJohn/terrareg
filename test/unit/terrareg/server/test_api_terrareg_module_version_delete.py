@@ -71,7 +71,30 @@ class TestApiTerraregModuleProviderDelete(TerraregUnitTest):
 
     @setup_test_data()
     def test_delete_non_existing_module_provider(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
-        """Test delete of module version of non-existing module provider."""
+        """Test delete of module version of non-existent module provider."""
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
+                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.models.ModuleVersion.delete') as mock_module_version_delete:
+
+            res = client.delete(
+                '/v1/terrareg/modules/emptynamespace/doesnotexist/doesnotexist/9.93.0/delete',
+                json={
+                    'csrf_token': 'unittestcsrf'
+                }
+            )
+            assert res.json == {'message': 'Module provider does not exist'}
+            assert res.status_code == 400
+
+            # Ensure required checks are called
+            mock_check_csrf.assert_called_once_with('unittestcsrf')
+            mocked_check_admin_authentication.assert_called()
+            mock_module_version_delete.assert_not_called()
+
+
+    @setup_test_data()
+    def test_delete_non_existing_namespace(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
+        """Test delete of module version of non-existent namespace."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.server.check_admin_authentication', return_value=True) as mocked_check_admin_authentication, \
                 unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
@@ -83,7 +106,7 @@ class TestApiTerraregModuleProviderDelete(TerraregUnitTest):
                     'csrf_token': 'unittestcsrf'
                 }
             )
-            assert res.json == {'message': 'Module provider does not exist'}
+            assert res.json == {'message': 'Namespace does not exist'}
             assert res.status_code == 400
 
             # Ensure required checks are called

@@ -4,6 +4,7 @@ from unittest import mock
 
 import pytest
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import Select
 import selenium
 
 from test.selenium import SeleniumTest
@@ -44,13 +45,40 @@ class TestCreateModuleProvider(SeleniumTest):
         for label in self.selenium_instance.find_element(By.ID, 'create-module-form').find_elements(By.TAG_NAME, 'label'):
             assert label.text == expected_labels.pop(0)
 
+        assert [
+            option.text
+            for option in Select(
+                self.selenium_instance.find_element(By.ID, 'create-module-namespace')
+            ).options
+        ] == [
+            'javascriptinjection',
+            'moduledetails',
+            'moduleextraction',
+            'modulesearch',
+            'modulesearch-contributed',
+            'modulesearch-trusted',
+            'mostrecent',
+            'mostrecentunpublished',
+            'onlybeta',
+            'onlyunpublished',
+            'real_providers',
+            'relevancysearch',
+            'repo_url_tests',
+            'searchbynamespace',
+            'testmodulecreation',
+            'testnamespace',
+            'trustednamespace',
+            'unpublished-beta-version-module-providers',
+        ]
+
+
     def test_create_basic(self):
         """Test creating module provider with inputs populated."""
         self.perform_admin_authentication('unittest-password')
 
         self.selenium_instance.get(self.get_url('/create-module'))
 
-        self._fill_out_field_by_label('Namespace', 'testmodulecreation')
+        Select(self.selenium_instance.find_element(By.ID, 'create-module-namespace')).select_by_visible_text('testmodulecreation')
         self._fill_out_field_by_label('Module Name', 'minimal-module')
         self._fill_out_field_by_label('Provider', 'testprovider')
 
@@ -71,7 +99,7 @@ class TestCreateModuleProvider(SeleniumTest):
 
         self.selenium_instance.get(self.get_url('/create-module'))
 
-        self._fill_out_field_by_label('Namespace', 'testmodulecreation')
+        Select(self.selenium_instance.find_element(By.ID, 'create-module-namespace')).select_by_visible_text('testmodulecreation')
         self._fill_out_field_by_label('Module Name', 'with-git-path')
         self._fill_out_field_by_label('Provider', 'testprovider')
 

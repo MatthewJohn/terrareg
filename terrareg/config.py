@@ -289,6 +289,16 @@ class Config:
         return self.convert_boolean(os.environ.get('AUTO_CREATE_MODULE_PROVIDER', 'True'))
 
     @property
+    def AUTO_CREATE_NAMESPACE(self):
+        """
+        Whether to automatically create namespaces when
+        uploading a module version to a module provider in a non-existent namespace.
+
+        If disabled, namespaces must be created using the namespace create endpoint (or via web UI)
+        """
+        return self.convert_boolean(os.environ.get('AUTO_CREATE_NAMESPACE', 'True'))
+
+    @property
     def MODULES_DIRECTORY(self):
         """
         Directory with a module's source that contains sub-modules.

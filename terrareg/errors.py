@@ -160,3 +160,9 @@ class InvalidBooleanConfigurationError(TerraregError):
     """Invalid boolean environment variable."""
 
     pass
+
+
+class NamespaceAlreadyExistsError(TerraregError):
+    """A namespace already exists with the provided."""
+
+    pass

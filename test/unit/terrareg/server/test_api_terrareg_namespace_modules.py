@@ -99,20 +99,7 @@ class TestApiTerraregNamespaceModules(TerraregUnitTest):
     def test_analytics_token_not_converted(self, client, mocked_server_namespace_fixture):
         """Test endpoint with analytics token and ensure it doesn't convert the analytics token."""
 
-        res = client.get('/v1/terrareg/modules/test_token-name__testnamespace/testmodulename/testprovider')
+        res = client.get('/v1/terrareg/modules/test_token-name__testnamespace')
 
         assert res.json == {'errors': ['Not Found']}
         assert res.status_code == 404
-
-    @setup_test_data()
-    def test_matches_terrareg_api_details_function(self, client, mocked_server_namespace_fixture):
-        """Test endpoint with analytics token"""
-
-        res = client.get('/v1/terrareg/modules/testnamespace/testmodulename/testprovider')
-
-        test_namespace = MockNamespace(name='testnamespace')
-        test_module = MockModule(namespace=test_namespace, name='testmodulename')
-        test_module_provider = MockModuleProvider(module=test_module, name='testprovider')
-
-        assert res.json == test_module_provider.get_latest_version().get_terrareg_api_details()
-        assert res.status_code == 200
