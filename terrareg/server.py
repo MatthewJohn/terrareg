@@ -1462,9 +1462,10 @@ class ApiTerraregModuleProviderVersions(ErrorCatchingResource):
         )
         args = parser.parse_args()
 
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
+        namespace, module, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+        if error:
+            return error
+
         return [
             {
                 'version': module_version.version,
