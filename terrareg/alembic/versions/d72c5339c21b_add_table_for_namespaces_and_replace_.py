@@ -66,10 +66,9 @@ def downgrade():
     c = op.get_bind()
     c.execute(
         sa.sql.text("""
-            UPDATE module_provider
-            INNER JOIN namespace
-            ON module_provider.namespace_id=namespace.id
-            SET module_provider.namespace=namespace.namespace
+            UPDATE module_provider SET namespace=(
+                SELECT namespace FROM namespace WHERE id=module_provider.namespace_id
+            )
         """)
     )
 
