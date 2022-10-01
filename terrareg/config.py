@@ -11,7 +11,11 @@ class Config:
 
     @property
     def DOMAIN_NAME(self):
-        """Domain name that the system is hosted on"""
+        """
+        Domain name that the system is hosted on.
+
+        This should be setup for all installations, but is required for infracost and OpenID authentication.
+        """
         return os.environ.get('DOMAIN_NAME', None)
 
     @property
@@ -461,6 +465,91 @@ class Config:
         ```
         """
         return os.environ.get('ADDITIONAL_MODULE_TABS', '[["Release Notes", ["RELEASE_NOTES.md", "CHANGELOG.md"]], ["License", ["LICENSE"]]]')
+
+    @property
+    def OPENID_CONNECT_LOGIN_TEXT(self):
+        """
+        Text for sign in button for OpenID Connect authentication
+        """
+        return os.environ.get('OPENID_CONNECT_LOGIN_TEXT', 'Login using OpenID Connect')
+
+    @property
+    def OPENID_CONNECT_CLIENT_ID(self):
+        """
+        Client ID for OpenID Conect authentication
+        """
+        return os.environ.get('OPENID_CONNECT_CLIENT_ID', None)
+
+    @property
+    def OPENID_CONNECT_CLIENT_SECRET(self):
+        """
+        Client secret for OpenID Conect authentication
+        """
+        return os.environ.get('OPENID_CONNECT_CLIENT_SECRET', None)
+
+    @property
+    def OPENID_CONNECT_ISSUER(self):
+        """
+        Base Issuer URL for OpenID Conect authentication.
+
+        A well-known URL will be expected at `${OPENID_CONNECT_ISSUER}/.well-known/openid-configuration`
+        """
+        return os.environ.get('OPENID_CONNECT_ISSUER', None)
+
+    @property
+    def SAML2_LOGIN_TEXT(self):
+        """
+        Text for sign in button for SAML2 authentication
+        """
+        return os.environ.get('SAML2_LOGIN_TEXT', 'Login using SAML')
+
+    @property
+    def SAML2_IDP_METADATA_URL(self):
+        """
+        SAML2 provider metadata url
+        """
+        return os.environ.get('SAML2_IDP_METADATA_URL', None)
+
+    @property
+    def SAML2_ISSUER_ENTITY_ID(self):
+        """
+        SAML2 provider entity ID.
+        
+        This is required if the SAML2 provider metadata endpoint contains multiple entities.
+        """
+        return os.environ.get('SAML2_ISSUER_ENTITY_ID', None)
+
+    @property
+    def SAML2_ENTITY_ID(self):
+        """
+        SAML2 provider entity ID of the application.
+        """
+        return os.environ.get('SAML2_ENTITY_ID', None)
+
+    @property
+    def SAML2_PUBLIC_KEY(self):
+        """
+        SAML2 public key for this application.
+
+        To generate, see SAML2_PRIVATE_KEY
+        """
+        return os.environ.get('SAML2_PUBLIC_KEY', None)
+
+    @property
+    def SAML2_PRIVATE_KEY(self):
+        """
+        SAML2 private key for this application.
+        
+        To generate, run:
+        ```
+        openssl genrsa -out private.key 4096
+        openssl req -new -x509 -key private.key -out publickey.cer -days 365
+        # Export values to environment variables
+        export SAML2_PRIVATE_KEY="$(cat private.key)"
+        export SAML2_PUBLIC_KEY="$(cat publickey.cer)"
+        ```
+        """
+        return os.environ.get('SAML2_PRIVATE_KEY', None)
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""

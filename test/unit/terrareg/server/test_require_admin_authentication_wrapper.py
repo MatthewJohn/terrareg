@@ -4,6 +4,7 @@ import datetime
 
 import pytest
 import werkzeug.exceptions
+import jwt
 
 from test.unit.terrareg import MockSession, TerraregUnitTest, mocked_server_session_fixture
 from test import client, app_context, test_request_context
@@ -85,7 +86,7 @@ class TestRequireAdminAuthenticationWrapper(TerraregUnitTest):
         )
 
     def test_401_with_expired_mock_session(self, app_context, test_request_context, mocked_server_session_fixture):
-        """Ensure resource is called with valid mock_session."""
+        """Test with an expired session."""
         # @TODO This is currently testing the functionality of the MockSession.
         # This test should be removed, since the checking functionality can't be put
         # into a non-overridden method, as it's part of the SQL query
@@ -97,7 +98,8 @@ class TestRequireAdminAuthenticationWrapper(TerraregUnitTest):
             expect_fail=True,
             mock_session={
                 'session_id': 'unittestssessionid',
-                'is_admin_authenticated': True
+                'is_admin_authenticated': True,
+                'authentication_type': AuthenticationType.SESSION_PASSWORD.value
             },
             mock_sessions={
                 'unittestssessionid': datetime.datetime.now() - datetime.timedelta(minutes=1)
@@ -105,7 +107,7 @@ class TestRequireAdminAuthenticationWrapper(TerraregUnitTest):
         )
 
     def test_401_with_nonexistent_mock_session(self, app_context, test_request_context, mocked_server_session_fixture):
-        """Ensure resource is called with valid mock_session."""
+        """Test with expired or non-existent session ID."""
         self._run_authentication_test(
             app_context=app_context,
             test_request_context=test_request_context,
@@ -114,14 +116,15 @@ class TestRequireAdminAuthenticationWrapper(TerraregUnitTest):
             expect_fail=True,
             mock_session={
                 'session_id': 'nonexistentsessionid',
-                'is_admin_authenticated': True
+                'is_admin_authenticated': True,
+                'authentication_type': AuthenticationType.SESSION_PASSWORD.value
             },
             mock_sessions={
             }
         )
 
     def test_invalid_authentication_with_empty_api_key(self, app_context, test_request_context, mocked_server_session_fixture):
-        """Ensure resource is called with valid mock_session."""
+        """Test authentication with an empty API key."""
         self._run_authentication_test(
             app_context=app_context,
             test_request_context=test_request_context,
@@ -134,15 +137,15 @@ class TestRequireAdminAuthenticationWrapper(TerraregUnitTest):
             }
         )
 
-    def test_authentication_with_mock_session(self, app_context, test_request_context, mocked_server_session_fixture):
-        """Ensure resource is called with valid mock_session."""
+    def test_authentication_with_mock_session_without_authentication_type(self, app_context, test_request_context, mocked_server_session_fixture):
+        """Test authentication without an authentication type in session."""
         self._run_authentication_test(
             app_context=app_context,
             test_request_context=test_request_context,
             config_secret_key='testsecret',
             config_admin_authentication_token='testpassword',
-            expect_fail=False,
-            expected_authentication_type=AuthenticationType.SESSION,
+            expect_fail=True,
+            expected_authentication_type=AuthenticationType.SESSION_PASSWORD,
             mock_session={
                 'session_id': 'unittestsessionid',
                 'is_admin_authenticated': True
@@ -151,6 +154,125 @@ class TestRequireAdminAuthenticationWrapper(TerraregUnitTest):
                 'unittestsessionid': datetime.datetime.now() + datetime.timedelta(hours=5)
             }
         )
+
+    def test_authentication_with_mock_session(self, app_context, test_request_context, mocked_server_session_fixture):
+        """Ensure resource is called with valid password session."""
+        self._run_authentication_test(
+            app_context=app_context,
+            test_request_context=test_request_context,
+            config_secret_key='testsecret',
+            config_admin_authentication_token='testpassword',
+            expect_fail=False,
+            expected_authentication_type=AuthenticationType.SESSION_PASSWORD,
+            mock_session={
+                'session_id': 'unittestsessionid',
+                'is_admin_authenticated': True,
+                'authentication_type': AuthenticationType.SESSION_PASSWORD.value
+            },
+            mock_sessions={
+                'unittestsessionid': datetime.datetime.now() + datetime.timedelta(hours=5)
+            }
+        )
+
+    def test_authentication_openid_without_expiry_session(self, app_context, test_request_context, mocked_server_session_fixture):
+        """Ensure authentication via OpenID connect without a valid expiry is rejected."""
+        self._run_authentication_test(
+            app_context=app_context,
+            test_request_context=test_request_context,
+            config_secret_key='testsecret',
+            config_admin_authentication_token='testpassword',
+            expect_fail=True,
+            expected_authentication_type=AuthenticationType.SESSION_OPENID_CONNECT,
+            mock_session={
+                'session_id': 'unittestsessionid',
+                'is_admin_authenticated': True,
+                'authentication_type': AuthenticationType.SESSION_OPENID_CONNECT.value
+            },
+            mock_sessions={
+                'unittestsessionid': datetime.datetime.now() + datetime.timedelta(hours=5)
+            }
+        )
+
+    def test_authentication_with_expired_openid_session(self, app_context, test_request_context, mocked_server_session_fixture):
+        """Ensure expired OpenID connect session is rejected."""
+        mock_validate_session_token = unittest.mock.MagicMock(return_value=False)
+
+        with unittest.mock.patch('terrareg.openid_connect.OpenidConnect.validate_session_token', mock_validate_session_token):
+            self._run_authentication_test(
+                app_context=app_context,
+                test_request_context=test_request_context,
+                config_secret_key='testsecret',
+                config_admin_authentication_token='testpassword',
+                expect_fail=True,
+                expected_authentication_type=AuthenticationType.SESSION_OPENID_CONNECT,
+                mock_session={
+                    'session_id': 'unittestsessionid',
+                    'is_admin_authenticated': True,
+                    'authentication_type': AuthenticationType.SESSION_OPENID_CONNECT.value,
+                    'openid_connect_expires_at': 500,
+                    'openid_connect_id_token': 'unittest-openid-connect-id-token'
+                },
+                mock_sessions={
+                    'unittestsessionid': datetime.datetime.now() + datetime.timedelta(hours=5)
+                }
+            )
+
+            mock_validate_session_token.assert_not_called()
+
+
+    def test_authentication_with_openid_session(self, app_context, test_request_context, mocked_server_session_fixture):
+        """Test authentication with a valid OpenID session."""
+        mock_validate_session_token = unittest.mock.MagicMock(return_value=True)
+
+        with unittest.mock.patch('terrareg.openid_connect.OpenidConnect.validate_session_token', mock_validate_session_token):
+            self._run_authentication_test(
+                app_context=app_context,
+                test_request_context=test_request_context,
+                config_secret_key='testsecret',
+                config_admin_authentication_token='testpassword',
+                expect_fail=False,
+                expected_authentication_type=AuthenticationType.SESSION_OPENID_CONNECT,
+                mock_session={
+                    'session_id': 'unittestsessionid',
+                    'is_admin_authenticated': True,
+                    'authentication_type': AuthenticationType.SESSION_OPENID_CONNECT.value,
+                    'openid_connect_expires_at': 33197904000,
+                    'openid_connect_id_token': 'unittest-openid-connect-id-token'
+                },
+                mock_sessions={
+                    'unittestsessionid': datetime.datetime.now() + datetime.timedelta(hours=5)
+                }
+            )
+
+        mock_validate_session_token.assert_called_once_with('unittest-openid-connect-id-token')
+
+    def test_authentication_with_invalid_openid_session(self, app_context, test_request_context, mocked_server_session_fixture):
+        """Ensure an invalid OpenID conect ID token is causes a failed login."""
+        def raise_exception():
+            raise jwt.exceptions.DecodeError
+        mock_validate_session_token = unittest.mock.MagicMock(side_effect=raise_exception)
+
+        with unittest.mock.patch('terrareg.openid_connect.OpenidConnect.validate_session_token', mock_validate_session_token):
+            self._run_authentication_test(
+                app_context=app_context,
+                test_request_context=test_request_context,
+                config_secret_key='testsecret',
+                config_admin_authentication_token='testpassword',
+                expect_fail=True,
+                expected_authentication_type=AuthenticationType.SESSION_OPENID_CONNECT,
+                mock_session={
+                    'session_id': 'unittestsessionid',
+                    'is_admin_authenticated': True,
+                    'authentication_type': AuthenticationType.SESSION_OPENID_CONNECT.value,
+                    'openid_connect_expires_at': 33197904000,
+                    'openid_connect_id_token': 'invalid-openid-connect-id-token'
+                },
+                mock_sessions={
+                    'unittestsessionid': datetime.datetime.now() + datetime.timedelta(hours=5)
+                }
+            )
+
+        mock_validate_session_token.assert_called_once_with('invalid-openid-connect-id-token')
 
     def test_authentication_with_api_key(self, app_context, test_request_context, mocked_server_session_fixture):
         """Ensure resource is called with an API key."""

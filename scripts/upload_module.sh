@@ -18,7 +18,7 @@ then
 fi
 
 echo Uploading module
-curl -X POST \
+curl -k -X POST \
     "${base_url}/v1/terrareg/modules/${namespace}/${name}/${provider}/${version}/upload" \
     -F file="@${file}"
 
@@ -30,7 +30,7 @@ read publish
 
 if [ "$publish" == "Y" ]
 then
-  curl -XPOST \
+  curl -k -XPOST \
     "${base_url}/v1/terrareg/modules/${namespace}/${name}/${provider}/${version}/publish"
 fi
 

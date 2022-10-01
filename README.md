@@ -196,6 +196,13 @@ Whether to perform a database migration on container startup.
 
 Set to `True` to enable database migration
 
+*Note:* Be very careful when scaling the application. There should never be more than one instance of Terrareg running with `MIGRATE_DATABASE` set to `True` during an upgrade.
+
+When upgrading, scale the application to a single instance before upgrading to a newer version.
+
+Alternatively, set `MIGRATE_DATABASE` to `False` and run a dedicated instance for performing database upgrades.
+Use `MIGRATE_DATABASE_ONLY` to run an instance that will perform the necessary database migrations and immediately exit.
+
 Default: `False`
 
 ### MIGRATE_DATABASE_ONLY
@@ -462,7 +469,11 @@ Default: `False`
 
 ### DOMAIN_NAME
 
-Domain name that the system is hosted on
+
+Domain name that the system is hosted on.
+
+This should be setup for all installations, but is required for infracost and OpenID authentication.
+
 
 Default: ``
 
@@ -618,6 +629,44 @@ This can be set to an empty string, to expected submodules to be in the root dir
 Default: `modules`
 
 
+### OPENID_CONNECT_CLIENT_ID
+
+
+Client ID for OpenID Conect authentication
+
+
+Default: ``
+
+
+### OPENID_CONNECT_CLIENT_SECRET
+
+
+Client secret for OpenID Conect authentication
+
+
+Default: ``
+
+
+### OPENID_CONNECT_ISSUER
+
+
+Base Issuer URL for OpenID Conect authentication.
+
+A well-known URL will be expected at `${OPENID_CONNECT_ISSUER}/.well-known/openid-configuration`
+
+
+Default: ``
+
+
+### OPENID_CONNECT_LOGIN_TEXT
+
+
+Text for sign in button for OpenID Connect authentication
+
+
+Default: `Login using OpenID Connect`
+
+
 ### PUBLISH_API_KEYS
 
 
@@ -633,6 +682,73 @@ Default: ``
 
 
 Comma-seperated list of metadata attributes that each uploaded module _must_ contain, otherwise the upload is aborted.
+
+
+Default: ``
+
+
+### SAML2_ENTITY_ID
+
+
+SAML2 provider entity ID of the application.
+
+
+Default: ``
+
+
+### SAML2_IDP_METADATA_URL
+
+
+SAML2 provider metadata url
+
+
+Default: ``
+
+
+### SAML2_ISSUER_ENTITY_ID
+
+
+SAML2 provider entity ID.
+
+This is required if the SAML2 provider metadata endpoint contains multiple entities.
+
+
+Default: ``
+
+
+### SAML2_LOGIN_TEXT
+
+
+Text for sign in button for SAML2 authentication
+
+
+Default: `Login using SAML`
+
+
+### SAML2_PRIVATE_KEY
+
+
+SAML2 private key for this application.
+
+To generate, run:
+```
+openssl genrsa -out private.key 4096
+openssl req -new -x509 -key private.key -out publickey.cer -days 365
+# Export values to environment variables
+export SAML2_PRIVATE_KEY="$(cat private.key)"
+export SAML2_PUBLIC_KEY="$(cat publickey.cer)"
+```
+
+
+Default: ``
+
+
+### SAML2_PUBLIC_KEY
+
+
+SAML2 public key for this application.
+
+To generate, see SAML2_PRIVATE_KEY
 
 
 Default: ``
@@ -793,6 +909,57 @@ There are common attributes that can be added to each of variable objects, which
 |boolean|Provides a checkbox that results in a true/false value as the 'terraform input'||
 |static|This does not appear in the 'Usage Builder' 'config input' table, but provides a static value in the 'terraform input'||
 |select|Provides a dropdown for the user to select from a list of choices|"choices" must be added to the object, which may either be a list of strings, or a list of objects. If using a list of objects, a "name" and "value" must be provided. Optionally an "additional_content" attribute can be added to the choice, which provides additional terraform to be added to the top of the terraform example. The main variable object may also contain a "allow_custom" boolean attribute, which allows the user to enter a custom text input.|
+
+## Single Sign-On
+
+*NOTE* OpenID and SAML2 authentication is currently experimental.
+
+It is advised to use with caution and avoid using on publicly hosted/accessible instances.
+
+### OpenID Connect
+
+To configure OpenID connect, setup an application in an identity provider (IdP) with the following:
+
+| | |
+| --- | --- |
+| Grant type | Authorization Code |
+| Sign-in redirect URI | `https://<terrareg-instance-domain>/openid/callback` |
+| Sign-out URI | `https://<terrareg-instance-domain>/logout` |
+| Initiate login URI | `https://<terrareg-instance-domain>/openid/login` |
+| Login flow | Redirect to app to initiate login |
+
+Obtain the client ID, client secret and issuer URL from the IdP provider and populate the following environment variables:
+
+ * DOMAIN_NAME
+ * OPENID_CONNECT_CLIENT_ID
+ * OPENID_CONNECT_CLIENT_SECRET
+ * OPENID_CONNECT_ISSUER
+
+(See above for details for each of these)
+
+Note: Most IdP providers will require the terrareg installation to be accessed via https.
+The instance should be configured with SSL certificates (SSL_CERT_PRIVATE_KEY/SSL_CERT_PUBLIC_KEY) or be hosted behind a reverse-proxy/load balancer.
+
+### SAML2
+
+Generate a public and a private key, using:
+
+    openssl genrsa -out private.key 4096
+    openssl req -new -x509 -key private.key -out publickey.cer -days 365
+
+Set the folllowing environment variables:
+
+* SAML2_IDP_METADATA_URL (required)
+* SAML2_ENTITY_ID (required)
+* SAML2_PRIVATE_KEY (required) (See above)
+* SAML2_PUBLIC_KEY (required) (See above)
+* SAML2_IDP_ENTITY_ID (optional)
+
+In the IdP:
+
+* configure the Single signin URL to `https://{terrareg_installation_domain}/saml/login?sso`;
+* configure the request and response to be signed;
+* ensure at least one attribute is assigned.
 
 ## Changelog
 
