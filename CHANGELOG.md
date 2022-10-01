@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.41.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.40.4...v2.41.0) (2022-10-01)
+
+
+### Features
+
+* Provide ability to show unpublished and beta versions in UI. ([c844390](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c844390742bd92eb77bc1a3dfed088e30b55dddb)), closes [#161](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/161)
+
 ## [2.40.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.40.3...v2.40.4) (2022-09-29)
 
 
