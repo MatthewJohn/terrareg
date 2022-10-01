@@ -320,6 +320,10 @@ class Server(object):
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>'
         )
         self._api.add_resource(
+            ApiTerraregModuleProviderVersions,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/versions'
+        )
+        self._api.add_resource(
             ApiTerraregModuleProviderCreate,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/create'
         )
@@ -1439,6 +1443,36 @@ class ApiModuleVersionDetails(ErrorCatchingResource):
             return self._get_404_response()
 
         return module_version.get_api_details()
+
+
+class ApiTerraregModuleProviderVersions(ErrorCatchingResource):
+    """Interface to obtain module provider versions"""
+
+    def _get(self, namespace, name, provider):
+        """Return list of module versions for module provider"""
+        parser = reqparse.RequestParser()
+        parser.add_argument(
+            'include-beta', type=inputs.boolean,
+            default=False, help='Whether to include beta versions',
+            dest='include_beta')
+        parser.add_argument(
+            'include-unpublished', type=inputs.boolean,
+            default=False, help='Whether to include unpublished versions',
+            dest='include_unpublished'
+        )
+        args = parser.parse_args()
+
+        namespace = Namespace(namespace)
+        module = Module(namespace=namespace, name=name)
+        module_provider = ModuleProvider(module=module, name=provider)
+        return [
+            {
+                'version': module_version.version,
+                'published': module_version.published,
+                'beta': module_version.beta
+            } for module_version in module_provider.get_versions(
+                include_beta=args.include_beta, include_unpublished=args.include_unpublished)
+        ]
 
 
 class ApiModuleVersions(ErrorCatchingResource):

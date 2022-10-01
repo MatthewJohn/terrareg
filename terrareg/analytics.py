@@ -93,7 +93,7 @@ class AnalyticsEngine:
         auth_token: str):
         """Store information about module version download in database."""
 
-        # If terraform version not present from header,
+        # If Terraform version not present from header,
         # attempt to determine from user agent
         if not terraform_version:
             user_agent_match = re.match(r'^Terraform/(\d+\.\d+\.\d+)$', user_agent)
