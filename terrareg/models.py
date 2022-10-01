@@ -357,7 +357,12 @@ class Namespace(object):
 
             namespace_query = sqlalchemy.select(
                 db.namespace.c.namespace
-            ).select_from(modules_query).group_by(
+            ).select_from(
+                modules_query
+            ).join(
+                db.namespace,
+                db.namespace.c.id==modules_query.c.namespace_id
+            ).group_by(
                 db.namespace.c.namespace
             ).order_by(
                 db.namespace.c.namespace
