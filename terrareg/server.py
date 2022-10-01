@@ -53,7 +53,7 @@ def catch_name_exceptions(f):
         except InvalidModuleNameError:
             namespace = None
             if 'namespace' in kwargs:
-                namespace = Namespace(name=kwargs['namespace'])
+                namespace = Namespace.get(name=kwargs['namespace'])
             return self._render_template(
                 'error.html',
                 error_title='Invalid module name',
@@ -66,8 +66,8 @@ def catch_name_exceptions(f):
             namespace = None
             module = None
             if 'namespace' in kwargs:
-                namespace = Namespace(name=kwargs['namespace'])
-                if 'name' in kwargs:
+                namespace = Namespace.get(name=kwargs['namespace'])
+                if namespace is not None and 'name' in kwargs:
                     module = Module(namespace=namespace, name=kwargs['name'])
             return self._render_template(
                 'error.html',
@@ -83,8 +83,8 @@ def catch_name_exceptions(f):
             module = None
             module_provider_name = None
             if 'namespace' in kwargs:
-                namespace = Namespace(name=kwargs['namespace'])
-                if 'name' in kwargs:
+                namespace = Namespace.get(name=kwargs['namespace'])
+                if namespace is not None and 'name' in kwargs:
                     module = Module(namespace=namespace, name=kwargs['name'])
                     if 'provider' in kwargs:
                         module_provider_name = kwargs['provider']
@@ -462,6 +462,16 @@ class Server(object):
 
         self._app.run(**kwargs)
 
+    def _namespace_404(self, namespace_name: str):
+        """Return 404 page for non-existent namespace"""
+        return self._render_template(
+            'error.html',
+            error_title='Namespace does not exist',
+            error_description='The namespace {namespace} does not exist'.format(
+                namespace=namespace_name
+            )
+        ), 404
+
     def _module_provider_404(self, namespace: Namespace, module: Module,
                              module_provider_name: str):
         return self._render_template(
@@ -534,8 +544,12 @@ class Server(object):
     @catch_name_exceptions
     def _view_serve_module(self, namespace, name):
         """Render view for display module."""
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
+        namespace_obj = Namespace.get(namespace)
+        if namespace_obj is None:
+            return self._namespace_404(
+                namespace_name=namespace
+            )
+        module = Module(namespace=namespace_obj, name=name)
         module_providers = module.get_providers()
 
         # If only one provider for module, redirect to it.
@@ -544,7 +558,7 @@ class Server(object):
         else:
             return self._render_template(
                 'module.html',
-                namespace=namespace,
+                namespace=namespace_obj,
                 module=module,
                 module_providers=module_providers
             )
@@ -552,12 +566,17 @@ class Server(object):
     @catch_name_exceptions
     def _view_serve_module_provider(self, namespace, name, provider, version=None):
         """Render view for displaying module provider information"""
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
+        namespace_obj = Namespace.get(namespace)
+        if namespace_obj is None:
+            return self._namespace_404(
+                namespace_name=namespace
+            )
+
+        module = Module(namespace=namespace_obj, name=name)
         module_provider = ModuleProvider.get(module=module, name=provider)
         if module_provider is None:
             return self._module_provider_404(
-                namespace=namespace,
+                namespace=namespace_obj,
                 module=module,
                 module_provider_name=provider)
 
@@ -577,9 +596,18 @@ class Server(object):
     @catch_name_exceptions
     def _view_serve_submodule(self, namespace, name, provider, version, submodule_path):
         """Review view for displaying submodule"""
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
+        namespace_obj = Namespace.get(namespace)
+        if namespace_obj is None:
+            return self._namespace_404(namespace_name=namespace)
+
+        module = Module(namespace=namespace_obj, name=name)
+        module_provider = ModuleProvider.get(module=module, name=provider)
+        if module_provider is None:
+            return self._module_provider_404(
+                namespace=namespace_obj,
+                module=name,
+                module_provider_name=provider)
+
         module_version = ModuleVersion.get(module_provider=module_provider, version=version)
 
         if module_version is None:
@@ -592,9 +620,18 @@ class Server(object):
     @catch_name_exceptions
     def _view_serve_example(self, namespace, name, provider, version, submodule_path):
         """Review view for displaying example"""
-        namespace = Namespace(namespace)
-        module = Module(namespace=namespace, name=name)
-        module_provider = ModuleProvider(module=module, name=provider)
+        namespace_obj = Namespace.get(namespace)
+        if namespace_obj is None:
+            return self._namespace_404(namespace=namespace)
+
+        module = Module(namespace=namespace_obj, name=name)
+        module_provider = ModuleProvider.get(module=module, name=provider)
+        if module_provider is None:
+            return self._module_provider_404(
+                namespace=namespace_obj,
+                module=name,
+                module_provider_name=provider)
+
         module_version = ModuleVersion.get(module_provider=module_provider, version=version)
 
         if module_version is None:
