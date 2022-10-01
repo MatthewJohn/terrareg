@@ -1,0 +1,133 @@
+version: '3.9'
+
+services:
+
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy
+    container_name: "${DOCKER_NAME}_socket-proxy"
+    hostname: docker-socket-proxy
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      CONTAINERS: 1
+    networks:
+      - dockerProxy
+      
+  traefik:
+    image: traefik:v2.8
+    restart: always
+    container_name: "${DOCKER_NAME}_traefik"
+    command:
+      - --providers.docker=true
+      # Enable the API handler in insecure mode,
+      # which means that the Traefik API will be available directly
+      # on the entry point named traefik.
+      - --api.insecure=true
+      # Defines the path to the configuration file with the certificates list.
+      - --providers.file.filename=/root/.config/ssl.toml
+      # Define Traefik entry points to port [80] for http and port [443] for https.
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+    depends_on:
+      - socket-proxy
+    networks:
+      - dockerProxy
+      - web
+      - default
+    ports:
+      # Open traefik http [80] and https [443] ports.
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./traefik/dynamic_conf.yaml:/etc/traefik/dynamic_conf.yaml:ro
+      - ./traefik/traefik.yaml:/etc/traefik/traefik.yaml:ro
+      - ./certs:/etc/certs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${DOCKER_NAME}_traefik.rule=Host(`traefik.${DOCKER_BASE_URL}`)"
+      - "traefik.http.routers.${DOCKER_NAME}_traefik.tls=true"
+      # # Enable Traefik API handler entrypoint on http.
+      - "traefik.http.routers.${DOCKER_NAME}_traefik-http.entrypoints=web"
+      # # By default the Traefik API handler operates on the port [8080].
+      # # Define a load balancer to route the entry point to [8080].
+      - "traefik.http.services.${DOCKER_NAME}_traefik.loadbalancer.server.port=8080"
+
+  terrareg:
+    container_name: "${DOCKER_NAME}_app"
+    restart: unless-stopped
+    build: .
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${DOCKER_NAME}_app.tls=true"
+      - "traefik.http.routers.${DOCKER_NAME}_app.rule=Host(`terrareg.${DOCKER_BASE_URL}`)"
+      - "traefik.http.services.${DOCKER_NAME}_app.loadbalancer.server.port=5000"
+      - "traefik.http.routers.${DOCKER_NAME}_app.service=${DOCKER_NAME}_app"
+    depends_on:
+      - mysql
+      - traefik
+    env_file:
+      - ./.env
+    volumes:
+      - ./:/app
+      # - ~/.ssh/:/root/.ssh/:ro
+    networks:
+      web:
+    healthcheck:
+      test: curl --fail http://localhost:5000 || exit 1
+      interval: 5s
+      retries: 30
+      start_period: 30s
+      timeout: 10s
+
+  mysql:
+    container_name: "${DOCKER_NAME}_mysql"
+    restart: unless-stopped
+    image: docker.io/bitnami/mysql:8.0
+    volumes:
+      - 'mysql:/bitnami/mysql/data'
+    env_file:
+      - ./.env
+    healthcheck:
+      test: ['CMD', '/opt/bitnami/scripts/mysql/healthcheck.sh']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      web:
+
+  phpmyadmin:
+    container_name: "${DOCKER_NAME}_phpmyadmin"
+    restart: unless-stopped
+    image: docker.io/bitnami/phpmyadmin:5
+    depends_on:
+      - mysql
+      - traefik
+    environment:
+      - DATABASE_HOST=mysql
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${DOCKER_NAME}_phpmyadmin.tls=true"
+      - "traefik.http.routers.${DOCKER_NAME}_phpmyadmin.rule=Host(`phpmyadmin.${DOCKER_BASE_URL}`)"
+      - "traefik.http.services.${DOCKER_NAME}_phpmyadmin.loadbalancer.server.port=8080"
+      - "traefik.http.routers.${DOCKER_NAME}_phpmyadmin.service=${DOCKER_NAME}_phpmyadmin"
+    networks:
+      web:
+
+volumes:
+  terrareg:
+    driver: local
+    name: "${DOCKER_NAME}_app"
+  mysql:
+    driver: local
+    name: "${DOCKER_NAME}_mysql"
+    
+networks:
+  web: 
+    name: "${DOCKER_NAME}_web"
+  dockerProxy:
+    name: "${DOCKER_NAME}_docker-proxy"
+  default:
+    name: "${DOCKER_NAME}_default"
+    driver: bridge

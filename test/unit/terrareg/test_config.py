@@ -87,7 +87,8 @@ class TestConfig:
 
     @pytest.mark.parametrize('config_name', [
         'ADMIN_SESSION_EXPIRY_MINS',
-        'LISTEN_PORT'
+        'LISTEN_PORT',
+        'GIT_CLONE_TIMEOUT'
     ])
     def test_integer_configs(self, config_name):
         """Test integer configs to ensure they are overriden with environment variables."""

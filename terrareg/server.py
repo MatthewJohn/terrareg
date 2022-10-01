@@ -1043,11 +1043,11 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
 
     def _post(self, namespace, name, provider):
         """Create new version based on bitbucket hooks."""
-        with Database.start_transaction():
+        with Database.start_transaction() as transaction_context:
             namespace = Namespace(name=namespace)
             module = Module(namespace=namespace, name=name)
-            # Get module provider and optionally create, if it doesn't exist
-            module_provider = ModuleProvider.get(module=module, name=provider, create=True)
+            # Get module provider
+            module_provider = ModuleProvider.get(module=module, name=provider)
 
             # Validate signature
             if terrareg.config.Config().UPLOAD_API_KEYS:
@@ -1112,20 +1112,26 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
                 module_version = ModuleVersion(module_provider=module_provider, version=version)
 
                 # Perform import from git
+                savepoint = transaction_context.connection.begin_nested()
                 try:
                     module_version.prepare_module()
                     with GitModuleExtractor(module_version=module_version) as me:
                         me.process_upload()
                 except TerraregError as exc:
+                    # Roll back the transaction for this module version
+                    savepoint.rollback()
+
                     imported_versions[version] = {
                         'status': 'Failed',
                         'message': str(exc)
                     }
-                    continue
-
-                imported_versions[version] = {
-                    'status': 'Success'
-                }
+                    error = True
+                else:
+                    # Commit the transaction for this version
+                    savepoint.commit()
+                    imported_versions[version] = {
+                        'status': 'Success'
+                    }
 
             if error:
                 return {
@@ -1145,14 +1151,13 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
 
     def _post(self, namespace, name, provider):
         """Create, update or delete new version based on GitHub release hooks."""
-        with Database.start_transaction():
+        with Database.start_transaction() as transaction_context:
             namespace = Namespace(name=namespace)
             module = Module(namespace=namespace, name=name)
-            # Get module provider and optionally create, if it doesn't exist
+            # Get module provider
             module_provider = ModuleProvider.get(
                 module=module,
-                name=provider,
-                create=terrareg.config.Config().AUTO_CREATE_MODULE_PROVIDER)
+                name=provider)
 
             if not module_provider:
                 return self._get_404_response()
@@ -1222,18 +1227,22 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
                     module_version.prepare_module()
                     with GitModuleExtractor(module_version=module_version) as me:
                         me.process_upload()
-
-                    return {
-                        'status': 'Success',
-                        'message': 'Imported provided tag',
-                        'tag': tag_ref
-                    }
                 except TerraregError as exc:
+                    # Roll back creation of module version
+                    transaction_context.transaction.rollback()
+
                     return {
                         'status': 'Error',
                         'message': 'Tag failed to import',
                         'tag': tag_ref
                     }, 500
+                else:
+                    return {
+                        'status': 'Success',
+                        'message': 'Imported provided tag',
+                        'tag': tag_ref
+                    }
+
 
 class ApiModuleList(ErrorCatchingResource):
     def _get(self):

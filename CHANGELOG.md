@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.40.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.40.3...v2.40.4) (2022-09-29)
+
+
+### Bug Fixes
+
+* Add timeout for git clone command execution. ([4ee467c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4ee467c81e9e088ae4e29ddcef39a6e1352cf438)), closes [#256](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/256)
+* Fix bitbucket hook to return error when one or more tags fail to import ([8ac85ff](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8ac85ffbece1cdfc987081dbe9572b83f2bb9cff)), closes [#256](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/256)
+* Stop auto-creation of module providers with Github/Bitbucket hook. ([1cf0a3b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1cf0a3b142b27e3800af4c5f23e0ac4fef33c47a)), closes [#256](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/256)
+* Update Bitbucket and Github hook endpoints to rollback database transactions when a single version fails to upload. ([3b63ecd](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3b63ecd5483861c7f42c5bcfc065df24a448f9b7)), closes [#256](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/256)
+
 ## [2.40.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.40.2...v2.40.3) (2022-09-27)
 
 

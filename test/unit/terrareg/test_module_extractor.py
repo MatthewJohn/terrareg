@@ -45,7 +45,8 @@ class TestGitModuleExtractor(TerraregUnitTest):
             expected_git_url,
             module_extractor.extract_directory],
             stderr=subprocess.STDOUT,
-            env=unittest.mock.ANY)
+            env=unittest.mock.ANY,
+            timeout=300)
         assert check_call_mock.call_args.kwargs['env']['GIT_SSH_COMMAND'] == 'ssh -o StrictHostKeyChecking=accept-new'
 
     @setup_test_data()
