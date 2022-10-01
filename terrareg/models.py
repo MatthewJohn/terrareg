@@ -16,7 +16,7 @@ from terrareg.database import Database
 import terrareg.config
 from terrareg.errors import (
     InvalidModuleNameError, InvalidModuleProviderNameError,
-    InvalidVersionError, NoModuleVersionAvailableError,
+    InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError,
     RepositoryUrlDoesNotContainValidSchemeError,
     RepositoryUrlContainsInvalidSchemeError,
@@ -243,16 +243,68 @@ class GitProvider:
 
 class Namespace(object):
 
+    @classmethod
+    def get(cls, name, create=False):
+        """Create object and ensure the object exists."""
+        obj = cls(name=name)
+
+        # If there is no row, the module provider does not exist
+        if obj._get_db_row() is None:
+
+            # If set to create and auto module-provider creation
+            # is enabled in config, create the module provider
+            if create and terrareg.config.Config().AUTO_CREATE_NAMESPACE:
+                cls.create(name=name)
+
+                return obj
+
+            # If not creating, return None
+            return None
+
+        # Otherwise, return object
+        return obj
+
+    @classmethod
+    def create(cls, name):
+        """Create instance of object in database."""
+        # Validate name
+        cls._validate_name(name)
+
+        db = Database.get()
+
+        # Ensure namespace doesn't already exist
+        pre_existing_select = sqlalchemy.select(
+            db.namespace
+        ).select_from(
+            db.namespace
+        ).where(
+            # Use a like to use case-insentive
+            # match for pre-existing namespaces
+            db.namespace.c.namespace.like(name)
+        )
+        with db.get_connection() as conn:
+            pre_existing = conn.execute(pre_existing_select)
+
+            if pre_existing.fetchone():
+                raise NamespaceAlreadyExistsError('A namespace already exists with this name')
+
+        # Create namespace
+        module_provider_insert = db.namespace.insert().values(
+            namespace=name
+        )
+        with db.get_connection() as conn:
+            conn.execute(module_provider_insert)
+
+        return cls(name=name)
+
     @staticmethod
     def get_total_count():
         """Get total number of namespaces."""
         db = Database.get()
         counts = sqlalchemy.select(
-            db.module_provider.c.namespace
+            db.namespace.c.namespace
         ).select_from(
-            db.module_provider
-        ).group_by(
-            db.module_provider.c.namespace
+            db.namespace
         ).subquery()
 
         select = sqlalchemy.select([sqlalchemy.func.count()]).select_from(counts)
@@ -304,30 +356,34 @@ class Namespace(object):
             modules_query = modules_query.subquery()
 
             namespace_query = sqlalchemy.select(
-                modules_query.c.namespace
-            ).select_from(modules_query).group_by(
-                modules_query.c.namespace
+                db.namespace.c.namespace
+            ).select_from(
+                modules_query
+            ).join(
+                db.namespace,
+                db.namespace.c.id==modules_query.c.namespace_id
+            ).group_by(
+                db.namespace.c.namespace
             ).order_by(
-                modules_query.c.namespace
+                db.namespace.c.namespace
             )
         else:
             namespace_query = sqlalchemy.select(
-                db.module_provider.c.namespace
+                db.namespace.c.namespace
             ).select_from(
-                db.module_provider
+                db.namespace
             ).group_by(
-                db.module_provider.c.namespace
+                db.namespace.c.namespace
             ).order_by(
-                db.module_provider.c.namespace
+                db.namespace.c.namespace
             )
 
         with db.get_connection() as conn:
             res = conn.execute(namespace_query)
 
-            namespaces = [r['namespace'] for r in res]
             return [
-                Namespace(name=namespace)
-                for namespace in namespaces
+                Namespace(name=r['namespace'])
+                for r in res
             ]
 
     @property
@@ -356,10 +412,33 @@ class Namespace(object):
         if not re.match(r'^[0-9a-zA-Z][0-9a-zA-Z-_]+[0-9A-Za-z]$', name):
             raise InvalidNamespaceNameError('Namespace name is invalid')
 
+    @property
+    def pk(self):
+        """Return database ID of namespace."""
+        db_row = self._get_db_row()
+        if not db_row:
+            return None
+        return db_row['id']
+
     def __init__(self, name: str):
         """Validate name and store member variables"""
         self._validate_name(name)
         self._name = name
+        self._cache_db_row = None
+
+    def _get_db_row(self):
+        """Return database row for namespace."""
+        if self._cache_db_row is None:
+            db = Database.get()
+            select = db.namespace.select(
+            ).where(
+                db.namespace.c.namespace == self._name
+            )
+            with db.get_connection() as conn:
+                res = conn.execute(select)
+                self._cache_db_row = res.fetchone()
+
+        return self._cache_db_row
 
     def get_view_url(self):
         """Return view URL"""
@@ -377,8 +456,10 @@ class Namespace(object):
         db = Database.get()
         select = sqlalchemy.select(
             db.module_provider.c.module
-        ).select_from(db.module_provider).where(
-            db.module_provider.c.namespace == self.name
+        ).select_from(db.module_provider).join(
+            db.namespace, db.module_provider.c.namespace_id==db.namespace.c.id
+        ).where(
+            db.namespace.c.namespace == self.name
         ).group_by(
             db.module_provider.c.module
         )
@@ -436,8 +517,11 @@ class Module(object):
             db.module_provider.c.provider
         ).select_from(
             db.module_provider
+        ).join(
+            db.namespace,
+            db.module_provider.c.namespace_id==db.namespace.c.id
         ).where(
-            db.module_provider.c.namespace == self._namespace.name,
+            db.namespace.c.namespace == self._namespace.name,
             db.module_provider.c.module == self.name
         ).group_by(
             db.module_provider.c.provider
@@ -665,7 +749,7 @@ class ModuleProvider(object):
         """Get total number of module providers."""
         db = Database.get()
         counts = sqlalchemy.select(
-            db.module_provider.c.namespace,
+            db.namespace.c.namespace,
             db.module_provider.c.module,
             db.module_provider.c.provider
         ).select_from(
@@ -673,6 +757,9 @@ class ModuleProvider(object):
         ).join(
             db.module_provider,
             db.module_version.c.module_provider_id==db.module_provider.c.id
+        ).join(
+            db.namespace,
+            db.module_provider.c.namespace_id==db.namespace.c.id
         )
         if only_published:
             counts = counts.where(
@@ -681,7 +768,7 @@ class ModuleProvider(object):
             )
 
         counts = counts.group_by(
-            db.module_provider.c.namespace,
+            db.namespace.c.namespace,
             db.module_provider.c.module,
             db.module_provider.c.provider
         ).subquery()
@@ -699,7 +786,7 @@ class ModuleProvider(object):
         # Create module provider
         db = Database.get()
         module_provider_insert = db.module_provider.insert().values(
-            namespace=module._namespace.name,
+            namespace_id=module._namespace.pk,
             module=module.name,
             provider=name,
             verified=module._namespace.is_auto_verified
@@ -859,9 +946,7 @@ class ModuleProvider(object):
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
         return statement.where(
-            db.module_provider.c.namespace == self._module._namespace.name,
-            db.module_provider.c.module == self._module.name,
-            db.module_provider.c.provider == self.name
+            db.module_provider.c.id==self.pk
         )
 
     def _get_db_row(self):
@@ -869,8 +954,11 @@ class ModuleProvider(object):
         if self._cache_db_row is None:
             db = Database.get()
             select = db.module_provider.select(
+            ).join(
+                db.namespace,
+                db.module_provider.c.namespace_id==db.namespace.c.id
             ).where(
-                db.module_provider.c.namespace == self._module._namespace.name,
+                db.namespace.c.id == self._module._namespace.pk,
                 db.module_provider.c.module == self._module.name,
                 db.module_provider.c.provider == self.name
             )
@@ -1099,9 +1187,7 @@ class ModuleProvider(object):
         select = db.select_module_version_joined_module_provider(
             db.module_version.c.version
         ).where(
-            db.module_provider.c.namespace == self._module._namespace.name,
-            db.module_provider.c.module == self._module.name,
-            db.module_provider.c.provider == self.name,
+            db.module_provider.c.id == self.pk,
             db.module_version.c.published == True,
             db.module_version.c.beta == False
         )
@@ -1137,9 +1223,7 @@ class ModuleProvider(object):
         select = db.select_module_version_joined_module_provider(
             db.module_version.c.version
         ).where(
-            db.module_provider.c.namespace == self._module._namespace.name,
-            db.module_provider.c.module == self._module.name,
-            db.module_provider.c.provider == self.name
+            db.module_provider.c.id == self.pk
         )
         # Remove unpublished versions, it not including them
         if not include_unpublished:
@@ -1463,7 +1547,7 @@ class ModuleVersion(TerraformSpecsObject):
         counts = db.select_module_version_joined_module_provider(
             db.module_version.c.version
         ).group_by(
-            db.module_provider.c.namespace,
+            db.namespace.c.namespace,
             db.module_provider.c.module,
             db.module_provider.c.provider,
             db.module_version.c.version
@@ -1655,9 +1739,7 @@ class ModuleVersion(TerraformSpecsObject):
             select = db.module_version.select().join(
                 db.module_provider, db.module_version.c.module_provider_id == db.module_provider.c.id
             ).where(
-                db.module_provider.c.namespace == self._module_provider._module._namespace.name,
-                db.module_provider.c.module == self._module_provider._module.name,
-                db.module_provider.c.provider == self._module_provider.name,
+                db.module_provider.c.id == self._module_provider.pk,
                 db.module_version.c.version == self.version
             )
             with db.get_connection() as conn:

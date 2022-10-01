@@ -1090,5 +1090,6 @@ integration_test_data = {
                 '1.5.3-beta': {'published': True, 'beta': True}
             }
         }}
-    }
+    },
+    'testmodulecreation': {}
 }

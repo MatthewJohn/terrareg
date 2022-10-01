@@ -210,14 +210,25 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
 
         assert res.status_code == 200
 
-    def test_non_existent_module_provider(self, client, mocked_server_namespace_fixture):
-        """Test endpoint with non-existent module"""
+    @setup_test_data()
+    def test_non_existent_namespace(self, client, mocked_server_namespace_fixture):
+        """Test endpoint with non-existent namespace"""
 
         res = client.get('/v1/terrareg/modules/doesnotexist/unittestdoesnotexist/unittestproviderdoesnotexist/1.0.0')
 
-        assert res.json == {'errors': ['Not Found']}
-        assert res.status_code == 404
+        assert res.json == {'message': 'Namespace does not exist'}
+        assert res.status_code == 400
 
+    @setup_test_data()
+    def test_non_existent_module(self, client, mocked_server_namespace_fixture):
+        """Test endpoint with non-existent module"""
+
+        res = client.get('/v1/terrareg/modules/emptynamespace/unittestdoesnotexist/unittestproviderdoesnotexist/1.0.0')
+
+        assert res.json == {'message': 'Module provider does not exist'}
+        assert res.status_code == 400
+
+    @setup_test_data()
     def test_non_existent_module_version(self, client, mocked_server_namespace_fixture):
         """Test endpoint with non-existent version"""
 
@@ -232,8 +243,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
 
         res = client.get('/v1/terrareg/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1')
 
-        assert res.json == {'errors': ['Not Found']}
-        assert res.status_code == 404
+        assert res.json == {'message': 'Namespace does not exist'}
+        assert res.status_code == 400
 
     @setup_test_data()
     def test_matches_terrareg_api_details_function(self, client, mocked_server_namespace_fixture):

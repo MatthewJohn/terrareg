@@ -104,6 +104,7 @@ class BaseTest:
             conn.execute(db.analytics.delete())
             conn.execute(db.session.delete())
             conn.execute(db.module_version_file.delete())
+            conn.execute(db.namespace.delete())
 
         # Setup test git providers
         for git_provider_id in cls._GIT_PROVIDER_DATA:
@@ -120,7 +121,7 @@ class BaseTest:
         # Iterate through namespaces
         for namespace_name in import_data:
             namespace_data = import_data[namespace_name]
-            namespace = Namespace(name=namespace_name)
+            namespace = Namespace.get(name=namespace_name, create=True)
 
             # Iterate through modules
             for module_name in namespace_data:
@@ -134,7 +135,7 @@ class BaseTest:
 
                     # Update provided test attributes
                     module_provider_attributes = {
-                        'namespace': namespace_name,
+                        'namespace_id': namespace.pk,
                         'module': module_name,
                         'provider': provider_name
                     }

@@ -113,15 +113,30 @@ class TestInitialSetup(SeleniumTest):
         # Login as admin
         self.perform_admin_authentication('admin-setup-password')
 
+    def _test_create_namespace_step(self):
+        """Test create namespace step."""
+        # Ensure user has been redirected back to initial setup
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/initial-setup'))
+        create_module_card = self.wait_for_element(By.ID, 'setup-create-namespace')
+        create_module_card_content = self.wait_for_element(By.CLASS_NAME, 'card-content', parent=create_module_card)
+        self.check_only_card_is_displayed('create-namespace')
+
+        self.check_progress_bar(40)
+
+        # Click link to create module
+        create_module_card_content.find_element(By.TAG_NAME, 'a').click()
+        assert self.selenium_instance.current_url == self.get_url('/create-namespace')
+
     def _test_create_module_step(self):
         """Test create module step."""
-        # Ensure user has been redirected back to initial setup
+        self.selenium_instance.get(self.get_url('/initial-setup'))
+
         self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/initial-setup'))
         create_module_card = self.wait_for_element(By.ID, 'setup-create-module')
         create_module_card_content = self.wait_for_element(By.CLASS_NAME, 'card-content', parent=create_module_card)
         self.check_only_card_is_displayed('create-module')
 
-        self.check_progress_bar(40)
+        self.check_progress_bar(50)
 
         # Click link to create module
         create_module_card_content.find_element(By.TAG_NAME, 'a').click()
@@ -296,18 +311,23 @@ class TestInitialSetup(SeleniumTest):
                 self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'):
             self._test_login_step()
 
-            # Step 3 - Create a module
+            # Step 3 - Create a namespace
+            self._test_create_namespace_step()
+
+            # Create a namespace
+            namespace = Namespace.create('unittestnamespace')
+
+            # Step 4 - Create a module
             self._test_create_module_step()
 
             # Create module provider
-            namespace = Namespace(name='unittestnamespace')
             module = Module(namespace=namespace, name='setupmodulename')
             module_provider = ModuleProvider.get(module=module, name='setupprovider', create=True)
 
-            # Step 4a. - Index module version from git
+            # Step 5a. - Index module version from git
             self._test_index_version_git_step(module_provider)
 
-            # Step 4b. - Index module version from source
+            # Step 5b. - Index module version from source
             self._test_index_version_upload_step(module_provider)
 
             # Create module version to move to next step
@@ -317,16 +337,16 @@ class TestInitialSetup(SeleniumTest):
             # Check upload module version steps with unpublished version
             self._test_publish_module_version_upload_step(module_provider)
 
-            # Step 4a. (repeat with unpublished version)
+            # Step 5a. (repeat with unpublished version)
             self._test_publish_module_version_git_step(module_provider)
 
             # Publish module version to get to step 5
             module_version.publish()
 
-            # Step 5 - Secure instance
+            # Step 6 - Secure instance
             self._test_secure_instance_step()
 
-            # STEP 6 - HTTPS
+            # STEP 7 - HTTPS
             with self.update_mock(self._config_upload_api_keys_mock, 'new', ['some-api-upload-key']), \
                     self.update_mock(self._config_publish_api_keys_mock, 'new', ['some-api-publish-key']):
                 self._test_ssl_step()

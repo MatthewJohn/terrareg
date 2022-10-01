@@ -479,6 +479,9 @@
 
 # [2.14.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.13.1...v2.14.0) (2022-06-25)
 
+WARNING: This database change is non-downgradable, due to incorrect naming of previous foreign keys.
+
+If a downgrade from this version is required, the database must be restored from a pre-upgrade backup.
 
 ### Bug Fixes
 

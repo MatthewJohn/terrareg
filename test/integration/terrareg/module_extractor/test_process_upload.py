@@ -26,7 +26,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         """Test basic module upload with single depth."""
         test_upload = UploadTestModule()
 
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
@@ -67,7 +67,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         """Test module upload with terrareg metadata file."""
         test_upload = UploadTestModule()
 
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='2.0.0')
@@ -98,7 +98,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         with mock.patch('terrareg.config.Config.REQUIRED_MODULE_METADATA_ATTRIBUTES', ['description', 'owner']):
             test_upload = UploadTestModule()
 
-            namespace = Namespace(name='testprocessupload')
+            namespace = Namespace.get(name='testprocessupload', create=True)
             module = Module(namespace=namespace, name='test-module')
             module_provider = ModuleProvider.get(module=module, name='aws', create=True)
             module_version = ModuleVersion(module_provider=module_provider, version='3.0.0')
@@ -134,7 +134,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         with mock.patch('terrareg.config.Config.REQUIRED_MODULE_METADATA_ATTRIBUTES', ['description', 'owner']):
             test_upload = UploadTestModule()
 
-            namespace = Namespace(name='testprocessupload')
+            namespace = Namespace.get(name='testprocessupload', create=True)
             module = Module(namespace=namespace, name='test-module')
             module_provider = ModuleProvider.get(module=module, name='aws', create=True)
             module_version = ModuleVersion(module_provider=module_provider, version='4.0.0')
@@ -158,7 +158,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         """Test module upload with an invaid terrareg metadata file."""
         test_upload = UploadTestModule()
 
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='5.0.0')
@@ -219,7 +219,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         """Test uploading module with submodules."""
         test_upload = UploadTestModule()
 
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='6.0.0')
@@ -271,7 +271,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         """Test uploading module with examples."""
         test_upload = UploadTestModule()
 
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='7.0.0')
@@ -323,7 +323,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         """Test uploading a module with a README."""
         test_upload = UploadTestModule()
 
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='8.0.0')
@@ -424,7 +424,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         """Test uploading a module within a sub-directory of a module."""
         test_upload = UploadTestModule()
 
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='git-path')
         module_provider = ModuleProvider.get(module=module, name='test', create=True)
 
@@ -514,7 +514,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         """Test uploading a module with invalid terraform."""
         test_upload = UploadTestModule()
 
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='10.0.0')
@@ -535,7 +535,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         """Test uploading a module with security issue."""
         test_upload = UploadTestModule()
 
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='11.0.0')
@@ -590,7 +590,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         """Test uploading a module with real infracost API key."""
         test_upload = UploadTestModule()
 
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='12.0.0')
@@ -616,7 +616,7 @@ resource "aws_s3_bucket" "test" {
         """Test uploading a module without infracost API key."""
         test_upload = UploadTestModule()
 
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='12.0.0')
@@ -651,7 +651,7 @@ resource "aws_s3_bucket" "test" {
         """Test uploading a module with infracost throwing an error."""
         test_upload = UploadTestModule()
 
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='13.0.0')
@@ -683,7 +683,7 @@ resource "aws_s3_bucket" "test" {
         """Test uploading a module with infracost."""
         test_upload = UploadTestModule()
 
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='14.0.0')
@@ -1009,7 +1009,7 @@ resource "aws_s3_bucket" "test" {
         """Test uploading a module with reference to inaccessible external module."""
         test_upload = UploadTestModule()
 
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='15.0.0')
@@ -1096,7 +1096,7 @@ resource "aws_s3_bucket" "test" {
         """Test uploading a module with custom tab files."""
         test_upload = UploadTestModule()
 
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='16.0.0')
@@ -1140,7 +1140,7 @@ resource "aws_s3_bucket" "test" {
     @pytest.mark.skipif((not os.path.isfile('/usr/bin/zip')), reason="Zip must be installed on system")
     def test_upload_malicious_zip(self):
         """Test basic module upload with single depth."""
-        namespace = Namespace(name='testprocessupload')
+        namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='17.0.0')
