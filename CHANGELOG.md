@@ -1,5 +1,15 @@
 # Changelog
 
+# [2.43.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.42.0...v2.43.0) (2022-10-01)
+
+
+### Features
+
+* Add UI to create namespaces and API endpoint to create namespaces ([6e81668](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6e816681771d45e89261f5e9440308922e9bcabb)), closes [#256](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/256)
+* Move namespaces into new table ([e01c820](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e01c820316d45e9c962a9f738f166cfa388a9f6e)), closes [#178](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/178)
+* Update initial setup page to include step for creation of initial namespace ([dd40f13](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/dd40f13fc549cf682355b66c33895a5494ad3c15)), closes [#178](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/178)
+* Update module provider creation page to select namespace from pre-existing namespaces ([0e6bdac](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0e6bdac34c88cf48fd1a9286f5fbea094f909c4f)), closes [#178](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/178)
+
 # [2.42.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.41.0...v2.42.0) (2022-10-01)
 
 
