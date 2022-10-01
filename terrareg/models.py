@@ -1246,7 +1246,7 @@ class ModuleProvider(object):
 
 
 class TerraformSpecsObject(object):
-    """Base terraform object, that has terraform-docs available."""
+    """Base Terraform object, that has terraform-docs available."""
 
     @classmethod
     def get(cls, *args, **kwargs):
@@ -1369,7 +1369,7 @@ class TerraformSpecsObject(object):
     def get_terraform_dependencies(self):
         """Obtain module dependencies."""
         #return self.get_module_specs()['requirements']
-        # @TODO Verify what this should be - terraform example is empty and real-world examples appears to
+        # @TODO Verify what this should be - Terraform example is empty and real-world examples appears to
         # be empty, but do have an undocumented 'provider_dependencies'
         return []
 
@@ -1425,7 +1425,7 @@ class TerraformSpecsObject(object):
                 module_path = ''
             else:
                 # Otherwise, prepend with additional leading slash,
-                # for the terraform annotation for a sub-directory within
+                # for the Terraform annotation for a sub-directory within
                 # the module
                 module_path = '/{module_path}'.format(module_path=module_path)
 
@@ -1666,7 +1666,7 @@ class ModuleVersion(TerraformSpecsObject):
         return self._cache_db_row
 
     def get_terraform_example_version_string(self):
-        """Return formatted string of version parameter for example terraform."""
+        """Return formatted string of version parameter for example Terraform."""
         # For beta versions, pass an exact version constraint.
         if self.beta:
             return self.version
@@ -1726,7 +1726,7 @@ class ModuleVersion(TerraformSpecsObject):
         # Return rendered version of template
         if rendered_url:
             # Check if scheme starts with git::, which is required
-            # by terraform to acknowledge a git repository
+            # by Terraform to acknowledge a git repository
             # and add if it not
             parsed_url = urllib.parse.urlparse(rendered_url)
             if not parsed_url.scheme.startswith('git::'):

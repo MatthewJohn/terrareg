@@ -23,6 +23,7 @@
 
         <script src="/static/js/terrareg/config.js"></script>
         <script src="/static/js/terrareg/module_provider.js"></script>
+        <script src="/static/js/terrareg/user-preferences.js"></script>
 
         <script>
           function navbar_search_modules() {
@@ -131,6 +132,19 @@
                 <div class="navbar-item">
                   <div class="field is-grouped">
                     <p class="control">
+                      <a id="navbar-user-preferences-link" class="button is-primary" onclick="userPreferencesModalShow();">
+                      <span class="icon">
+                        <i id="navbar-user-preferences" class="fa fa-gear"></i>
+                      </span>
+                      <span id="navbar-user-preferences-span">Preferences</span>
+                    </a>
+                    </p>
+                  </div>
+                </div>
+
+                <div class="navbar-item">
+                  <div class="field is-grouped">
+                    <p class="control">
                       <a id="navbar_login_link" class="button is-primary" href="/login">
                       <span class="icon">
                         <i id="navbar_login_icon" class="fa fa-sign-in"></i>
@@ -163,6 +177,35 @@
             {% block additional_footer %}{% endblock %}
           </div>
         </footer>
+
+
+        <!-- User preferences modal -->
+        <div id="user-preferences-modal" class="modal">
+          <div class="modal-background" onclick="userPreferencesModalClose();"></div>
+        
+          <div class="modal-content">
+            <div class="box">
+              <p>User Preferences</p>
+              <br />
+
+              <div class="field">
+                <label class="label"><input id="user-preferences-show-beta" class="checkbox" type="checkbox" /> Show 'beta' versions</label>
+              </div>
+
+              <div class="field">
+                <label class="label"><input id="user-preferences-show-unpublished" class="checkbox" type="checkbox" /> Show 'unpublished' versions</label>
+              </div>
+
+              <br />
+
+              <button class="button" aria-label="close" onclick="userPreferencesModalSave();">Save</button>
+              <button class="button" aria-label="close" onclick="userPreferencesModalClose();">Close</button>
+            </div>
+          </div>
+        
+          <button class="modal-close is-large" aria-label="close" onclick="userPreferencesModalClose();"></button>
+        </div>
+        <!-- !User preferences modal -->
 
     </body>
 </html>

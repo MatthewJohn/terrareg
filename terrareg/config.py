@@ -7,7 +7,7 @@ from terrareg.errors import InvalidBooleanConfigurationError
 class Config:
 
     _INTERNAL_EXTRACTION_ANALYITCS_TOKEN = str(uuid.uuid4())
-    """Analaytics token used by terraform initialised by the registry"""
+    """Analaytics token used by Terraform initialised by the registry"""
 
     @property
     def DOMAIN_NAME(self):
@@ -66,7 +66,7 @@ class Config:
     @property
     def ALLOW_UNIDENTIFIED_DOWNLOADS(self):
         """
-        Whether modules can be downloaded with terraform
+        Whether modules can be downloaded with Terraform
         without specifying an identification string in
         the namespace
         """
@@ -100,7 +100,7 @@ class Config:
         Note that, if this token is used in a module call, it will be ignored and treated as if
         an analytics token has not been provided.
         If analytics tokens are required, this stops users from accidently using the example placeholder in
-        terraform projects.
+        Terraform projects.
         """
         return os.environ.get('EXAMPLE_ANALYTICS_TOKEN', 'my-tf-application')
 
@@ -194,11 +194,11 @@ class Config:
     @property
     def ANALYTICS_AUTH_KEYS(self):
         """
-        List of comma-separated values for terraform auth tokens for deployment environments.
+        List of comma-separated values for Terraform auth tokens for deployment environments.
 
         E.g. `xxxxxx.deploy1.xxxxxxxxxxxxx:dev,zzzzzz.deploy1.zzzzzzzzzzzzz:prod`
-        In this example, in the 'dev' environment, the auth token for terraform would be: `xxxxxx.deploy1.xxxxxxxxxxxxx`
-        and the auth token for terraform for prod would be: `zzzzzz.deploy1.zzzzzzzzzzzzz`.
+        In this example, in the 'dev' environment, the auth token for Terraform would be: `xxxxxx.deploy1.xxxxxxxxxxxxx`
+        and the auth token for Terraform for prod would be: `zzzzzz.deploy1.zzzzzzzzzzzzz`.
 
         To disable auth tokens and to report all downloads, leave empty.
 
@@ -270,7 +270,7 @@ class Config:
         If this is disabled, the publish endpoint must be called before the module version
         is displayed in the list of module versions.
 
-        NOTE: Even whilst in an unpublished state, the module version can still be accessed directly, but not used within terraform.
+        NOTE: Even whilst in an unpublished state, the module version can still be accessed directly, but not used within Terraform.
         """
         return self.convert_boolean(os.environ.get('AUTO_PUBLISH_MODULE_VERSIONS', 'True'))
 
@@ -370,8 +370,8 @@ class Config:
     @property
     def TERRAFORM_EXAMPLE_VERSION_TEMPLATE(self):
         """
-        Template of version number string to be used in terraform examples in the UI.
-        This is used by the snippet example of a terraform module and the 'resource builder' example.
+        Template of version number string to be used in Terraform examples in the UI.
+        This is used by the snippet example of a Terraform module and the 'resource builder' example.
 
         The template can contain the following placeholders:
          * `{major}`, `{minor}`, `{patch}`
@@ -382,7 +382,7 @@ class Config:
          * `>= {major}.{minor}.{patch}, < {major_plus_one}.0.0`
          * `~> {major}.{minor}.{patch}`
 
-        For more information, see terraform documentation: https://www.terraform.io/language/expressions/version-constraints
+        For more information, see Terraform documentation: https://www.terraform.io/language/expressions/version-constraints
 
         """
         return os.environ.get('TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '{major}.{minor}.{patch}')
