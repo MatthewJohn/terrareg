@@ -276,6 +276,10 @@ There are common attributes that can be added to each of variable objects, which
 
 ## Single Sign-On
 
+*NOTE* OpenID and SAML2 authentication is currently experimental.
+
+It is advised to use with caution and avoid using on publicly hosted/accessible instances.
+
 ### OpenID Connect
 
 To configure OpenID connect, setup an application in an identity provider (IdP) with the following:
