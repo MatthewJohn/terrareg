@@ -942,7 +942,7 @@ The instance should be configured with SSL certificates (SSL_CERT_PRIVATE_KEY/SS
 
 ### SAML2
 
-Generate a x and a private key, using:
+Generate a public and a private key, using:
 
     openssl genrsa -out private.key 4096
     openssl req -new -x509 -key private.key -out publickey.cer -days 365
@@ -951,8 +951,8 @@ Set the folllowing environment variables:
 
 * SAML2_IDP_METADATA_URL (required)
 * SAML2_ENTITY_ID (required)
-* SAML2_PRIVATE_KEY (required) (See configuration documentation for guide to generating this)
-* SAML2_PUBLIC_KEY (required) (See configuration documentation for guide to generating this)
+* SAML2_PRIVATE_KEY (required) (See above)
+* SAML2_PUBLIC_KEY (required) (See above)
 * SAML2_IDP_ENTITY_ID (optional)
 
 In the IdP:
