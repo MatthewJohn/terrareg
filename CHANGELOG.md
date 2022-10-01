@@ -1,5 +1,17 @@
 # Changelog
 
+# [2.42.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.41.0...v2.42.0) (2022-10-01)
+
+
+### Bug Fixes
+
+* Fix logout icon ([cd343cb](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/cd343cbd58de011a9d67e182934512a1e8cc3d9f)), closes [#7](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/7)
+
+
+### Features
+
+* Implement OpenID and SAML authentication ([c611a7c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c611a7cb7c506c9744dd30c7acec8ea8ce0cad9a))
+
 # [2.41.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.40.4...v2.41.0) (2022-10-01)
 
 
