@@ -13,7 +13,7 @@ from attr import ib
 from flask import (
     Config, Flask, request, render_template,
     redirect, make_response, send_from_directory,
-    session, g
+    session, g, redirect
 )
 from flask_restful import Resource, Api, reqparse, inputs, abort
 
@@ -32,6 +32,8 @@ from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ApiUploadModuleExtractor, GitModuleExtractor
 from terrareg.analytics import AnalyticsEngine
 from terrareg.filters import NamespaceTrustFilter
+import terrareg.openid_connect
+import terrareg.saml
 
 
 def catch_name_exceptions(f):
@@ -102,7 +104,61 @@ def catch_name_exceptions(f):
     return decorated_function
 
 
-class Server(object):
+class BaseHandler:
+    """Provide base methods for handling requests and serving pages."""
+
+    def _render_template(self, *args, **kwargs):
+        """Override render_template, passing in base variables."""
+        return render_template(
+            *args, **kwargs,
+            terrareg_application_name=terrareg.config.Config().APPLICATION_NAME,
+            terrareg_logo_url=terrareg.config.Config().LOGO_URL,
+            ALLOW_MODULE_HOSTING=terrareg.config.Config().ALLOW_MODULE_HOSTING,
+            TRUSTED_NAMESPACE_LABEL=terrareg.config.Config().TRUSTED_NAMESPACE_LABEL,
+            CONTRIBUTED_NAMESPACE_LABEL=terrareg.config.Config().CONTRIBUTED_NAMESPACE_LABEL,
+            VERIFIED_MODULE_LABEL=terrareg.config.Config().VERIFIED_MODULE_LABEL,
+            csrf_token=get_csrf_token()
+        )
+
+    def _module_provider_404(self, namespace: Namespace, module: Module,
+                             module_provider_name: str):
+        return self._render_template(
+            'error.html',
+            error_title='Module/Provider does not exist',
+            error_description='The module {namespace}/{module}/{module_provider_name} does not exist'.format(
+                namespace=namespace.name,
+                module=module.name,
+                module_provider_name=module_provider_name
+            ),
+            namespace=namespace,
+            module=module,
+            module_provider_name=module_provider_name
+        ), 404
+
+    def create_session(self):
+        """Create session for user"""
+        if not terrareg.config.Config().SECRET_KEY:
+            return None
+
+        # Check if a session already exists and delete it
+        if session.get('session_id', None):
+            session_obj = Session.check_session(session.get('session_id', None))
+            if session_obj:
+                session_obj.delete()
+
+        session['csrf_token'] = hashlib.sha1(os.urandom(64)).hexdigest()
+        session_obj = Session.create_session()
+        session['session_id'] = session_obj.id
+        session.modified = True
+
+        # Whilst authenticating a user, piggyback the request
+        # to take the opportunity to delete old sessions
+        Session.cleanup_old_sessions()
+
+        return session_obj
+
+
+class Server(BaseHandler):
     """Manage web server and route requests"""
 
     def __init__(self, ssl_public_key=None, ssl_private_key=None):
@@ -257,6 +313,27 @@ class Server(object):
         self._app.route(
             '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/example/<path:submodule_path>'
         )(self._view_serve_example)
+
+
+        # OpenID connect endpoints
+        self._api.add_resource(
+            ApiOpenIdInitiate,
+            '/openid/login'
+        )
+        self._api.add_resource(
+            ApiOpenIdCallback,
+            '/openid/callback'
+        )
+
+        # Saml2 endpoints
+        self._api.add_resource(
+            ApiSamlInitiate,
+            '/saml/login'
+        )
+        self._api.add_resource(
+            ApiSamlMetadata,
+            '/saml/metadata'
+        )
 
         # Terrareg APIs
         ## Config endpoint
@@ -438,19 +515,6 @@ class Server(object):
             '/v1/terrareg/health'
         )
 
-    def _render_template(self, *args, **kwargs):
-        """Override render_template, passing in base variables."""
-        return render_template(
-            *args, **kwargs,
-            terrareg_application_name=terrareg.config.Config().APPLICATION_NAME,
-            terrareg_logo_url=terrareg.config.Config().LOGO_URL,
-            ALLOW_MODULE_HOSTING=terrareg.config.Config().ALLOW_MODULE_HOSTING,
-            TRUSTED_NAMESPACE_LABEL=terrareg.config.Config().TRUSTED_NAMESPACE_LABEL,
-            CONTRIBUTED_NAMESPACE_LABEL=terrareg.config.Config().CONTRIBUTED_NAMESPACE_LABEL,
-            VERIFIED_MODULE_LABEL=terrareg.config.Config().VERIFIED_MODULE_LABEL,
-            csrf_token=get_csrf_token()
-        )
-
     def run(self, debug=None):
         """Run flask server."""
         kwargs = {
@@ -509,6 +573,11 @@ class Server(object):
         session['session_id'] = None
 
         session['is_admin_authenticated'] = False
+        session['openid_connect_state'] = None
+        session['openid_connect_access_token'] = None
+        session['openid_connect_id_token'] = None
+        session['openid_connect_expires_at'] = None
+        session.modified = True
         return redirect('/')
 
     def _view_serve_create_module(self):
@@ -655,7 +724,9 @@ class AuthenticationType(Enum):
     NOT_CHECKED = 0
     NOT_AUTHENTICATED = 1
     AUTHENTICATION_TOKEN = 2
-    SESSION = 3
+    SESSION_PASSWORD = 3
+    SESSION_OPENID_CONNECT = 4
+    SESSION_SAML = 5
 
 
 def get_csrf_token():
@@ -703,8 +774,32 @@ def check_admin_authentication():
     if (terrareg.config.Config().SECRET_KEY and
             Session.check_session(session.get('session_id', None)) and
             session.get('is_admin_authenticated', False)):
-        authenticated = True
-        g.authentication_type = AuthenticationType.SESSION
+
+        session_authentication_type = AuthenticationType(
+            session.get('authentication_type',
+                        AuthenticationType.NOT_AUTHENTICATED.value))
+
+        if session_authentication_type is AuthenticationType.SESSION_PASSWORD:
+            authenticated = True
+            g.authentication_type = AuthenticationType.SESSION_PASSWORD
+
+        # Check for SAML authentcation type
+        elif session_authentication_type is AuthenticationType.SESSION_SAML:
+            auth = terrareg.saml.Saml2.initialise_request_auth_object(request)
+            if auth.is_authenticated():
+                authenticated = True
+                g.authentication_type = AuthenticationType.SESSION_SAML
+
+        # If authentication type is OpenID connect,
+        # ensure the OpenID token has not expired
+        elif (session_authentication_type is AuthenticationType.SESSION_OPENID_CONNECT
+                and datetime.datetime.now() < datetime.datetime.fromtimestamp(session.get('openid_connect_expires_at', 0))):
+            try:
+                terrareg.openid_connect.OpenidConnect.validate_session_token(session.get('openid_connect_id_token'))
+                authenticated = True
+                g.authentication_type = AuthenticationType.SESSION_OPENID_CONNECT
+            except Exception:
+                pass
 
     return authenticated
 
@@ -759,7 +854,7 @@ class ApiTerraformWellKnown(Resource):
         }
 
 
-class ErrorCatchingResource(Resource):
+class ErrorCatchingResource(Resource, BaseHandler):
     """Provide resource that catches terrareg errors."""
 
     def _get(self, *args, **kwargs):
@@ -873,7 +968,11 @@ class ApiTerraregConfig(ErrorCatchingResource):
             'ALLOW_CUSTOM_GIT_URL_MODULE_VERSION': config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
             'ADMIN_AUTHENTICATION_TOKEN_ENABLED': bool(config.ADMIN_AUTHENTICATION_TOKEN),
             'SECRET_KEY_SET': bool(config.SECRET_KEY),
-            'ADDITIONAL_MODULE_TABS': config.ADDITIONAL_MODULE_TABS
+            'ADDITIONAL_MODULE_TABS': config.ADDITIONAL_MODULE_TABS,
+            'OPENID_CONNECT_ENABLED': terrareg.openid_connect.OpenidConnect.is_enabled(),
+            'OPENID_CONNECT_LOGIN_TEXT': config.OPENID_CONNECT_LOGIN_TEXT,
+            'SAML_ENABLED': terrareg.saml.Saml2.is_enabled(),
+            'SAML_LOGIN_TEXT': config.SAML2_LOGIN_TEXT
         }
 
 
@@ -1873,24 +1972,13 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
     def _post(self):
         """Handle POST requests to the authentication endpoint."""
 
-        if not terrareg.config.Config().SECRET_KEY:
+        session_obj = self.create_session()
+        if not isinstance(session_obj, Session):
             return {'message': 'Sessions not enabled in configuration'}, 403
 
-        # Check if a session already exists and delete it
-        if session.get('session_id', None):
-            session_obj = Session.check_session(session.get('session_id', None))
-            if session_obj:
-                session_obj.delete()
-
         session['is_admin_authenticated'] = True
-        session['csrf_token'] = hashlib.sha1(os.urandom(64)).hexdigest()
-        session_obj = Session.create_session()
-        session['session_id'] = session_obj.id
+        session['authentication_type'] = AuthenticationType.SESSION_PASSWORD.value
         session.modified = True
-
-        # Whilst authenticating a user, piggyback the request
-        # to take the opportunity to delete old sessions
-        Session.cleanup_old_sessions()
 
         return {'authenticated': True}
 
@@ -2403,3 +2491,156 @@ class ApiTerraregModuleVersionFile(ErrorCatchingResource):
             return {'message': 'Module version file does not exist.'}, 400
 
         return module_version_file.get_content()
+
+
+class ApiOpenIdInitiate(ErrorCatchingResource):
+    """Interface to initiate authentication via OpenID connect"""
+
+    def _get(self):
+        """Generate session for storing OpenID state token and redirect to openid login provider."""
+        redirect_url, state = terrareg.openid_connect.OpenidConnect.get_authorize_redirect_url()
+
+        if redirect_url is None:
+            res = make_response(render_template(
+                'error.html',
+                error_title='Login error',
+                error_description='SSO is incorrectly configured'
+            ))
+            res.headers['Content-Type'] = 'text/html'
+            return res
+
+        session['openid_connect_state'] = state
+        session.modified = True
+
+        return redirect(redirect_url, code=302)
+
+
+class ApiOpenIdCallback(ErrorCatchingResource):
+    """Interface to handle callback from authorization flow from OpenID connect"""
+
+    def _get(self):
+        """Handle response from OpenID callback"""
+        # If session state has not been set, return 
+        state = session.get('openid_connect_state')
+        if not state:
+            return {}, 400
+
+        # Fetch access token
+        try:
+            access_token = terrareg.openid_connect.OpenidConnect.fetch_access_token(uri=request.url, valid_state=state)
+            if access_token is None:
+                raise Exception('Error getting access token')
+        except Exception as exc:
+            # In dev, reraise exception
+            if terrareg.config.Config().DEBUG:
+                raise
+
+            res = make_response(render_template(
+                'error.html',
+                error_title='Login error',
+                error_description='Invalid repsonse from SSO'
+            ))
+            res.headers['Content-Type'] = 'text/html'
+            return res
+
+
+        session_obj = self.create_session()
+        if not isinstance(session_obj, Session):
+            res = make_response(render_template(
+                'error.html',
+                error_title='Login error',
+                error_description='Sessions are not available'
+            ))
+            res.headers['Content-Type'] = 'text/html'
+            return res
+
+        session['openid_connect_id_token'] = access_token['id_token']
+        session['is_admin_authenticated'] = True
+        session['authentication_type'] = AuthenticationType.SESSION_OPENID_CONNECT.value
+
+        # Manually calcualte expires at, to avoid timezone issues
+        session['openid_connect_expires_at'] = datetime.datetime.now().timestamp() + access_token['expires_in']
+        session.modified = True
+
+        # Redirect to homepage
+        return redirect('/')
+
+
+class ApiSamlInitiate(ErrorCatchingResource):
+    """Interface to initiate authentication via OpenID connect"""
+
+    def _get(self):
+        """Setup authentication request to redirect user to SAML provider."""
+        auth = terrareg.saml.Saml2.initialise_request_auth_object(request)
+
+        errors = None
+
+        if 'sso' in request.args:
+            session_obj = self.create_session()
+            if session_obj is None:
+                return {"Error", "Could not create session"}, 500
+
+            idp_url = auth.login()
+
+            session['AuthNRequestID'] = auth.get_last_request_id()
+            session.modified = True
+
+            return redirect(idp_url)
+
+        elif 'acs' in request.args:
+            request_id = session.get('AuthNRequestID')
+
+            if request_id is None:
+                return {"Error": "No request ID"}, 500
+
+            auth.process_response(request_id=request_id)
+            errors = auth.get_errors()
+            if not errors and auth.is_authenticated():
+                if 'AuthNRequestID' in session:
+                    del session['AuthNRequestID']
+
+                # Setup Authentcation session
+                session['samlUserdata'] = auth.get_attributes()
+                session['samlNameId'] = auth.get_nameid()
+                session['samlNameIdFormat'] = auth.get_nameid_format()
+                session['samlNameIdNameQualifier'] = auth.get_nameid_nq()
+                session['samlNameIdSPNameQualifier'] = auth.get_nameid_spnq()
+                session['samlSessionIndex'] = auth.get_session_index()
+                session['is_admin_authenticated'] = True
+                session['authentication_type'] = AuthenticationType.SESSION_SAML.value
+
+                session.modified = True
+
+        if errors:
+            res = make_response(render_template(
+                'error.html',
+                error_title='Login error',
+                error_description='An error occured whilst processing SAML login request'
+            ))
+            res.headers['Content-Type'] = 'text/html'
+            return res
+
+        return redirect('/', code=302)
+
+    def _post(self):
+        """Handle POST request."""
+        return self._get()
+
+
+class ApiSamlMetadata(ErrorCatchingResource):
+    """Meta-data endpoint for SAML"""
+
+    def _get(self):
+        """Return SAML SP metadata."""
+        auth = terrareg.saml.Saml2.initialise_request_auth_object(request)
+        settings = auth.get_settings()
+        metadata = settings.get_sp_metadata()
+        errors = settings.validate_metadata(metadata)
+
+        if len(errors) == 0:
+            resp = make_response(metadata, 200)
+            resp.headers['Content-Type'] = 'text/xml'
+        else:
+            resp = make_response(', '.join(errors), 500)
+        return resp
+
