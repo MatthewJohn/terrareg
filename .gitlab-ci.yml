@@ -79,6 +79,8 @@ test-docker-image:
   services:
     - name: terrareg-image:v${CI_COMMIT_SHORT_SHA}
       alias: terrareg
+  variables:
+    MIGRATE_DATABASE: "True"
   script:
     # Wait for Terrareg container to come up
     - sleep 30
