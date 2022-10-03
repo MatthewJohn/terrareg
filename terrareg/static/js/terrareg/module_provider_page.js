@@ -49,7 +49,7 @@ class BaseTab {
     constructor() {
         this._renderPromise = undefined;
     }
-    render() {}
+    render() { }
     async isValid() {
         let result = await this._renderPromise;
         return result;
@@ -61,7 +61,7 @@ class ModuleDetailsTab extends BaseTab {
         super();
         this._moduleDetails = moduleDetails;
     }
-    render() {}
+    render() { }
 }
 
 
@@ -85,24 +85,24 @@ class ReadmeTab extends BaseTab {
                     resolve(false);
                     return;
                 }
-            
+
                 let readmeContentDiv = $("#module-tab-readme");
-            
+
                 // Populate README conrtent
                 readmeContentDiv.append(readmeContent);
-            
+
                 // Add 'table' class to all tables in README
                 readmeContentDiv.find("table").addClass("table");
-            
+
                 // Replace size of headers
                 readmeContentDiv.find("h1").addClass("subtitle").addClass("is-3");
                 readmeContentDiv.find("h2").addClass("subtitle").addClass("is-4");
                 readmeContentDiv.find("h3").addClass("subtitle").addClass("is-5");
                 readmeContentDiv.find("h4").addClass("subtitle").addClass("is-6");
-            
+
                 // Show README tab button
                 $("#module-tab-link-readme").removeClass('default-hidden');
-            
+
                 resolve(true);
             });
         });
@@ -131,15 +131,15 @@ class AdditionalTab extends BaseTab {
                     resolve(false);
                     return;
                 }
-            
+
                 let tab = $(`<div id="module-tab-${this.name}" class="module-tabs content default-hidden"></div>`);
-            
+
                 // Populate file conrtent
                 tab.append(fileContent);
-            
+
                 // Add 'table' class to all tables in README
                 tab.find("table").addClass("table");
-            
+
                 // Replace size of headers
                 tab.find("h1").addClass("subtitle").addClass("is-3");
                 tab.find("h2").addClass("subtitle").addClass("is-4");
@@ -154,7 +154,7 @@ class AdditionalTab extends BaseTab {
                 let tabLink = $(`<li id="module-tab-link-${this.name}" class="module-tab-link"><a onclick="selectModuleTab('${this.name}')">${this._tabName}</a></li>`);
                 let insertAfterLink = $('#module-tab-link-resources');
                 tabLink.insertAfter(insertAfterLink);
-            
+
                 resolve(true);
             });
         });
@@ -209,7 +209,7 @@ class ExampleFilesTab extends ModuleDetailsTab {
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
             $.get(`/v1/terrareg/modules/${this._moduleDetails.id}/examples/filelist/${this._exampleDetails.path}`, (data) => {
-                if (! data.length) {
+                if (!data.length) {
                     resolve(false);
                     return;
                 }
@@ -247,7 +247,7 @@ class InputsTab extends ModuleDetailsTab {
         return 'inputs';
     }
     async render() {
-            this._renderPromise = new Promise(async (resolve) => {
+        this._renderPromise = new Promise(async (resolve) => {
             let inputTab = $("#module-tab-inputs");
             let inputTabTbody = inputTab.find("tbody");
             this._moduleDetails.inputs.forEach((input) => {
@@ -342,6 +342,111 @@ class ProvidersTab extends ModuleDetailsTab {
             $('#module-tab-link-providers').removeClass('default-hidden');
             resolve(true);
         });
+    }
+}
+
+class SecurityIssuesTab extends ModuleDetailsTab {
+    get name() {
+        return 'security-issues';
+    }
+    async render() {
+        this._renderPromise = new Promise(async (resolve) => {
+            if (this._moduleDetails.security_results) {
+                let tfsecTab = $("#module-tab-security-issues");
+                let tfsecTabTbody = tfsecTab.find("tbody");
+                this._moduleDetails.security_results.forEach((tfsec) => {
+                    let tfsecRow = $("<tr></tr>");
+
+                    let blankTd = $('<td class="is-vcentered"></td>');
+                    tfsecRow.append(blankTd);
+
+                    let severityTd = ''
+                    if (tfsec.severity == "CRITICAL") {
+                        severityTd = '<td class="is-vcentered"><span class="tag is-primary is-light" style="background-color: red; color: white">' + tfsec.severity + '</span></td>';
+                    } else if (tfsec.severity == "HIGH") {
+                        severityTd = '<td class="is-vcentered"><span class="tag is-primary is-light" style="background-color: orangered; color: white">' + tfsec.severity + '</span></td>';
+                    } else if (tfsec.severity == "MEDIUM") {
+                        severityTd = '<td class="is-vcentered"><span class="tag is-primary is-light" style="background-color: orange; color: white">' + tfsec.severity + '</span></td>';
+                    } else if (tfsec.severity == "LOW") {
+                        severityTd = '<td class="is-vcentered"><span class="tag is-primary is-light" style="background-color: darkgray; color: white">' + tfsec.severity + '</span></td>';
+                    } else {
+                    };
+                    tfsecRow.append(severityTd);
+
+                    let ruleidTd = $('<td class="is-vcentered"></td>');
+                    ruleidTd.text(tfsec.rule_id);
+                    tfsecRow.append(ruleidTd);
+
+                    let fileTd = $('<td class="is-vcentered"></td>');
+                    fileTd.text(tfsec.location.filename);
+                    tfsecRow.append(fileTd);
+
+                    let descriptionTd = $('<td class="is-vcentered"></td>');
+                    descriptionTd.text(tfsec.rule_description);
+                    tfsecRow.append(descriptionTd);
+
+                    let providerTd = $('<td class="is-vcentered"></td>');
+                    providerTd.text(tfsec.rule_provider);
+                    tfsecRow.append(providerTd);
+
+                    let serviceTd = $('<td class="is-vcentered"></td>');
+                    serviceTd.text(tfsec.rule_service);
+                    tfsecRow.append(serviceTd);
+
+                    let resourceTd = $('<td class="is-vcentered"></td>');
+                    resourceTd.text(tfsec.resource);
+                    tfsecRow.append(resourceTd);
+
+                    let startLineTd = $('<td class="is-vcentered"></td>');
+                    startLineTd.text(tfsec.location.start_line);
+                    tfsecRow.append(startLineTd);
+
+                    let endLineTd = $('<td class="is-vcentered"></td>');
+                    endLineTd.text(tfsec.location.end_line);
+                    tfsecRow.append(endLineTd);
+
+                    let impactTd = $('<td class="is-vcentered"></td>');
+                    impactTd.text(tfsec.impact);
+                    tfsecRow.append(impactTd);
+
+                    let resolutionTd = $('<td class="is-vcentered"></td>');
+                    resolutionTd.text(tfsec.resolution);
+                    tfsecRow.append(resolutionTd);
+
+                    tfsecTabTbody.append(tfsecRow);
+                });
+
+                // Show tab link
+                $('#module-tab-link-security-issues').removeClass('default-hidden');
+            }
+            resolve(true);
+        });
+        if (this._moduleDetails.security_results) {
+            $(document).ready(function () {
+
+                $("#security-issues-table").DataTable({
+                    order: [[1, 'asc']],
+                    columnDefs: [
+                        {
+                            targets: [5, 6, 7, 8, 9, 10, 11],
+                            className: "none"
+                        },
+                        {
+                            targets: [4],
+                            className: "none"
+                            // visible: false
+                        },
+                    ],
+                    rowGroup: {
+                        dataSrc: [2, 4]
+                    },
+                    lengthMenu: [
+                        [25, 50, -1],
+                        [25, 50, 'All'],
+                    ],
+                });
+            });
+        }
     }
 }
 
@@ -472,7 +577,7 @@ class SettingsTab extends ModuleDetailsTab {
 
             let loggedIn = await isLoggedIn();
             // Return immediately if user is not logged in
-            if (! loggedIn) {
+            if (!loggedIn) {
                 resolve(false);
                 return;
             }
@@ -496,7 +601,7 @@ class SettingsTab extends ModuleDetailsTab {
                 let customGitProvider = $('<option></option>');
                 customGitProvider.val('');
                 customGitProvider.text('Custom');
-                if (! this._moduleDetails.git_provider_id) {
+                if (!this._moduleDetails.git_provider_id) {
                     customGitProvider.attr('selected', '');
                 }
                 gitProviderSelect.append(customGitProvider);
@@ -580,7 +685,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
             analyticsTokenInputField.attr('id', 'usageBuilderAnalyticsToken');
             analyticsTokenInputField.attr('type', 'text');
             analyticsTokenInputField.attr('placeholder', config.EXAMPLE_ANALYTICS_TOKEN);
-            analyticsTokenInputField.bind('keyup', () => {updateUsageBuilderOutput(this._moduleDetails)});
+            analyticsTokenInputField.bind('keyup', () => { updateUsageBuilderOutput(this._moduleDetails) });
             analyticsTokenInputTd.append(analyticsTokenInputField);
             analyticsTokenInputRow.append(analyticsTokenInputTd);
 
@@ -588,7 +693,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
 
             let inputVariables = await getUsageBuilderVariables(this._moduleDetails.id);
 
-            if (inputVariables === null || ! inputVariables.length) {
+            if (inputVariables === null || !inputVariables.length) {
                 // If there are no variables present in the usage builder,
                 // then exit early
                 resolve(false);
@@ -619,7 +724,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
                     inputDiv.addClass('input');
                     inputDiv.attr('type', 'text');
                     inputDiv.attr('id', inputId);
-                    inputDiv.bind('keyup', () => {updateUsageBuilderOutput(this._moduleDetails)});
+                    inputDiv.bind('keyup', () => { updateUsageBuilderOutput(this._moduleDetails) });
                     valueTd.append(inputDiv);
 
                 } else if (inputVariable.type == 'boolean') {
@@ -629,7 +734,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
                     inputDiv.attr('type', 'checkbox');
                     inputDiv.attr('id', inputId);
                     inputDiv.attr('value', 'true');
-                    inputDiv.bind('onchange', () => {updateUsageBuilderOutput(this._moduleDetails)});
+                    inputDiv.bind('onchange', () => { updateUsageBuilderOutput(this._moduleDetails) });
                     valueTd.append(inputDiv);
 
                 } else if (inputVariable.type == 'select') {
@@ -637,7 +742,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
                     inputDiv.addClass('select');
                     let inputSelect = $('<select></select>');
                     inputSelect.attr('id', inputId);
-                    inputSelect.bind('change', () => {updateUsageBuilderOutput(this._moduleDetails)});
+                    inputSelect.bind('change', () => { updateUsageBuilderOutput(this._moduleDetails) });
 
                     inputVariable.choices.forEach((inputChoice, itx) => {
                         // If choices is list of strings, use the string as the name,
@@ -664,7 +769,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
                     customInput.addClass('input');
                     customInput.attr('type', 'text');
                     customInput.attr('id', `${inputId}-customValue`);
-                    customInput.bind('keyup', () => {updateUsageBuilderOutput(this._moduleDetails)});
+                    customInput.bind('keyup', () => { updateUsageBuilderOutput(this._moduleDetails) });
                     customInput.css('display', 'none');
                     valueTd.append(customInput);
 
@@ -739,7 +844,7 @@ function getCurrentObjectId(data, stopAt = undefined) {
         return id;
     }
 
-    if (! data.version) {
+    if (!data.version) {
         return id;
     }
     id += `/${data.version}`;
@@ -804,83 +909,83 @@ function populateVersionSelect(moduleDetails) {
     let userPreferences = getUserPreferences();
 
     $.get(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/versions` +
-          `?include-beta=${userPreferences["show-beta-versions"]}&` +
-          `include-unpublished=${userPreferences["show-unpublished-versions"]}`).then((versions) => {
-        let foundLatest = false;
-        for (let versionDetails of versions) {
-            let versionOption = $("<option></option>");
-            let isLatest = false;
+        `?include-beta=${userPreferences["show-beta-versions"]}&` +
+        `include-unpublished=${userPreferences["show-unpublished-versions"]}`).then((versions) => {
+            let foundLatest = false;
+            for (let versionDetails of versions) {
+                let versionOption = $("<option></option>");
+                let isLatest = false;
 
-            // Set value of option to view URL of module version
-            versionOption.val(`/modules/${moduleDetails.namespace}/${moduleDetails.name}/${moduleDetails.provider}/${versionDetails.version}`);
+                // Set value of option to view URL of module version
+                versionOption.val(`/modules/${moduleDetails.namespace}/${moduleDetails.name}/${moduleDetails.provider}/${versionDetails.version}`);
 
-            let versionText = versionDetails.version;
-            // Add '(latest)' suffix to the first (latest) version
-            if (foundLatest == false && versionDetails.beta == false && versionDetails.published == true) {
-                versionText += " (latest)";
-                foundLatest = true;
-                isLatest = true;
-            } else {
-                if (versionDetails.beta) {
-                    versionText += ' (beta)';
+                let versionText = versionDetails.version;
+                // Add '(latest)' suffix to the first (latest) version
+                if (foundLatest == false && versionDetails.beta == false && versionDetails.published == true) {
+                    versionText += " (latest)";
+                    foundLatest = true;
+                    isLatest = true;
+                } else {
+                    if (versionDetails.beta) {
+                        versionText += ' (beta)';
+                    }
+                    if (versionDetails.published == false) {
+                        versionText += ' (unpublished)';
+                    }
                 }
-                if (versionDetails.published == false) {
-                    versionText += ' (unpublished)';
+                versionOption.text(versionText);
+
+                // Set version that matches current module to selected
+                if (versionDetails.version == moduleDetails.version) {
+                    versionOption.attr("selected", "");
+                    currentVersionFound = true;
+
+                    // Determine if the current version is the latest version
+                    // (first in list of versions)
+                    if (isLatest) {
+                        currentIsLatestVersion = true;
+                    }
                 }
+
+                versionSelection.append(versionOption);
             }
-            versionOption.text(versionText);
 
-            // Set version that matches current module to selected
-            if (versionDetails.version == moduleDetails.version) {
+            // If current version has not been found, add fake version to drop-down
+            if (currentVersionFound == false) {
+                let versionOption = $("<option></option>");
+                let suffix = '';
+                if (moduleDetails.beta) {
+                    suffix += ' (beta)';
+                }
+                if (!moduleDetails.published) {
+                    suffix += ' (unpublished)';
+                }
+                versionOption.text(`${moduleDetails.version}${suffix}`);
                 versionOption.attr("selected", "");
-                currentVersionFound = true;
+                versionSelection.append(versionOption);
 
-                // Determine if the current version is the latest version
-                // (first in list of versions)
-                if (isLatest) {
-                    currentIsLatestVersion = true;
+            }
+            if (!currentIsLatestVersion && !moduleDetails.beta && moduleDetails.published) {
+                // Otherwise, if user is not viewing the latest version,
+                // display warning
+                $("#non-latest-version-warning").removeClass('default-hidden');
+            }
+
+            if (moduleDetails.beta) {
+                // If the beta module is published, show warning about
+                // beta version and how to use it.
+                if (moduleDetails.published) {
+                    $("#beta-warning").removeClass('default-hidden');
                 }
             }
-
-            versionSelection.append(versionOption);
-        }
-
-        // If current version has not been found, add fake version to drop-down
-        if (currentVersionFound == false) {
-            let versionOption = $("<option></option>");
-            let suffix = '';
-            if (moduleDetails.beta) {
-                suffix += ' (beta)';
+            if (!moduleDetails.published) {
+                // Add warning to page about unpublished version
+                $("#unpublished-warning").removeClass('default-hidden');
             }
-            if (! moduleDetails.published) {
-                suffix += ' (unpublished)';
-            }
-            versionOption.text(`${moduleDetails.version}${suffix}`);
-            versionOption.attr("selected", "");
-            versionSelection.append(versionOption);
 
-        }
-        if (! currentIsLatestVersion && ! moduleDetails.beta && moduleDetails.published) {
-            // Otherwise, if user is not viewing the latest version,
-            // display warning
-            $("#non-latest-version-warning").removeClass('default-hidden');
-        }
-
-        if (moduleDetails.beta) {
-            // If the beta module is published, show warning about
-            // beta version and how to use it.
-            if (moduleDetails.published) {
-                $("#beta-warning").removeClass('default-hidden');
-            }
-        }
-        if (! moduleDetails.published) {
-            // Add warning to page about unpublished version
-            $("#unpublished-warning").removeClass('default-hidden');
-        }
-
-        // Show version drop-down
-        $('#details-version').removeClass('default-hidden');
-    });
+            // Show version drop-down
+            $('#details-version').removeClass('default-hidden');
+        });
 }
 
 /*
@@ -1249,7 +1354,7 @@ function enableBackToParentLink(moduleDetails) {
  */
 async function enableTerraregExclusiveTags() {
     let config = await getConfig();
-    if (! config.DISABLE_TERRAREG_EXCLUSIVE_LABELS) {
+    if (!config.DISABLE_TERRAREG_EXCLUSIVE_LABELS) {
         $.find('.terrareg-exclusive').forEach((tag) => {
             $(tag).removeClass('default-hidden');
         });
@@ -1280,11 +1385,11 @@ function deleteModuleVersion(moduleDetails) {
             csrf_token: $('#settings-csrf-token').val()
         }),
         contentType: 'application/json'
-    }).done(()=> {
+    }).done(() => {
         // Reidrect to module provider page.
         // This will automatically redirect back
         // down the path to valid existing object.
-        window.location.href = `/modules/${ moduleDetails.module_provider_id }`;
+        window.location.href = `/modules/${moduleDetails.module_provider_id}`;
     }).fail((res) => {
         if (res.status == 401) {
             $('#settings-status-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
@@ -1311,7 +1416,7 @@ function deleteModuleProvider(moduleDetails) {
             csrf_token: $('#settings-csrf-token').val()
         }),
         contentType: 'application/json'
-    }).done(()=> {
+    }).done(() => {
         // Reidrect to module page.
         // This will automatically redirect back
         // down the path to valid existing object.
@@ -1391,23 +1496,19 @@ async function updateUsageBuilderOutput(moduleDetails) {
         let varInput = '';
 
         // Get value from
-        if (inputVariable.type == 'static')
-        {
+        if (inputVariable.type == 'static') {
             varInput = usageBuilderQuoteString(inputVariable, inputVariable.value);
         }
-        else if (inputVariable.type == 'text')
-        {
+        else if (inputVariable.type == 'text') {
             varInput = usageBuilderQuoteString(inputVariable, $(inputId)[0].value);
         }
         else if (inputVariable.type == 'list') {
             varInput = `[${usageBuilderQuoteString(inputVariable, $(inputId)[0].value)}]`;
         }
-        else if (inputVariable.type == 'boolean')
-        {
+        else if (inputVariable.type == 'boolean') {
             varInput = $(inputId).is(':checked') ? 'true' : 'false';
         }
-        else if (inputVariable.type == 'select')
-        {
+        else if (inputVariable.type == 'select') {
             let selectIndex = $(inputId)[0].value;
             let customInputId = `${inputId}-customValue`;
 
@@ -1419,8 +1520,7 @@ async function updateUsageBuilderOutput(moduleDetails) {
                 // Use value of custom input as output
                 varInput = usageBuilderQuoteString(inputVariable, $(customInputId)[0].value);
             }
-            else
-            {
+            else {
                 // Hide custom input and clear value
                 $(customInputId)[0].style.display = 'none';
                 $(customInputId)[0].value = '';
@@ -1498,7 +1598,7 @@ async function setupBasePage(data) {
 
     // If current version is not available or there are no
     // versions, set warning and exit
-    if (! moduleDetails.version) {
+    if (!moduleDetails.version) {
         showNoAvailableVersions();
         return;
     }
@@ -1551,6 +1651,7 @@ async function setupRootModulePage(data) {
         tabFactory.registerTab(new OutputsTab(moduleDetails.root));
         tabFactory.registerTab(new ProvidersTab(moduleDetails.root));
         tabFactory.registerTab(new ResourcesTab(moduleDetails.root));
+        tabFactory.registerTab(new SecurityIssuesTab(moduleDetails));
         tabFactory.registerTab(new AnalyticsTab(moduleDetails));
         tabFactory.registerTab(new UsageBuilderTab(moduleDetails));
 
@@ -1601,6 +1702,7 @@ async function setupSubmodulePage(data) {
     tabFactory.registerTab(new OutputsTab(submoduleDetails));
     tabFactory.registerTab(new ProvidersTab(submoduleDetails));
     tabFactory.registerTab(new ResourcesTab(submoduleDetails));
+    tabFactory.registerTab(new SecurityIssuesTab(submoduleDetails));
     tabFactory.renderTabs();
     tabFactory.setDefaultTab();
 }
@@ -1636,12 +1738,13 @@ async function setupExamplePage(data) {
     tabFactory.registerTab(new OutputsTab(submoduleDetails));
     tabFactory.registerTab(new ProvidersTab(submoduleDetails));
     tabFactory.registerTab(new ResourcesTab(submoduleDetails));
+    tabFactory.registerTab(new SecurityIssuesTab(submoduleDetails));
     tabFactory.renderTabs();
     tabFactory.setDefaultTab();
 }
 
 
-function createBreadcrumbs(data, subpath=undefined) {
+function createBreadcrumbs(data, subpath = undefined) {
     let breadcrumbs = [
         ["Modules", "modules"],
         [data.namespace, data.namespace],

@@ -1346,6 +1346,7 @@ class TerraformSpecsObject(object):
     def __init__(self):
         """Setup member variables."""
         self._module_specs = None
+        self._module_tfsec = None
 
     @property
     def module_version(self):
@@ -1456,6 +1457,15 @@ class TerraformSpecsObject(object):
         # @TODO Verify what this should be - Terraform example is empty and real-world examples appears to
         # be empty, but do have an undocumented 'provider_dependencies'
         return []
+
+    def get_tfsec_results(self):
+        """Get tfsec"""
+        if self._module_tfsec is None:
+            module_tfsec = {}
+
+            module_details = self.module_details
+            self._module_tfsec = module_details.tfsec["results"]
+        return self._module_tfsec
 
     def get_terraform_provider_dependencies(self):
         """Obtain module dependencies."""
@@ -1990,6 +2000,7 @@ class ModuleVersion(TerraformSpecsObject):
             "beta": self.beta,
             "published": self.published,
             "security_failures": self.get_tfsec_failure_count(),
+            "security_results": self.get_tfsec_results(),
             "additional_tab_files": tab_file_mapping
         })
         return api_details
@@ -2265,7 +2276,8 @@ class BaseSubmodule(TerraformSpecsObject):
         source_browse_url = self.get_source_browse_url()
         api_details.update({
             "display_source_url": source_browse_url if source_browse_url else self._module_version.get_source_base_url(),
-            "security_failures": self.get_tfsec_failure_count()
+            "security_failures": self.get_tfsec_failure_count(),
+            "security_results": self.get_tfsec_results(),
         })
         return api_details
 
