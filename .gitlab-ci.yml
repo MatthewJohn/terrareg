@@ -85,6 +85,7 @@ test-docker-image:
     # Wait for Terrareg container to come up
     - sleep 30
     # Curl the terrareg homepage and ensure the title is displayed
+    - curl http://terrareg:5000
     - curl http://terrareg:5000 | grep 'Home - Terrareg'
 
 build-wheel:
