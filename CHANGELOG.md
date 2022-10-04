@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.43.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.43.0...v2.43.1) (2022-10-04)
+
+
+### Bug Fixes
+
+* Remove unused import, erroneously added in [#178](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/178) ([e5a00ad](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e5a00adf8595ad5d00e5300734ac20a5628c9ed6)), closes [#262](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/262)
+
 # [2.43.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.42.0...v2.43.0) (2022-10-01)
 
 
