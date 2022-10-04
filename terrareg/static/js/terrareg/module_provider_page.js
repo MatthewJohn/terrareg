@@ -419,34 +419,31 @@ class SecurityIssuesTab extends ModuleDetailsTab {
                 // Show tab link
                 $('#module-tab-link-security-issues').removeClass('default-hidden');
             }
+
+            $("#security-issues-table").DataTable({
+                order: [[1, 'asc']],
+                columnDefs: [
+                    {
+                        targets: [5, 6, 7, 8, 9, 10, 11],
+                        className: "none"
+                    },
+                    {
+                        targets: [4],
+                        className: "none"
+                        // visible: false
+                    },
+                ],
+                rowGroup: {
+                    dataSrc: [2, 4]
+                },
+                lengthMenu: [
+                    [25, 50, -1],
+                    [25, 50, 'All'],
+                ],
+            });
+
             resolve(true);
         });
-        if (this._moduleDetails.security_results) {
-            $(document).ready(function () {
-
-                $("#security-issues-table").DataTable({
-                    order: [[1, 'asc']],
-                    columnDefs: [
-                        {
-                            targets: [5, 6, 7, 8, 9, 10, 11],
-                            className: "none"
-                        },
-                        {
-                            targets: [4],
-                            className: "none"
-                            // visible: false
-                        },
-                    ],
-                    rowGroup: {
-                        dataSrc: [2, 4]
-                    },
-                    lengthMenu: [
-                        [25, 50, -1],
-                        [25, 50, 'All'],
-                    ],
-                });
-            });
-        }
     }
 }
 
