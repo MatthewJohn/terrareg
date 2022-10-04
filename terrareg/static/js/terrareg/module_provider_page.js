@@ -360,17 +360,15 @@ class SecurityIssuesTab extends ModuleDetailsTab {
                     let blankTd = $('<td class="is-vcentered"></td>');
                     tfsecRow.append(blankTd);
 
-                    let severityTd = ''
+                    let color = 'darkgray';
                     if (tfsec.severity == "CRITICAL") {
-                        severityTd = '<td class="is-vcentered"><span class="tag is-primary is-light" style="background-color: red; color: white">' + tfsec.severity + '</span></td>';
+                        color = 'red';
                     } else if (tfsec.severity == "HIGH") {
-                        severityTd = '<td class="is-vcentered"><span class="tag is-primary is-light" style="background-color: orangered; color: white">' + tfsec.severity + '</span></td>';
+                        color = 'orangered';
                     } else if (tfsec.severity == "MEDIUM") {
-                        severityTd = '<td class="is-vcentered"><span class="tag is-primary is-light" style="background-color: orange; color: white">' + tfsec.severity + '</span></td>';
-                    } else if (tfsec.severity == "LOW") {
-                        severityTd = '<td class="is-vcentered"><span class="tag is-primary is-light" style="background-color: darkgray; color: white">' + tfsec.severity + '</span></td>';
-                    } else {
-                    };
+                        color = 'orange';
+                    }
+                    let severityTd = `<td class="is-vcentered"><span class="tag is-primary is-light" style="background-color: ${color}; color: white">${tfsec.severity}</span></td>`;
                     tfsecRow.append(severityTd);
 
                     let ruleidTd = $('<td class="is-vcentered"></td>');
