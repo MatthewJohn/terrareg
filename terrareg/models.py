@@ -1464,7 +1464,7 @@ class TerraformSpecsObject(object):
             module_details = self.module_details
             if module_details is None:
                 return None
-            self._module_tfsec = module_details.tfsec["results"]
+            self._module_tfsec = module_details.tfsec.get("results")
         return self._module_tfsec
 
     def get_terraform_provider_dependencies(self):
