@@ -8,7 +8,6 @@ import json
 import urllib.parse
 import hashlib
 from enum import Enum
-from attr import ib
 
 from flask import (
     Config, Flask, request, render_template,
