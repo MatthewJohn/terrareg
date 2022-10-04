@@ -1461,9 +1461,9 @@ class TerraformSpecsObject(object):
     def get_tfsec_results(self):
         """Get tfsec"""
         if self._module_tfsec is None:
-            module_tfsec = {}
-
             module_details = self.module_details
+            if module_details is None:
+                return None
             self._module_tfsec = module_details.tfsec["results"]
         return self._module_tfsec
 
