@@ -87,8 +87,7 @@ class ModuleExtractor:
 
         return json.loads(terradocs_output)
 
-    @staticmethod
-    def _run_tfsec(module_path):
+    def _run_tfsec(self, module_path):
         """Run tfsec and return output."""
         try:
             raw_output = subprocess.check_output([
@@ -107,7 +106,7 @@ class ModuleExtractor:
             for result in tfsec_results['results']:
                 print(result['location']['filename'])
                 print(module_path + '/')
-                result['location']['filename'] = result['location']['filename'].replace(module_path + '/', '')
+                result['location']['filename'] = result['location']['filename'].replace(self._extract_directory.name + '/', '')
                 print(result['location']['filename'])
 
         return tfsec_results
