@@ -1346,7 +1346,7 @@ class TerraformSpecsObject(object):
     def __init__(self):
         """Setup member variables."""
         self._module_specs = None
-        self._module_tfsec = None
+        self._tfsec_results = None
 
     @property
     def module_version(self):
@@ -1460,12 +1460,12 @@ class TerraformSpecsObject(object):
 
     def get_tfsec_results(self):
         """Get tfsec"""
-        if self._module_tfsec is None:
+        if self._tfsec_results is None:
             module_details = self.module_details
             if module_details is None:
                 return None
-            self._module_tfsec = module_details.tfsec.get("results")
-        return self._module_tfsec
+            self._tfsec_results = module_details.tfsec.get("results")
+        return self._tfsec_results
 
     def get_terraform_provider_dependencies(self):
         """Obtain module dependencies."""
