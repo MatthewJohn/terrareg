@@ -2001,6 +2001,7 @@ class ModuleVersion(TerraformSpecsObject):
             "published": self.published,
             "security_failures": self.get_tfsec_failure_count(),
             "security_results": self.get_tfsec_results(),
+            "security_results": self.get_tfsec_results(),
             "additional_tab_files": tab_file_mapping
         })
         return api_details
@@ -2277,6 +2278,7 @@ class BaseSubmodule(TerraformSpecsObject):
         api_details.update({
             "display_source_url": source_browse_url if source_browse_url else self._module_version.get_source_base_url(),
             "security_failures": self.get_tfsec_failure_count(),
+            "security_results": self.get_tfsec_results(),,
             "security_results": self.get_tfsec_results(),
         })
         return api_details

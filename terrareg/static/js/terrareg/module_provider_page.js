@@ -49,7 +49,7 @@ class BaseTab {
     constructor() {
         this._renderPromise = undefined;
     }
-    render() { }
+    render() {  }
     async isValid() {
         let result = await this._renderPromise;
         return result;
