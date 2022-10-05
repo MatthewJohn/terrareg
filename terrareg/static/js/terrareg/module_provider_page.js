@@ -360,7 +360,7 @@ class SecurityIssuesTab extends ModuleDetailsTab {
                     let links = (tfsec.links).toString().split(',');
 
                     let tfsec_link = links[0];
-                    let tfdocs_link = links[1];
+                    // let tfdocs_link = links[1];
 
                     let blankTd = $('<td class="is-vcentered"></td>');
                     tfsecRow.append(blankTd);
@@ -397,7 +397,8 @@ class SecurityIssuesTab extends ModuleDetailsTab {
                     tfsecRow.append(serviceTd);
 
                     let resourceTd = $('<td class="is-vcentered"></td>');
-                    resourceTd.html(`<a href="${tfdocs_link}" target="_blank" rel="noopener noreferrer">${tfsec.resource}</a>`);
+                    resourceTd.text(tfsec.resource);
+                    // resourceTd.html(`<a href="${tfdocs_link}" target="_blank" rel="noopener noreferrer">${tfsec.resource}</a>`);
                     tfsecRow.append(resourceTd);
 
                     let startLineTd = $('<td class="is-vcentered"></td>');
@@ -415,6 +416,19 @@ class SecurityIssuesTab extends ModuleDetailsTab {
                     let resolutionTd = $('<td class="is-vcentered"></td>');
                     resolutionTd.text(tfsec.resolution);
                     tfsecRow.append(resolutionTd);
+                    
+                    let resourcesTd = $('<td class="is-vcentered"></td>');
+                    resourcesTd.html('<br/>');
+                    for(var i = 0; i < links.length; i++)
+                    {
+                        console.log(i)
+                        console.log(links[i]);
+                        resourcesTd.append(` - <a href="${links[i]}" target="_blank" rel="noopener noreferrer">${links[i]}</a><br/>`);
+                    }
+                    // for(var i = 0; i < links.length; i++) {
+                    //     resourcesTd.text(links[i])
+                    // }
+                    tfsecRow.append(resourcesTd);
 
                     tfsecTabTbody.append(tfsecRow);
                 });
@@ -427,7 +441,7 @@ class SecurityIssuesTab extends ModuleDetailsTab {
                 order: [[1, 'asc']],
                 columnDefs: [
                     {
-                        targets: [2, 4, 5, 6, 7, 8, 9, 10, 11],
+                        targets: [2, 4, 5, 6, 7, 8, 9, 10, 11, 12],
                         className: "none"
                     },
                     {
