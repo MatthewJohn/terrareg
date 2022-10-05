@@ -2542,6 +2542,8 @@ class ApiOpenIdCallback(ErrorCatchingResource):
             res.headers['Content-Type'] = 'text/html'
             return res
 
+        print(terrareg.openid_connect.OpenidConnect.get_user_info(access_token=access_token['access_token']))
+
 
         session_obj = self.create_session()
         if not isinstance(session_obj, Session):
@@ -2554,6 +2556,7 @@ class ApiOpenIdCallback(ErrorCatchingResource):
             return res
 
         session['openid_connect_id_token'] = access_token['id_token']
+        session['openid_connect_access_token'] = access_token['access_token']
         session['is_admin_authenticated'] = True
         session['authentication_type'] = AuthenticationType.SESSION_OPENID_CONNECT.value
 
