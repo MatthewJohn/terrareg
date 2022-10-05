@@ -93,7 +93,7 @@ class OpenidConnect:
         return cls.get_client().prepare_request_uri(
             auth_url,
             redirect_uri=cls.get_redirect_url(),
-            scope=['openid', 'profile', 'groups'],
+            scope=['openid', 'profile'],
             state=state
         ), state
 
