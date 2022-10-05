@@ -1393,9 +1393,12 @@ class TerraformSpecsObject(object):
         if self._tfsec_results is None:
             module_details = self.module_details
             if module_details is None:
-                self._tfsec_results = []
-            # Handle when results in not in tfsec output or results is None
-            self._tfsec_results = module_details.tfsec.get("results", []) or []
+                self._tfsec_results = None
+            else:
+                self._tfsec_results = module_details.tfsec.get("results", None)
+
+        if self._tfsec_results is None:
+            return None
 
         for result in self._tfsec_results:
             # TFsec status of 0 is a fail
@@ -1993,7 +1996,7 @@ class ModuleVersion(TerraformSpecsObject):
             "versions": versions,
             "beta": self.beta,
             "published": self.published,
-            "security_failures": len(tfsec_failures),
+            "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
             "security_results": tfsec_failures,
             "additional_tab_files": tab_file_mapping
         })
@@ -2271,7 +2274,7 @@ class BaseSubmodule(TerraformSpecsObject):
         tfsec_failures = self.get_tfsec_failures()
         api_details.update({
             "display_source_url": source_browse_url if source_browse_url else self._module_version.get_source_base_url(),
-            "security_failures": len(tfsec_failures),
+            "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
             "security_results": tfsec_failures
         })
         return api_details
