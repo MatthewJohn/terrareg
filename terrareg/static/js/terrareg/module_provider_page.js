@@ -357,6 +357,11 @@ class SecurityIssuesTab extends ModuleDetailsTab {
                 this._moduleDetails.security_results.forEach((tfsec) => {
                     let tfsecRow = $("<tr></tr>");
 
+                    let links = (tfsec.links).toString().split(',');
+
+                    let tfsec_link = links[0];
+                    let tfdocs_link = links[1];
+
                     let blankTd = $('<td class="is-vcentered"></td>');
                     tfsecRow.append(blankTd);
 
@@ -370,7 +375,7 @@ class SecurityIssuesTab extends ModuleDetailsTab {
                     }
                     let severityTd = `<td class="is-vcentered"><span class="tag is-primary is-light" style="background-color: ${color}; color: white">${tfsec.severity}</span></td>`;
                     tfsecRow.append(severityTd);
-
+                    
                     let fileTd = $('<td class="is-vcentered"></td>');
                     fileTd.text(tfsec.location.filename);
                     tfsecRow.append(fileTd);
@@ -380,7 +385,7 @@ class SecurityIssuesTab extends ModuleDetailsTab {
                     tfsecRow.append(descriptionTd);
 
                     let ruleidTd = $('<td class="is-vcentered"></td>');
-                    ruleidTd.text(tfsec.rule_id);
+                    ruleidTd.html(`<a href="${tfsec_link}" target="_blank" rel="noopener noreferrer">${tfsec.rule_id}</a>`);
                     tfsecRow.append(ruleidTd);
 
                     let providerTd = $('<td class="is-vcentered"></td>');
@@ -392,7 +397,7 @@ class SecurityIssuesTab extends ModuleDetailsTab {
                     tfsecRow.append(serviceTd);
 
                     let resourceTd = $('<td class="is-vcentered"></td>');
-                    resourceTd.text(tfsec.resource);
+                    resourceTd.html(`<a href="${tfdocs_link}" target="_blank" rel="noopener noreferrer">${tfsec.resource}</a>`);
                     tfsecRow.append(resourceTd);
 
                     let startLineTd = $('<td class="is-vcentered"></td>');
