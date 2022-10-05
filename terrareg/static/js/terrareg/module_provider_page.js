@@ -422,18 +422,18 @@ class SecurityIssuesTab extends ModuleDetailsTab {
                 order: [[1, 'asc']],
                 columnDefs: [
                     {
-                        targets: [5, 6, 7, 8, 9, 10, 11],
+                        targets: [2, 4, 5, 6, 7, 8, 9, 10, 11],
                         className: "none"
                     },
                     {
-                        targets: [4],
-                        className: "none"
-                        // visible: false
+                        targets: [1],
+                        width: "1%"
                     },
                 ],
                 rowGroup: {
-                    dataSrc: [2, 4]
+                    dataSrc: [2]
                 },
+                pagingType: "full_numbers_no_ellipses",
                 lengthMenu: [
                     [25, 50, -1],
                     [25, 50, 'All'],
