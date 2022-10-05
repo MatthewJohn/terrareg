@@ -1394,7 +1394,8 @@ class TerraformSpecsObject(object):
             module_details = self.module_details
             if module_details is None:
                 self._tfsec_results = []
-            self._tfsec_results = module_details.tfsec.get("results", [])
+            # Handle when results in not in tfsec output or results is None
+            self._tfsec_results = module_details.tfsec.get("results", []) or []
 
         for result in self._tfsec_results:
             # TFsec status of 0 is a fail
