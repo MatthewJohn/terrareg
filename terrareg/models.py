@@ -1690,6 +1690,8 @@ class ModuleVersion(TerraformSpecsObject):
                     converted_type = 'text'
                     if input_variable['type'] == 'bool':
                         converted_type = 'boolean'
+                    elif input_variable['type'] == 'number':
+                        converted_type = 'number'
                     elif input_variable['type'].startswith('list('):
                         converted_type = 'list'
 
@@ -1697,7 +1699,7 @@ class ModuleVersion(TerraformSpecsObject):
                         'name': input_variable['name'],
                         'type': converted_type,
                         'additional_help': input_variable['description'],
-                        'quote_value': True
+                        'quote_value': converted_type != "number"
                     })
         return variables
 
