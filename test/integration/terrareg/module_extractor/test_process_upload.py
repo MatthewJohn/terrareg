@@ -583,7 +583,33 @@ class TestProcessUpload(TerraregIntegrationTest):
         ]}
 
         # Ensure security issue count shows the issue
-        assert module_version.get_tfsec_failure_count() == 1
+        assert module_version.get_tfsec_failures() == [
+            {
+                'description': 'Secret explicitly uses the default key.',
+                'impact': 'Using AWS managed keys reduces the flexibility and '
+                          'control over the encryption key',
+                'links': [
+                    'https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/ssm/secret-use-customer-key/',
+                    'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret#kms_key_id'
+                ],
+                'location': {
+                    'end_line': 4,
+                    'filename': 'main.tf',
+                    'start_line': 2
+                },
+                'long_id': 'aws-ssm-secret-use-customer-key',
+                'resolution': 'Use customer managed keys',
+                'resource': 'aws_secretsmanager_secret.this',
+                'rule_description': 'Secrets Manager should use customer managed '
+                                    'keys',
+                'rule_id': 'AVD-AWS-0098',
+                'rule_provider': 'aws',
+                'rule_service': 'ssm',
+                'severity': 'LOW',
+                'status': 0,
+                'warning': False
+            }
+        ]
 
     @pytest.mark.skipif(terrareg.config.Config().INFRACOST_API_KEY == None, reason="Requires valid infracost API key")
     def test_uploading_module_with_infracost(self):
