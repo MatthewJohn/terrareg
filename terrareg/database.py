@@ -8,6 +8,7 @@ import flask
 
 import terrareg.config
 from terrareg.errors import DatabaseMustBeIniistalisedError
+from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 
 
 class Database():
@@ -44,6 +45,9 @@ class Database():
 
     def __init__(self):
         """Setup member variables."""
+        self._session = None
+        self._user_group = None
+        self._user_group_namespace_permission = None
         self._git_provider = None
         self._namespace = None
         self._module_provider = None
@@ -52,7 +56,6 @@ class Database():
         self._sub_module = None
         self._analytics = None
         self._example_file = None
-        self._session = None
         self._module_version_file = None
         self.transaction_connection = None
 
@@ -62,6 +65,20 @@ class Database():
         if self._session is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._session
+
+    @property
+    def user_group(self):
+        """Return namespace table."""
+        if self._user_group is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._user_group
+
+    @property
+    def user_group_namespace_permission(self):
+        """Return namespace table."""
+        if self._user_group_namespace_permission is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._user_group_namespace_permission
 
     @property
     def git_provider(self):
@@ -172,6 +189,39 @@ class Database():
             'session', meta,
             sqlalchemy.Column('id', sqlalchemy.String(128), primary_key=True),
             sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
+        )
+
+        self._user_group = sqlalchemy.Table(
+            'user_group', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('sso_group_attribute', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('site_admin', sqlalchemy.Boolean, default=False, nullable=False)
+        )
+
+        self._user_group_namespace_permission = sqlalchemy.Table(
+            'user_group_namespace_permission', meta,
+            sqlalchemy.Column(
+                'user_group_id',
+                sqlalchemy.ForeignKey(
+                    'user_group.id',
+                    name='fk_user_group_namespace_permission_user_group_id_user_group_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False,
+                primary_key=True
+            ),
+            sqlalchemy.Column(
+                'namespace_id',
+                sqlalchemy.ForeignKey(
+                    'namespace.id',
+                    name='fk_user_group_namespace_permission_namespace_id_namespace_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False,
+                primary_key=True
+            ),
+            sqlalchemy.Column('permission_type', sqlalchemy.Enum(UserGroupNamespacePermissionType))
         )
 
         self._git_provider = sqlalchemy.Table(
