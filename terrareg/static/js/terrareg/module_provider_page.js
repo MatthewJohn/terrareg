@@ -399,7 +399,6 @@ class SecurityIssuesTab extends ModuleDetailsTab {
 
                     let resourceTd = $('<td class="is-vcentered"></td>');
                     resourceTd.text(tfsec.resource);
-                    // resourceTd.html(`<a href="${tfdocs_link}" target="_blank" rel="noopener noreferrer">${tfsec.resource}</a>`);
                     tfsecRow.append(resourceTd);
 
                     let startLineTd = $('<td class="is-vcentered"></td>');
@@ -430,9 +429,6 @@ class SecurityIssuesTab extends ModuleDetailsTab {
                             resourcesTd.append(` - <a href="${tfsec.links[i]}" target="_blank" rel="noopener noreferrer">${tfsec.links[i]}</a><br/>`);
                         }
                     }
-                    // for(var i = 0; i < links.length; i++) {
-                    //     resourcesTd.text(links[i])
-                    // }
                     tfsecRow.append(resourcesTd);
 
                     tfsecTabTbody.append(tfsecRow);
