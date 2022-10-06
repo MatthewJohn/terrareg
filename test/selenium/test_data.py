@@ -937,6 +937,98 @@ integration_test_data = {
                                 'severity': 'HIGH',
                                 'status': 0,
                                 'warning': False
+                            },
+                            {
+                                'description': 'Some security issue 3.',
+                                'impact': 'Entire project is compromised',
+                                'links': [
+                                    'https://example.com/issuehere',
+                                    'https://example.com/docshere'
+                                ],
+                                'location': {
+                                    'end_line': 1,
+                                    'filename': 'different.tf',
+                                    'start_line': 6
+                                },
+                                'long_id': 'dodgy-bad-is-bad',
+                                'resolution': 'Do not use bad code',
+                                'resource': 'some_data_resource.this',
+                                'rule_description': 'Dodgy code should be removed',
+                                'rule_id': 'DDG-ANC-003',
+                                'rule_provider': 'bad',
+                                'rule_service': 'code',
+                                'severity': 'HIGH',
+                                'status': 0,
+                                'warning': False
+                            },
+                            {
+                                'description': 'Second high issue.',
+                                'impact': 'Entire project is compromised',
+                                'links': [
+                                    'https://example.com/issuehere',
+                                    'https://example.com/docshere'
+                                ],
+                                'location': {
+                                    'end_line': 1,
+                                    'filename': 'main.tf',
+                                    'start_line': 6
+                                },
+                                'long_id': 'dodgy-bad-is-bad',
+                                'resolution': 'Do not use bad code',
+                                'resource': 'some_data_resource.this',
+                                'rule_description': 'Dodgy code should be removed',
+                                'rule_id': 'DDG-ANC-004',
+                                'rule_provider': 'bad',
+                                'rule_service': 'code',
+                                'severity': 'HIGH',
+                                'status': 0,
+                                'warning': False
+                            },
+                            {
+                                'description': 'Some security issue 4.',
+                                'impact': 'Entire project is compromised',
+                                'links': [
+                                    'https://example.com/issuehere',
+                                    'https://example.com/docshere'
+                                ],
+                                'location': {
+                                    'end_line': 1,
+                                    'filename': 'itsfine.tf',
+                                    'start_line': 6
+                                },
+                                'long_id': 'dodgy-bad-is-fine',
+                                'resolution': 'Do not use bad code',
+                                'resource': 'some_data_resource.this',
+                                'rule_description': 'Dodgy code should be removed',
+                                'rule_id': 'DDG-ANC-005',
+                                'rule_provider': 'bad',
+                                'rule_service': 'code',
+                                'severity': 'HIGH',
+                                'status': 1,
+                                'warning': False
+                            },
+                            {
+                                'description': 'Some security issue 5.',
+                                'impact': 'Entire project is compromised',
+                                'links': [
+                                    'https://example.com/issuehere',
+                                    'https://example.com/docshere'
+                                ],
+                                'location': {
+                                    'end_line': 1,
+                                    'filename': 'ignored.tf',
+                                    'start_line': 6
+                                },
+                                'long_id': 'dodgy-bad-is-ignored',
+                                'resolution': 'Do not use bad code',
+                                'resource': 'some_data_resource.this',
+                                'rule_description': 'Dodgy code should be removed',
+                                'rule_id': 'DDG-ANC-006',
+                                'rule_provider': 'bad',
+                                'rule_service': 'code',
+                                'severity': 'HIGH',
+                                'status': 2,
+                                'warning': False
                             }
                         ]
                     })
