@@ -372,7 +372,9 @@ class SecurityIssuesTab extends ModuleDetailsTab {
                     tfsecRow.append(severityTd);
                     
                     let fileTd = $('<td class="is-vcentered"></td>');
-                    fileTd.text(tfsec.location.filename);
+                    if (tfsec.location && tfsec.location.filename) {
+                        fileTd.text(tfsec.location.filename);
+                    }
                     tfsecRow.append(fileTd);
 
                     let descriptionTd = $('<td class="is-vcentered"></td>');
@@ -401,11 +403,15 @@ class SecurityIssuesTab extends ModuleDetailsTab {
                     tfsecRow.append(resourceTd);
 
                     let startLineTd = $('<td class="is-vcentered"></td>');
-                    startLineTd.text(tfsec.location.start_line);
+                    if (tfsec.location) {
+                        startLineTd.text(tfsec.location.start_line);
+                    }
                     tfsecRow.append(startLineTd);
 
                     let endLineTd = $('<td class="is-vcentered"></td>');
-                    endLineTd.text(tfsec.location.end_line);
+                    if (tfsec.location) {
+                        endLineTd.text(tfsec.location.end_line);
+                    }
                     tfsecRow.append(endLineTd);
 
                     let impactTd = $('<td class="is-vcentered"></td>');
