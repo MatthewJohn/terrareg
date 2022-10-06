@@ -151,7 +151,8 @@ class TestConfig:
         'ENABLE_SECURITY_SCANNING',
         'AUTOGENERATE_USAGE_BUILDER_VARIABLES',
         'THREADED',
-        'INFRACOST_TLS_INSECURE_SKIP_VERIFY'
+        'INFRACOST_TLS_INSECURE_SKIP_VERIFY',
+        'ENABLE_ACCESS_CONTROLS'
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
         """Test boolean configs to ensure they are overriden with environment variables."""

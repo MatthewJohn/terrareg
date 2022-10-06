@@ -477,6 +477,18 @@ class Config:
         return os.environ.get('ADDITIONAL_MODULE_TABS', '[["Release Notes", ["RELEASE_NOTES.md", "CHANGELOG.md"]], ["License", ["LICENSE"]]]')
 
     @property
+    def ENABLE_ACCESS_CONTROLS(self):
+        """
+        Enables role based access controls for SSO users.
+
+        Enabling this feature will restrict all SSO users from performing any admin tasks.
+        Group mappings can be setup in the settings page, providing SSO users and groups with global or namespace-based permissions.
+
+        When disabled, all SSO users will have global admin privileges.
+        """
+        return self.convert_boolean(os.environ.get('ENABLE_ACCESS_CONTROLS', 'False'))
+
+    @property
     def OPENID_CONNECT_LOGIN_TEXT(self):
         """
         Text for sign in button for OpenID Connect authentication
