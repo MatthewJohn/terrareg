@@ -216,7 +216,7 @@ module "fullypopulated" {{
         # Ensure security issues are displayed
         security_issues = self.wait_for_element(By.ID, 'security-issues')
         assert security_issues.is_displayed() == True
-        assert security_issues.text == '2 Security issues'
+        assert security_issues.text == '4 Security issues'
 
         # Go to 1.1.0 version, with no security issues
         Select(self.selenium_instance.find_element(By.ID, 'version-select')).select_by_visible_text('1.1.0')
@@ -253,7 +253,7 @@ module "fullypopulated" {{
         Select(self.selenium_instance.find_element(By.ID, 'submodule-select')).select_by_visible_text('modules/withanotherissue')
         self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.2.0/submodule/modules/withanotherissue'))
 
-        # Ensure 3 security issues are shown
+        # Ensure 1 security issue is shown
         security_issues = self.wait_for_element(By.ID, 'security-issues')
         assert security_issues.is_displayed() == True
         assert security_issues.text == '1 Security issues'
@@ -1865,3 +1865,145 @@ All rights are not reserved for this example file content</pre>
 <li>This is an initial release</li>
 </ul>
         """.strip()
+
+    def test_security_issues_tab(self):
+        """Check security issues tab"""
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.0.0'))
+
+        # Security issues tab button is shown
+        tab_link = self.wait_for_element(By.ID, 'module-tab-link-security-issues')
+        assert tab_link.is_displayed() == True
+        assert tab_link.text == 'Security Issues\nTerrareg Exclusive'
+
+        # Ensure tab is not shown
+        tab_content = self.wait_for_element(By.ID, "module-tab-security-issues", ensure_displayed=False)
+        assert tab_content.is_displayed() == False
+
+        # Click tab link
+        tab_link.click()
+
+        assert tab_content.is_displayed() == True
+
+        # Check rows for security issues
+        expected_rows = [
+            ['', 'Severity', '', 'Description', '', '', '', '', '', '', '', '', ''],
+            ['main.tf'],
+            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
+            ['different.tf'],
+            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
+            ['main.tf'],
+            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
+            ['', 'LOW', '', 'Secrets Manager should use customer managed keys', '', '', '', '', '', '', '', '', '']
+        ]
+        for row in tab_content.find_elements(By.TAG_NAME, "tr"):
+            column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
+            assert column_data == expected_rows.pop(0)
+
+        # Select third row (first issue) and expand
+        tab_content.find_elements(By.TAG_NAME, "tr")[2].find_elements(By.TAG_NAME, "td")[0].click()
+
+        # Ensure row is expanded, showing additional information
+        expected_rows = [
+            ['', 'Severity', '', 'Description', '', '', '', '', '', '', '', '', ''],
+            ['main.tf'],
+            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
+            [
+                'File main.tf\n'
+                'ID DDG-ANC-001\n'
+                'Provider bad\n'
+                'Service code\n'
+                'Resource some_data_resource.this\n'
+                'Starting Line 6\n'
+                'Ending Line 1\n'
+                'Impact Entire project is compromised\n'
+                'Resolution Do not use bad code\n'
+                'Resources\n'
+                '- https://example.com/issuehere\n'
+                '- https://example.com/docshere'
+            ],
+            ['different.tf'],
+            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
+            ['main.tf'],
+            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
+            ['', 'LOW', '', 'Secrets Manager should use customer managed keys', '', '', '', '', '', '', '', '', '']
+        ]
+        for row in tab_content.find_elements(By.TAG_NAME, "tr"):
+            column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
+            assert column_data == expected_rows.pop(0)
+
+        # Go to 1.1.0 version, with no security issues
+        Select(self.selenium_instance.find_element(By.ID, 'version-select')).select_by_visible_text('1.1.0')
+
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.1.0'))
+
+        # Wait for inputs tab, to indicate page has loaded
+        self.wait_for_element(By.ID, 'module-tab-link-integrations')
+
+        # Security issues tab button is not shown
+        tab_link = self.wait_for_element(By.ID, 'module-tab-link-security-issues', ensure_displayed=False)
+        assert tab_link.is_displayed() == False
+
+        # Go to example
+        Select(self.selenium_instance.find_element(By.ID, 'example-select')).select_by_visible_text('examples/withsecissue')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.1.0/example/examples/withsecissue'))
+
+        tab_link = self.wait_for_element(By.ID, 'module-tab-link-security-issues')
+        assert tab_link.is_displayed() == True
+        assert tab_link.text == 'Security Issues\nTerrareg Exclusive'
+
+        # Click tab link
+        tab_link.click()
+
+        tab_content = self.wait_for_element(By.ID, "module-tab-security-issues")
+
+        assert tab_content.is_displayed() == True
+
+        # Check rows for security issues.
+        # All data contains invalid data.
+        expected_rows = [
+            ['', 'Severity', '', 'Description', '', '', '', '', '', '', '', '', ''],
+            ['No group'],
+            ['', 'undefined', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', 'undefined', '', '', '', '', '', '', '', '', '', '', ''],
+            ['', 'undefined', '', '', '', '', '', '', '', '', '', '', ''],
+        ]
+        for row in tab_content.find_elements(By.TAG_NAME, "tr"):
+            column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
+            assert column_data == expected_rows.pop(0)
+
+        # Go back to parent
+        self.selenium_instance.find_element(By.ID, 'submodule-back-to-parent').click()
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.1.0'))
+
+        # Go to 1.2.0 version, with no security issues
+        Select(self.selenium_instance.find_element(By.ID, 'version-select')).select_by_visible_text('1.2.0 (latest)')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.2.0'))
+
+        # Security issues tab button is not shown
+        tab_link = self.wait_for_element(By.ID, 'module-tab-link-security-issues', ensure_displayed=False)
+        assert tab_link.is_displayed() == False
+
+        # Go to submodule
+        Select(self.selenium_instance.find_element(By.ID, 'submodule-select')).select_by_visible_text('modules/withanotherissue')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.2.0/submodule/modules/withanotherissue'))
+
+        # Ensure 3 security issues are shown
+        tab_link = self.wait_for_element(By.ID, 'module-tab-link-security-issues')
+        assert tab_link.is_displayed() == True
+        assert tab_link.text == 'Security Issues\nTerrareg Exclusive'
+
+        # Click tab link
+        tab_link.click()
+
+        tab_content = self.wait_for_element(By.ID, "module-tab-security-issues")
+        assert tab_content.is_displayed() == True
+
+        # Check rows for security issues
+        expected_rows = [
+            ['', 'Severity', '', 'Description', '', '', '', '', '', '', '', '', ''],
+            ['No group'],
+            ['', 'undefined', '', '', '', '', '', '', '', '', '', '', '']
+        ]
+        for row in tab_content.find_elements(By.TAG_NAME, "tr"):
+            column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
+            assert column_data == expected_rows.pop(0)

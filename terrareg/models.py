@@ -1,5 +1,6 @@
 
 import datetime
+from enum import Enum
 from importlib.util import module_for_loader
 import os
 from distutils.version import LooseVersion
@@ -1329,6 +1330,15 @@ class ModuleProvider(object):
         return integrations
 
 
+class TfsecResultStatus(Enum):
+    """tfsec result status"""
+
+    FAIL = 0
+    PASS = 1
+    SKIP = 2
+    UNSPECIFIED = 'unspecified'
+
+
 class TerraformSpecsObject(object):
     """Base Terraform object, that has terraform-docs available."""
 
@@ -1407,7 +1417,9 @@ class TerraformSpecsObject(object):
             # 2 - Ignored
             
             # Only return failed results
-            if result.get('status') == 0:
+            if (TfsecResultStatus(
+                        result.get('status', TfsecResultStatus.UNSPECIFIED.value)
+                    ) == TfsecResultStatus.FAIL):
                 failures.append(result)
 
         return failures
