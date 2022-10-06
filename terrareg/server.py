@@ -15,6 +15,7 @@ from flask import (
     session, g, redirect
 )
 from flask_restful import Resource, Api, reqparse, inputs, abort
+from terrareg.auth import AuthFactory
 
 import terrareg.config
 from terrareg.database import Database
@@ -737,7 +738,7 @@ def check_csrf_token(csrf_token):
     """Check CSRF token."""
     # If user is authenticated using authentication token,
     # do not required CSRF token
-    if get_current_authentication_type() is AuthenticationType.AUTHENTICATION_TOKEN:
+    if AuthFactory().get_current_auth_method().requires_csrf_tokens:
         return False
 
     session_token = get_csrf_token()
