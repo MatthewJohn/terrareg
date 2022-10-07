@@ -41,9 +41,13 @@ class AuthFactory:
 class BaseAuthMethod:
     """Base auth method"""
 
-    @property
     def is_admin(self):
-        raise NotImplementedError
+        """Whether user is an admin"""
+        return False
+
+    def is_authenticated(self):
+        """Whether user is authenticated"""
+        return True
 
     @property
     def requires_csrf_tokens(self):
@@ -73,18 +77,26 @@ class NotAuthenticated(BaseAuthMethod):
         """Whether auth type requires CSRF tokens"""
         return True
 
-    @property
-    def is_admin(self):
-        """Return whether user is an admin"""
+    def is_authenticated(self):
+        """Whether user is authenticated"""
         return False
 
     def check_namespace_access(self, namespace):
         """Unauthenticated users have no namespace access."""
         return None
 
+    @classmethod
+    def check_auth_state(cls):
+        """Always return True as a last-catch auth mechanism"""
+        return True
+
 
 class BaseAdminAuthMethod(BaseAuthMethod):
     """Base auth method admin authentication"""
+
+    def is_admin(self):
+        """Return whether user is an admin"""
+        return True
 
     @staticmethod
     def is_enabled():
