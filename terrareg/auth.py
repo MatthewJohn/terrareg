@@ -32,7 +32,7 @@ class AuthFactory:
                     OpenidConnectAuthMethod,
                     NotAuthenticated]:
             if auth_method := cls.get_current_instance():
-                g[AuthFactory.FLASK_GLOBALS_AUTH_KEY] = auth_method
+                setattr(g, AuthFactory.FLASK_GLOBALS_AUTH_KEY, auth_method)
                 return auth_method
 
         raise Exception('Unable to determine current auth type - not caught by NotAuthenticated')
