@@ -41,6 +41,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'beta': False,
             'published': True,
             'security_failures': 0,
+            'security_results': None,
             'git_path': None,
             'additional_tab_files': {}
         }
@@ -101,6 +102,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'beta': False,
             'published': True,
             'security_failures': 0,
+            'security_results': None,
             'git_path': None,
             'additional_tab_files': {}
         }
@@ -152,6 +154,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'beta': False,
             'published': False,
             'security_failures': 0,
+            'security_results': None,
             'git_path': None,
             'additional_tab_files': {}
         }
@@ -204,6 +207,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'beta': True,
             'published': True,
             'security_failures': 0,
+            'security_results': None,
             'git_path': None,
             'additional_tab_files': {}
         }
