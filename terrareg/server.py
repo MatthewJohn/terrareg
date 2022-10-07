@@ -1892,7 +1892,7 @@ class ApiTerraregIsAuthenticated(ErrorCatchingResource):
 class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
     """Interface to perform authentication as an admin and set appropriate cookie."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [auth_wrapper('is_built_in_admin')]
 
     def _post(self):
         """Handle POST requests to the authentication endpoint."""

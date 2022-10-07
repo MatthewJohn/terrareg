@@ -31,6 +31,9 @@ class AuthFactory:
                     SamlAuthMethod,
                     OpenidConnectAuthMethod,
                     NotAuthenticated]:
+            if not cls.is_enabled():
+                continue
+
             if auth_method := cls.get_current_instance():
                 setattr(g, AuthFactory.FLASK_GLOBALS_AUTH_KEY, auth_method)
                 return auth_method
@@ -41,6 +44,10 @@ class AuthFactory:
 class BaseAuthMethod:
     """Base auth method"""
 
+    def is_built_in_admin(self):
+        """Whether user is the built-in admin"""
+        return False
+
     def is_admin(self):
         """Whether user is an admin"""
         return False
@@ -48,6 +55,11 @@ class BaseAuthMethod:
     def is_authenticated(self):
         """Whether user is authenticated"""
         return True
+
+    @classmethod
+    def is_enabled(cls):
+        """Whether authentication method is enabled"""
+        raise NotImplementedError
 
     @property
     def requires_csrf_tokens(self):
@@ -90,6 +102,10 @@ class NotAuthenticated(BaseAuthMethod):
         """Always return True as a last-catch auth mechanism"""
         return True
 
+    @classmethod
+    def is_enabled(cls):
+        return True
+
 
 class BaseAdminAuthMethod(BaseAuthMethod):
     """Base auth method admin authentication"""
@@ -98,8 +114,12 @@ class BaseAdminAuthMethod(BaseAuthMethod):
         """Return whether user is an admin"""
         return True
 
-    @staticmethod
-    def is_enabled():
+    def is_built_in_admin(self):
+        """Whether user is the built-in admin"""
+        return True
+
+    @classmethod
+    def is_enabled(cls):
         return bool(terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN)
 
 
@@ -114,7 +134,7 @@ class BaseApiKeyAuthMethod(BaseAuthMethod):
     @classmethod
     def _check_api_key(cls, valid_keys):
         """Whether whether API key is valid"""
-        if isinstance(valid_keys, list):
+        if not isinstance(valid_keys, list):
             return False
 
         # Obtain API key from request, ensuring that it is
@@ -179,6 +199,10 @@ class UploadApiKeyAuthMethod(BaseApiKeyAuthMethod):
         """Check if upload API key is provided"""
         return cls._check_api_key(terrareg.config.Config().UPLOAD_API_KEYS)
 
+    @classmethod
+    def is_enabled(cls):
+        return bool(terrareg.config.Config().UPLOAD_API_KEYS)
+
 
 class PublishApiKeyAuthMethod(BaseApiKeyAuthMethod):
     """Auth method for publish API key"""
@@ -187,6 +211,10 @@ class PublishApiKeyAuthMethod(BaseApiKeyAuthMethod):
     def check_auth_state(cls):
         """Check if upload API key is provided"""
         return cls._check_api_key(terrareg.config.Config().PUBLISH_API_KEYS)
+
+    @classmethod
+    def is_enabled(cls):
+        return bool(terrareg.config.Config().PUBLISH_API_KEYS)
 
 
 class SamlAuthMethod(BaseSessionAuthMethod):
@@ -200,6 +228,9 @@ class SamlAuthMethod(BaseSessionAuthMethod):
         auth = terrareg.saml.Saml2.initialise_request_auth_object(request)
         return auth.is_authenticated()
 
+    @classmethod
+    def is_enabled(cls):
+        return terrareg.saml.Saml2.is_enabled()
 
 class OpenidConnectAuthMethod(BaseSessionAuthMethod):
     """Auth method for OpenID authentication"""
@@ -221,6 +252,10 @@ class OpenidConnectAuthMethod(BaseSessionAuthMethod):
             return False
         # If validate did not raise errors, return True
         return True
+
+    @classmethod
+    def is_enabled(cls):
+        return terrareg.openid_connect.OpenidConnect.is_enabled()
 
 
 class AdminApiKeyAuthMethod(BaseAdminAuthMethod, BaseApiKeyAuthMethod):
