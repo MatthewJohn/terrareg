@@ -17,7 +17,7 @@ class AuthFactory:
 
     FLASK_GLOBALS_AUTH_KEY = 'user_auth'
 
-    def get_current_auth_method(self, request, session):
+    def get_current_auth_method(self):
         """Obtain user's current login state"""
         # Check if current authenticate type has been determined
         if (current_auth_method := g.get(AuthFactory.FLASK_GLOBALS_AUTH_KEY, None)) is not None:
