@@ -401,10 +401,12 @@ class IntegrationsTab extends ModuleDetailsTab {
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
             let config = await getConfig();
+            let loggedIn = await isLoggedIn();
+
             if (config.ALLOW_MODULE_HOSTING) {
                 $("#module-integrations-upload-container").removeClass('default-hidden');
             }
-            if (!config.PUBLISH_API_KEYS_ENABLED) {
+            if (!config.PUBLISH_API_KEYS_ENABLED || loggedIn) {
                 $("#integrations-index-module-version-publish").removeClass('default-hidden');
             }
 

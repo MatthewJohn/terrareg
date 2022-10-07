@@ -66,6 +66,10 @@ class BaseAuthMethod:
         """Whether auth type requires CSRF tokens"""
         raise NotImplementedError
 
+    def can_publish_module_version(self, namespace):
+        """Whether user can publish module version within a namespace."""
+        return False
+
     @classmethod
     def get_current_instance(cls):
         """Get instance of auth method, if user is authenticated"""
@@ -116,6 +120,10 @@ class BaseAdminAuthMethod(BaseAuthMethod):
 
     def is_built_in_admin(self):
         """Whether user is the built-in admin"""
+        return True
+
+    def can_publish_module_version(self, namespace):
+        """Whether user can publish module version within a namespace."""
         return True
 
     @classmethod
@@ -216,6 +224,9 @@ class PublishApiKeyAuthMethod(BaseApiKeyAuthMethod):
     def is_enabled(cls):
         return bool(terrareg.config.Config().PUBLISH_API_KEYS)
 
+    def can_publish_module_version(self, namespace):
+        """Whether user can publish module version within a namespace."""
+        return True
 
 class SamlAuthMethod(BaseSessionAuthMethod):
     """Auth method for SAML authentication"""
