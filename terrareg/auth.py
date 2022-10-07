@@ -70,6 +70,10 @@ class BaseAuthMethod:
         """Whether user can publish module version within a namespace."""
         return False
 
+    def can_upload_module_version(self, namespace):
+        """Whether user can upload/index module version within a namespace."""
+        return False
+
     @classmethod
     def get_current_instance(cls):
         """Get instance of auth method, if user is authenticated"""
@@ -124,6 +128,10 @@ class BaseAdminAuthMethod(BaseAuthMethod):
 
     def can_publish_module_version(self, namespace):
         """Whether user can publish module version within a namespace."""
+        return True
+
+    def can_upload_module_version(self, namespace):
+        """Whether user can upload/index module version within a namespace."""
         return True
 
     @classmethod
@@ -210,6 +218,10 @@ class UploadApiKeyAuthMethod(BaseApiKeyAuthMethod):
     @classmethod
     def is_enabled(cls):
         return bool(terrareg.config.Config().UPLOAD_API_KEYS)
+
+    def can_upload_module_version(self, namespace):
+        """Whether user can upload/index module version within a namespace."""
+        return True
 
 
 class PublishApiKeyAuthMethod(BaseApiKeyAuthMethod):

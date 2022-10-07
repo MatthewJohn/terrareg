@@ -984,7 +984,7 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
 
     ALLOWED_EXTENSIONS = ['zip']
 
-    method_decorators = [require_api_authentication(terrareg.config.Config().UPLOAD_API_KEYS)]
+    method_decorators = [auth_wrapper('can_upload_module_version', request_kwarg_map={'namespace': 'namespace'})]
 
     def allowed_file(self, filename):
         """Check if file has allowed file-extension"""
@@ -1033,7 +1033,7 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
 class ApiModuleVersionCreate(ErrorCatchingResource):
     """Provide interface to create release for git-backed modules."""
 
-    method_decorators = [require_api_authentication(terrareg.config.Config().UPLOAD_API_KEYS)]
+    method_decorators = [auth_wrapper('can_upload_module_version', request_kwarg_map={'namespace': 'namespace'})]
 
     def _post(self, namespace, name, provider, version):
         """Handle creation of module version."""
