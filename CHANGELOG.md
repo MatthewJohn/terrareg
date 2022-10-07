@@ -1,5 +1,19 @@
 # Changelog
 
+# [2.44.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.43.1...v2.44.0) (2022-10-07)
+
+
+### Bug Fixes
+
+* Update tfsec absolute path replacement to replace paths from the extraction directory. ([360b40a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/360b40afae959d9331597cf81e5c7fc1119828e6)), closes [#228](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/228)
+
+
+### Features
+
+* Add tab listing security issues in module ([b62d8d7](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b62d8d727a37f17e32332e29f3653dc9cfe55dfa)), closes [#228](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/228)
+* Add tab listing security issues in module ([a0bac97](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a0bac9721761dd9190928c1d55f2dea08e7f43b6))
+* Add tab listing security issues in module ([b728c82](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b728c8255663785b421ad9604bc11886fe715b57))
+
 ## [2.43.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.43.0...v2.43.1) (2022-10-04)
 
 
