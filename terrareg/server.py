@@ -750,98 +750,23 @@ def check_csrf_token(csrf_token):
         return True
 
 
-def get_current_authentication_type():
-    """Return the current authentication method of the user."""
-    return g.get('authentication_type', AuthenticationType.NOT_CHECKED)
-
-
-def check_admin_authentication():
-    """Check authorization header is present or authenticated session"""
-    authenticated = False
-    g.authentication_type = AuthenticationType.NOT_AUTHENTICATED
-
-    # Check that:
-    # - An admin authentication token has been setup
-    # - A token has neeif valid authorisation header has been passed
-    if (terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN and
-            request.headers.get('X-Terrareg-ApiKey', '') ==
-            terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN):
-        authenticated = True
-        g.authentication_type = AuthenticationType.AUTHENTICATION_TOKEN
-
-    # Check if authenticated via session
-    # - Ensure session key has been setup
-    if (terrareg.config.Config().SECRET_KEY and
-            Session.check_session(session.get('session_id', None)) and
-            session.get('is_admin_authenticated', False)):
-
-        session_authentication_type = AuthenticationType(
-            session.get('authentication_type',
-                        AuthenticationType.NOT_AUTHENTICATED.value))
-
-        if session_authentication_type is AuthenticationType.SESSION_PASSWORD:
-            authenticated = True
-            g.authentication_type = AuthenticationType.SESSION_PASSWORD
-
-        # Check for SAML authentcation type
-        elif session_authentication_type is AuthenticationType.SESSION_SAML:
-            auth = terrareg.saml.Saml2.initialise_request_auth_object(request)
-            if auth.is_authenticated():
-                authenticated = True
-                g.authentication_type = AuthenticationType.SESSION_SAML
-
-        # If authentication type is OpenID connect,
-        # ensure the OpenID token has not expired
-        elif (session_authentication_type is AuthenticationType.SESSION_OPENID_CONNECT
-                and datetime.datetime.now() < datetime.datetime.fromtimestamp(session.get('openid_connect_expires_at', 0))):
-            try:
-                terrareg.openid_connect.OpenidConnect.validate_session_token(session.get('openid_connect_id_token'))
-                authenticated = True
-                g.authentication_type = AuthenticationType.SESSION_OPENID_CONNECT
-            except Exception:
-                pass
-
-    return authenticated
-
-
-def require_admin_authentication(func):
-    """Check user is authenticated as admin and either call function or return 401, if not."""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if not check_admin_authentication():
-            abort(401)
-        else:
-            return func(*args, **kwargs)
-    return wrapper
-
-
-def check_api_key_authentication(api_keys):
-    """Check API key authentication."""
-    # If user is authenticated as admin, allow
-    if check_admin_authentication():
-        return True
-    # Check if no API keys have been configured
-    # and allow request
-    if not api_keys:
-        return True
-
-    # Check header against list of allowed API keys
-    provided_api_key = request.headers.get('X-Terrareg-ApiKey', '')
-    return provided_api_key and provided_api_key in api_keys
-
-
-def require_api_authentication(api_keys):
-    """Check user is authenticated using API key or as admin and either call function or return 401, if not."""
-    def outer_wrapper(func):
+def auth_wrapper(auth_check_method, *wrapper_args, **wrapper_kwargs):
+    """
+    Wrapper to custom authentication decorators.
+    An authentication checking method should be passed with args/kwargs, which will be
+    used to check authentication and authorisation.
+    """
+    def decorator_wrapper(func):
+        """Check user is authenticated as admin and either call function or return 401, if not."""
         @wraps(func)
         def wrapper(*args, **kwargs):
-
-            if not check_api_key_authentication(api_keys):
+            auth_method = AuthFactory().get_current_auth_method()
+            if not getattr(auth_method, auth_check_method)(*wrapper_args, **wrapper_kwargs):
                 abort(401)
             else:
                 return func(*args, **kwargs)
         return wrapper
-    return outer_wrapper
+    return decorator_wrapper
 
 
 class ApiTerraformWellKnown(Resource):
@@ -1698,7 +1623,7 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
     """Provide interface to obtain namespaces."""
 
     method_decorators = {
-        "post": [require_admin_authentication]
+        "post": [auth_wrapper('is_admin')]
     }
 
     def _get(self):
@@ -1958,7 +1883,7 @@ class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
 class ApiTerraregIsAuthenticated(ErrorCatchingResource):
     """Interface to teturn whether user is authenticated as an admin."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [auth_wrapper('is_authenticated')]
 
     def _get(self):
         return {'authenticated': True}
