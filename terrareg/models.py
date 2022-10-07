@@ -1411,10 +1411,6 @@ class TerraformSpecsObject(object):
             return None
 
         for result in self._tfsec_results:
-            # Status Codes: 
-            # 0 - Failed
-            # 1 - Passed
-            # 2 - Ignored
             
             # Only return failed results
             if (TfsecResultStatus(
