@@ -724,6 +724,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
 
             // Show tab
             $('#module-tab-link-usage-builder').removeClass('default-hidden');
+            $('#example-link-usage-builder').removeClass('default-hidden');
             resolve(true);
 
             // Build input table
