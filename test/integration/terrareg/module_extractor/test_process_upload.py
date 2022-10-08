@@ -83,14 +83,65 @@ class TestProcessUpload(TerraregIntegrationTest):
                     metadata_fh.writelines(json.dumps({
                         'description': 'unittestdescription!',
                         'owner': 'unittestowner.',
-                        'variable_template': [{'test_variable': {}}]
+                            'variable_template': [{"name": "test_variable","type": "text","quote_value": True,'required': 'No'}],
                     }))
 
             UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         assert module_version.description == 'unittestdescription!'
         assert module_version.owner == 'unittestowner.'
-        assert module_version.variable_template == [{'test_variable': {}}]
+        assert module_version.variable_template == [
+            {
+                'name': 'test_variable',
+                'quote_value': True,
+                'type': 'text',
+                'required': 'No'
+            },
+            {
+                'additional_help': 'This is a test input',
+                'default_value': 'test_default_val',
+                'name': 'test_input',
+                'quote_value': True,
+                'required': 'No',
+                'type': 'text'
+            }
+        ]
+
+    def test_terrareg_metadata_override_autogenerate(self):
+        """Test module upload with terrareg metadata file overriding autogenrated variable."""
+        test_upload = UploadTestModule()
+
+        namespace = Namespace.get(name='testprocessupload', create=True)
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='2.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
+
+                with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
+                    metadata_fh.writelines(json.dumps({
+                        'description': 'unittestdescription!',
+                        'owner': 'unittestowner.',
+                            'variable_template': [{"name": "test_input","type": "text","quote_value": True,'required': 'No'}],
+                    }))
+
+            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+
+        assert module_version.description == 'unittestdescription!'
+        assert module_version.owner == 'unittestowner.'
+        assert module_version.variable_template == [
+            {
+                'name': 'test_input',
+                'quote_value': True,
+                'type': 'text',
+                'required': 'No'
+            },
+        ]
 
 
     def test_terrareg_metadata_required_attributes(self):
@@ -114,14 +165,29 @@ class TestProcessUpload(TerraregIntegrationTest):
                         metadata_fh.writelines(json.dumps({
                             'description': 'unittestdescription!',
                             'owner': 'unittestowner.',
-                            'variable_template': [{'test_variable': {}}]
+                            'variable_template': [{"name": "test_variable","type": "text","quote_value": True,'required': 'No'}],
                         }))
 
                 UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
             assert module_version.description == 'unittestdescription!'
             assert module_version.owner == 'unittestowner.'
-            assert module_version.variable_template == [{'test_variable': {}}]
+            assert module_version.variable_template == [
+            {
+                'name': 'test_variable',
+                'quote_value': True,
+                'type': 'text',
+                'required': 'No'
+            },
+            {
+                'additional_help': 'This is a test input',
+                'default_value': 'test_default_val',
+                'name': 'test_input',
+                'quote_value': True,
+                'required': 'No',
+                'type': 'text'
+            }
+        ]
 
     @pytest.mark.parametrize('terrareg_json', [
         {},
@@ -364,7 +430,7 @@ class TestProcessUpload(TerraregIntegrationTest):
                     metadata_fh.writelines(json.dumps({
                         'description': 'Test unittest description',
                         'owner': 'Test unittest owner',
-                        'variable_template': [{'test_variable': {}}],
+                        'variable_template': [{"name": "test_variable","type": "text","quote_value": True,'required': 'No'}],
                         'repo_clone_url': 'ssh://overrideurl_here.com/{namespace}/{module}-{provider}',
                         'repo_base_url': 'https://realoverride.com/blah/{namespace}-{module}-{provider}',
                         'repo_browse_url': 'https://base_url.com/{namespace}-{module}-{provider}-{tag}/{path}'
@@ -418,7 +484,22 @@ class TestProcessUpload(TerraregIntegrationTest):
         # Check attributes from terrareg
         assert module_version.description == 'Test unittest description'
         assert module_version.owner == 'Test unittest owner'
-        assert module_version.variable_template == [{'test_variable': {}}]
+        assert module_version.variable_template == [
+            {
+                'name': 'test_variable',
+                'quote_value': True,
+                'type': 'text',
+                'required': 'No'
+            },
+            {
+                'additional_help': 'This is a test input',
+                'default_value': 'test_default_val',
+                'name': 'test_input',
+                'quote_value': True,
+                'required': 'No',
+                'type': 'text'
+            }
+        ]
 
     def test_non_root_repo_directory(self):
         """Test uploading a module within a sub-directory of a module."""
