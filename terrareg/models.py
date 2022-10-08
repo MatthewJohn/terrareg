@@ -1702,21 +1702,33 @@ class ModuleVersion(TerraformSpecsObject):
 
         if terrareg.config.Config().AUTOGENERATE_USAGE_BUILDER_VARIABLES:
             for input_variable in self.get_terraform_inputs():
-                if not input_variable['required']:
-                    continue
+                # if not input_variable['required']:
+                #     continue
                 if input_variable['name'] not in [v['name'] for v in variables]:
 
                     converted_type = 'text'
+                    quote_value = True
+                    default_value = input_variable['default']
                     if input_variable['type'] == 'bool':
                         converted_type = 'boolean'
+                        quote_value = False
                     elif input_variable['type'].startswith('list('):
                         converted_type = 'list'
-
+                        quote_value = False
+                    elif input_variable['type'] == 'number':
+                        converted_type = 'number'
+                        quote_value = False
+                    elif input_variable['type'].startswith('map('):
+                        converted_type = 'text'
+                        quote_value = False
+                    
                     variables.append({
                         'name': input_variable['name'],
                         'type': converted_type,
                         'additional_help': input_variable['description'],
-                        'quote_value': True
+                        'quote_value': quote_value,
+                        'required': ('No', 'Yes')[input_variable['required']],
+                        'default_value': default_value
                     })
         return variables
 

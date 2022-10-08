@@ -440,6 +440,7 @@ class SecurityIssuesTab extends ModuleDetailsTab {
 
             $("#security-issues-table").DataTable({
                 order: [[1, 'asc']],
+                autoWidth: false,
                 columnDefs: [
                     {
                         targets: [2, 4, 5, 6, 7, 8, 9, 10, 11, 12],
@@ -690,6 +691,11 @@ class UsageBuilderTab extends ModuleDetailsTab {
             analyticsTokenName.text(config.ANALYTICS_TOKEN_PHRASE);
             analyticsTokenInputRow.append(analyticsTokenName);
 
+            
+            let analyticsrequiredTd = $('<td></td>');
+            analyticsrequiredTd.text("Yes");
+            analyticsTokenInputRow.append(analyticsrequiredTd);
+
             let analyticsTokenDescription = $('<td></td>');
             analyticsTokenDescription.text(config.ANALYTICS_TOKEN_DESCRIPTION);
             analyticsTokenInputRow.append(analyticsTokenDescription);
@@ -697,6 +703,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
             let analyticsTokenInputTd = $('<td></td>');
             let analyticsTokenInputField = $('<input />');
             analyticsTokenInputField.attr('class', 'input');
+            // analyticsTokenInputField.attr('style', 'width: 200px');
             analyticsTokenInputField.attr('id', 'usageBuilderAnalyticsToken');
             analyticsTokenInputField.attr('type', 'text');
             analyticsTokenInputField.attr('placeholder', config.EXAMPLE_ANALYTICS_TOKEN);
@@ -724,24 +731,38 @@ class UsageBuilderTab extends ModuleDetailsTab {
                 let inputId = `usageBuilderInput-${inputVariable.name}`;
 
                 let inputRow = $('<tr></tr>');
+                
                 let inputNameTd = $('<td></td>');
+                inputNameTd.attr('style', 'width: 10%');
                 inputNameTd.text(inputVariable.name);
                 inputRow.append(inputNameTd);
+                
+                let requiredTd = $('<td></td>');
+                inputNameTd.attr('style', 'width: 10%');
+                requiredTd.text(inputVariable.required);
+                inputRow.append(requiredTd);
 
                 let additionalHelpTd = $('<td></td>');
+                additionalHelpTd.attr('style', 'width: 50%');
                 additionalHelpTd.text(inputVariable.additional_help ? inputVariable.additional_help : '');
                 inputRow.append(additionalHelpTd);
 
                 let valueTd = $('<td></td>');
+                valueTd.attr('style', 'width: 20%');
 
                 if (inputVariable.type == 'text' || inputVariable.type == 'list') {
+                    let placeholder = inputVariable.default_value
+                    if (typeof placeholder === 'object') {
+                        placeholder = JSON.stringify(placeholder)
+                    }
                     let inputDiv = $('<input />');
                     inputDiv.addClass('input');
                     inputDiv.attr('type', 'text');
                     inputDiv.attr('id', inputId);
+                    inputDiv.attr('placeholder', placeholder);
                     inputDiv.bind('keyup', () => { updateUsageBuilderOutput(this._moduleDetails) });
                     valueTd.append(inputDiv);
-
+ 
                 } else if (inputVariable.type == 'boolean') {
 
                     let inputDiv = $('<input />');
@@ -749,6 +770,9 @@ class UsageBuilderTab extends ModuleDetailsTab {
                     inputDiv.attr('type', 'checkbox');
                     inputDiv.attr('id', inputId);
                     inputDiv.attr('value', 'true');
+                    if (inputVariable.default_value == true) {
+                        inputDiv.prop( "checked", true )
+                    }
                     inputDiv.bind('onchange', () => { updateUsageBuilderOutput(this._moduleDetails) });
                     valueTd.append(inputDiv);
 
@@ -797,6 +821,55 @@ class UsageBuilderTab extends ModuleDetailsTab {
 
                 $('#usageBuilderTable').append(inputRow);
             });
+            globalThis.usageBuilderUseOptional = false
+            $("#usage-builder-table").DataTable({
+                columnDefs: [
+                    {
+                        targets: [0,1],
+                        width: "1%"
+                    },
+                ],
+                order: [[1, 'desc'],[0, 'asc']],
+                ordering: false,
+                paging: false,
+                dom: 'Bfrtip',
+                buttons: [{
+                    text: 'Show Optional Variables',
+                    action: function (e, dt, node, config) {
+                        if (dt.column(1).search() === 'Yes') {
+                            this.text('Hide Optional Variables');
+                            dt.column(1).search('').draw(true);
+                            globalThis.usageBuilderUseOptional = true
+                            console.log("Show")
+                            console.log(globalThis.usageBuilderUseOptional)
+                        } else {
+                            this.text('Show Optional Variables');
+                            dt.column(1).search('Yes').draw(true);
+                            globalThis.usageBuilderUseOptional = false
+                            console.log("Hide")
+                            console.log(globalThis.usageBuilderUseOptional)
+                        }
+                    }
+                }],
+                searchCols: [
+                  null,
+                  { search: "Yes" },
+                ]
+                // buttons: [
+                //         {
+                //             text: 'Show Only Required',
+                //             action: function ( e, dt, node, config ) {
+                //                 dt.column(1).search('Yes').draw();
+                //             }
+                //         },
+                //     ]
+                // pagingType: "full_numbers_no_ellipses",
+                // lengthMenu: [
+                //     [25, 50, -1],
+                //     [25, 50, 'All'],
+                // ],
+            });
+
         });
     }
 }
@@ -1505,8 +1578,14 @@ async function updateUsageBuilderOutput(moduleDetails) {
     let analytics_token = $('#usageBuilderAnalyticsToken')[0].value;
 
     let inputVariables = await getUsageBuilderVariables(moduleDetails.id);
+    // console.log(globalThis.usageBuilderUseOptional)
 
     inputVariables.forEach((inputVariable) => {
+        // console.log(globalThis.usageBuilderUseOptional)
+        if (inputVariable.required == "No" && globalThis.usageBuilderUseOptional == false) {
+            return
+        }
+        // console.log(inputVariable)
         let inputId = `#usageBuilderInput-${inputVariable.name}`;
         let varInput = '';
 
@@ -1518,10 +1597,13 @@ async function updateUsageBuilderOutput(moduleDetails) {
             varInput = usageBuilderQuoteString(inputVariable, $(inputId)[0].value);
         }
         else if (inputVariable.type == 'list') {
-            varInput = `[${usageBuilderQuoteString(inputVariable, $(inputId)[0].value)}]`;
+            varInput = `[${$(inputId)[0].value}]`;
         }
         else if (inputVariable.type == 'boolean') {
             varInput = $(inputId).is(':checked') ? 'true' : 'false';
+            if (varInput == String(inputVariable.default_value)) {
+                varInput = ""
+            }
         }
         else if (inputVariable.type == 'select') {
             let selectIndex = $(inputId)[0].value;
@@ -1555,8 +1637,9 @@ async function updateUsageBuilderOutput(moduleDetails) {
                 varInput = usageBuilderQuoteString(inputVariable, varInput);
             }
         }
-
-        outputTf += `\n  ${inputVariable.name} = ${varInput}`;
+        if (!/(""|\[""\]|\[\])$/.test(varInput) && varInput != "") {
+            outputTf += `\n  ${inputVariable.name} = ${varInput}`;
+        }
     });
 
     $('#usageBuilderOutput').html(`${additionalContent}module "${moduleDetails.name}" {
