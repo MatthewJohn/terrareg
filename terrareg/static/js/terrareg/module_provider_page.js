@@ -751,14 +751,27 @@ class UsageBuilderTab extends ModuleDetailsTab {
                 let valueTd = $('<td></td>');
                 valueTd.attr('style', 'width: 20%');
 
-                if (inputVariable.type == 'text' || inputVariable.type == 'list') {
+                if (inputVariable.type == 'text' || inputVariable.type == 'list' || inputVariable.type == 'number') {
                     let placeholder = inputVariable.default_value
                     if (typeof placeholder === 'object') {
                         placeholder = JSON.stringify(placeholder)
                     }
                     let inputDiv = $('<input />');
                     inputDiv.addClass('input');
-                    inputDiv.attr('type', 'text');
+                    if (inputVariable.type == 'number') {
+                        inputDiv.attr('type', 'number');
+                    } else {
+                        inputDiv.attr('type', 'text');
+                    }
+
+                    if (inputVariable.type == 'list') {
+                        // Add class for input ID
+                        inputDiv.addClass(inputId);
+
+                        // Append 0 to input ID, for first input for list
+                        inputId += '0';
+                    }
+
                     inputDiv.attr('id', inputId);
                     inputDiv.attr('placeholder', placeholder);
                     inputDiv.bind('keyup', () => { updateUsageBuilderOutput(this._moduleDetails) });
@@ -774,7 +787,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
                     if (inputVariable.default_value == true) {
                         inputDiv.prop( "checked", true )
                     }
-                    inputDiv.bind('onchange', () => { updateUsageBuilderOutput(this._moduleDetails) });
+                    inputDiv.bind('change', () => { updateUsageBuilderOutput(this._moduleDetails) });
                     valueTd.append(inputDiv);
 
                 } else if (inputVariable.type == 'select') {
@@ -1587,7 +1600,8 @@ async function updateUsageBuilderOutput(moduleDetails) {
             return
         }
         // console.log(inputVariable)
-        let inputId = `#usageBuilderInput-${inputVariable.name}`;
+        let inputIdName = `usageBuilderInput-${inputVariable.name}`;
+        let inputId = `#${inputIdName}`;
         let varInput = '';
 
         // Get value from
@@ -1597,8 +1611,54 @@ async function updateUsageBuilderOutput(moduleDetails) {
         else if (inputVariable.type == 'text') {
             varInput = usageBuilderQuoteString(inputVariable, $(inputId)[0].value);
         }
+        else if (inputVariable.type == 'number')
+        {
+            varInput = $(inputId)[0].value;
+        }
         else if (inputVariable.type == 'list') {
-            varInput = `[${$(inputId)[0].value}]`;
+
+            let valueList = [];
+
+            // Check all list inputs, remove any empty ones
+            // and add an additional input, if last input is populated
+            let listInputDivs = $(`.${inputIdName}`);
+            for (const inputDiv of listInputDivs) {
+                console.log(listInputDivs);
+                let val = inputDiv.value;
+
+                // Check if input div is last item
+                if (listInputDivs.index(inputDiv) == (listInputDivs.length - 1)) {
+
+                    // If input contains a value, clone and create new input
+                    if (val) {
+                        let newInput = $(inputDiv).clone();
+
+                        // Update Id of new input
+                        newInput.attr('id', inputIdName + listInputDivs.length);
+
+                        // Reset value of new iput
+                        newInput.val('');
+
+                        // Bind original keyup method to new input div
+                        newInput.bind('keyup', $._data(inputDiv).events.keyup[0].handler);
+
+                        // Add new input after the original
+                        newInput.insertAfter(inputDiv);
+
+                        // Add value of current input to list
+                        valueList.push(usageBuilderQuoteString(inputVariable, val));
+                    }
+                } else {
+                    // Otherwise, check if item is empty
+                    if (val) {
+                        valueList.push(usageBuilderQuoteString(inputVariable, val));
+                    } else {
+                        inputDiv.remove();
+                    }
+                }
+            }
+
+            varInput = `[${valueList.join(', ')}]`;
         }
         else if (inputVariable.type == 'boolean') {
             varInput = $(inputId).is(':checked') ? 'true' : 'false';
