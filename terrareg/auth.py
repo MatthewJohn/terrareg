@@ -114,6 +114,22 @@ class NotAuthenticated(BaseAuthMethod):
     def is_enabled(cls):
         return True
 
+    def can_publish_module_version(self, namespace):
+        """Whether user can publish module version within a namespace."""
+        # If API key authentication is not configured for publishing modules,
+        # allow unauthenticated access
+        if not PublishApiKeyAuthMethod.is_enabled():
+            return True
+        return False
+
+    def can_upload_module_version(self, namespace):
+        """Whether user can upload/index module version within a namespace."""
+        # If API key authentication is not configured for uploading modules,
+        # allow unauthenticated access
+        if not UploadApiKeyAuthMethod.is_enabled():
+            return True
+        return False
+
 
 class BaseAdminAuthMethod(BaseAuthMethod):
     """Base auth method admin authentication"""
