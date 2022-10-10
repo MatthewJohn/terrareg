@@ -2544,7 +2544,6 @@ class ApiSamlInitiate(ErrorCatchingResource):
 
                 # Setup Authentcation session
                 session['samlUserdata'] = auth.get_attributes()
-                print(session['samlUserdata'])
                 session['samlNameId'] = auth.get_nameid()
                 session['samlNameIdFormat'] = auth.get_nameid_format()
                 session['samlNameIdNameQualifier'] = auth.get_nameid_nq()

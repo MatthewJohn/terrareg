@@ -342,8 +342,7 @@ class SamlAuthMethod(BaseSsoAuthMethod):
     @classmethod
     def check_session(cls):
         """Check SAML session is valid"""
-        auth = terrareg.saml.Saml2.initialise_request_auth_object(request)
-        return auth.is_authenticated()
+        return session.get('samlUserdata')
 
     @classmethod
     def is_enabled(cls):
