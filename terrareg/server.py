@@ -34,6 +34,7 @@ from terrareg.analytics import AnalyticsEngine
 from terrareg.filters import NamespaceTrustFilter
 import terrareg.openid_connect
 import terrareg.saml
+from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 
 
 def catch_name_exceptions(f):
@@ -1917,7 +1918,9 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
 class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
     """Provide interface to create module provider."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [auth_wrapper('check_namespace_access',
+                                      UserGroupNamespacePermissionType.FULL,
+                                      request_kwarg_map={'namespace': 'namespace'})]
 
     def _post(self, namespace, name, provider):
         """Handle update to settings."""
@@ -2064,7 +2067,9 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
 class ApiTerraregModuleProviderDelete(ErrorCatchingResource):
     """Provide interface to delete module provider."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [auth_wrapper('check_namespace_access',
+                                      UserGroupNamespacePermissionType.FULL,
+                                      request_kwarg_map={'namespace': 'namespace'})]
 
     def _delete(self, namespace, name, provider):
         """Delete module provider."""
@@ -2090,7 +2095,9 @@ class ApiTerraregModuleProviderDelete(ErrorCatchingResource):
 class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
     """Provide interface to delete module version."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [auth_wrapper('check_namespace_access',
+                                      UserGroupNamespacePermissionType.FULL,
+                                      request_kwarg_map={'namespace': 'namespace'})]
 
     def _delete(self, namespace, name, provider, version):
         """Delete module version."""
@@ -2121,7 +2128,9 @@ class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
 class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
     """Provide interface to update module provider settings."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [auth_wrapper('check_namespace_access',
+                                      UserGroupNamespacePermissionType.MODIFY,
+                                      request_kwarg_map={'namespace': 'namespace'})]
 
     def _post(self, namespace, name, provider):
         """Handle update to settings."""
@@ -2474,8 +2483,7 @@ class ApiOpenIdCallback(ErrorCatchingResource):
             res.headers['Content-Type'] = 'text/html'
             return res
 
-        print(terrareg.openid_connect.OpenidConnect.get_user_info(access_token=access_token['access_token']))
-
+        user_info = terrareg.openid_connect.OpenidConnect.get_user_info(access_token=access_token['access_token'])
 
         session_obj = self.create_session()
         if not isinstance(session_obj, Session):
@@ -2489,6 +2497,7 @@ class ApiOpenIdCallback(ErrorCatchingResource):
 
         session['openid_connect_id_token'] = access_token['id_token']
         session['openid_connect_access_token'] = access_token['access_token']
+        session['openid_groups'] = user_info.get('groups', [])
         session['is_admin_authenticated'] = True
         session['authentication_type'] = AuthenticationType.SESSION_OPENID_CONNECT.value
 
@@ -2535,6 +2544,7 @@ class ApiSamlInitiate(ErrorCatchingResource):
 
                 # Setup Authentcation session
                 session['samlUserdata'] = auth.get_attributes()
+                print(session['samlUserdata'])
                 session['samlNameId'] = auth.get_nameid()
                 session['samlNameIdFormat'] = auth.get_nameid_format()
                 session['samlNameIdNameQualifier'] = auth.get_nameid_nq()

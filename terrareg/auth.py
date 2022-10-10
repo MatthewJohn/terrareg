@@ -1,12 +1,15 @@
 
 import datetime
 
+import sqlalchemy
 from flask import g, request, session
 
 import terrareg.config
-from terrareg.models import Session
+from terrareg.database import Database
+from terrareg.models import Namespace, Session
 import terrareg.openid_connect
 import terrareg.saml
+from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 
 
 class AuthFactory:
@@ -84,7 +87,7 @@ class BaseAuthMethod:
         """Check whether user is logged in using this method and return instance of object"""
         raise NotImplementedError
 
-    def check_namespace_access(self, namespace):
+    def check_namespace_access(self, permission_type, namespace):
         """Check level of access to namespace"""
         raise NotImplementedError
 
@@ -101,9 +104,9 @@ class NotAuthenticated(BaseAuthMethod):
         """Whether user is authenticated"""
         return False
 
-    def check_namespace_access(self, namespace):
+    def check_namespace_access(self, permission_type, namespace):
         """Unauthenticated users have no namespace access."""
-        return None
+        return False
 
     @classmethod
     def check_auth_state(cls):
@@ -148,6 +151,11 @@ class BaseAdminAuthMethod(BaseAuthMethod):
 
     def can_upload_module_version(self, namespace):
         """Whether user can upload/index module version within a namespace."""
+        return True
+
+    def check_namespace_access(self, permission_type, namespace):
+        """Check access level to a given namespace."""
+        # Allow full access to all namespaces
         return True
 
     @classmethod
@@ -239,6 +247,10 @@ class UploadApiKeyAuthMethod(BaseApiKeyAuthMethod):
         """Whether user can upload/index module version within a namespace."""
         return True
 
+    def check_namespace_access(self, permission_type, namespace):
+        """Check access level to a given namespace."""
+        return False
+
 
 class PublishApiKeyAuthMethod(BaseApiKeyAuthMethod):
     """Auth method for publish API key"""
@@ -256,7 +268,73 @@ class PublishApiKeyAuthMethod(BaseApiKeyAuthMethod):
         """Whether user can publish module version within a namespace."""
         return True
 
-class SamlAuthMethod(BaseSessionAuthMethod):
+    def check_namespace_access(self, permission_type, namespace):
+        """Check access level to a given namespace."""
+        return False
+
+
+class BaseSsoAuthMethod(BaseSessionAuthMethod):
+    """Base methods for SSO based authentication"""
+
+    def get_group_memberships(self):
+        """Return list of groups that the user is a member of"""
+        raise NotImplementedError
+
+    def is_admin(self):
+        """Check if user is an admin"""
+        # Obtain list of user's groups
+        groups = self.get_group_memberships()
+
+        # Find any user groups that the user is a member of
+        # that has admin permissions
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(
+                sqlalchemy.select(
+                    db.user_group
+                ).where(
+                    db.user_group.c.name.in_(groups),
+                    db.user_group.c.site_admin==True
+                )
+            )
+            if res.fetchone():
+                return True
+
+            return False
+
+    def check_namespace_access(self, permission_type, namespace):
+        """Check access level to a given namespace."""
+        namespace_obj = Namespace.get(namespace)
+
+        # Obtain list of user's groups
+        groups = self.get_group_memberships()
+
+        # Find any permissions
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(
+                sqlalchemy.select(
+                    db.user_group_namespace_permission
+                ).join(
+                    db.user_group,
+                    db.user_group_namespace_permission.c.user_group_id==db.user_group.c.id
+                ).where(
+                    db.user_group_namespace_permission.c.namespace_id==namespace_obj.pk,
+                    db.user_group.c.name.in_(groups)
+                )
+            )
+            # Check each permission mapping that the user has for the namespace
+            # and return True is the permission type matches the required permission,
+            # or the permission is FULL access.
+            for row in res:
+                if (row['permission_type'] == permission_type or
+                        row['permission_type'] == UserGroupNamespacePermissionType.FULL):
+                    return True
+
+            return False
+
+
+class SamlAuthMethod(BaseSsoAuthMethod):
     """Auth method for SAML authentication"""
 
     SESSION_AUTH_TYPE_VALUE = 5
@@ -271,7 +349,12 @@ class SamlAuthMethod(BaseSessionAuthMethod):
     def is_enabled(cls):
         return terrareg.saml.Saml2.is_enabled()
 
-class OpenidConnectAuthMethod(BaseSessionAuthMethod):
+    def get_group_memberships(self):
+        """Return list of groups that the user a member of"""
+        return session.get('openidsamlUserdata_groups', {}).get('groups', [])
+
+
+class OpenidConnectAuthMethod(BaseSsoAuthMethod):
     """Auth method for OpenID authentication"""
     
     SESSION_AUTH_TYPE_VALUE = 4
@@ -291,6 +374,10 @@ class OpenidConnectAuthMethod(BaseSessionAuthMethod):
             return False
         # If validate did not raise errors, return True
         return True
+
+    def get_group_memberships(self):
+        """Return list of groups that the user a member of"""
+        return session.get('openid_groups', [])
 
     @classmethod
     def is_enabled(cls):
