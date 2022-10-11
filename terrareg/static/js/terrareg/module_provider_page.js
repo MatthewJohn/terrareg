@@ -910,6 +910,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
                     buttons: [
                         {
                             text: 'Show Optional Variables',
+                            className: 'is-dark',
                             action: function (e, dt, node, config) {
                                 if (dt.column(1).search() === 'Yes') {
                                     this.text('Hide Optional Variables');
@@ -928,7 +929,6 @@ class UsageBuilderTab extends ModuleDetailsTab {
                             action: function ( e, dt, node, conf ) {
                                 e.preventDefault();
                                 updateUsageBuilderOutput(dt)
-                                // usage
                             }
                         }
                     ],
