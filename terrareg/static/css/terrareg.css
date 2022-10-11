@@ -27,3 +27,8 @@ table.dataTable tr.dtrg-group th {
 table.dataTable .select {
     height: auto !important;
 }
+
+#module-tab-usage-builder .dt-buttons {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}

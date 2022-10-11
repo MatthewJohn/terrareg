@@ -894,51 +894,54 @@ class UsageBuilderTab extends ModuleDetailsTab {
                 ],
                 order: [[1, 'desc'],[0, 'asc']],
                 ordering: false,
-                pagingType: "full_numbers_no_ellipses",
+                // pagingType: "full_numbers_no_ellipses",
                 lengthMenu: [
                     [10, 25, 50, -1],
                     [10, 25, 50, 'All'],
                 ],
-                dom: 'Bfrtip',
-                buttons: [
-                    {
-                        text: 'Show Optional Variables',
-                        action: function (e, dt, node, config) {
-                            if (dt.column(1).search() === 'Yes') {
-                                this.text('Hide Optional Variables');
-                                dt.column(1).search('').draw(true);
-                                globalThis.usageBuilderUseOptional = true
-                            } else {
-                                this.text('Show Optional Variables');
-                                dt.column(1).search('Yes').draw(true);
-                                globalThis.usageBuilderUseOptional = false
+                // dom: 'Bfrtip',
+                buttons: {
+                    dom: {
+                        button: {
+                            tag: 'button',
+                            className: 'button'
+                        }
+                    },
+                    buttons: [
+                        {
+                            text: 'Show Optional Variables',
+                            action: function (e, dt, node, config) {
+                                if (dt.column(1).search() === 'Yes') {
+                                    this.text('Hide Optional Variables');
+                                    dt.column(1).search('').draw(true);
+                                    globalThis.usageBuilderUseOptional = true
+                                } else {
+                                    this.text('Show Optional Variables');
+                                    dt.column(1).search('Yes').draw(true);
+                                    globalThis.usageBuilderUseOptional = false
+                                }
+                            }
+                        },
+                        {
+                            text: 'Generate Terraform',
+                            action: function ( e, dt, node, conf ) {
+                                e.preventDefault();
+                                updateUsageBuilderOutput(dt)
+                                // usage
                             }
                         }
-                    }
-                ],
+                    ],
+                },
                 searchCols: [
                     null,
                     { search: "Yes" },
                 ]
             });
-            
-            new $.fn.dataTable.Buttons( globalThis.usageBuilderTable, {
-                buttons: [
-                    {
-                        text: 'Generate Terraform',
-                        action: function ( e, dt, node, conf ) {
-                            e.preventDefault();
-                            updateUsageBuilderOutput(dt)
-                            // usage
-                        }
-                    }
-                ]
-            } );
 
-                    
-            globalThis.usageBuilderTable.buttons( 1, null ).container().appendTo(
-                globalThis.usageBuilderTable.table().container()
-            );
+            
+            globalThis.usageBuilderTable.buttons().container()
+            .appendTo( $('div.column.is-full', globalThis.usageBuilderTable.table().container()).eq(0) );
+            
 
         });
     }
