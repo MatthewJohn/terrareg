@@ -904,7 +904,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
                     dom: {
                         button: {
                             tag: 'button',
-                            className: 'button'
+                            className: 'button is-outlined '
                         }
                     },
                     buttons: [
@@ -924,6 +924,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
                         },
                         {
                             text: 'Generate Terraform',
+                            className: 'is-info',
                             action: function ( e, dt, node, conf ) {
                                 e.preventDefault();
                                 updateUsageBuilderOutput(dt)
