@@ -1727,7 +1727,7 @@ class ModuleVersion(TerraformSpecsObject):
                         'type': converted_type,
                         'additional_help': input_variable['description'],
                         'quote_value': quote_value,
-                        'required': ('No', 'Yes')[input_variable['required']],
+                        'required': input_variable['required'],
                         'default_value': default_value
                     })
         return variables

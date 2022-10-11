@@ -83,7 +83,7 @@ class TestProcessUpload(TerraregIntegrationTest):
                     metadata_fh.writelines(json.dumps({
                         'description': 'unittestdescription!',
                         'owner': 'unittestowner.',
-                            'variable_template': [{"name": "test_variable","type": "text","quote_value": True,'required': 'No'}],
+                            'variable_template': [{"name": "test_variable","type": "text","quote_value": True,'required': False}],
                     }))
 
             UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
@@ -95,14 +95,14 @@ class TestProcessUpload(TerraregIntegrationTest):
                 'name': 'test_variable',
                 'quote_value': True,
                 'type': 'text',
-                'required': 'No'
+                'required': False
             },
             {
                 'additional_help': 'This is a test input',
                 'default_value': 'test_default_val',
                 'name': 'test_input',
                 'quote_value': True,
-                'required': 'No',
+                'required': False,
                 'type': 'text'
             }
         ]
@@ -165,7 +165,7 @@ class TestProcessUpload(TerraregIntegrationTest):
                         metadata_fh.writelines(json.dumps({
                             'description': 'unittestdescription!',
                             'owner': 'unittestowner.',
-                            'variable_template': [{"name": "test_variable","type": "text","quote_value": True,'required': 'No'}],
+                            'variable_template': [{"name": "test_variable","type": "text","quote_value": True,'required': False}],
                         }))
 
                 UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
@@ -177,14 +177,14 @@ class TestProcessUpload(TerraregIntegrationTest):
                 'name': 'test_variable',
                 'quote_value': True,
                 'type': 'text',
-                'required': 'No'
+                'required': False
             },
             {
                 'additional_help': 'This is a test input',
                 'default_value': 'test_default_val',
                 'name': 'test_input',
                 'quote_value': True,
-                'required': 'No',
+                'required': False,
                 'type': 'text'
             }
         ]
@@ -430,7 +430,7 @@ class TestProcessUpload(TerraregIntegrationTest):
                     metadata_fh.writelines(json.dumps({
                         'description': 'Test unittest description',
                         'owner': 'Test unittest owner',
-                        'variable_template': [{"name": "test_variable","type": "text","quote_value": True,'required': 'No'}],
+                        'variable_template': [{"name": "test_variable","type": "text","quote_value": True,'required': False}],
                         'repo_clone_url': 'ssh://overrideurl_here.com/{namespace}/{module}-{provider}',
                         'repo_base_url': 'https://realoverride.com/blah/{namespace}-{module}-{provider}',
                         'repo_browse_url': 'https://base_url.com/{namespace}-{module}-{provider}-{tag}/{path}'
@@ -489,14 +489,14 @@ class TestProcessUpload(TerraregIntegrationTest):
                 'name': 'test_variable',
                 'quote_value': True,
                 'type': 'text',
-                'required': 'No'
+                'required': False
             },
             {
                 'additional_help': 'This is a test input',
                 'default_value': 'test_default_val',
                 'name': 'test_input',
                 'quote_value': True,
-                'required': 'No',
+                'required': False,
                 'type': 'text'
             }
         ]

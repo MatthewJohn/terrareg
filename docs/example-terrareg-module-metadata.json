@@ -6,7 +6,7 @@
             "name": "var_a",
             "type": "text",
             "quote_value": "true",
-            "required": "Yes"
+            "required": true
         },
         {
             "name": "var_b",
@@ -24,7 +24,7 @@
             ],
             "allow_custom": true,
             "quote_value": false,
-            "required": "No"
+            "required": false
         },
         {
             "name": "subnets",
@@ -41,20 +41,20 @@
                 }
             ],
             "quote_value": false,
-            "required": "Yes"
+            "required": true
         },
         {
             "name": "var_d",
             "type": "boolean",
             "additional_help": "Some text that will provided, as well as the variable description",
-            "required": "Yes",
+            "required": true,
             "default_value": true
         },
         {
             "name": "var_e",
             "type": "static",
             "value": "var.a_variable_present_in_parent_terraform",
-            "required": "Yes"
+            "required": true
         }
     ]
 }

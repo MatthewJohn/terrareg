@@ -375,7 +375,7 @@ class TestModuleVersion(TerraregIntegrationTest):
                     'default_value': 'this is the default',
                     'name': 'string_with_default_value',
                     'quote_value': True,
-                    'required': 'No',
+                    'required': False,
                     'type': 'text'
                 },
                 {
@@ -383,7 +383,7 @@ class TestModuleVersion(TerraregIntegrationTest):
                     'default_value': None,
                     'name': 'undocumented_required_variable',
                     'quote_value': True,
-                    'required': 'Yes',
+                    'required': True,
                     'type': 'text'
                 },
                 {
@@ -391,7 +391,7 @@ class TestModuleVersion(TerraregIntegrationTest):
                     'default_value': None,
                     'name': 'example_boolean_input',
                     'quote_value': False,
-                    'required': 'Yes',
+                    'required': True,
                     'type': 'boolean'
                 },
                 {
@@ -399,7 +399,7 @@ class TestModuleVersion(TerraregIntegrationTest):
                     'default_value': None,
                     'name': 'required_list_variable',
                     'quote_value': False,
-                    'required': 'Yes',
+                    'required': True,
                     'type': 'list'
                 },
                 {
@@ -408,7 +408,7 @@ class TestModuleVersion(TerraregIntegrationTest):
                                     'value 2'],
                     'name': 'example_list_input',
                     'quote_value': True,
-                    'required': 'No',
+                    'required': False,
                     'type': 'text'
                 }
             ]

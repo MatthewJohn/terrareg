@@ -752,34 +752,7 @@ export SAML2_PUBLIC_KEY="$(cat publickey.cer)"
 ```
 
 
-Default: `-----BEGIN PRIVATE KEY-----
-MIIEwgIBADANBgkqhkiG9w0BAQEFAASCBKwwggSoAgEAAoIBAgDPEMZqduO/GrRK
-jeMGILlxxImv5X8Yj2B0ZB/dFm2Qse26+iqRlmiiZPyxlIhrLPI7CeUrEGdXoQZj
-HufPyhildK83DxL3d4RMNY+lXL+BkdLxPdSoszWp+gJHKzG4fKcuKbiYWG4QVres
-F1UMIddsIoQ37BetV3HdvFkKPznOPtAP1m1ln2HOGmTPY2Hcl+fBdvzHdIubaPry
-GPDYcPmKk3V0+LBz92hfbjHuvCSiHQCsfArdHIjFkDVQZqoxTbjbSoWSg4mQxo3D
-zctL/Gqf5zbp5YZN4eQBGEQRLncr0ZVsyVKF4ZdA+6fqoP1ugxTTvI1mDbXi0iw6
-0y8ZJfn++QIDAQABAoIBAgCIg2+8qws1Z96rNGYTGSoJpmB8Fdq4D3aw5X3YXbv4
-ZEXuOpYsC7SKM/gg/2L8/dHpOHnc7WCkdiXm3W5JIN0k4AvQSeDgQ+x17e35QG+F
-deVTZMc6PYRIvuoXj5OlJJF3rsvjrJFLtlA7ZdqNOBZ1VUBEOiPWBUutu0ocplhu
-8AlvKTCCVkSi4tgyUQe8YCjmFi8potwSnHqbLJijInnhseKiMGzyDzN84OQ2eIgL
-7Mx0SPv/ZGUbnWCQ6VGMTvBKW3RYjGd1aEnasiknHqosGMpeAP0ZrweRQFdwH0Mn
-U6qufuUAONftB5RgzkslUo3TIaYEFk9hUSI0ddPzBW+NvQKBgQ8Y6QNWNckDrz9P
-skPosfBH8jQg+uA5pRJYZlw1/NPqOFJS8KK8VeAduNfiuIRcpWx+vcyWhxjXD6l0
-P4n5D/+zC50KrgE2aDbHDEXvcIm/QvbP+D+N/nFAXZeW/JbcwLnWDqyhb8dPaNp6
-JuNzU9AzS31LeopsK1RKWXOfYMJUOwKBgQ23JDXYpjusSwzqR9kLABgboZVk/Iq1
-dsgy5G2veeHbCcqbilGvhlbfIeuXcSVffY+QCSUfO9S9LIX4Bkl3MORlVu4NeqfM
-RAB0Cw58vOHQqAELB4X6EJ/nxPMQiui2f8FbpdkzrhkSAPN8uc6YHXTtzRaunTi/
-3Q3JsMRUFddKWwKBgQLgzttR/iL6TtiVCvkjTXjvXl9NwkYo9y1OKQV/TVnhFyeq
-pDGCEiUNxYVytZaWSvsqFmkAcXTs2xGFFe/pyYEH0zj3JkEY7Dk1LUPP5/Z6vftr
-nnoPSeixSqZxpGnmX9+NzXJfvH2Ux/qOuwc1n07b2JJkZ1IoWQJSwkbmpX2mrQKB
-gQksWcqt6Zj1xoiP1ZgkFF8LdApQrdw0PIrwBvoZqGJYNvdNCrlRtX865BwHgUSm
-1nsDsioi9sh18mZ0GfhfANNxuC+l0kiShVTsSEzbPxWlkgiIkPKZ6y6YPJD5mn7F
-OTNhEc7xEttvwDUaUcgM037WYhpulXdUVAwZvuHA/46sCwKBgQaJFg4macWzerfs
-+f45jCWGSsik/PmLm4f/ib/MBlZiG9ainVNdO7L9452Abji2daJYG/96+b6z++1u
-6hDaDZKd6n3LfTC8CNUy8zSRMZne1Hx9UTxE4+KSr8R80DCKeSrk0r9ho7LyqVft
-Rhr3HXmEign3AuiZSZK0rY5jlaC9tg==
------END PRIVATE KEY-----`
+Default: ``
 
 
 ### SAML2_PUBLIC_KEY
@@ -790,27 +763,7 @@ SAML2 public key for this application.
 To generate, see SAML2_PRIVATE_KEY
 
 
-Default: `-----BEGIN CERTIFICATE-----
-MIIDaTCCAlCgAwIBAgIBADANBgkqhkiG9w0BAQ0FADBOMQswCQYDVQQGEwJ1czEL
-MAkGA1UECAwCQ0ExETAPBgNVBAoMCFRlcnJhcmVnMR8wHQYDVQQDDBZ0ZXJyYXJl
-Zy5hcHAubG9jYWxob3N0MB4XDTIyMTAwMjIzNDQxOFoXDTIzMTAwMjIzNDQxOFow
-TjELMAkGA1UEBhMCdXMxCzAJBgNVBAgMAkNBMREwDwYDVQQKDAhUZXJyYXJlZzEf
-MB0GA1UEAwwWdGVycmFyZWcuYXBwLmxvY2FsaG9zdDCCASMwDQYJKoZIhvcNAQEB
-BQADggEQADCCAQsCggECAM8Qxmp2478atEqN4wYguXHEia/lfxiPYHRkH90WbZCx
-7br6KpGWaKJk/LGUiGss8jsJ5SsQZ1ehBmMe58/KGKV0rzcPEvd3hEw1j6Vcv4GR
-0vE91KizNan6AkcrMbh8py4puJhYbhBWt6wXVQwh12wihDfsF61Xcd28WQo/Oc4+
-0A/WbWWfYc4aZM9jYdyX58F2/Md0i5to+vIY8Nhw+YqTdXT4sHP3aF9uMe68JKId
-AKx8Ct0ciMWQNVBmqjFNuNtKhZKDiZDGjcPNy0v8ap/nNunlhk3h5AEYRBEudyvR
-lWzJUoXhl0D7p+qg/W6DFNO8jWYNteLSLDrTLxkl+f75AgMBAAGjUDBOMB0GA1Ud
-DgQWBBSXmb2KTMMH7nUHmOHKa/kpC6J97TAfBgNVHSMEGDAWgBSXmb2KTMMH7nUH
-mOHKa/kpC6J97TAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBDQUAA4IBAgBLr4V1
-8LEO9cdsfwHu1gV0lTlcXbeemk6MAeVeOyKx6h27s9GffQVL/uIomg3Ic0PqJZIT
-o8P22v367GzinUj2AF9KDf2MLopHkrTn196J+VlKgcmY7DqZg3Xa7UgVrGFu//p7
-ayQv8yMZnnRsomUs13cPfUBVW6kcS8KkIy/zxDgWs2FaPzzK1T4cqJ/Hr+7+VDuz
-PRYBbTpQEDasfUUigvNjCjdJIXOy13SARR0YK6vvIQclvkmT1sh1m/9Mz8pA+SyE
-n4hnxqzgFrSXNeCNYG8hfz6/gfGHKG8y7WaDpufRPzLUqvJZ20DRFS92HmYyJGI8
-2mHazxS6itFgOK7wOw==
------END CERTIFICATE-----`
+Default: ``
 
 
 ### SECRET_KEY
@@ -957,7 +910,7 @@ There are common attributes that can be added to each of variable objects, which
 --- | --- | ---|
 |name|The name of the 'config input'. This is also used as the module variable in the 'terraform input'.|Required|
 |type|The type of the input variable, see table below.|Required|
-|required|Specify if this variable is Required. Valid Options: "Yes" "No"|Required|
+|required|Boolean flag to determine whether the variable is Required.|false|
 |quote_value|Boolean flag to determine whether the value generated is quoted for the 'terraform input'.|false|
 |additional_help|A description that is provided, along with the terraform variable description in the usage builder|Empty|
 |default_value|The dafault value if required is "No"|Empty|

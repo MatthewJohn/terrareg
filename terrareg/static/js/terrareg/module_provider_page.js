@@ -703,11 +703,9 @@ class UsageBuilderTab extends ModuleDetailsTab {
             let analyticsTokenInputTd = $('<td></td>');
             let analyticsTokenInputField = $('<input />');
             analyticsTokenInputField.attr('class', 'input');
-            // analyticsTokenInputField.attr('style', 'width: 200px');
             analyticsTokenInputField.attr('id', 'usageBuilderAnalyticsToken');
             analyticsTokenInputField.attr('type', 'text');
             analyticsTokenInputField.attr('placeholder', config.EXAMPLE_ANALYTICS_TOKEN);
-            analyticsTokenInputField.bind('keyup', () => { updateUsageBuilderOutput(this._moduleDetails) });
             analyticsTokenInputTd.append(analyticsTokenInputField);
             analyticsTokenInputRow.append(analyticsTokenInputTd);
 
@@ -740,7 +738,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
                 
                 let requiredTd = $('<td></td>');
                 inputNameTd.attr('style', 'width: 10%');
-                requiredTd.text(inputVariable.required);
+                requiredTd.text(inputVariable.required === true ? "Yes" : "No");
                 inputRow.append(requiredTd);
 
                 let additionalHelpTd = $('<td></td>');
@@ -770,11 +768,52 @@ class UsageBuilderTab extends ModuleDetailsTab {
 
                         // Append 0 to input ID, for first input for list
                         inputId += '0';
+                        inputDiv.on('keyup', () => {
+
+                            let valueList = [];
+
+                            // Check all list inputs, remove any empty ones
+                            // and add an additional input, if last input is populated
+                        let inputIdName = `usageBuilderInput-${inputVariable.name}`;
+                        let listInputDivs = $(`.${inputIdName}`);
+                            for (const inputDiv of listInputDivs) {
+                                let val = inputDiv.value;
+
+                                // Check if input div is last item
+                                if (listInputDivs.index(inputDiv) == (listInputDivs.length - 1)) {
+
+                                    // If input contains a value, clone and create new input
+                                    if (val) {
+                                        let newInput = $(inputDiv).clone();
+
+                                        // Update Id of new input
+                                        newInput.attr('id', inputIdName + listInputDivs.length);
+
+                                        // Reset value of new iput
+                                        newInput.val('');
+
+                                        // Bind original keyup method to new input div
+                                        newInput.on('keyup', $._data(inputDiv).events.keyup[0].handler);
+
+                                        // Add new input after the original
+                                        newInput.insertAfter(inputDiv);
+
+                                        // Add value of current input to list
+                                    }
+                                } else {
+                                    // Otherwise, check if item is empty
+                                    if (val) {
+                                    } else {
+                                        inputDiv.remove();
+                                    }
+                                }
+                            }
+                        });
+
                     }
 
                     inputDiv.attr('id', inputId);
                     inputDiv.attr('placeholder', placeholder);
-                    inputDiv.bind('keyup', () => { updateUsageBuilderOutput(this._moduleDetails) });
                     valueTd.append(inputDiv);
  
                 } else if (inputVariable.type == 'boolean') {
@@ -783,11 +822,9 @@ class UsageBuilderTab extends ModuleDetailsTab {
                     inputDiv.addClass('checkbox');
                     inputDiv.attr('type', 'checkbox');
                     inputDiv.attr('id', inputId);
-                    inputDiv.attr('value', 'true');
                     if (inputVariable.default_value == true) {
                         inputDiv.prop( "checked", true )
                     }
-                    inputDiv.bind('change', () => { updateUsageBuilderOutput(this._moduleDetails) });
                     valueTd.append(inputDiv);
 
                 } else if (inputVariable.type == 'select') {
@@ -795,8 +832,6 @@ class UsageBuilderTab extends ModuleDetailsTab {
                     inputDiv.addClass('select');
                     let inputSelect = $('<select></select>');
                     inputSelect.attr('id', inputId);
-                    inputSelect.bind('change', () => { updateUsageBuilderOutput(this._moduleDetails) });
-
                     inputVariable.choices.forEach((inputChoice, itx) => {
                         // If choices is list of strings, use the string as the name,
                         // otherwise, use name attribute of object.
@@ -808,6 +843,20 @@ class UsageBuilderTab extends ModuleDetailsTab {
                     });
                     // If custom input is available, add to select
                     if (inputVariable.allow_custom) {
+                        inputSelect.on('change', function () {
+                            var selectedText  = this.selectedOptions[0].value;
+                            inputId = $(this).prop('id');
+                            let customInputId = `#${inputId}-customValue`;
+                            // Check if custom type
+                            if (selectedText == 'custom') {
+                                // Display custom text input
+                                $(customInputId).attr("style", "display:block");
+                            } else {
+                                // Hide custom input and clear value
+                                $(customInputId).attr("style", "display:none")
+                                $(customInputId).value = '';
+                            }
+                        });
                         let option = $('<option></option>');
                         option.val('custom');
                         option.text('Custom Value');
@@ -822,7 +871,6 @@ class UsageBuilderTab extends ModuleDetailsTab {
                     customInput.addClass('input');
                     customInput.attr('type', 'text');
                     customInput.attr('id', `${inputId}-customValue`);
-                    customInput.bind('keyup', () => { updateUsageBuilderOutput(this._moduleDetails) });
                     customInput.css('display', 'none');
                     valueTd.append(customInput);
 
@@ -836,7 +884,8 @@ class UsageBuilderTab extends ModuleDetailsTab {
                 $('#usageBuilderTable').append(inputRow);
             });
             globalThis.usageBuilderUseOptional = false
-            $("#usage-builder-table").DataTable({
+            globalThis.moduleDetails = this._moduleDetails
+            globalThis.usageBuilderTable = $("#usage-builder-table").DataTable({
                 columnDefs: [
                     {
                         targets: [0,1],
@@ -845,44 +894,51 @@ class UsageBuilderTab extends ModuleDetailsTab {
                 ],
                 order: [[1, 'desc'],[0, 'asc']],
                 ordering: false,
-                paging: false,
+                pagingType: "full_numbers_no_ellipses",
+                lengthMenu: [
+                    [10, 25, 50, -1],
+                    [10, 25, 50, 'All'],
+                ],
                 dom: 'Bfrtip',
-                buttons: [{
-                    text: 'Show Optional Variables',
-                    action: function (e, dt, node, config) {
-                        if (dt.column(1).search() === 'Yes') {
-                            this.text('Hide Optional Variables');
-                            dt.column(1).search('').draw(true);
-                            globalThis.usageBuilderUseOptional = true
-                            console.log("Show")
-                            console.log(globalThis.usageBuilderUseOptional)
-                        } else {
-                            this.text('Show Optional Variables');
-                            dt.column(1).search('Yes').draw(true);
-                            globalThis.usageBuilderUseOptional = false
-                            console.log("Hide")
-                            console.log(globalThis.usageBuilderUseOptional)
+                buttons: [
+                    {
+                        text: 'Show Optional Variables',
+                        action: function (e, dt, node, config) {
+                            if (dt.column(1).search() === 'Yes') {
+                                this.text('Hide Optional Variables');
+                                dt.column(1).search('').draw(true);
+                                globalThis.usageBuilderUseOptional = true
+                            } else {
+                                this.text('Show Optional Variables');
+                                dt.column(1).search('Yes').draw(true);
+                                globalThis.usageBuilderUseOptional = false
+                            }
                         }
                     }
-                }],
+                ],
                 searchCols: [
-                  null,
-                  { search: "Yes" },
+                    null,
+                    { search: "Yes" },
                 ]
-                // buttons: [
-                //         {
-                //             text: 'Show Only Required',
-                //             action: function ( e, dt, node, config ) {
-                //                 dt.column(1).search('Yes').draw();
-                //             }
-                //         },
-                //     ]
-                // pagingType: "full_numbers_no_ellipses",
-                // lengthMenu: [
-                //     [25, 50, -1],
-                //     [25, 50, 'All'],
-                // ],
             });
+            
+            new $.fn.dataTable.Buttons( globalThis.usageBuilderTable, {
+                buttons: [
+                    {
+                        text: 'Generate Terraform',
+                        action: function ( e, dt, node, conf ) {
+                            e.preventDefault();
+                            updateUsageBuilderOutput(dt)
+                            // usage
+                        }
+                    }
+                ]
+            } );
+
+                    
+            globalThis.usageBuilderTable.buttons( 1, null ).container().appendTo(
+                globalThis.usageBuilderTable.table().container()
+            );
 
         });
     }
@@ -1578,28 +1634,26 @@ function updateModuleProviderSettings(moduleDetails) {
 function usageBuilderQuoteString(inputVariable, input) {
     // Place input value directly into double quotes.
     // Escape backslashes and then escape double quotes.
-    if (inputVariable.quote_value) {
+    if (inputVariable.quote_value && typeof input !== "undefined") {
         return '"' + input.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
     } else {
         return input;
     }
 }
 
-async function updateUsageBuilderOutput(moduleDetails) {
+async function updateUsageBuilderOutput(datatable) {
     let outputTf = '';
     let additionalContent = '';
+    let moduleDetails = globalThis.moduleDetails;
 
-    let analytics_token = $('#usageBuilderAnalyticsToken')[0].value;
-
+    let analytics_token = datatable.rows( {} ).nodes().to$().find('#usageBuilderAnalyticsToken').val();
     let inputVariables = await getUsageBuilderVariables(moduleDetails.id);
-    // console.log(globalThis.usageBuilderUseOptional)
 
     inputVariables.forEach((inputVariable) => {
-        // console.log(globalThis.usageBuilderUseOptional)
-        if (inputVariable.required == "No" && globalThis.usageBuilderUseOptional == false) {
+        let is_required = inputVariable.required
+        if (is_required === false && globalThis.usageBuilderUseOptional == false) {
             return
         }
-        // console.log(inputVariable)
         let inputIdName = `usageBuilderInput-${inputVariable.name}`;
         let inputId = `#${inputIdName}`;
         let varInput = '';
@@ -1609,51 +1663,33 @@ async function updateUsageBuilderOutput(moduleDetails) {
             varInput = usageBuilderQuoteString(inputVariable, inputVariable.value);
         }
         else if (inputVariable.type == 'text') {
-            varInput = usageBuilderQuoteString(inputVariable, $(inputId)[0].value);
+            varInput = usageBuilderQuoteString(inputVariable, datatable.rows( {} ).nodes().to$().find(inputId).val());
         }
         else if (inputVariable.type == 'number')
         {
-            varInput = $(inputId)[0].value;
+            varInput = datatable.rows( {} ).nodes().to$().find(inputId).val();
         }
         else if (inputVariable.type == 'list') {
-
             let valueList = [];
 
-            // Check all list inputs, remove any empty ones
-            // and add an additional input, if last input is populated
-            let listInputDivs = $(`.${inputIdName}`);
+            let listInputDivs = datatable.rows( {} ).nodes().to$().find(`.${inputIdName}`);
+            console.log(listInputDivs)
             for (const inputDiv of listInputDivs) {
-                console.log(listInputDivs);
                 let val = inputDiv.value;
 
                 // Check if input div is last item
                 if (listInputDivs.index(inputDiv) == (listInputDivs.length - 1)) {
 
-                    // If input contains a value, clone and create new input
+                    // If input contains a value add to valueList
                     if (val) {
-                        let newInput = $(inputDiv).clone();
-
-                        // Update Id of new input
-                        newInput.attr('id', inputIdName + listInputDivs.length);
-
-                        // Reset value of new iput
-                        newInput.val('');
-
-                        // Bind original keyup method to new input div
-                        newInput.bind('keyup', $._data(inputDiv).events.keyup[0].handler);
-
-                        // Add new input after the original
-                        newInput.insertAfter(inputDiv);
 
                         // Add value of current input to list
                         valueList.push(usageBuilderQuoteString(inputVariable, val));
                     }
                 } else {
-                    // Otherwise, check if item is empty
+                    // If input contains a value add to valueList
                     if (val) {
                         valueList.push(usageBuilderQuoteString(inputVariable, val));
-                    } else {
-                        inputDiv.remove();
                     }
                 }
             }
@@ -1661,28 +1697,22 @@ async function updateUsageBuilderOutput(moduleDetails) {
             varInput = `[${valueList.join(', ')}]`;
         }
         else if (inputVariable.type == 'boolean') {
-            varInput = $(inputId).is(':checked') ? 'true' : 'false';
+            varInput = JSON.stringify(datatable.rows( {} ).nodes().to$().find(inputId).prop('checked'))
             if (varInput == String(inputVariable.default_value)) {
                 varInput = ""
             }
         }
         else if (inputVariable.type == 'select') {
-            let selectIndex = $(inputId)[0].value;
+            let selectIndex = datatable.rows( {} ).nodes().to$().find(inputId).val();
             let customInputId = `${inputId}-customValue`;
 
             // Check if custom type
             if (selectIndex == 'custom') {
-                // Display custom text input
-                $(customInputId)[0].style.display = 'block';
 
                 // Use value of custom input as output
-                varInput = usageBuilderQuoteString(inputVariable, $(customInputId)[0].value);
+                varInput = usageBuilderQuoteString(inputVariable, datatable.rows( {} ).nodes().to$().find(customInputId).val());
             }
             else {
-                // Hide custom input and clear value
-                $(customInputId)[0].style.display = 'none';
-                $(customInputId)[0].value = '';
-
                 // If choice is a string, add the choice name to as the value
                 if (typeof inputVariable.choices[selectIndex] === 'string') {
                     varInput = inputVariable.choices[selectIndex];
@@ -1698,11 +1728,12 @@ async function updateUsageBuilderOutput(moduleDetails) {
                 varInput = usageBuilderQuoteString(inputVariable, varInput);
             }
         }
-        if (!/(""|\[""\]|\[\])$/.test(varInput) && varInput != "") {
-            outputTf += `\n  ${inputVariable.name} = ${varInput}`;
-        }
+            if (is_required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "" || typeof varInput === "undefined") ) {
+                return
+            } else {
+                outputTf += `\n  ${inputVariable.name} = ${varInput}`;
+            }
     });
-
     $('#usageBuilderOutput').html(`${additionalContent}module "${moduleDetails.name}" {
   source  = "${window.location.hostname}/${analytics_token}__${moduleDetails.module_provider_id}"
   version = "${moduleDetails.terraform_example_version_string}"
