@@ -1725,11 +1725,10 @@ async function updateUsageBuilderOutput(datatable) {
                 varInput = usageBuilderQuoteString(inputVariable, varInput);
             }
         }
-            if (is_required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "" || typeof varInput === "undefined") ) {
-                return
-            } else {
-                outputTf += `\n  ${inputVariable.name} = ${varInput}`;
-            }
+        if (is_required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "" || typeof varInput === "undefined")) {
+            return;
+        }
+        outputTf += `\n  ${inputVariable.name} = ${varInput}`;
     });
     $('#usageBuilderOutput').html(`${additionalContent}module "${moduleDetails.name}" {
   source  = "${window.location.hostname}/${analytics_token}__${moduleDetails.module_provider_id}"
