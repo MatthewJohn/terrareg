@@ -802,8 +802,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
                                     }
                                 } else {
                                     // Otherwise, check if item is empty
-                                    if (val) {
-                                    } else {
+                                    if (!val) {
                                         inputDiv.remove();
                                     }
                                 }
