@@ -729,7 +729,7 @@ def check_csrf_token(csrf_token):
     """Check CSRF token."""
     # If user is authenticated using authentication token,
     # do not required CSRF token
-    if terrareg.auth.AuthFactory().get_current_auth_method().requires_csrf_tokens:
+    if not terrareg.auth.AuthFactory().get_current_auth_method().requires_csrf_tokens:
         return False
 
     session_token = get_csrf_token()
