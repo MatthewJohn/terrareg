@@ -1725,7 +1725,7 @@ async function updateUsageBuilderOutput(datatable) {
                 varInput = usageBuilderQuoteString(inputVariable, varInput);
             }
         }
-        if (is_required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "" || typeof varInput === "undefined")) {
+        if (is_required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
             return;
         }
         outputTf += `\n  ${inputVariable.name} = ${varInput}`;
