@@ -720,11 +720,6 @@ class UsageBuilderTab extends ModuleDetailsTab {
                 return;
             }
 
-            // Show tab
-            $('#module-tab-link-usage-builder').removeClass('default-hidden');
-            $('#example-link-usage-builder').removeClass('default-hidden');
-            resolve(true);
-
             // Build input table
             inputVariables.forEach((inputVariable) => {
                 let inputId = `usageBuilderInput-${inputVariable.name}`;
@@ -936,10 +931,13 @@ class UsageBuilderTab extends ModuleDetailsTab {
                 ]
             });
 
-            
             globalThis.usageBuilderTable.buttons().container()
-            .appendTo( $('div.column.is-full', globalThis.usageBuilderTable.table().container()).eq(0) );
-            
+                .appendTo( $('div.column.is-full', globalThis.usageBuilderTable.table().container()).eq(0) );
+
+            // Show tab
+            $('#module-tab-link-usage-builder').removeClass('default-hidden');
+            $('#example-link-usage-builder').removeClass('default-hidden');
+            resolve(true);
 
         });
     }
