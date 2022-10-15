@@ -880,11 +880,11 @@ class UsageBuilderTab extends ModuleDetailsTab {
             globalThis.usageBuilderTable = $("#usage-builder-table").DataTable({
                 columnDefs: [
                     {
-                        targets: [0,1],
+                        targets: [0, 1],
                         width: "1%"
                     },
                 ],
-                order: [[1, 'desc'],[0, 'asc']],
+                order: [[1, 'desc'], [0, 'asc']],
                 ordering: false,
                 // pagingType: "full_numbers_no_ellipses",
                 lengthMenu: [
@@ -896,7 +896,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
                     dom: {
                         button: {
                             tag: 'button',
-                            className: 'button is-outlined '
+                            className: 'button is-outlined'
                         }
                     },
                     buttons: [
