@@ -1,5 +1,6 @@
 
 import datetime
+from enum import Enum
 
 import sqlalchemy
 from flask import g, request, session
@@ -10,6 +11,16 @@ from terrareg.models import Namespace, Session
 import terrareg.openid_connect
 import terrareg.saml
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
+
+
+class AuthenticationType(Enum):
+    """Determine the method of authentication."""
+    NOT_CHECKED = 0
+    NOT_AUTHENTICATED = 1
+    AUTHENTICATION_TOKEN = 2
+    SESSION_PASSWORD = 3
+    SESSION_OPENID_CONNECT = 4
+    SESSION_SAML = 5
 
 
 class AuthFactory:
@@ -209,7 +220,7 @@ class BaseSessionAuthMethod(BaseAuthMethod):
         if cls.SESSION_AUTH_TYPE_VALUE is None:
             raise NotImplementedError
 
-        return session.get(cls.SESSION_AUTH_TYPE_KEY, None) == cls.SESSION_AUTH_TYPE_VALUE
+        return session.get(cls.SESSION_AUTH_TYPE_KEY, None) == cls.SESSION_AUTH_TYPE_VALUE.value
 
     @classmethod
     def check_session(cls):
@@ -337,7 +348,7 @@ class BaseSsoAuthMethod(BaseSessionAuthMethod):
 class SamlAuthMethod(BaseSsoAuthMethod):
     """Auth method for SAML authentication"""
 
-    SESSION_AUTH_TYPE_VALUE = 5
+    SESSION_AUTH_TYPE_VALUE = AuthenticationType.SESSION_SAML
 
     @classmethod
     def check_session(cls):
@@ -356,7 +367,7 @@ class SamlAuthMethod(BaseSsoAuthMethod):
 class OpenidConnectAuthMethod(BaseSsoAuthMethod):
     """Auth method for OpenID authentication"""
     
-    SESSION_AUTH_TYPE_VALUE = 4
+    SESSION_AUTH_TYPE_VALUE = AuthenticationType.SESSION_OPENID_CONNECT
     
     @classmethod
     def check_session(cls):
@@ -395,7 +406,7 @@ class AdminApiKeyAuthMethod(BaseAdminAuthMethod, BaseApiKeyAuthMethod):
 class AdminSessionAuthMethod(BaseAdminAuthMethod, BaseSessionAuthMethod):
     """Auth method for admin session"""
 
-    SESSION_AUTH_TYPE_VALUE = 3
+    SESSION_AUTH_TYPE_VALUE = AuthenticationType.SESSION_PASSWORD
 
     @classmethod
     def check_session(cls):

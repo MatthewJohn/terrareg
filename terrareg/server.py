@@ -15,7 +15,7 @@ from flask import (
     session, g, redirect
 )
 from flask_restful import Resource, Api, reqparse, inputs, abort
-from terrareg.auth import AuthFactory
+import terrareg.auth
 
 import terrareg.config
 from terrareg.database import Database
@@ -720,16 +720,6 @@ class Server(BaseHandler):
         return self._render_template('module_search.html')
 
 
-class AuthenticationType(Enum):
-    """Determine the method of authentication."""
-    NOT_CHECKED = 0
-    NOT_AUTHENTICATED = 1
-    AUTHENTICATION_TOKEN = 2
-    SESSION_PASSWORD = 3
-    SESSION_OPENID_CONNECT = 4
-    SESSION_SAML = 5
-
-
 def get_csrf_token():
     """Return current session CSRF token."""
     return session.get('csrf_token', '')
@@ -739,7 +729,7 @@ def check_csrf_token(csrf_token):
     """Check CSRF token."""
     # If user is authenticated using authentication token,
     # do not required CSRF token
-    if AuthFactory().get_current_auth_method().requires_csrf_tokens:
+    if terrareg.auth.AuthFactory().get_current_auth_method().requires_csrf_tokens:
         return False
 
     session_token = get_csrf_token()
@@ -761,7 +751,7 @@ def auth_wrapper(auth_check_method, *wrapper_args, request_kwarg_map={}, **wrapp
         """Check user is authenticated as admin and either call function or return 401, if not."""
         @wraps(func)
         def wrapper(*args, **kwargs):
-            auth_method = AuthFactory().get_current_auth_method()
+            auth_method = terrareg.auth.AuthFactory().get_current_auth_method()
 
             auth_kwargs = wrapper_kwargs.copy()
             for request_kwarg in request_kwarg_map:
@@ -1909,7 +1899,7 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
             return {'message': 'Sessions not enabled in configuration'}, 403
 
         session['is_admin_authenticated'] = True
-        session['authentication_type'] = AuthenticationType.SESSION_PASSWORD.value
+        session['authentication_type'] = terrareg.auth.AuthenticationType.SESSION_PASSWORD.value
         session.modified = True
 
         return {'authenticated': True}
@@ -2499,7 +2489,7 @@ class ApiOpenIdCallback(ErrorCatchingResource):
         session['openid_connect_access_token'] = access_token['access_token']
         session['openid_groups'] = user_info.get('groups', [])
         session['is_admin_authenticated'] = True
-        session['authentication_type'] = AuthenticationType.SESSION_OPENID_CONNECT.value
+        session['authentication_type'] = terrareg.auth.AuthenticationType.SESSION_OPENID_CONNECT.value
 
         # Manually calcualte expires at, to avoid timezone issues
         session['openid_connect_expires_at'] = datetime.datetime.now().timestamp() + access_token['expires_in']
@@ -2550,7 +2540,7 @@ class ApiSamlInitiate(ErrorCatchingResource):
                 session['samlNameIdSPNameQualifier'] = auth.get_nameid_spnq()
                 session['samlSessionIndex'] = auth.get_session_index()
                 session['is_admin_authenticated'] = True
-                session['authentication_type'] = AuthenticationType.SESSION_SAML.value
+                session['authentication_type'] = terrareg.auth.AuthenticationType.SESSION_SAML.value
 
                 session.modified = True
 
