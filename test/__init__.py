@@ -11,7 +11,7 @@ from terrareg.models import (
     ModuleVersion, GitProvider, Submodule
 )
 from terrareg.database import Database
-from terrareg.server import Server, require_admin_authentication
+from terrareg.server import Server
 import terrareg.config
 
 
