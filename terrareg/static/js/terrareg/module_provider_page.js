@@ -774,8 +774,8 @@ class UsageBuilderTab extends ModuleDetailsTab {
 
                             // Check all list inputs, remove any empty ones
                             // and add an additional input, if last input is populated
-                        let inputIdName = `usageBuilderInput-${inputVariable.name}`;
-                        let listInputDivs = $(`.${inputIdName}`);
+                            let inputIdName = `usageBuilderInput-${inputVariable.name}`;
+                            let listInputDivs = $(`.${inputIdName}`);
                             for (const inputDiv of listInputDivs) {
                                 let val = inputDiv.value;
 
