@@ -765,8 +765,6 @@ class UsageBuilderTab extends ModuleDetailsTab {
                         inputId += '0';
                         inputDiv.on('keyup', () => {
 
-                            let valueList = [];
-
                             // Check all list inputs, remove any empty ones
                             // and add an additional input, if last input is populated
                             let inputIdName = `usageBuilderInput-${inputVariable.name}`;
