@@ -797,8 +797,6 @@ class UsageBuilderTab extends ModuleDetailsTab {
 
                                         // Add new input after the original
                                         newInput.insertAfter(inputDiv);
-
-                                        // Add value of current input to list
                                     }
                                 } else {
                                     // Otherwise, check if item is empty
