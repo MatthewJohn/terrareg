@@ -152,6 +152,30 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             mock_update_attributes.assert_not_called()
 
     @setup_test_data()
+    def test_update_repository_invalid_auth(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
+        """Test update of repository URL without a CSRF token."""
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(False)[0]), \
+                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_attributes') as mock_update_attributes:
+
+            res = client.post(
+                '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/settings',
+                json={
+                    'repo_clone_url_template': 'https://example.com/test.git'
+                }
+            )
+            assert res.json == {'message': "The server could not verify that you are authorized to access the URL requested."
+                                           " You either supplied the wrong credentials (e.g. a bad password),"
+                                           " or your browser doesn't understand how to supply the credentials required."}
+            assert res.status_code == 401
+
+            # Ensure required checks are called
+            mock_update_git_tag_format.assert_not_called()
+            mock_update_attributes.assert_not_called()
+
+    @setup_test_data()
     def test_update_git_tag_format(
             self, app_context,
             test_request_context, mocked_server_namespace_fixture,
