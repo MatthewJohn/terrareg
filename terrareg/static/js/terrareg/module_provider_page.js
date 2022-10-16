@@ -1706,7 +1706,7 @@ async function updateUsageBuilderOutput(datatable) {
                 varInput = "";
             } else if (String(inputVariable.default_value) == "null") {
                 console.log(is_checked)
-                varInput = is_checked + " # Default is <strong>null</strong>. Check inputs for desired value";
+                varInput = is_checked + " # Default is <strong>null</strong>, check inputs for desired value.";
             } else {
                 varInput = is_checked;
             }
