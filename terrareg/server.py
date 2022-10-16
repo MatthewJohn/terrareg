@@ -758,10 +758,12 @@ def auth_wrapper(auth_check_method, *wrapper_args, request_kwarg_map={}, **wrapp
                 if request_kwarg in kwargs:
                     auth_kwargs[request_kwarg_map[request_kwarg]] = kwargs[request_kwarg]
 
-            if not getattr(auth_method, auth_check_method)(*wrapper_args, **auth_kwargs):
+            if (status := getattr(auth_method, auth_check_method)(*wrapper_args, **auth_kwargs)) == False:
                 abort(401)
-            else:
+            elif status == True:
                 return func(*args, **kwargs)
+            else:
+                raise Exception('Invalid response from auth check method')
         return wrapper
     return decorator_wrapper
 
