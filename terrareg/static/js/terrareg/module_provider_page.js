@@ -1701,9 +1701,14 @@ async function updateUsageBuilderOutput(datatable) {
             varInput = `[${valueList.join(', ')}]`;
         }
         else if (inputVariable.type == 'boolean') {
-            varInput = JSON.stringify(datatable.rows( {} ).nodes().to$().find(inputId).prop('checked'))
-            if (varInput == String(inputVariable.default_value)) {
-                varInput = ""
+            is_checked = JSON.stringify(datatable.rows( {} ).nodes().to$().find(inputId).prop('checked'));
+            if (String(is_checked) == String(inputVariable.default_value)) {
+                varInput = "";
+            } else if (String(inputVariable.default_value) == "null") {
+                console.log(is_checked)
+                varInput = is_checked + " # Default is <strong>null</strong>. Check inputs for desired value";
+            } else {
+                varInput = is_checked;
             }
         }
         else if (inputVariable.type == 'select') {
