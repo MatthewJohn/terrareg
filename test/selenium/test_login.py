@@ -18,6 +18,7 @@ class TestLogin(SeleniumTest):
         cls._mock_openid_connect_get_authorize_redirect_url = mock.MagicMock(return_value=(None, None))
         cls._mock_openid_connect_fetch_access_token = mock.MagicMock(return_value=None)
         cls._mock_openid_connect_validate_session_token = mock.MagicMock(return_value=False)
+        cls._mock_openid_connect_get_user_info = mock.MagicMock(return_value=None)
         cls._mock_saml2_is_enabled = mock.MagicMock(return_value=False)
         cls._mock_saml2_initialise_request_auth_object = mock.MagicMock()
         cls._config_secret_key_mock = mock.patch('terrareg.config.Config.SECRET_KEY', '')
@@ -28,6 +29,7 @@ class TestLogin(SeleniumTest):
         cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.get_authorize_redirect_url', cls._mock_openid_connect_get_authorize_redirect_url))
         cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.fetch_access_token', cls._mock_openid_connect_fetch_access_token))
         cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.validate_session_token', cls._mock_openid_connect_validate_session_token))
+        cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.get_user_info', cls._mock_openid_connect_get_user_info))
         cls.register_patch(mock.patch('terrareg.saml.Saml2.is_enabled', cls._mock_saml2_is_enabled))
         cls.register_patch(mock.patch('terrareg.saml.Saml2.initialise_request_auth_object', cls._mock_saml2_initialise_request_auth_object))
 
@@ -57,6 +59,8 @@ class TestLogin(SeleniumTest):
                                  ('/openid/callback?code=abcdefg&state=unitteststate', 'unitteststate')), \
                 self.update_mock(self._mock_openid_connect_fetch_access_token, 'return_value',
                                  {'access_token': 'unittestaccesstoken', 'id_token': 'unittestidtoken', 'expires_in': 6000}), \
+                self.update_mock(self._mock_openid_connect_get_user_info, 'return_value',
+                                 {'groups': []}), \
                 self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
                 self.update_mock(self._config_openid_connect_button_text, 'new', 'Unittest OpenID Connect Login Button'), \
                 self.update_mock(self._mock_openid_connect_validate_session_token, 'return_value', True):
