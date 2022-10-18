@@ -370,7 +370,7 @@ class SecurityIssuesTab extends ModuleDetailsTab {
                     }
                     let severityTd = `<td class="is-vcentered"><span class="tag is-primary is-light" style="background-color: ${color}; color: white">${tfsec.severity}</span></td>`;
                     tfsecRow.append(severityTd);
-                    
+
                     let fileTd = $('<td class="is-vcentered"></td>');
                     if (tfsec.location && tfsec.location.filename) {
                         fileTd.text(tfsec.location.filename);
@@ -420,7 +420,7 @@ class SecurityIssuesTab extends ModuleDetailsTab {
                     let resolutionTd = $('<td class="is-vcentered"></td>');
                     resolutionTd.text(tfsec.resolution);
                     tfsecRow.append(resolutionTd);
-                    
+
                     let resourcesTd = $('<td class="is-vcentered"></td>');
                     resourcesTd.html('<br/>');
                     if (tfsec.links) {
@@ -675,41 +675,281 @@ class SettingsTab extends ModuleDetailsTab {
     }
 }
 
+class UsageBuilderRowFactory {
+    constructor(terraregConfig) {
+        this.terraregConfig = terraregConfig;
+    }
+    getRowFromConfig(config) {
+        switch (config.type) {
+            case "text": {
+                return new UsageBuilderTextRow(config);
+            }
+            case "list": {
+                return new UsageBuilderListRow(config);
+            }
+            case "number": {
+                return new UsageBuilderNumberRow(config);
+            }
+            case "boolean": {
+                return new UsageBuilderBooleanRow(config);
+            }
+            case "select": {
+                return new UsageBuilderSelectRow(config);
+            }
+        }
+    }
+    getAnalyticsRow() {
+        return new UsageBuilderAnalyticstokenRow(this.terraregConfig);
+    }
+}
+
+class BaseUsageBuilderRow {
+    constructor(config) {
+        this.config = config;
+    }
+
+    get name() {
+        return this.config.name;
+    }
+
+    get inputId() {
+        return `usageBuilderInput-${this.name}`;
+    }
+
+    get required() {
+        return this.config.required;
+    }
+
+    getInputRow() {
+
+        let inputRow = $('<tr></tr>');
+
+        let inputNameTd = $('<td></td>');
+        inputNameTd.attr('style', 'width: 10%');
+        inputNameTd.text(this.name);
+        inputRow.append(inputNameTd);
+
+        let requiredTd = $('<td></td>');
+        inputNameTd.attr('style', 'width: 10%');
+        requiredTd.text(this.required === true ? "Yes" : "No");
+        inputRow.append(requiredTd);
+
+        let additionalHelpTd = $('<td></td>');
+        additionalHelpTd.attr('style', 'width: 50%');
+        additionalHelpTd.text(this.config.additional_help ? this.config.additional_help : '');
+        inputRow.append(additionalHelpTd);
+
+        let valueTd = $('<td></td>');
+        valueTd.attr('style', 'width: 20%');
+
+        this.generateInputDiv(valueTd);
+        inputRow.append(valueTd);
+
+        return inputRow;
+    }
+}
+
+class UsageBuilderTextRow extends BaseUsageBuilderRow {
+    generateInputDiv(valueTd) {
+        let placeholder = this.config.default_value
+        if (typeof placeholder === 'object') {
+            placeholder = JSON.stringify(placeholder)
+        }
+        let inputDiv = $('<input />');
+        inputDiv.addClass('input');
+
+        inputDiv.attr('type', 'text');
+
+        inputDiv.attr('id', this.inputId);
+        inputDiv.attr('placeholder', placeholder);
+        valueTd.append(inputDiv);
+    }
+}
+
+class UsageBuilderNumberRow extends BaseUsageBuilderRow {
+    generateInputDiv(valueTd) {
+        let placeholder = this.config.default_value
+        if (typeof placeholder === 'object') {
+            placeholder = JSON.stringify(placeholder)
+        }
+        let inputDiv = $('<input />');
+        inputDiv.addClass('input');
+
+        inputDiv.attr('type', 'number');
+
+        inputDiv.attr('id', this.inputId);
+        inputDiv.attr('placeholder', placeholder);
+        valueTd.append(inputDiv);
+    }
+}
+
+class UsageBuilderListRow extends BaseUsageBuilderRow {
+    generateInputDiv(valueTd) {
+        let placeholder = this.config.default_value
+        if (typeof placeholder === 'object') {
+            placeholder = JSON.stringify(placeholder)
+        }
+        let inputDiv = $('<input />');
+        inputDiv.addClass('input');
+        inputDiv.attr('type', 'text');
+
+        // Add class for input ID
+        inputDiv.addClass(this.inputId);
+
+        // Append 0 to input ID, for first input for list
+        let inputId = this.inputId + '0';
+        inputDiv.on('keyup', () => {
+
+            // Check all list inputs, remove any empty ones
+            // and add an additional input, if last input is populated
+            let inputIdName = `usageBuilderInput-${this.name}`;
+            let listInputDivs = $(`.${inputIdName}`);
+            for (const inputDiv of listInputDivs) {
+                let val = inputDiv.value;
+
+                // Check if input div is last item
+                if (listInputDivs.index(inputDiv) == (listInputDivs.length - 1)) {
+
+                    // If input contains a value, clone and create new input
+                    if (val) {
+                        let newInput = $(inputDiv).clone();
+
+                        // Update Id of new input
+                        newInput.attr('id', inputIdName + listInputDivs.length);
+
+                        // Reset value of new iput
+                        newInput.val('');
+
+                        // Bind original keyup method to new input div
+                        newInput.on('keyup', $._data(inputDiv).events.keyup[0].handler);
+
+                        // Add new input after the original
+                        newInput.insertAfter(inputDiv);
+                    }
+                } else {
+                    // Otherwise, check if item is empty
+                    if (!val) {
+                        inputDiv.remove();
+                    }
+                }
+            }
+        });
+
+        inputDiv.attr('id', inputId);
+        inputDiv.attr('placeholder', placeholder);
+        valueTd.append(inputDiv);
+    }
+}
+
+class UsageBuilderBooleanRow extends BaseUsageBuilderRow {
+    generateInputDiv(valueTd) {
+        let inputDiv = $('<input />');
+        inputDiv.addClass('checkbox');
+        inputDiv.attr('type', 'checkbox');
+        inputDiv.attr('id', this.inputId);
+        if (this.config.default_value == true) {
+            inputDiv.prop( "checked", true )
+        }
+        valueTd.append(inputDiv);
+    }
+}
+
+class UsageBuilderSelectRow extends BaseUsageBuilderRow {
+    generateInputDiv(valueTd) {
+        let inputDiv = $('<div></div>');
+        inputDiv.addClass('select');
+        let inputSelect = $('<select></select>');
+        inputSelect.attr('id', this.inputId);
+        this.config.choices.forEach((inputChoice, itx) => {
+            // If choices is list of strings, use the string as the name,
+            // otherwise, use name attribute of object.
+            let inputName = typeof inputChoice === 'string' ? inputChoice : inputChoice.name;
+            let option = $('<option></option>');
+            option.val(itx);
+            option.text(inputName);
+            inputSelect.append(option);
+        });
+        // If custom input is available, add to select
+        if (this.config.allow_custom) {
+            inputSelect.on('change', function () {
+                var selectedText  = this.selectedOptions[0].value;
+                inputId = $(this).prop('id');
+                let customInputId = `#${inputId}-customValue`;
+                // Check if custom type
+                if (selectedText == 'custom') {
+                    // Display custom text input
+                    $(customInputId).attr("style", "display:block");
+                } else {
+                    // Hide custom input and clear value
+                    $(customInputId).attr("style", "display:none")
+                    $(customInputId).value = '';
+                }
+            });
+            let option = $('<option></option>');
+            option.val('custom');
+            option.text('Custom Value');
+            inputSelect.append(option);
+        }
+        inputDiv.append(inputSelect);
+
+        valueTd.append(inputDiv);
+
+        // If custom input is available, add hidden input for custom input
+        let customInput = $('<input />');
+        customInput.addClass('input');
+        customInput.attr('type', 'text');
+        customInput.attr('id', `${inputId}-customValue`);
+        customInput.css('display', 'none');
+        valueTd.append(customInput);
+    }
+}
+
+class UsageBuilderAnalyticstokenRow extends BaseUsageBuilderRow {
+    constructor(terraregConfig) {
+        super(null);
+        this.terraregConfig = terraregConfig;
+    }
+    getInputRow() {
+        // Setup analytics input row
+        let analyticsTokenInputRow = $('<tr></tr>');
+
+        let analyticsTokenName = $('<td></td>');
+        analyticsTokenName.text(this.terraregConfig.ANALYTICS_TOKEN_PHRASE);
+        analyticsTokenInputRow.append(analyticsTokenName);
+
+        let analyticsrequiredTd = $('<td></td>');
+        analyticsrequiredTd.text("Yes");
+        analyticsTokenInputRow.append(analyticsrequiredTd);
+
+        let analyticsTokenDescription = $('<td></td>');
+        analyticsTokenDescription.text(this.terraregConfig.ANALYTICS_TOKEN_DESCRIPTION);
+        analyticsTokenInputRow.append(analyticsTokenDescription);
+
+        let analyticsTokenInputTd = $('<td></td>');
+        let analyticsTokenInputField = $('<input />');
+        analyticsTokenInputField.attr('class', 'input');
+        analyticsTokenInputField.attr('id', 'usageBuilderAnalyticsToken');
+        analyticsTokenInputField.attr('type', 'text');
+        analyticsTokenInputField.attr('placeholder', this.terraregConfig.EXAMPLE_ANALYTICS_TOKEN);
+        analyticsTokenInputTd.append(analyticsTokenInputField);
+        analyticsTokenInputRow.append(analyticsTokenInputTd);
+
+        return analyticsTokenInputRow;
+    }
+}
+
+
 class UsageBuilderTab extends ModuleDetailsTab {
+    constructor(moduleDetails) {
+        super(moduleDetails);
+        this._inputRows = [];
+    }
     get name() {
         return 'usage-builder';
     }
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
-            let config = await getConfig();
             let usageBuilderTable = $('#usageBuilderTable');
-
-            // Setup analytics input row
-            let analyticsTokenInputRow = $('<tr></tr>');
-
-            let analyticsTokenName = $('<td></td>');
-            analyticsTokenName.text(config.ANALYTICS_TOKEN_PHRASE);
-            analyticsTokenInputRow.append(analyticsTokenName);
-
-            
-            let analyticsrequiredTd = $('<td></td>');
-            analyticsrequiredTd.text("Yes");
-            analyticsTokenInputRow.append(analyticsrequiredTd);
-
-            let analyticsTokenDescription = $('<td></td>');
-            analyticsTokenDescription.text(config.ANALYTICS_TOKEN_DESCRIPTION);
-            analyticsTokenInputRow.append(analyticsTokenDescription);
-
-            let analyticsTokenInputTd = $('<td></td>');
-            let analyticsTokenInputField = $('<input />');
-            analyticsTokenInputField.attr('class', 'input');
-            analyticsTokenInputField.attr('id', 'usageBuilderAnalyticsToken');
-            analyticsTokenInputField.attr('type', 'text');
-            analyticsTokenInputField.attr('placeholder', config.EXAMPLE_ANALYTICS_TOKEN);
-            analyticsTokenInputTd.append(analyticsTokenInputField);
-            analyticsTokenInputRow.append(analyticsTokenInputTd);
-
-            usageBuilderTable.append(analyticsTokenInputRow);
 
             let inputVariables = await getUsageBuilderVariables(this._moduleDetails.id);
 
@@ -720,158 +960,26 @@ class UsageBuilderTab extends ModuleDetailsTab {
                 return;
             }
 
+            let config = await getConfig();
+
+            let usageBuilderRowFactory = new UsageBuilderRowFactory(config);
+
+            let analyticsTokenRow = usageBuilderRowFactory.getAnalyticsRow();
+            usageBuilderTable.append(analyticsTokenRow.getInputRow());
+            this._inputRows.push(analyticsTokenRow);
+
             // Build input table
             inputVariables.forEach((inputVariable) => {
-                let inputId = `usageBuilderInput-${inputVariable.name}`;
 
-                let inputRow = $('<tr></tr>');
-                
-                let inputNameTd = $('<td></td>');
-                inputNameTd.attr('style', 'width: 10%');
-                inputNameTd.text(inputVariable.name);
-                inputRow.append(inputNameTd);
-                
-                let requiredTd = $('<td></td>');
-                inputNameTd.attr('style', 'width: 10%');
-                requiredTd.text(inputVariable.required === true ? "Yes" : "No");
-                inputRow.append(requiredTd);
+                let inputRowObject = usageBuilderRowFactory.getRowFromConfig(inputVariable);
 
-                let additionalHelpTd = $('<td></td>');
-                additionalHelpTd.attr('style', 'width: 50%');
-                additionalHelpTd.text(inputVariable.additional_help ? inputVariable.additional_help : '');
-                inputRow.append(additionalHelpTd);
-
-                let valueTd = $('<td></td>');
-                valueTd.attr('style', 'width: 20%');
-
-                if (inputVariable.type == 'text' || inputVariable.type == 'list' || inputVariable.type == 'number') {
-                    let placeholder = inputVariable.default_value
-                    if (typeof placeholder === 'object') {
-                        placeholder = JSON.stringify(placeholder)
+                if (inputRowObject) {
+                    let inputRow = inputRowObject.getInputRow();
+                    if (inputRow) {
+                        usageBuilderTable.append(inputRow);
+                        this._inputRows.push(inputRowObject);
                     }
-                    let inputDiv = $('<input />');
-                    inputDiv.addClass('input');
-                    if (inputVariable.type == 'number') {
-                        inputDiv.attr('type', 'number');
-                    } else {
-                        inputDiv.attr('type', 'text');
-                    }
-
-                    if (inputVariable.type == 'list') {
-                        // Add class for input ID
-                        inputDiv.addClass(inputId);
-
-                        // Append 0 to input ID, for first input for list
-                        inputId += '0';
-                        inputDiv.on('keyup', () => {
-
-                            // Check all list inputs, remove any empty ones
-                            // and add an additional input, if last input is populated
-                            let inputIdName = `usageBuilderInput-${inputVariable.name}`;
-                            let listInputDivs = $(`.${inputIdName}`);
-                            for (const inputDiv of listInputDivs) {
-                                let val = inputDiv.value;
-
-                                // Check if input div is last item
-                                if (listInputDivs.index(inputDiv) == (listInputDivs.length - 1)) {
-
-                                    // If input contains a value, clone and create new input
-                                    if (val) {
-                                        let newInput = $(inputDiv).clone();
-
-                                        // Update Id of new input
-                                        newInput.attr('id', inputIdName + listInputDivs.length);
-
-                                        // Reset value of new iput
-                                        newInput.val('');
-
-                                        // Bind original keyup method to new input div
-                                        newInput.on('keyup', $._data(inputDiv).events.keyup[0].handler);
-
-                                        // Add new input after the original
-                                        newInput.insertAfter(inputDiv);
-                                    }
-                                } else {
-                                    // Otherwise, check if item is empty
-                                    if (!val) {
-                                        inputDiv.remove();
-                                    }
-                                }
-                            }
-                        });
-
-                    }
-
-                    inputDiv.attr('id', inputId);
-                    inputDiv.attr('placeholder', placeholder);
-                    valueTd.append(inputDiv);
- 
-                } else if (inputVariable.type == 'boolean') {
-
-                    let inputDiv = $('<input />');
-                    inputDiv.addClass('checkbox');
-                    inputDiv.attr('type', 'checkbox');
-                    inputDiv.attr('id', inputId);
-                    if (inputVariable.default_value == true) {
-                        inputDiv.prop( "checked", true )
-                    }
-                    valueTd.append(inputDiv);
-
-                } else if (inputVariable.type == 'select') {
-                    let inputDiv = $('<div></div>');
-                    inputDiv.addClass('select');
-                    let inputSelect = $('<select></select>');
-                    inputSelect.attr('id', inputId);
-                    inputVariable.choices.forEach((inputChoice, itx) => {
-                        // If choices is list of strings, use the string as the name,
-                        // otherwise, use name attribute of object.
-                        let inputName = typeof inputChoice === 'string' ? inputChoice : inputChoice.name;
-                        let option = $('<option></option>');
-                        option.val(itx);
-                        option.text(inputName);
-                        inputSelect.append(option);
-                    });
-                    // If custom input is available, add to select
-                    if (inputVariable.allow_custom) {
-                        inputSelect.on('change', function () {
-                            var selectedText  = this.selectedOptions[0].value;
-                            inputId = $(this).prop('id');
-                            let customInputId = `#${inputId}-customValue`;
-                            // Check if custom type
-                            if (selectedText == 'custom') {
-                                // Display custom text input
-                                $(customInputId).attr("style", "display:block");
-                            } else {
-                                // Hide custom input and clear value
-                                $(customInputId).attr("style", "display:none")
-                                $(customInputId).value = '';
-                            }
-                        });
-                        let option = $('<option></option>');
-                        option.val('custom');
-                        option.text('Custom Value');
-                        inputSelect.append(option);
-                    }
-                    inputDiv.append(inputSelect);
-
-                    valueTd.append(inputDiv);
-
-                    // If custom input is available, add hidden input for custom input
-                    let customInput = $('<input />');
-                    customInput.addClass('input');
-                    customInput.attr('type', 'text');
-                    customInput.attr('id', `${inputId}-customValue`);
-                    customInput.css('display', 'none');
-                    valueTd.append(customInput);
-
-                } else {
-                    // Skip displaying other types of variables in input
-                    return;
                 }
-
-                inputRow.append(valueTd);
-
-                $('#usageBuilderTable').append(inputRow);
             });
             globalThis.usageBuilderUseOptional = false
             globalThis.moduleDetails = this._moduleDetails
