@@ -696,6 +696,13 @@ class UsageBuilderRowFactory {
             case "select": {
                 return new UsageBuilderSelectRow(config);
             }
+            case "static": {
+                return new UsageBuilderStaticRow(config);
+            }
+            default: {
+                console.log('Unknown usage builder row type:', conifg.type);
+                break;
+            }
         }
     }
     getAnalyticsRow() {
@@ -746,6 +753,12 @@ class BaseUsageBuilderRow {
         inputRow.append(valueTd);
 
         return inputRow;
+    }
+}
+
+class UsageBuilderStaticRow extends BaseUsageBuilderRow {
+    getInputRow() {
+        return null;
     }
 }
 
@@ -972,12 +985,11 @@ class UsageBuilderTab extends ModuleDetailsTab {
             inputVariables.forEach((inputVariable) => {
 
                 let inputRowObject = usageBuilderRowFactory.getRowFromConfig(inputVariable);
-
                 if (inputRowObject) {
+                    this._inputRows.push(inputRowObject);
                     let inputRow = inputRowObject.getInputRow();
                     if (inputRow) {
                         usageBuilderTable.append(inputRow);
-                        this._inputRows.push(inputRowObject);
                     }
                 }
             });
