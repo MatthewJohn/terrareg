@@ -713,6 +713,7 @@ class UsageBuilderRowFactory {
 class BaseUsageBuilderRow {
     constructor(config) {
         this.config = config;
+        this._inputRow = undefined;
     }
 
     get name() {
@@ -751,8 +752,110 @@ class BaseUsageBuilderRow {
 
         this.generateInputDiv(valueTd);
         inputRow.append(valueTd);
+        this._inputRow = inputRow;
 
         return inputRow;
+    }
+
+    quoteString(input) {
+        // Place input value directly into double quotes.
+        // Escape backslashes and then escape double quotes.
+        if (this.config.quote_value && typeof input !== "undefined") {
+            return '"' + input.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+        } else {
+            return input;
+        }
+    }
+
+    getTerraformContent(optionalEnabled) {
+        if (this.config.required === false && optionalEnabled === false) {
+            return {
+                'body': '',
+                'additionalContent': ''
+            };
+        }
+        let inputIdName = `usageBuilderInput-${this.name}`;
+        let inputId = `#${inputIdName}`;
+        let varInput = '';
+        let additionalContent = '';
+
+        // Get value from
+        if (this.config.type == 'static') {
+            varInput = this.quoteString(inputVariable.value);
+        }
+        else if (this.config.type == 'text') {
+            varInput = this.quoteString(this._inputRow.find(inputId).val());
+        }
+        else if (this.config.type == 'number')
+        {
+            varInput = this._inputRow.find(inputId).val();
+        }
+        else if (this.config.type == 'list') {
+            let valueList = [];
+
+            let listInputDivs = this._inputRow.find(`.${inputIdName}`);
+            console.log(listInputDivs)
+            for (const inputDiv of listInputDivs) {
+                let val = inputDiv.value;
+
+                // Check if input div is last item
+                if (listInputDivs.index(inputDiv) == (listInputDivs.length - 1)) {
+
+                    // If input contains a value add to valueList
+                    if (val) {
+
+                        // Add value of current input to list
+                        valueList.push(this.quoteString(val));
+                    }
+                } else {
+                    // If input contains a value add to valueList
+                    if (val) {
+                        valueList.push(this.quoteString(val));
+                    }
+                }
+            }
+
+            varInput = `[${valueList.join(', ')}]`;
+        }
+        else if (this.config.type == 'boolean') {
+            varInput = JSON.stringify(this._inputRow.find(inputId).prop('checked'))
+            if (varInput == String(this.config.default_value)) {
+                varInput = ""
+            }
+        }
+        else if (this.config.type == 'select') {
+            let selectIndex = this._inputRow.find(inputId).val();
+            let customInputId = `${inputId}-customValue`;
+
+            // Check if custom type
+            if (selectIndex == 'custom') {
+
+                // Use value of custom input as output
+                varInput = this.quoteString(this._inputRow.find(customInputId).val());
+            }
+            else {
+                // If choice is a string, add the choice name to as the value
+                if (typeof this.config.choices[selectIndex] === 'string') {
+                    varInput = this.config.choices[selectIndex];
+                } else {
+                    // Otherwise, use the attribute for the value
+                    varInput = this.config.choices[selectIndex].value;
+
+                    // If object has additional_content, add it to the TF output
+                    if (this.config.choices[selectIndex].additional_content) {
+                        additionalContent += this.config.choices[selectIndex].additional_content + '\n\n';
+                    }
+                }
+                varInput = this.quoteString(varInput);
+            }
+        }
+        if (this.config.required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
+            return;
+        }
+        return {
+            'body': `\n  ${this.name} = ${varInput}`,
+            'additionalContent': additionalContent
+        };
     }
 }
 
@@ -921,6 +1024,7 @@ class UsageBuilderAnalyticstokenRow extends BaseUsageBuilderRow {
     constructor(terraregConfig) {
         super(null);
         this.terraregConfig = terraregConfig;
+        this._inputDiv = undefined;
     }
     getInputRow() {
         // Setup analytics input row
@@ -944,10 +1048,18 @@ class UsageBuilderAnalyticstokenRow extends BaseUsageBuilderRow {
         analyticsTokenInputField.attr('id', 'usageBuilderAnalyticsToken');
         analyticsTokenInputField.attr('type', 'text');
         analyticsTokenInputField.attr('placeholder', this.terraregConfig.EXAMPLE_ANALYTICS_TOKEN);
+        this._inputDiv = analyticsTokenInputField;
         analyticsTokenInputTd.append(analyticsTokenInputField);
         analyticsTokenInputRow.append(analyticsTokenInputTd);
 
         return analyticsTokenInputRow;
+    }
+
+    getValue() {
+        if (this._inputDiv) {
+            return this._inputDiv.val();
+        }
+        return "";
     }
 }
 
@@ -956,6 +1068,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
     constructor(moduleDetails) {
         super(moduleDetails);
         this._inputRows = [];
+        this._analyticsInput = undefined;
     }
     get name() {
         return 'usage-builder';
@@ -977,9 +1090,8 @@ class UsageBuilderTab extends ModuleDetailsTab {
 
             let usageBuilderRowFactory = new UsageBuilderRowFactory(config);
 
-            let analyticsTokenRow = usageBuilderRowFactory.getAnalyticsRow();
-            usageBuilderTable.append(analyticsTokenRow.getInputRow());
-            this._inputRows.push(analyticsTokenRow);
+            this._analyticsInput = usageBuilderRowFactory.getAnalyticsRow();
+            usageBuilderTable.append(this._analyticsInput.getInputRow());
 
             // Build input table
             inputVariables.forEach((inputVariable) => {
@@ -995,6 +1107,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
             });
             globalThis.usageBuilderUseOptional = false
             globalThis.moduleDetails = this._moduleDetails
+            globalThis.usageBuilderTab = this;
             globalThis.usageBuilderTable = $("#usage-builder-table").DataTable({
                 columnDefs: [
                     {
@@ -1038,7 +1151,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
                             className: 'is-info',
                             action: function ( e, dt, node, conf ) {
                                 e.preventDefault();
-                                updateUsageBuilderOutput(dt)
+                                globalThis.usageBuilderTab.updateUsageBuilderOutput()
                             }
                         }
                     ],
@@ -1058,6 +1171,25 @@ class UsageBuilderTab extends ModuleDetailsTab {
             resolve(true);
 
         });
+    }
+
+    async updateUsageBuilderOutput() {
+        let outputTf = '';
+        let additionalContent = '';
+        let moduleDetails = globalThis.moduleDetails;
+    
+        let analytics_token = this._analyticsInput.getValue();
+    
+        this._inputRows.forEach((inputRow) => {
+            let content = inputRow.getTerraformContent(globalThis.usageBuilderUseOptional);
+            outputTf += content.body
+            additionalContent += content.additionalContent;
+        });
+        $('#usageBuilderOutput').html(`${additionalContent}module "${moduleDetails.name}" {
+  source  = "${window.location.hostname}/${analytics_token}__${moduleDetails.module_provider_id}"
+  version = "${moduleDetails.terraform_example_version_string}"
+${outputTf}
+}`);
     }
 }
 
@@ -1746,115 +1878,6 @@ function updateModuleProviderSettings(moduleDetails) {
 
     // Return false to present default action
     return false;
-}
-
-function usageBuilderQuoteString(inputVariable, input) {
-    // Place input value directly into double quotes.
-    // Escape backslashes and then escape double quotes.
-    if (inputVariable.quote_value && typeof input !== "undefined") {
-        return '"' + input.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
-    } else {
-        return input;
-    }
-}
-
-async function updateUsageBuilderOutput(datatable) {
-    let outputTf = '';
-    let additionalContent = '';
-    let moduleDetails = globalThis.moduleDetails;
-
-    let analytics_token = datatable.rows( {} ).nodes().to$().find('#usageBuilderAnalyticsToken').val();
-    let inputVariables = await getUsageBuilderVariables(moduleDetails.id);
-
-    inputVariables.forEach((inputVariable) => {
-        let is_required = inputVariable.required
-        if (is_required === false && globalThis.usageBuilderUseOptional == false) {
-            return
-        }
-        let inputIdName = `usageBuilderInput-${inputVariable.name}`;
-        let inputId = `#${inputIdName}`;
-        let varInput = '';
-
-        // Get value from
-        if (inputVariable.type == 'static') {
-            varInput = usageBuilderQuoteString(inputVariable, inputVariable.value);
-        }
-        else if (inputVariable.type == 'text') {
-            varInput = usageBuilderQuoteString(inputVariable, datatable.rows( {} ).nodes().to$().find(inputId).val());
-        }
-        else if (inputVariable.type == 'number')
-        {
-            varInput = datatable.rows( {} ).nodes().to$().find(inputId).val();
-        }
-        else if (inputVariable.type == 'list') {
-            let valueList = [];
-
-            let listInputDivs = datatable.rows( {} ).nodes().to$().find(`.${inputIdName}`);
-            console.log(listInputDivs)
-            for (const inputDiv of listInputDivs) {
-                let val = inputDiv.value;
-
-                // Check if input div is last item
-                if (listInputDivs.index(inputDiv) == (listInputDivs.length - 1)) {
-
-                    // If input contains a value add to valueList
-                    if (val) {
-
-                        // Add value of current input to list
-                        valueList.push(usageBuilderQuoteString(inputVariable, val));
-                    }
-                } else {
-                    // If input contains a value add to valueList
-                    if (val) {
-                        valueList.push(usageBuilderQuoteString(inputVariable, val));
-                    }
-                }
-            }
-
-            varInput = `[${valueList.join(', ')}]`;
-        }
-        else if (inputVariable.type == 'boolean') {
-            varInput = JSON.stringify(datatable.rows( {} ).nodes().to$().find(inputId).prop('checked'))
-            if (varInput == String(inputVariable.default_value)) {
-                varInput = ""
-            }
-        }
-        else if (inputVariable.type == 'select') {
-            let selectIndex = datatable.rows( {} ).nodes().to$().find(inputId).val();
-            let customInputId = `${inputId}-customValue`;
-
-            // Check if custom type
-            if (selectIndex == 'custom') {
-
-                // Use value of custom input as output
-                varInput = usageBuilderQuoteString(inputVariable, datatable.rows( {} ).nodes().to$().find(customInputId).val());
-            }
-            else {
-                // If choice is a string, add the choice name to as the value
-                if (typeof inputVariable.choices[selectIndex] === 'string') {
-                    varInput = inputVariable.choices[selectIndex];
-                } else {
-                    // Otherwise, use the attribute for the value
-                    varInput = inputVariable.choices[selectIndex].value;
-
-                    // If object has additional_content, add it to the TF output
-                    if (inputVariable.choices[selectIndex].additional_content) {
-                        additionalContent += inputVariable.choices[selectIndex].additional_content + '\n\n';
-                    }
-                }
-                varInput = usageBuilderQuoteString(inputVariable, varInput);
-            }
-        }
-        if (is_required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
-            return;
-        }
-        outputTf += `\n  ${inputVariable.name} = ${varInput}`;
-    });
-    $('#usageBuilderOutput').html(`${additionalContent}module "${moduleDetails.name}" {
-  source  = "${window.location.hostname}/${analytics_token}__${moduleDetails.module_provider_id}"
-  version = "${moduleDetails.terraform_example_version_string}"
-${outputTf}
-}`);
 }
 
 function showSecurityWarnings(moduleDetails) {
