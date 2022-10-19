@@ -969,10 +969,17 @@ class UsageBuilderBooleanRow extends BaseUsageBuilderRow {
     }
 
     _getTerraformContent() {
-        let varInput = JSON.stringify(this._inputRow.find(this.inputIdHash).prop('checked'))
-        if (varInput == String(this.config.default_value)) {
+        let varInput = '';
+        let is_checked = JSON.stringify(this._inputRow.find(this.inputIdHash).prop('checked'));
+        if (String(is_checked) == String(this.config.default_value)) {
             varInput = "";
+        } else if (String(this.config.default_value) == "null") {
+            console.log(is_checked)
+            varInput = is_checked + " # Default is <strong>null</strong>, check inputs for desired value.";
+        } else {
+            varInput = is_checked;
         }
+
         if (this.config.required === false && varInput === "") {
             return {
                 'body': '',
