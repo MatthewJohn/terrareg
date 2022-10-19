@@ -723,6 +723,9 @@ class BaseUsageBuilderRow {
     get inputId() {
         return `usageBuilderInput-${this.name}`;
     }
+    get inputIdHash() {
+        return `#${this.inputId}`;
+    }
 
     get required() {
         return this.config.required;
@@ -810,14 +813,10 @@ class UsageBuilderTextRow extends BaseUsageBuilderRow {
     }
 
     _getTerraformContent() {
-        let inputIdName = `usageBuilderInput-${this.name}`;
-        let inputId = `#${inputIdName}`;
-        let varInput = '';
-        let additionalContent = '';
+        let userValue = this._inputRow.find(this.inputIdHash).val()
+        let varInput = this.quoteString(userValue);
 
-        varInput = this.quoteString(this._inputRow.find(inputId).val());
-
-        if (this.config.required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
+        if (this.config.required === false && userValue === "") {
             return {
                 'body': '',
                 'additionalContent': ''
@@ -825,7 +824,7 @@ class UsageBuilderTextRow extends BaseUsageBuilderRow {
         }
         return {
             'body': `\n  ${this.name} = ${varInput}`,
-            'additionalContent': additionalContent
+            'additionalContent': ''
         };
     }
 }
@@ -847,18 +846,17 @@ class UsageBuilderNumberRow extends BaseUsageBuilderRow {
     }
 
     _getTerraformContent() {
-        let inputIdName = `usageBuilderInput-${this.name}`;
-        let inputId = `#${inputIdName}`;
-        let varInput = '';
-        let additionalContent = '';
-        varInput = this._inputRow.find(inputId).val();
+        let varInput = this._inputRow.find(this.inputIdHash).val();
 
-        if (this.config.required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
-            return;
+        if (this.config.required === false && varInput == '') {
+            return {
+                'body': '',
+                'additionalContent': ''
+            };
         }
         return {
             'body': `\n  ${this.name} = ${varInput}`,
-            'additionalContent': additionalContent
+            'additionalContent': ''
         };
     }
 }
@@ -921,15 +919,13 @@ class UsageBuilderListRow extends BaseUsageBuilderRow {
     }
 
     _getTerraformContent() {
-        let inputIdName = `usageBuilderInput-${this.name}`;
-        let inputId = `#${inputIdName}`;
         let varInput = '';
         let additionalContent = '';
 
         // Get value from
         let valueList = [];
 
-        let listInputDivs = this._inputRow.find(`.${inputIdName}`);
+        let listInputDivs = this._inputRow.find(`.${this.inputId}`);
         console.log(listInputDivs)
         for (const inputDiv of listInputDivs) {
             let val = inputDiv.value;
@@ -953,7 +949,10 @@ class UsageBuilderListRow extends BaseUsageBuilderRow {
 
         varInput = `[${valueList.join(', ')}]`;
         if (this.config.required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
-            return;
+            return {
+                'body': '',
+                'additionalContent': ''
+            };
         }
         return {
             'body': `\n  ${this.name} = ${varInput}`,
@@ -986,7 +985,10 @@ class UsageBuilderBooleanRow extends BaseUsageBuilderRow {
             varInput = "";
         }
         if (this.config.required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
-            return;
+            return {
+                'body': '',
+                'additionalContent': ''
+            };
         }
         return {
             'body': `\n  ${this.name} = ${varInput}`,
@@ -1077,7 +1079,10 @@ class UsageBuilderSelectRow extends BaseUsageBuilderRow {
         }
 
         if (this.config.required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
-            return;
+            return {
+                'body': '',
+                'additionalContent': ''
+            };
         }
         return {
             'body': `\n  ${this.name} = ${varInput}`,
