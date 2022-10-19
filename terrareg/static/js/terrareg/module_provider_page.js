@@ -700,7 +700,7 @@ class UsageBuilderRowFactory {
                 return new UsageBuilderStaticRow(config);
             }
             default: {
-                console.log('Unknown usage builder row type:', conifg.type);
+                console.log('Unknown usage builder row type:', config.type);
                 break;
             }
         }
