@@ -1730,8 +1730,6 @@ class ModuleVersion(TerraformSpecsObject):
                     elif input_variable['type'].startswith('map('):
                         converted_type = 'text'
                         quote_value = False
-                    else:
-                        continue
                     
                     variables.append({
                         'name': input_variable['name'],
