@@ -1718,8 +1718,12 @@ class ModuleVersion(TerraformSpecsObject):
                         converted_type = 'boolean'
                         quote_value = False
                     elif input_variable['type'].startswith('list('):
+                        list_type = re.match(r'list\((.*)\)', input_variable['type'])
+                        if list_type and list_type.group(1) == 'number':
+                            quote_value = False
+                        else:
+                            quote_value = True
                         converted_type = 'list'
-                        quote_value = False
                     elif input_variable['type'] == 'number':
                         converted_type = 'number'
                         quote_value = False
