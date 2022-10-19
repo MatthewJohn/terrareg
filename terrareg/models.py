@@ -1702,10 +1702,7 @@ class ModuleVersion(TerraformSpecsObject):
 
         if terrareg.config.Config().AUTOGENERATE_USAGE_BUILDER_VARIABLES:
             for input_variable in self.get_terraform_inputs():
-                # if not input_variable['required']:
-                #     continue
                 if input_variable['name'] not in [v['name'] for v in variables]:
-
                     converted_type = 'text'
                     quote_value = True
                     default_value = input_variable['default']
