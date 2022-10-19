@@ -83,7 +83,10 @@ class TestProcessUpload(TerraregIntegrationTest):
                     metadata_fh.writelines(json.dumps({
                         'description': 'unittestdescription!',
                         'owner': 'unittestowner.',
-                            'variable_template': [{"name": "test_variable","type": "text","quote_value": True,'required': False}],
+                        'variable_template': [
+                            {"name": "test_variable","type": "number", "quote_value": True, 'required': False},
+                            {"name": "test_defaults"}
+                        ],
                     }))
 
             UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
@@ -94,8 +97,18 @@ class TestProcessUpload(TerraregIntegrationTest):
             {
                 'name': 'test_variable',
                 'quote_value': True,
+                'type': 'number',
+                'required': False,
+                'default_value': None,
+                'additional_help': ''
+            },
+            {
+                'name': 'test_defaults',
+                'quote_value': True,
                 'type': 'text',
-                'required': False
+                'required': True,
+                'default_value': None,
+                'additional_help': ''
             },
             {
                 'additional_help': 'This is a test input',
@@ -127,7 +140,7 @@ class TestProcessUpload(TerraregIntegrationTest):
                     metadata_fh.writelines(json.dumps({
                         'description': 'unittestdescription!',
                         'owner': 'unittestowner.',
-                            'variable_template': [{"name": "test_input","type": "text","quote_value": True,'required': 'No'}],
+                        'variable_template': [{"name": "test_input","type": "text","quote_value": True,'required': False}],
                     }))
 
             UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
@@ -138,8 +151,10 @@ class TestProcessUpload(TerraregIntegrationTest):
             {
                 'name': 'test_input',
                 'quote_value': True,
+                'default_value': None,
                 'type': 'text',
-                'required': 'No'
+                'required': False,
+                'additional_help': ''
             },
         ]
 
@@ -177,7 +192,9 @@ class TestProcessUpload(TerraregIntegrationTest):
                 'name': 'test_variable',
                 'quote_value': True,
                 'type': 'text',
-                'required': False
+                'required': False,
+                'additional_help': '',
+                'default_value': None
             },
             {
                 'additional_help': 'This is a test input',
@@ -489,7 +506,9 @@ class TestProcessUpload(TerraregIntegrationTest):
                 'name': 'test_variable',
                 'quote_value': True,
                 'type': 'text',
-                'required': False
+                'required': False,
+                'default_value': None,
+                'additional_help': ''
             },
             {
                 'additional_help': 'This is a test input',
