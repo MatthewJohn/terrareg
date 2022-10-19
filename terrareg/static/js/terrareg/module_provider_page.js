@@ -768,10 +768,14 @@ class BaseUsageBuilderRow {
     }
 
     getTerraformContent(optionalEnabled) {
-        return {
-            'body': '',
-            'additionalContent': ''
-        };
+        if (this.config.required === false && optionalEnabled === false) {
+            return {
+                'body': '',
+                'additionalContent': ''
+            };
+        }
+
+        return this._getTerraformContent()
     }
 }
 
@@ -780,14 +784,7 @@ class UsageBuilderStaticRow extends BaseUsageBuilderRow {
         return null;
     }
 
-    getTerraformContent(optionalEnabled) {
-        if (this.config.required === false && optionalEnabled === false) {
-            return {
-                'body': '',
-                'additionalContent': ''
-            };
-        }
-
+    _getTerraformContent() {
         let varInput = this.quoteString(this.config.value);
         return {
             'body': `\n  ${this.name} = ${varInput}`,
@@ -812,13 +809,7 @@ class UsageBuilderTextRow extends BaseUsageBuilderRow {
         valueTd.append(inputDiv);
     }
 
-    getTerraformContent(optionalEnabled) {
-        if (this.config.required === false && optionalEnabled === false) {
-            return {
-                'body': '',
-                'additionalContent': ''
-            };
-        }
+    _getTerraformContent() {
         let inputIdName = `usageBuilderInput-${this.name}`;
         let inputId = `#${inputIdName}`;
         let varInput = '';
@@ -855,13 +846,7 @@ class UsageBuilderNumberRow extends BaseUsageBuilderRow {
         valueTd.append(inputDiv);
     }
 
-    getTerraformContent(optionalEnabled) {
-        if (this.config.required === false && optionalEnabled === false) {
-            return {
-                'body': '',
-                'additionalContent': ''
-            };
-        }
+    _getTerraformContent() {
         let inputIdName = `usageBuilderInput-${this.name}`;
         let inputId = `#${inputIdName}`;
         let varInput = '';
@@ -935,13 +920,7 @@ class UsageBuilderListRow extends BaseUsageBuilderRow {
         valueTd.append(inputDiv);
     }
 
-    getTerraformContent(optionalEnabled) {
-        if (this.config.required === false && optionalEnabled === false) {
-            return {
-                'body': '',
-                'additionalContent': ''
-            };
-        }
+    _getTerraformContent() {
         let inputIdName = `usageBuilderInput-${this.name}`;
         let inputId = `#${inputIdName}`;
         let varInput = '';
@@ -995,13 +974,7 @@ class UsageBuilderBooleanRow extends BaseUsageBuilderRow {
         valueTd.append(inputDiv);
     }
 
-    getTerraformContent(optionalEnabled) {
-        if (this.config.required === false && optionalEnabled === false) {
-            return {
-                'body': '',
-                'additionalContent': ''
-            };
-        }
+    _getTerraformContent() {
         let inputIdName = `usageBuilderInput-${this.name}`;
         let inputId = `#${inputIdName}`;
         let varInput = '';
@@ -1071,13 +1044,7 @@ class UsageBuilderSelectRow extends BaseUsageBuilderRow {
         valueTd.append(customInput);
     }
 
-    getTerraformContent(optionalEnabled) {
-        if (this.config.required === false && optionalEnabled === false) {
-            return {
-                'body': '',
-                'additionalContent': ''
-            };
-        }
+    _getTerraformContent() {
         let inputIdName = `usageBuilderInput-${this.name}`;
         let inputId = `#${inputIdName}`;
         let varInput = '';
