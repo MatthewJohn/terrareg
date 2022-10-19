@@ -768,93 +768,9 @@ class BaseUsageBuilderRow {
     }
 
     getTerraformContent(optionalEnabled) {
-        if (this.config.required === false && optionalEnabled === false) {
-            return {
-                'body': '',
-                'additionalContent': ''
-            };
-        }
-        let inputIdName = `usageBuilderInput-${this.name}`;
-        let inputId = `#${inputIdName}`;
-        let varInput = '';
-        let additionalContent = '';
-
-        // Get value from
-        if (this.config.type == 'static') {
-            varInput = this.quoteString(inputVariable.value);
-        }
-        else if (this.config.type == 'text') {
-            varInput = this.quoteString(this._inputRow.find(inputId).val());
-        }
-        else if (this.config.type == 'number')
-        {
-            varInput = this._inputRow.find(inputId).val();
-        }
-        else if (this.config.type == 'list') {
-            let valueList = [];
-
-            let listInputDivs = this._inputRow.find(`.${inputIdName}`);
-            console.log(listInputDivs)
-            for (const inputDiv of listInputDivs) {
-                let val = inputDiv.value;
-
-                // Check if input div is last item
-                if (listInputDivs.index(inputDiv) == (listInputDivs.length - 1)) {
-
-                    // If input contains a value add to valueList
-                    if (val) {
-
-                        // Add value of current input to list
-                        valueList.push(this.quoteString(val));
-                    }
-                } else {
-                    // If input contains a value add to valueList
-                    if (val) {
-                        valueList.push(this.quoteString(val));
-                    }
-                }
-            }
-
-            varInput = `[${valueList.join(', ')}]`;
-        }
-        else if (this.config.type == 'boolean') {
-            varInput = JSON.stringify(this._inputRow.find(inputId).prop('checked'))
-            if (varInput == String(this.config.default_value)) {
-                varInput = ""
-            }
-        }
-        else if (this.config.type == 'select') {
-            let selectIndex = this._inputRow.find(inputId).val();
-            let customInputId = `${inputId}-customValue`;
-
-            // Check if custom type
-            if (selectIndex == 'custom') {
-
-                // Use value of custom input as output
-                varInput = this.quoteString(this._inputRow.find(customInputId).val());
-            }
-            else {
-                // If choice is a string, add the choice name to as the value
-                if (typeof this.config.choices[selectIndex] === 'string') {
-                    varInput = this.config.choices[selectIndex];
-                } else {
-                    // Otherwise, use the attribute for the value
-                    varInput = this.config.choices[selectIndex].value;
-
-                    // If object has additional_content, add it to the TF output
-                    if (this.config.choices[selectIndex].additional_content) {
-                        additionalContent += this.config.choices[selectIndex].additional_content + '\n\n';
-                    }
-                }
-                varInput = this.quoteString(varInput);
-            }
-        }
-        if (this.config.required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
-            return;
-        }
         return {
-            'body': `\n  ${this.name} = ${varInput}`,
-            'additionalContent': additionalContent
+            'body': '',
+            'additionalContent': ''
         };
     }
 }
@@ -862,6 +778,21 @@ class BaseUsageBuilderRow {
 class UsageBuilderStaticRow extends BaseUsageBuilderRow {
     getInputRow() {
         return null;
+    }
+
+    getTerraformContent(optionalEnabled) {
+        if (this.config.required === false && optionalEnabled === false) {
+            return {
+                'body': '',
+                'additionalContent': ''
+            };
+        }
+
+        let varInput = this.quoteString(this.config.value);
+        return {
+            'body': `\n  ${this.name} = ${varInput}`,
+            'additionalContent': ''
+        };
     }
 }
 
@@ -880,6 +811,32 @@ class UsageBuilderTextRow extends BaseUsageBuilderRow {
         inputDiv.attr('placeholder', placeholder);
         valueTd.append(inputDiv);
     }
+
+    getTerraformContent(optionalEnabled) {
+        if (this.config.required === false && optionalEnabled === false) {
+            return {
+                'body': '',
+                'additionalContent': ''
+            };
+        }
+        let inputIdName = `usageBuilderInput-${this.name}`;
+        let inputId = `#${inputIdName}`;
+        let varInput = '';
+        let additionalContent = '';
+
+        varInput = this.quoteString(this._inputRow.find(inputId).val());
+
+        if (this.config.required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
+            return {
+                'body': '',
+                'additionalContent': ''
+            };
+        }
+        return {
+            'body': `\n  ${this.name} = ${varInput}`,
+            'additionalContent': additionalContent
+        };
+    }
 }
 
 class UsageBuilderNumberRow extends BaseUsageBuilderRow {
@@ -896,6 +853,28 @@ class UsageBuilderNumberRow extends BaseUsageBuilderRow {
         inputDiv.attr('id', this.inputId);
         inputDiv.attr('placeholder', placeholder);
         valueTd.append(inputDiv);
+    }
+
+    getTerraformContent(optionalEnabled) {
+        if (this.config.required === false && optionalEnabled === false) {
+            return {
+                'body': '',
+                'additionalContent': ''
+            };
+        }
+        let inputIdName = `usageBuilderInput-${this.name}`;
+        let inputId = `#${inputIdName}`;
+        let varInput = '';
+        let additionalContent = '';
+        varInput = this._inputRow.find(inputId).val();
+
+        if (this.config.required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
+            return;
+        }
+        return {
+            'body': `\n  ${this.name} = ${varInput}`,
+            'additionalContent': additionalContent
+        };
     }
 }
 
@@ -955,6 +934,53 @@ class UsageBuilderListRow extends BaseUsageBuilderRow {
         inputDiv.attr('placeholder', placeholder);
         valueTd.append(inputDiv);
     }
+
+    getTerraformContent(optionalEnabled) {
+        if (this.config.required === false && optionalEnabled === false) {
+            return {
+                'body': '',
+                'additionalContent': ''
+            };
+        }
+        let inputIdName = `usageBuilderInput-${this.name}`;
+        let inputId = `#${inputIdName}`;
+        let varInput = '';
+        let additionalContent = '';
+
+        // Get value from
+        let valueList = [];
+
+        let listInputDivs = this._inputRow.find(`.${inputIdName}`);
+        console.log(listInputDivs)
+        for (const inputDiv of listInputDivs) {
+            let val = inputDiv.value;
+
+            // Check if input div is last item
+            if (listInputDivs.index(inputDiv) == (listInputDivs.length - 1)) {
+
+                // If input contains a value add to valueList
+                if (val) {
+
+                    // Add value of current input to list
+                    valueList.push(this.quoteString(val));
+                }
+            } else {
+                // If input contains a value add to valueList
+                if (val) {
+                    valueList.push(this.quoteString(val));
+                }
+            }
+        }
+
+        varInput = `[${valueList.join(', ')}]`;
+        if (this.config.required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
+            return;
+        }
+        return {
+            'body': `\n  ${this.name} = ${varInput}`,
+            'additionalContent': additionalContent
+        };
+    }
 }
 
 class UsageBuilderBooleanRow extends BaseUsageBuilderRow {
@@ -967,6 +993,32 @@ class UsageBuilderBooleanRow extends BaseUsageBuilderRow {
             inputDiv.prop( "checked", true )
         }
         valueTd.append(inputDiv);
+    }
+
+    getTerraformContent(optionalEnabled) {
+        if (this.config.required === false && optionalEnabled === false) {
+            return {
+                'body': '',
+                'additionalContent': ''
+            };
+        }
+        let inputIdName = `usageBuilderInput-${this.name}`;
+        let inputId = `#${inputIdName}`;
+        let varInput = '';
+        let additionalContent = '';
+
+
+        varInput = JSON.stringify(this._inputRow.find(inputId).prop('checked'))
+        if (varInput == String(this.config.default_value)) {
+            varInput = "";
+        }
+        if (this.config.required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
+            return;
+        }
+        return {
+            'body': `\n  ${this.name} = ${varInput}`,
+            'additionalContent': additionalContent
+        };
     }
 }
 
@@ -1017,6 +1069,53 @@ class UsageBuilderSelectRow extends BaseUsageBuilderRow {
         customInput.attr('id', `${inputId}-customValue`);
         customInput.css('display', 'none');
         valueTd.append(customInput);
+    }
+
+    getTerraformContent(optionalEnabled) {
+        if (this.config.required === false && optionalEnabled === false) {
+            return {
+                'body': '',
+                'additionalContent': ''
+            };
+        }
+        let inputIdName = `usageBuilderInput-${this.name}`;
+        let inputId = `#${inputIdName}`;
+        let varInput = '';
+        let additionalContent = '';
+
+
+        let selectIndex = this._inputRow.find(inputId).val();
+        let customInputId = `${inputId}-customValue`;
+
+        // Check if custom type
+        if (selectIndex == 'custom') {
+
+            // Use value of custom input as output
+            varInput = this.quoteString(this._inputRow.find(customInputId).val());
+        }
+        else {
+            // If choice is a string, add the choice name to as the value
+            if (typeof this.config.choices[selectIndex] === 'string') {
+                varInput = this.config.choices[selectIndex];
+            } else {
+                // Otherwise, use the attribute for the value
+                varInput = this.config.choices[selectIndex].value;
+
+                // If object has additional_content, add it to the TF output
+                if (this.config.choices[selectIndex].additional_content) {
+                    additionalContent += this.config.choices[selectIndex].additional_content + '\n\n';
+                }
+            }
+            varInput = this.quoteString(varInput);
+        }
+
+        if (this.config.required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
+            return;
+        }
+        return {
+            'body': `\n  ${this.name} = ${varInput}`,
+            'additionalContent': additionalContent
+        };
     }
 }
 
@@ -1180,11 +1279,11 @@ class UsageBuilderTab extends ModuleDetailsTab {
     
         let analytics_token = this._analyticsInput.getValue();
     
-        this._inputRows.forEach((inputRow) => {
+        for (let inputRow of this._inputRows) {
             let content = inputRow.getTerraformContent(globalThis.usageBuilderUseOptional);
             outputTf += content.body
             additionalContent += content.additionalContent;
-        });
+        }
         $('#usageBuilderOutput').html(`${additionalContent}module "${moduleDetails.name}" {
   source  = "${window.location.hostname}/${analytics_token}__${moduleDetails.module_provider_id}"
   version = "${moduleDetails.terraform_example_version_string}"
