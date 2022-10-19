@@ -919,14 +919,9 @@ class UsageBuilderListRow extends BaseUsageBuilderRow {
     }
 
     _getTerraformContent() {
-        let varInput = '';
-        let additionalContent = '';
-
-        // Get value from
         let valueList = [];
 
         let listInputDivs = this._inputRow.find(`.${this.inputId}`);
-        console.log(listInputDivs)
         for (const inputDiv of listInputDivs) {
             let val = inputDiv.value;
 
@@ -947,8 +942,8 @@ class UsageBuilderListRow extends BaseUsageBuilderRow {
             }
         }
 
-        varInput = `[${valueList.join(', ')}]`;
-        if (this.config.required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
+        let varInput = `[${valueList.join(', ')}]`;
+        if (this.config.required === false && valueList.length == 0) {
             return {
                 'body': '',
                 'additionalContent': ''
@@ -956,7 +951,7 @@ class UsageBuilderListRow extends BaseUsageBuilderRow {
         }
         return {
             'body': `\n  ${this.name} = ${varInput}`,
-            'additionalContent': additionalContent
+            'additionalContent': ''
         };
     }
 }
@@ -974,17 +969,11 @@ class UsageBuilderBooleanRow extends BaseUsageBuilderRow {
     }
 
     _getTerraformContent() {
-        let inputIdName = `usageBuilderInput-${this.name}`;
-        let inputId = `#${inputIdName}`;
-        let varInput = '';
-        let additionalContent = '';
-
-
-        varInput = JSON.stringify(this._inputRow.find(inputId).prop('checked'))
+        let varInput = JSON.stringify(this._inputRow.find(this.inputIdHash).prop('checked'))
         if (varInput == String(this.config.default_value)) {
             varInput = "";
         }
-        if (this.config.required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
+        if (this.config.required === false && varInput === "") {
             return {
                 'body': '',
                 'additionalContent': ''
@@ -992,7 +981,7 @@ class UsageBuilderBooleanRow extends BaseUsageBuilderRow {
         }
         return {
             'body': `\n  ${this.name} = ${varInput}`,
-            'additionalContent': additionalContent
+            'additionalContent': ''
         };
     }
 }
@@ -1047,38 +1036,36 @@ class UsageBuilderSelectRow extends BaseUsageBuilderRow {
     }
 
     _getTerraformContent() {
-        let inputIdName = `usageBuilderInput-${this.name}`;
-        let inputId = `#${inputIdName}`;
+        let userInput = '';
         let varInput = '';
         let additionalContent = '';
 
 
-        let selectIndex = this._inputRow.find(inputId).val();
-        let customInputId = `${inputId}-customValue`;
+        let selectIndex = this._inputRow.find(this.inputIdHash).val();
+        let customInputId = `${this.inputId}-customValue`;
 
         // Check if custom type
         if (selectIndex == 'custom') {
 
             // Use value of custom input as output
-            varInput = this.quoteString(this._inputRow.find(customInputId).val());
-        }
-        else {
+            userInput = this._inputRow.find(customInputId).val()
+        } else {
             // If choice is a string, add the choice name to as the value
             if (typeof this.config.choices[selectIndex] === 'string') {
-                varInput = this.config.choices[selectIndex];
+                userInput = this.config.choices[selectIndex];
             } else {
                 // Otherwise, use the attribute for the value
-                varInput = this.config.choices[selectIndex].value;
+                userInput = this.config.choices[selectIndex].value;
 
                 // If object has additional_content, add it to the TF output
                 if (this.config.choices[selectIndex].additional_content) {
                     additionalContent += this.config.choices[selectIndex].additional_content + '\n\n';
                 }
             }
-            varInput = this.quoteString(varInput);
         }
+        varInput = this.quoteString(userInput)
 
-        if (this.config.required === false && (/(""|\[""\]|\[\])$/.test(varInput) || varInput === "")) {
+        if (this.config.required === false && userInput == "") {
             return {
                 'body': '',
                 'additionalContent': ''
