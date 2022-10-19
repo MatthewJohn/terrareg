@@ -957,35 +957,75 @@ class UsageBuilderListRow extends BaseUsageBuilderRow {
 }
 
 class UsageBuilderBooleanRow extends BaseUsageBuilderRow {
-    generateInputDiv(valueTd) {
+    constructor(config) {
+        super(config);
+        this._inputShown = true;
+    }
+    generateInputDiv(valueTd, forceShowCheckbox=false) {
+        // Remove all child elements from the inputDiv
+        valueTd.empty();
+
+        // If the config is not required and default value is null,
+        // show code default value with a link to enable modification,
+        // which will re-call this function, forcing the display of the checkbox input
+        if (this.config.required === false && this.config.default_value == null && forceShowCheckbox === false) {
+            this._inputShown = false;
+
+            let nullText = $('<code>null</code>');
+            valueTd.append(nullText);
+            valueTd.append('<br />');
+
+            let changeLink = $('<a>Modify</a>');
+            changeLink.bind('click', () => {
+                this.generateInputDiv(valueTd, true);
+            });
+            valueTd.append(changeLink);
+            return;
+        }
+        this._inputShown = true;
+
         let inputDiv = $('<input />');
         inputDiv.addClass('checkbox');
         inputDiv.attr('type', 'checkbox');
         inputDiv.attr('id', this.inputId);
+
         if (this.config.default_value == true) {
             inputDiv.prop( "checked", true )
         }
         valueTd.append(inputDiv);
+
+        // Add link to remove input checkbox for optional value
+        if (this.config.required == false && this.config.default_value == null) {
+            valueTd.append('<br />');
+            let changeLink = $('<a>Undo</a>');
+            changeLink.bind('click', () => {
+                this.generateInputDiv(valueTd);
+            });
+            valueTd.append(changeLink);
+        }
     }
 
     _getTerraformContent() {
-        let varInput = '';
-        let is_checked = JSON.stringify(this._inputRow.find(this.inputIdHash).prop('checked'));
-        if (String(is_checked) == String(this.config.default_value)) {
-            varInput = "";
-        } else if (String(this.config.default_value) == "null") {
-            console.log(is_checked)
-            varInput = is_checked + " # Default is <strong>null</strong>, check inputs for desired value.";
-        } else {
-            varInput = is_checked;
-        }
-
-        if (this.config.required === false && varInput === "") {
+        // If input is now shown, skip the row
+        if (!this._inputShown) {
             return {
                 'body': '',
                 'additionalContent': ''
             };
         }
+
+        let is_checked = JSON.stringify(this._inputRow.find(this.inputIdHash).prop('checked'));
+
+        // If default value is shown (i.e. the value is optional),
+        // do not show any Terraform output
+        if (String(is_checked) == String(this.config.default_value)) {
+            return {
+                'body': '',
+                'additionalContent': ''
+            };
+        }
+        let varInput = is_checked;
+
         return {
             'body': `\n  ${this.name} = ${varInput}`,
             'additionalContent': ''
