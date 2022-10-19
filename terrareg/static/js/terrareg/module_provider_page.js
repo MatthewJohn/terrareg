@@ -1014,17 +1014,17 @@ class UsageBuilderBooleanRow extends BaseUsageBuilderRow {
             };
         }
 
-        let is_checked = JSON.stringify(this._inputRow.find(this.inputIdHash).prop('checked'));
+        let is_checked = this._inputRow.find(this.inputIdHash).prop('checked');
 
         // If default value is shown (i.e. the value is optional),
         // do not show any Terraform output
-        if (String(is_checked) == String(this.config.default_value)) {
+        if (is_checked === this.config.default_value) {
             return {
                 'body': '',
                 'additionalContent': ''
             };
         }
-        let varInput = is_checked;
+        let varInput = JSON.stringify(is_checked);
 
         return {
             'body': `\n  ${this.name} = ${varInput}`,
