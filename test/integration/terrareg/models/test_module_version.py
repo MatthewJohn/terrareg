@@ -356,7 +356,9 @@ class TestModuleVersion(TerraregIntegrationTest):
                     'additional_help': 'Provide the name of the application',
                     'name': 'name_of_application',
                     'quote_value': True,
-                    'type': 'text'
+                    'type': 'text',
+                    'default_value': None,
+                    'additional_help': ''
                 }
             ]
 
