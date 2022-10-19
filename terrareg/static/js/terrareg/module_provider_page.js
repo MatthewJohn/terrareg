@@ -1038,7 +1038,8 @@ class UsageBuilderSelectRow extends BaseUsageBuilderRow {
         let inputDiv = $('<div></div>');
         inputDiv.addClass('select');
         let inputSelect = $('<select></select>');
-        inputSelect.attr('id', this.inputId);
+        let inputId = this.inputId;
+        inputSelect.attr('id', inputId);
         this.config.choices.forEach((inputChoice, itx) => {
             // If choices is list of strings, use the string as the name,
             // otherwise, use name attribute of object.
