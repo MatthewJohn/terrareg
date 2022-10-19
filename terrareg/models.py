@@ -1695,6 +1695,14 @@ class ModuleVersion(TerraformSpecsObject):
         raw_json = Database.decode_blob(self._get_db_row()['variable_template'])
         variables = json.loads(raw_json) if raw_json else []
 
+        # Set default values for each user-defined variable
+        for variable in variables:
+            variable['required'] = variable.get('required', True)
+            variable['type'] = variable.get('type', 'text')
+            variable['additional_help'] = variable.get('additional_help', '')
+            variable['quote_value'] = variable.get('quote_value', True)
+            variable['default_value'] = variable.get('default_value', None)
+
         # Detect bad type for variable template and replace
         # with empty array
         if type(variables) is not list:
