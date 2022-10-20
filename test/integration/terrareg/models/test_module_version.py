@@ -358,7 +358,7 @@ class TestModuleVersion(TerraregIntegrationTest):
                     'quote_value': True,
                     'type': 'text',
                     'default_value': None,
-                    'additional_help': ''
+                    'required': True
                 }
             ]
 
