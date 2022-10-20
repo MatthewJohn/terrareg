@@ -370,7 +370,9 @@ class TestModuleVersion(TerraregIntegrationTest):
                     'additional_help': 'Provide the name of the application',
                     'name': 'name_of_application',
                     'quote_value': True,
-                    'type': 'text'
+                    'type': 'text',
+                    'default_value': None,
+                    'required': True
                 },
                 {
                     'additional_help': 'Override the default string',
@@ -400,7 +402,7 @@ class TestModuleVersion(TerraregIntegrationTest):
                     'additional_help': 'A required list',
                     'default_value': None,
                     'name': 'required_list_variable',
-                    'quote_value': False,
+                    'quote_value': True,
                     'required': True,
                     'type': 'list'
                 },
