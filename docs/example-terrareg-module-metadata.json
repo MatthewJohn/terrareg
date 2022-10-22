@@ -12,7 +12,7 @@
             "name": "var_b",
             "type": "text",
             "quote_value": "true",
-            "required": "No",
+            "required": false,
             "default_value": "Some Value"
         },
         {
