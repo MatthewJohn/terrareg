@@ -23,3 +23,12 @@
 table.dataTable tr.dtrg-group th {
     background-color: #EDEDED !important;
 }
+
+table.dataTable .select {
+    height: auto !important;
+}
+
+#module-tab-usage-builder .dt-buttons {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
