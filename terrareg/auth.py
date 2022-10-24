@@ -315,6 +315,10 @@ class BaseSsoAuthMethod(BaseSessionAuthMethod):
 
     def check_namespace_access(self, permission_type, namespace):
         """Check access level to a given namespace."""
+        # Check admin access
+        if self.is_admin():
+            return True
+
         namespace_obj = Namespace.get(namespace)
 
         # Obtain list of user's groups
