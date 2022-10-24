@@ -26,7 +26,7 @@ from terrareg.errors import (
 from terrareg.models import (
     Example, ExampleFile, ModuleVersionFile, Namespace, Module, ModuleProvider,
     ModuleVersion, ProviderLogo, Session, Submodule,
-    GitProvider
+    GitProvider, UserGroup, UserGroupNamespacePermission
 )
 from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ApiUploadModuleExtractor, GitModuleExtractor
@@ -273,6 +273,9 @@ class Server(BaseHandler):
             '/initial-setup'
         )(self._view_serve_initial_setup)
         self._app.route(
+            '/user-groups'
+        )(self._view_serve_user_groups)
+        self._app.route(
             '/modules'
         )(self._view_serve_namespace_list)
         self._app.route(
@@ -499,6 +502,14 @@ class Server(BaseHandler):
             ApiTerraregModuleSearchFilters,
             '/v1/terrareg/search_filters'
         )
+        self._api.add_resource(
+            ApiAuthUserGroups,
+            '/v1/terrareg/user-groups'
+        )
+        self._api.add_resource(
+            ApiAuthUserGroupNamespacePermissions,
+            '/v1/terrareg/user-groups/<string:user_group>/permissions/<string:namespace>'
+        )
 
         ## Auth endpoints /v1/terrareg/auth
         self._api.add_resource(
@@ -718,6 +729,10 @@ class Server(BaseHandler):
     def _view_serve_module_search(self):
         """Search modules based on input."""
         return self._render_template('module_search.html')
+
+    def _view_serve_user_groups(self):
+        """Page to view/modify user groups and permissions."""
+        return self._render_template('user_groups.html')
 
 
 def get_csrf_token():
@@ -2579,3 +2594,88 @@ class ApiSamlMetadata(ErrorCatchingResource):
             resp = make_response(', '.join(errors), 500)
         return resp
 
+
+class ApiAuthUserGroups(ErrorCatchingResource):
+    """Interface to list and create user groups."""
+
+    method_decorators = [auth_wrapper('is_admin')]
+
+    def _get(self):
+        """Obtain list of user groups."""
+        return [
+            {
+                'name': user_group.name,
+                'site_admin': user_group.site_admin,
+                'namespace_permissions': [
+                    {
+                        'namespace': permission.namespace.name,
+                        'permission': permission.permission_type
+                    }
+                    for permission in UserGroupNamespacePermission.get_permissions_by_user_group(user_group=user_group)
+                ]
+            }
+            for user_group in UserGroup.get_all_user_groups()
+        ]
+
+    def _post(self):
+        """Create user group"""
+        attributes = request.json()
+        name = attributes.get('name')
+        site_admin = attributes.get('site_admin')
+
+        user_group = UserGroup.create(name=name, site_admin=site_admin)
+        if user_group:
+            return {
+                'name': user_group.name,
+                'site_admin': user_group.site_admin
+            }, 201
+        else:
+            return {}, 400
+
+
+class ApiAuthUserGroupNamespacePermissions(ErrorCatchingResource):
+    """Interface to create user groups namespace permissions."""
+
+    method_decorators = [auth_wrapper('is_admin')]
+
+    def _post(self, user_group, namespace):
+        """Create user group namespace permission"""
+        attributes = request.json()
+        permission_type = attributes.get('permission_type')
+        permission_type_enum = UserGroupNamespacePermissionType(permission_type)
+        namespace_obj = Namespace.get(name=namespace)
+        if not namespace_obj:
+            return {'message': 'Namespace does not exist.'}, 400
+        user_group_obj = UserGroup.get_by_group_name(user_group)
+        if not user_group_obj:
+            return {'message': 'User group does not exist.'}, 400
+
+        user_group_namespace_permission = UserGroupNamespacePermission.create(
+            user_group=user_group_obj,
+            namespace=namespace_obj,
+            permission_type=permission_type_enum
+        )
+        if user_group_namespace_permission:
+            return {
+                'user_group': user_group.name,
+                'namespace': namespace.name,
+                'permission_type': permission_type_enum.value
+            }, 201
+        else:
+            return {}, 400
+
+    def _post(self, user_group, namespace):
+        """Delete user group namespace permission"""
+        namespace_obj = Namespace.get(name=namespace)
+        if not namespace_obj:
+            return {'message': 'Namespace does not exist.'}, 400
+        user_group_obj = UserGroup.get_by_group_name(user_group)
+        if not user_group_obj:
+            return {'message': 'User group does not exist.'}, 400
+
+        user_group_namespace_permission = UserGroupNamespacePermission(
+            user_group=user_group_obj,
+            namespace=namespace_obj
+        )
+        user_group_namespace_permission.delete()
+        return {}, 200
