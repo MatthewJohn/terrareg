@@ -1,5 +1,6 @@
 
 import datetime
+from enum import Enum
 from importlib.util import module_for_loader
 import os
 from distutils.version import LooseVersion
@@ -1507,6 +1508,15 @@ class ModuleProvider(object):
         return integrations
 
 
+class TfsecResultStatus(Enum):
+    """tfsec result status"""
+
+    FAIL = 0
+    PASS = 1
+    SKIP = 2
+    UNSPECIFIED = 'unspecified'
+
+
 class TerraformSpecsObject(object):
     """Base Terraform object, that has terraform-docs available."""
 
@@ -1524,6 +1534,7 @@ class TerraformSpecsObject(object):
     def __init__(self):
         """Setup member variables."""
         self._module_specs = None
+        self._tfsec_results = None
 
     @property
     def module_version(self):
@@ -1564,20 +1575,28 @@ class TerraformSpecsObject(object):
         """Must be implemented by object. Return row from DB."""
         raise NotImplementedError
 
-    def get_tfsec_failure_count(self):
-        """Return number of tfsec failures."""
-        # Handle when results in None
-        module_details = self.module_details
-        if module_details is None or module_details.tfsec['results'] is None:
-            return 0
+    def get_tfsec_failures(self):
+        """Get tfsec failure results"""
+        failures = []
+        if self._tfsec_results is None:
+            module_details = self.module_details
+            if module_details is None:
+                self._tfsec_results = None
+            else:
+                self._tfsec_results = module_details.tfsec.get("results", None)
 
-        count = 0
-        # Count each of the test failures
-        for result in self.module_details.tfsec['results']:
-            # TFsec status of 0 is a fail
-            if result['status'] == 0:
-                count += 1
-        return count
+        if self._tfsec_results is None:
+            return None
+
+        for result in self._tfsec_results:
+            
+            # Only return failed results
+            if (TfsecResultStatus(
+                        result.get('status', TfsecResultStatus.UNSPECIFIED.value)
+                    ) == TfsecResultStatus.FAIL):
+                failures.append(result)
+
+        return failures
 
     def get_module_specs(self):
         """Return module specs"""
@@ -2160,6 +2179,7 @@ class ModuleVersion(TerraformSpecsObject):
                     tab_file_mapping[tab_config[0]] = file
 
         source_browse_url = self.get_source_browse_url()
+        tfsec_failures = self.get_tfsec_failures()
         api_details.update({
             "published_at_display": self.publish_date_display,
             "display_source_url": source_browse_url if source_browse_url else self.get_source_base_url(),
@@ -2167,7 +2187,8 @@ class ModuleVersion(TerraformSpecsObject):
             "versions": versions,
             "beta": self.beta,
             "published": self.published,
-            "security_failures": self.get_tfsec_failure_count(),
+            "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
+            "security_results": tfsec_failures,
             "additional_tab_files": tab_file_mapping
         })
         return api_details
@@ -2441,9 +2462,11 @@ class BaseSubmodule(TerraformSpecsObject):
         """Return dict of submodule details with additional attributes used by terrareg UI."""
         api_details = self.get_api_module_specs()
         source_browse_url = self.get_source_browse_url()
+        tfsec_failures = self.get_tfsec_failures()
         api_details.update({
             "display_source_url": source_browse_url if source_browse_url else self._module_version.get_source_base_url(),
-            "security_failures": self.get_tfsec_failure_count()
+            "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
+            "security_results": tfsec_failures
         })
         return api_details
 

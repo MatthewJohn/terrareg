@@ -43,6 +43,7 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'beta': False,
             'published': True,
             'security_failures': 0,
+            'security_results': None,
             'git_path': None,
             'additional_tab_files': {}
         }
@@ -50,15 +51,53 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
         assert res.status_code == 200
 
     @setup_test_data()
-    @pytest.mark.parametrize('security_issues_enabled,expected_security_issues', [
+    @pytest.mark.parametrize('security_issues_enabled,expected_security_issues,expected_security_results', [
         # When security issues are enabled, 2 should be returned
-        (True, 2),
+        (True, 2, [{
+            'description': 'Secret explicitly uses the default key.',
+            'impact': 'Using AWS managed keys reduces the '
+                        'flexibility and control over the encryption '
+                        'key',
+            'links': ['https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/ssm/secret-use-customer-key/',
+                        'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret#kms_key_id'],
+            'location': {'end_line': 4,
+                        'filename': 'main.tf',
+                        'start_line': 2},
+            'long_id': 'aws-ssm-secret-use-customer-key',
+            'resolution': 'Use customer managed keys',
+            'resource': 'aws_secretsmanager_secret.this',
+            'rule_description': 'Secrets Manager should use '
+                                'customer managed keys',
+            'rule_id': 'AVD-AWS-0098',
+            'rule_provider': 'aws',
+            'rule_service': 'ssm',
+            'severity': 'LOW',
+            'status': 0,
+            'warning': False},
+            {'description': 'Some security issue 2.',
+            'impact': 'Entire project is compromised',
+            'links': ['https://example.com/issuehere',
+                        'https://example.com/docshere'],
+            'location': {'end_line': 1,
+                        'filename': 'main.tf',
+                        'start_line': 6},
+            'long_id': 'dodgy-bad-is-bad',
+            'resolution': 'Do not use bad code',
+            'resource': 'some_data_resource.this',
+            'rule_description': 'Dodgy code should be removed',
+            'rule_id': 'DDG-ANC-001',
+            'rule_provider': 'bad',
+            'rule_service': 'code',
+            'severity': 'HIGH',
+            'status': 0,
+            'warning': False}
+        ]),
         # When security issues are disabled, 0 should be returned
-        (False, 0)
+        (False, 0, None)
     ])
     def test_existing_module_provider_with_security_issues(
             self, security_issues_enabled, expected_security_issues,
-            client, mocked_server_namespace_fixture):
+            expected_security_results, client, mocked_server_namespace_fixture):
         """Test obtaining details about module provider with security issues"""
         with mock.patch('terrareg.config.Config.ENABLE_SECURITY_SCANNING', security_issues_enabled):
             res = client.get('/v1/terrareg/modules/testnamespace/withsecurityissues/testprovider')
@@ -89,6 +128,7 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
                 'beta': False,
                 'published': True,
                 'security_failures': expected_security_issues,
+                'security_results': expected_security_results,
                 'git_path': None,
                 'additional_tab_files': {}
             }

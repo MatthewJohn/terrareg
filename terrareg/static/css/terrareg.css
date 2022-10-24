@@ -19,3 +19,7 @@
 #search-results-header {
     padding: 10px;
 }
+
+table.dataTable tr.dtrg-group th {
+    background-color: #EDEDED !important;
+}

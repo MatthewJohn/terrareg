@@ -186,6 +186,13 @@
             <a onclick="selectModuleTab('resources')">Resources</a>
         </li>
 
+
+        <li id="module-tab-link-security-issues" class="module-tab-link default-hidden">
+            <a onclick="selectModuleTab('security-issues')">
+                Security Issues
+                <span class="tag is-warning is-light terrareg-exclusive default-hidden">Terrareg Exclusive</span>
+            </a>
+        </li>
         <li id="module-tab-link-analytics" class="module-tab-link default-hidden">
             <a onclick="selectModuleTab('analytics')">
                 Analytics
@@ -299,6 +306,33 @@
                 <tbody>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Security Issues tab -->
+        <div id="module-tab-security-issues" class="module-tabs default-hidden">
+            <div class="table-container">
+                <table id="security-issues-table" class="table display compact nowrap responsive" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Severity</th>
+                            <th>File</th>
+                            <th>Description</th>
+                            <th>ID</th>
+                            <th>Provider</th>
+                            <th>Service</th>
+                            <th>Resource</th>
+                            <th>Starting Line</th>
+                            <th>Ending Line</th>
+                            <th>Impact</th>
+                            <th>Resolution</th>
+                            <th>Resources</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tfsecResultsTable">
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Analytics tab -->
