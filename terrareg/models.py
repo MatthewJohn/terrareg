@@ -103,8 +103,9 @@ class UserGroup:
     @staticmethod
     def _validate_name(name):
         """Validate name of user group"""
-        if not re.match(r'^[0-9a-zA-Z-_]+$', name):
+        if not re.match(r'^[\s0-9a-zA-Z-_]+$', name):
             raise InvalidUserGroupNameError('User group name is invalid')
+        return True
 
     @classmethod
     def get_by_group_name(cls, name):
