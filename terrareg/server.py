@@ -2628,6 +2628,9 @@ class ApiAuthUserGroups(ErrorCatchingResource):
         name = attributes.get('name')
         site_admin = attributes.get('site_admin')
 
+        if site_admin is not True and site_admin is not False:
+            return {}, 400
+
         user_group = UserGroup.create(name=name, site_admin=site_admin)
         if user_group:
             return {
