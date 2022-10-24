@@ -194,8 +194,7 @@ class Database():
         self._user_group = sqlalchemy.Table(
             'user_group', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
-            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
-            sqlalchemy.Column('sso_group_attribute', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False, unique=True),
             sqlalchemy.Column('site_admin', sqlalchemy.Boolean, default=False, nullable=False)
         )
 
