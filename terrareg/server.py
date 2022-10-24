@@ -2614,7 +2614,7 @@ class ApiAuthUserGroups(ErrorCatchingResource):
                 'namespace_permissions': [
                     {
                         'namespace': permission.namespace.name,
-                        'permission': permission.permission_type
+                        'permission_type': permission.permission_type.value
                     }
                     for permission in UserGroupNamespacePermission.get_permissions_by_user_group(user_group=user_group)
                 ]
@@ -2665,14 +2665,14 @@ class ApiAuthUserGroupNamespacePermissions(ErrorCatchingResource):
         )
         if user_group_namespace_permission:
             return {
-                'user_group': user_group.name,
-                'namespace': namespace.name,
+                'user_group': user_group_obj.name,
+                'namespace': namespace_obj.name,
                 'permission_type': permission_type_enum.value
             }, 201
         else:
             return {}, 400
 
-    def _post(self, user_group, namespace):
+    def _delete(self, user_group, namespace):
         """Delete user group namespace permission"""
         namespace_obj = Namespace.get(name=namespace)
         if not namespace_obj:

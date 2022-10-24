@@ -32,30 +32,54 @@
         });
     }
 
-    function createUserGroupNamespacePermission() {
-
+    function createUserGroupNamespacePermission(userGroup) {
+        let namespace = $(`#createUserGroupPermission-Namespace-${userGroup}`).val();
+        let permissionType = $(`#createUserGroupPermission-Permission-${userGroup}`).val();
+        $.post({
+            url: `/v1/terrareg/user-groups/${userGroup}/permissions/${namespace}`,
+            data: JSON.stringify({
+                permission_type: permissionType,
+                csrf_token: '{{ csrf_token }}'
+            }),
+            contentType: 'application/json'
+        }).done((res) => {
+            $('#create-error').css('display', 'none');
+            getUserGroupList();
+        }).fail((res) => {
+            if (res.status == 401) {
+                $('#create-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
+            } else if (res.responseJSON && res.responseJSON.message) {
+                $('#create-error').html(res.responseJSON.message);
+            } else {
+                $('#create-error').html('An unexpected error occurred');
+            }
+            $('#create-error').css('display', 'block');
+            $(window).scrollTop($('#create-error').offset().top);
+        });
     }
 
     function deleteUserGroupNamespacePermission(userGroup, namespace) {}
 
     async function getUserGroupList() {
         return new Promise((resolve, reject) => {
-            $.get('/v1/terrareg/user-groups').then((userGroups) => {
+            $.get('/v1/terrareg/user-groups').then(async (userGroups) => {
                 let tableContent = $('#user-group-table-content');
+
+                let namespaces = await getNamespaces();
+
                 for (let userGroup of userGroups) {
 
+                    let groupId = `${userGroup.name} (Site admin: ${userGroup.site_admin ? 'Yes' : 'No'})`
 
                     for (let permission of userGroup.namespace_permissions) {
                         let row = $(`<tr></tr>`);
 
-                        row.append(`<td class="is-vcentered"></td>`);
-                        row.append(`<td class="is-vcentered">${userGroup.name}</td>`);
-                        row.append(`<td class="is-vcentered">${userGroup.site_admin}</td>`);
+                        row.append(`<td class="is-vcentered">${groupId}</td>`);
                         row.append(`<td class="is-vcentered">${permission.namespace}</td>`);
                         row.append(`<td class="is-vcentered">${permission.permission_type}</td>`);
                         let buttonTd = $('<td class="is-vcentered"></td>');
-                        let button = $('<button class="button">Create</button>');
-                        button.bind(onclick, () => {
+                        let button = $('<button class="button is-small is-warning">Delete</button>');
+                        button.bind('click', () => {
                             deleteUserGroupNamespacePermission(userGroup.name, permission.namespace);
                         });
                         buttonTd.append(button);
@@ -65,15 +89,19 @@
                     }
 
                     {
-                        let row = $(`<tr id="createUserGroupPermissionRow-${userGroup.name}"></tr>`);
-                        row.append(`<td class="is-vcentered"></td>`);
-                        row.append(`<td class="is-vcentered">${userGroup.name}</td>`);
-                        row.append(`<td class="is-vcentered">${userGroup.site_admin}</td>`);
-                        row.append(`<td class="is-vcentered"><select class="select"></select></td>`);
-                        row.append(`<td class="is-vcentered"><select class="select"><option>Full</option><option>Modify</option></select></td>`);
+                        let row = $(`<tr></tr>`);
+                        row.append(`<td class="is-vcentered">${groupId}</td>`);
+                        let namespaceTd = $(`<td class="is-vcentered"></td>`);
+                        let namespaceSelect = $(`<select id="createUserGroupPermission-Namespace-${userGroup.name}" class="select"></select>`);
+                        for (let namespace of namespaces) {
+                            namespaceSelect.append(`<option value="${namespace.name}">${namespace.name}</option>`);
+                        }
+                        namespaceTd.append(namespaceSelect);
+                        row.append(namespaceTd);
+                        row.append(`<td class="is-vcentered"><select id="createUserGroupPermission-Permission-${userGroup.name}" class="select"><option value="FULL">Full</option><option value="MODIFY">Modify</option></select></td>`);
                         let buttonTd = $('<td class="is-vcentered"></td>');
                         let button = $('<button class="button is-small is-primary">Create</button>');
-                        button.bind(onclick, () => {
+                        button.bind('click', () => {
                             createUserGroupNamespacePermission(userGroup.name);
                         });
                         buttonTd.append(button);
@@ -84,9 +112,7 @@
 
                     {
                         let row = $(`<tr></tr>`);
-                        row.append(`<td class="is-vcentered"></td>`);
-                        row.append(`<td class="is-vcentered">${userGroup.name}</td>`);
-                        row.append(`<td class="is-vcentered"></td>`);
+                        row.append(`<td class="is-vcentered">${groupId}</td>`);
                         row.append(`<td class="is-vcentered"></td>`);
                         row.append(`<td class="is-vcentered"></td>`);
                         let buttonTd = $('<td class="is-vcentered"></td>');
@@ -110,12 +136,12 @@
                 autoWidth: true,
                 columnDefs: [
                     {
-                        targets: [0, 1],
+                        targets: [0],
                         visible: false
                     }
                 ],
                 rowGroup: {
-                    dataSrc: [1, 2]
+                    dataSrc: [0]
                 },
                 pagingType: "full_numbers_no_ellipses",
                 lengthMenu: [
@@ -150,8 +176,6 @@
                     <thead>
                         <tr>
                             <th></th>
-                            <th>Group Name</th>
-                            <th>Site Admin</th>
                             <th>Namespace</th>
                             <th>Permission</th>
                             <th>Action</th>
