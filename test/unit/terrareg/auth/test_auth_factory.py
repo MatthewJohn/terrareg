@@ -1,16 +1,12 @@
 
 import contextlib
 import unittest.mock
-import datetime
 
 import pytest
-import werkzeug.exceptions
-import jwt
 
-from test.unit.terrareg import MockSession, TerraregUnitTest, mocked_server_session_fixture
-from test import client, app_context, test_request_context
-from terrareg.server import auth_wrapper
-from terrareg.auth import AuthFactory, AuthenticationType
+from test.unit.terrareg import TerraregUnitTest
+from test import app_context
+from terrareg.auth import AuthFactory
 
 
 class TestAuthFactory(TerraregUnitTest):
