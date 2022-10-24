@@ -186,6 +186,10 @@ class UserGroup:
     def delete(self):
         """Delete user group"""
         db = Database.get()
+
+        for group_permission in UserGroupNamespacePermission.get_permissions_by_user_group(self):
+            group_permission.delete()
+
         with db.get_connection() as conn:
             conn.execute(db.user_group.delete().where(
                 db.user_group.c.id==self.pk
