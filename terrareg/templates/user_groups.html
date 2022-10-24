@@ -1,0 +1,143 @@
+{% extends 'template.html' %}
+
+{% block title %}User Groups{% endblock %}
+
+{% block header %}
+<script>
+    function createUserGroup() {
+        if (! $('#create-user-group-form')[0].reportValidity()) {
+            return;
+        }
+        $.post({
+            url: '/v1/terrareg/user-groups',
+            data: JSON.stringify({
+                name: $('#user-group-name').val(),
+                site_admin: $('#user-group-site-admin').is(':checked'),
+                csrf_token: '{{ csrf_token }}'
+            }),
+            contentType: 'application/json'
+        }).done((res) => {
+            $('#create-error').css('display', 'none');
+            getUserGroupList();
+        }).fail((res) => {
+            if (res.status == 401) {
+                $('#create-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
+            } else if (res.responseJSON && res.responseJSON.message) {
+                $('#create-error').html(res.responseJSON.message);
+            } else {
+                $('#create-error').html('An unexpected error occurred');
+            }
+            $('#create-error').css('display', 'block');
+            $(window).scrollTop($('#create-error').offset().top);
+        });
+    }
+
+    function createUserGroupNamespacePermission() {
+
+    }
+
+    function getUserGroupList() {
+        $.get('/v1/terrareg/user-groups').then((userGroups) => {
+            let tableContent = $('#user-group-table-content');
+            userGroups.forEach((userGroup) => {
+                let row = $("<tr></tr>");
+
+                row.append(`<td>Row 1</td>`);
+                row.append(`<td>${userGroup.name}</td>`);
+                row.append(`<td>${userGroup.site_admin}</td>`);
+
+                tableContent.append(row);
+            });
+        });
+    }
+
+    // $(document).ready(() => {
+        let dataTable = $("#user-group-table").DataTable({
+            order: [[1, 'asc']],
+            autoWidth: false,
+            columnDefs: [
+                {
+                    targets: [2],
+                    className: "none"
+                },
+                {
+                    targets: [0],
+                    width: "1%"
+                },
+            ],
+            rowGroup: {
+                dataSrc: [1]
+            },
+            pagingType: "full_numbers_no_ellipses",
+            lengthMenu: [
+                [25, 50, -1],
+                [25, 50, 'All'],
+            ],
+        });
+        getUserGroupList();
+    // });
+
+</script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li>Settings</li>
+        <li class="is-active"><a href="/user-groups">User Groups</a></li>
+    </ul>
+</nav>
+
+<div class="columns">
+    <div class="column is-one-third is-offset-one-third">
+     
+        <div class="field is-vertical">
+
+
+
+            <div class="table-container">
+                <table id="user-group-table" class="table display compact nowrap responsive" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Group Name</th>
+                            <th>Site Admin</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-group-table-content">
+                    </tbody>
+                </table>
+            </div>
+
+
+
+
+            <h2 class="h2">Create User Group</h2>
+            <div id="create-error" style="display: none" class="notification is-danger">
+            </div>
+            <form id="create-user-group-form" onsubmit="event.preventDefault(); createUserGroup();">
+                <div class="field">
+                    <label class="label">SSO Group Name</label>
+                    <div class="control">
+                        <input required id="user-group-name" class="input" type="text" placeholder="my-team">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Site Admin</label>
+                    <div class="control">
+                        <input id="user-group-site-admin" class="checkbox" type="checkbox" value="true">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="control">
+                    <button class="button is-link">Create</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</nav>
+
+{% endblock %}
