@@ -36,46 +36,95 @@
 
     }
 
-    function getUserGroupList() {
-        $.get('/v1/terrareg/user-groups').then((userGroups) => {
-            let tableContent = $('#user-group-table-content');
-            userGroups.forEach((userGroup) => {
-                let row = $("<tr></tr>");
+    function deleteUserGroupNamespacePermission(userGroup, namespace) {}
 
-                row.append(`<td>Row 1</td>`);
-                row.append(`<td>${userGroup.name}</td>`);
-                row.append(`<td>${userGroup.site_admin}</td>`);
+    async function getUserGroupList() {
+        return new Promise((resolve, reject) => {
+            $.get('/v1/terrareg/user-groups').then((userGroups) => {
+                let tableContent = $('#user-group-table-content');
+                for (let userGroup of userGroups) {
 
-                tableContent.append(row);
+
+                    for (let permission of userGroup.namespace_permissions) {
+                        let row = $(`<tr></tr>`);
+
+                        row.append(`<td class="is-vcentered"></td>`);
+                        row.append(`<td class="is-vcentered">${userGroup.name}</td>`);
+                        row.append(`<td class="is-vcentered">${userGroup.site_admin}</td>`);
+                        row.append(`<td class="is-vcentered">${permission.namespace}</td>`);
+                        row.append(`<td class="is-vcentered">${permission.permission_type}</td>`);
+                        let buttonTd = $('<td class="is-vcentered"></td>');
+                        let button = $('<button class="button">Create</button>');
+                        button.bind(onclick, () => {
+                            deleteUserGroupNamespacePermission(userGroup.name, permission.namespace);
+                        });
+                        buttonTd.append(button);
+                        row.append(buttonTd);
+
+                        tableContent.append(row);
+                    }
+
+                    {
+                        let row = $(`<tr id="createUserGroupPermissionRow-${userGroup.name}"></tr>`);
+                        row.append(`<td class="is-vcentered"></td>`);
+                        row.append(`<td class="is-vcentered">${userGroup.name}</td>`);
+                        row.append(`<td class="is-vcentered">${userGroup.site_admin}</td>`);
+                        row.append(`<td class="is-vcentered"><select class="select"></select></td>`);
+                        row.append(`<td class="is-vcentered"><select class="select"><option>Full</option><option>Modify</option></select></td>`);
+                        let buttonTd = $('<td class="is-vcentered"></td>');
+                        let button = $('<button class="button is-small is-primary">Create</button>');
+                        button.bind(onclick, () => {
+                            createUserGroupNamespacePermission(userGroup.name);
+                        });
+                        buttonTd.append(button);
+                        row.append(buttonTd);
+                        tableContent.append(row);
+
+                    }
+
+                    {
+                        let row = $(`<tr></tr>`);
+                        row.append(`<td class="is-vcentered"></td>`);
+                        row.append(`<td class="is-vcentered">${userGroup.name}</td>`);
+                        row.append(`<td class="is-vcentered"></td>`);
+                        row.append(`<td class="is-vcentered"></td>`);
+                        row.append(`<td class="is-vcentered"></td>`);
+                        let buttonTd = $('<td class="is-vcentered"></td>');
+                        let button = $('<button class="button is-small is-danger">Delete user group</button>');
+                        buttonTd.append(button);
+                        row.append(buttonTd);
+                        tableContent.append(row);
+                    }
+
+                };
+            }).then(() => {
+                resolve();
             });
         });
     }
 
-    // $(document).ready(() => {
-        let dataTable = $("#user-group-table").DataTable({
-            order: [[1, 'asc']],
-            autoWidth: false,
-            columnDefs: [
-                {
-                    targets: [2],
-                    className: "none"
+    $(document).ready(() => {
+        getUserGroupList().then(() => {
+            $("#user-group-table").DataTable({
+                order: [[1, 'asc']],
+                autoWidth: true,
+                columnDefs: [
+                    {
+                        targets: [0, 1],
+                        visible: false
+                    }
+                ],
+                rowGroup: {
+                    dataSrc: [1, 2]
                 },
-                {
-                    targets: [0],
-                    width: "1%"
-                },
-            ],
-            rowGroup: {
-                dataSrc: [1]
-            },
-            pagingType: "full_numbers_no_ellipses",
-            lengthMenu: [
-                [25, 50, -1],
-                [25, 50, 'All'],
-            ],
+                pagingType: "full_numbers_no_ellipses",
+                lengthMenu: [
+                    [25, 50, -1],
+                    [25, 50, 'All'],
+                ],
+            });
         });
-        getUserGroupList();
-    // });
+    });
 
 </script>
 {% endblock %}
@@ -90,25 +139,28 @@
 </nav>
 
 <div class="columns">
-    <div class="column is-one-third is-offset-one-third">
+    <div class="column is-three-fifths is-offset-one-fifth">
      
         <div class="field is-vertical">
 
 
 
-            <div class="table-container">
+            <!-- <div class="table-container"> -->
                 <table id="user-group-table" class="table display compact nowrap responsive" style="width:100%">
                     <thead>
                         <tr>
                             <th></th>
                             <th>Group Name</th>
                             <th>Site Admin</th>
+                            <th>Namespace</th>
+                            <th>Permission</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="user-group-table-content">
                     </tbody>
                 </table>
-            </div>
+            <!-- </div> -->
 
 
 
