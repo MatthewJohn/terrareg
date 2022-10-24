@@ -507,6 +507,10 @@ class Server(BaseHandler):
             '/v1/terrareg/user-groups'
         )
         self._api.add_resource(
+            ApiAuthUserGroup,
+            '/v1/terrareg/user-groups/<string:user_group>'
+        )
+        self._api.add_resource(
             ApiAuthUserGroupNamespacePermissions,
             '/v1/terrareg/user-groups/<string:user_group>/permissions/<string:namespace>'
         )
@@ -2639,6 +2643,20 @@ class ApiAuthUserGroups(ErrorCatchingResource):
             }, 201
         else:
             return {}, 400
+
+
+class ApiAuthUserGroup(ErrorCatchingResource):
+    """Interface to interact with single user group."""
+
+    def _delete(self, user_group):
+        """Delete user group."""
+        user_group_obj = UserGroup.get_by_group_name(user_group)
+        if not user_group_obj:
+            return {'message': 'User group does not exist.'}, 400
+
+        user_group_obj.delete()
+        return {}, 200
+
 
 
 class ApiAuthUserGroupNamespacePermissions(ErrorCatchingResource):

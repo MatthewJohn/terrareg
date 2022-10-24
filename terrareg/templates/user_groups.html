@@ -4,6 +4,7 @@
 
 {% block header %}
 <script>
+    var dataTable = undefined;
     function createUserGroup() {
         if (! $('#create-user-group-form')[0].reportValidity()) {
             return;
@@ -18,7 +19,9 @@
             contentType: 'application/json'
         }).done((res) => {
             $('#create-error').css('display', 'none');
-            getUserGroupList();
+            getUserGroupList().then(() => {
+                dataTable.draw();
+            });
         }).fail((res) => {
             if (res.status == 401) {
                 $('#create-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
@@ -44,7 +47,9 @@
             contentType: 'application/json'
         }).done((res) => {
             $('#create-error').css('display', 'none');
-            getUserGroupList();
+            getUserGroupList().then(() => {
+                dataTable.draw();
+            });
         }).fail((res) => {
             if (res.status == 401) {
                 $('#create-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
@@ -58,13 +63,64 @@
         });
     }
 
-    function deleteUserGroupNamespacePermission(userGroup, namespace) {}
+    function deleteUserGroupNamespacePermission(userGroup, namespace) {
+        $.ajax({
+            method: 'DELETE',
+            url: `/v1/terrareg/user-groups/${userGroup}/permissions/${namespace}`,
+            data: JSON.stringify({
+                csrf_token: '{{ csrf_token }}'
+            }),
+            contentType: 'application/json'
+        }).done((res) => {
+            $('#create-error').css('display', 'none');
+            getUserGroupList().then(() => {
+                dataTable.draw();
+            });
+        }).fail((res) => {
+            if (res.status == 401) {
+                $('#create-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
+            } else if (res.responseJSON && res.responseJSON.message) {
+                $('#create-error').html(res.responseJSON.message);
+            } else {
+                $('#create-error').html('An unexpected error occurred');
+            }
+            $('#create-error').css('display', 'block');
+            $(window).scrollTop($('#create-error').offset().top);
+        });
+    }
+
+    function deleteUserGroup(userGroup) {
+        $.ajax({
+            method: 'DELETE',
+            url: `/v1/terrareg/user-groups/${userGroup}`,
+            data: JSON.stringify({
+                csrf_token: '{{ csrf_token }}'
+            }),
+            contentType: 'application/json'
+        }).done((res) => {
+            $('#create-error').css('display', 'none');
+            getUserGroupList().then(() => {
+                dataTable.draw();
+            });
+        }).fail((res) => {
+            if (res.status == 401) {
+                $('#create-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
+            } else if (res.responseJSON && res.responseJSON.message) {
+                $('#create-error').html(res.responseJSON.message);
+            } else {
+                $('#create-error').html('An unexpected error occurred');
+            }
+            $('#create-error').css('display', 'block');
+            $(window).scrollTop($('#create-error').offset().top);
+        });
+    }
 
     async function getUserGroupList() {
         return new Promise((resolve, reject) => {
             $.get('/v1/terrareg/user-groups').then(async (userGroups) => {
                 let tableContent = $('#user-group-table-content');
 
+                tableContent.empty();
                 let namespaces = await getNamespaces();
 
                 for (let userGroup of userGroups) {
@@ -117,6 +173,9 @@
                         row.append(`<td class="is-vcentered"></td>`);
                         let buttonTd = $('<td class="is-vcentered"></td>');
                         let button = $('<button class="button is-small is-danger">Delete user group</button>');
+                        button.on('click', () => {
+                            deleteUserGroup(userGroup.name);
+                        });
                         buttonTd.append(button);
                         row.append(buttonTd);
                         tableContent.append(row);
@@ -131,8 +190,8 @@
 
     $(document).ready(() => {
         getUserGroupList().then(() => {
-            $("#user-group-table").DataTable({
-                order: [[1, 'asc']],
+            dataTable = $("#user-group-table").DataTable({
+                order: [[0, 'asc']],
                 autoWidth: true,
                 columnDefs: [
                     {

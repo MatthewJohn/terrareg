@@ -183,6 +183,14 @@ class UserGroup:
                 self._row_cache = res.fetchone()
         return self._row_cache
 
+    def delete(self):
+        """Delete user group"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.user_group.delete().where(
+                db.user_group.c.id==self.pk
+            ))
+
 
 class UserGroupNamespacePermission:
 
@@ -288,6 +296,15 @@ class UserGroupNamespacePermission:
                 res = conn.execute(select)
                 self._row_cache = res.fetchone()
         return self._row_cache
+
+    def delete(self):
+        """Delete user group namespace permission."""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.user_group_namespace_permission.delete().where(
+                db.user_group_namespace_permission.c.user_group_id==self.user_group.pk,
+                db.user_group_namespace_permission.c.namespace_id==self.namespace.pk
+            ))
 
 
 class GitProvider:
