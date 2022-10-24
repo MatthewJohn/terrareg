@@ -2624,7 +2624,7 @@ class ApiAuthUserGroups(ErrorCatchingResource):
 
     def _post(self):
         """Create user group"""
-        attributes = request.json()
+        attributes = request.json
         name = attributes.get('name')
         site_admin = attributes.get('site_admin')
 
@@ -2645,7 +2645,7 @@ class ApiAuthUserGroupNamespacePermissions(ErrorCatchingResource):
 
     def _post(self, user_group, namespace):
         """Create user group namespace permission"""
-        attributes = request.json()
+        attributes = request.json
         permission_type = attributes.get('permission_type')
         permission_type_enum = UserGroupNamespacePermissionType(permission_type)
         namespace_obj = Namespace.get(name=namespace)
