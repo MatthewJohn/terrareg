@@ -1900,7 +1900,12 @@ class ApiTerraregIsAuthenticated(ErrorCatchingResource):
     method_decorators = [auth_wrapper('is_authenticated')]
 
     def _get(self):
-        return {'authenticated': True}
+        """Return information about current user."""
+        auth_method = terrareg.auth.AuthFactory().get_current_auth_method()
+        return {
+            'authenticated': True,
+            'site_admin': auth_method.is_admin()
+        }
 
 
 class ApiTerraregAdminAuthenticate(ErrorCatchingResource):

@@ -67,7 +67,7 @@ async function isLoggedIn() {
             $.ajax({
                 url: '/v1/terrareg/auth/admin/is_authenticated',
                 statusCode: {
-                  200: () => {resolve(true)},
+                  200: (data) => {resolve(data)},
                   401: () => {resolve(false)}
                 }
             });

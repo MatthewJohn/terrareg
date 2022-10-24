@@ -48,6 +48,10 @@
               $('#navbar_login_icon').addClass('fa-right-from-bracket');
               $('#navbar_login_span').html('Logout');
               $('#navbarCreateDropdown').css('display', 'flex');
+
+              if (loggedIn.site_admin) {
+                $('#navbarSettingsDropdown').css('display', 'flex');
+              }
             }
           }
 
@@ -98,6 +102,13 @@
                   <div class="navbar-dropdown is-boxed">
                     <a class="navbar-item" href="/create-namespace">Namespace</a>
                     <a class="navbar-item" href="/create-module">Module</a>
+                  </div>
+                </div>
+
+                <div style="display: none;" id="navbarSettingsDropdown" class="navbar-item has-dropdown is-hoverable">
+                  <a class="navbar-link" href="#">Settings</a>
+                  <div class="navbar-dropdown is-boxed">
+                    <a class="navbar-item" href="/user-groups">User Groups</a>
                   </div>
                 </div>
 
