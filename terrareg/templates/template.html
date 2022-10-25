@@ -56,10 +56,24 @@
               $('#navbar_login_icon').removeClass('fa-lock');
               $('#navbar_login_icon').addClass('fa-right-from-bracket');
               $('#navbar_login_span').html('Logout');
-              $('#navbarCreateDropdown').css('display', 'flex');
 
+              let showCreateModule = false;
               if (loggedIn.site_admin) {
+                // Show settings drop-down
                 $('#navbarSettingsDropdown').css('display', 'flex');
+
+                // Show create namespace button
+                $('#navbarCreateNamespaceButton').css('display', 'block');
+
+                showCreateModule = true;
+              } else if (Object.values(loggedIn.namespace_permissions).indexOf('FULL') !== -1) {
+                showCreateModule = true;
+              }
+              if (showCreateModule) {
+                // Show create module button
+                $('#navbarCreateModuleButton').css('display', 'block');
+                // Show create drop-down
+                $('#navbarCreateDropdown').css('display', 'flex');
               }
             }
           }
@@ -109,8 +123,8 @@
                 <div style="display: none;" id="navbarCreateDropdown" class="navbar-item has-dropdown is-hoverable">
                   <a class="navbar-link" href="#">Create</a>
                   <div class="navbar-dropdown is-boxed">
-                    <a class="navbar-item" href="/create-namespace">Namespace</a>
-                    <a class="navbar-item" href="/create-module">Module</a>
+                    <a id="navbarCreateNamespaceButton" style="display: none;" class="navbar-item" href="/create-namespace">Namespace</a>
+                    <a id="navbarCreateModuleButton" style="display: none;" class="navbar-item" href="/create-module">Module</a>
                   </div>
                 </div>
 
