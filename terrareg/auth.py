@@ -297,6 +297,11 @@ class BaseSsoAuthMethod(BaseSessionAuthMethod):
 
     def is_admin(self):
         """Check if user is an admin"""
+        # Check if RBAC is enabled, if not, all authenticated users
+        # are treated as admins
+        if terrareg.config.Config().ENABLE_ACCESS_CONTROLS:
+            return True
+
         # Obtain list of user's groups
         groups = self.get_group_memberships()
 
