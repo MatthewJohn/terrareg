@@ -1185,3 +1185,10 @@ integration_test_data = {
     },
     'testmodulecreation': {}
 }
+
+two_empty_namespaces = {
+    'firstnamespace': {
+    },
+    'second-namespace': {
+    }
+}
