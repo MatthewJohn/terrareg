@@ -126,9 +126,11 @@
                         row.append(`<td class="is-vcentered">${groupId}</td>`);
                         let namespaceTd = $(`<td class="is-vcentered"></td>`);
                         let namespaceSelect = $(`<select id="createUserGroupPermission-Namespace-${userGroup.name}" class="select"></select>`);
+                        let namespacesAvailable = false;
                         for (let namespace of namespaces) {
                             if (userGroup.namespace_permissions.map((perm) => {return perm.namespace}).indexOf(namespace.name) === -1) {
                                 namespaceSelect.append(`<option value="${namespace.name}">${namespace.name}</option>`);
+                                namespacesAvailable = true;
                             }
                         }
                         namespaceTd.append(namespaceSelect);
@@ -141,7 +143,9 @@
                         });
                         buttonTd.append(button);
                         row.append(buttonTd);
-                        tableContent.append(row);
+                        if (namespacesAvailable) {
+                            tableContent.append(row);
+                        }
 
                     }
 
