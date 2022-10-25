@@ -778,7 +778,10 @@ def auth_wrapper(auth_check_method, *wrapper_args, request_kwarg_map={}, **wrapp
                     auth_kwargs[request_kwarg_map[request_kwarg]] = kwargs[request_kwarg]
 
             if (status := getattr(auth_method, auth_check_method)(*wrapper_args, **auth_kwargs)) == False:
-                abort(401)
+                if auth_method.is_authenticated():
+                    abort(403)
+                else:
+                    abort(401)
             elif status == True:
                 return func(*args, **kwargs)
             else:

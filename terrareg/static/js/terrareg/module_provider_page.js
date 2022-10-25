@@ -1330,11 +1330,7 @@ function indexModuleVersion(moduleDetails) {
                         inProgressMessage.addClass('default-hidden');
 
                         // Display any errors
-                        if (res.responseJSON && res.responseJSON.message) {
-                            errorMessage.html(res.responseJSON.message);
-                        } else {
-                            errorMessage.html("An unexpected error occurred when publishing module version");
-                        }
+                        errorMessage.html(failedResponseToErrorString(res));
                         errorMessage.removeClass('default-hidden');
                     });
             } else {
@@ -1344,11 +1340,7 @@ function indexModuleVersion(moduleDetails) {
         })
         .fail((res) => {
             // Render and show error
-            if (res.responseJSON && res.responseJSON.message) {
-                errorMessage.html(res.responseJSON.message);
-            } else {
-                errorMessage.html("An unexpected error occurred when indexing module");
-            }
+            errorMessage.html(failedResponseToErrorString(res));
             errorMessage.removeClass('default-hidden');
             // Hide in-progress
             inProgressMessage.addClass('default-hidden');

@@ -94,3 +94,20 @@ function pathToUrl(urlPath) {
     fullUrl += urlPath;
     return fullUrl;
 }
+
+/*
+ * Convert failed ajax response to error message
+ *
+ * @param response The ajax response object
+ */
+function failedResponseToErrorString(response) {
+    if (response.status == 401) {
+        return 'You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.';
+    } else if (response.status == 403) {
+        return 'You do not have permission to peform this action.'
+    } else if (response.responseJSON && response.responseJSON.message) {
+        return response.responseJSON.message
+    } else {
+        return 'An unexpected error occurred';
+    }
+}

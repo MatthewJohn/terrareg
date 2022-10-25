@@ -5,6 +5,15 @@
 {% block header %}
 <script>
     var dataTable = undefined;
+
+    function showError(error) {
+        $('#create-error').html(error);
+        $('#create-error').css('display', 'block');
+        $(window).scrollTop($('#create-error').offset().top);
+    }
+    function hideError() {
+        $('#create-error').css('display', 'none');
+    }
     function createUserGroup() {
         if (! $('#create-user-group-form')[0].reportValidity()) {
             return;
@@ -18,20 +27,12 @@
             }),
             contentType: 'application/json'
         }).done((res) => {
-            $('#create-error').css('display', 'none');
+            hideError();
             getUserGroupList().then(() => {
                 dataTable.draw();
             });
         }).fail((res) => {
-            if (res.status == 401) {
-                $('#create-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
-            } else if (res.responseJSON && res.responseJSON.message) {
-                $('#create-error').html(res.responseJSON.message);
-            } else {
-                $('#create-error').html('An unexpected error occurred');
-            }
-            $('#create-error').css('display', 'block');
-            $(window).scrollTop($('#create-error').offset().top);
+            showError(failedResponseToErrorString(res));
         });
     }
 
@@ -46,20 +47,12 @@
             }),
             contentType: 'application/json'
         }).done((res) => {
-            $('#create-error').css('display', 'none');
+            hideError();
             getUserGroupList().then(() => {
                 dataTable.draw();
             });
         }).fail((res) => {
-            if (res.status == 401) {
-                $('#create-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
-            } else if (res.responseJSON && res.responseJSON.message) {
-                $('#create-error').html(res.responseJSON.message);
-            } else {
-                $('#create-error').html('An unexpected error occurred');
-            }
-            $('#create-error').css('display', 'block');
-            $(window).scrollTop($('#create-error').offset().top);
+            showError(failedResponseToErrorString(res));
         });
     }
 
@@ -72,20 +65,12 @@
             }),
             contentType: 'application/json'
         }).done((res) => {
-            $('#create-error').css('display', 'none');
+            hideError();
             getUserGroupList().then(() => {
                 dataTable.draw();
             });
         }).fail((res) => {
-            if (res.status == 401) {
-                $('#create-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
-            } else if (res.responseJSON && res.responseJSON.message) {
-                $('#create-error').html(res.responseJSON.message);
-            } else {
-                $('#create-error').html('An unexpected error occurred');
-            }
-            $('#create-error').css('display', 'block');
-            $(window).scrollTop($('#create-error').offset().top);
+            showError(failedResponseToErrorString(res));
         });
     }
 
@@ -98,20 +83,12 @@
             }),
             contentType: 'application/json'
         }).done((res) => {
-            $('#create-error').css('display', 'none');
+            hideError();
             getUserGroupList().then(() => {
                 dataTable.draw();
             });
         }).fail((res) => {
-            if (res.status == 401) {
-                $('#create-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
-            } else if (res.responseJSON && res.responseJSON.message) {
-                $('#create-error').html(res.responseJSON.message);
-            } else {
-                $('#create-error').html('An unexpected error occurred');
-            }
-            $('#create-error').css('display', 'block');
-            $(window).scrollTop($('#create-error').offset().top);
+            showError(failedResponseToErrorString(res));
         });
     }
 
