@@ -1,14 +1,5 @@
 
-import contextlib
-import unittest.mock
-import datetime
-
-import pytest
-import werkzeug.exceptions
-import jwt
-
 from test.unit.terrareg import TerraregUnitTest
-from terrareg.auth import AuthFactory, AuthenticationType
 
 
 class BaseAuthMethodTest(TerraregUnitTest):
@@ -40,10 +31,6 @@ class BaseAuthMethodTest(TerraregUnitTest):
 
     def test_can_upload_module_version(self):
         """Test can_upload_module_version method"""
-        raise NotImplementedError
-
-    def test_get_current_instance(self):
-        """Test get_current_intstance method"""
         raise NotImplementedError
 
     def test_check_auth_state(self):

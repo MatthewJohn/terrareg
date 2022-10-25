@@ -113,7 +113,7 @@ class NotAuthenticated(BaseAuthMethod):
     @property
     def requires_csrf_tokens(self):
         """Whether auth type requires CSRF tokens"""
-        return True
+        return False
 
     def is_authenticated(self):
         """Whether user is authenticated"""

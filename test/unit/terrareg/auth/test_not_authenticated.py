@@ -57,11 +57,6 @@ class TestNotAuthenticated(BaseAuthMethodTest):
             obj = NotAuthenticated()
             assert obj.can_upload_module_version(namespace='testnamespace') is expected_result
 
-    def test_get_current_instance(self):
-        """Test get_current_intstance method"""
-        obj = NotAuthenticated.get_current_instance()
-        assert isinstance(obj, NotAuthenticated)
-
     def test_check_auth_state(self):
         """Test check_auth_state method"""
         obj = NotAuthenticated()
