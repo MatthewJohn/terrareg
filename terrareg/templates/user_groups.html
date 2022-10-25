@@ -28,9 +28,7 @@
             contentType: 'application/json'
         }).done((res) => {
             hideError();
-            getUserGroupList().then(() => {
-                dataTable.draw();
-            });
+            getUserGroupList();
         }).fail((res) => {
             showError(failedResponseToErrorString(res));
         });
@@ -48,9 +46,7 @@
             contentType: 'application/json'
         }).done((res) => {
             hideError();
-            getUserGroupList().then(() => {
-                dataTable.draw();
-            });
+            getUserGroupList();
         }).fail((res) => {
             showError(failedResponseToErrorString(res));
         });
@@ -66,9 +62,7 @@
             contentType: 'application/json'
         }).done((res) => {
             hideError();
-            getUserGroupList().then(() => {
-                dataTable.draw();
-            });
+            getUserGroupList();
         }).fail((res) => {
             showError(failedResponseToErrorString(res));
         });
@@ -84,9 +78,7 @@
             contentType: 'application/json'
         }).done((res) => {
             hideError();
-            getUserGroupList().then(() => {
-                dataTable.draw();
-            });
+            getUserGroupList();
         }).fail((res) => {
             showError(failedResponseToErrorString(res));
         });
@@ -96,6 +88,10 @@
         return new Promise((resolve, reject) => {
             $.get('/v1/terrareg/user-groups').then(async (userGroups) => {
                 let tableContent = $('#user-group-table-content');
+
+                if (dataTable) {
+                    dataTable.destroy();
+                }
 
                 tableContent.empty();
                 let namespaces = await getNamespaces();
@@ -165,33 +161,33 @@
                     }
 
                 };
+
             }).then(() => {
+                dataTable = $("#user-group-table").DataTable({
+                    order: [[0, 'asc']],
+                    autoWidth: true,
+                    columnDefs: [
+                        {
+                            targets: [0],
+                            visible: false
+                        }
+                    ],
+                    rowGroup: {
+                        dataSrc: [0]
+                    },
+                    paging: false,
+                    lengthMenu: [
+                        [25, 50, -1],
+                        [25, 50, 'All'],
+                    ],
+                });
                 resolve();
             });
         });
     }
 
     $(document).ready(() => {
-        getUserGroupList().then(() => {
-            dataTable = $("#user-group-table").DataTable({
-                order: [[0, 'asc']],
-                autoWidth: true,
-                columnDefs: [
-                    {
-                        targets: [0],
-                        visible: false
-                    }
-                ],
-                rowGroup: {
-                    dataSrc: [0]
-                },
-                paging: false,
-                lengthMenu: [
-                    [25, 50, -1],
-                    [25, 50, 'All'],
-                ],
-            });
-        });
+        getUserGroupList();
     });
 
 </script>
