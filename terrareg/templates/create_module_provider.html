@@ -54,9 +54,13 @@
     }
 
     // Obtain list of module providers
-    $.get('/v1/terrareg/namespaces').then((data) => {
-        data.forEach((namespace) => {
-            $('#create-module-namespace').append($(`<option value="${namespace.name}">${namespace.name}</option>`))
+    isLoggedIn().then((auth) => {
+        $.get('/v1/terrareg/namespaces').then((data) => {
+            data.forEach((namespace) => {
+                if (auth.site_admin || auth.namespace_permissions[namespace.name] == 'FULL') {
+                    $('#create-module-namespace').append($(`<option value="${namespace.name}">${namespace.name}</option>`))
+                }
+            });
         });
     });
 </script>
