@@ -1911,7 +1911,11 @@ class ApiTerraregIsAuthenticated(ErrorCatchingResource):
         auth_method = terrareg.auth.AuthFactory().get_current_auth_method()
         return {
             'authenticated': True,
-            'site_admin': auth_method.is_admin()
+            'site_admin': auth_method.is_admin(),
+            'namespace_permissions': {
+                namespace.name: permission.value
+                for namespace, permission in auth_method.get_all_namespace_permissions().items()
+            }
         }
 
 

@@ -102,6 +102,10 @@ class BaseAuthMethod:
         """Check level of access to namespace"""
         raise NotImplementedError
 
+    def get_all_namespace_permissions(self):
+        """Return all permissions by namespace"""
+        return {}
+
 
 class NotAuthenticated(BaseAuthMethod):
     """Base auth method for unauthenticated users"""
@@ -312,6 +316,33 @@ class BaseSsoAuthMethod(BaseSessionAuthMethod):
                 return True
 
             return False
+
+    def get_all_namespace_permissions(self):
+        """Obtain all namespace permissions for user."""
+        # Obtain list of user's groups
+        groups = self.get_group_memberships()
+
+        # Find any permissions
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(
+                sqlalchemy.select(
+                    db.user_group_namespace_permission.c.permission_type,
+                    db.namespace.c.namespace
+                ).join(
+                    db.user_group,
+                    db.user_group_namespace_permission.c.user_group_id==db.user_group.c.id
+                ).join(
+                    db.namespace,
+                    db.user_group_namespace_permission.c.namespace_id==db.namespace.c.id
+                ).where(
+                    db.user_group.c.name.in_(groups)
+                )
+            )
+            return {
+                Namespace(row['namespace']): row['permission_type']
+                for row in res
+            }
 
     def check_namespace_access(self, permission_type, namespace):
         """Check access level to a given namespace."""
