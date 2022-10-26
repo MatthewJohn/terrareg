@@ -7,6 +7,9 @@ from terrareg.auth import AdminSessionAuthMethod, UserGroupNamespacePermissionTy
 from test import BaseTest
 from test.unit.terrareg.auth.test_base_session_auth_method import BaseAdminSessionAuthMethod
 
+# Required as this is sued by BaseAdminSessionAuthMethod
+from test import test_request_context
+
 
 class TestAdminSessionAuthMethod(BaseAdminSessionAuthMethod):
     """Test methods of AdminSessionAuthMethod auth method"""
@@ -82,8 +85,8 @@ class TestAdminSessionAuthMethod(BaseAdminSessionAuthMethod):
 
         ('valid', 'valid', True)
     ])
-    def test_check_auth_state(self, admin_authentication_config, api_key_header, expected_result):
-        """Test check_auth_state method"""
+    def test_check_session(self, admin_authentication_config, api_key_header, expected_result):
+        """Test check_session method"""
         headers = {}
         # Add API key header to request
         if api_key_header is not None:
@@ -93,7 +96,7 @@ class TestAdminSessionAuthMethod(BaseAdminSessionAuthMethod):
                 BaseTest.get().SERVER._app.test_request_context(environ_base=headers):
 
             obj = AdminSessionAuthMethod()
-            assert obj.check_auth_state() is expected_result
+            assert obj.check_session() is expected_result
 
     @pytest.mark.parametrize('namespace,access_type,expected_result', [
         ('testnamespace', UserGroupNamespacePermissionType.MODIFY, True),

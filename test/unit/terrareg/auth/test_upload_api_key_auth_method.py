@@ -46,7 +46,7 @@ class TestUploadApiKeyAuthMethod(BaseAuthMethodTest):
     @pytest.mark.parametrize('public_api_keys,expected_result', [
         (None, False),
         ([], False),
-        (['publishapikey', False])
+        (['publishapikey'], False)
     ])
     def test_can_publish_module_version(self, public_api_keys, expected_result):
         """Test can_publish_module_version method"""
@@ -57,7 +57,7 @@ class TestUploadApiKeyAuthMethod(BaseAuthMethodTest):
     @pytest.mark.parametrize('upload_api_keys,expected_result', [
         (None, True),
         ([], True),
-        (['uploadapikey', True])
+        (['uploadapikey'], True)
     ])
     def test_can_upload_module_version(self, upload_api_keys, expected_result):
         """Test can_upload_module_version method"""

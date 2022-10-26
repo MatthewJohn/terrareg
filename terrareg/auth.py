@@ -4,10 +4,12 @@ from enum import Enum
 
 import sqlalchemy
 from flask import g, request, session
+import flask
 
 import terrareg.config
 from terrareg.database import Database
-from terrareg.models import Namespace, Session
+from terrareg.models import Namespace
+import terrareg.models
 import terrareg.openid_connect
 import terrareg.saml
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
@@ -224,7 +226,7 @@ class BaseSessionAuthMethod(BaseAuthMethod):
         if cls.SESSION_AUTH_TYPE_VALUE is None:
             raise NotImplementedError
 
-        return session.get(cls.SESSION_AUTH_TYPE_KEY, None) == cls.SESSION_AUTH_TYPE_VALUE.value
+        return flask.session.get(cls.SESSION_AUTH_TYPE_KEY, None) == cls.SESSION_AUTH_TYPE_VALUE.value
 
     @classmethod
     def check_session(cls):
@@ -238,8 +240,8 @@ class BaseSessionAuthMethod(BaseAuthMethod):
         # session ID is present and valid and
         # is_admin_authenticated session is set
         if (not terrareg.config.Config().SECRET_KEY or
-                not Session.check_session(session.get('session_id', None)) or
-                not session.get('is_admin_authenticated', False)):
+                not terrareg.models.Session.check_session(flask.session.get('session_id', None)) or
+                not flask.session.get('is_admin_authenticated', False)):
             return False
 
         # Ensure session type is set to the current session and session is valid
@@ -393,7 +395,7 @@ class SamlAuthMethod(BaseSsoAuthMethod):
     @classmethod
     def check_session(cls):
         """Check SAML session is valid"""
-        return session.get('samlUserdata')
+        return flask.session.get('samlUserdata')
 
     @classmethod
     def is_enabled(cls):
@@ -401,7 +403,7 @@ class SamlAuthMethod(BaseSsoAuthMethod):
 
     def get_group_memberships(self):
         """Return list of groups that the user a member of"""
-        return session.get('openidsamlUserdata_groups', {}).get('groups', [])
+        return flask.session.get('openidsamlUserdata_groups', {}).get('groups', [])
 
 
 class OpenidConnectAuthMethod(BaseSsoAuthMethod):
@@ -414,11 +416,11 @@ class OpenidConnectAuthMethod(BaseSsoAuthMethod):
         """Check OpenID session"""
         # Check OpenID connect expiry time
         if datetime.datetime.now() >= datetime.datetime.fromtimestamp(
-                session.get('openid_connect_expires_at', 0)):
+                flask.session.get('openid_connect_expires_at', 0)):
             return False
 
         try:
-            terrareg.openid_connect.OpenidConnect.validate_session_token(session.get('openid_connect_id_token'))
+            terrareg.openid_connect.OpenidConnect.validate_session_token(flask.session.get('openid_connect_id_token'))
         except:
             # Catch any exceptions when validating session and return False
             return False
@@ -427,7 +429,7 @@ class OpenidConnectAuthMethod(BaseSsoAuthMethod):
 
     def get_group_memberships(self):
         """Return list of groups that the user a member of"""
-        return session.get('openid_groups', [])
+        return flask.session.get('openid_groups', [])
 
     @classmethod
     def is_enabled(cls):
