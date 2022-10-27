@@ -5,8 +5,9 @@ import pytest
 
 from terrareg.auth import OpenidConnectAuthMethod, UserGroupNamespacePermissionType
 from test import BaseTest
+from test.unit.terrareg import MockNamespace, MockUserGroup, MockUserGroupNamespacePermission, setup_test_data
 from test.unit.terrareg.auth.base_session_auth_method_tests import BaseSessionAuthMethodTests
-from test.unit.terrareg.auth.base_sso_auth_method_tests import BaseSsoAuthMethodTests
+from test.unit.terrareg.auth.base_sso_auth_method_tests import BaseSsoAuthMethodTests, test_data, user_group_data
 
 # Required as this is sued by BaseOpenidConnectAuthMethod
 from test import test_request_context
@@ -20,12 +21,28 @@ class TestOpenidConnectAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodT
     def test_is_built_in_admin(self):
         """Test is_built_in_admin method"""
         obj = OpenidConnectAuthMethod()
-        assert obj.is_built_in_admin() is True
+        assert obj.is_built_in_admin() is False
 
-    def test_is_admin(self):
+    @pytest.mark.parametrize('sso_groups,expected_result', [
+        ([], False),
+        (['validgroup', False]),
+        (['validgroup', 'invalidgroup'], False),
+        # Passing
+        (['siteadmingroup'], True),
+        (['invalidgroup', 'validgroup', 'siteadmingroup'], True)
+    ])
+    @setup_test_data(None, user_group_data=user_group_data)
+    def test_is_admin(self, sso_groups, expected_result):
         """Test is_admin method"""
-        obj = OpenidConnectAuthMethod()
-        assert obj.is_admin() is True
+        mock_get_group_memberships = mock.MagicMock(return_value=sso_groups)
+
+        with mock.patch('terrareg.models.UserGroup', MockUserGroup), \
+                mock.patch('terrareg.models.UserGroupNamespacePermission',
+                           MockUserGroupNamespacePermission), \
+                mock.patch('terrareg.models.Namespace', MockNamespace), \
+                mock.patch(f'terrareg.auth.{self.CLS.__name__}.get_group_memberships', mock_get_group_memberships):
+            obj = OpenidConnectAuthMethod()
+            assert obj.is_admin() is expected_result
 
     def test_is_authenticated(self):
         """Test is_authenticated method"""

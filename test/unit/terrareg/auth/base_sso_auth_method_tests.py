@@ -39,6 +39,9 @@ user_group_data = {
         'namespace_permissions': {
             'first-namespace': UserGroupNamespacePermissionType.MODIFY
         }
+    },
+    'siteadmingroup': {
+        'site_admin': True
     }
 }
 
