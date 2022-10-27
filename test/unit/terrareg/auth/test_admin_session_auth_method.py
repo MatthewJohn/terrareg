@@ -70,33 +70,10 @@ class TestAdminSessionAuthMethod(BaseAdminSessionAuthMethod):
             obj = AdminSessionAuthMethod()
             assert obj.can_upload_module_version(namespace='testnamespace') is True
 
-    @pytest.mark.parametrize('admin_authentication_config,api_key_header,expected_result', [
-        (None, None, False),
-        ('', None, False),
-        ('testApiKey1', None, False),
-
-        (None, '', False),
-        ('', '', False),
-        ('testAdminPass', '', False),
-
-        (None, 'incorrect', False),
-        ('', 'incorrect', False),
-        ('testAdminPass', 'incorrect', False),
-
-        ('valid', 'valid', True)
-    ])
-    def test_check_session(self, admin_authentication_config, api_key_header, expected_result):
+    def test_check_session(self):
         """Test check_session method"""
-        headers = {}
-        # Add API key header to request
-        if api_key_header is not None:
-            headers['HTTP_X_TERRAREG_APIKEY'] = api_key_header
-
-        with mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', admin_authentication_config), \
-                BaseTest.get().SERVER._app.test_request_context(environ_base=headers):
-
-            obj = AdminSessionAuthMethod()
-            assert obj.check_session() is expected_result
+        obj = AdminSessionAuthMethod()
+        assert obj.check_session() is True
 
     @pytest.mark.parametrize('namespace,access_type,expected_result', [
         ('testnamespace', UserGroupNamespacePermissionType.MODIFY, True),
