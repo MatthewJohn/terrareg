@@ -3,12 +3,11 @@
 from unittest import mock
 import pytest
 
-from terrareg.auth import AdminSessionAuthMethod, UserGroupNamespacePermissionType
 from test.unit.terrareg.auth.base_auth_method_test import BaseAuthMethodTest
 from test import test_request_context
 
 
-class BaseAdminSessionAuthMethod(BaseAuthMethodTest):
+class BaseSessionAuthMethodTests(BaseAuthMethodTest):
 
     CLS = None
 

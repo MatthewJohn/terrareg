@@ -5,13 +5,13 @@ import pytest
 
 from terrareg.auth import AdminSessionAuthMethod, UserGroupNamespacePermissionType
 from test import BaseTest
-from test.unit.terrareg.auth.test_base_session_auth_method import BaseAdminSessionAuthMethod
+from test.unit.terrareg.auth.base_session_auth_method_tests import BaseSessionAuthMethodTests
 
 # Required as this is sued by BaseAdminSessionAuthMethod
 from test import test_request_context
 
 
-class TestAdminSessionAuthMethod(BaseAdminSessionAuthMethod):
+class TestAdminSessionAuthMethod(BaseSessionAuthMethodTests):
     """Test methods of AdminSessionAuthMethod auth method"""
 
     CLS = AdminSessionAuthMethod

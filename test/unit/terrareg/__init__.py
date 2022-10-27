@@ -10,7 +10,7 @@ from terrareg.database import Database
 from terrareg.errors import NamespaceAlreadyExistsError
 from terrareg.models import (
     GitProvider, Module, ModuleDetails,
-    ModuleProvider, ModuleVersion, ModuleVersionFile, Namespace, Session, UserGroup
+    ModuleProvider, ModuleVersion, ModuleVersionFile, Namespace, Session, UserGroup, UserGroupNamespacePermission
 )
 from terrareg.server import Server
 import terrareg.config
@@ -435,14 +435,21 @@ class MockUserGroup(UserGroup):
 
     def _get_db_row(self):
         """Return DB row for user group."""
-        raise NotImplementedError
+        global USER_GROUP_CONFIG
+        if self._name in USER_GROUP_CONFIG:
+            return {
+                'id': USER_GROUP_CONFIG[self._name].get('id', 100),
+                'name': self._name,
+                'site_admin': USER_GROUP_CONFIG[self._name].get('site_admin', False)
+            }
 
     def delete(self):
         """Delete user group"""
-        raise NotImplementedError
+        global USER_GROUP_CONFIG
+        del USER_GROUP_CONFIG[self._name]
 
 
-class MockUserGroupNamespacePermission:
+class MockUserGroupNamespacePermission(UserGroupNamespacePermission):
 
     @classmethod
     def get_permissions_by_user_group(cls, user_group):
@@ -455,7 +462,7 @@ class MockUserGroupNamespacePermission:
         global USER_GROUP_CONFIG
         permissions = []
         for user_group in user_groups:
-            if user_group.name in USER_GROUP_CONFIG and namespace.name in USER_GROUP_CONFIG[user_group.name]:
+            if user_group.name in USER_GROUP_CONFIG and namespace.name in USER_GROUP_CONFIG[user_group.name].get('namespace_permissions', {}):
                 permissions.append(MockUserGroupNamespacePermission(user_group, namespace))
 
         return permissions
@@ -468,7 +475,14 @@ class MockUserGroupNamespacePermission:
 
     def _get_db_row(self):
         """Return DB row for user group."""
-        raise NotImplementedError
+        global USER_GROUP_CONFIG
+        if self._user_group.name in USER_GROUP_CONFIG and self._namespace.name in USER_GROUP_CONFIG[self._user_group.name].get('namespace_permissions', {}):
+            return {
+                'namespace_id': self._namespace.pk,
+                'user_group_id': self._user_group.pk,
+                'permission_type': USER_GROUP_CONFIG[self._user_group.name]['namespace_permissions'][self._namespace.name]
+            }
+        return None
 
     def delete(self):
         """Delete user group namespace permission."""
