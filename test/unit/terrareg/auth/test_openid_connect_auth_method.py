@@ -89,4 +89,4 @@ class TestOpenidConnectAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodT
             test_request_context.session.modified = True
         
             obj = OpenidConnectAuthMethod()
-            assert obj.get_group_memberships() == expected_result()
+            assert obj.get_group_memberships() == expected_result
