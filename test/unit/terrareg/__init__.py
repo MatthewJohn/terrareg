@@ -10,12 +10,12 @@ from terrareg.database import Database
 from terrareg.errors import NamespaceAlreadyExistsError
 from terrareg.models import (
     GitProvider, Module, ModuleDetails,
-    ModuleProvider, ModuleVersion, ModuleVersionFile, Namespace, Session
+    ModuleProvider, ModuleVersion, ModuleVersionFile, Namespace, Session, UserGroup
 )
 from terrareg.server import Server
 import terrareg.config
 from test import BaseTest
-from .test_data import test_data_full, test_git_providers
+from .test_data import test_data_full, test_git_providers, test_user_group_data_full
 
 
 class TerraregUnitTest(BaseTest):
@@ -45,8 +45,9 @@ TEST_MODULE_DATA = {}
 TEST_GIT_PROVIDER_DATA = {}
 TEST_MODULE_DETAILS = {}
 TEST_MODULE_DETAILS_ITX = 0
+USER_GROUP_CONFIG = {}
 
-def setup_test_data(test_data=None):
+def setup_test_data(test_data=None, user_group_data=None):
     """Provide decorator to setup test data to be used for mocked objects."""
     def deco(func):
         @functools.wraps(func)
@@ -54,8 +55,10 @@ def setup_test_data(test_data=None):
             global TEST_MODULE_DETAILS
             global TEST_MODULE_DETAILS_ITX
             global TEST_MODULE_DATA
+            global USER_GROUP_CONFIG
             TEST_MODULE_DATA = dict(test_data if test_data else test_data_full)
             TEST_MODULE_DETAILS = {}
+            USER_GROUP_CONFIG = dict(user_group_data if user_group_data else test_user_group_data_full)
 
             # Replace all ModuleDetails in test data with IDs and move contents to
             # TEST_MODULE_DETAILS
@@ -408,6 +411,68 @@ class MockSession(Session):
         """Delete session from database"""
         if self.id in MockSession.MOCK_SESSIONS:
             del MockSession.MOCK_SESSIONS[self.id]
+
+
+class MockUserGroup(UserGroup):
+
+    @classmethod
+    def get_by_group_name(cls, name):
+        """Obtain group by name."""
+        global USER_GROUP_CONFIG
+        if name in USER_GROUP_CONFIG:
+            return MockUserGroup(name)
+        return None
+
+    @classmethod
+    def create(cls, name, site_admin):
+        """Create usergroup"""
+        raise NotImplementedError
+
+    @classmethod
+    def get_all_user_groups(cls):
+        """Obtain all user groups."""
+        raise NotImplementedError
+
+    def _get_db_row(self):
+        """Return DB row for user group."""
+        raise NotImplementedError
+
+    def delete(self):
+        """Delete user group"""
+        raise NotImplementedError
+
+
+class MockUserGroupNamespacePermission:
+
+    @classmethod
+    def get_permissions_by_user_group(cls, user_group):
+        """Return permissions by user group"""
+        raise NotImplementedError
+
+    @classmethod
+    def get_permissions_by_user_groups_and_namespace(cls, user_groups, namespace):
+        """Obtain user permission by multiple user groups for a single namespace"""
+        global USER_GROUP_CONFIG
+        permissions = []
+        for user_group in user_groups:
+            if user_group.name in USER_GROUP_CONFIG and namespace.name in USER_GROUP_CONFIG[user_group.name]:
+                permissions.append(MockUserGroupNamespacePermission(user_group, namespace))
+
+        return permissions
+
+    @classmethod
+    def create(cls, user_group, namespace, permission_type):
+        """Create user group namespace permission"""
+        # Check if permission already exists
+        raise NotImplementedError
+
+    def _get_db_row(self):
+        """Return DB row for user group."""
+        raise NotImplementedError
+
+    def delete(self):
+        """Delete user group namespace permission."""
+        raise NotImplementedError
 
 
 def mocked_server_module_version(request):
