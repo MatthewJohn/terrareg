@@ -305,24 +305,11 @@ class BaseSsoAuthMethod(BaseSessionAuthMethod):
             return True
 
         # Obtain list of user's groups
-        groups = self.get_group_memberships()
-
-        # Find any user groups that the user is a member of
-        # that has admin permissions
-        db = Database.get()
-        with db.get_connection() as conn:
-            res = conn.execute(
-                sqlalchemy.select(
-                    db.user_group
-                ).where(
-                    db.user_group.c.name.in_(groups),
-                    db.user_group.c.site_admin==True
-                )
-            )
-            if res.fetchone():
+        for group in self.get_group_memberships():
+            user_group = terrareg.models.UserGroup.get_by_group_name(group)
+            if user_group is not None and user_group.site_admin:
                 return True
-
-            return False
+        return False
 
     def get_all_namespace_permissions(self):
         """Obtain all namespace permissions for user."""
