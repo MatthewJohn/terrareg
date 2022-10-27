@@ -410,7 +410,7 @@ class OpenidConnectAuthMethod(BaseSsoAuthMethod):
 
     def get_group_memberships(self):
         """Return list of groups that the user a member of"""
-        return flask.session.get('openid_groups', [])
+        return flask.session.get('openid_groups', []) or []
 
     @classmethod
     def is_enabled(cls):
