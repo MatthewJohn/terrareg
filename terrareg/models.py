@@ -230,21 +230,37 @@ class UserGroupNamespacePermission:
     @classmethod
     def get_permissions_by_user_group_and_namespace(cls, user_group, namespace):
         """Return permission by user group and namespace"""
+        permissions = cls.get_permissions_by_user_groups_and_namespace([user_group], namespace)
+        if len(permissions) > 1:
+            raise Exception('Found more than 1 permission for user group/namespace')
+        return permissions[0] if permissions else None
+
+    @classmethod
+    def get_permissions_by_user_groups_and_namespace(cls, user_groups, namespace):
+        """Obtain user permission by multiple user groups for a single namespace"""
         db = Database.get()
+        user_group_ids = [user_group.pk for user_group in user_groups]
+        user_group_mapping = {
+            user_group.name: user_group
+            for user_group in user_groups
+        }
         with db.get_connection() as conn:
             query = sqlalchemy.select(
-                db.user_group_namespace_permission
+                db.user_group.c.name.label('user_group_name')
             ).join(
                 db.user_group,
                 db.user_group_namespace_permission.c.user_group_id==db.user_group.c.id
             ).where(
-                db.user_group.c.id==user_group.pk,
+                db.user_group.c.id__in==user_group_ids,
                 db.user_group_namespace_permission.c.namespace_id==namespace.pk
             )
             res = conn.execute(query)
-            if res.fetchone():
-                return cls(user_group=user_group, namespace=namespace)
-            return None
+            permissions = [
+                cls(user_group=user_group_mapping[row['user_group_name']], namespace=namespace)
+                for row in res
+            ]
+
+            return permissions
 
     @classmethod
     def create(cls, user_group, namespace, permission_type):

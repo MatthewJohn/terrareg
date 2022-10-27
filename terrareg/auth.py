@@ -8,7 +8,7 @@ import flask
 
 import terrareg.config
 from terrareg.database import Database
-from terrareg.models import Namespace
+import terrareg.models
 import terrareg.models
 import terrareg.openid_connect
 import terrareg.saml
@@ -347,7 +347,7 @@ class BaseSsoAuthMethod(BaseSessionAuthMethod):
                 )
             )
             return {
-                Namespace(row['namespace']): row['permission_type']
+                terrareg.models.Namespace(row['namespace']): row['permission_type']
                 for row in res
             }
 
@@ -357,34 +357,28 @@ class BaseSsoAuthMethod(BaseSessionAuthMethod):
         if self.is_admin():
             return True
 
-        namespace_obj = Namespace.get(namespace)
+        namespace_obj = terrareg.models.Namespace.get(namespace)
+        if not namespace_obj:
+            return False
 
         # Obtain list of user's groups
-        groups = self.get_group_memberships()
+        user_groups = []
+        for group in self.get_group_memberships():
+            user_group = terrareg.models.UserGroup.get_by_group_name(group)
+            # If user group object was found for SSO group,
+            # add to list
+            if user_group:
+                user_groups.append(user_group)
 
-        # Find any permissions
-        db = Database.get()
-        with db.get_connection() as conn:
-            res = conn.execute(
-                sqlalchemy.select(
-                    db.user_group_namespace_permission
-                ).join(
-                    db.user_group,
-                    db.user_group_namespace_permission.c.user_group_id==db.user_group.c.id
-                ).where(
-                    db.user_group_namespace_permission.c.namespace_id==namespace_obj.pk,
-                    db.user_group.c.name.in_(groups)
-                )
-            )
-            # Check each permission mapping that the user has for the namespace
-            # and return True is the permission type matches the required permission,
-            # or the permission is FULL access.
-            for row in res:
-                if (row['permission_type'] == permission_type or
-                        row['permission_type'] == UserGroupNamespacePermissionType.FULL):
-                    return True
-
-            return False
+        user_group_permissions = terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_groups_and_namespace(
+            user_groups=user_groups,
+            namespace=namespace_obj
+        )
+        for user_group_permission in user_group_permissions:
+            if (user_group_permission.permission_type == permission_type or
+                    user_group_permission.permission_type == UserGroupNamespacePermissionType.FULL):
+                return True
+        return False
 
 
 class SamlAuthMethod(BaseSsoAuthMethod):
