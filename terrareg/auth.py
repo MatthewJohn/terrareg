@@ -398,7 +398,7 @@ class SamlAuthMethod(BaseSsoAuthMethod):
     @classmethod
     def check_session(cls):
         """Check SAML session is valid"""
-        return flask.session.get('samlUserdata')
+        return bool(flask.session.get('samlUserdata'))
 
     @classmethod
     def is_enabled(cls):
