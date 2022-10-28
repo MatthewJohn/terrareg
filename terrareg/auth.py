@@ -418,8 +418,12 @@ class OpenidConnectAuthMethod(BaseSsoAuthMethod):
     def check_session(cls):
         """Check OpenID session"""
         # Check OpenID connect expiry time
-        if datetime.datetime.now() >= datetime.datetime.fromtimestamp(
-                flask.session.get('openid_connect_expires_at', 0)):
+        try:
+            session_timestamp = float(flask.session.get('openid_connect_expires_at', 0))
+        except ValueError:
+            return False
+
+        if datetime.datetime.now() >= datetime.datetime.fromtimestamp(session_timestamp):
             return False
 
         try:
