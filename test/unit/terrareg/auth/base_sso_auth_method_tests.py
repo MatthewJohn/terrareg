@@ -232,3 +232,39 @@ class BaseSsoAuthMethodTests:
                 permission_type=UserGroupNamespacePermissionType.MODIFY)
         else:
             mock_check_namespace_access.assert_not_called()
+
+    def test_is_built_in_admin(self):
+        """Test is_built_in_admin method"""
+        obj = self.CLS()
+        assert obj.is_built_in_admin() is False
+
+    @pytest.mark.parametrize('sso_groups,expected_result', [
+        ([], False),
+        (['validgroup', False]),
+        (['validgroup', 'invalidgroup'], False),
+        # Passing
+        (['siteadmingroup'], True),
+        (['invalidgroup', 'validgroup', 'siteadmingroup'], True)
+    ])
+    @setup_test_data(None, user_group_data=user_group_data)
+    def test_is_admin(self, sso_groups, expected_result):
+        """Test is_admin method"""
+        mock_get_group_memberships = mock.MagicMock(return_value=sso_groups)
+
+        with mock.patch('terrareg.models.UserGroup', MockUserGroup), \
+                mock.patch('terrareg.models.UserGroupNamespacePermission',
+                           MockUserGroupNamespacePermission), \
+                mock.patch('terrareg.models.Namespace', MockNamespace), \
+                mock.patch(f'terrareg.auth.{self.CLS.__name__}.get_group_memberships', mock_get_group_memberships):
+            obj = self.CLS()
+            assert obj.is_admin() is expected_result
+
+    def test_is_authenticated(self):
+        """Test is_authenticated method"""
+        obj = self.CLS()
+        assert obj.is_authenticated() is True
+
+    def test_requires_csrf_tokens(self):
+        """Test requires_csrf_token method"""
+        obj = self.CLS()
+        assert obj.requires_csrf_tokens is True

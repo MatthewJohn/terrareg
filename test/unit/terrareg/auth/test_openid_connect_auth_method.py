@@ -18,37 +18,6 @@ class TestOpenidConnectAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodT
 
     CLS = OpenidConnectAuthMethod
 
-    def test_is_built_in_admin(self):
-        """Test is_built_in_admin method"""
-        obj = OpenidConnectAuthMethod()
-        assert obj.is_built_in_admin() is False
-
-    @pytest.mark.parametrize('sso_groups,expected_result', [
-        ([], False),
-        (['validgroup', False]),
-        (['validgroup', 'invalidgroup'], False),
-        # Passing
-        (['siteadmingroup'], True),
-        (['invalidgroup', 'validgroup', 'siteadmingroup'], True)
-    ])
-    @setup_test_data(None, user_group_data=user_group_data)
-    def test_is_admin(self, sso_groups, expected_result):
-        """Test is_admin method"""
-        mock_get_group_memberships = mock.MagicMock(return_value=sso_groups)
-
-        with mock.patch('terrareg.models.UserGroup', MockUserGroup), \
-                mock.patch('terrareg.models.UserGroupNamespacePermission',
-                           MockUserGroupNamespacePermission), \
-                mock.patch('terrareg.models.Namespace', MockNamespace), \
-                mock.patch(f'terrareg.auth.{self.CLS.__name__}.get_group_memberships', mock_get_group_memberships):
-            obj = OpenidConnectAuthMethod()
-            assert obj.is_admin() is expected_result
-
-    def test_is_authenticated(self):
-        """Test is_authenticated method"""
-        obj = OpenidConnectAuthMethod()
-        assert obj.is_authenticated() is True
-
     @pytest.mark.parametrize('openid_connect_is_enabled,expected_result', [
         (False, False),
         (True, True)
@@ -58,11 +27,6 @@ class TestOpenidConnectAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodT
         with mock.patch('terrareg.openid_connect.OpenidConnect.is_enabled', mock.MagicMock(return_value=openid_connect_is_enabled)):
             obj = OpenidConnectAuthMethod()
             assert obj.is_enabled() is expected_result
-
-    def test_requires_csrf_tokens(self):
-        """Test requires_csrf_token method"""
-        obj = OpenidConnectAuthMethod()
-        assert obj.requires_csrf_tokens is True
 
     def test_check_session(self):
         """Test check_session method"""
