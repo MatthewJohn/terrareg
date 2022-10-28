@@ -47,17 +47,15 @@ class TestOpenidConnectAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodT
     def test_is_authenticated(self):
         """Test is_authenticated method"""
         obj = OpenidConnectAuthMethod()
-        # @TODO Should this be True?
         assert obj.is_authenticated() is True
 
-    @pytest.mark.parametrize('admin_authentication_token,expected_result', [
-        (None, False),
-        ('', False),
-        ('ISAPASSWORD', True)
+    @pytest.mark.parametrize('openid_connect_is_enabled,expected_result', [
+        (False, False),
+        (True, True)
     ])
-    def test_is_enabled(self, admin_authentication_token, expected_result):
+    def test_is_enabled(self, openid_connect_is_enabled, expected_result):
         """Test is_enabled method"""
-        with mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', admin_authentication_token):
+        with mock.patch('terrareg.openid_connect.OpenidConnect.is_enabled', mock.MagicMock(return_value=openid_connect_is_enabled)):
             obj = OpenidConnectAuthMethod()
             assert obj.is_enabled() is expected_result
 
