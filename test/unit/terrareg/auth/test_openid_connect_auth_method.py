@@ -45,7 +45,7 @@ class TestOpenidConnectAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodT
     def test_check_session(self, openid_connect_expires_at, expiry_should_pass, openid_connect_id_token,
                            validate_session_token_raises, expected_result, test_request_context):
         """Test check_session method"""
-        def validate_session_token_side_effect():
+        def validate_session_token_side_effect(passed_token):
             if validate_session_token_raises:
                 raise Exception('Token is invalid')
         mock_validate_session_token = mock.MagicMock(side_effect=validate_session_token_side_effect)
