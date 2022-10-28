@@ -1,5 +1,6 @@
 
 
+import datetime
 from unittest import mock
 import pytest
 
@@ -28,10 +29,44 @@ class TestOpenidConnectAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodT
             obj = OpenidConnectAuthMethod()
             assert obj.is_enabled() is expected_result
 
-    def test_check_session(self):
+    @pytest.mark.parametrize('openid_connect_expires_at,expiry_should_pass,openid_connect_id_token,validate_session_token_raises,expected_result', [
+        # Working situation
+        ((datetime.datetime.now() + datetime.timedelta(minutes=10)).timestamp(), True, 'testtoken', True, True),
+        # Expired token
+        ((datetime.datetime.now() - datetime.timedelta(minutes=1)).timestamp(), False, 'testtoken', True, False),
+        # Non existent timestamp
+        (None, False, 'testtoken', True, False),
+        # Invalid timestamp
+        ('thisisnotatimestamp', False, 'testtoken', True, False),
+        # Empty token, with false return
+        ((datetime.datetime.now() + datetime.timedelta(minutes=10)).timestamp(), True, '', False, False),
+        ((datetime.datetime.now() + datetime.timedelta(minutes=10)).timestamp(), True, None, False, False),
+    ])
+    def test_check_session(self, openid_connect_expires_at, expiry_should_pass, openid_connect_id_token,
+                           validate_session_token_raises, expected_result, test_request_context):
         """Test check_session method"""
-        obj = OpenidConnectAuthMethod()
-        assert obj.check_session() is True
+        def validate_session_token_side_effect():
+            if validate_session_token_raises:
+                raise Exception('Token is invalid')
+        mock_validate_session_token = mock.MagicMock(side_effect=validate_session_token_side_effect)
+        self.SERVER._app.secret_key = 'test_secret_key'
+
+        with mock.patch('terrareg.openid_connect.OpenidConnect.validate_session_token', mock_validate_session_token), \
+                test_request_context:
+
+            if openid_connect_expires_at:
+                test_request_context.session['openid_connect_expires_at'] = openid_connect_expires_at
+            if openid_connect_id_token:
+                test_request_context.session['openid_connect_id_token'] = openid_connect_id_token
+            test_request_context.session.modified = True
+
+            obj = OpenidConnectAuthMethod()
+            assert obj.check_session() is expected_result
+
+            if expiry_should_pass:
+                mock_validate_session_token.assert_called_once_with(openid_connect_id_token or None)
+            else:
+                mock_validate_session_token.assert_not_called()
 
     @pytest.mark.parametrize('session_groups,expected_result', [
         (None, []),
