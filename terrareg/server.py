@@ -503,15 +503,15 @@ class Server(BaseHandler):
             '/v1/terrareg/search_filters'
         )
         self._api.add_resource(
-            ApiAuthUserGroups,
+            ApiTerraregAuthUserGroups,
             '/v1/terrareg/user-groups'
         )
         self._api.add_resource(
-            ApiAuthUserGroup,
+            ApiTerraregAuthUserGroup,
             '/v1/terrareg/user-groups/<string:user_group>'
         )
         self._api.add_resource(
-            ApiAuthUserGroupNamespacePermissions,
+            ApiTerraregAuthUserGroupNamespacePermissions,
             '/v1/terrareg/user-groups/<string:user_group>/permissions/<string:namespace>'
         )
 
@@ -2611,7 +2611,7 @@ class ApiSamlMetadata(ErrorCatchingResource):
         return resp
 
 
-class ApiAuthUserGroups(ErrorCatchingResource):
+class ApiTerraregAuthUserGroups(ErrorCatchingResource):
     """Interface to list and create user groups."""
 
     method_decorators = [auth_wrapper('is_admin')]
@@ -2652,7 +2652,7 @@ class ApiAuthUserGroups(ErrorCatchingResource):
             return {}, 400
 
 
-class ApiAuthUserGroup(ErrorCatchingResource):
+class ApiTerraregAuthUserGroup(ErrorCatchingResource):
     """Interface to interact with single user group."""
 
     def _delete(self, user_group):
@@ -2666,7 +2666,7 @@ class ApiAuthUserGroup(ErrorCatchingResource):
 
 
 
-class ApiAuthUserGroupNamespacePermissions(ErrorCatchingResource):
+class ApiTerraregAuthUserGroupNamespacePermissions(ErrorCatchingResource):
     """Interface to create user groups namespace permissions."""
 
     method_decorators = [auth_wrapper('is_admin')]

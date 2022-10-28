@@ -431,7 +431,11 @@ class MockUserGroup(UserGroup):
     @classmethod
     def get_all_user_groups(cls):
         """Obtain all user groups."""
-        raise NotImplementedError
+        global USER_GROUP_CONFIG
+        return [
+            cls(user_group_name)
+            for user_group_name in USER_GROUP_CONFIG
+        ]
 
     def _get_db_row(self):
         """Return DB row for user group."""
@@ -454,7 +458,11 @@ class MockUserGroupNamespacePermission(UserGroupNamespacePermission):
     @classmethod
     def get_permissions_by_user_group(cls, user_group):
         """Return permissions by user group"""
-        raise NotImplementedError
+        global USER_GROUP_CONFIG
+        return [
+            cls(user_group=user_group, namespace=MockNamespace.get(name=namespace))
+            for namespace in USER_GROUP_CONFIG[user_group.name].get('namespace_permissions', {})
+        ]
 
     @classmethod
     def get_permissions_by_user_groups_and_namespace(cls, user_groups, namespace):
@@ -487,6 +495,26 @@ class MockUserGroupNamespacePermission(UserGroupNamespacePermission):
     def delete(self):
         """Delete user group namespace permission."""
         raise NotImplementedError
+
+
+def mock_server_user_groups(request):
+    """Mock UserGroup and UserGroupNamespacePermission classes"""
+    user_group_patch = unittest.mock.patch('terrareg.server.UserGroup', MockUserGroup)
+    user_group_namespace_permission_patch = unittest.mock.patch(
+        'terrareg.server.UserGroupNamespacePermission',
+        MockUserGroupNamespacePermission)
+
+    def cleanup_mock():
+        user_group_namespace_permission_patch.stop()
+        user_group_patch.stop()
+    request.addfinalizer(cleanup_mock)
+    user_group_patch.start()
+    user_group_namespace_permission_patch.start()
+
+@pytest.fixture()
+def mock_server_user_groups_fixture(request):
+    """Mock UserGroup and UserGroupNamespacePermission as fixture"""
+    mock_server_user_groups(request)
 
 
 def mocked_server_module_version(request):
