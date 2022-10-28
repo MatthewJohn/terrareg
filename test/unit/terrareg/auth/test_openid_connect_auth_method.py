@@ -66,54 +66,6 @@ class TestOpenidConnectAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodT
         obj = OpenidConnectAuthMethod()
         assert obj.requires_csrf_tokens is True
 
-    @pytest.mark.parametrize('publish_api_key_config,has_namespace_access,expected_result', [
-        # With access to namespace
-        (None, True, True),
-        ([], True, True),
-        (['key1'], True, True),
-        (['key1', 'key2'], True, True),
-        # Without access to namespace
-        (None, False, True),
-        ([], False, True),
-        (['key1'], False, False),
-        (['key1', 'key2'], False, False),
-    ])
-    def test_can_publish_module_version(self, publish_api_key_config, has_namespace_access, expected_result):
-        """Test can_publish_module_version method"""
-        mock_check_namespace_access = mock.MagicMock(return_value=has_namespace_access)
-        with mock.patch('terrareg.auth.OpenidConnectAuthMethod.check_namespace_access', mock_check_namespace_access), \
-                mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', publish_api_key_config):
-            obj = OpenidConnectAuthMethod()
-            assert obj.can_publish_module_version(namespace='testnamespace') is expected_result
-
-        mock_check_namespace_access.assert_called_once_with(
-            namespace='testnamespace',
-            permission_type=UserGroupNamespacePermissionType.MODIFY)
-
-    @pytest.mark.parametrize('upload_api_key_config,has_namespace_access,expected_result', [
-        # With access to namespace
-        (None, True, True),
-        ([], True, True),
-        (['key1'], True, True),
-        (['key1', 'key2'], True, True),
-        # Without access to namespace
-        (None, False, True),
-        ([], False, True),
-        (['key1'], False, False),
-        (['key1', 'key2'], False, False),
-    ])
-    def test_can_upload_module_version(self, upload_api_key_config, has_namespace_access, expected_result):
-        """Test can_upload_module_version method"""
-        mock_check_namespace_access = mock.MagicMock(return_value=has_namespace_access)
-        with mock.patch('terrareg.auth.OpenidConnectAuthMethod.check_namespace_access', mock_check_namespace_access), \
-                mock.patch('terrareg.config.Config.UPLOAD_API_KEYS', upload_api_key_config):
-            obj = OpenidConnectAuthMethod()
-            assert obj.can_upload_module_version(namespace='testnamespace') is expected_result
-
-        mock_check_namespace_access.assert_called_once_with(
-            namespace='testnamespace',
-            permission_type=UserGroupNamespacePermissionType.MODIFY)
-
     def test_check_session(self):
         """Test check_session method"""
         obj = OpenidConnectAuthMethod()
