@@ -311,6 +311,28 @@ class BaseSsoAuthMethod(BaseSessionAuthMethod):
                 return True
         return False
 
+    def can_publish_module_version(self, namespace):
+        """Determine if user can publish a module version to given namespace."""
+        return (
+            # If PUBLISH API keys have not been enabled,
+            # allow user to publish module versions, as this
+            # can be performed without authentication
+            (not PublishApiKeyAuthMethod.is_enabled()) or
+            # Otherwise, check for MODIFY namespace access
+            self.check_namespace_access(namespace=namespace, permission_type=UserGroupNamespacePermissionType.MODIFY)
+        )
+
+    def can_upload_module_version(self, namespace):
+        """Determine if user can upload a module version to given namespace."""
+        return (
+            # If UPLOAD API keys have not been enabled,
+            # allow user to publish module versions, as this
+            # can be performed without authentication
+            (not UploadApiKeyAuthMethod.is_enabled()) or
+            # Otherwise, check for MODIFY namespace access
+            self.check_namespace_access(namespace=namespace, permission_type=UserGroupNamespacePermissionType.MODIFY)
+        )
+
     def get_all_namespace_permissions(self):
         """Obtain all namespace permissions for user."""
         # Obtain list of user's groups

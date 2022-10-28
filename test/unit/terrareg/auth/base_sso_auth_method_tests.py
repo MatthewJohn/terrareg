@@ -199,9 +199,12 @@ class BaseSsoAuthMethodTests:
             obj = self.CLS()
             assert obj.can_publish_module_version(namespace='testnamespace') is expected_result
 
-        mock_check_namespace_access.assert_called_once_with(
-            namespace='testnamespace',
-            permission_type=UserGroupNamespacePermissionType.MODIFY)
+        if publish_api_key_config:
+            mock_check_namespace_access.assert_called_once_with(
+                namespace='testnamespace',
+                permission_type=UserGroupNamespacePermissionType.MODIFY)
+        else:
+            mock_check_namespace_access.assert_not_called()
 
     @pytest.mark.parametrize('upload_api_key_config,has_namespace_access,expected_result', [
         # With access to namespace
@@ -223,6 +226,9 @@ class BaseSsoAuthMethodTests:
             obj = self.CLS()
             assert obj.can_upload_module_version(namespace='testnamespace') is expected_result
 
-        mock_check_namespace_access.assert_called_once_with(
-            namespace='testnamespace',
-            permission_type=UserGroupNamespacePermissionType.MODIFY)
+        if upload_api_key_config:
+            mock_check_namespace_access.assert_called_once_with(
+                namespace='testnamespace',
+                permission_type=UserGroupNamespacePermissionType.MODIFY)
+        else:
+            mock_check_namespace_access.assert_not_called()
