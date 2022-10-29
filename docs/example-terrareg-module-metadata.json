@@ -5,14 +5,26 @@
         {
             "name": "var_a",
             "type": "text",
-	    "quote_value": "true"
+            "quote_value": "true",
+            "required": true
+        },
+        {
+            "name": "var_b",
+            "type": "text",
+            "quote_value": "true",
+            "required": false,
+            "default_value": "Some Value"
         },
         {
             "name": "this_or_that",
             "type": "select",
-            "choices": ["var.this", "var.that"],
+            "choices": [
+                "var.this",
+                "var.that"
+            ],
             "allow_custom": true,
-	    "quote_value": false
+            "quote_value": false,
+            "required": false
         },
         {
             "name": "subnets",
@@ -27,18 +39,22 @@
                     "value": "data.terraform_remote_state.networking.blah",
                     "additional_content": "data \"terraform_remote_state\" \"networking\" {\n\n}"
                 }
-	    ],
-	    "quote_value": false
+            ],
+            "quote_value": false,
+            "required": true
         },
         {
             "name": "var_d",
             "type": "boolean",
-            "additional_help": "Some text that will provided, as well as the variable description"
+            "additional_help": "Some text that will provided, as well as the variable description",
+            "required": true,
+            "default_value": true
         },
         {
             "name": "var_e",
             "type": "static",
-            "value": "var.a_variable_present_in_parent_terraform"
+            "value": "var.a_variable_present_in_parent_terraform",
+            "required": true
         }
     ]
 }

@@ -1695,6 +1695,14 @@ class ModuleVersion(TerraformSpecsObject):
         raw_json = Database.decode_blob(self._get_db_row()['variable_template'])
         variables = json.loads(raw_json) if raw_json else []
 
+        # Set default values for each user-defined variable
+        for variable in variables:
+            variable['required'] = variable.get('required', True)
+            variable['type'] = variable.get('type', 'text')
+            variable['additional_help'] = variable.get('additional_help', '')
+            variable['quote_value'] = variable.get('quote_value', True)
+            variable['default_value'] = variable.get('default_value', None)
+
         # Detect bad type for variable template and replace
         # with empty array
         if type(variables) is not list:
@@ -1702,21 +1710,34 @@ class ModuleVersion(TerraformSpecsObject):
 
         if terrareg.config.Config().AUTOGENERATE_USAGE_BUILDER_VARIABLES:
             for input_variable in self.get_terraform_inputs():
-                if not input_variable['required']:
-                    continue
                 if input_variable['name'] not in [v['name'] for v in variables]:
-
                     converted_type = 'text'
+                    quote_value = True
+                    default_value = input_variable['default']
                     if input_variable['type'] == 'bool':
                         converted_type = 'boolean'
+                        quote_value = False
                     elif input_variable['type'].startswith('list('):
+                        list_type = re.match(r'list\((.*)\)', input_variable['type'])
+                        if list_type and list_type.group(1) == 'number':
+                            quote_value = False
+                        else:
+                            quote_value = True
                         converted_type = 'list'
-
+                    elif input_variable['type'] == 'number':
+                        converted_type = 'number'
+                        quote_value = False
+                    elif input_variable['type'].startswith('map('):
+                        converted_type = 'text'
+                        quote_value = False
+                    
                     variables.append({
                         'name': input_variable['name'],
                         'type': converted_type,
                         'additional_help': input_variable['description'],
-                        'quote_value': True
+                        'quote_value': quote_value,
+                        'required': input_variable['required'],
+                        'default_value': default_value
                     })
         return variables
 
