@@ -1,5 +1,14 @@
 # Changelog
 
+# [2.45.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.44.0...v2.45.0) (2022-10-29)
+
+
+### Features
+
+* Add support 'number' variable types in usage builder ([482d2aa](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/482d2aa321eefd0d1709ab7674221bbce33014cd))
+* Re-design usage builder ([228820e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/228820e363b81e7ad32288f691756925d8ac3757)), closes [#264](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/264)
+* Update usage builder to provide multiple inputs when populating a list variable ([68859c5](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/68859c58d766a3d4083a7038409834101bbda20b))
+
 # [2.44.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.43.1...v2.44.0) (2022-10-07)
 
 
