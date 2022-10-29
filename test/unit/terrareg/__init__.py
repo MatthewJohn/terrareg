@@ -1,4 +1,5 @@
 
+from copy import deepcopy
 import datetime
 import functools
 import secrets
@@ -58,7 +59,7 @@ def setup_test_data(test_data=None, user_group_data=None):
             global USER_GROUP_CONFIG
             TEST_MODULE_DATA = dict(test_data if test_data else test_data_full)
             TEST_MODULE_DETAILS = {}
-            USER_GROUP_CONFIG = dict(user_group_data if user_group_data else test_user_group_data_full)
+            USER_GROUP_CONFIG = deepcopy(user_group_data if user_group_data else test_user_group_data_full)
 
             # Replace all ModuleDetails in test data with IDs and move contents to
             # TEST_MODULE_DETAILS
@@ -424,9 +425,17 @@ class MockUserGroup(UserGroup):
         return None
 
     @classmethod
-    def create(cls, name, site_admin):
-        """Create usergroup"""
-        raise NotImplementedError
+    def _insert_into_db(cls, name, site_admin):
+        """Insert usergroup into DB"""
+        global USER_GROUP_CONFIG
+        if name in USER_GROUP_CONFIG:
+            # Should not hit this exception
+            raise Exception('MOCK USER GROUP ALREAY EXISTS')
+        USER_GROUP_CONFIG[name] = {
+            'id': 200,
+            'site_admin': site_admin,
+            'namespace_permissions': {}
+        }
 
     @classmethod
     def get_all_user_groups(cls):
@@ -476,10 +485,14 @@ class MockUserGroupNamespacePermission(UserGroupNamespacePermission):
         return permissions
 
     @classmethod
-    def create(cls, user_group, namespace, permission_type):
-        """Create user group namespace permission"""
-        # Check if permission already exists
-        raise NotImplementedError
+    def _insert_into_database(cls, user_group, namespace, permission_type):
+        """Insert user group namespace permission into DB"""
+        global USER_GROUP_CONFIG
+        if 'namespace_permissions' not in USER_GROUP_CONFIG[user_group.name]:
+            USER_GROUP_CONFIG[user_group.name]['namespace_permissions'] = {}
+        if namespace.name in USER_GROUP_CONFIG[user_group.name]['namespace_permissions']:
+            raise Exception('MOCK - namepsace_permission for namespace already exists')
+        USER_GROUP_CONFIG[user_group.name]['namespace_permissions'][namespace.name] = permission_type
 
     def _get_db_row(self):
         """Return DB row for user group."""

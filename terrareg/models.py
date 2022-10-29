@@ -132,12 +132,18 @@ class UserGroup:
         if not cls._validate_name(name):
             return None
 
+        cls._insert_into_db(name=name, site_admin=site_admin)
+        return cls(name=name)
+
+    @classmethod
+    def _insert_into_db(cls, name, site_admin):
+        """Insert new user group into database."""
         db = Database.get()
         with db.get_connection() as conn:
             conn.execute(db.user_group.insert().values(
                 name=name, site_admin=site_admin
             ))
-            return cls(name=name)
+
 
     @classmethod
     def get_all_user_groups(cls):
@@ -271,6 +277,15 @@ class UserGroupNamespacePermission:
                 namespace=namespace):
             return None
 
+        cls._insert_into_database(
+            user_group=user_group,
+            namespace=namespace,
+            permission_type=permission_type)
+        return cls(user_group=user_group, namespace=namespace)
+
+    @classmethod
+    def _insert_into_database(cls, user_group, namespace, permission_type):
+        """Insert permission into database"""
         db = Database.get()
         with db.get_connection() as conn:
             conn.execute(db.user_group_namespace_permission.insert().values(
@@ -278,7 +293,6 @@ class UserGroupNamespacePermission:
                 namespace_id=namespace.pk,
                 permission_type=permission_type
             ))
-        return cls(user_group=user_group, namespace=namespace)
 
     @property
     def user_group(self):

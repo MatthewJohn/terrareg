@@ -2676,7 +2676,11 @@ class ApiTerraregAuthUserGroupNamespacePermissions(ErrorCatchingResource):
         """Create user group namespace permission"""
         attributes = request.json
         permission_type = attributes.get('permission_type')
-        permission_type_enum = UserGroupNamespacePermissionType(permission_type)
+        try:
+            permission_type_enum = UserGroupNamespacePermissionType(permission_type)
+        except ValueError:
+            return {'message': 'Invalid namespace permission type'}, 400
+
         namespace_obj = Namespace.get(name=namespace)
         if not namespace_obj:
             return {'message': 'Namespace does not exist.'}, 400
@@ -2696,7 +2700,7 @@ class ApiTerraregAuthUserGroupNamespacePermissions(ErrorCatchingResource):
                 'permission_type': permission_type_enum.value
             }, 201
         else:
-            return {}, 400
+            return {'message': 'Permission already exists for this user_group/namespace.'}, 400
 
     def _delete(self, user_group, namespace):
         """Delete user group namespace permission"""
