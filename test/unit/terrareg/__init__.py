@@ -507,7 +507,8 @@ class MockUserGroupNamespacePermission(UserGroupNamespacePermission):
 
     def delete(self):
         """Delete user group namespace permission."""
-        raise NotImplementedError
+        global USER_GROUP_CONFIG
+        del USER_GROUP_CONFIG[self.user_group.name]['namespace_permissions'][self.namespace.name]
 
 
 def mock_server_user_groups(request):

@@ -2711,9 +2711,12 @@ class ApiTerraregAuthUserGroupNamespacePermissions(ErrorCatchingResource):
         if not user_group_obj:
             return {'message': 'User group does not exist.'}, 400
 
-        user_group_namespace_permission = UserGroupNamespacePermission(
+        user_group_namespace_permission = UserGroupNamespacePermission.get_permissions_by_user_group_and_namespace(
             user_group=user_group_obj,
             namespace=namespace_obj
         )
+        if not user_group_namespace_permission:
+            return {'message': 'Permission does not exist.'}, 400
+
         user_group_namespace_permission.delete()
         return {}, 200
