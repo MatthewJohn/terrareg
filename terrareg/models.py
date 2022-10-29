@@ -257,7 +257,7 @@ class UserGroupNamespacePermission:
                 db.user_group,
                 db.user_group_namespace_permission.c.user_group_id==db.user_group.c.id
             ).where(
-                db.user_group.c.id__in==user_group_ids,
+                db.user_group.c.id.in_(user_group_ids),
                 db.user_group_namespace_permission.c.namespace_id==namespace.pk
             )
             res = conn.execute(query)
