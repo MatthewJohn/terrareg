@@ -2655,6 +2655,8 @@ class ApiTerraregAuthUserGroups(ErrorCatchingResource):
 class ApiTerraregAuthUserGroup(ErrorCatchingResource):
     """Interface to interact with single user group."""
 
+    method_decorators = [auth_wrapper('is_admin')]
+
     def _delete(self, user_group):
         """Delete user group."""
         user_group_obj = UserGroup.get_by_group_name(user_group)
@@ -2663,7 +2665,6 @@ class ApiTerraregAuthUserGroup(ErrorCatchingResource):
 
         user_group_obj.delete()
         return {}, 200
-
 
 
 class ApiTerraregAuthUserGroupNamespacePermissions(ErrorCatchingResource):
