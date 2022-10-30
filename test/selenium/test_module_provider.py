@@ -14,6 +14,8 @@ from terrareg.models import GitProvider, ModuleVersion, Namespace, Module, Modul
 class TestModuleProvider(SeleniumTest):
     """Test module provider page."""
 
+    _SECRET_KEY = 'unittestsecretkey'
+
     @classmethod
     def setup_class(cls):
         """Setup required mocks."""
