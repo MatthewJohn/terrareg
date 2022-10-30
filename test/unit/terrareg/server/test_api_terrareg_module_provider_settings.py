@@ -166,10 +166,9 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
                     'repo_clone_url_template': 'https://example.com/test.git'
                 }
             )
-            assert res.json == {'message': "The server could not verify that you are authorized to access the URL requested."
-                                           " You either supplied the wrong credentials (e.g. a bad password),"
-                                           " or your browser doesn't understand how to supply the credentials required."}
-            assert res.status_code == 401
+            assert res.json == {'message': "You don't have the permission to access the requested resource. "
+                                           "It is either read-protected or not readable by the server."}
+            assert res.status_code == 403
 
             # Ensure required checks are called
             mock_update_git_tag_format.assert_not_called()

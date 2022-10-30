@@ -81,4 +81,4 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
 
             res = client.post('/v1/terrareg/auth/admin/login')
 
-            assert res.status_code == 401
+            assert res.status_code == 403

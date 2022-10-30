@@ -33,6 +33,9 @@ class TestCreateModuleProvider(SeleniumTest):
 
     def test_page_details(self):
         """Test page contains required information."""
+
+        self.perform_admin_authentication('unittest-password')
+
         self.selenium_instance.get(self.get_url('/create-module'))
 
         assert self.selenium_instance.find_element(By.CLASS_NAME, 'breadcrumb').text == 'Create Module'

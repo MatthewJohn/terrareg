@@ -52,7 +52,7 @@ class TestAuthWrapper(TerraregUnitTest):
             wrapped_mock = auth_wrapper('test_failing_method')(mock_protected_method)
 
             # Call wrapped method
-            with pytest.raises(werkzeug.exceptions.Unauthorized):
+            with pytest.raises(werkzeug.exceptions.Forbidden):
                 wrapped_mock()
 
             mock_get_current_auth_method.assert_called_once_with()
