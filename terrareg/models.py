@@ -320,6 +320,16 @@ class UserGroupNamespacePermission:
         self._namespace = namespace
         self._row_cache = None
 
+    def __eq__(self, __o):
+        """Check if two user group namespace permissions are the same"""
+        if isinstance(__o, self.__class__):
+            return (
+                self.namespace.pk == __o.namespace.pk and
+                self.user_group.pk == __o.user_group.pk and
+                self.permission_type == __o.permission_type
+            )
+        return super(UserGroupNamespacePermission, self).__eq__(__o)
+
     def _get_db_row(self):
         """Return DB row for user group."""
         if self._row_cache is None:
