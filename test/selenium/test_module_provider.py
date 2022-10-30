@@ -1127,6 +1127,9 @@ module "fullypopulated" {{
     def test_integration_tab_index_version_with_publish_disabled(self):
         """Test indexing a new module version from the integration tab whilst publishing is not possible"""
         with self.update_mock(self._config_publish_api_keys_mock, 'new', ['abcdefg']):
+            # Clear cookies to remove authentication
+            self.selenium_instance.delete_all_cookies()
+
             self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
 
             # Wait for integrations tab button to be visible
