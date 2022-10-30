@@ -526,7 +526,12 @@ class IntegrationsTab extends ModuleDetailsTab {
             if (config.ALLOW_MODULE_HOSTING) {
                 $("#module-integrations-upload-container").removeClass('default-hidden');
             }
-            if (!config.PUBLISH_API_KEYS_ENABLED || loggedIn) {
+            if (!config.PUBLISH_API_KEYS_ENABLED ||
+                    loggedIn && (
+                        loggedIn.site_admin ||
+                        Object.keys(loggedIn.namespace_permissions).indexOf(this._moduleDetails.namespace) !== -1
+                    )
+            ) {
                 $("#integrations-index-module-version-publish").removeClass('default-hidden');
             }
 

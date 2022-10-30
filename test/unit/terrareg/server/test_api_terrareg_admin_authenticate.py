@@ -82,3 +82,5 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
             res = client.post('/v1/terrareg/auth/admin/login')
 
             assert res.status_code == 403
+            assert res.json == {'message': "You don't have the permission to access the requested resource. "
+                                           "It is either read-protected or not readable by the server."}

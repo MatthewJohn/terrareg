@@ -1124,6 +1124,39 @@ module "fullypopulated" {{
         self._api_version_create_mock.assert_called_once_with(namespace='moduledetails', name='fullypopulated', provider='testprovider', version='5.2.1')
         self._api_version_publish_mock.assert_called_once_with(namespace='moduledetails', name='fullypopulated', provider='testprovider', version='5.2.1')
 
+    @pytest.mark.parametrize('user_groups,expected_result', [
+        ([], False),
+        (['siteadmin'], True),
+        (['nopermissions'], False),
+        (['moduledetailsmodify'], True),
+        (['moduledetailsfull'], True)
+    ])
+    def test_integration_tab_publish_button_permissions(self, user_groups, expected_result):
+        """Test disabling of publish button, logged in with various user groups."""
+        with self.update_mock(self._config_publish_api_keys_mock, 'new', ['abcdefg']):
+            # Clear cookies to remove authentication
+            self.selenium_instance.delete_all_cookies()
+
+            with self.log_in_with_openid_connect(user_groups):
+                self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+                # Wait for integrations tab button to be visible
+                integrations_tab_button = self.wait_for_element(By.ID, 'module-tab-link-integrations')
+
+                # Ensure the integrations tab content is not visible
+                assert self.wait_for_element(By.ID, 'module-tab-integrations', ensure_displayed=False).is_displayed() == False
+
+                # Click on integrations tab
+                integrations_tab_button.click()
+
+                integrations_tab_content = self.selenium_instance.find_element(By.ID, 'module-tab-integrations')
+
+                # Ensure publish button exists and is not disaplyed
+                assert integrations_tab_content.find_element(By.ID, 'indexModuleVersionPublish').is_displayed() == expected_result
+
+                # Ensure publish button container is not displayed
+                assert integrations_tab_content.find_element(By.ID, 'integrations-index-module-version-publish').is_displayed() == expected_result
+
     def test_integration_tab_index_version_with_publish_disabled(self):
         """Test indexing a new module version from the integration tab whilst publishing is not possible"""
         with self.update_mock(self._config_publish_api_keys_mock, 'new', ['abcdefg']):

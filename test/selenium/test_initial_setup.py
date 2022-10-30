@@ -22,13 +22,11 @@ class TestInitialSetup(SeleniumTest):
         cls._config_allow_module_uploads_mock = mock.patch('terrareg.config.Config.ALLOW_MODULE_HOSTING', True)
         cls._config_publish_api_keys_mock = mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', [])
         cls._config_admin_authentication_key_mock = mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', '')
-        cls._config_secret_key_mock = mock.patch('terrareg.config.Config.SECRET_KEY', '')
 
         cls.register_patch(cls._config_upload_api_keys_mock)
         cls.register_patch(cls._config_allow_module_uploads_mock)
         cls.register_patch(cls._config_publish_api_keys_mock)
         cls.register_patch(cls._config_admin_authentication_key_mock)
-        cls.register_patch(cls._config_secret_key_mock)
 
         super(TestInitialSetup, cls).setup_class()
 

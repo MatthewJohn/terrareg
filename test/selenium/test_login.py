@@ -14,26 +14,9 @@ class TestLogin(SeleniumTest):
     @classmethod
     def setup_class(cls):
         """Setup required mocks."""
-        cls._mock_openid_connect_is_enabled = mock.MagicMock(return_value=False)
-        cls._mock_openid_connect_get_authorize_redirect_url = mock.MagicMock(return_value=(None, None))
-        cls._mock_openid_connect_fetch_access_token = mock.MagicMock(return_value=None)
-        cls._mock_openid_connect_validate_session_token = mock.MagicMock(return_value=False)
-        cls._mock_openid_connect_get_user_info = mock.MagicMock(return_value=None)
-        cls._mock_saml2_is_enabled = mock.MagicMock(return_value=False)
-        cls._mock_saml2_initialise_request_auth_object = mock.MagicMock()
-        cls._config_secret_key_mock = mock.patch('terrareg.config.Config.SECRET_KEY', '')
         cls._config_openid_connect_button_text = mock.patch('terrareg.config.Config.OPENID_CONNECT_LOGIN_TEXT', '')
         cls._config_saml_button_text = mock.patch('terrareg.config.Config.SAML2_LOGIN_TEXT', '')
 
-        cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.is_enabled', cls._mock_openid_connect_is_enabled))
-        cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.get_authorize_redirect_url', cls._mock_openid_connect_get_authorize_redirect_url))
-        cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.fetch_access_token', cls._mock_openid_connect_fetch_access_token))
-        cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.validate_session_token', cls._mock_openid_connect_validate_session_token))
-        cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.get_user_info', cls._mock_openid_connect_get_user_info))
-        cls.register_patch(mock.patch('terrareg.saml.Saml2.is_enabled', cls._mock_saml2_is_enabled))
-        cls.register_patch(mock.patch('terrareg.saml.Saml2.initialise_request_auth_object', cls._mock_saml2_initialise_request_auth_object))
-
-        cls.register_patch(cls._config_secret_key_mock)
         cls.register_patch(cls._config_openid_connect_button_text)
         cls.register_patch(cls._config_saml_button_text)
         super(TestLogin, cls).setup_class()

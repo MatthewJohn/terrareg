@@ -8,11 +8,12 @@ import pytest
 
 from terrareg.models import (
     Example, ExampleFile, ModuleDetails, ModuleVersionFile, Namespace, Module, ModuleProvider,
-    ModuleVersion, GitProvider, Submodule
+    ModuleVersion, GitProvider, Submodule, UserGroup, UserGroupNamespacePermission
 )
 from terrareg.database import Database
 from terrareg.server import Server
 import terrareg.config
+from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 
 
 @pytest.fixture
@@ -37,6 +38,7 @@ class BaseTest:
 
     _TEST_DATA = None
     _GIT_PROVIDER_DATA = None
+    _USER_GROUP_DATA = None
 
     INSTANCE_ = None
 
@@ -95,6 +97,8 @@ class BaseTest:
         # Delete any pre-existing data
         db = Database.get()
         with Database.get_engine().connect() as conn:
+            conn.execute(db.user_group_namespace_permission.delete())
+            conn.execute(db.user_group.delete())
             conn.execute(db.sub_module.delete())
             conn.execute(db.module_version.delete())
             conn.execute(db.module_provider.delete())
@@ -247,3 +251,12 @@ class BaseTest:
                                 example_file = ExampleFile.create(example=example, path=example_file_path)
                                 example_file.update_attributes(content=example_config['example_files'][example_file_path])
 
+        if cls._USER_GROUP_DATA:
+            for group_name in cls._USER_GROUP_DATA:
+                user_group = UserGroup.create(name=group_name, site_admin=cls._USER_GROUP_DATA[group_name].get('site_admin', False))
+                for namespace_name, permission_type in cls._USER_GROUP_DATA[group_name].get('namespace_permissions', {}).items():
+                    namespace = Namespace.get(namespace_name)
+                    UserGroupNamespacePermission.create(
+                        user_group=user_group,
+                        namespace=namespace,
+                        permission_type=UserGroupNamespacePermissionType(permission_type))

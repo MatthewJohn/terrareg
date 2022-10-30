@@ -1,4 +1,5 @@
 
+from contextlib import contextmanager
 import functools
 import multiprocessing
 import os
@@ -25,13 +26,14 @@ from terrareg.database import Database
 from terrareg.server import Server
 import terrareg.config
 from test import BaseTest
-from .test_data import integration_test_data, integration_git_providers
+from .test_data import integration_test_data, integration_git_providers, selenium_user_group_data
 
 
 class SeleniumTest(BaseTest):
 
     _TEST_DATA = integration_test_data
     _GIT_PROVIDER_DATA = integration_git_providers
+    _USER_GROUP_DATA = selenium_user_group_data
     _MOCK_PATCHES = []
 
     DISPLAY_INSTANCE = None
@@ -58,8 +60,32 @@ class SeleniumTest(BaseTest):
         cls._MOCK_PATCHES.append(patch)
 
     @classmethod
+    def _setup_auth_mocks(cls):
+        """Setup mocks used to perform saml/openid connect authentication"""
+        cls._mock_openid_connect_is_enabled = unittest.mock.MagicMock(return_value=False)
+        cls._mock_openid_connect_get_authorize_redirect_url = unittest.mock.MagicMock(return_value=(None, None))
+        cls._mock_openid_connect_fetch_access_token = unittest.mock.MagicMock(return_value=None)
+        cls._mock_openid_connect_validate_session_token = unittest.mock.MagicMock(return_value=False)
+        cls._mock_openid_connect_get_user_info = unittest.mock.MagicMock(return_value=None)
+        cls._mock_saml2_is_enabled = unittest.mock.MagicMock(return_value=False)
+        cls._mock_saml2_initialise_request_auth_object = unittest.mock.MagicMock()
+        cls._config_secret_key_mock = unittest.mock.patch('terrareg.config.Config.SECRET_KEY', '')
+
+        cls.register_patch(unittest.mock.patch('terrareg.openid_connect.OpenidConnect.is_enabled', cls._mock_openid_connect_is_enabled))
+        cls.register_patch(unittest.mock.patch('terrareg.openid_connect.OpenidConnect.get_authorize_redirect_url', cls._mock_openid_connect_get_authorize_redirect_url))
+        cls.register_patch(unittest.mock.patch('terrareg.openid_connect.OpenidConnect.fetch_access_token', cls._mock_openid_connect_fetch_access_token))
+        cls.register_patch(unittest.mock.patch('terrareg.openid_connect.OpenidConnect.validate_session_token', cls._mock_openid_connect_validate_session_token))
+        cls.register_patch(unittest.mock.patch('terrareg.openid_connect.OpenidConnect.get_user_info', cls._mock_openid_connect_get_user_info))
+        cls.register_patch(unittest.mock.patch('terrareg.saml.Saml2.is_enabled', cls._mock_saml2_is_enabled))
+        cls.register_patch(unittest.mock.patch('terrareg.saml.Saml2.initialise_request_auth_object', cls._mock_saml2_initialise_request_auth_object))
+        cls.register_patch(cls._config_secret_key_mock)
+
+    @classmethod
     def setup_class(cls):
         """Setup host/port to host server."""
+
+        cls._setup_auth_mocks()
+
         super(SeleniumTest, cls).setup_class()
 
         # Start all mock patches
@@ -194,6 +220,33 @@ class SeleniumTest(BaseTest):
 
         # Wait for homepage to load
         self.wait_for_element(By.ID, 'title')
+
+    @contextmanager
+    def log_in_with_openid_connect(self, user_groups):
+        """Login with OpenID connect"""
+        with self.update_mock(self._mock_openid_connect_is_enabled, 'return_value', True), \
+                self.update_mock(self._mock_openid_connect_get_authorize_redirect_url, 'return_value',
+                                 ('/openid/callback?code=abcdefg&state=unitteststate', 'unitteststate')), \
+                self.update_mock(self._mock_openid_connect_fetch_access_token, 'return_value',
+                                 {'access_token': 'unittestaccesstoken', 'id_token': 'unittestidtoken', 'expires_in': 6000}), \
+                self.update_mock(self._mock_openid_connect_get_user_info, 'return_value',
+                                 {'groups': user_groups}), \
+                self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
+                self.update_mock(self._mock_openid_connect_validate_session_token, 'return_value', True):
+            self.selenium_instance.get(self.get_url('/login'))
+            # Wait for SSO login button to be displayed
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'openid-connect-login').is_displayed(), True)
+
+            openid_connect_login_button = self.selenium_instance.find_element(By.ID, 'openid-connect-login')
+            openid_connect_login_button.click()
+
+            # Ensure redirected to login
+            self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/'))
+
+            # Ensure user is logged in
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbar_login_span').text, 'Logout')
+
+            yield
 
     def update_mock(self, *args, **kwargs):
         """Return context-manager instance for handling updating of mock attributes during selenium test."""
