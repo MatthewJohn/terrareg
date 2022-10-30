@@ -111,7 +111,8 @@ class TestApiModuleVersionPublish(TerraregUnitTest):
 
             res = client.post(
                 '/v1/terrareg/modules/testnamespace/modulenotpublished/testprovider/10.2.1/publish')
-            assert res.status_code == 401
-            assert res.json == {'message': 'The server could not verify that you are authorized to access the URL requested. You either supplied the wrong credentials (e.g. a bad password), or your browser doesn\'t understand how to supply the credentials required.'}
+            assert res.status_code == 403
+            assert res.json == {'message': "You don't have the permission to access the requested resource. "
+                                           "It is either read-protected or not readable by the server."}
 
             mocked_update_attributes.assert_not_called()
