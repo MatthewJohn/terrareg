@@ -14,6 +14,7 @@ class TestInitialSetup(SeleniumTest):
 
     # Disable test data
     _TEST_DATA = {}
+    _USER_GROUP_DATA = None
 
     @classmethod
     def setup_class(cls):

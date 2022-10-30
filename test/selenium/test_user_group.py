@@ -20,6 +20,7 @@ class TestUserGroup(SeleniumTest):
     """Test User Group page."""
 
     _TEST_DATA = two_empty_namespaces
+    _USER_GROUP_DATA = None
     _SECRET_KEY = '354867a669ef58d17d0513a0f3d02f4403354915139422a8931661a3dbccdffe'
 
     @classmethod
