@@ -31,7 +31,7 @@ class TestOpenidConnectAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodT
 
     @pytest.mark.parametrize('openid_connect_expires_at,expiry_should_pass,openid_connect_id_token,validate_session_token_raises,expected_result', [
         # Working situation
-        ((datetime.datetime.now() + datetime.timedelta(minutes=10)).timestamp(), True, 'testtoken', False, True),
+        ((datetime.datetime.now() + datetime.timedelta(minutes=30)).timestamp(), True, 'testtoken', False, True),
         # Expired token
         ((datetime.datetime.now() - datetime.timedelta(minutes=1)).timestamp(), False, 'testtoken', False, False),
         # Non existent timestamp
@@ -39,8 +39,8 @@ class TestOpenidConnectAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodT
         # Invalid timestamp
         ('thisisnotatimestamp', False, 'testtoken', False, False),
         # Empty token, with false return
-        ((datetime.datetime.now() + datetime.timedelta(minutes=10)).timestamp(), True, '', True, False),
-        ((datetime.datetime.now() + datetime.timedelta(minutes=10)).timestamp(), True, None, True, False),
+        ((datetime.datetime.now() + datetime.timedelta(minutes=30)).timestamp(), True, '', True, False),
+        ((datetime.datetime.now() + datetime.timedelta(minutes=30)).timestamp(), True, None, True, False),
     ])
     def test_check_session(self, openid_connect_expires_at, expiry_should_pass, openid_connect_id_token,
                            validate_session_token_raises, expected_result, test_request_context):
