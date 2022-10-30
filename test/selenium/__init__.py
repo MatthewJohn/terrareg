@@ -35,6 +35,7 @@ class SeleniumTest(BaseTest):
     _GIT_PROVIDER_DATA = integration_git_providers
     _USER_GROUP_DATA = selenium_user_group_data
     _MOCK_PATCHES = []
+    _SECRET_KEY = ''
 
     DISPLAY_INSTANCE = None
     SELENIUM_INSTANCE = None
@@ -69,7 +70,7 @@ class SeleniumTest(BaseTest):
         cls._mock_openid_connect_get_user_info = unittest.mock.MagicMock(return_value=None)
         cls._mock_saml2_is_enabled = unittest.mock.MagicMock(return_value=False)
         cls._mock_saml2_initialise_request_auth_object = unittest.mock.MagicMock()
-        cls._config_secret_key_mock = unittest.mock.patch('terrareg.config.Config.SECRET_KEY', '')
+        cls._config_secret_key_mock = unittest.mock.patch('terrareg.config.Config.SECRET_KEY', cls._SECRET_KEY)
 
         cls.register_patch(unittest.mock.patch('terrareg.openid_connect.OpenidConnect.is_enabled', cls._mock_openid_connect_is_enabled))
         cls.register_patch(unittest.mock.patch('terrareg.openid_connect.OpenidConnect.get_authorize_redirect_url', cls._mock_openid_connect_get_authorize_redirect_url))
