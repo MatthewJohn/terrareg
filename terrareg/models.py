@@ -178,7 +178,7 @@ class UserGroup:
     def __eq__(self, __o):
         """Check if two user groups are the same"""
         if isinstance(__o, self.__class__):
-            return self.name == __o.name and self.site_admin == __o.site_admin
+            return self.pk == __o.pk and self.name == __o.name and self.site_admin == __o.site_admin
         return super(UserGroup, self).__eq__(__o)
 
     def _get_db_row(self):
