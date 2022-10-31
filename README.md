@@ -136,8 +136,9 @@ Because everything referencing localhost routes to 172.0.0.1 no special host fil
     # Initialise database and start server:
     alembic upgrade head
 
-    # Set a secret key and admin token
+    # Set random admin authentication token - the password used for authenticating as the built-in admin user
     export ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword
+    # Set random secret key, used encrypting client session data
     export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex())')
     
     # Obtain terraform-docs, tfsec and infracost
@@ -258,7 +259,7 @@ Default: `[["Release Notes", ["RELEASE_NOTES.md", "CHANGELOG.md"]], ["License", 
 ### ADMIN_AUTHENTICATION_TOKEN
 
 
-Token to use for authorisation to be able to modify modules in the user interface.
+Token to use for authentication as the built-in admin user, login as an admin to the user interface.
 
 
 Default: ``

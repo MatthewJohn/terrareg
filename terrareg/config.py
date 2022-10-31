@@ -245,7 +245,7 @@ class Config:
     @property
     def ADMIN_AUTHENTICATION_TOKEN(self):
         """
-        Token to use for authorisation to be able to modify modules in the user interface.
+        Token to use for authentication as the built-in admin user, login as an admin to the user interface.
         """
         return os.environ.get('ADMIN_AUTHENTICATION_TOKEN', None)
 
