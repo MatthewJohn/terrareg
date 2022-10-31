@@ -238,16 +238,24 @@ class BaseSsoAuthMethodTests:
         obj = self.CLS()
         assert obj.is_built_in_admin() is False
 
-    @pytest.mark.parametrize('sso_groups,expected_result', [
-        ([], False),
-        (['validgroup', False]),
-        (['validgroup', 'invalidgroup'], False),
+    @pytest.mark.parametrize('sso_groups,rbac_enabled,expected_result', [
+        ([], True, False),
+        (['validgroup', True, False]),
+        (['validgroup', 'invalidgroup'], True, False),
+
         # Passing
-        (['siteadmingroup'], True),
-        (['invalidgroup', 'validgroup', 'siteadmingroup'], True)
+        (['siteadmingroup'], True, True),
+        (['invalidgroup', 'validgroup', 'siteadmingroup'], True, True),
+
+        # RBAC disabled
+        ([], False, True),
+        (['validgroup', False, True]),
+        (['validgroup', 'invalidgroup'], False, True),
+        (['siteadmingroup'], False, True),
+        (['invalidgroup', 'validgroup', 'siteadmingroup'], False, True)
     ])
     @setup_test_data(None, user_group_data=user_group_data)
-    def test_is_admin(self, sso_groups, expected_result):
+    def test_is_admin(self, sso_groups, rbac_enabled, expected_result):
         """Test is_admin method"""
         mock_get_group_memberships = mock.MagicMock(return_value=sso_groups)
 
@@ -255,6 +263,7 @@ class BaseSsoAuthMethodTests:
                 mock.patch('terrareg.models.UserGroupNamespacePermission',
                            MockUserGroupNamespacePermission), \
                 mock.patch('terrareg.models.Namespace', MockNamespace), \
+                mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', rbac_enabled), \
                 mock.patch(f'terrareg.auth.{self.CLS.__name__}.get_group_memberships', mock_get_group_memberships):
             obj = self.CLS()
             assert obj.is_admin() is expected_result
