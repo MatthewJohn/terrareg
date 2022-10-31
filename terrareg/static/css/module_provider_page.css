@@ -20,3 +20,6 @@
 #module-labels {
     padding-bottom: 5px;
 }
+#current-submodule {
+    font-weight: bold;
+}
