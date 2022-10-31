@@ -165,7 +165,7 @@
                     <ol>
                         <li>Add the following example to your Terraform,</li>
                         <li>Ensure the "<span id="usage-example-analytics-token"></span>" placeholder must be replaced with your '<span id="usage-example-analytics-token-phrase"></span>',</li>
-                        <li>Add the required inputs - use the '<a onclick="selectModuleTab('usage-builder')">Usage Builder</a>' tab for help and 'Inputs' tab for a full list.</li>
+                        <li>Add the required inputs - use the <span id="example-link-usage-builder" class="module-tab-link default-hidden">'<a onclick="selectModuleTab('usage-builder')">Usage Builder</a>' tab for help and </span>'Inputs' tab for a full list.</li>
                     </ol>
                 </div>
 
@@ -353,18 +353,22 @@
 
         <!-- Usage Builder tab -->
         <div id="module-tab-usage-builder" class="module-tabs default-hidden">
-            <span>Provide values to the following inputs to generate Terraform required to use the module.</span>
-            <table id="usage-builder-table" class="table module-provider-tab-content-table">
-                <thead>
-                    <tr>
-                        <th>Variable</th>
-                        <th>Description</th>
-                        <th>Value</th>
-                    </tr>
-                </thead>
-                <tbody id="usageBuilderTable">
-                </tbody>
-            </table>
+            <div class="notification has-text-centered">Provide values to the following inputs to generate Terraform required to use the module.</div><br />
+            <form name="frm-example" id="frm-example">
+                <table id="usage-builder-table" class="table is-flex-wrap-wrap module-provider-tab-content-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Variable</th>
+                            <th>Required?</th>
+                            <th>Description</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usageBuilderTable">
+                    </tbody>
+                </table>
+            </form>
+            <br/><br/>
             <pre id="usageBuilderOutput"></pre>
         </div>
 

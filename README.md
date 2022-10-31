@@ -395,6 +395,18 @@ If disabled, modules must be created using the module provider create endpoint (
 Default: `True`
 
 
+### AUTO_CREATE_NAMESPACE
+
+
+Whether to automatically create namespaces when
+uploading a module version to a module provider in a non-existent namespace.
+
+If disabled, namespaces must be created using the namespace create endpoint (or via web UI)
+
+
+Default: `True`
+
+
 ### AUTO_PUBLISH_MODULE_VERSIONS
 
 
@@ -912,8 +924,10 @@ There are common attributes that can be added to each of variable objects, which
 --- | --- | ---|
 |name|The name of the 'config input'. This is also used as the module variable in the 'terraform input'.|Required|
 |type|The type of the input variable, see table below.|Required|
-|quote_value|Boolean flag to determine whether the value generated is quoted for the 'terraform input'.|false|
-|additional_help|A description that is provided, along with the terraform variable description in the usage builder|Empty|
+|required|Boolean flag to determine whether the variable is Required.|`true`|
+|quote_value|Boolean flag to determine whether the value generated is quoted for the 'terraform input'.|`false`|
+|additional_help|A description that is provided, along with the terraform variable description in the usage builder|`""`|
+|default_value|The default value if required is false|`null`|
 
 
 
