@@ -16,9 +16,11 @@ class TestLogin(SeleniumTest):
         """Setup required mocks."""
         cls._config_openid_connect_button_text = mock.patch('terrareg.config.Config.OPENID_CONNECT_LOGIN_TEXT', '')
         cls._config_saml_button_text = mock.patch('terrareg.config.Config.SAML2_LOGIN_TEXT', '')
+        cls._config_enable_access_controls = mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', False)
 
         cls.register_patch(cls._config_openid_connect_button_text)
         cls.register_patch(cls._config_saml_button_text)
+        cls.register_patch(cls._config_enable_access_controls)
         super(TestLogin, cls).setup_class()
 
     def teardown_method(self, method):
@@ -35,9 +37,14 @@ class TestLogin(SeleniumTest):
             # Ensure OpenID Connect login is not displayed
             assert self.selenium_instance.find_element(By.ID, 'openid-connect-login').is_displayed() == False
 
-    def test_valid_openid_connect_login(self):
+    @pytest.mark.parametrize('enable_access_controls', [
+        True,
+        False
+    ])
+    def test_valid_openid_connect_login(self, enable_access_controls):
         """Ensure OpenID Connect login works"""
         with self.update_mock(self._mock_openid_connect_is_enabled, 'return_value', True), \
+                self.update_mock(self._config_enable_access_controls, 'new', enable_access_controls), \
                 self.update_mock(self._mock_openid_connect_get_authorize_redirect_url, 'return_value',
                                  ('/openid/callback?code=abcdefg&state=unitteststate', 'unitteststate')), \
                 self.update_mock(self._mock_openid_connect_fetch_access_token, 'return_value',
@@ -95,7 +102,11 @@ class TestLogin(SeleniumTest):
             # Ensure SAML login is not displayed
             assert self.selenium_instance.find_element(By.ID, 'saml-login').is_displayed() == False
 
-    def test_valid_saml_login(self):
+    @pytest.mark.parametrize('enable_access_controls', [
+        True,
+        False
+    ])
+    def test_valid_saml_login(self, enable_access_controls):
         """Ensure SAML login works"""
 
         mock_auth_object = mock.MagicMock()
@@ -116,6 +127,7 @@ class TestLogin(SeleniumTest):
         mock_auth_object.get_session_index = mock.MagicMock(return_value='unittestSamlSessionIndex')
 
         with self.update_mock(self._mock_saml2_is_enabled, 'return_value', True), \
+                self.update_mock(self._config_enable_access_controls, 'new', enable_access_controls), \
                 self.update_mock(self._mock_saml2_initialise_request_auth_object, 'return_value',
                                  mock_auth_object), \
                 self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'), \

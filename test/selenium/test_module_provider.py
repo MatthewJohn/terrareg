@@ -24,6 +24,7 @@ class TestModuleProvider(SeleniumTest):
         cls._config_publish_api_keys_mock = mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', [])
         cls._config_allow_custom_repo_urls_module_provider = mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', True)
         cls._config_allow_custom_repo_urls_module_version = mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', True)
+        cls._config_enable_access_controls = mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', False)
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
@@ -32,6 +33,7 @@ class TestModuleProvider(SeleniumTest):
         cls.register_patch(cls._config_publish_api_keys_mock)
         cls.register_patch(cls._config_allow_custom_repo_urls_module_provider)
         cls.register_patch(cls._config_allow_custom_repo_urls_module_version)
+        cls.register_patch(cls._config_enable_access_controls)
 
         super(TestModuleProvider, cls).setup_class()
 
@@ -1134,7 +1136,8 @@ module "fullypopulated" {{
     ])
     def test_integration_tab_publish_button_permissions(self, user_groups, expected_result):
         """Test disabling of publish button, logged in with various user groups."""
-        with self.update_mock(self._config_publish_api_keys_mock, 'new', ['abcdefg']):
+        with self.update_mock(self._config_publish_api_keys_mock, 'new', ['abcdefg']), \
+                self.update_mock(self._config_enable_access_controls, 'new', True):
             # Clear cookies to remove authentication
             self.selenium_instance.delete_all_cookies()
 
