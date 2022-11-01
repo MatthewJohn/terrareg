@@ -43,7 +43,7 @@ class SeleniumTest(BaseTest):
 
     RUN_INTERACTIVELY = os.environ.get('RUN_INTERACTIVELY', False)
 
-    DEFAULT_RESOLUTION = (1280, 720)
+    DEFAULT_RESOLUTION = (1920, 1080)
 
     @staticmethod
     def _get_database_path():
