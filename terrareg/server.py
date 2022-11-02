@@ -10,7 +10,7 @@ import hashlib
 from enum import Enum
 
 from flask import (
-    Config, Flask, request, render_template,
+    Flask, request, render_template,
     redirect, make_response, send_from_directory,
     session, g, redirect
 )
@@ -2531,6 +2531,15 @@ class ApiOpenIdCallback(ErrorCatchingResource):
         session['is_admin_authenticated'] = True
         session['authentication_type'] = terrareg.auth.AuthenticationType.SESSION_OPENID_CONNECT.value
 
+        if terrareg.config.Config().OPENID_CONNECT_DEBUG:
+            print(f"""
+Successul OpenID connect authentication response:
+User info:
+{user_info}
+User groups:
+{session['openid_groups']}""")
+
+
         # Manually calcualte expires at, to avoid timezone issues
         session['openid_connect_expires_at'] = datetime.datetime.now().timestamp() + access_token['expires_in']
         session.modified = True
@@ -2581,10 +2590,22 @@ class ApiSamlInitiate(ErrorCatchingResource):
                 session['samlSessionIndex'] = auth.get_session_index()
                 session['is_admin_authenticated'] = True
                 session['authentication_type'] = terrareg.auth.AuthenticationType.SESSION_SAML.value
+                if terrareg.config.Config().SAML2_DEBUG:
+                    print(f"""
+Successul SAML2 authentication response:
+User data:
+{session['samlUserdata']}
+User groups:
+{session['samlUserdata'].get('groups', [])}""")
 
                 session.modified = True
 
         if errors:
+            if terrareg.config.Config().SAML2_DEBUG:
+                print(f"""
+Error during SAML2 authentication response:
+Errors:
+{errors}""")
             res = make_response(render_template(
                 'error.html',
                 error_title='Login error',

@@ -519,6 +519,15 @@ class Config:
         return os.environ.get('OPENID_CONNECT_ISSUER', None)
 
     @property
+    def OPENID_CONNECT_DEBUG(self):
+        """
+        Enable debug of OpenID connect via stdout.
+
+        This should only be enabled for non-production environments.
+        """
+        return self.convert_boolean(os.environ.get('OPENID_CONNECT_DEBUG', 'False'))
+
+    @property
     def SAML2_LOGIN_TEXT(self):
         """
         Text for sign in button for SAML2 authentication
@@ -572,6 +581,15 @@ class Config:
         ```
         """
         return os.environ.get('SAML2_PRIVATE_KEY', None)
+
+    @property
+    def SAML2_DEBUG(self):
+        """
+        Enable debug of Saml2 via stdout.
+
+        This should only be enabled for non-production environments.
+        """
+        return self.convert_boolean(os.environ.get('SAML2_DEBUG', 'False'))
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""

@@ -673,6 +673,17 @@ Client secret for OpenID Conect authentication
 Default: ``
 
 
+### OPENID_CONNECT_DEBUG
+
+
+Enable debug of OpenID connect via stdout.
+
+This should only be enabled for non-production environments.
+
+
+Default: `False`
+
+
 ### OPENID_CONNECT_ISSUER
 
 
@@ -711,6 +722,17 @@ Comma-seperated list of metadata attributes that each uploaded module _must_ con
 
 
 Default: ``
+
+
+### SAML2_DEBUG
+
+
+Enable debug of Saml2 via stdout.
+
+This should only be enabled for non-production environments.
+
+
+Default: `False`
 
 
 ### SAML2_ENTITY_ID

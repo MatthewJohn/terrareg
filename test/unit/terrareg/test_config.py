@@ -152,7 +152,9 @@ class TestConfig:
         'AUTOGENERATE_USAGE_BUILDER_VARIABLES',
         'THREADED',
         'INFRACOST_TLS_INSECURE_SKIP_VERIFY',
-        'ENABLE_ACCESS_CONTROLS'
+        'ENABLE_ACCESS_CONTROLS',
+        'SAML2_DEBUG',
+        'OPENID_CONNECT_DEBUG'
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
         """Test boolean configs to ensure they are overriden with environment variables."""
