@@ -406,7 +406,7 @@ class SamlAuthMethod(BaseSsoAuthMethod):
 
     def get_group_memberships(self):
         """Return list of groups that the user a member of"""
-        user_data_groups = flask.session.get('openidsamlUserdata_groups', None)
+        user_data_groups = flask.session.get('samlUserdata', None)
         if user_data_groups and isinstance(user_data_groups, dict):
             groups = user_data_groups.get('groups')
             if isinstance(groups, list):

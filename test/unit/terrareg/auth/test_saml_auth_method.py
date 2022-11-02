@@ -57,7 +57,7 @@ class TestSamlAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodTests):
     def test_get_group_memberships(self, userdata_group_session_value, expected_result, test_request_context):
         """Test get_group_memberships method"""
         with test_request_context:
-            test_request_context.session['openidsamlUserdata_groups'] = userdata_group_session_value
+            test_request_context.session['samlUserdata'] = userdata_group_session_value
             test_request_context.session.modified = True
         
             obj = SamlAuthMethod()
