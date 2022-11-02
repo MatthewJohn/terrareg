@@ -37,11 +37,17 @@ class TestLogin(SeleniumTest):
             # Ensure OpenID Connect login is not displayed
             assert self.selenium_instance.find_element(By.ID, 'openid-connect-login').is_displayed() == False
 
-    @pytest.mark.parametrize('enable_access_controls', [
-        True,
-        False
+    @pytest.mark.parametrize('enable_access_controls,group_memberships,has_site_admin,can_create_module', [
+        (True, ['nopermissions'], False, False),
+        (True, ['siteadmin'], True, True),
+        (True, ['moduledetailsfull'], False, True),
+        (True, [], False, False),
+        (False, ['nopermissions'], True, True),
+        (False, ['siteadmin'], True, True),
+        (False, ['moduledetailsfull'], True, True),
+        (False, [], True, True),
     ])
-    def test_valid_openid_connect_login(self, enable_access_controls):
+    def test_valid_openid_connect_login(self, enable_access_controls, group_memberships, has_site_admin, can_create_module):
         """Ensure OpenID Connect login works"""
         with self.update_mock(self._mock_openid_connect_is_enabled, 'return_value', True), \
                 self.update_mock(self._config_enable_access_controls, 'new', enable_access_controls), \
@@ -50,7 +56,7 @@ class TestLogin(SeleniumTest):
                 self.update_mock(self._mock_openid_connect_fetch_access_token, 'return_value',
                                  {'access_token': 'unittestaccesstoken', 'id_token': 'unittestidtoken', 'expires_in': 6000}), \
                 self.update_mock(self._mock_openid_connect_get_user_info, 'return_value',
-                                 {'groups': []}), \
+                                 {'groups': group_memberships}), \
                 self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
                 self.update_mock(self._config_openid_connect_button_text, 'new', 'Unittest OpenID Connect Login Button'), \
                 self.update_mock(self._mock_openid_connect_validate_session_token, 'return_value', True):
@@ -68,6 +74,14 @@ class TestLogin(SeleniumTest):
 
             # Ensure user is logged in
             self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbar_login_span').text, 'Logout')
+
+            # Ensure 'settings' drop-down is shown, depending on whether
+            # user is a site admin
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbarSettingsDropdown').is_displayed(), has_site_admin)
+
+            # Ensure 'create' drop-down is shown, depending on whether
+            # user has permissions to a namespace
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbarCreateDropdown').is_displayed(), can_create_module)
 
             self._mock_openid_connect_validate_session_token.assert_called_with('unittestidtoken')
 
@@ -102,11 +116,17 @@ class TestLogin(SeleniumTest):
             # Ensure SAML login is not displayed
             assert self.selenium_instance.find_element(By.ID, 'saml-login').is_displayed() == False
 
-    @pytest.mark.parametrize('enable_access_controls', [
-        True,
-        False
+    @pytest.mark.parametrize('enable_access_controls,group_memberships,has_site_admin,can_create_module', [
+        (True, ['nopermissions'], False, False),
+        (True, ['siteadmin'], True, True),
+        (True, ['moduledetailsfull'], False, True),
+        (True, [], False, False),
+        (False, ['nopermissions'], True, True),
+        (False, ['siteadmin'], True, True),
+        (False, ['moduledetailsfull'], True, True),
+        (False, [], True, True),
     ])
-    def test_valid_saml_login(self, enable_access_controls):
+    def test_valid_saml_login(self, enable_access_controls, group_memberships, has_site_admin, can_create_module):
         """Ensure SAML login works"""
 
         mock_auth_object = mock.MagicMock()
@@ -119,7 +139,7 @@ class TestLogin(SeleniumTest):
         mock_auth_object.process_response = mock.MagicMock()
         mock_auth_object.get_errors = mock.MagicMock(return_value=[])
         mock_auth_object.is_authenticated = mock.MagicMock(return_value=True)
-        mock_auth_object.get_attributes = mock.MagicMock(return_value='unittestSamlAttributes')
+        mock_auth_object.get_attributes = mock.MagicMock(return_value={'Login': ['testuser@localhost.com'], 'groups': group_memberships})
         mock_auth_object.get_nameid = mock.MagicMock(return_value='unittestSamlNamId')
         mock_auth_object.get_nameid_format = mock.MagicMock(return_value='unittestSamlNamIdFormat')
         mock_auth_object.get_nameid_nq = mock.MagicMock(return_value='unittestSamlNamIdNq')
@@ -147,6 +167,14 @@ class TestLogin(SeleniumTest):
 
             # Ensure user is logged in
             self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbar_login_span').text, 'Logout')
+
+            # Ensure 'settings' drop-down is shown, depending on whether
+            # user is a site admin
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbarSettingsDropdown').is_displayed(), has_site_admin)
+
+            # Ensure 'create' drop-down is shown, depending on whether
+            # user has permissions to a namespace
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbarCreateDropdown').is_displayed(), can_create_module)
 
             mock_auth_object.process_response.assert_called_with(request_id='unittestAuthRequestId')
             mock_auth_object.get_errors.assert_called()
