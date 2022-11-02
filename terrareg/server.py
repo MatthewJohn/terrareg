@@ -711,7 +711,7 @@ class Server(BaseHandler):
         """Review view for displaying example"""
         namespace_obj = Namespace.get(namespace)
         if namespace_obj is None:
-            return self._namespace_404(namespace=namespace)
+            return self._namespace_404(namespace_name=namespace)
 
         module = Module(namespace=namespace_obj, name=name)
         module_provider = ModuleProvider.get(module=module, name=provider)
