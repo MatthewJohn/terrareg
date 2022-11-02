@@ -736,6 +736,13 @@ class Server(BaseHandler):
 
     def _view_serve_user_groups(self):
         """Page to view/modify user groups and permissions."""
+        if not terrareg.auth.AuthFactory().get_current_auth_method().is_admin():
+            return self._render_template(
+                'error.html',
+                root_bread_brumb='User groups',
+                error_title='Permission denied',
+                error_description="You are not logged in or do not have permssion to view this page"
+            ), 403
         return self._render_template('user_groups.html')
 
 
