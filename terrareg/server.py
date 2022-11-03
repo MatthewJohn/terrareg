@@ -2590,6 +2590,10 @@ class ApiSamlInitiate(ErrorCatchingResource):
                 session['samlSessionIndex'] = auth.get_session_index()
                 session['is_admin_authenticated'] = True
                 session['authentication_type'] = terrareg.auth.AuthenticationType.SESSION_SAML.value
+
+                if terrareg.config.Config().SAML2_GROUP_ATTRIBUTE:
+                    session['samlUserdata']['groups'] = session['samlUserdata'].get(terrareg.config.Config().SAML2_GROUP_ATTRIBUTE, [])
+
                 if terrareg.config.Config().SAML2_DEBUG:
                     print(f"""
 Successul SAML2 authentication response:

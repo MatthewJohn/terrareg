@@ -528,6 +528,13 @@ class Config:
         return self.convert_boolean(os.environ.get('OPENID_CONNECT_DEBUG', 'False'))
 
     @property
+    def SAML2_GROUP_ATTRIBUTE(self):
+        """
+        Custom attribute to get Groups from for SAML2 authentication.
+        """
+        return os.environ.get('SAML2_GROUP_ATTRIBUTE', None)
+
+    @property
     def SAML2_LOGIN_TEXT(self):
         """
         Text for sign in button for SAML2 authentication
