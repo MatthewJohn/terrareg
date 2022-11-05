@@ -2596,7 +2596,7 @@ Successul SAML2 authentication response:
 User data:
 {session['samlUserdata']}
 User groups:
-{session['samlUserdata'].get('groups', [])}""")
+{session['samlUserdata'].get(terrareg.config.Config().SAML2_GROUP_ATTRIBUTE, [])}""")
 
                 session.modified = True
 

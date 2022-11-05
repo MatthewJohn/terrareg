@@ -583,6 +583,13 @@ class Config:
         return os.environ.get('SAML2_PRIVATE_KEY', None)
 
     @property
+    def SAML2_GROUP_ATTRIBUTE(self):
+        """
+        SAML2 user data group attribute.
+        """
+        return os.environ.get('SAML2_GROUP_ATTRIBUTE', 'groups')
+
+    @property
     def SAML2_DEBUG(self):
         """
         Enable debug of Saml2 via stdout.

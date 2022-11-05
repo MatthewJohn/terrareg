@@ -44,19 +44,25 @@ class TestSamlAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodTests):
             obj = SamlAuthMethod()
             assert obj.check_session() == expected_result
 
-    @pytest.mark.parametrize('userdata_group_session_value,expected_result', [
-        (None, []),
-        ({}, []),
-        ('invalidstring', []),
-        ({'groups': None}, []),
-        ({'groups': 'invalidstring'}, []),
-        ({'groups': []}, []),
-        ({'groups': ['onegroup']}, ['onegroup']),
-        ({'groups': ['first-group', 'second group']}, ['first-group', 'second group'])
+    @pytest.mark.parametrize('userdata_group_session_value,saml2_group_attribute,expected_result', [
+        (None, 'groups', []),
+        ({}, 'groups', []),
+        ('invalidstring', 'groups', []),
+        ({'groups': None}, 'groups', []),
+        ({'groups': 'invalidstring'}, 'groups', []),
+        ({'groups': []}, 'groups', []),
+        ({'groups': ['onegroup']}, 'groups', ['onegroup']),
+        ({'groups': ['first-group', 'second group']}, 'groups', ['first-group', 'second group']),
+        ({'groups': ['first-group', 'second group'],
+          'alternativeattr': ['third-group', 'forth-group']}, 'alternativeattr',
+          ['third-group', 'forth-group'])
     ])
-    def test_get_group_memberships(self, userdata_group_session_value, expected_result, test_request_context):
+    def test_get_group_memberships(self, userdata_group_session_value, saml2_group_attribute, expected_result, test_request_context):
         """Test get_group_memberships method"""
-        with test_request_context:
+        self.SERVER._app.secret_key = "asecretkey"
+        with mock.patch('terrareg.config.Config.SECRET_KEY', "asecretkey"), \
+                mock.patch('terrareg.config.Config.SAML2_GROUP_ATTRIBUTE', saml2_group_attribute), \
+                test_request_context:
             test_request_context.session['samlUserdata'] = userdata_group_session_value
             test_request_context.session.modified = True
         

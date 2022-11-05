@@ -408,7 +408,7 @@ class SamlAuthMethod(BaseSsoAuthMethod):
         """Return list of groups that the user a member of"""
         user_data_groups = flask.session.get('samlUserdata', None)
         if user_data_groups and isinstance(user_data_groups, dict):
-            groups = user_data_groups.get('groups')
+            groups = user_data_groups.get(terrareg.config.Config().SAML2_GROUP_ATTRIBUTE)
             if isinstance(groups, list):
                 return groups
         return []

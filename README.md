@@ -744,6 +744,15 @@ SAML2 provider entity ID of the application.
 Default: ``
 
 
+### SAML2_GROUP_ATTRIBUTE
+
+
+SAML2 user data group attribute.
+
+
+Default: `groups`
+
+
 ### SAML2_IDP_METADATA_URL
 
 
