@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.45.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.45.0...v2.45.1) (2022-11-05)
+
+
+### Bug Fixes
+
+* Handle multi-levels of indentation in README and other markdown tabs ([9b6bc26](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9b6bc2694b9758cafe392bf309106305db964fba)), closes [#222](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/222)
+
 # [2.45.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.44.0...v2.45.0) (2022-10-29)
 
 
