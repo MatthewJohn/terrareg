@@ -187,7 +187,7 @@ class TestInitialSetup(SeleniumTest):
         assert upload_command.text == (
             '# Zip module\n'
             'cd path/to/module\n'
-            'zip * ../module.zip\n\n'
+            'zip -r ../module.zip *\n\n'
             'version=1.0.0\n\n'
             '# Upload module version\n'
             'curl -X POST \\\n'
