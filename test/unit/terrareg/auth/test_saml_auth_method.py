@@ -36,7 +36,9 @@ class TestSamlAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodTests):
     ])
     def test_check_session(self, session_userdata, expected_result, test_request_context):
         """Test check_session method"""
-        with test_request_context:
+        self.SERVER._app.secret_key = "asecretkey"
+        with mock.patch('terrareg.config.Config.SECRET_KEY', "asecretkey"), \
+                test_request_context:
             if session_userdata:
                 test_request_context.session['samlUserdata'] = session_userdata
             test_request_context.session.modified = True

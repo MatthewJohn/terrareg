@@ -76,7 +76,9 @@ class TestOpenidConnectAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodT
     ])
     def test_get_group_memberships(self, session_groups, expected_result, test_request_context):
         """Test get_group_memberships method"""
-        with test_request_context:
+        self.SERVER._app.secret_key = "asecretkey"
+        with mock.patch('terrareg.config.Config.SECRET_KEY', "asecretkey"), \
+                test_request_context:
             test_request_context.session['openid_groups'] = session_groups
             test_request_context.session.modified = True
         
