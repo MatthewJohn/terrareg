@@ -101,5 +101,5 @@ def convert_markdown_to_html(markdown_html):
     """Convert markdown to HTML"""
     return markdown.markdown(
         markdown_html,
-        extensions=['fenced_code', 'tables']
+        extensions=['fenced_code', 'tables', 'mdx_truly_sane_lists']
     )
