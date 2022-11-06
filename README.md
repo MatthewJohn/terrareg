@@ -259,7 +259,7 @@ Default: `[["Release Notes", ["RELEASE_NOTES.md", "CHANGELOG.md"]], ["License", 
 ### ADMIN_AUTHENTICATION_TOKEN
 
 
-Token to use for authentication as the built-in admin user, login as an admin to the user interface.
+Password/API key to for authentication as the built-in admin user.
 
 
 Default: ``
