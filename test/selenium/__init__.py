@@ -225,15 +225,15 @@ class SeleniumTest(BaseTest):
     @contextmanager
     def log_in_with_openid_connect(self, user_groups):
         """Login with OpenID connect"""
-        with self.update_mock(self._mock_openid_connect_is_enabled, 'return_value', True), \
-                self.update_mock(self._mock_openid_connect_get_authorize_redirect_url, 'return_value',
-                                 ('/openid/callback?code=abcdefg&state=unitteststate', 'unitteststate')), \
-                self.update_mock(self._mock_openid_connect_fetch_access_token, 'return_value',
-                                 {'access_token': 'unittestaccesstoken', 'id_token': 'unittestidtoken', 'expires_in': 6000}), \
-                self.update_mock(self._mock_openid_connect_get_user_info, 'return_value',
-                                 {'groups': user_groups}), \
-                self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
-                self.update_mock(self._mock_openid_connect_validate_session_token, 'return_value', True):
+        with self.update_multiple_mocks((self._mock_openid_connect_is_enabled, 'return_value', True), \
+                (self._mock_openid_connect_get_authorize_redirect_url, 'return_value',
+                 ('/openid/callback?code=abcdefg&state=unitteststate', 'unitteststate')), \
+                (self._mock_openid_connect_fetch_access_token, 'return_value',
+                 {'access_token': 'unittestaccesstoken', 'id_token': 'unittestidtoken', 'expires_in': 6000}), \
+                (self._mock_openid_connect_get_user_info, 'return_value',
+                 {'groups': user_groups}), \
+                (self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
+                (self._mock_openid_connect_validate_session_token, 'return_value', True)):
             self.selenium_instance.get(self.get_url('/login'))
             # Wait for SSO login button to be displayed
             self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'openid-connect-login').is_displayed(), True)
@@ -256,6 +256,23 @@ class SeleniumTest(BaseTest):
         """Return context-manager instance for handling updating of mock attributes during selenium test."""
         return SeleniumMockUpdater(self, *args, **kwargs)
 
+    @contextmanager
+    def update_multiple_mocks(self, *mocks_configs):
+        """Return context-manager instance for handling updating of mock attributes during selenium test."""
+        mocks = []
+        try:
+            for itx, mock_config in enumerate(mocks_configs):
+                mock = SeleniumMockUpdater(self, *mock_config)
+                mocks.append(mock)
+                mock.__enter__(restart_server=(itx==len(mocks_configs) - 1))
+
+            yield mocks
+
+        finally:
+            mocks.reverse()
+            for mock in mocks:
+                mock.__exit__()
+
 
 class SeleniumMockUpdater:
     """"Provide context-manager to update mock within selenium test"""
@@ -267,9 +284,11 @@ class SeleniumMockUpdater:
         self._attribute = attribute
         self._new_value = new_value
         self._original_value = None
+        self._restart_server = True
 
-    def __enter__(self):
+    def __enter__(self, restart_server=True):
         """On enter, store current mock value, update mock and restart server"""
+        self._restart_server = restart_server
         self._original_value = getattr(self._mock, self._attribute)
         setattr(self._mock, self._attribute, self._new_value)
         # Stop/start patch, this is required when performing 
@@ -277,13 +296,15 @@ class SeleniumMockUpdater:
         # as the new value is pushed straight to the target, so there is no direct
         # reference to the new target value in the mock.
         self._restart_mock()
-        self._test.restart_server()
+        if self._restart_server:
+            self._test.restart_server()
 
     def __exit__(self, *args, **kwargs):
         """On exit, set original mock value and restart server"""
         setattr(self._mock, self._attribute, self._original_value)
         self._restart_mock()
-        self._test.restart_server()
+        if self._restart_server:
+            self._test.restart_server()
 
     def _restart_mock(self):
         """Restar the mock."""

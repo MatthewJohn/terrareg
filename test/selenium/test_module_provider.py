@@ -702,8 +702,8 @@ module "fullypopulated" {{
                 repo_base_url_template=module_provider_base_url_template
             )
 
-            with self.update_mock(self._config_allow_custom_repo_urls_module_provider, 'new', allow_custom_git_urls_module_provider), \
-                    self.update_mock(self._config_allow_custom_repo_urls_module_version, 'new', allow_custom_git_urls_module_version):
+            with self.update_multiple_mocks((self._config_allow_custom_repo_urls_module_provider, 'new', allow_custom_git_urls_module_provider), \
+                    (self._config_allow_custom_repo_urls_module_version, 'new', allow_custom_git_urls_module_version)):
 
                 self.selenium_instance.get(self.get_url(url))
 
@@ -1136,8 +1136,8 @@ module "fullypopulated" {{
     ])
     def test_integration_tab_publish_button_permissions(self, user_groups, expected_result):
         """Test disabling of publish button, logged in with various user groups."""
-        with self.update_mock(self._config_publish_api_keys_mock, 'new', ['abcdefg']), \
-                self.update_mock(self._config_enable_access_controls, 'new', True):
+        with self.update_multiple_mocks((self._config_publish_api_keys_mock, 'new', ['abcdefg']), \
+                (self._config_enable_access_controls, 'new', True)):
             # Clear cookies to remove authentication
             self.selenium_instance.delete_all_cookies()
 
@@ -1770,7 +1770,6 @@ module "fullypopulated" {{
                 'injectedSubemoduleFileContent']:
 
             with pytest.raises(selenium.common.exceptions.NoSuchElementException):
-                print('Checking for element:', injected_element)
                 self.selenium_instance.find_element(By.ID, injected_element)
 
     @pytest.mark.parametrize('enable_beta,enable_unpublished,expected_versions', [

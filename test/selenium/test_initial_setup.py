@@ -306,8 +306,8 @@ class TestInitialSetup(SeleniumTest):
         self._test_auth_vars_step()
 
         # STEP 2 - Login
-        with self.update_mock(self._config_admin_authentication_key_mock, 'new', 'admin-setup-password'), \
-                self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'):
+        with self.update_multiple_mocks((self._config_admin_authentication_key_mock, 'new', 'admin-setup-password'), \
+                (self._config_secret_key_mock, 'new', 'abcdefabcdef')):
             self._test_login_step()
 
             # Step 3 - Create a namespace
@@ -346,8 +346,8 @@ class TestInitialSetup(SeleniumTest):
             self._test_secure_instance_step()
 
             # STEP 7 - HTTPS
-            with self.update_mock(self._config_upload_api_keys_mock, 'new', ['some-api-upload-key']), \
-                    self.update_mock(self._config_publish_api_keys_mock, 'new', ['some-api-publish-key']):
+            with self.update_multiple_mocks((self._config_upload_api_keys_mock, 'new', ['some-api-upload-key']), \
+                    (self._config_publish_api_keys_mock, 'new', ['some-api-publish-key'])):
                 self._test_ssl_step()
 
                 # Step 7 - Success

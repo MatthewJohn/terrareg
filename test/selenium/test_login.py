@@ -49,17 +49,17 @@ class TestLogin(SeleniumTest):
     ])
     def test_valid_openid_connect_login(self, enable_access_controls, group_memberships, has_site_admin, can_create_module):
         """Ensure OpenID Connect login works"""
-        with self.update_mock(self._mock_openid_connect_is_enabled, 'return_value', True), \
-                self.update_mock(self._config_enable_access_controls, 'new', enable_access_controls), \
-                self.update_mock(self._mock_openid_connect_get_authorize_redirect_url, 'return_value',
-                                 ('/openid/callback?code=abcdefg&state=unitteststate', 'unitteststate')), \
-                self.update_mock(self._mock_openid_connect_fetch_access_token, 'return_value',
+        with self.update_multiple_mocks((self._mock_openid_connect_is_enabled, 'return_value', True),
+                (self._config_enable_access_controls, 'new', enable_access_controls),
+                (self._mock_openid_connect_get_authorize_redirect_url, 'return_value',
+                                 ('/openid/callback?code=abcdefg&state=unitteststate', 'unitteststate')),
+                (self._mock_openid_connect_fetch_access_token, 'return_value',
                                  {'access_token': 'unittestaccesstoken', 'id_token': 'unittestidtoken', 'expires_in': 6000}), \
-                self.update_mock(self._mock_openid_connect_get_user_info, 'return_value',
+                (self._mock_openid_connect_get_user_info, 'return_value',
                                  {'groups': group_memberships}), \
-                self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
-                self.update_mock(self._config_openid_connect_button_text, 'new', 'Unittest OpenID Connect Login Button'), \
-                self.update_mock(self._mock_openid_connect_validate_session_token, 'return_value', True):
+                (self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
+                (self._config_openid_connect_button_text, 'new', 'Unittest OpenID Connect Login Button'), \
+                (self._mock_openid_connect_validate_session_token, 'return_value', True)):
             self.selenium_instance.get(self.get_url('/login'))
             # Wait for SSO login button to be displayed
             self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'openid-connect-login').is_displayed(), True)
@@ -89,12 +89,12 @@ class TestLogin(SeleniumTest):
         """Test handling of invalid OpenID connect authentication error"""
         def raise_exception():
             raise Exception('Unittest exception')
-        with self.update_mock(self._mock_openid_connect_is_enabled, 'return_value', True), \
-                self.update_mock(self._mock_openid_connect_get_authorize_redirect_url, 'return_value',
+        with self.update_multiple_mocks((self._mock_openid_connect_is_enabled, 'return_value', True), \
+                (self._mock_openid_connect_get_authorize_redirect_url, 'return_value',
                                  ('/openid/callback?code=abcdefg&state=unitteststate', 'unitteststate')), \
-                self.update_mock(self._mock_openid_connect_fetch_access_token, 'side_effect',
+                (self._mock_openid_connect_fetch_access_token, 'side_effect',
                                  raise_exception), \
-                self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'):
+                (self._config_secret_key_mock, 'new', 'abcdefabcdef')):
 
             self.selenium_instance.get(self.get_url('/login'))
             # Wait for OpenID connect login button to be displayed and click
@@ -146,12 +146,12 @@ class TestLogin(SeleniumTest):
         mock_auth_object.get_nameid_spnq = mock.MagicMock(return_value='unittestSamlNamIdSPNQ')
         mock_auth_object.get_session_index = mock.MagicMock(return_value='unittestSamlSessionIndex')
 
-        with self.update_mock(self._mock_saml2_is_enabled, 'return_value', True), \
-                self.update_mock(self._config_enable_access_controls, 'new', enable_access_controls), \
-                self.update_mock(self._mock_saml2_initialise_request_auth_object, 'return_value',
+        with self.update_multiple_mocks((self._mock_saml2_is_enabled, 'return_value', True), \
+                (self._config_enable_access_controls, 'new', enable_access_controls), \
+                (self._mock_saml2_initialise_request_auth_object, 'return_value',
                                  mock_auth_object), \
-                self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
-                self.update_mock(self._config_saml_button_text, 'new', 'Unittest SAML Login Button'):
+                (self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
+                (self._config_saml_button_text, 'new', 'Unittest SAML Login Button')):
 
             self.selenium_instance.get(self.get_url('/login'))
             # Wait for SSO login button to be displayed
@@ -193,11 +193,11 @@ class TestLogin(SeleniumTest):
         mock_auth_object.is_authenticated = mock.MagicMock(return_value=True)
         mock_auth_object.get_attributes = mock.MagicMock(return_value='unittestSamlAttributes')
 
-        with self.update_mock(self._mock_saml2_is_enabled, 'return_value', True), \
-                self.update_mock(self._mock_saml2_initialise_request_auth_object, 'return_value',
+        with self.update_multiple_mocks((self._mock_saml2_is_enabled, 'return_value', True), \
+                (self._mock_saml2_initialise_request_auth_object, 'return_value',
                                  mock_auth_object), \
-                self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
-                self.update_mock(self._config_saml_button_text, 'new', 'Unittest SAML Login Button'):
+                (self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
+                (self._config_saml_button_text, 'new', 'Unittest SAML Login Button')):
 
             self.selenium_instance.get(self.get_url('/login'))
             # Wait for SSO login button to be displayed
