@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.45.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.45.1...v2.45.2) (2022-11-06)
+
+
+### Bug Fixes
+
+* Fix ZIP command in initial-setup page ([317f8c1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/317f8c1c2a018a2227854faa6c5afbce1b8e58d3)), closes [#218](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/218)
+
 ## [2.45.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.45.0...v2.45.1) (2022-11-05)
 
 
