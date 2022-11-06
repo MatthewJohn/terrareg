@@ -136,8 +136,9 @@ Because everything referencing localhost routes to 172.0.0.1 no special host fil
     # Initialise database and start server:
     alembic upgrade head
 
-    # Set a secret key and admin token
+    # Set random admin authentication token - the password used for authenticating as the built-in admin user
     export ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword
+    # Set random secret key, used encrypting client session data
     export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex())')
     
     # Obtain terraform-docs, tfsec and infracost
