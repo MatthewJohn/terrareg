@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.45.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.45.2...v2.45.3) (2022-11-06)
+
+
+### Bug Fixes
+
+* Remove 'Description' from start of description in module provider cards in namespace list and search results ([8eba7c3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8eba7c31ca50aa132f6e59f7904143bfcf7b55f8)), closes [#263](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/263)
+
 ## [2.45.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.45.1...v2.45.2) (2022-11-06)
 
 
