@@ -173,8 +173,8 @@ class TestNamespace(SeleniumTest):
             'This module does not have any published versions',
             'This module does not have any published versions',
             'This module does not have any published versions',
-            'Description\nDescription of second provider in module',
-            'Description\nTest module description for testprovider'
+            'Description of second provider in module',
+            'Test module description for testprovider'
         ]
         for card in self.selenium_instance.find_element(By.ID, 'module-list-table').find_elements(By.CLASS_NAME, 'card'):
             assert card.find_element(By.CLASS_NAME, 'card-content').text == card_descriptions.pop(0)
