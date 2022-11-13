@@ -1627,7 +1627,7 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
 
         # Determine if auth token is for internal initialisation of modules
         # during module extraction
-        if auth_token == terrareg.config.Config()._INTERNAL_EXTRACTION_ANALYITCS_TOKEN:
+        if auth_token == terrareg.config.Config().INTERNAL_EXTRACTION_ANALYITCS_TOKEN:
             pass
         # otherwise, if module download should be rejected due to
         # non-existent analytics token

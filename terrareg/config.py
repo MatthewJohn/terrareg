@@ -6,8 +6,17 @@ from terrareg.errors import InvalidBooleanConfigurationError
 
 class Config:
 
-    _INTERNAL_EXTRACTION_ANALYITCS_TOKEN = str(uuid.uuid4())
-    """Analaytics token used by Terraform initialised by the registry"""
+    @property
+    def INTERNAL_EXTRACTION_ANALYITCS_TOKEN(self):
+        """
+        Analaytics token used by Terraform initialised by the registry.
+
+        This is used by the registry to call back to itself when analysing module examples.
+
+        The value should be changed if it might result in a conflict with a legitimate analytics token used in Terraform
+        that calls modules from the registry.
+        """
+        return os.environ.get('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', 'internal-terrareg-analytics-token')
 
     @property
     def DOMAIN_NAME(self):
