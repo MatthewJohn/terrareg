@@ -2528,6 +2528,7 @@ class ApiOpenIdCallback(ErrorCatchingResource):
         session['openid_connect_id_token'] = access_token['id_token']
         session['openid_connect_access_token'] = access_token['access_token']
         session['openid_groups'] = user_info.get('groups', [])
+        session['openid_username'] = user_info.get('preferred_username', None)
         session['is_admin_authenticated'] = True
         session['authentication_type'] = terrareg.auth.AuthenticationType.SESSION_OPENID_CONNECT.value
 
@@ -2537,7 +2538,10 @@ Successul OpenID connect authentication response:
 User info:
 {user_info}
 User groups:
-{session['openid_groups']}""")
+{session['openid_groups']}
+Username:
+{session['openid_username']}
+""")
 
 
         # Manually calcualte expires at, to avoid timezone issues
