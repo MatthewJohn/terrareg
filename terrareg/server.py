@@ -1946,7 +1946,6 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
 
         # Create audit event
         AuditEvent.create_audit_event(
-            username=terrareg.auth.AuthFactory().get_current_auth_method().get_username(),
             action=AuditAction.USER_LOGIN,
             object_type=None, object_id=None,
             old_value=None, new_value=None
@@ -2559,7 +2558,6 @@ Username:
 
         # Create audit event
         AuditEvent.create_audit_event(
-            username=terrareg.auth.AuthFactory().get_current_auth_method().get_username(),
             action=AuditAction.USER_LOGIN,
             object_type=None, object_id=None,
             old_value=None, new_value=None
@@ -2637,7 +2635,6 @@ Errors:
 
         # Create audit event
         AuditEvent.create_audit_event(
-            username=terrareg.auth.AuthFactory().get_current_auth_method().get_username(),
             action=AuditAction.USER_LOGIN,
             object_type=None, object_id=None,
             old_value=None, new_value=None
