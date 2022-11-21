@@ -15,6 +15,8 @@ from flask import (
     session, g, redirect
 )
 from flask_restful import Resource, Api, reqparse, inputs, abort
+from terrareg.audit import AuditEvent
+from terrareg.audit_action import AuditAction
 import terrareg.auth
 
 import terrareg.config
@@ -1942,6 +1944,14 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
         session['authentication_type'] = terrareg.auth.AuthenticationType.SESSION_PASSWORD.value
         session.modified = True
 
+        # Create audit event
+        AuditEvent.create_audit_event(
+            username=terrareg.auth.AuthFactory().get_current_auth_method().get_username(),
+            action=AuditAction.USER_LOGIN,
+            object_type=None, object_id=None,
+            old_value=None, new_value=None
+        )
+
         return {'authenticated': True}
 
 
@@ -2543,10 +2553,17 @@ Username:
 {session['openid_username']}
 """)
 
-
         # Manually calcualte expires at, to avoid timezone issues
         session['openid_connect_expires_at'] = datetime.datetime.now().timestamp() + access_token['expires_in']
         session.modified = True
+
+        # Create audit event
+        AuditEvent.create_audit_event(
+            username=terrareg.auth.AuthFactory().get_current_auth_method().get_username(),
+            action=AuditAction.USER_LOGIN,
+            object_type=None, object_id=None,
+            old_value=None, new_value=None
+        )
 
         # Redirect to homepage
         return redirect('/')
@@ -2617,6 +2634,14 @@ Errors:
             ))
             res.headers['Content-Type'] = 'text/html'
             return res
+
+        # Create audit event
+        AuditEvent.create_audit_event(
+            username=terrareg.auth.AuthFactory().get_current_auth_method().get_username(),
+            action=AuditAction.USER_LOGIN,
+            object_type=None, object_id=None,
+            old_value=None, new_value=None
+        )
 
         return redirect('/', code=302)
 
