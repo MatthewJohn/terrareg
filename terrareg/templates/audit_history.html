@@ -5,18 +5,18 @@
 {% block header %}
 <script>
     $(document).ready(() => {
-        $.get('/v1/terrareg/audit-history').then((data) => {
-            $('#audit-history-table').DataTable({
-                data: data.map((value) => Object.values(value)),
-                columns: [
-                    { title: 'Timestamp' },
-                    { title: 'Username' },
-                    { title: 'Action' },
-                    { title: 'Object' },
-                    { title: 'Old value' },
-                    { title: 'New value' },
-                ],
-            });
+        $('#audit-history-table').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "ajax": "/v1/terrareg/audit-history",
+            columns: [
+                { title: 'Timestamp', data: 'timestamp' },
+                { title: 'Username', data: 'username' },
+                { title: 'Action', data: 'action' },
+                { title: 'Object', data: 'object_id' },
+                { title: 'Old value', data: 'old_value' },
+                { title: 'New value', data: 'new_value' },
+            ],
         });
     });
 </script>
@@ -30,10 +30,6 @@
     </ul>
 </nav>
 
-<div class="columns">
-    <div class="column is-three-fifths is-offset-one-fifth">
-        <table id="audit-history-table" class="display" width="100%"></table>
-    </div>
-</nav>
+<table id="audit-history-table" class="display" width="100%"></table>
 
 {% endblock %}
