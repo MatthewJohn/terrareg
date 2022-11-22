@@ -1,0 +1,39 @@
+{% extends 'template.html' %}
+
+{% block title %}Audit History{% endblock %}
+
+{% block header %}
+<script>
+    $(document).ready(() => {
+        $.get('/v1/terrareg/audit-history').then((data) => {
+            $('#audit-history-table').DataTable({
+                data: data.map((value) => Object.values(value)),
+                columns: [
+                    { title: 'Timestamp' },
+                    { title: 'Username' },
+                    { title: 'Action' },
+                    { title: 'Object' },
+                    { title: 'Old value' },
+                    { title: 'New value' },
+                ],
+            });
+        });
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li class="is-active"><a href="/audit-history">Audit History</a></li>
+    </ul>
+</nav>
+
+<div class="columns">
+    <div class="column is-three-fifths is-offset-one-fifth">
+        <table id="audit-history-table" class="display" width="100%"></table>
+    </div>
+</nav>
+
+{% endblock %}

@@ -278,6 +278,9 @@ class Server(BaseHandler):
             '/user-groups'
         )(self._view_serve_user_groups)
         self._app.route(
+            '/audit-history'
+        )(self._view_serve_audit_history)
+        self._app.route(
             '/modules'
         )(self._view_serve_namespace_list)
         self._app.route(
@@ -503,6 +506,10 @@ class Server(BaseHandler):
         self._api.add_resource(
             ApiTerraregModuleSearchFilters,
             '/v1/terrareg/search_filters'
+        )
+        self._api.add_resource(
+            ApiTerraregAuditHistory,
+            '/v1/terrareg/audit-history'
         )
         self._api.add_resource(
             ApiTerraregAuthUserGroups,
@@ -746,6 +753,17 @@ class Server(BaseHandler):
                 error_description="You are not logged in or do not have permssion to view this page"
             ), 403
         return self._render_template('user_groups.html')
+
+    def _view_serve_audit_history(self):
+        """Page to view/modify user groups and permissions."""
+        if not terrareg.auth.AuthFactory().get_current_auth_method().is_admin():
+            return self._render_template(
+                'error.html',
+                root_bread_brumb='Audit History',
+                error_title='Permission denied',
+                error_description="You are not logged in or do not have permssion to view this page"
+            ), 403
+        return self._render_template('audit_history.html')
 
 
 def get_csrf_token():
@@ -2671,6 +2689,26 @@ class ApiSamlMetadata(ErrorCatchingResource):
         else:
             resp = make_response(', '.join(errors), 500)
         return resp
+
+
+class ApiTerraregAuditHistory(ErrorCatchingResource):
+    """Interface to obtain audit history"""
+
+    method_decorators = [auth_wrapper('is_admin')]
+
+    def _get(self):
+        """Obtain audit history events"""
+        return [
+            {
+                'timestamp': event['timestamp'].isoformat(),
+                'username': event['username'],
+                'action': event['action'].name,
+                'object_id': event['object_id'],
+                'old_value': event['old_value'],
+                'new_value': event['new_value']
+            }
+            for event in AuditEvent.get_events()
+        ]
 
 
 class ApiTerraregAuthUserGroups(ErrorCatchingResource):

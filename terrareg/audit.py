@@ -1,12 +1,28 @@
 
 import datetime
 
+import sqlalchemy
+
 from terrareg.database import Database
 import terrareg.auth
 
 
 class AuditEvent:
     
+    @classmethod
+    def get_events(cls):
+        """Return audit events from database"""
+        db = Database.get()
+        query = sqlalchemy.select(
+            db.audit_history
+        ).select_from(
+            db.audit_history
+        )
+
+        with db.get_connection() as conn:
+            res = conn.execute(query).fetchall()
+        return res
+
     @classmethod
     def create_audit_event(cls, action,
                            object_type, object_id,
