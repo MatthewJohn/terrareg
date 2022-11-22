@@ -1076,14 +1076,6 @@ class ApiModuleVersionCreate(ErrorCatchingResource):
             with GitModuleExtractor(module_version=module_version) as me:
                 me.process_upload()
 
-            # Create audit event
-            AuditEvent.create_audit_event(
-                action=AuditAction.MODULE_VERSION_INDEX,
-                object_type=module_version.__class__.__name__,
-                object_id=module_version.id,
-                old_value=None, new_value=None
-            )
-
             return {
                 'status': 'Success'
             }
@@ -1168,12 +1160,6 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
                     with GitModuleExtractor(module_version=module_version) as me:
                         me.process_upload()
 
-                    AuditEvent.create_audit_event(
-                        action=AuditAction.MODULE_VERSION_INDEX,
-                        object_type=module_version.__class__.__name__,
-                        object_id=module_version.id,
-                        old_value=None, new_value=None
-                    )
                 except TerraregError as exc:
                     # Roll back the transaction for this module version
                     savepoint.rollback()
@@ -1279,12 +1265,6 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
                     with GitModuleExtractor(module_version=module_version) as me:
                         me.process_upload()
 
-                    AuditEvent.create_audit_event(
-                        action=AuditAction.MODULE_VERSION_INDEX,
-                        object_type=module_version.__class__.__name__,
-                        object_id=module_version.id,
-                        old_value=None, new_value=None
-                    )
                 except TerraregError as exc:
                     # Roll back creation of module version
                     transaction_context.transaction.rollback()
@@ -1695,13 +1675,6 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
         namespace_name = request.json.get('name')
         namespace = Namespace.create(name=namespace_name)
 
-        AuditEvent.create_audit_event(
-            action=AuditAction.NAMESPACE_CREATE,
-            object_type=namespace.__class__.__name__,
-            object_id=namespace.name,
-            old_value=None, new_value=None
-        )
-
         return {
             "name": namespace.name,
             "view_href": namespace.get_view_url()
@@ -2062,13 +2035,6 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
         with Database.start_transaction() as transaction_context:
             module_provider = ModuleProvider.create(module=module, name=provider)
 
-            AuditEvent.create_audit_event(
-                action=AuditAction.MODULE_PROVIDER_CREATE,
-                object_type=module_provider.__class__.__name__,
-                object_id=module_provider.id,
-                old_value=None, new_value=None
-            )
-
             # If git provider ID has been specified,
             # validate it and update attribute of module provider.
             if args.git_provider_id is not None:
@@ -2170,13 +2136,6 @@ class ApiTerraregModuleProviderDelete(ErrorCatchingResource):
 
         module_provider.delete()
 
-        AuditEvent.create_audit_event(
-            action=AuditAction.MODULE_PROVIDER_DELETE,
-            object_type=module_provider.__class__.__name__,
-            object_id=module_provider_id,
-            old_value=None, new_value=None
-        )
-
 
 class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
     """Provide interface to delete module version."""
@@ -2207,13 +2166,6 @@ class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
         module_version_id = module_version.id
 
         module_version.delete()
-
-        AuditEvent.create_audit_event(
-            action=AuditAction.MODULE_VERSION_DELETE,
-            object_type=module_version.__class__.__name__,
-            object_id=module_version_id,
-            old_value=None, new_value=None
-        )
 
         return {
             'status': 'Success'
