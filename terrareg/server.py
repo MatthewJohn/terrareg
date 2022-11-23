@@ -2327,7 +2327,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             module_provider.update_git_path(git_path=git_path)
 
         if args.verified is not None:
-            module_provider.update_attributes(verified=args.verified)
+            module_provider.update_verified(verified=args.verified)
 
         return {}
 

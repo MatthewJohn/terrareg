@@ -16,6 +16,7 @@ class AuditAction(Enum):
     MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BASE_URL = "module_provider_update_git_custom_base_url"
     MODULE_PROVIDER_UPDATE_GIT_CUSTOM_CLONE_URL = "module_provider_update_git_custom_clone_url"
     MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BROWSE_URL = "module_provider_update_git_custom_browse_url"
+    MODULE_PROVIDER_UPDATE_VERIFIED = "module_provider_update_verified"
 
     MODULE_VERSION_INDEX = "module_version_index"
     MODULE_VERSION_PUBLISH = "module_version_publish"

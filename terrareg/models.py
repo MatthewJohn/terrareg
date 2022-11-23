@@ -1366,6 +1366,20 @@ class ModuleProvider(object):
         # Remove cached DB row
         self._cache_db_row = None
 
+    def update_verified(self, verified):
+        """Update verified flag of module provider."""
+        if verified in [True, False] and verified != self.verified:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_VERIFIED,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=self.verified,
+                new_value=verified
+            )
+            self.update_attributes(
+                verified=verified
+            )
+
     def update_git_provider(self, git_provider: GitProvider):
         """Update git provider associated with module provider."""
         if self.get_git_provider() != git_provider:
