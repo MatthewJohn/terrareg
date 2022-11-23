@@ -134,7 +134,7 @@ class UserGroup:
         if not cls._validate_name(name):
             return None
 
-        cls._insert_into_db(name=name, site_admin=site_admin)
+        cls._insert_into_database(name=name, site_admin=site_admin)
 
         obj = cls(name=name)
 
@@ -148,7 +148,7 @@ class UserGroup:
         return obj
 
     @classmethod
-    def _insert_into_db(cls, name, site_admin):
+    def _insert_into_database(cls, name, site_admin):
         """Insert new user group into database."""
         db = Database.get()
         with db.get_connection() as conn:
@@ -208,8 +208,6 @@ class UserGroup:
 
     def delete(self):
         """Delete user group"""
-        db = Database.get()
-
         for group_permission in UserGroupNamespacePermission.get_permissions_by_user_group(self):
             group_permission.delete()
 
@@ -220,6 +218,11 @@ class UserGroup:
             old_value=None, new_value=None
         )
 
+        self._delete_from_database()
+
+    def _delete_from_database(self):
+        """Delete row from database"""
+        db = Database.get()
         with db.get_connection() as conn:
             conn.execute(db.user_group.delete().where(
                 db.user_group.c.id==self.pk
@@ -385,8 +388,6 @@ class UserGroupNamespacePermission:
 
     def delete(self):
         """Delete user group namespace permission."""
-        db = Database.get()
-
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.USER_GROUP_NAMESPACE_PERMISSION_DELETE,
             object_type=self.__class__.__name__,
@@ -394,11 +395,17 @@ class UserGroupNamespacePermission:
             old_value=None, new_value=None
         )
 
+        self._delete_from_database()
+
+    def _delete_from_database(self):
+        """Delete row from database"""
         with db.get_connection() as conn:
             conn.execute(db.user_group_namespace_permission.delete().where(
                 db.user_group_namespace_permission.c.user_group_id==self.user_group.pk,
                 db.user_group_namespace_permission.c.namespace_id==self.namespace.pk
             ))
+
+        db = Database.get()
 
 
 class GitProvider:

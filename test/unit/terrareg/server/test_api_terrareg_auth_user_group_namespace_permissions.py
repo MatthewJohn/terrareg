@@ -62,11 +62,11 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
             test_request_context, mock_server_user_groups_fixture,
             mocked_server_namespace_fixture, client
         ):
-        """Test update of repository URL."""
+        """Test creating new permission using endpoint."""
         mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
-                unittest.mock.patch('terrareg.server.AuditEvent.create_audit_event') as mock_create_audit_event:
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event:
 
             user_group = MockUserGroup.get_by_group_name('nopermissions')
             # Ensure user group doesn't have any permissions
@@ -102,9 +102,9 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
             test_request_context, mock_server_user_groups_fixture,
             mocked_server_namespace_fixture, client
         ):
-        """Test update of repository URL."""
+        """Test creating new permission with invalid permission type."""
         with app_context, test_request_context, client, \
-                unittest.mock.patch('terrareg.server.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]):
 
             user_group = MockUserGroup.get_by_group_name('nopermissions')
@@ -128,9 +128,9 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
             test_request_context, mock_server_user_groups_fixture,
             mocked_server_namespace_fixture, client
         ):
-        """Test update of repository URL."""
+        """Test creating new permission with invalid namespace."""
         with app_context, test_request_context, client, \
-                unittest.mock.patch('terrareg.server.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]):
 
             user_group = MockUserGroup.get_by_group_name('nopermissions')
@@ -155,9 +155,9 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
             test_request_context, mock_server_user_groups_fixture,
             mocked_server_namespace_fixture, client
         ):
-        """Test update of repository URL."""
+        """Test creating duplicate permission for user group."""
         with app_context, test_request_context, client, \
-                unittest.mock.patch('terrareg.server.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]):
 
             user_group = MockUserGroup.get_by_group_name('onepermissiongroup')
@@ -185,7 +185,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
         ):
         """Test update of repository URL."""
         with app_context, test_request_context, client, \
-                unittest.mock.patch('terrareg.server.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]):
 
             user_group = MockUserGroup.get_by_group_name('onepermissiongroup')
@@ -211,9 +211,9 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
             test_request_context, mock_server_user_groups_fixture,
             mocked_server_namespace_fixture, client
         ):
-        """Test update of repository URL."""
+        """Test creating new permission without permission to perform action."""
         with app_context, test_request_context, client, \
-                unittest.mock.patch('terrareg.server.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(False)[0]):
 
             user_group = MockUserGroup.get_by_group_name('nopermissions')
@@ -238,10 +238,10 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
             test_request_context, mock_server_user_groups_fixture,
             mocked_server_namespace_fixture, client
         ):
-        """Test update of repository URL."""
+        """Test deletion of permission."""
         mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
         with app_context, test_request_context, client, \
-                unittest.mock.patch('terrareg.server.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
 
             user_group = MockUserGroup.get_by_group_name('onepermissiongroup')
@@ -254,7 +254,12 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
             assert res.json == {}
             assert res.status_code == 200
 
-            mock_create_audit_event.assert_not_called()
+            mock_create_audit_event.assert_called_once_with(
+                action=terrareg.audit_action.AuditAction.USER_GROUP_NAMESPACE_PERMISSION_DELETE,
+                object_type='MockUserGroupNamespacePermission',
+                object_id='onepermissiongroup/namespace1',
+                old_value=None, new_value=None
+            )
 
             mock_auth_method.is_admin.assert_called_once()
             # Assert permissions have not been modified
@@ -266,10 +271,10 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
             test_request_context, mock_server_user_groups_fixture,
             mocked_server_namespace_fixture, client
         ):
-        """Test update of repository URL."""
+        """Test deletion of non-existent permission."""
         mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
         with app_context, test_request_context, client, \
-                unittest.mock.patch('terrareg.server.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
 
             user_group = MockUserGroup.get_by_group_name('onepermissiongroup')
@@ -294,9 +299,9 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
             test_request_context, mock_server_user_groups_fixture,
             mocked_server_namespace_fixture, client
         ):
-        """Test update of repository URL."""
+        """Test deletion of permission without authorization."""
         with app_context, test_request_context, client, \
-                unittest.mock.patch('terrareg.server.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(False)[0]):
 
             user_group = MockUserGroup.get_by_group_name('onepermissiongroup')

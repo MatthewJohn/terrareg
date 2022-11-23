@@ -425,7 +425,7 @@ class MockUserGroup(UserGroup):
         return None
 
     @classmethod
-    def _insert_into_db(cls, name, site_admin):
+    def _insert_into_database(cls, name, site_admin):
         """Insert usergroup into DB"""
         global USER_GROUP_CONFIG
         if name in USER_GROUP_CONFIG:
@@ -456,7 +456,7 @@ class MockUserGroup(UserGroup):
                 'site_admin': USER_GROUP_CONFIG[self._name].get('site_admin', False)
             }
 
-    def delete(self):
+    def _delete_from_database(self):
         """Delete user group"""
         global USER_GROUP_CONFIG
         del USER_GROUP_CONFIG[self._name]
@@ -505,7 +505,7 @@ class MockUserGroupNamespacePermission(UserGroupNamespacePermission):
             }
         return None
 
-    def delete(self):
+    def _delete_from_database(self):
         """Delete user group namespace permission."""
         global USER_GROUP_CONFIG
         del USER_GROUP_CONFIG[self.user_group.name]['namespace_permissions'][self.namespace.name]

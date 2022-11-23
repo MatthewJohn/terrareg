@@ -6,6 +6,7 @@ import unittest.mock
 
 import pytest
 
+import terrareg.audit_action
 from test.unit.terrareg import (
     TEST_MODULE_DATA, MockUserGroup, mock_server_user_groups_fixture,
     setup_test_data, TerraregUnitTest
@@ -42,6 +43,7 @@ class TestApiTerraregAuthUserGroup(TerraregUnitTest):
         """Test update of repository URL."""
         mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
         with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
 
             # Ensure user group exists
@@ -55,10 +57,17 @@ class TestApiTerraregAuthUserGroup(TerraregUnitTest):
             mock_auth_method.is_admin.assert_called_once()
             assert MockUserGroup.get_all_user_groups() == []
 
+            mock_create_audit_event.assert_called_once_with(
+                action=terrareg.audit_action.AuditAction.USER_GROUP_DELETE,
+                object_type='MockUserGroup', object_id='todelete',
+                old_value=None, new_value=None
+            )
+
     @setup_test_data(user_group_data=test_usergroup_data)
     def test_delete_non_existent(self, app_context, test_request_context, mock_server_user_groups_fixture, client):
         """Test creation of module provider without permission."""
         with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]), \
                 unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf:
 
@@ -66,11 +75,14 @@ class TestApiTerraregAuthUserGroup(TerraregUnitTest):
             assert res.json == {'message': 'User group does not exist.'}
             assert res.status_code == 400
 
+            mock_create_audit_event.assert_not_called()
+
 
     @setup_test_data(user_group_data=test_usergroup_data)
     def test_delete_without_permissions(self, app_context, test_request_context, mock_server_user_groups_fixture, client):
         """Test creation of module provider without permission."""
         with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(False)[0]), \
                 unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf:
 
@@ -78,3 +90,5 @@ class TestApiTerraregAuthUserGroup(TerraregUnitTest):
             assert res.json == {'message': "You don't have the permission to access the requested resource. "
                                            'It is either read-protected or not readable by the server.'}
             assert res.status_code == 403
+
+            mock_create_audit_event.assert_not_called()
