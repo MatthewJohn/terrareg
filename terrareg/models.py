@@ -536,7 +536,7 @@ class GitProvider:
         """Check if two git providers are the same"""
         if isinstance(__o, self.__class__):
             return self.pk == __o.pk
-        return super(UserGroup, self).__eq__(__o)
+        return super(GitProvider, self).__eq__(__o)
 
     def __init__(self, id):
         """Store member variable for ID."""
