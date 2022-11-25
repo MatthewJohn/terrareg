@@ -13,7 +13,6 @@ from terrareg.models import (
 from terrareg.database import Database
 from terrareg.server import Server
 import terrareg.config
-from terrareg.auth import AdminApiKeyAuthMethod
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 
 
@@ -112,8 +111,7 @@ class BaseTest:
             conn.execute(db.namespace.delete())
 
         with unittest.mock.patch(
-            'terrareg.auth.AuthFactory.get_current_auth_method',
-            return_value=AdminApiKeyAuthMethod()):
+            'terrareg.audit.AuditEvent.create_audit_event'):
 
             # Setup test git providers
             for git_provider_id in cls._GIT_PROVIDER_DATA:
