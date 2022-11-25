@@ -18,6 +18,8 @@ test_git_providers = {
     }
 }
 
+test_user_group_data_full = {}
+
 test_data_full = {
     'testnamespace': {
         'id': 1,
@@ -656,5 +658,12 @@ test_data_full = {
     'emptynamespace': {
         'id': 6,
         'modules': {}
+    }
+}
+
+two_empty_namespaces = {
+    'firstnamespace': {
+    },
+    'second-namespace': {
     }
 }

@@ -1,0 +1,250 @@
+{% extends 'template.html' %}
+
+{% block title %}User Groups{% endblock %}
+
+{% block header %}
+<script>
+    var dataTable = undefined;
+
+    function showError(error) {
+        $('#create-error').html(error);
+        $('#create-error').css('display', 'block');
+        $(window).scrollTop($('#create-error').offset().top);
+    }
+    function hideError() {
+        $('#create-error').css('display', 'none');
+    }
+    function createUserGroup() {
+        if (! $('#create-user-group-form')[0].reportValidity()) {
+            return;
+        }
+        $.post({
+            url: '/v1/terrareg/user-groups',
+            data: JSON.stringify({
+                name: $('#user-group-name').val(),
+                site_admin: $('#user-group-site-admin').is(':checked'),
+                csrf_token: '{{ csrf_token }}'
+            }),
+            contentType: 'application/json'
+        }).done((res) => {
+            hideError();
+            getUserGroupList();
+        }).fail((res) => {
+            showError(failedResponseToErrorString(res));
+        });
+    }
+
+    function createUserGroupNamespacePermission(userGroup) {
+        let namespace = $(`#createUserGroupPermission-Namespace-${userGroup}`).val();
+        let permissionType = $(`#createUserGroupPermission-Permission-${userGroup}`).val();
+        $.post({
+            url: `/v1/terrareg/user-groups/${userGroup}/permissions/${namespace}`,
+            data: JSON.stringify({
+                permission_type: permissionType,
+                csrf_token: '{{ csrf_token }}'
+            }),
+            contentType: 'application/json'
+        }).done((res) => {
+            hideError();
+            getUserGroupList();
+        }).fail((res) => {
+            showError(failedResponseToErrorString(res));
+        });
+    }
+
+    function deleteUserGroupNamespacePermission(userGroup, namespace) {
+        $.ajax({
+            method: 'DELETE',
+            url: `/v1/terrareg/user-groups/${userGroup}/permissions/${namespace}`,
+            data: JSON.stringify({
+                csrf_token: '{{ csrf_token }}'
+            }),
+            contentType: 'application/json'
+        }).done((res) => {
+            hideError();
+            getUserGroupList();
+        }).fail((res) => {
+            showError(failedResponseToErrorString(res));
+        });
+    }
+
+    function deleteUserGroup(userGroup) {
+        $.ajax({
+            method: 'DELETE',
+            url: `/v1/terrareg/user-groups/${userGroup}`,
+            data: JSON.stringify({
+                csrf_token: '{{ csrf_token }}'
+            }),
+            contentType: 'application/json'
+        }).done((res) => {
+            hideError();
+            getUserGroupList();
+        }).fail((res) => {
+            showError(failedResponseToErrorString(res));
+        });
+    }
+
+    async function getUserGroupList() {
+        return new Promise((resolve, reject) => {
+            $.get('/v1/terrareg/user-groups').then(async (userGroups) => {
+                let tableContent = $('#user-group-table-content');
+
+                if (dataTable) {
+                    dataTable.destroy();
+                }
+
+                tableContent.empty();
+                let namespaces = await getNamespaces();
+
+                for (let userGroup of userGroups) {
+
+                    let groupId = `${userGroup.name} (Site admin: ${userGroup.site_admin ? 'Yes' : 'No'})`
+
+                    for (let permission of userGroup.namespace_permissions) {
+                        let row = $(`<tr></tr>`);
+
+                        row.append(`<td class="is-vcentered">${groupId}</td>`);
+                        row.append(`<td class="is-vcentered">${permission.namespace}</td>`);
+                        row.append(`<td class="is-vcentered">${permission.permission_type}</td>`);
+                        let buttonTd = $('<td class="is-vcentered"></td>');
+                        let button = $('<button class="button is-small is-warning">Delete</button>');
+                        button.bind('click', () => {
+                            deleteUserGroupNamespacePermission(userGroup.name, permission.namespace);
+                        });
+                        buttonTd.append(button);
+                        row.append(buttonTd);
+
+                        tableContent.append(row);
+                    }
+
+                    {
+                        let row = $(`<tr></tr>`);
+                        row.append(`<td class="is-vcentered">${groupId}</td>`);
+                        let namespaceTd = $(`<td class="is-vcentered"></td>`);
+                        let namespaceSelect = $(`<select id="createUserGroupPermission-Namespace-${userGroup.name}" class="select"></select>`);
+                        let namespacesAvailable = false;
+                        for (let namespace of namespaces) {
+                            if (userGroup.namespace_permissions.map((perm) => {return perm.namespace}).indexOf(namespace.name) === -1) {
+                                namespaceSelect.append(`<option value="${namespace.name}">${namespace.name}</option>`);
+                                namespacesAvailable = true;
+                            }
+                        }
+                        namespaceTd.append(namespaceSelect);
+                        row.append(namespaceTd);
+                        row.append(`<td class="is-vcentered"><select id="createUserGroupPermission-Permission-${userGroup.name}" class="select"><option value="FULL">Full</option><option value="MODIFY">Modify</option></select></td>`);
+                        let buttonTd = $('<td class="is-vcentered"></td>');
+                        let button = $('<button class="button is-small is-primary">Create</button>');
+                        button.bind('click', () => {
+                            createUserGroupNamespacePermission(userGroup.name);
+                        });
+                        buttonTd.append(button);
+                        row.append(buttonTd);
+                        if (namespacesAvailable) {
+                            tableContent.append(row);
+                        }
+
+                    }
+
+                    {
+                        let row = $(`<tr></tr>`);
+                        row.append(`<td class="is-vcentered">${groupId}</td>`);
+                        row.append(`<td class="is-vcentered"></td>`);
+                        row.append(`<td class="is-vcentered"></td>`);
+                        let buttonTd = $('<td class="is-vcentered"></td>');
+                        let button = $('<button class="button is-small is-danger">Delete user group</button>');
+                        button.on('click', () => {
+                            deleteUserGroup(userGroup.name);
+                        });
+                        buttonTd.append(button);
+                        row.append(buttonTd);
+                        tableContent.append(row);
+                    }
+
+                };
+
+            }).then(() => {
+                dataTable = $("#user-group-table").DataTable({
+                    order: [[0, 'asc']],
+                    autoWidth: true,
+                    columnDefs: [
+                        {
+                            targets: [0],
+                            visible: false
+                        }
+                    ],
+                    rowGroup: {
+                        dataSrc: [0]
+                    },
+                    paging: false,
+                    lengthMenu: [
+                        [25, 50, -1],
+                        [25, 50, 'All'],
+                    ],
+                });
+                resolve();
+            });
+        });
+    }
+
+    $(document).ready(() => {
+        getUserGroupList();
+    });
+
+</script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li>Settings</li>
+        <li class="is-active"><a href="/user-groups">User Groups</a></li>
+    </ul>
+</nav>
+
+<div class="columns">
+    <div class="column is-three-fifths is-offset-one-fifth">
+     
+        <div class="field is-vertical">
+
+            <table id="user-group-table" class="table display compact nowrap responsive" style="width:100%">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Namespace</th>
+                        <th>Permission</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="user-group-table-content">
+                </tbody>
+            </table>
+
+            <h2 class="h2">Create User Group</h2>
+            <div id="create-error" style="display: none" class="notification is-danger">
+            </div>
+            <form id="create-user-group-form" onsubmit="event.preventDefault(); createUserGroup();">
+                <div class="field">
+                    <label class="label">SSO Group Name</label>
+                    <div class="control">
+                        <input required id="user-group-name" class="input" type="text" placeholder="my-team">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Site Admin</label>
+                    <div class="control">
+                        <input id="user-group-site-admin" class="checkbox" type="checkbox" value="true">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="control">
+                    <button class="button is-link">Create</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</nav>
+
+{% endblock %}

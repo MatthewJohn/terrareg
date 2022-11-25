@@ -6,7 +6,11 @@
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
+        {% if not root_bread_brumb %}
         <li><a href="/modules">Modules</a></li>
+        {% else %}
+        <li class="is-active"><a href="#">{{ root_bread_brumb }}</a></li>
+        {% endif %}
         {% if namespace %}<li><a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></li>{% endif %}
         {% if module %}<li><a href="/modules/{{ namespace.name }}/{{ module.name }}">{{ module.name }}</a></li>{% endif %}
         {% if module_provider_name %}<li class="is-active"><a href="#">{{ module_provider_name }}</a></li>{% endif %}

@@ -140,3 +140,18 @@ class OpenidConnect:
             algorithms=[header['alg']],
             audience=terrareg.config.Config().OPENID_CONNECT_CLIENT_ID
         )
+
+    @classmethod
+    def get_user_info(cls, access_token):
+        """Get user infor"""
+        user_info_endpoint = cls.obtain_issuer_metadata().get('userinfo_endpoint')
+        if not user_info_endpoint:
+            return None
+
+        res = requests.post(
+            user_info_endpoint,
+            headers={
+                'Authorization': f'Bearer {access_token}'
+            }
+        )
+        return res.json()

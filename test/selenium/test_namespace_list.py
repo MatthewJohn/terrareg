@@ -46,6 +46,7 @@ class TestNamespaceListSingleNamespace(SeleniumTest):
     """Test namespace list page with single namespace"""
 
     _TEST_DATA = one_namespace_test_data
+    _USER_GROUP_DATA = None
 
     def test_namespace_list_page_redirect(self):
         """Test namespace list page with one namespace."""
@@ -59,6 +60,7 @@ class TestNamespaceListNoNamespaces(SeleniumTest):
     """Test namespace list page with no namespaces"""
 
     _TEST_DATA = {}
+    _USER_GROUP_DATA = None
 
     def test_namespace_list_page_warning(self):
         """Test namespace list page with no namespaces."""

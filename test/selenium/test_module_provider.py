@@ -14,6 +14,8 @@ from terrareg.models import GitProvider, ModuleVersion, Namespace, Module, Modul
 class TestModuleProvider(SeleniumTest):
     """Test module provider page."""
 
+    _SECRET_KEY = '354867a669ef58d17d0513a0f3d02f4403354915139422a8931661a3dbccdffe'
+
     @classmethod
     def setup_class(cls):
         """Setup required mocks."""
@@ -22,15 +24,16 @@ class TestModuleProvider(SeleniumTest):
         cls._config_publish_api_keys_mock = mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', [])
         cls._config_allow_custom_repo_urls_module_provider = mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', True)
         cls._config_allow_custom_repo_urls_module_version = mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', True)
+        cls._config_enable_access_controls = mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', False)
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
-        cls.register_patch(mock.patch('terrareg.config.Config.SECRET_KEY', '354867a669ef58d17d0513a0f3d02f4403354915139422a8931661a3dbccdffe'))
         cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
         cls.register_patch(mock.patch('terrareg.server.ApiModuleVersionCreate._post', cls._api_version_create_mock))
         cls.register_patch(mock.patch('terrareg.server.ApiTerraregModuleVersionPublish._post', cls._api_version_publish_mock))
         cls.register_patch(cls._config_publish_api_keys_mock)
         cls.register_patch(cls._config_allow_custom_repo_urls_module_provider)
         cls.register_patch(cls._config_allow_custom_repo_urls_module_version)
+        cls.register_patch(cls._config_enable_access_controls)
 
         super(TestModuleProvider, cls).setup_class()
 
@@ -699,8 +702,8 @@ module "fullypopulated" {{
                 repo_base_url_template=module_provider_base_url_template
             )
 
-            with self.update_mock(self._config_allow_custom_repo_urls_module_provider, 'new', allow_custom_git_urls_module_provider), \
-                    self.update_mock(self._config_allow_custom_repo_urls_module_version, 'new', allow_custom_git_urls_module_version):
+            with self.update_multiple_mocks((self._config_allow_custom_repo_urls_module_provider, 'new', allow_custom_git_urls_module_provider), \
+                    (self._config_allow_custom_repo_urls_module_version, 'new', allow_custom_git_urls_module_version)):
 
                 self.selenium_instance.get(self.get_url(url))
 
@@ -1124,9 +1127,46 @@ module "fullypopulated" {{
         self._api_version_create_mock.assert_called_once_with(namespace='moduledetails', name='fullypopulated', provider='testprovider', version='5.2.1')
         self._api_version_publish_mock.assert_called_once_with(namespace='moduledetails', name='fullypopulated', provider='testprovider', version='5.2.1')
 
+    @pytest.mark.parametrize('user_groups,expected_result', [
+        ([], False),
+        (['siteadmin'], True),
+        (['nopermissions'], False),
+        (['moduledetailsmodify'], True),
+        (['moduledetailsfull'], True)
+    ])
+    def test_integration_tab_publish_button_permissions(self, user_groups, expected_result):
+        """Test disabling of publish button, logged in with various user groups."""
+        with self.update_multiple_mocks((self._config_publish_api_keys_mock, 'new', ['abcdefg']), \
+                (self._config_enable_access_controls, 'new', True)):
+            # Clear cookies to remove authentication
+            self.selenium_instance.delete_all_cookies()
+
+            with self.log_in_with_openid_connect(user_groups):
+                self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+                # Wait for integrations tab button to be visible
+                integrations_tab_button = self.wait_for_element(By.ID, 'module-tab-link-integrations')
+
+                # Ensure the integrations tab content is not visible
+                assert self.wait_for_element(By.ID, 'module-tab-integrations', ensure_displayed=False).is_displayed() == False
+
+                # Click on integrations tab
+                integrations_tab_button.click()
+
+                integrations_tab_content = self.selenium_instance.find_element(By.ID, 'module-tab-integrations')
+
+                # Ensure publish button exists and is not disaplyed
+                assert integrations_tab_content.find_element(By.ID, 'indexModuleVersionPublish').is_displayed() == expected_result
+
+                # Ensure publish button container is not displayed
+                assert integrations_tab_content.find_element(By.ID, 'integrations-index-module-version-publish').is_displayed() == expected_result
+
     def test_integration_tab_index_version_with_publish_disabled(self):
         """Test indexing a new module version from the integration tab whilst publishing is not possible"""
         with self.update_mock(self._config_publish_api_keys_mock, 'new', ['abcdefg']):
+            # Clear cookies to remove authentication
+            self.selenium_instance.delete_all_cookies()
+
             self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
 
             # Wait for integrations tab button to be visible
@@ -1730,7 +1770,6 @@ module "fullypopulated" {{
                 'injectedSubemoduleFileContent']:
 
             with pytest.raises(selenium.common.exceptions.NoSuchElementException):
-                print('Checking for element:', injected_element)
                 self.selenium_instance.find_element(By.ID, injected_element)
 
     @pytest.mark.parametrize('enable_beta,enable_unpublished,expected_versions', [
