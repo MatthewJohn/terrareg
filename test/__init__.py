@@ -33,6 +33,11 @@ def app_context():
     """Return test request context"""
     return BaseTest.get().SERVER._app.app_context()
 
+@pytest.fixture
+def mock_create_audit_event():
+    """Mock create audit event when modifying objects outside of request context"""
+    return unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event')
+
 
 class BaseTest:
 

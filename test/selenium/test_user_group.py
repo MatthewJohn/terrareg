@@ -107,9 +107,10 @@ class TestUserGroup(SeleniumTest):
         user_table_rows = user_group_table.find_elements(By.TAG_NAME, 'tr')
         assert f'UnittestUserGroup (Site admin: {"Yes" if is_site_admin else "No"})' in [r.text for r in user_table_rows]
 
-    def test_add_user_group_permission(self):
+    def test_add_user_group_permission(self, mock_create_audit_event):
         """Test adding user group permission"""
-        user_group = UserGroup.create(name='AddPermissionUserGroup', site_admin=False)
+        with mock_create_audit_event:
+            user_group = UserGroup.create(name='AddPermissionUserGroup', site_admin=False)
 
         self.perform_admin_authentication('unittest-password')
 
@@ -196,14 +197,15 @@ class TestUserGroup(SeleniumTest):
         assert permissions[1].namespace.name == 'second-namespace'
         assert permissions[1].permission_type is UserGroupNamespacePermissionType.MODIFY
 
-    def test_delete_namespace_permission(self):
+    def test_delete_namespace_permission(self, mock_create_audit_event):
         """Test deleting namespace permission"""
-        user_group = UserGroup.create('UnittestGroupToDeletePerm', site_admin=False)
-        UserGroupNamespacePermission.create(
-            user_group=user_group,
-            namespace=Namespace.get('firstnamespace'),
-            permission_type=UserGroupNamespacePermissionType.FULL
-        )
+        with mock_create_audit_event:
+            user_group = UserGroup.create('UnittestGroupToDeletePerm', site_admin=False)
+            UserGroupNamespacePermission.create(
+                user_group=user_group,
+                namespace=Namespace.get('firstnamespace'),
+                permission_type=UserGroupNamespacePermissionType.FULL
+            )
 
         self.perform_admin_authentication('unittest-password')
 
@@ -250,9 +252,10 @@ Modify
 Create
 """.strip()
 
-    def test_delete_user_gruop(self):
+    def test_delete_user_gruop(self, mock_create_audit_event):
         """Test deleting user group"""
-        UserGroup.create('UnittestGroupToDelete', site_admin=False)
+        with mock_create_audit_event:
+            UserGroup.create('UnittestGroupToDelete', site_admin=False)
 
         self.perform_admin_authentication('unittest-password')
 
