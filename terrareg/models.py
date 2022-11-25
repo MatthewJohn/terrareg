@@ -479,6 +479,13 @@ class Namespace(object):
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
 
+    def get_module_custom_links(self):
+        """Obtain module links that are applicable to namespace"""
+        links = filter(
+            lambda x: x.get('namespaces', None) is None or self.name in x.get('namespaces', []),
+            json.loads(terrareg.config.Config().MODULE_LINKS))
+        return links
+
 
 class Module(object):
 
@@ -1764,6 +1771,23 @@ class ModuleVersion(TerraformSpecsObject):
             res = conn.execute(select)
             return res.fetchall()
 
+    @property
+    def custom_links(self):
+        """Return list of links to be displayed in UI"""
+        links = []
+        placeholders = {
+            'namespace': self._module_provider._module._namespace.name,
+            'module': self.module_provider._module.name,
+            'provider': self.module_provider.name,
+            'version': self._version
+        }
+        for link in self._module_provider._module._namespace.get_module_custom_links():
+            links.append({
+                'text': link.get('text', '').format(**placeholders),
+                'url': link.get('url', '#').format(**placeholders)
+            })
+        return links
+
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
         self._extracted_beta_flag = self._validate_version(version)
@@ -2032,7 +2056,8 @@ class ModuleVersion(TerraformSpecsObject):
             "published": self.published,
             "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
             "security_results": tfsec_failures,
-            "additional_tab_files": tab_file_mapping
+            "additional_tab_files": tab_file_mapping,
+            "custom_links": self.custom_links
         })
         return api_details
 

@@ -477,6 +477,31 @@ class Config:
         return os.environ.get('ADDITIONAL_MODULE_TABS', '[["Release Notes", ["RELEASE_NOTES.md", "CHANGELOG.md"]], ["License", ["LICENSE"]]]')
 
     @property
+    def MODULE_LINKS(self):
+        """
+        List of custom links to display on module provides.
+
+        Each link must contain a display and and link URL.
+        These can contain placeholders, such as:
+         * namespace
+         * module
+         * provider
+         * version
+
+        The links can be provided with a list of namespaces to limit the link to only modules within those namespaces.
+
+        The format should be similar to this example:
+        [
+            {"text": "Text for the link e.g. Github Issues for {module}",
+             "url": "https://github.com/{namespace}/{module}-{provider}/issues"},
+            {"text": "Second link limited to two namespaces",
+             "url": "https://mydomain.example.com/",
+             "namespaces": ["namespace1", "namespace2"]}
+        ]
+        """
+        return os.environ.get('MODULE_LINKS', '[]')
+
+    @property
     def OPENID_CONNECT_LOGIN_TEXT(self):
         """
         Text for sign in button for OpenID Connect authentication
