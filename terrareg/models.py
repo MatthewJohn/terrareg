@@ -1382,13 +1382,15 @@ class ModuleProvider(object):
 
     def update_git_provider(self, git_provider: GitProvider):
         """Update git provider associated with module provider."""
-        if self.get_git_provider() != git_provider:
+        original_git_provider = self.get_git_provider()
+        if original_git_provider != git_provider:
+
             terrareg.audit.AuditEvent.create_audit_event(
                 action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_PROVIDER,
                 object_type=self.__class__.__name__,
                 object_id=self.id,
-                old_value=self.get_git_provider().name,
-                new_value=git_provider.name
+                old_value=original_git_provider.name if original_git_provider else None,
+                new_value=git_provider.name if git_provider else None
             )
         self.update_attributes(
             git_provider_id=(git_provider.pk if git_provider is not None else None)
