@@ -8,7 +8,9 @@ import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
 import selenium.webdriver
+
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
+from test import mock_create_audit_event
 
 from test.selenium import SeleniumTest
 from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider, UserGroup, UserGroupNamespacePermission
@@ -33,8 +35,9 @@ class TestUserGroup(SeleniumTest):
     def _delete_all_user_groups(self):
         """Delete all user groups"""
         # Delete any pre-existing user groups
-        for user_group in UserGroup.get_all_user_groups():
-            user_group.delete()
+        with mock.patch('terrareg.audit.AuditEvent.create_audit_event'):
+            for user_group in UserGroup.get_all_user_groups():
+                user_group.delete()
 
     def setup_method(self):
         r = super().setup_method()
