@@ -2,6 +2,7 @@
 
 from unittest import mock
 import pytest
+from terrareg.auth import AuthenticationType
 
 from test.unit.terrareg.auth.base_auth_method_test import BaseAuthMethodTest
 from test import test_request_context
@@ -58,4 +59,4 @@ class BaseSessionAuthMethodTests(BaseAuthMethodTest):
 
     def test_check_session_auth_type(self):
         """Test check_session_auth_type"""
-        pass
+        raise NotImplementedError

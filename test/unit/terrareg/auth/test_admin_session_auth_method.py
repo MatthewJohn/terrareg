@@ -3,7 +3,7 @@
 from unittest import mock
 import pytest
 
-from terrareg.auth import AdminSessionAuthMethod, UserGroupNamespacePermissionType
+from terrareg.auth import AdminSessionAuthMethod, AuthenticationType, UserGroupNamespacePermissionType
 from test import BaseTest
 from test.unit.terrareg.auth.base_session_auth_method_tests import BaseSessionAuthMethodTests
 
@@ -83,6 +83,27 @@ class TestAdminSessionAuthMethod(BaseSessionAuthMethodTests):
         """Test check_namespace_access method"""
         obj = AdminSessionAuthMethod()
         assert obj.check_namespace_access(access_type, namespace) is expected_result
+
+    @pytest.mark.parametrize('auth_type,expected_result', [
+        (None, False),
+        (AuthenticationType.NOT_AUTHENTICATED, False),
+        (AuthenticationType.NOT_CHECKED, False),
+        (AuthenticationType.AUTHENTICATION_TOKEN, False),
+        (AuthenticationType.SESSION_PASSWORD, True),
+        (AuthenticationType.SESSION_OPENID_CONNECT, False),
+        (AuthenticationType.SESSION_SAML, False)
+    ])
+    def test_check_session_auth_type(self, auth_type, expected_result, test_request_context):
+        """Test check_session_auth_type"""
+        self.SERVER._app.secret_key = "asecretkey"
+        with mock.patch('terrareg.config.Config.SECRET_KEY', "asecretkey"), \
+                test_request_context:
+            if auth_type:
+                test_request_context.session['authentication_type'] = auth_type.value
+                test_request_context.session.modified = True
+            
+            obj = AdminSessionAuthMethod()
+            assert obj.check_session_auth_type() == expected_result
 
     def test_get_username(self):
         """Test get_username method"""

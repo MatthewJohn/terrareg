@@ -4,7 +4,7 @@ import datetime
 from unittest import mock
 import pytest
 
-from terrareg.auth import SamlAuthMethod, UserGroupNamespacePermissionType
+from terrareg.auth import AuthenticationType, SamlAuthMethod, UserGroupNamespacePermissionType
 from test import BaseTest
 from test.unit.terrareg import MockNamespace, MockUserGroup, MockUserGroupNamespacePermission, setup_test_data
 from test.unit.terrareg.auth.base_session_auth_method_tests import BaseSessionAuthMethodTests
@@ -70,6 +70,27 @@ class TestSamlAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodTests):
         
             obj = SamlAuthMethod()
             assert obj.get_group_memberships() == expected_result
+
+    @pytest.mark.parametrize('auth_type,expected_result', [
+        (None, False),
+        (AuthenticationType.NOT_AUTHENTICATED, False),
+        (AuthenticationType.NOT_CHECKED, False),
+        (AuthenticationType.AUTHENTICATION_TOKEN, False),
+        (AuthenticationType.SESSION_PASSWORD, False),
+        (AuthenticationType.SESSION_OPENID_CONNECT, False),
+        (AuthenticationType.SESSION_SAML, True)
+    ])
+    def test_check_session_auth_type(self, auth_type, expected_result, test_request_context):
+        """Test check_session_auth_type"""
+        self.SERVER._app.secret_key = "asecretkey"
+        with mock.patch('terrareg.config.Config.SECRET_KEY', "asecretkey"), \
+                test_request_context:
+            if auth_type:
+                test_request_context.session['authentication_type'] = auth_type.value
+                test_request_context.session.modified = True
+            
+            obj = SamlAuthMethod()
+            assert obj.check_session_auth_type() == expected_result
 
     @pytest.mark.parametrize('saml_name_id', [
         None,

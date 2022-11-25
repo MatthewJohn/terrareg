@@ -4,7 +4,7 @@ import datetime
 from unittest import mock
 import pytest
 
-from terrareg.auth import OpenidConnectAuthMethod, UserGroupNamespacePermissionType
+from terrareg.auth import AuthenticationType, OpenidConnectAuthMethod, UserGroupNamespacePermissionType
 from test import BaseTest
 from test.unit.terrareg import MockNamespace, MockUserGroup, MockUserGroupNamespacePermission, setup_test_data
 from test.unit.terrareg.auth.base_session_auth_method_tests import BaseSessionAuthMethodTests
@@ -84,6 +84,27 @@ class TestOpenidConnectAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodT
         
             obj = OpenidConnectAuthMethod()
             assert obj.get_group_memberships() == expected_result
+
+    @pytest.mark.parametrize('auth_type,expected_result', [
+        (None, False),
+        (AuthenticationType.NOT_AUTHENTICATED, False),
+        (AuthenticationType.NOT_CHECKED, False),
+        (AuthenticationType.AUTHENTICATION_TOKEN, False),
+        (AuthenticationType.SESSION_PASSWORD, False),
+        (AuthenticationType.SESSION_OPENID_CONNECT, True),
+        (AuthenticationType.SESSION_SAML, False)
+    ])
+    def test_check_session_auth_type(self, auth_type, expected_result, test_request_context):
+        """Test check_session_auth_type"""
+        self.SERVER._app.secret_key = "asecretkey"
+        with mock.patch('terrareg.config.Config.SECRET_KEY', "asecretkey"), \
+                test_request_context:
+            if auth_type:
+                test_request_context.session['authentication_type'] = auth_type.value
+                test_request_context.session.modified = True
+            
+            obj = OpenidConnectAuthMethod()
+            assert obj.check_session_auth_type() == expected_result
 
     @pytest.mark.parametrize('openid_username', [
         None,
