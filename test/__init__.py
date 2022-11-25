@@ -97,6 +97,7 @@ class BaseTest:
         # Delete any pre-existing data
         db = Database.get()
         with Database.get_engine().connect() as conn:
+            conn.execute(db.audit_history.delete())
             conn.execute(db.user_group_namespace_permission.delete())
             conn.execute(db.user_group.delete())
             conn.execute(db.sub_module.delete())
