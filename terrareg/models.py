@@ -399,13 +399,12 @@ class UserGroupNamespacePermission:
 
     def _delete_from_database(self):
         """Delete row from database"""
+        db = Database.get()
         with db.get_connection() as conn:
             conn.execute(db.user_group_namespace_permission.delete().where(
                 db.user_group_namespace_permission.c.user_group_id==self.user_group.pk,
                 db.user_group_namespace_permission.c.namespace_id==self.namespace.pk
             ))
-
-        db = Database.get()
 
 
 class GitProvider:
