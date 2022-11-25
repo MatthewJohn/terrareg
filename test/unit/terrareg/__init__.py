@@ -305,6 +305,11 @@ class MockModuleProvider(ModuleProvider):
             versions.append(version_obj)
         return versions
 
+    def update_attributes(self, **kwargs):
+        """Update mock data attributes"""
+        self._unittest_data.update(kwargs)
+
+
 class MockNamespace(Namespace):
     """Mocked namespace."""
 
