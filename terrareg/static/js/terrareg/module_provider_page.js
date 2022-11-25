@@ -332,7 +332,7 @@ class ProvidersTab extends ModuleDetailsTab {
                 providerRow.append(sourceTd);
 
                 let versionTd = $("<td></td>");
-                versionTd.text(provider.version);
+                versionTd.append(provider.version);
                 providerRow.append(versionTd);
 
                 providerTabTbody.append(providerRow);
