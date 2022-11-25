@@ -20,6 +20,8 @@ class TerraregIntegrationTest(BaseTest):
     @classmethod
     def setup_class(cls):
         """Setup class method"""
+        super(TerraregIntegrationTest, cls).setup_class()
+
         # Mock get_current_auth_method, which is used when
         # creating audit events.
         cls._get_current_auth_method_mock = unittest.mock.patch(
@@ -27,10 +29,9 @@ class TerraregIntegrationTest(BaseTest):
             return_value=AdminApiKeyAuthMethod())
         cls._get_current_auth_method_mock.start()
 
-        super(TerraregIntegrationTest, cls).setup_class()
-
     @classmethod
     def teardown_class(cls):
         """Teardown class"""
-        super(TerraregIntegrationTest, cls).teardown_class()
         cls._get_current_auth_method_mock.stop()
+
+        super(TerraregIntegrationTest, cls).teardown_class()
