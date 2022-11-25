@@ -84,3 +84,18 @@ class TestOpenidConnectAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodT
         
             obj = OpenidConnectAuthMethod()
             assert obj.get_group_memberships() == expected_result
+
+    @pytest.mark.parametrize('openid_username', [
+        None,
+        '',
+        'ausername'
+    ])
+    def test_get_username(self, openid_username, test_request_context):
+        """Test get_username method"""
+        with test_request_context:
+
+            test_request_context.session['openid_username'] = openid_username
+            test_request_context.session.modified = True
+
+            obj = OpenidConnectAuthMethod()
+            assert obj.get_username() == openid_username

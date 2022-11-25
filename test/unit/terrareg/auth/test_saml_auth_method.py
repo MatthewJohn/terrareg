@@ -70,3 +70,18 @@ class TestSamlAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodTests):
         
             obj = SamlAuthMethod()
             assert obj.get_group_memberships() == expected_result
+
+    @pytest.mark.parametrize('saml_name_id', [
+        None,
+        '',
+        'ausername'
+    ])
+    def test_get_username(self, saml_name_id, test_request_context):
+        """Test get_username method"""
+        with test_request_context:
+
+            test_request_context.session['samlNameId'] = saml_name_id
+            test_request_context.session.modified = True
+
+            obj = SamlAuthMethod()
+            assert obj.get_username() == saml_name_id
