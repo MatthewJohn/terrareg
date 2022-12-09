@@ -2541,7 +2541,10 @@ User groups:
 
 
         # Manually calcualte expires at, to avoid timezone issues
-        session['openid_connect_expires_at'] = datetime.datetime.now().timestamp() + access_token['expires_in']
+        if 'expires_at' in access_token:
+            session['openid_connect_expires_at'] = access_token['expires_at']
+        else:
+            session['openid_connect_expires_at'] = datetime.datetime.now().timestamp() + access_token['expires_in']
         session.modified = True
 
         # Redirect to homepage
