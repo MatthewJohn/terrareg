@@ -10,11 +10,12 @@ import hashlib
 from enum import Enum
 
 from flask import (
-    Config, Flask, request, render_template,
+    Flask, request, render_template,
     redirect, make_response, send_from_directory,
     session, g, redirect
 )
 from flask_restful import Resource, Api, reqparse, inputs, abort
+import terrareg.auth
 
 import terrareg.config
 from terrareg.database import Database
@@ -25,7 +26,7 @@ from terrareg.errors import (
 from terrareg.models import (
     Example, ExampleFile, ModuleVersionFile, Namespace, Module, ModuleProvider,
     ModuleVersion, ProviderLogo, Session, Submodule,
-    GitProvider
+    GitProvider, UserGroup, UserGroupNamespacePermission
 )
 from terrareg.module_search import ModuleSearch
 from terrareg.module_extractor import ApiUploadModuleExtractor, GitModuleExtractor
@@ -33,6 +34,7 @@ from terrareg.analytics import AnalyticsEngine
 from terrareg.filters import NamespaceTrustFilter
 import terrareg.openid_connect
 import terrareg.saml
+from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 
 
 def catch_name_exceptions(f):
@@ -271,6 +273,9 @@ class Server(BaseHandler):
             '/initial-setup'
         )(self._view_serve_initial_setup)
         self._app.route(
+            '/user-groups'
+        )(self._view_serve_user_groups)
+        self._app.route(
             '/modules'
         )(self._view_serve_namespace_list)
         self._app.route(
@@ -497,6 +502,18 @@ class Server(BaseHandler):
             ApiTerraregModuleSearchFilters,
             '/v1/terrareg/search_filters'
         )
+        self._api.add_resource(
+            ApiTerraregAuthUserGroups,
+            '/v1/terrareg/user-groups'
+        )
+        self._api.add_resource(
+            ApiTerraregAuthUserGroup,
+            '/v1/terrareg/user-groups/<string:user_group>'
+        )
+        self._api.add_resource(
+            ApiTerraregAuthUserGroupNamespacePermissions,
+            '/v1/terrareg/user-groups/<string:user_group>/permissions/<string:namespace>'
+        )
 
         ## Auth endpoints /v1/terrareg/auth
         self._api.add_resource(
@@ -694,7 +711,7 @@ class Server(BaseHandler):
         """Review view for displaying example"""
         namespace_obj = Namespace.get(namespace)
         if namespace_obj is None:
-            return self._namespace_404(namespace=namespace)
+            return self._namespace_404(namespace_name=namespace)
 
         module = Module(namespace=namespace_obj, name=name)
         module_provider = ModuleProvider.get(module=module, name=provider)
@@ -717,15 +734,16 @@ class Server(BaseHandler):
         """Search modules based on input."""
         return self._render_template('module_search.html')
 
-
-class AuthenticationType(Enum):
-    """Determine the method of authentication."""
-    NOT_CHECKED = 0
-    NOT_AUTHENTICATED = 1
-    AUTHENTICATION_TOKEN = 2
-    SESSION_PASSWORD = 3
-    SESSION_OPENID_CONNECT = 4
-    SESSION_SAML = 5
+    def _view_serve_user_groups(self):
+        """Page to view/modify user groups and permissions."""
+        if not terrareg.auth.AuthFactory().get_current_auth_method().is_admin():
+            return self._render_template(
+                'error.html',
+                root_bread_brumb='User groups',
+                error_title='Permission denied',
+                error_description="You are not logged in or do not have permssion to view this page"
+            ), 403
+        return self._render_template('user_groups.html')
 
 
 def get_csrf_token():
@@ -737,7 +755,7 @@ def check_csrf_token(csrf_token):
     """Check CSRF token."""
     # If user is authenticated using authentication token,
     # do not required CSRF token
-    if get_current_authentication_type() is AuthenticationType.AUTHENTICATION_TOKEN:
+    if not terrareg.auth.AuthFactory().get_current_auth_method().requires_csrf_tokens:
         return False
 
     session_token = get_csrf_token()
@@ -749,98 +767,34 @@ def check_csrf_token(csrf_token):
         return True
 
 
-def get_current_authentication_type():
-    """Return the current authentication method of the user."""
-    return g.get('authentication_type', AuthenticationType.NOT_CHECKED)
-
-
-def check_admin_authentication():
-    """Check authorization header is present or authenticated session"""
-    authenticated = False
-    g.authentication_type = AuthenticationType.NOT_AUTHENTICATED
-
-    # Check that:
-    # - An admin authentication token has been setup
-    # - A token has neeif valid authorisation header has been passed
-    if (terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN and
-            request.headers.get('X-Terrareg-ApiKey', '') ==
-            terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN):
-        authenticated = True
-        g.authentication_type = AuthenticationType.AUTHENTICATION_TOKEN
-
-    # Check if authenticated via session
-    # - Ensure session key has been setup
-    if (terrareg.config.Config().SECRET_KEY and
-            Session.check_session(session.get('session_id', None)) and
-            session.get('is_admin_authenticated', False)):
-
-        session_authentication_type = AuthenticationType(
-            session.get('authentication_type',
-                        AuthenticationType.NOT_AUTHENTICATED.value))
-
-        if session_authentication_type is AuthenticationType.SESSION_PASSWORD:
-            authenticated = True
-            g.authentication_type = AuthenticationType.SESSION_PASSWORD
-
-        # Check for SAML authentcation type
-        elif session_authentication_type is AuthenticationType.SESSION_SAML:
-            auth = terrareg.saml.Saml2.initialise_request_auth_object(request)
-            if auth.is_authenticated():
-                authenticated = True
-                g.authentication_type = AuthenticationType.SESSION_SAML
-
-        # If authentication type is OpenID connect,
-        # ensure the OpenID token has not expired
-        elif (session_authentication_type is AuthenticationType.SESSION_OPENID_CONNECT
-                and datetime.datetime.now() < datetime.datetime.fromtimestamp(session.get('openid_connect_expires_at', 0))):
-            try:
-                terrareg.openid_connect.OpenidConnect.validate_session_token(session.get('openid_connect_id_token'))
-                authenticated = True
-                g.authentication_type = AuthenticationType.SESSION_OPENID_CONNECT
-            except Exception:
-                pass
-
-    return authenticated
-
-
-def require_admin_authentication(func):
-    """Check user is authenticated as admin and either call function or return 401, if not."""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        if not check_admin_authentication():
-            abort(401)
-        else:
-            return func(*args, **kwargs)
-    return wrapper
-
-
-def check_api_key_authentication(api_keys):
-    """Check API key authentication."""
-    # If user is authenticated as admin, allow
-    if check_admin_authentication():
-        return True
-    # Check if no API keys have been configured
-    # and allow request
-    if not api_keys:
-        return True
-
-    # Check header against list of allowed API keys
-    provided_api_key = request.headers.get('X-Terrareg-ApiKey', '')
-    return provided_api_key and provided_api_key in api_keys
-
-
-def require_api_authentication(api_keys):
-    """Check user is authenticated using API key or as admin and either call function or return 401, if not."""
-    def outer_wrapper(func):
+def auth_wrapper(auth_check_method, *wrapper_args, request_kwarg_map={}, **wrapper_kwargs):
+    """
+    Wrapper to custom authentication decorators.
+    An authentication checking method should be passed with args/kwargs, which will be
+    used to check authentication and authorisation.
+    """
+    def decorator_wrapper(func):
+        """Check user is authenticated as admin and either call function or return 401, if not."""
         @wraps(func)
         def wrapper(*args, **kwargs):
+            auth_method = terrareg.auth.AuthFactory().get_current_auth_method()
 
-            if not check_api_key_authentication(api_keys):
-                abort(401)
-            else:
+            auth_kwargs = wrapper_kwargs.copy()
+            for request_kwarg in request_kwarg_map:
+                if request_kwarg in kwargs:
+                    auth_kwargs[request_kwarg_map[request_kwarg]] = kwargs[request_kwarg]
+
+            if (status := getattr(auth_method, auth_check_method)(*wrapper_args, **auth_kwargs)) == False:
+                if auth_method.is_authenticated():
+                    abort(403)
+                else:
+                    abort(401)
+            elif status == True:
                 return func(*args, **kwargs)
+            else:
+                raise Exception('Invalid response from auth check method')
         return wrapper
-    return outer_wrapper
+    return decorator_wrapper
 
 
 class ApiTerraformWellKnown(Resource):
@@ -1052,7 +1006,7 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
 
     ALLOWED_EXTENSIONS = ['zip']
 
-    method_decorators = [require_api_authentication(terrareg.config.Config().UPLOAD_API_KEYS)]
+    method_decorators = [auth_wrapper('can_upload_module_version', request_kwarg_map={'namespace': 'namespace'})]
 
     def allowed_file(self, filename):
         """Check if file has allowed file-extension"""
@@ -1101,7 +1055,7 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
 class ApiModuleVersionCreate(ErrorCatchingResource):
     """Provide interface to create release for git-backed modules."""
 
-    method_decorators = [require_api_authentication(terrareg.config.Config().UPLOAD_API_KEYS)]
+    method_decorators = [auth_wrapper('can_upload_module_version', request_kwarg_map={'namespace': 'namespace'})]
 
     def _post(self, namespace, name, provider, version):
         """Handle creation of module version."""
@@ -1697,7 +1651,7 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
     """Provide interface to obtain namespaces."""
 
     method_decorators = {
-        "post": [require_admin_authentication]
+        "post": [auth_wrapper('is_admin')]
     }
 
     def _get(self):
@@ -1957,16 +1911,25 @@ class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
 class ApiTerraregIsAuthenticated(ErrorCatchingResource):
     """Interface to teturn whether user is authenticated as an admin."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [auth_wrapper('is_authenticated')]
 
     def _get(self):
-        return {'authenticated': True}
+        """Return information about current user."""
+        auth_method = terrareg.auth.AuthFactory().get_current_auth_method()
+        return {
+            'authenticated': True,
+            'site_admin': auth_method.is_admin(),
+            'namespace_permissions': {
+                namespace.name: permission.value
+                for namespace, permission in auth_method.get_all_namespace_permissions().items()
+            }
+        }
 
 
 class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
     """Interface to perform authentication as an admin and set appropriate cookie."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [auth_wrapper('is_built_in_admin')]
 
     def _post(self):
         """Handle POST requests to the authentication endpoint."""
@@ -1976,7 +1939,7 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
             return {'message': 'Sessions not enabled in configuration'}, 403
 
         session['is_admin_authenticated'] = True
-        session['authentication_type'] = AuthenticationType.SESSION_PASSWORD.value
+        session['authentication_type'] = terrareg.auth.AuthenticationType.SESSION_PASSWORD.value
         session.modified = True
 
         return {'authenticated': True}
@@ -1985,7 +1948,9 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
 class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
     """Provide interface to create module provider."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [auth_wrapper('check_namespace_access',
+                                      UserGroupNamespacePermissionType.FULL,
+                                      request_kwarg_map={'namespace': 'namespace'})]
 
     def _post(self, namespace, name, provider):
         """Handle update to settings."""
@@ -2132,7 +2097,9 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
 class ApiTerraregModuleProviderDelete(ErrorCatchingResource):
     """Provide interface to delete module provider."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [auth_wrapper('check_namespace_access',
+                                      UserGroupNamespacePermissionType.FULL,
+                                      request_kwarg_map={'namespace': 'namespace'})]
 
     def _delete(self, namespace, name, provider):
         """Delete module provider."""
@@ -2158,7 +2125,9 @@ class ApiTerraregModuleProviderDelete(ErrorCatchingResource):
 class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
     """Provide interface to delete module version."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [auth_wrapper('check_namespace_access',
+                                      UserGroupNamespacePermissionType.FULL,
+                                      request_kwarg_map={'namespace': 'namespace'})]
 
     def _delete(self, namespace, name, provider, version):
         """Delete module version."""
@@ -2189,7 +2158,9 @@ class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
 class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
     """Provide interface to update module provider settings."""
 
-    method_decorators = [require_admin_authentication]
+    method_decorators = [auth_wrapper('check_namespace_access',
+                                      UserGroupNamespacePermissionType.MODIFY,
+                                      request_kwarg_map={'namespace': 'namespace'})]
 
     def _post(self, namespace, name, provider):
         """Handle update to settings."""
@@ -2329,7 +2300,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
 class ApiTerraregModuleVersionPublish(ErrorCatchingResource):
     """Provide interface to publish module version."""
 
-    method_decorators = [require_api_authentication(terrareg.config.Config().PUBLISH_API_KEYS)]
+    method_decorators = [auth_wrapper('can_publish_module_version', request_kwarg_map={'namespace': 'namespace'})]
 
     def _post(self, namespace, name, provider, version):
         """Publish module."""
@@ -2542,6 +2513,7 @@ class ApiOpenIdCallback(ErrorCatchingResource):
             res.headers['Content-Type'] = 'text/html'
             return res
 
+        user_info = terrareg.openid_connect.OpenidConnect.get_user_info(access_token=access_token['access_token'])
 
         session_obj = self.create_session()
         if not isinstance(session_obj, Session):
@@ -2554,8 +2526,19 @@ class ApiOpenIdCallback(ErrorCatchingResource):
             return res
 
         session['openid_connect_id_token'] = access_token['id_token']
+        session['openid_connect_access_token'] = access_token['access_token']
+        session['openid_groups'] = user_info.get('groups', [])
         session['is_admin_authenticated'] = True
-        session['authentication_type'] = AuthenticationType.SESSION_OPENID_CONNECT.value
+        session['authentication_type'] = terrareg.auth.AuthenticationType.SESSION_OPENID_CONNECT.value
+
+        if terrareg.config.Config().OPENID_CONNECT_DEBUG:
+            print(f"""
+Successul OpenID connect authentication response:
+User info:
+{user_info}
+User groups:
+{session['openid_groups']}""")
+
 
         # Manually calcualte expires at, to avoid timezone issues
         session['openid_connect_expires_at'] = datetime.datetime.now().timestamp() + access_token['expires_in']
@@ -2606,11 +2589,23 @@ class ApiSamlInitiate(ErrorCatchingResource):
                 session['samlNameIdSPNameQualifier'] = auth.get_nameid_spnq()
                 session['samlSessionIndex'] = auth.get_session_index()
                 session['is_admin_authenticated'] = True
-                session['authentication_type'] = AuthenticationType.SESSION_SAML.value
+                session['authentication_type'] = terrareg.auth.AuthenticationType.SESSION_SAML.value
+                if terrareg.config.Config().SAML2_DEBUG:
+                    print(f"""
+Successul SAML2 authentication response:
+User data:
+{session['samlUserdata']}
+User groups:
+{session['samlUserdata'].get(terrareg.config.Config().SAML2_GROUP_ATTRIBUTE, [])}""")
 
                 session.modified = True
 
         if errors:
+            if terrareg.config.Config().SAML2_DEBUG:
+                print(f"""
+Error during SAML2 authentication response:
+Errors:
+{errors}""")
             res = make_response(render_template(
                 'error.html',
                 error_title='Login error',
@@ -2643,3 +2638,113 @@ class ApiSamlMetadata(ErrorCatchingResource):
             resp = make_response(', '.join(errors), 500)
         return resp
 
+
+class ApiTerraregAuthUserGroups(ErrorCatchingResource):
+    """Interface to list and create user groups."""
+
+    method_decorators = [auth_wrapper('is_admin')]
+
+    def _get(self):
+        """Obtain list of user groups."""
+        return [
+            {
+                'name': user_group.name,
+                'site_admin': user_group.site_admin,
+                'namespace_permissions': [
+                    {
+                        'namespace': permission.namespace.name,
+                        'permission_type': permission.permission_type.value
+                    }
+                    for permission in UserGroupNamespacePermission.get_permissions_by_user_group(user_group=user_group)
+                ]
+            }
+            for user_group in UserGroup.get_all_user_groups()
+        ]
+
+    def _post(self):
+        """Create user group"""
+        attributes = request.json
+        name = attributes.get('name')
+        site_admin = attributes.get('site_admin')
+
+        if site_admin is not True and site_admin is not False:
+            return {}, 400
+
+        user_group = UserGroup.create(name=name, site_admin=site_admin)
+        if user_group:
+            return {
+                'name': user_group.name,
+                'site_admin': user_group.site_admin
+            }, 201
+        else:
+            return {}, 400
+
+
+class ApiTerraregAuthUserGroup(ErrorCatchingResource):
+    """Interface to interact with single user group."""
+
+    method_decorators = [auth_wrapper('is_admin')]
+
+    def _delete(self, user_group):
+        """Delete user group."""
+        user_group_obj = UserGroup.get_by_group_name(user_group)
+        if not user_group_obj:
+            return {'message': 'User group does not exist.'}, 400
+
+        user_group_obj.delete()
+        return {}, 200
+
+
+class ApiTerraregAuthUserGroupNamespacePermissions(ErrorCatchingResource):
+    """Interface to create user groups namespace permissions."""
+
+    method_decorators = [auth_wrapper('is_admin')]
+
+    def _post(self, user_group, namespace):
+        """Create user group namespace permission"""
+        attributes = request.json
+        permission_type = attributes.get('permission_type')
+        try:
+            permission_type_enum = UserGroupNamespacePermissionType(permission_type)
+        except ValueError:
+            return {'message': 'Invalid namespace permission type'}, 400
+
+        namespace_obj = Namespace.get(name=namespace)
+        if not namespace_obj:
+            return {'message': 'Namespace does not exist.'}, 400
+        user_group_obj = UserGroup.get_by_group_name(user_group)
+        if not user_group_obj:
+            return {'message': 'User group does not exist.'}, 400
+
+        user_group_namespace_permission = UserGroupNamespacePermission.create(
+            user_group=user_group_obj,
+            namespace=namespace_obj,
+            permission_type=permission_type_enum
+        )
+        if user_group_namespace_permission:
+            return {
+                'user_group': user_group_obj.name,
+                'namespace': namespace_obj.name,
+                'permission_type': permission_type_enum.value
+            }, 201
+        else:
+            return {'message': 'Permission already exists for this user_group/namespace.'}, 400
+
+    def _delete(self, user_group, namespace):
+        """Delete user group namespace permission"""
+        namespace_obj = Namespace.get(name=namespace)
+        if not namespace_obj:
+            return {'message': 'Namespace does not exist.'}, 400
+        user_group_obj = UserGroup.get_by_group_name(user_group)
+        if not user_group_obj:
+            return {'message': 'User group does not exist.'}, 400
+
+        user_group_namespace_permission = UserGroupNamespacePermission.get_permissions_by_user_group_and_namespace(
+            user_group=user_group_obj,
+            namespace=namespace_obj
+        )
+        if not user_group_namespace_permission:
+            return {'message': 'Permission does not exist.'}, 400
+
+        user_group_namespace_permission.delete()
+        return {}, 200

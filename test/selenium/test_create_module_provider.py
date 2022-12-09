@@ -13,11 +13,12 @@ from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
 class TestCreateModuleProvider(SeleniumTest):
     """Test create_module_provider page."""
 
+    _SECRET_KEY = '354867a669ef58d17d0513a0f3d02f4403354915139422a8931661a3dbccdffe'
+
     @classmethod
     def setup_class(cls):
         """Setup required mocks."""
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
-        cls.register_patch(mock.patch('terrareg.config.Config.SECRET_KEY', '354867a669ef58d17d0513a0f3d02f4403354915139422a8931661a3dbccdffe'))
 
         super(TestCreateModuleProvider, cls).setup_class()
 
@@ -33,6 +34,9 @@ class TestCreateModuleProvider(SeleniumTest):
 
     def test_page_details(self):
         """Test page contains required information."""
+
+        self.perform_admin_authentication('unittest-password')
+
         self.selenium_instance.get(self.get_url('/create-module'))
 
         assert self.selenium_instance.find_element(By.CLASS_NAME, 'breadcrumb').text == 'Create Module'
