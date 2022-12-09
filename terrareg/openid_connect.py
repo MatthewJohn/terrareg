@@ -134,9 +134,32 @@ class OpenidConnect:
 
         header = jwt.get_unverified_header(jwt=session_id_token)
 
-        jwt.decode(
-            session_id_token,
-            key=idp_keys[header['kid']],
-            algorithms=[header['alg']],
-            audience=terrareg.config.Config().OPENID_CONNECT_CLIENT_ID
+        try:
+            jwt.decode(
+                session_id_token,
+                key=idp_keys[header['kid']],
+                algorithms=[header['alg']],
+                audience=terrareg.config.Config().OPENID_CONNECT_CLIENT_ID
+            )
+        except:
+            if terrareg.config.Config().OPENID_CONNECT_DEBUG:
+                print(
+                    'ERROR VERIFYING JWT TOKEN. '
+                    'Please check that OPENID_CONNECT_CLIENT_ID is set to correct audience.'
+                )
+            raise
+
+    @classmethod
+    def get_user_info(cls, access_token):
+        """Get user infor"""
+        user_info_endpoint = cls.obtain_issuer_metadata().get('userinfo_endpoint')
+        if not user_info_endpoint:
+            return None
+
+        res = requests.post(
+            user_info_endpoint,
+            headers={
+                'Authorization': f'Bearer {access_token}'
+            }
         )
+        return res.json()

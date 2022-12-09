@@ -16,7 +16,7 @@ import terrareg.analytics
 from terrareg.database import Database
 import terrareg.config
 from terrareg.errors import (
-    InvalidModuleNameError, InvalidModuleProviderNameError,
+    InvalidModuleNameError, InvalidModuleProviderNameError, InvalidUserGroupNameError,
     InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError,
     RepositoryUrlDoesNotContainValidSchemeError,
@@ -96,6 +96,263 @@ class Session:
         with db.get_connection() as conn:
             conn.execute(db.session.delete().where(
                 db.session.c.id==self.id
+            ))
+
+
+class UserGroup:
+
+    @staticmethod
+    def _validate_name(name):
+        """Validate name of user group"""
+        if not re.match(r'^[\s0-9a-zA-Z-_]+$', name):
+            raise InvalidUserGroupNameError('User group name is invalid')
+        return True
+
+    @classmethod
+    def get_by_group_name(cls, name):
+        """Obtain group by name."""
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(db.user_group.select().where(
+                db.user_group.c.name==name
+            ))
+            if row := res.fetchone():
+                return cls(name=row['name'])
+
+            return None
+
+    @classmethod
+    def create(cls, name, site_admin):
+        """Create usergroup"""
+        # Check if group exists with name
+        if cls.get_by_group_name(name=name):
+            return None
+
+        # Check group name
+        if not cls._validate_name(name):
+            return None
+
+        cls._insert_into_db(name=name, site_admin=site_admin)
+        return cls(name=name)
+
+    @classmethod
+    def _insert_into_db(cls, name, site_admin):
+        """Insert new user group into database."""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.user_group.insert().values(
+                name=name, site_admin=site_admin
+            ))
+
+    @classmethod
+    def get_all_user_groups(cls):
+        """Obtain all user groups."""
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(db.user_group.select())
+            return [
+                cls(row['name'])
+                for row in res.fetchall()
+            ]
+
+    @property
+    def pk(self):
+        """Return DB ID of user group"""
+        return self._get_db_row()['id']
+
+    @property
+    def name(self):
+        """Return name of user group"""
+        return self._name
+
+    @property
+    def site_admin(self):
+        """Return site_admin property of user group"""
+        return self._get_db_row()['site_admin']
+
+    def __init__(self, name):
+        """Store member variables"""
+        self._name = name
+        self._row_cache = None
+
+    def __eq__(self, __o):
+        """Check if two user groups are the same"""
+        if isinstance(__o, self.__class__):
+            return self.pk == __o.pk and self.name == __o.name and self.site_admin == __o.site_admin
+        return super(UserGroup, self).__eq__(__o)
+
+    def _get_db_row(self):
+        """Return DB row for user group."""
+        if self._row_cache is None:
+            db = Database.get()
+            # Obtain row from user group table.
+            select = db.user_group.select().where(
+                db.user_group.c.name == self._name
+            )
+            with db.get_connection() as conn:
+                res = conn.execute(select)
+                self._row_cache = res.fetchone()
+        return self._row_cache
+
+    def delete(self):
+        """Delete user group"""
+        db = Database.get()
+
+        for group_permission in UserGroupNamespacePermission.get_permissions_by_user_group(self):
+            group_permission.delete()
+
+        with db.get_connection() as conn:
+            conn.execute(db.user_group.delete().where(
+                db.user_group.c.id==self.pk
+            ))
+
+
+class UserGroupNamespacePermission:
+
+    @classmethod
+    def get_permissions_by_user_group(cls, user_group):
+        """Return permissions by user group"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            query = sqlalchemy.select(
+                db.user_group.c.name.label('user_group_name'),
+                db.namespace.c.namespace.label('namespace_name')
+            ).select_from(
+                db.user_group_namespace_permission
+            ).join(
+                db.user_group,
+                db.user_group_namespace_permission.c.user_group_id==db.user_group.c.id
+            ).join(
+                db.namespace,
+                db.user_group_namespace_permission.c.namespace_id==db.namespace.c.id
+            ).where(
+                db.user_group.c.id==user_group.pk
+            )
+            res = conn.execute(query)
+
+            return [
+                cls(
+                    user_group=UserGroup(name=r['user_group_name']),
+                    namespace=Namespace(name=r['namespace_name'])
+                )
+                for r in res.fetchall()
+            ]
+
+    @classmethod
+    def get_permissions_by_user_group_and_namespace(cls, user_group, namespace):
+        """Return permission by user group and namespace"""
+        permissions = cls.get_permissions_by_user_groups_and_namespace([user_group], namespace)
+        if len(permissions) > 1:
+            raise Exception('Found more than 1 permission for user group/namespace')
+        return permissions[0] if permissions else None
+
+    @classmethod
+    def get_permissions_by_user_groups_and_namespace(cls, user_groups, namespace):
+        """Obtain user permission by multiple user groups for a single namespace"""
+        db = Database.get()
+        user_group_ids = [user_group.pk for user_group in user_groups]
+        user_group_mapping = {
+            user_group.name: user_group
+            for user_group in user_groups
+        }
+        with db.get_connection() as conn:
+            query = sqlalchemy.select(
+                db.user_group.c.name.label('user_group_name')
+            ).join(
+                db.user_group,
+                db.user_group_namespace_permission.c.user_group_id==db.user_group.c.id
+            ).where(
+                db.user_group.c.id.in_(user_group_ids),
+                db.user_group_namespace_permission.c.namespace_id==namespace.pk
+            )
+            res = conn.execute(query)
+            permissions = [
+                cls(user_group=user_group_mapping[row['user_group_name']], namespace=namespace)
+                for row in res
+            ]
+
+            return permissions
+
+    @classmethod
+    def create(cls, user_group, namespace, permission_type):
+        """Create user group namespace permission"""
+        # Check if permission already exists
+        if cls.get_permissions_by_user_group_and_namespace(
+                user_group=user_group,
+                namespace=namespace):
+            return None
+
+        cls._insert_into_database(
+            user_group=user_group,
+            namespace=namespace,
+            permission_type=permission_type)
+        return cls(user_group=user_group, namespace=namespace)
+
+    @classmethod
+    def _insert_into_database(cls, user_group, namespace, permission_type):
+        """Insert permission into database"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.user_group_namespace_permission.insert().values(
+                user_group_id=user_group.pk,
+                namespace_id=namespace.pk,
+                permission_type=permission_type
+            ))
+
+    @property
+    def user_group(self):
+        """Return user group."""
+        return self._user_group
+
+    @property
+    def namespace(self):
+        """Return namespace."""
+        return self._namespace
+
+    @property
+    def permission_type(self):
+        """Return permission."""
+        return self._get_db_row()['permission_type']
+
+    def __init__(self, user_group, namespace):
+        """Store member variables."""
+        self._user_group = user_group
+        self._namespace = namespace
+        self._row_cache = None
+
+    def __eq__(self, __o):
+        """Check if two user group namespace permissions are the same"""
+        if isinstance(__o, self.__class__):
+            return (
+                self.namespace.pk == __o.namespace.pk and
+                self.user_group.pk == __o.user_group.pk and
+                self.permission_type == __o.permission_type
+            )
+        return super(UserGroupNamespacePermission, self).__eq__(__o)
+
+    def _get_db_row(self):
+        """Return DB row for user group."""
+        if self._row_cache is None:
+            db = Database.get()
+            # Obtain row from user group table.
+            select = sqlalchemy.select(
+                db.user_group_namespace_permission
+            ).where(
+                db.user_group_namespace_permission.c.user_group_id==self._user_group.pk,
+                db.user_group_namespace_permission.c.namespace_id==self._namespace.pk
+            )
+            with db.get_connection() as conn:
+                res = conn.execute(select)
+                self._row_cache = res.fetchone()
+        return self._row_cache
+
+    def delete(self):
+        """Delete user group namespace permission."""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.user_group_namespace_permission.delete().where(
+                db.user_group_namespace_permission.c.user_group_id==self.user_group.pk,
+                db.user_group_namespace_permission.c.namespace_id==self.namespace.pk
             ))
 
 
