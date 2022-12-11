@@ -15,6 +15,8 @@ from flask import (
     session, g, redirect
 )
 from flask_restful import Resource, Api, reqparse, inputs, abort
+from terrareg.audit import AuditEvent
+from terrareg.audit_action import AuditAction
 import terrareg.auth
 
 import terrareg.config
@@ -276,6 +278,9 @@ class Server(BaseHandler):
             '/user-groups'
         )(self._view_serve_user_groups)
         self._app.route(
+            '/audit-history'
+        )(self._view_serve_audit_history)
+        self._app.route(
             '/modules'
         )(self._view_serve_namespace_list)
         self._app.route(
@@ -501,6 +506,10 @@ class Server(BaseHandler):
         self._api.add_resource(
             ApiTerraregModuleSearchFilters,
             '/v1/terrareg/search_filters'
+        )
+        self._api.add_resource(
+            ApiTerraregAuditHistory,
+            '/v1/terrareg/audit-history'
         )
         self._api.add_resource(
             ApiTerraregAuthUserGroups,
@@ -744,6 +753,17 @@ class Server(BaseHandler):
                 error_description="You are not logged in or do not have permssion to view this page"
             ), 403
         return self._render_template('user_groups.html')
+
+    def _view_serve_audit_history(self):
+        """Page to view/modify user groups and permissions."""
+        if not terrareg.auth.AuthFactory().get_current_auth_method().is_admin():
+            return self._render_template(
+                'error.html',
+                root_bread_brumb='Audit History',
+                error_title='Permission denied',
+                error_description="You are not logged in or do not have permssion to view this page"
+            ), 403
+        return self._render_template('audit_history.html')
 
 
 def get_csrf_token():
@@ -1157,6 +1177,7 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
                     module_version.prepare_module()
                     with GitModuleExtractor(module_version=module_version) as me:
                         me.process_upload()
+
                 except TerraregError as exc:
                     # Roll back the transaction for this module version
                     savepoint.rollback()
@@ -1261,6 +1282,7 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
                     module_version.prepare_module()
                     with GitModuleExtractor(module_version=module_version) as me:
                         me.process_upload()
+
                 except TerraregError as exc:
                     # Roll back creation of module version
                     transaction_context.transaction.rollback()
@@ -1670,6 +1692,7 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
         """Create namespace."""
         namespace_name = request.json.get('name')
         namespace = Namespace.create(name=namespace_name)
+
         return {
             "name": namespace.name,
             "view_href": namespace.get_view_url()
@@ -1942,6 +1965,13 @@ class ApiTerraregAdminAuthenticate(ErrorCatchingResource):
         session['authentication_type'] = terrareg.auth.AuthenticationType.SESSION_PASSWORD.value
         session.modified = True
 
+        # Create audit event
+        AuditEvent.create_audit_event(
+            action=AuditAction.USER_LOGIN,
+            object_type=None, object_id=None,
+            old_value=None, new_value=None
+        )
+
         return {'authenticated': True}
 
 
@@ -2120,7 +2150,10 @@ class ApiTerraregModuleProviderDelete(ErrorCatchingResource):
         if error:
             return error
 
+        module_provider_id = module_provider.id
+
         module_provider.delete()
+
 
 class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
     """Provide interface to delete module version."""
@@ -2147,6 +2180,8 @@ class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
         _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
         if error:
             return error
+
+        module_version_id = module_version.id
 
         module_version.delete()
 
@@ -2292,7 +2327,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             module_provider.update_git_path(git_path=git_path)
 
         if args.verified is not None:
-            module_provider.update_attributes(verified=args.verified)
+            module_provider.update_verified(verified=args.verified)
 
         return {}
 
@@ -2528,6 +2563,7 @@ class ApiOpenIdCallback(ErrorCatchingResource):
         session['openid_connect_id_token'] = access_token['id_token']
         session['openid_connect_access_token'] = access_token['access_token']
         session['openid_groups'] = user_info.get('groups', [])
+        session['openid_username'] = user_info.get('preferred_username', None)
         session['is_admin_authenticated'] = True
         session['authentication_type'] = terrareg.auth.AuthenticationType.SESSION_OPENID_CONNECT.value
 
@@ -2537,12 +2573,21 @@ Successul OpenID connect authentication response:
 User info:
 {user_info}
 User groups:
-{session['openid_groups']}""")
-
+{session['openid_groups']}
+Username:
+{session['openid_username']}
+""")
 
         # Manually calcualte expires at, to avoid timezone issues
         session['openid_connect_expires_at'] = datetime.datetime.now().timestamp() + access_token['expires_in']
         session.modified = True
+
+        # Create audit event
+        AuditEvent.create_audit_event(
+            action=AuditAction.USER_LOGIN,
+            object_type=None, object_id=None,
+            old_value=None, new_value=None
+        )
 
         # Redirect to homepage
         return redirect('/')
@@ -2614,6 +2659,13 @@ Errors:
             res.headers['Content-Type'] = 'text/html'
             return res
 
+        # Create audit event
+        AuditEvent.create_audit_event(
+            action=AuditAction.USER_LOGIN,
+            object_type=None, object_id=None,
+            old_value=None, new_value=None
+        )
+
         return redirect('/', code=302)
 
     def _post(self):
@@ -2637,6 +2689,94 @@ class ApiSamlMetadata(ErrorCatchingResource):
         else:
             resp = make_response(', '.join(errors), 500)
         return resp
+
+
+class ApiTerraregAuditHistory(ErrorCatchingResource):
+    """Interface to obtain audit history"""
+
+    method_decorators = [auth_wrapper('is_admin')]
+
+    def _get(self):
+        """Obtain audit history events"""
+
+        parser = reqparse.RequestParser()
+        parser.add_argument(
+            'search[value]', type=str,
+            required=False,
+            default='',
+            help='Templated URL for browsing repository.',
+            dest='query'
+        )
+        parser.add_argument(
+            'length', type=int,
+            required=False,
+            default=10,
+            help='Module provider git tag format.'
+        )
+        parser.add_argument(
+            'start', type=int,
+            required=False,
+            default=0,
+            help='Path within git repository that the module exists.'
+        )
+        parser.add_argument(
+            'order[0][dir]', type=str,
+            required=False,
+            default='desc',
+            help='Whether module provider is marked as verified.',
+            dest='order_dir'
+        )
+        parser.add_argument(
+            'order[0][column]', type=int,
+            required=False,
+            help='CSRF token',
+            default=0,
+            dest='order_by'
+        )
+        parser.add_argument(
+            'draw', type=int,
+            required=False,
+            help='draw ID',
+            default=0
+        )
+
+        args = parser.parse_args()
+        columns = [
+            'timestamp',
+            'username',
+            'action',
+            'object_id',
+            'old_value',
+            'new_value'
+        ]
+        order_by = 'timestamp'
+        if args.order_by < len(columns):
+            order_by = columns[args.order_by]
+
+        events, total_count, filtered_count = AuditEvent.get_events(
+            limit=args.length,
+            offset=args.start,
+            descending=args.order_dir == 'desc',
+            order_by=order_by,
+            query=args.query
+        )
+
+        return {
+            "data": [
+                {
+                    'timestamp': event['timestamp'].isoformat(),
+                    'username': event['username'],
+                    'action': event['action'].name,
+                    'object_id': event['object_id'],
+                    'old_value': event['old_value'],
+                    'new_value': event['new_value']
+                }
+                for event in events
+            ],
+            "draw": args.draw + 1,
+            "recordsTotal": total_count,
+            "recordsFiltered": filtered_count
+        }
 
 
 class ApiTerraregAuthUserGroups(ErrorCatchingResource):

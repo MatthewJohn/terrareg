@@ -40,3 +40,7 @@ class BaseAuthMethodTest(TerraregUnitTest):
     def test_check_namespace_access(self):
         """Test check_namespace_access method"""
         raise NotImplementedError
+
+    def test_get_username(self):
+        """Test check_username method"""
+        raise NotImplementedError
