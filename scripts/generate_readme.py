@@ -55,11 +55,11 @@ Default: `{documented_default_value}`
     description=description,
     documented_default_value=documented_default_value)
 
-with open('README.in', 'r') as readme_in:
+with open('docs/CONFIG.md.in', 'r') as readme_in:
     readme_template = ''.join(readme_in.readlines())
 
 template = jinja2.Template(readme_template)
 readme_out = template.render(CONFIG_CONTENTS=config_contents)
 
-with open('README.md', 'w') as readme:
+with open('docs/CONFIG.md', 'w') as readme:
     readme.write(readme_out)
