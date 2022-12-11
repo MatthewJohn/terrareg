@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.46.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.46.0...v2.46.1) (2022-12-11)
+
+
+### Bug Fixes
+
+* Move title for current submodule/example above name of module ([f026850](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f02685065e07595d7969a65d75545bb13038ac6d)), closes [#224](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/224)
+
 # [2.46.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.45.3...v2.46.0) (2022-12-09)
 
 
