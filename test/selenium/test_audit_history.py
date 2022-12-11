@@ -93,16 +93,13 @@ class TestAuditHistory(SeleniumTest):
         # Ensure table is shown and fields are present
         audit_table = self.selenium_instance.find_element(By.ID, 'audit-history-table')
 
-        # Re-order table by timestamp desc
-        #audit_table.find_element(By.XPATH, ".//th[text()='Timestamp']").click()
-
         rows = [r for r in audit_table.find_elements(By.TAG_NAME, 'tr')]
-        print(rows)
+
         # Ignore first two audit events caused by login
         self._ensure_audit_row_is_like(
             rows[1],
-            timestamp='2022-11-27T19:15:10', username='test-event-admin',
-            action='NAMESPACE_CREATE', object_id='test-namespace/test-module', old_value='', new_value='')
+            timestamp='2022-11-27T19:14:10', username='test-event-admin',
+            action='NAMESPACE_CREATE', object_id='test-namespace', old_value='', new_value='')
 
         self._ensure_audit_row_is_like(
             rows[2],
