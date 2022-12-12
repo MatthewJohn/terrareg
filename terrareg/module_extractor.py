@@ -262,7 +262,7 @@ class ModuleExtractor:
 
         infracost_env = dict(os.environ)
         if Config().DOMAIN_NAME:
-            infracost_env['INFRACOST_TERRAFORM_CLOUD_TOKEN'] = Config()._INTERNAL_EXTRACTION_ANALYITCS_TOKEN
+            infracost_env['INFRACOST_TERRAFORM_CLOUD_TOKEN'] = Config().INTERNAL_EXTRACTION_ANALYITCS_TOKEN
             infracost_env['INFRACOST_TERRAFORM_CLOUD_HOST'] = Config().DOMAIN_NAME
 
         # Create temporary file safely and immediately close to
