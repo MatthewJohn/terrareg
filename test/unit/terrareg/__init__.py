@@ -1,4 +1,5 @@
 
+from copy import deepcopy
 import datetime
 import functools
 import secrets
@@ -10,12 +11,12 @@ from terrareg.database import Database
 from terrareg.errors import NamespaceAlreadyExistsError
 from terrareg.models import (
     GitProvider, Module, ModuleDetails,
-    ModuleProvider, ModuleVersion, ModuleVersionFile, Namespace, Session
+    ModuleProvider, ModuleVersion, ModuleVersionFile, Namespace, Session, UserGroup, UserGroupNamespacePermission
 )
 from terrareg.server import Server
 import terrareg.config
 from test import BaseTest
-from .test_data import test_data_full, test_git_providers
+from .test_data import test_data_full, test_git_providers, test_user_group_data_full
 
 
 class TerraregUnitTest(BaseTest):
@@ -45,8 +46,9 @@ TEST_MODULE_DATA = {}
 TEST_GIT_PROVIDER_DATA = {}
 TEST_MODULE_DETAILS = {}
 TEST_MODULE_DETAILS_ITX = 0
+USER_GROUP_CONFIG = {}
 
-def setup_test_data(test_data=None):
+def setup_test_data(test_data=None, user_group_data=None):
     """Provide decorator to setup test data to be used for mocked objects."""
     def deco(func):
         @functools.wraps(func)
@@ -54,8 +56,10 @@ def setup_test_data(test_data=None):
             global TEST_MODULE_DETAILS
             global TEST_MODULE_DETAILS_ITX
             global TEST_MODULE_DATA
+            global USER_GROUP_CONFIG
             TEST_MODULE_DATA = dict(test_data if test_data else test_data_full)
             TEST_MODULE_DETAILS = {}
+            USER_GROUP_CONFIG = deepcopy(user_group_data if user_group_data else test_user_group_data_full)
 
             # Replace all ModuleDetails in test data with IDs and move contents to
             # TEST_MODULE_DETAILS
@@ -408,6 +412,123 @@ class MockSession(Session):
         """Delete session from database"""
         if self.id in MockSession.MOCK_SESSIONS:
             del MockSession.MOCK_SESSIONS[self.id]
+
+
+class MockUserGroup(UserGroup):
+
+    @classmethod
+    def get_by_group_name(cls, name):
+        """Obtain group by name."""
+        global USER_GROUP_CONFIG
+        if name in USER_GROUP_CONFIG:
+            return MockUserGroup(name)
+        return None
+
+    @classmethod
+    def _insert_into_db(cls, name, site_admin):
+        """Insert usergroup into DB"""
+        global USER_GROUP_CONFIG
+        if name in USER_GROUP_CONFIG:
+            # Should not hit this exception
+            raise Exception('MOCK USER GROUP ALREAY EXISTS')
+        USER_GROUP_CONFIG[name] = {
+            'id': 200,
+            'site_admin': site_admin,
+            'namespace_permissions': {}
+        }
+
+    @classmethod
+    def get_all_user_groups(cls):
+        """Obtain all user groups."""
+        global USER_GROUP_CONFIG
+        return [
+            cls(user_group_name)
+            for user_group_name in USER_GROUP_CONFIG
+        ]
+
+    def _get_db_row(self):
+        """Return DB row for user group."""
+        global USER_GROUP_CONFIG
+        if self._name in USER_GROUP_CONFIG:
+            return {
+                'id': USER_GROUP_CONFIG[self._name].get('id', 100),
+                'name': self._name,
+                'site_admin': USER_GROUP_CONFIG[self._name].get('site_admin', False)
+            }
+
+    def delete(self):
+        """Delete user group"""
+        global USER_GROUP_CONFIG
+        del USER_GROUP_CONFIG[self._name]
+
+
+class MockUserGroupNamespacePermission(UserGroupNamespacePermission):
+
+    @classmethod
+    def get_permissions_by_user_group(cls, user_group):
+        """Return permissions by user group"""
+        global USER_GROUP_CONFIG
+        return [
+            cls(user_group=user_group, namespace=MockNamespace.get(name=namespace))
+            for namespace in USER_GROUP_CONFIG[user_group.name].get('namespace_permissions', {})
+        ]
+
+    @classmethod
+    def get_permissions_by_user_groups_and_namespace(cls, user_groups, namespace):
+        """Obtain user permission by multiple user groups for a single namespace"""
+        global USER_GROUP_CONFIG
+        permissions = []
+        for user_group in user_groups:
+            if user_group.name in USER_GROUP_CONFIG and namespace.name in USER_GROUP_CONFIG[user_group.name].get('namespace_permissions', {}):
+                permissions.append(MockUserGroupNamespacePermission(user_group, namespace))
+
+        return permissions
+
+    @classmethod
+    def _insert_into_database(cls, user_group, namespace, permission_type):
+        """Insert user group namespace permission into DB"""
+        global USER_GROUP_CONFIG
+        if 'namespace_permissions' not in USER_GROUP_CONFIG[user_group.name]:
+            USER_GROUP_CONFIG[user_group.name]['namespace_permissions'] = {}
+        if namespace.name in USER_GROUP_CONFIG[user_group.name]['namespace_permissions']:
+            raise Exception('MOCK - namepsace_permission for namespace already exists')
+        USER_GROUP_CONFIG[user_group.name]['namespace_permissions'][namespace.name] = permission_type
+
+    def _get_db_row(self):
+        """Return DB row for user group."""
+        global USER_GROUP_CONFIG
+        if self._user_group.name in USER_GROUP_CONFIG and self._namespace.name in USER_GROUP_CONFIG[self._user_group.name].get('namespace_permissions', {}):
+            return {
+                'namespace_id': self._namespace.pk,
+                'user_group_id': self._user_group.pk,
+                'permission_type': USER_GROUP_CONFIG[self._user_group.name]['namespace_permissions'][self._namespace.name]
+            }
+        return None
+
+    def delete(self):
+        """Delete user group namespace permission."""
+        global USER_GROUP_CONFIG
+        del USER_GROUP_CONFIG[self.user_group.name]['namespace_permissions'][self.namespace.name]
+
+
+def mock_server_user_groups(request):
+    """Mock UserGroup and UserGroupNamespacePermission classes"""
+    user_group_patch = unittest.mock.patch('terrareg.server.UserGroup', MockUserGroup)
+    user_group_namespace_permission_patch = unittest.mock.patch(
+        'terrareg.server.UserGroupNamespacePermission',
+        MockUserGroupNamespacePermission)
+
+    def cleanup_mock():
+        user_group_namespace_permission_patch.stop()
+        user_group_patch.stop()
+    request.addfinalizer(cleanup_mock)
+    user_group_patch.start()
+    user_group_namespace_permission_patch.start()
+
+@pytest.fixture()
+def mock_server_user_groups_fixture(request):
+    """Mock UserGroup and UserGroupNamespacePermission as fixture"""
+    mock_server_user_groups(request)
 
 
 def mocked_server_module_version(request):

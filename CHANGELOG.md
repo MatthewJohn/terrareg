@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.46.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.46.0...v2.46.1) (2022-12-11)
+
+
+### Bug Fixes
+
+* Move title for current submodule/example above name of module ([f026850](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f02685065e07595d7969a65d75545bb13038ac6d)), closes [#224](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/224)
+
+# [2.46.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.45.3...v2.46.0) (2022-12-09)
+
+
+### Bug Fixes
+
+* Fix call to _module_provider_404 in example view ([14149f1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/14149f1ba0e9ff4f1a849cee47151dc89d1ad612)), closes [#255](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/255)
+
+
+### Features
+
+* Add ability to delete user group permissions and user groups from UI ([1674817](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1674817a59fb252fbe3b81d6d14c41fabc3fe6af)), closes [#255](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/255)
+* Add configurations to output debug for SAML2 and OpenID connect ([8248929](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8248929bd89b894f97eb4dfcb1d713d09cb6d71a)), closes [#255](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/255)
+* Update authenticated endpoint to return list of namespace permissions ([4144c1b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4144c1bb45aa1585ac961a5f6a36026aaa54cf42)), closes [#255](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/255)
+
 ## [2.45.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.45.2...v2.45.3) (2022-11-06)
 
 

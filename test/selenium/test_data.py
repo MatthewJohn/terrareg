@@ -1185,3 +1185,36 @@ integration_test_data = {
     },
     'testmodulecreation': {}
 }
+
+two_empty_namespaces = {
+    'firstnamespace': {
+    },
+    'second-namespace': {
+    }
+}
+
+selenium_user_group_data = {
+    'nopermissions': {
+    },
+    'siteadmin': {
+        'site_admin': True
+    },
+    'moduledetailsmodify': {
+        'namespace_permissions': {
+            'moduledetails': 'MODIFY'
+        }
+    },
+    'moduledetailsfull': {
+        'namespace_permissions': {
+            'moduledetails': 'FULL'
+        }
+    },
+    'multiplenamespaces': {
+        'namespace_permissions': {
+            'moduledetails': 'FULL',
+            'trustednamespace': 'FULL',
+            'testnamespace': 'MODIFY',
+            'moduleextraction': 'MODIFY'
+        }
+    }
+}

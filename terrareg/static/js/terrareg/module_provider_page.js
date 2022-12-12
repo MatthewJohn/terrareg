@@ -522,10 +522,17 @@ class IntegrationsTab extends ModuleDetailsTab {
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
             let config = await getConfig();
+            let loggedIn = await isLoggedIn();
+
             if (config.ALLOW_MODULE_HOSTING) {
                 $("#module-integrations-upload-container").removeClass('default-hidden');
             }
-            if (!config.PUBLISH_API_KEYS_ENABLED) {
+            if (!config.PUBLISH_API_KEYS_ENABLED ||
+                    loggedIn && (
+                        loggedIn.site_admin ||
+                        Object.keys(loggedIn.namespace_permissions).indexOf(this._moduleDetails.namespace) !== -1
+                    )
+            ) {
                 $("#integrations-index-module-version-publish").removeClass('default-hidden');
             }
 
@@ -1826,11 +1833,7 @@ function indexModuleVersion(moduleDetails) {
                         inProgressMessage.addClass('default-hidden');
 
                         // Display any errors
-                        if (res.responseJSON && res.responseJSON.message) {
-                            errorMessage.html(res.responseJSON.message);
-                        } else {
-                            errorMessage.html("An unexpected error occurred when publishing module version");
-                        }
+                        errorMessage.html(failedResponseToErrorString(res));
                         errorMessage.removeClass('default-hidden');
                     });
             } else {
@@ -1840,11 +1843,7 @@ function indexModuleVersion(moduleDetails) {
         })
         .fail((res) => {
             // Render and show error
-            if (res.responseJSON && res.responseJSON.message) {
-                errorMessage.html(res.responseJSON.message);
-            } else {
-                errorMessage.html("An unexpected error occurred when indexing module");
-            }
+            errorMessage.html(failedResponseToErrorString(res));
             errorMessage.removeClass('default-hidden');
             // Hide in-progress
             inProgressMessage.addClass('default-hidden');

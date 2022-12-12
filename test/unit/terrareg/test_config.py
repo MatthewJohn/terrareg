@@ -78,6 +78,7 @@ class TestConfig:
         ('SAML2_LOGIN_TEXT', None),
         ('SAML2_PRIVATE_KEY', None),
         ('SAML2_PUBLIC_KEY', None),
+        ('SAML2_GROUP_ATTRIBUTE', None),
         ('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', None)
     ])
     def test_string_configs(self, config_name, override_expected_value):
@@ -152,7 +153,10 @@ class TestConfig:
         'ENABLE_SECURITY_SCANNING',
         'AUTOGENERATE_USAGE_BUILDER_VARIABLES',
         'THREADED',
-        'INFRACOST_TLS_INSECURE_SKIP_VERIFY'
+        'INFRACOST_TLS_INSECURE_SKIP_VERIFY',
+        'ENABLE_ACCESS_CONTROLS',
+        'SAML2_DEBUG',
+        'OPENID_CONNECT_DEBUG'
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
         """Test boolean configs to ensure they are overriden with environment variables."""

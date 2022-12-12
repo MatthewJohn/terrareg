@@ -1,6 +1,7 @@
 
 import unittest.mock
 import datetime
+from terrareg.auth import AdminApiKeyAuthMethod
 
 from test.unit.terrareg import (
     TerraregUnitTest, mocked_server_session_fixture
@@ -13,19 +14,22 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
     def test_authenticated(self, client, mocked_server_session_fixture):
         """Test endpoint when user is authenticated."""
         cookie_expiry_mins = 5
-        with unittest.mock.patch('terrareg.server.check_admin_authentication') as mock_admin_authentication, \
+        mock_auth_method = unittest.mock.MagicMock()
+        mock_auth_method.is_built_in_admin = unittest.mock.MagicMock(return_value=True)
+        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
+        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
                 unittest.mock.patch('terrareg.config.Config.SECRET_KEY', 'averysecretkey'), \
                 unittest.mock.patch('terrareg.config.Config.ADMIN_SESSION_EXPIRY_MINS', cookie_expiry_mins), \
                 unittest.mock.patch('terrareg.server.Session.cleanup_old_sessions', create=True) as cleanup_old_sessions_mock:
             # Update real app secret key
             self.SERVER._app.secret_key = 'averysecretkey'
 
-            mock_admin_authentication.return_value = True
-
             res = client.post('/v1/terrareg/auth/admin/login')
 
             assert res.status_code == 200
             assert res.json == {'authenticated': True}
+
+            mock_auth_method.is_built_in_admin.assert_called_once_with()
 
             cleanup_old_sessions_mock.assert_called_once()
 
@@ -37,16 +41,19 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
 
     def test_authenticated_without_secret_key(self, client, mocked_server_session_fixture):
         """Test endpoint and ensure session is not provided"""
-        with unittest.mock.patch('terrareg.server.check_admin_authentication') as mock_admin_authentication, \
+        mock_auth_method = unittest.mock.MagicMock()
+        mock_auth_method.is_built_in_admin = unittest.mock.MagicMock(return_value=True)
+        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
+        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
                 unittest.mock.patch('terrareg.config.Config.SECRET_KEY', ''), \
                 unittest.mock.patch('terrareg.server.Session.cleanup_old_sessions', create=True) as cleanup_old_sessions_mock:
             # Update real app secret key with fake value,
             # otherwise an error would be received when checking the session.
             self.SERVER._app.secret_key = 'test'
 
-            mock_admin_authentication.return_value = True
-
             res = client.post('/v1/terrareg/auth/admin/login')
+
+            mock_auth_method.is_built_in_admin.assert_called_once_with()
 
             assert res.status_code == 403
             assert res.json == {'message': 'Sessions not enabled in configuration'}
@@ -67,10 +74,13 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
 
     def test_unauthenticated(self, client, mocked_server_session_fixture):
         """Test endpoint when user is authenticated."""
-        with unittest.mock.patch('terrareg.server.check_admin_authentication') as mock_admin_authentication:
-
-            mock_admin_authentication.return_value = False
+        mock_auth_method = unittest.mock.MagicMock()
+        mock_auth_method.is_built_in_admin = unittest.mock.MagicMock(return_value=False)
+        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
+        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
 
             res = client.post('/v1/terrareg/auth/admin/login')
 
-            assert res.status_code == 401
+            assert res.status_code == 403
+            assert res.json == {'message': "You don't have the permission to access the requested resource. "
+                                           "It is either read-protected or not readable by the server."}

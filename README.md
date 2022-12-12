@@ -491,6 +491,20 @@ This should be setup for all installations, but is required for infracost and Op
 Default: ``
 
 
+### ENABLE_ACCESS_CONTROLS
+
+
+Enables role based access controls for SSO users.
+
+Enabling this feature will restrict all SSO users from performing any admin tasks.
+Group mappings can be setup in the settings page, providing SSO users and groups with global or namespace-based permissions.
+
+When disabled, all SSO users will have global admin privileges.
+
+
+Default: `False`
+
+
 ### ENABLE_SECURITY_SCANNING
 
 
@@ -674,6 +688,17 @@ Client secret for OpenID Conect authentication
 Default: ``
 
 
+### OPENID_CONNECT_DEBUG
+
+
+Enable debug of OpenID connect via stdout.
+
+This should only be enabled for non-production environments.
+
+
+Default: `False`
+
+
 ### OPENID_CONNECT_ISSUER
 
 
@@ -714,6 +739,17 @@ Comma-seperated list of metadata attributes that each uploaded module _must_ con
 Default: ``
 
 
+### SAML2_DEBUG
+
+
+Enable debug of Saml2 via stdout.
+
+This should only be enabled for non-production environments.
+
+
+Default: `False`
+
+
 ### SAML2_ENTITY_ID
 
 
@@ -721,6 +757,15 @@ SAML2 provider entity ID of the application.
 
 
 Default: ``
+
+
+### SAML2_GROUP_ATTRIBUTE
+
+
+SAML2 user data group attribute.
+
+
+Default: `groups`
 
 
 ### SAML2_IDP_METADATA_URL
