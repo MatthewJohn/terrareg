@@ -256,6 +256,39 @@ class TestAuditHistory(SeleniumTest):
                         row_test
                     )
 
-    def test_result_filtering(self):
+    @pytest.mark.parametrize(
+        'search_string,result_count,expected_rows', [
+            ('testuser', 10, [_AUDIT_DATA['user_login_1'], _AUDIT_DATA['user_login_2'], _AUDIT_DATA['user_login_3']]),
+            ('namespaceowner', 4, [_AUDIT_DATA['module_version_index_2'], _AUDIT_DATA['module_version_index_1'],
+                                   _AUDIT_DATA['module_version_publish'], _AUDIT_DATA['module_version_delete']]),
+            ('MODULE_VERSION_INDEX', 2, [_AUDIT_DATA['module_version_index_2'], _AUDIT_DATA['module_version_index_1']]),
+            ('test-namespace', 6, [_AUDIT_DATA['namespace_create'], _AUDIT_DATA['module_provider_create'],
+                                   _AUDIT_DATA['module_version_index_2'], _AUDIT_DATA['module_version_index_1'],
+                                   _AUDIT_DATA['module_version_publish'], _AUDIT_DATA['module_version_delete']])
+        ]
+    )
+    def test_result_filtering(self, search_string, result_count, expected_rows):
         """Test filtering results using query string."""
-        pass
+        self.perform_admin_authentication('unittest-password')
+
+        # Load homepage, waiting for drop-down to be rendered and navigate to audit history page
+        self.selenium_instance.get(self.get_url('/audit-history'))
+
+        # Ensure table is shown and fields are present
+        audit_table = self.selenium_instance.find_element(By.ID, 'audit-history-table')
+
+        self.selenium_instance.find_element(By.ID, 'audit-history-table_filter').find_element(By.TAG_NAME, 'input').send_keys(search_string)
+
+        # Ensure only 10 rows are shown in table (plus heading)
+        self.assert_equals(lambda: len(self._get_audit_rows(audit_table)), result_count + 1)
+
+        rows = self._get_audit_rows(audit_table)
+
+        rows = self._get_audit_rows(audit_table)
+        # Check rows
+        for itx, row_test in enumerate(expected_rows):
+            if row_test is not None:
+                self._ensure_audit_row_is_like(
+                    rows[itx + 1],
+                    row_test
+                )
