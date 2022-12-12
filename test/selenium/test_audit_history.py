@@ -1,5 +1,6 @@
 
 from datetime import datetime
+from time import sleep
 from unittest import mock
 
 import pytest
@@ -25,9 +26,37 @@ class TestAuditHistory(SeleniumTest):
         with db.get_connection() as conn:
             for data in [
                 ['test-event-admin', AuditAction.NAMESPACE_CREATE, 'Namespace', 'test-namespace', None, None,
-                 datetime(year=2022, month=11, day=27, hour=19, minute=14, second=10)],
+                 datetime(year=2020, month=11, day=27, hour=19, minute=14, second=10)],
                 ['test-event-admin', AuditAction.MODULE_PROVIDER_CREATE, 'Module', 'test-namespace/test-module', None, None,
-                 datetime(year=2022, month=11, day=27, hour=19, minute=15, second=10)]
+                 datetime(year=2021, month=11, day=27, hour=19, minute=15, second=10)],
+                ['test-event-admin', AuditAction.MODULE_VERSION_INDEX, 'Module', 'test-namespace/test-module/2.0.1', None, None,
+                 datetime(year=2021, month=12, day=28, hour=19, minute=16, second=23)],
+                ['test-event-admin', AuditAction.MODULE_VERSION_INDEX, 'Module', 'test-namespace/test-module/2.0.1', None, None,
+                 datetime(year=2021, month=12, day=28, hour=19, minute=15, second=10)],
+                ['test-event-admin', AuditAction.MODULE_VERSION_PUBLISH, 'Module', 'test-namespace/test-module/2.0.1', None, None,
+                 datetime(year=2021, month=12, day=29, hour=19, minute=23, second=31)],
+                ['test-event-admin', AuditAction.MODULE_VERSION_DELETE, 'Module', 'test-namespace/test-module/2.0.1', None, None,
+                 datetime(year=2021, month=12, day=29, hour=20, minute=12, second=23)],
+                ['test-event-admin', AuditAction.USER_LOGIN, 'User', 'testuser1', None, None,
+                 datetime(year=2020, month=1, day=2, hour=9, minute=49, second=20)],
+                ['test-event-admin', AuditAction.USER_LOGIN, 'User', 'testuser2', None, None,
+                 datetime(year=2020, month=1, day=2, hour=9, minute=50, second=20)],
+                ['test-event-admin', AuditAction.USER_LOGIN, 'User', 'testuser3', None, None,
+                 datetime(year=2020, month=1, day=2, hour=9, minute=51, second=20)],
+                ['test-event-admin', AuditAction.USER_LOGIN, 'User', 'testuser4', None, None,
+                 datetime(year=2020, month=1, day=2, hour=9, minute=52, second=20)],
+                ['test-event-admin', AuditAction.USER_LOGIN, 'User', 'testuser4', None, None,
+                 datetime(year=2020, month=1, day=2, hour=9, minute=53, second=20)],
+                ['test-event-admin', AuditAction.USER_LOGIN, 'User', 'testuser5', None, None,
+                 datetime(year=2020, month=1, day=2, hour=9, minute=54, second=20)],
+                ['test-event-admin', AuditAction.USER_LOGIN, 'User', 'testuser6', None, None,
+                 datetime(year=2020, month=1, day=2, hour=9, minute=55, second=20)],
+                ['test-event-admin', AuditAction.USER_LOGIN, 'User', 'testuser7', None, None,
+                 datetime(year=2020, month=1, day=2, hour=9, minute=56, second=20)],
+                ['test-event-admin', AuditAction.USER_LOGIN, 'User', 'testuser8', None, None,
+                 datetime(year=2020, month=1, day=2, hour=9, minute=57, second=20)],
+                ['test-event-admin', AuditAction.USER_LOGIN, 'User', 'testuser9', None, None,
+                 datetime(year=2020, month=1, day=2, hour=9, minute=58, second=20)],
             ]:
                 conn.execute(
                     db.audit_history.insert().values(
@@ -75,11 +104,14 @@ class TestAuditHistory(SeleniumTest):
 
     def _ensure_audit_row_is_like(self, row, timestamp, username, action, object_id, old_value, new_value):
         """Ensure row matches expected data"""
-        assert [timestamp, username, action, object_id, old_value, new_value] == [
+        assert [
             td.text
             for td in row.find_elements(By.TAG_NAME, 'td')
-        ]
+        ] == [timestamp, username, action, object_id, old_value, new_value]
 
+    def _get_audit_rows(self, parent):
+        """Return rows from table"""
+        return [r for r in parent.find_elements(By.TAG_NAME, 'tr')]
 
     def test_basic_view(self):
         """Ensure page shows basic audit history."""
@@ -93,22 +125,77 @@ class TestAuditHistory(SeleniumTest):
         # Ensure table is shown and fields are present
         audit_table = self.selenium_instance.find_element(By.ID, 'audit-history-table')
 
-        rows = [r for r in audit_table.find_elements(By.TAG_NAME, 'tr')]
+        # Re-order table by timestamp desc
+        audit_table.find_element(By.XPATH, ".//th[text()='Timestamp']").click()
 
-        # Ignore first two audit events caused by login
+        rows = self._get_audit_rows(audit_table)
+        
+        # Ignore header row and first audit event caused by login
+        self._ensure_audit_row_is_like(
+            rows[2],
+            timestamp='2021-11-27T20:12:23', username='test-event-admin',
+            action='MODULE_VERSION_DELETE', object_id='test-namespace/test-module/2.0.1', old_value='', new_value='')
+
+        self._ensure_audit_row_is_like(
+            rows[3],
+            timestamp='2021-11-27T19:23:31', username='test-event-admin',
+            action='MODULE_VERSION_PUBLISH', object_id='test-namespace/test-module/2.0.1', old_value='', new_value='')
+
+    def test_pagination(self):
+        """Test pagination for audit history."""
+        self.perform_admin_authentication('unittest-password')
+
+        # Load homepage, waiting for drop-down to be rendered and navigate to audit history page
+        self.selenium_instance.get(self.get_url('/audit-history'))
+
+        assert self.selenium_instance.find_element(By.CLASS_NAME, 'breadcrumb').text == 'Audit History'
+
+        # Ensure table is shown and fields are present
+        audit_table = self.selenium_instance.find_element(By.ID, 'audit-history-table')
+
+        # Ensure only 10 rows are shown in table (plus heading)
+        self.assert_equals(lambda: len(self._get_audit_rows(audit_table)), 11)
+
+        rows = self._get_audit_rows(audit_table)
+
+        # Check content of rows
         self._ensure_audit_row_is_like(
             rows[1],
-            timestamp='2022-11-27T19:14:10', username='test-event-admin',
+            timestamp='2020-01-02T09:49:20', username='test-event-admin',
+            action='USER_LOGIN', object_id='testuser1', old_value='', new_value='')
+
+        self._ensure_audit_row_is_like(
+            rows[2],
+            timestamp='2020-01-02T09:50:20', username='test-event-admin',
+            action='USER_LOGIN', object_id='testuser2', old_value='', new_value='')
+
+        # Ensure previous is disabled and next is available
+        # Temporarily disabled due to is_enabled returning True
+        #assert self.selenium_instance.find_element(By.ID, 'audit-history-table_previous').find_element(By.CLASS_NAME, 'pagination-link').is_enabled() == False
+        #assert self.selenium_instance.find_element(By.ID, 'audit-history-table_next').find_element(By.CLASS_NAME, 'pagination-link').is_enabled() == True
+
+        # Ensure total pages is 2
+        page_links = [link for link in self.selenium_instance.find_elements(By.CLASS_NAME, 'pagination-link')]
+        assert len(page_links) == 4
+
+        # Click next page
+        self.selenium_instance.find_element(By.ID, 'audit-history-table_next').find_element(By.TAG_NAME, 'a').click()
+
+        # Ensure that there are 7 rows plus header
+        self.assert_equals(lambda: len(self._get_audit_rows(audit_table)), 8)
+
+        rows = self._get_audit_rows(audit_table)
+
+        # Check content of rows
+        self._ensure_audit_row_is_like(
+            rows[1],
+            timestamp='2020-11-27T19:14:10', username='test-event-admin',
             action='NAMESPACE_CREATE', object_id='test-namespace', old_value='', new_value='')
 
         self._ensure_audit_row_is_like(
             rows[2],
-            timestamp='2022-11-27T19:15:10', username='test-event-admin',
+            timestamp='2021-11-27T19:15:10', username='test-event-admin',
             action='MODULE_PROVIDER_CREATE', object_id='test-namespace/test-module', old_value='', new_value='')
-
-    def test_pagination(self):
-        """Test pagination for audit history."""
-        pass
 
     def test_column_ordering(self):
         """Test ordering data by column."""
