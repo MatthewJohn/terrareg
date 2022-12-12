@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.46.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.46.1...v2.46.2) (2022-12-12)
+
+
+### Bug Fixes
+
+* Update internal analaytics token to a config value, set by environment variable. ([3013b1b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3013b1b5190bf132c032f8507a1629e35e7801b4)), closes [#267](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/267)
+
+
+### Reverts
+
+* Revert "db: Add DB migration to handle deletion of erroneous analytics rows" ([6f44314](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6f44314fd29963847f648e3c7b6488c89192d371))
+
 ## [2.46.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.46.0...v2.46.1) (2022-12-11)
 
 
