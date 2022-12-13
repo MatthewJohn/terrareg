@@ -262,7 +262,7 @@ class TestAuditHistory(SeleniumTest):
                  self._AUDIT_DATA['user_group_create']]),
 
             # Sort by username
-            (1, [None, self._AUDIT_DATA['module_version_index_1'], None]),
+            (1, [None, self._AUDIT_DATA['module_version_delete'], self._AUDIT_DATA['module_version_publish']]),
             # Sort by username reversed
             (1, [self._AUDIT_DATA['user_group_delete'],
                  self._AUDIT_DATA['user_group_create']]),
@@ -270,8 +270,9 @@ class TestAuditHistory(SeleniumTest):
             # Sort by action
             (2, [None, self._AUDIT_DATA['module_version_index_1']]),
             # Sort by action reversed
-            (2, [self._AUDIT_DATA['user_login_1'],
-                 self._AUDIT_DATA['user_login_2']]),
+            (2, [None,
+                 self._AUDIT_DATA['user_login_10'],
+                 self._AUDIT_DATA['user_login_9']]),
 
             # Sort by object
             (3, [None, self._AUDIT_DATA['namespace_create']]),

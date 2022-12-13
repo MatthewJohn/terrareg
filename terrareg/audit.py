@@ -36,7 +36,9 @@ class AuditEvent:
 
         # Create query with ordering, limit and offset applied
         filtered_limit = filtered.order_by(
-            sqlalchemy.desc(order_by) if descending else sqlalchemy.asc(order_by)
+            sqlalchemy.desc(order_by) if descending else sqlalchemy.asc(order_by),
+            # Use timestamp in descender order as secondary ordering
+            sqlalchemy.desc(db.audit_history.c.timestamp)
         ).limit(
             limit
         ).offset(
