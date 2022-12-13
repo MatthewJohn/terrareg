@@ -46,12 +46,12 @@ class AuditEvent:
         # Create query counting all rows in table
         total_count_query = sqlalchemy.select(
             sqlalchemy.func.count('*').label('count')
-        ).select_from(db_query)
+        ).select_from(db_query.subquery())
 
         # Create query counting all rows with just filtering
         filtered_count_query = sqlalchemy.select(
             sqlalchemy.func.count('*').label('count')
-        ).select_from(filtered)
+        ).select_from(filtered.subquery())
 
         with db.get_connection() as conn:
             res = conn.execute(filtered_limit)
