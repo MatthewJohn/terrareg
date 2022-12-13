@@ -66,6 +66,8 @@ class TestAuditHistory(SeleniumTest):
         """Setup test audit data."""
         db = Database.get()
         with db.get_connection() as conn:
+            conn.execute(db.audit_history.delete())
+
             for data in cls._AUDIT_DATA.values():
                 conn.execute(
                     db.audit_history.insert().values(
@@ -86,7 +88,10 @@ class TestAuditHistory(SeleniumTest):
 
         super(TestAuditHistory, cls).setup_class()
 
-        cls._setup_test_audit_data()
+    def setup_method(self, *args, **kwargs):
+        """Setup test audit data."""
+        super(TestAuditHistory, self).setup_method(*args, **kwargs)
+        self._setup_test_audit_data()
 
     def test_navigation_from_homepage(self):
         """Test navigation user navbar to audit history page"""
@@ -147,12 +152,12 @@ class TestAuditHistory(SeleniumTest):
         
         # Ignore header row and first audit event caused by login
         self._ensure_audit_row_is_like(
-            rows[2],
-            self._AUDIT_DATA['module_version_delete'])
+            rows[1],
+            self._AUDIT_DATA['user_group_delete'])
 
         self._ensure_audit_row_is_like(
-            rows[3],
-            self._AUDIT_DATA['module_version_publish'])
+            rows[2],
+            self._AUDIT_DATA['user_group_create'])
 
     def test_pagination(self):
         """Test pagination for audit history."""
@@ -185,7 +190,7 @@ class TestAuditHistory(SeleniumTest):
         #assert self.selenium_instance.find_element(By.ID, 'audit-history-table_previous').find_element(By.CLASS_NAME, 'pagination-link').is_enabled() == False
         #assert self.selenium_instance.find_element(By.ID, 'audit-history-table_next').find_element(By.CLASS_NAME, 'pagination-link').is_enabled() == True
 
-        # Ensure total pages is 2
+        # Ensure total pages is 2, with prev + next buttons
         page_links = [link for link in self.selenium_instance.find_elements(By.CLASS_NAME, 'pagination-link')]
         assert len(page_links) == 4
 
@@ -229,7 +234,7 @@ class TestAuditHistory(SeleniumTest):
             (0, [self._AUDIT_DATA['user_group_delete'], self._AUDIT_DATA['user_group_create']]),
 
             # Sort by username
-            (1, [None, self._AUDIT_DATA['module_version_index_1']]),
+            (1, [None, self._AUDIT_DATA['module_version_index_1'], None]),
             # Sort by username reversed
             (1, [self._AUDIT_DATA['user_group_delete'], self._AUDIT_DATA['user_group_create']]),
 
