@@ -20,6 +20,9 @@ class AuditEvent:
             db.audit_history
         )
         filtered = db_query
+
+        # If query string has been provided,
+        # match any rows where any of the columns match
         if query:
             filtered = filtered.where(
                 sqlalchemy.or_(
@@ -30,6 +33,8 @@ class AuditEvent:
                     db.audit_history.c.new_value.like(f'%{query}%')
                 )
             )
+
+        # Create query with ordering, limit and offset applied
         filtered_limit = filtered.order_by(
             sqlalchemy.desc(order_by) if descending else sqlalchemy.asc(order_by)
         ).limit(
@@ -37,18 +42,23 @@ class AuditEvent:
         ).offset(
             offset
         )
-        filtered_count_query = sqlalchemy.select(
-            sqlalchemy.func.count('*').label('count')
-        ).select_from(filtered)
+
+        # Create query counting all rows in table
         total_count_query = sqlalchemy.select(
             sqlalchemy.func.count('*').label('count')
-        ).select_from(db_query)
+        ).select_from(db_query.subquery())
+
+        # Create query counting all rows with just filtering
+        filtered_count_query = sqlalchemy.select(
+            sqlalchemy.func.count('*').label('count')
+        ).select_from(filtered.subquery())
 
         with db.get_connection() as conn:
             res = conn.execute(filtered_limit)
             res = res.fetchall()
             filtered_count = conn.execute(filtered_count_query).fetchone()['count']
             total_count = conn.execute(total_count_query).fetchone()['count']
+
         return res, total_count, filtered_count
 
     @classmethod
