@@ -27,19 +27,19 @@ class TestAuditHistory(SeleniumTest):
                      hour=19, minute=14, second=10)
         ],
         'module_provider_create': [
-            'test-event-admin', AuditAction.NAMESPACE_CREATE, 'Namespace', 'test-namespace', None, None,
+            'test-event-admin', AuditAction.MODULE_PROVIDER_CREATE, 'ModuleProvider', 'test-namespace/test-module/provider', None, None,
             datetime(year=2020, month=11, day=27, hour=19, minute=14, second=10)],
         'module_version_index_1': [
-            'namespaceowner', AuditAction.MODULE_VERSION_INDEX, 'Module', 'test-namespace/test-module/2.0.1', None, None,
+            'namespaceowner', AuditAction.MODULE_VERSION_INDEX, 'ModuleVersion', 'test-namespace/test-module/provider/2.0.1', None, None,
             datetime(year=2021, month=12, day=28, hour=19, minute=16, second=23)],
         'module_version_index_2': [
-            'namespaceowner', AuditAction.MODULE_VERSION_INDEX, 'Module', 'test-namespace/test-module/2.0.1', None, None,
+            'namespaceowner', AuditAction.MODULE_VERSION_INDEX, 'ModuleVersion', 'test-namespace/test-module/provider/2.0.1', None, None,
             datetime(year=2021, month=12, day=28, hour=19, minute=15, second=10)],
         'module_version_publish': [
-            'namespaceowner', AuditAction.MODULE_VERSION_PUBLISH, 'Module', 'test-namespace/test-module/2.0.1', None, None,
+            'namespaceowner', AuditAction.MODULE_VERSION_PUBLISH, 'ModuleVersion', 'test-namespace/test-module/provider/2.0.1', None, None,
             datetime(year=2021, month=12, day=29, hour=19, minute=23, second=31)],
         'module_version_delete': [
-            'namespaceowner', AuditAction.MODULE_VERSION_DELETE, 'Module', 'test-namespace/test-module/2.0.1', None, None,
+            'namespaceowner', AuditAction.MODULE_VERSION_DELETE, 'ModuleVersion', 'test-namespace/test-module/provider/2.0.1', None, None,
             datetime(year=2021, month=12, day=29, hour=20, minute=12, second=23)],
         'user_login_1': [
             'testuser1', AuditAction.USER_LOGIN, 'User', 'testuser1', None, None,
@@ -234,7 +234,7 @@ class TestAuditHistory(SeleniumTest):
             self._AUDIT_DATA['namespace_create'])
 
         self._ensure_audit_row_is_like(
-            rows[1],
+            rows[2],
             self._AUDIT_DATA['module_provider_create'])
 
     def test_column_ordering(self):
@@ -268,7 +268,7 @@ class TestAuditHistory(SeleniumTest):
                  self._AUDIT_DATA['user_group_create']]),
 
             # Sort by action
-            (2, [None, self._AUDIT_DATA['module_version_index_1']]),
+            (2, [self._AUDIT_DATA['module_provider_create'], self._AUDIT_DATA['module_version_delete']]),
             # Sort by action reversed
             (2, [None,
                  self._AUDIT_DATA['user_login_10'],
