@@ -29,6 +29,10 @@ class TestAuditHistory(SeleniumTest):
         'module_provider_create': [
             'test-event-admin', AuditAction.MODULE_PROVIDER_CREATE, 'ModuleProvider', 'test-namespace/test-module/provider', None, None,
             datetime(year=2020, month=11, day=27, hour=19, minute=14, second=10)],
+        'module_provider_update_git_custom_clone_url': [
+            'namespaceadmin', AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_CLONE_URL,
+            'ModuleProvider', 'test-namespace/test-module/provider', 'old-git-clone-url', 'new-git-clone-url',
+            datetime(year=2020, month=11, day=28, hour=8, minute=47, second=20)],
         'module_version_index_1': [
             'namespaceowner', AuditAction.MODULE_VERSION_INDEX, 'ModuleVersion', 'test-namespace/test-module/provider/2.0.1', None, None,
             datetime(year=2021, month=12, day=28, hour=19, minute=16, second=23)],
@@ -67,11 +71,7 @@ class TestAuditHistory(SeleniumTest):
             datetime(year=2020, month=1, day=2, hour=9, minute=57, second=20)],
         'user_login_9': [
             'testuser9', AuditAction.USER_LOGIN, 'User', 'testuser9', None, None,
-            datetime(year=2020, month=1, day=2, hour=9, minute=58, second=20)],
-        'user_login_10': [
-            'testuser10', AuditAction.USER_LOGIN, 'User', 'testuser10', None, None,
-            datetime(year=2020, month=1, day=2, hour=9, minute=59, second=20)]
-
+            datetime(year=2020, month=1, day=2, hour=9, minute=58, second=20)]
     }
 
     @classmethod
@@ -231,11 +231,11 @@ class TestAuditHistory(SeleniumTest):
         # Check content of rows
         self._ensure_audit_row_is_like(
             rows[1],
-            self._AUDIT_DATA['namespace_create'])
+            self._AUDIT_DATA['module_provider_create'])
 
         self._ensure_audit_row_is_like(
             rows[2],
-            self._AUDIT_DATA['module_provider_create'])
+            self._AUDIT_DATA['module_provider_update_git_custom_clone_url'])
 
     def test_column_ordering(self):
         """Test ordering data by column."""
@@ -262,17 +262,19 @@ class TestAuditHistory(SeleniumTest):
                  self._AUDIT_DATA['user_group_create']]),
 
             # Sort by username
-            (1, [None, self._AUDIT_DATA['module_version_delete'], self._AUDIT_DATA['module_version_publish']]),
+            (1, [None, self._AUDIT_DATA['module_provider_update_git_custom_clone_url'],
+                 self._AUDIT_DATA['module_version_delete'], self._AUDIT_DATA['module_version_publish']]),
             # Sort by username reversed
             (1, [self._AUDIT_DATA['user_group_delete'],
                  self._AUDIT_DATA['user_group_create']]),
 
             # Sort by action
-            (2, [self._AUDIT_DATA['module_provider_create'], self._AUDIT_DATA['module_version_delete']]),
+            (2, [self._AUDIT_DATA['module_provider_create'], self._AUDIT_DATA['module_provider_update_git_custom_clone_url'],
+                 self._AUDIT_DATA['module_version_delete']]),
             # Sort by action reversed
             (2, [None,
-                 self._AUDIT_DATA['user_login_10'],
-                 self._AUDIT_DATA['user_login_9']]),
+                 self._AUDIT_DATA['user_login_9'],
+                 self._AUDIT_DATA['user_login_8']]),
 
             # Sort by object
             (3, [None, self._AUDIT_DATA['namespace_create']]),
@@ -295,13 +297,18 @@ class TestAuditHistory(SeleniumTest):
 
     @pytest.mark.parametrize(
         'search_string,result_count,expected_rows', [
-            ('testuser', 10, [_AUDIT_DATA['user_login_1'],
+            # Filter by user and object ID
+            ('testuser', 9, [_AUDIT_DATA['user_login_1'],
                               _AUDIT_DATA['user_login_2'], _AUDIT_DATA['user_login_3']]),
+            # Filter by user
             ('namespaceowner', 4, [_AUDIT_DATA['module_version_index_2'], _AUDIT_DATA['module_version_index_1'],
                                    _AUDIT_DATA['module_version_publish'], _AUDIT_DATA['module_version_delete']]),
+            # Filter by action
             ('MODULE_VERSION_INDEX', 2, [
              _AUDIT_DATA['module_version_index_2'], _AUDIT_DATA['module_version_index_1']]),
-            ('test-namespace', 6, [_AUDIT_DATA['namespace_create'], _AUDIT_DATA['module_provider_create'],
+            # Filter by partial object ID
+            ('test-namespace', 7, [_AUDIT_DATA['namespace_create'], _AUDIT_DATA['module_provider_create'],
+                                   _AUDIT_DATA['module_provider_update_git_custom_clone_url'],
                                    _AUDIT_DATA['module_version_index_2'], _AUDIT_DATA['module_version_index_1'],
                                    _AUDIT_DATA['module_version_publish'], _AUDIT_DATA['module_version_delete']])
         ]
