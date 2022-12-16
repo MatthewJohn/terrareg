@@ -548,7 +548,8 @@ integration_test_data = {
                             {
                                 'name': 'random',
                                 'alias': 'random-alias',
-                                'version': '5.2.1'
+                                # Ensure GT and LT are displayed correctly in browser
+                                'version': '>= 5.2.1, < 6.0.0'
                             },
                             {
                                 'name': 'someothercompany/unsafe',
