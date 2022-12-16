@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.47.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.47.0...v2.47.1) (2022-12-16)
+
+
+### Bug Fixes
+
+* Fix display of < and > symbols in provider requirement version fields ([b10e9a3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b10e9a3cfc9e1ca7a7cd8cd0ec30600881077e66)), closes [#275](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/275)
+
 # [2.47.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.46.2...v2.47.0) (2022-12-16)
 
 
