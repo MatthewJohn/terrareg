@@ -101,3 +101,8 @@ class TestAdminApiKeyAuthMethod(BaseAuthMethodTest):
         """Test check_namespace_access method"""
         obj = AdminApiKeyAuthMethod()
         assert obj.check_namespace_access(access_type, namespace) is expected_result
+
+    def test_get_username(self):
+        """Test get_username method"""
+        obj = AdminApiKeyAuthMethod()
+        assert obj.get_username() == 'Built-in admin'

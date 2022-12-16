@@ -103,3 +103,7 @@ class TestPublishApiKeyAuthMethod(BaseAuthMethodTest):
         obj = PublishApiKeyAuthMethod()
         assert obj.check_namespace_access(access_type, namespace) is expected_result
 
+    def test_get_username(self):
+        """Test get_username method"""
+        obj = PublishApiKeyAuthMethod()
+        assert obj.get_username() == 'Publish API Key'

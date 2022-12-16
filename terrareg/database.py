@@ -5,6 +5,7 @@ import sqlalchemy.dialects.mysql
 
 from flask import has_request_context
 import flask
+from terrareg.audit_action import AuditAction
 
 import terrareg.config
 from terrareg.errors import DatabaseMustBeIniistalisedError
@@ -142,6 +143,13 @@ class Database():
         if self._module_version_file is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._module_version_file
+
+    @property
+    def audit_history(self):
+        """Audit history table."""
+        if self._audit_history is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._audit_history
 
     @classmethod
     def reset(cls):
@@ -394,6 +402,18 @@ class Database():
             ),
             sqlalchemy.Column('path', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
             sqlalchemy.Column('content', Database.medium_blob())
+        )
+
+        self._audit_history = sqlalchemy.Table(
+            'audit_history', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('timestamp', sqlalchemy.DateTime),
+            sqlalchemy.Column('username', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('action', sqlalchemy.Enum(AuditAction)),
+            sqlalchemy.Column('object_type', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('object_id', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('old_value', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('new_value', sqlalchemy.String(GENERAL_COLUMN_SIZE))
         )
 
     def select_module_version_joined_module_provider(self, *select_args):

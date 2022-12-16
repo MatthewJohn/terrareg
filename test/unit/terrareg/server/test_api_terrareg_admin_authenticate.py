@@ -1,8 +1,7 @@
 
 import unittest.mock
-import datetime
-from terrareg.auth import AdminApiKeyAuthMethod
 
+import terrareg.audit_action
 from test.unit.terrareg import (
     TerraregUnitTest, mocked_server_session_fixture
 )
@@ -16,10 +15,12 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
         cookie_expiry_mins = 5
         mock_auth_method = unittest.mock.MagicMock()
         mock_auth_method.is_built_in_admin = unittest.mock.MagicMock(return_value=True)
+        mock_auth_method.get_username.return_value = 'unittestadminuser'
         mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
         with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
                 unittest.mock.patch('terrareg.config.Config.SECRET_KEY', 'averysecretkey'), \
                 unittest.mock.patch('terrareg.config.Config.ADMIN_SESSION_EXPIRY_MINS', cookie_expiry_mins), \
+                unittest.mock.patch('terrareg.server.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.server.Session.cleanup_old_sessions', create=True) as cleanup_old_sessions_mock:
             # Update real app secret key
             self.SERVER._app.secret_key = 'averysecretkey'
@@ -39,6 +40,13 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
                 assert session['session_id']
                 assert len(session['csrf_token']) == 40
 
+            mock_create_audit_event.assert_called_with(
+                action=terrareg.audit_action.AuditAction.USER_LOGIN,
+                object_type=None,
+                object_id=None,
+                old_value=None,
+                new_value=None)
+
     def test_authenticated_without_secret_key(self, client, mocked_server_session_fixture):
         """Test endpoint and ensure session is not provided"""
         mock_auth_method = unittest.mock.MagicMock()
@@ -46,6 +54,7 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
         mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
         with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
                 unittest.mock.patch('terrareg.config.Config.SECRET_KEY', ''), \
+                unittest.mock.patch('terrareg.server.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.server.Session.cleanup_old_sessions', create=True) as cleanup_old_sessions_mock:
             # Update real app secret key with fake value,
             # otherwise an error would be received when checking the session.
@@ -58,6 +67,7 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
             assert res.status_code == 403
             assert res.json == {'message': 'Sessions not enabled in configuration'}
             cleanup_old_sessions_mock.assert_not_called()
+            mock_create_audit_event.assert_not_called()
             with client.session_transaction() as session:
                 # Assert that no session cookies were provided
                 assert 'session_id' not in session
@@ -71,16 +81,20 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
 
             assert res.status_code == 403
             assert res.json == {'message': 'Sessions not enabled in configuration'}
+            mock_create_audit_event.assert_not_called()
 
     def test_unauthenticated(self, client, mocked_server_session_fixture):
         """Test endpoint when user is authenticated."""
         mock_auth_method = unittest.mock.MagicMock()
         mock_auth_method.is_built_in_admin = unittest.mock.MagicMock(return_value=False)
         mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
-        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
+            unittest.mock.patch('terrareg.server.AuditEvent.create_audit_event') as mock_create_audit_event:
 
             res = client.post('/v1/terrareg/auth/admin/login')
 
             assert res.status_code == 403
             assert res.json == {'message': "You don't have the permission to access the requested resource. "
                                            "It is either read-protected or not readable by the server."}
+
+            mock_create_audit_event.assert_not_called()

@@ -15,6 +15,8 @@ import markdown
 import terrareg.analytics
 from terrareg.database import Database
 import terrareg.config
+import terrareg.audit
+import terrareg.audit_action
 from terrareg.errors import (
     InvalidModuleNameError, InvalidModuleProviderNameError, InvalidUserGroupNameError,
     InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
@@ -132,11 +134,21 @@ class UserGroup:
         if not cls._validate_name(name):
             return None
 
-        cls._insert_into_db(name=name, site_admin=site_admin)
-        return cls(name=name)
+        cls._insert_into_database(name=name, site_admin=site_admin)
+
+        obj = cls(name=name)
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.USER_GROUP_CREATE,
+            object_type=obj.__class__.__name__,
+            object_id=obj.name,
+            old_value=None, new_value=None
+        )
+
+        return obj
 
     @classmethod
-    def _insert_into_db(cls, name, site_admin):
+    def _insert_into_database(cls, name, site_admin):
         """Insert new user group into database."""
         db = Database.get()
         with db.get_connection() as conn:
@@ -196,11 +208,21 @@ class UserGroup:
 
     def delete(self):
         """Delete user group"""
-        db = Database.get()
-
         for group_permission in UserGroupNamespacePermission.get_permissions_by_user_group(self):
             group_permission.delete()
 
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.USER_GROUP_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.name,
+            old_value=None, new_value=None
+        )
+
+        self._delete_from_database()
+
+    def _delete_from_database(self):
+        """Delete row from database"""
+        db = Database.get()
         with db.get_connection() as conn:
             conn.execute(db.user_group.delete().where(
                 db.user_group.c.id==self.pk
@@ -286,7 +308,17 @@ class UserGroupNamespacePermission:
             user_group=user_group,
             namespace=namespace,
             permission_type=permission_type)
-        return cls(user_group=user_group, namespace=namespace)
+
+        obj = cls(user_group=user_group, namespace=namespace)
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.USER_GROUP_NAMESPACE_PERMISSION_ADD,
+            object_type=obj.__class__.__name__,
+            object_id=obj.id,
+            old_value=None, new_value=None
+        )
+
+        return obj
 
     @classmethod
     def _insert_into_database(cls, user_group, namespace, permission_type):
@@ -298,6 +330,14 @@ class UserGroupNamespacePermission:
                 namespace_id=namespace.pk,
                 permission_type=permission_type
             ))
+
+    @property
+    def id(self):
+        """Return identifiable name of object"""
+        return '{user_group}/{namespace}'.format(
+            user_group=self.user_group.name,
+            namespace=self.namespace.name
+        )
 
     @property
     def user_group(self):
@@ -348,6 +388,17 @@ class UserGroupNamespacePermission:
 
     def delete(self):
         """Delete user group namespace permission."""
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.USER_GROUP_NAMESPACE_PERMISSION_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.id,
+            old_value=None, new_value=None
+        )
+
+        self._delete_from_database()
+
+    def _delete_from_database(self):
+        """Delete row from database"""
         db = Database.get()
         with db.get_connection() as conn:
             conn.execute(db.user_group_namespace_permission.delete().where(
@@ -480,6 +531,12 @@ class GitProvider:
         """Return browse_url for git provider."""
         return self._get_db_row()['browse_url_template']
 
+    def __eq__(self, __o):
+        """Check if two git providers are the same"""
+        if isinstance(__o, self.__class__):
+            return self.pk == __o.pk
+        return super(GitProvider, self).__eq__(__o)
+
     def __init__(self, id):
         """Store member variable for ID."""
         self._id = id
@@ -553,7 +610,15 @@ class Namespace(object):
         with db.get_connection() as conn:
             conn.execute(module_provider_insert)
 
-        return cls(name=name)
+        obj = cls(name=name)
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.NAMESPACE_CREATE,
+            object_type=obj.__class__.__name__,
+            object_id=obj.name,
+            old_value=None, new_value=None
+        )
+        return obj
 
     @staticmethod
     def get_total_count():
@@ -1052,7 +1117,16 @@ class ModuleProvider(object):
         with db.get_connection() as conn:
             conn.execute(module_provider_insert)
 
-        return cls(module=module, name=name)
+        obj = cls(module=module, name=name)
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_CREATE,
+            object_type=obj.__class__.__name__,
+            object_id=obj.id,
+            old_value=None, new_value=None
+        )
+
+        return obj
 
     @classmethod
     def get(cls, module, name, create=False):
@@ -1232,6 +1306,13 @@ class ModuleProvider(object):
         for module_version in self.get_versions(include_beta=True, include_unpublished=True):
             module_version.delete()
 
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.id,
+            old_value=None, new_value=None
+        )
+
         db = Database.get()
 
         with db.get_connection() as conn:
@@ -1284,8 +1365,32 @@ class ModuleProvider(object):
         # Remove cached DB row
         self._cache_db_row = None
 
+    def update_verified(self, verified):
+        """Update verified flag of module provider."""
+        if verified in [True, False] and verified != self.verified:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_VERIFIED,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=self.verified,
+                new_value=verified
+            )
+            self.update_attributes(
+                verified=verified
+            )
+
     def update_git_provider(self, git_provider: GitProvider):
         """Update git provider associated with module provider."""
+        original_git_provider = self.get_git_provider()
+        if original_git_provider != git_provider:
+
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_PROVIDER,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_git_provider.name if original_git_provider else None,
+                new_value=git_provider.name if git_provider else None
+            )
         self.update_attributes(
             git_provider_id=(git_provider.pk if git_provider is not None else None)
         )
@@ -1304,6 +1409,16 @@ class ModuleProvider(object):
         else:
             # If not value was provided, default to None
             sanitised_git_tag_format = None
+
+        if sanitised_git_tag_format != self.git_tag_format:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_TAG_FORMAT,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=self.git_tag_format,
+                new_value=sanitised_git_tag_format
+            )
+
         self.update_attributes(git_tag_format=sanitised_git_tag_format)
 
     def update_git_path(self, git_path):
@@ -1313,6 +1428,16 @@ class ModuleProvider(object):
         if git_path and git_path != '/':
             # Sanity check path
             safe_join_paths('/somepath/somesubpath', git_path, allow_same_directory=True)
+
+        original_value = self._get_db_row()['git_path']
+        if original_value != git_path:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_PATH,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_value,
+                new_value=git_path
+            )
         self.update_attributes(git_path=git_path)
 
     def update_repo_clone_url_template(self, repo_clone_url_template):
@@ -1342,6 +1467,16 @@ class ModuleProvider(object):
                 )
 
             repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe='\{\}/:@%?=')
+
+        original_value = self._get_db_row()['repo_clone_url_template']
+        if original_value != repo_clone_url_template:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_CLONE_URL,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_value,
+                new_value=repo_clone_url_template
+            )
 
         self.update_attributes(repo_clone_url_template=repo_clone_url_template)
 
@@ -1381,6 +1516,16 @@ class ModuleProvider(object):
 
             repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe='\{\}/:@%?=')
 
+        original_value = self._get_db_row()['repo_browse_url_template']
+        if original_value != repo_browse_url_template:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BROWSE_URL,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_value,
+                new_value=repo_browse_url_template
+            )
+
         self.update_attributes(repo_browse_url_template=repo_browse_url_template)
 
     def update_repo_base_url_template(self, repo_base_url_template):
@@ -1411,6 +1556,16 @@ class ModuleProvider(object):
                 )
 
             repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe='\{\}/:@%?=')
+
+        original_value = self._get_db_row()['repo_base_url_template']
+        if original_value != repo_base_url_template:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BASE_URL,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_value,
+                new_value=repo_base_url_template
+            )
 
         self.update_attributes(repo_base_url_template=repo_base_url_template)
 
@@ -2217,6 +2372,14 @@ class ModuleVersion(TerraformSpecsObject):
 
     def publish(self):
         """Publish module version."""
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_VERSION_PUBLISH,
+            object_type=self.__class__.__name__,
+            object_id=self.id,
+            old_value=None,
+            new_value=None
+        )
+
         # Mark module version as published
         self.update_attributes(published=True)
 
@@ -2298,6 +2461,14 @@ class ModuleVersion(TerraformSpecsObject):
         self.create_data_directory()
         self._create_db_row()
 
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_VERSION_INDEX,
+            object_type=self.__class__.__name__,
+            object_id=self.id,
+            old_value=None,
+            new_value=None
+        )
+
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
         return statement.where(
@@ -2339,6 +2510,14 @@ class ModuleVersion(TerraformSpecsObject):
             module_details.delete()
 
         db = Database.get()
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_VERSION_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.id,
+            old_value=None,
+            new_value=None
+        )
 
         with db.get_connection() as conn:
             # Delete module from module_version table

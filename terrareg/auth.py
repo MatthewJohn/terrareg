@@ -108,6 +108,10 @@ class BaseAuthMethod:
         """Return all permissions by namespace"""
         return {}
 
+    def get_username(self):
+        """Get username of current user"""
+        raise NotImplementedError
+
 
 class NotAuthenticated(BaseAuthMethod):
     """Base auth method for unauthenticated users"""
@@ -150,6 +154,10 @@ class NotAuthenticated(BaseAuthMethod):
             return True
         return False
 
+    def get_username(self):
+        """Get username of current user"""
+        return 'Unauthenticated User'
+
 
 class BaseAdminAuthMethod(BaseAuthMethod):
     """Base auth method admin authentication"""
@@ -178,6 +186,10 @@ class BaseAdminAuthMethod(BaseAuthMethod):
     @classmethod
     def is_enabled(cls):
         return bool(terrareg.config.Config().ADMIN_AUTHENTICATION_TOKEN)
+
+    def get_username(self):
+        """Get username of current user"""
+        return 'Built-in admin'
 
 
 class BaseApiKeyAuthMethod(BaseAuthMethod):
@@ -268,6 +280,10 @@ class UploadApiKeyAuthMethod(BaseApiKeyAuthMethod):
         """Check access level to a given namespace."""
         return False
 
+    def get_username(self):
+        """Get username of current user"""
+        return 'Upload API Key'
+
 
 class PublishApiKeyAuthMethod(BaseApiKeyAuthMethod):
     """Auth method for publish API key"""
@@ -288,6 +304,10 @@ class PublishApiKeyAuthMethod(BaseApiKeyAuthMethod):
     def check_namespace_access(self, permission_type, namespace):
         """Check access level to a given namespace."""
         return False
+
+    def get_username(self):
+        """Get username of current user"""
+        return 'Publish API Key'
 
 
 class BaseSsoAuthMethod(BaseSessionAuthMethod):
@@ -413,6 +433,11 @@ class SamlAuthMethod(BaseSsoAuthMethod):
                 return groups
         return []
 
+    def get_username(self):
+        """Get username of current user"""
+        return flask.session.get('samlNameId')
+
+
 class OpenidConnectAuthMethod(BaseSsoAuthMethod):
     """Auth method for OpenID authentication"""
     
@@ -445,6 +470,10 @@ class OpenidConnectAuthMethod(BaseSsoAuthMethod):
     @classmethod
     def is_enabled(cls):
         return terrareg.openid_connect.OpenidConnect.is_enabled()
+
+    def get_username(self):
+        """Get username of current user"""
+        return flask.session.get('openid_username')
 
 
 class AdminApiKeyAuthMethod(BaseAdminAuthMethod, BaseApiKeyAuthMethod):
