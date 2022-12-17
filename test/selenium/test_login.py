@@ -205,8 +205,8 @@ class TestLogin(SeleniumTest):
         """Ensure SAML login button is not shown when SAML login is not available"""
         with self.update_mock(self._mock_saml2_is_enabled, 'return_value', False):
             self.selenium_instance.get(self.get_url('/login'))
-            # Wait for normal login button to be displayed
-            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'login-button').is_displayed(), True)
+            self._wait_for_login_form_ready()
+
             # Ensure SAML login is not displayed
             assert self.selenium_instance.find_element(By.ID, 'saml-login').is_displayed() == False
 
