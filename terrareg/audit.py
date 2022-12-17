@@ -34,9 +34,20 @@ class AuditEvent:
                 )
             )
 
+        # Convert name of audit by column to column attribute of table
+        order_by_column = getattr(db.audit_history.c, order_by)
+
+        # If ordering by action, which is an enum, cast column
+        # to char, as enum is ordered by the order of the enum definitions, not
+        # alphabetically
+        if order_by_column == db.audit_history.c.action:
+            order_by_column = order_by_column.cast(sqlalchemy.CHAR)
+
         # Create query with ordering, limit and offset applied
         filtered_limit = filtered.order_by(
-            sqlalchemy.desc(order_by) if descending else sqlalchemy.asc(order_by)
+            sqlalchemy.desc(order_by_column) if descending else sqlalchemy.asc(order_by_column),
+            # Use timestamp in descender order as secondary ordering
+            sqlalchemy.desc(db.audit_history.c.timestamp)
         ).limit(
             limit
         ).offset(

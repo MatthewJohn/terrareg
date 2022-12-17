@@ -937,7 +937,7 @@ module "fullypopulated" {{
         (
             '/modules/moduledetails/fullypopulated/testprovider/1.5.0',
             [
-                ['random', 'hashicorp', '', '5.2.1'],
+                ['random', 'hashicorp', '', '>= 5.2.1, < 6.0.0'],
                 ['unsafe', 'someothercompany', '', '2.0.0']
             ]
         ),

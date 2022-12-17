@@ -1,5 +1,36 @@
 # Changelog
 
+## [2.47.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.47.0...v2.47.1) (2022-12-16)
+
+
+### Bug Fixes
+
+* Fix display of < and > symbols in provider requirement version fields ([b10e9a3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b10e9a3cfc9e1ca7a7cd8cd0ec30600881077e66)), closes [#275](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/275)
+
+# [2.47.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.46.2...v2.47.0) (2022-12-16)
+
+
+### Features
+
+* Add audit event logging and audit history page ([9ed7222](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9ed72226833a4546c98886cb3355ce356f8b53fc)), closes [#253](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/253)
+* Add audit events for create/delete namespaces, module providers and module versions ([97ed1a0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/97ed1a0ca6675f268ef9da9926c00b4ebd9da276)), closes [#253](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/253)
+* Add audit events for logins ([b077ca5](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b077ca5fee06a71d3e7f4aff2fbc1fed927e59ab)), closes [#253](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/253)
+* Add audit events for modifications to module provider configuration. ([67826e8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/67826e8cda81330b9a127141fa8ad45610ced9b5)), closes [#253](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/253)
+* Create audit history page and API endpoint to return audit history ([0ce7156](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0ce71562cf98d199abd19f8cec3fa7a5b67024bc)), closes [#253](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/253)
+* Implement audit log querying, limit+offset, sorting and ordering in API and datatable ([5132e46](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5132e4615a1d272c345348d2f2ccc9bd3332cd78)), closes [#253](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/253)
+
+## [2.46.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.46.1...v2.46.2) (2022-12-12)
+
+
+### Bug Fixes
+
+* Update internal analaytics token to a config value, set by environment variable. ([3013b1b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3013b1b5190bf132c032f8507a1629e35e7801b4)), closes [#267](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/267)
+
+
+### Reverts
+
+* Revert "db: Add DB migration to handle deletion of erroneous analytics rows" ([6f44314](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6f44314fd29963847f648e3c7b6488c89192d371))
+
 ## [2.46.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.46.0...v2.46.1) (2022-12-11)
 
 
