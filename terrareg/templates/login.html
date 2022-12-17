@@ -29,15 +29,23 @@
     }
 
     getConfig().then((config) => {
-        if (config.OPENID_CONNECT_ENABLED) {
-            $('#openid-connect-login').text(config.OPENID_CONNECT_LOGIN_TEXT);
-            $('#openid-connect-login').removeClass('default-hidden');
+        if (config.ADMIN_LOGIN_ENABLED) {
+            $('#admin-login').removeClass('default-hidden');
         }
-        if (config.SAML_ENABLED) {
-            $('#saml-login').text(config.SAML_LOGIN_TEXT);
-            $('#saml-login').removeClass('default-hidden');
+        if (config.OPENID_CONNECT_ENABLED || config.SAML_ENABLED) {
+            $('#sso-login').removeClass('default-hidden');
+
+            if (config.OPENID_CONNECT_ENABLED) {
+                $('#openid-connect-login').text(config.OPENID_CONNECT_LOGIN_TEXT);
+                $('#openid-connect-login').removeClass('default-hidden');
+            }
+            if (config.SAML_ENABLED) {
+                $('#saml-login').text(config.SAML_LOGIN_TEXT);
+                $('#saml-login').removeClass('default-hidden');
+            }
         }
-        $('#login-button').removeClass('default-hidden');        
+        // Show title to indicate that processing has completed for tests
+        $('#login-title').removeClass('default-hidden');
     });
 </script>
 {% endblock %}
@@ -52,28 +60,34 @@
 
 <nav class="level">
     <div class="level-item">
-
         <div class="field is-vertical">
+            <h1 id="login-title" class="title is-3 default-hidden">Login</h1>
+
             <div id="login_error" style="display: none" class="notification is-danger">
             </div>
-            <form onsubmit="login(); event.preventDefault();">
-                <div class="field">
-                    <label class="label">Admin Token</label>
-                    <div class="control">
-                    <input id="admin_token_input" class="input" type="password" placeholder="Admin Token">
-                    </div>
-                </div>
 
-                <div class="field">
-                    <div class="control">
-                        <button id="login-button" class="button is-link default-hidden">Submit</button>
+            <section id="admin-login" class="section default-hidden">
+                <form onsubmit="login(); event.preventDefault();">
+                    <div class="field">
+                        <label class="label">Admin Token</label>
+                        <div class="control">
+                            <input id="admin_token_input" class="input" type="password" placeholder="Admin Token">
+                        </div>
                     </div>
-                </div>
-            </form>
 
-            <br />
-            <a id="openid-connect-login" class="button default-hidden" href="/openid/login">Login with OpenID Connect</a>
-            <a id="saml-login" class="button default-hidden" href="/saml/login?sso">Login with SAML</a>
+                    <div class="field">
+                        <div class="control">
+                            <button id="login-button" class="button is-link">Login</button>
+                        </div>
+                    </div>
+                </form>
+            </section>
+
+            <section id="sso-login" class="section default-hidden">
+                <label class="label">Single Sign-On</label>
+                <a id="openid-connect-login" class="button default-hidden" href="/openid/login">Login with OpenID Connect</a>
+                <a id="saml-login" class="button default-hidden" href="/saml/login?sso">Login with SAML</a>
+            </section>
         </div>
 
     </div>

@@ -945,7 +945,8 @@ class ApiTerraregConfig(ErrorCatchingResource):
             'OPENID_CONNECT_ENABLED': terrareg.openid_connect.OpenidConnect.is_enabled(),
             'OPENID_CONNECT_LOGIN_TEXT': config.OPENID_CONNECT_LOGIN_TEXT,
             'SAML_ENABLED': terrareg.saml.Saml2.is_enabled(),
-            'SAML_LOGIN_TEXT': config.SAML2_LOGIN_TEXT
+            'SAML_LOGIN_TEXT': config.SAML2_LOGIN_TEXT,
+            'ADMIN_LOGIN_ENABLED': terrareg.auth.AdminApiKeyAuthMethod.is_enabled()
         }
 
 

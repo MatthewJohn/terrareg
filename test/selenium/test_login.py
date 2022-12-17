@@ -16,10 +16,12 @@ class TestLogin(SeleniumTest):
         """Setup required mocks."""
         cls._config_openid_connect_button_text = mock.patch('terrareg.config.Config.OPENID_CONNECT_LOGIN_TEXT', '')
         cls._config_saml_button_text = mock.patch('terrareg.config.Config.SAML2_LOGIN_TEXT', '')
+        cls._config_admin_authentication_token = mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', '')
         cls._config_enable_access_controls = mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', False)
 
         cls.register_patch(cls._config_openid_connect_button_text)
         cls.register_patch(cls._config_saml_button_text)
+        cls.register_patch(cls._config_admin_authentication_token)
         cls.register_patch(cls._config_enable_access_controls)
         super(TestLogin, cls).setup_class()
 
@@ -28,14 +30,84 @@ class TestLogin(SeleniumTest):
         self.selenium_instance.delete_all_cookies()
         super(TestLogin, self).teardown_method(method)
 
+    def _wait_for_login_form_ready(self):
+        """Wait for login form to be rendered"""
+        # Wait for login title
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'login-title').is_displayed(), True)
+
+    def test_ensure_admin_authentication_not_shown(self):
+        """Ensure admin login form is not shown when admin password is not configured"""
+        with self.update_mock(self._config_admin_authentication_token, 'new', ''):
+            self.selenium_instance.get(self.get_url('/login'))
+            self._wait_for_login_form_ready()
+
+            # Ensure admin login is not displayed
+            assert self.selenium_instance.find_element(By.ID, 'admin-login').is_displayed() == False
+
     def test_ensure_openid_connect_login_not_shown(self):
         """Ensure OpenID connect login button is not shown when OpenId connect login is not available"""
         with self.update_mock(self._mock_openid_connect_is_enabled, 'return_value', False):
             self.selenium_instance.get(self.get_url('/login'))
-            # Wait for normal login button to be displayed
-            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'login-button').is_displayed(), True)
+            self._wait_for_login_form_ready()
+
             # Ensure OpenID Connect login is not displayed
             assert self.selenium_instance.find_element(By.ID, 'openid-connect-login').is_displayed() == False
+
+    @pytest.mark.parametrize('test_password', [
+        '',
+        'incorrectpassword'
+    ])
+    def test_admin_password_login_invalid_password(self, test_password):
+        """Test admin authentication using incorrect password"""
+        with self.update_multiple_mocks((self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
+                (self._config_admin_authentication_token, 'new', 'correct-password')):
+
+            self.selenium_instance.get(self.get_url('/login'))
+            # Wait for admin login form to be displayed
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'admin-login').is_displayed(), True)
+
+            # Fill out admin password
+            self.selenium_instance.find_element(By.ID, 'admin_token_input').send_keys(test_password)
+            self.selenium_instance.find_element(By.ID, 'login-button').click()
+
+            # Ensure redirected to login
+            self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/login'))
+
+            # Ensure user is logged in
+            assert self.selenium_instance.find_element(By.ID, 'navbar_login_span').text == 'Login'
+
+            # Ensure error is displayed about incorrect password
+            error_div = self.selenium_instance.find_element(By.ID, 'login_error')
+            assert error_div.is_displayed() == True
+            assert error_div.text == 'Incorrect admin token'
+
+    def test_admin_password_login(self):
+        """Test admin authentication using password"""
+        with self.update_multiple_mocks((self._mock_saml2_is_enabled, 'return_value', True), \
+                (self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
+                (self._config_admin_authentication_token, 'new', 'testloginpassword')):
+
+            self.selenium_instance.get(self.get_url('/login'))
+            # Wait for admin login form to be displayed
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'admin-login').is_displayed(), True)
+
+            # Fill out admin password
+            self.selenium_instance.find_element(By.ID, 'admin_token_input').send_keys('testloginpassword')
+            self.selenium_instance.find_element(By.ID, 'login-button').click()
+
+            # Ensure redirected to login
+            self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/'))
+
+            # Ensure user is logged in
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbar_login_span').text, 'Logout')
+
+            # Ensure 'settings' drop-down is shown, depending on whether
+            # user is a site admin
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbarSettingsDropdown').is_displayed(), True)
+
+            # Ensure 'create' drop-down is shown, depending on whether
+            # user has permissions to a namespace
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbarCreateDropdown').is_displayed(), True)
 
     @pytest.mark.parametrize('enable_access_controls,group_memberships,has_site_admin,can_create_module', [
         (True, ['nopermissions'], False, False),
@@ -105,7 +177,6 @@ class TestLogin(SeleniumTest):
             self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/openid/callback?code=abcdefg&state=unitteststate'))
             self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'error-title').text, 'Login error')
             self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'error-content').text, 'Invalid repsonse from SSO')
-
 
     def test_ensure_saml_login_not_shown(self):
         """Ensure SAML login button is not shown when SAML login is not available"""
