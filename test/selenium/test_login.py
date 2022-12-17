@@ -35,6 +35,29 @@ class TestLogin(SeleniumTest):
         # Wait for login title
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'login-title').is_displayed(), True)
 
+    @pytest.mark.parametrize('admin_token,openid_enabled,saml_enabled,warning_shown', [
+        # Check warning is shown when no methods are available
+        ('', False, False, True),
+        # Cases where authentication method is enabled
+        ('pass', False, False, False),
+        ('', True, False, False),
+        ('', False, True, False)
+    ])
+    def test_no_authentication_methods_warning(self, admin_token, openid_enabled, saml_enabled, warning_shown):
+        """Test warning is shown when no authentication methods are available."""
+        with self.update_multiple_mocks(
+                (self._config_admin_authentication_token, 'new', admin_token),
+                (self._mock_openid_connect_is_enabled, 'return_value', openid_enabled),
+                (self._mock_saml2_is_enabled, 'return_value', saml_enabled)):
+            self.selenium_instance.get(self.get_url('/login'))
+            self._wait_for_login_form_ready()
+
+            # Ensure warning is displayed
+            warning = self.selenium_instance.find_element(By.ID, 'no-authentication-methods-warning')
+            assert warning.is_displayed() == warning_shown
+            if warning_shown:
+                assert warning.text == 'Login is not available as there are no authentication methods configured'
+
     def test_ensure_admin_authentication_not_shown(self):
         """Ensure admin login form is not shown when admin password is not configured"""
         with self.update_mock(self._config_admin_authentication_token, 'new', ''):

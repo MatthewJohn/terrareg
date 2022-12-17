@@ -29,10 +29,15 @@
     }
 
     getConfig().then((config) => {
+        let authenticationEnabled = false;
+
         if (config.ADMIN_LOGIN_ENABLED) {
+            authenticationEnabled = true;
             $('#admin-login').removeClass('default-hidden');
         }
         if (config.OPENID_CONNECT_ENABLED || config.SAML_ENABLED) {
+            authenticationEnabled = true;
+
             $('#sso-login').removeClass('default-hidden');
 
             if (config.OPENID_CONNECT_ENABLED) {
@@ -43,6 +48,10 @@
                 $('#saml-login').text(config.SAML_LOGIN_TEXT);
                 $('#saml-login').removeClass('default-hidden');
             }
+        }
+
+        if (authenticationEnabled === false) {
+            $('#no-authentication-methods-warning').removeClass('default-hidden');
         }
         // Show title to indicate that processing has completed for tests
         $('#login-title').removeClass('default-hidden');
@@ -65,6 +74,10 @@
 
             <div id="login_error" style="display: none" class="notification is-danger">
             </div>
+
+            <h1 id="no-authentication-methods-warning" class="is-3 default-hidden">
+                Login is not available as there are no authentication methods configured
+            </h1>
 
             <section id="admin-login" class="section default-hidden">
                 <form onsubmit="login(); event.preventDefault();">
