@@ -1,0 +1,6 @@
+## Application environment variables
+
+The following environment variables are available to configure the application
+
+
+{{ CONFIG_CONTENTS }}
