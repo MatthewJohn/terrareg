@@ -17,14 +17,13 @@
             contentType: 'application/json'
         }).done((res) => {
             // Obtain get parameters from URL
-            const urlSearchParams = new URLSearchParams(window.location.search);
-            const params = Object.fromEntries(urlSearchParams.entries());
+            const urlParams = getUrlParams();
             // If parameter from initial setup page is present,
             // redirect user back to initial setup
-            if (params.initial_setup) {
+            if (urlParams.initial_setup) {
                 window.location.href = '/initial-setup';
             } else {
-                window.location.href = res.view_href
+                window.location.href = res.view_href;
             }
         }).fail((res) => {
             $('#create-error').html(failedResponseToErrorString(res));
