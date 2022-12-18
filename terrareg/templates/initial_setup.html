@@ -45,7 +45,7 @@
                     The following environment variables must be setup to be able to login:
                     <ul>
                         <li id="setup-step-auth-vars-admin-authentication-token">
-                            <code>ADMIN_AUTHENTICATION_TOKEN</code> - Token to use for authorisation to be able to modify modules in the user interface.
+                            <code>ADMIN_AUTHENTICATION_TOKEN</code> - Token to use for authorisation to be able to modify modules in the user interface. Alternatively configure SAML2 or OpenID Connect (see <a target="blank" href="https://gitlab.dockstudios.co.uk/pub/terrareg/-/blob/main/README.md">README.md</a> for more information).
                         </li>
                         <li id="setup-step-auth-vars-secret-key">
                             <code>SECRET_KEY</code> - Key used for encrypting sessions. Can be generated using: <code>python -c 'import secrets; print(secrets.token_hex())'</code>

@@ -72,16 +72,21 @@ class TestInitialSetup(SeleniumTest):
 
         self.check_progress_bar(0)
 
-        # Set auth token
-        with self.update_mock(self._config_admin_authentication_key_mock, 'new', 'admin-setup-password'):
-            # Reload page and ensure admin password is striked through
-            self.selenium_instance.get(self.get_url('/initial-setup'))
+        # Set auth methods
+        for auth_mock_updates in [
+            (self._config_admin_authentication_key_mock, 'new', 'admin-setup-password'),
+            (self._mock_openid_connect_is_enabled, 'return_value', True),
+            (self._mock_saml2_is_enabled, 'return_value', True)
+            ]:
+            with self.update_mock(*auth_mock_updates):
+                # Reload page and ensure admin password is striked through
+                self.selenium_instance.get(self.get_url('/initial-setup'))
 
-            admin_token_li = self.wait_for_element(By.ID, 'setup-step-auth-vars-admin-authentication-token')
-            assert self.is_striked_through(admin_token_li) == True
-            secret_key_li = self.wait_for_element(By.ID, 'setup-step-auth-vars-secret-key')
-            assert self.is_striked_through(secret_key_li) == False
-            self.check_progress_bar(10)
+                admin_token_li = self.wait_for_element(By.ID, 'setup-step-auth-vars-admin-authentication-token')
+                assert self.is_striked_through(admin_token_li) == True
+                secret_key_li = self.wait_for_element(By.ID, 'setup-step-auth-vars-secret-key')
+                assert self.is_striked_through(secret_key_li) == False
+                self.check_progress_bar(10)
 
         # Set secret key
         with self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'):
