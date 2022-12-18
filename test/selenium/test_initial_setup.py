@@ -130,7 +130,14 @@ class TestInitialSetup(SeleniumTest):
 
         # Click link to create module
         create_module_card_content.find_element(By.TAG_NAME, 'a').click()
-        assert self.selenium_instance.current_url == self.get_url('/create-namespace')
+        assert self.selenium_instance.current_url == self.get_url('/create-namespace?initial_setup=1')
+
+        # Fill out namespace form and click create
+        self.selenium_instance.find_element(By.ID, 'namespace-name').send_keys('unittestnamespace')
+        self.selenium_instance.find_element(By.ID, 'create-namespace-form').find_element(By.TAG_NAME, 'button').click()
+
+        # Ensure user is redirected back to initial-setup page
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/initial-setup'))
 
     def _test_create_module_step(self):
         """Test create module step."""
@@ -319,9 +326,8 @@ class TestInitialSetup(SeleniumTest):
             # Step 3 - Create a namespace
             self._test_create_namespace_step()
 
-            with mock_create_audit_event:
-                # Create a namespace
-                namespace = Namespace.create('unittestnamespace')
+            # Create a namespace
+            namespace = Namespace.get('unittestnamespace')
 
             # Step 4 - Create a module
             self._test_create_module_step()

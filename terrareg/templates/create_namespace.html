@@ -16,7 +16,16 @@
             }),
             contentType: 'application/json'
         }).done((res) => {
-            window.location.href = res.view_href
+            // Obtain get parameters from URL
+            const urlSearchParams = new URLSearchParams(window.location.search);
+            const params = Object.fromEntries(urlSearchParams.entries());
+            // If parameter from initial setup page is present,
+            // redirect user back to initial setup
+            if (params.initial_setup) {
+                window.location.href = '/initial-setup';
+            } else {
+                window.location.href = res.view_href
+            }
         }).fail((res) => {
             $('#create-error').html(failedResponseToErrorString(res));
             $('#create-error').css('display', 'block');
