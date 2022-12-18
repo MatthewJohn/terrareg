@@ -1,4 +1,4 @@
-# terrareg
+# Terrareg
 
 Open source Terraform Registry.
 
