@@ -31,7 +31,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
         """Test update of repository URL."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]), \
-                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
 
@@ -59,7 +59,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
         """Test update of repository URL."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]), \
-                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
 
@@ -91,7 +91,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
         mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
-                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
 
@@ -119,7 +119,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
         """Test creation of module provider with non-existent namespace."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]), \
-                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf:
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf:
 
             res = client.post(
                 '/v1/terrareg/modules/doesnotexist/newm/newp/create',
@@ -138,7 +138,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
         """Test creation of module provider without permission."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(False)[0]), \
-                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf:
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf:
 
             res = client.post(
                 '/v1/terrareg/modules/testnamespace/doesnotexist/testprovider/create',

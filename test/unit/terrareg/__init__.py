@@ -535,7 +535,7 @@ def mock_server_user_groups_fixture(request):
 
 def mocked_server_module_version(request):
     """Mock server ModuleVersion class."""
-    patch = unittest.mock.patch('terrareg.server.ModuleVersion', MockModuleVersion)
+    patch = unittest.mock.patch('terrareg.models.ModuleVersion', MockModuleVersion)
     module_version_file_patch = unittest.mock.patch('terrareg.models.ModuleVersionFile', MockModuleVersionFile)
 
     def cleanup_mock():

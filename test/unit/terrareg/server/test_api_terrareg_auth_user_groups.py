@@ -98,7 +98,7 @@ class TestApiTerraregAuthUserGroups(TerraregUnitTest):
         """Test creation of module provider without permission."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(False)[0]), \
-                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf:
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf:
 
             res = client.get('/v1/terrareg/user-groups')
             assert res.json == {'message': "You don't have the permission to access the requested resource. "

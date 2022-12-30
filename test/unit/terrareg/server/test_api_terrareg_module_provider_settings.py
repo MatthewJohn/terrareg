@@ -43,7 +43,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_auth_method), \
                 unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
-                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
                 unittest.mock.patch('test.unit.terrareg.MockModuleProvider.update_attributes') as mock_update_attributes:
 
             res = client.post(
@@ -73,7 +73,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
                 unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
-                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
                 unittest.mock.patch('test.unit.terrareg.MockModuleProvider.update_attributes') as mock_update_attributes:
 
             res = client.post(
@@ -97,7 +97,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
                 unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
-                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
                 unittest.mock.patch('test.unit.terrareg.MockModuleProvider.update_attributes') as mock_update_attributes:
 
             res = client.post(
@@ -121,7 +121,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
                 unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
-                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
                 unittest.mock.patch('test.unit.terrareg.MockModuleProvider.update_attributes') as mock_update_attributes:
 
             res = client.post(
@@ -167,7 +167,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(False)[0]), \
                 unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
-                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
                 unittest.mock.patch('test.unit.terrareg.MockModuleProvider.update_attributes') as mock_update_attributes:
 
             res = client.post(
@@ -194,7 +194,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
                 unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
-                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
                 unittest.mock.patch('test.unit.terrareg.MockModuleProvider.update_attributes') as mock_update_attributes:
 
             res = client.post(
@@ -228,7 +228,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
                 unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
-                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
                 unittest.mock.patch('test.unit.terrareg.MockModuleProvider.update_attributes') as mock_update_attributes:
 
             res = client.post(
@@ -268,7 +268,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
                 unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
-                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
                 unittest.mock.patch('test.unit.terrareg.MockModuleProvider.update_attributes') as mock_update_attributes:
 
             res = client.post(
@@ -302,7 +302,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
                 unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
-                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
                 unittest.mock.patch('test.unit.terrareg.MockModuleProvider.update_attributes') as mock_update_attributes:
 
             res = client.post(
