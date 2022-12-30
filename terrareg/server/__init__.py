@@ -6,18 +6,10 @@ from flask import Flask, session, redirect
 from flask_restful import Api
 
 import terrareg.config
-from terrareg.database import Database
-from terrareg.models import (
-    Namespace, Module, GitProvider, Session,
-    ModuleVersion, ModuleProvider, Submodule,
-    Example
-)
-from terrareg.errors import (
-    InvalidNamespaceNameError,
-    InvalidModuleNameError,
-    InvalidModuleProviderNameError,
-    InvalidVersionError
-)
+import terrareg.database
+import terrareg.models
+import terrareg.errors
+import terrareg.auth
 from .base_handler import BaseHandler
 from terrareg.server.api import *
 
@@ -30,7 +22,7 @@ def catch_name_exceptions(f):
             return f(self, *args, **kwargs)
 
         # Handle invalid namespace name
-        except InvalidNamespaceNameError:
+        except terrareg.errors.InvalidNamespaceNameError:
             return self._render_template(
                 'error.html',
                 error_title='Invalid namespace name',
@@ -38,10 +30,10 @@ def catch_name_exceptions(f):
             ), 400
 
         # Handle invalid module name exceptions
-        except InvalidModuleNameError:
+        except terrareg.errors.InvalidModuleNameError:
             namespace = None
             if 'namespace' in kwargs:
-                namespace = Namespace.get(name=kwargs['namespace'])
+                namespace = terrareg.models.Namespace.get(name=kwargs['namespace'])
             return self._render_template(
                 'error.html',
                 error_title='Invalid module name',
@@ -50,13 +42,13 @@ def catch_name_exceptions(f):
             ), 400
 
         # Handle invalid provider name exceptions
-        except InvalidModuleProviderNameError:
+        except terrareg.errors.InvalidModuleProviderNameError:
             namespace = None
             module = None
             if 'namespace' in kwargs:
-                namespace = Namespace.get(name=kwargs['namespace'])
+                namespace = terrareg.models.Namespace.get(name=kwargs['namespace'])
                 if namespace is not None and 'name' in kwargs:
-                    module = Module(namespace=namespace, name=kwargs['name'])
+                    module = terrareg.models.Module(namespace=namespace, name=kwargs['name'])
             return self._render_template(
                 'error.html',
                 error_title='Invalid provider name',
@@ -66,14 +58,14 @@ def catch_name_exceptions(f):
             ), 400
 
         # Handle invalid version number error
-        except InvalidVersionError:
+        except terrareg.errors.InvalidVersionError:
             namespace = None
             module = None
             module_provider_name = None
             if 'namespace' in kwargs:
-                namespace = Namespace.get(name=kwargs['namespace'])
+                namespace = terrareg.models.Namespace.get(name=kwargs['namespace'])
                 if namespace is not None and 'name' in kwargs:
-                    module = Module(namespace=namespace, name=kwargs['name'])
+                    module = terrareg.models.Module(namespace=namespace, name=kwargs['name'])
                     if 'provider' in kwargs:
                         module_provider_name = kwargs['provider']
             version = None
@@ -120,8 +112,8 @@ class Server(BaseHandler):
         self._app.config['UPLOAD_FOLDER'] = self._get_upload_directory()
 
         # Initialise database
-        Database.get().initialise()
-        GitProvider.initialise_from_config()
+        terrareg.database.Database.get().initialise()
+        terrareg.models.GitProvider.initialise_from_config()
 
         self._register_routes()
 
@@ -494,7 +486,9 @@ class Server(BaseHandler):
             )
         ), 404
 
-    def _module_provider_404(self, namespace: Namespace, module: Module,
+    def _module_provider_404(self,
+                             namespace: terrareg.models.Namespace,
+                             module: terrareg.models.Module,
                              module_provider_name: str):
         return self._render_template(
             'error.html',
@@ -521,7 +515,7 @@ class Server(BaseHandler):
         """Remove cookie and redirect."""
         # Check if session exists in database and, if so,
         # delete it
-        session_obj = Session.check_session(session_id=session.get('session_id', None))
+        session_obj = terrareg.models.Session.check_session(session_id=session.get('session_id', None))
         if session_obj:
             session_obj.delete()
         session['session_id'] = None
@@ -538,7 +532,7 @@ class Server(BaseHandler):
         """Provide view to create module provider."""
         return self._render_template(
             'create_module_provider.html',
-            git_providers=GitProvider.get_all(),
+            git_providers=terrareg.models.GitProvider.get_all(),
             ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
             ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
@@ -571,12 +565,12 @@ class Server(BaseHandler):
     @catch_name_exceptions
     def _view_serve_module(self, namespace, name):
         """Render view for display module."""
-        namespace_obj = Namespace.get(namespace)
+        namespace_obj = terrareg.models.Namespace.get(namespace)
         if namespace_obj is None:
             return self._namespace_404(
                 namespace_name=namespace
             )
-        module = Module(namespace=namespace_obj, name=name)
+        module = terrareg.models.Module(namespace=namespace_obj, name=name)
         module_providers = module.get_providers()
 
         # If only one provider for module, redirect to it.
@@ -593,14 +587,14 @@ class Server(BaseHandler):
     @catch_name_exceptions
     def _view_serve_module_provider(self, namespace, name, provider, version=None):
         """Render view for displaying module provider information"""
-        namespace_obj = Namespace.get(namespace)
+        namespace_obj = terrareg.models.Namespace.get(namespace)
         if namespace_obj is None:
             return self._namespace_404(
                 namespace_name=namespace
             )
 
-        module = Module(namespace=namespace_obj, name=name)
-        module_provider = ModuleProvider.get(module=module, name=provider)
+        module = terrareg.models.Module(namespace=namespace_obj, name=name)
+        module_provider = terrareg.models.ModuleProvider.get(module=module, name=provider)
         if module_provider is None:
             return self._module_provider_404(
                 namespace=namespace_obj,
@@ -611,7 +605,7 @@ class Server(BaseHandler):
             module_version = module_provider.get_latest_version()
 
         else:
-            module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+            module_version = terrareg.models.ModuleVersion.get(module_provider=module_provider, version=version)
 
             if module_version is None:
                 # If a version number was provided and it does not exist,
@@ -623,48 +617,48 @@ class Server(BaseHandler):
     @catch_name_exceptions
     def _view_serve_submodule(self, namespace, name, provider, version, submodule_path):
         """Review view for displaying submodule"""
-        namespace_obj = Namespace.get(namespace)
+        namespace_obj = terrareg.models.Namespace.get(namespace)
         if namespace_obj is None:
             return self._namespace_404(namespace_name=namespace)
 
-        module = Module(namespace=namespace_obj, name=name)
-        module_provider = ModuleProvider.get(module=module, name=provider)
+        module = terrareg.models.Module(namespace=namespace_obj, name=name)
+        module_provider = terrareg.models.ModuleProvider.get(module=module, name=provider)
         if module_provider is None:
             return self._module_provider_404(
                 namespace=namespace_obj,
                 module=name,
                 module_provider_name=provider)
 
-        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        module_version = terrareg.models.ModuleVersion.get(module_provider=module_provider, version=version)
 
         if module_version is None:
             return redirect(module_provider.get_view_url())
 
-        submodule = Submodule(module_version=module_version, module_path=submodule_path)
+        submodule = terrareg.models.Submodule(module_version=module_version, module_path=submodule_path)
 
         return self._render_template('module_provider.html')
 
     @catch_name_exceptions
     def _view_serve_example(self, namespace, name, provider, version, submodule_path):
         """Review view for displaying example"""
-        namespace_obj = Namespace.get(namespace)
+        namespace_obj = terrareg.models.Namespace.get(namespace)
         if namespace_obj is None:
             return self._namespace_404(namespace_name=namespace)
 
-        module = Module(namespace=namespace_obj, name=name)
-        module_provider = ModuleProvider.get(module=module, name=provider)
+        module = terrareg.models.Module(namespace=namespace_obj, name=name)
+        module_provider = terrareg.models.ModuleProvider.get(module=module, name=provider)
         if module_provider is None:
             return self._module_provider_404(
                 namespace=namespace_obj,
                 module=name,
                 module_provider_name=provider)
 
-        module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        module_version = terrareg.models.ModuleVersion.get(module_provider=module_provider, version=version)
 
         if module_version is None:
             return redirect(module_provider.get_view_url())
 
-        submodule = Example(module_version=module_version, module_path=submodule_path)
+        submodule = terrareg.models.Example(module_version=module_version, module_path=submodule_path)
 
         return self._render_template('module_provider.html')
 

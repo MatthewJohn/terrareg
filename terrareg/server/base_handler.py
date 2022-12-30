@@ -4,9 +4,9 @@ import os
 
 from flask import render_template, session
 
-from terrareg.csrf import get_csrf_token
+import terrareg.csrf
 import terrareg.config
-from terrareg.models import Namespace, Module, Session
+import terrareg.models
 
 
 class BaseHandler:
@@ -22,10 +22,11 @@ class BaseHandler:
             TRUSTED_NAMESPACE_LABEL=terrareg.config.Config().TRUSTED_NAMESPACE_LABEL,
             CONTRIBUTED_NAMESPACE_LABEL=terrareg.config.Config().CONTRIBUTED_NAMESPACE_LABEL,
             VERIFIED_MODULE_LABEL=terrareg.config.Config().VERIFIED_MODULE_LABEL,
-            csrf_token=get_csrf_token()
+            csrf_token=terrareg.csrf.get_csrf_token()
         )
 
-    def _module_provider_404(self, namespace: Namespace, module: Module,
+    def _module_provider_404(self, namespace: terrareg.models.Namespace,
+                             module: terrareg.models.Module,
                              module_provider_name: str):
         return self._render_template(
             'error.html',
@@ -47,17 +48,17 @@ class BaseHandler:
 
         # Check if a session already exists and delete it
         if session.get('session_id', None):
-            session_obj = Session.check_session(session.get('session_id', None))
+            session_obj = terrareg.models.Session.check_session(session.get('session_id', None))
             if session_obj:
                 session_obj.delete()
 
         session['csrf_token'] = hashlib.sha1(os.urandom(64)).hexdigest()
-        session_obj = Session.create_session()
+        session_obj = terrareg.models.Session.create_session()
         session['session_id'] = session_obj.id
         session.modified = True
 
         # Whilst authenticating a user, piggyback the request
         # to take the opportunity to delete old sessions
-        Session.cleanup_old_sessions()
+        terrareg.models.Session.cleanup_old_sessions()
 
         return session_obj
