@@ -97,8 +97,8 @@ class Server(BaseHandler):
         """Create flask app and store member variables"""
         self._app = Flask(
             __name__,
-            static_folder='static',
-            template_folder='templates'
+            static_folder=os.path.join('..', 'static'),
+            template_folder=os.path.join('..', 'templates')
         )
         self._api = Api(
             self._app,
