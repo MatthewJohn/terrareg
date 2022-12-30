@@ -2,7 +2,7 @@
 from flask_restful import reqparse, inputs
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.module_search import NamespaceTrustFilter, ModuleSearch
+import terrareg.module_search
 
 
 class ApiModuleSearch(ErrorCatchingResource):
@@ -52,7 +52,7 @@ class ApiModuleSearch(ErrorCatchingResource):
 
         args = parser.parse_args()
 
-        namespace_trust_filters = NamespaceTrustFilter.UNSPECIFIED
+        namespace_trust_filters = terrareg.module_search.NamespaceTrustFilter.UNSPECIFIED
         # If either trusted namepsaces or contributed have been provided
         # (irrelevant of whether they are set to true or false),
         # setup the filter to no longer be unspecified.
@@ -60,11 +60,11 @@ class ApiModuleSearch(ErrorCatchingResource):
             namespace_trust_filters = []
 
         if args.trusted_namespaces:
-            namespace_trust_filters.append(NamespaceTrustFilter.TRUSTED_NAMESPACES)
+            namespace_trust_filters.append(terrareg.module_search.NamespaceTrustFilter.TRUSTED_NAMESPACES)
         if args.contributed:
-            namespace_trust_filters.append(NamespaceTrustFilter.CONTRIBUTED)
+            namespace_trust_filters.append(terrareg.module_search.NamespaceTrustFilter.CONTRIBUTED)
 
-        search_results = ModuleSearch.search_module_providers(
+        search_results = terrareg.module_search.ModuleSearch.search_module_providers(
             query=args.q,
             namespaces=args.namespaces,
             providers=args.providers,

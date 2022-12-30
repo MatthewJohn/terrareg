@@ -2,7 +2,7 @@
 from flask import request
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.models import Submodule
+import terrareg.models
 
 
 class ApiTerraregSubmoduleReadmeHtml(ErrorCatchingResource):
@@ -14,6 +14,6 @@ class ApiTerraregSubmoduleReadmeHtml(ErrorCatchingResource):
         if error:
             return error
 
-        submodule_obj = Submodule.get(module_version=module_version, module_path=submodule)
+        submodule_obj = terrareg.models.Submodule.get(module_version=module_version, module_path=submodule)
 
         return submodule_obj.get_readme_html(server_hostname=request.host)

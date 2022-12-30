@@ -1,7 +1,7 @@
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.models import Namespace, ModuleProvider, ModuleVersion
-from terrareg.analytics import AnalyticsEngine
+import terrareg.models
+import terrareg.analytics
 
 
 class ApiTerraregGlobalStatsSummary(ErrorCatchingResource):
@@ -10,8 +10,8 @@ class ApiTerraregGlobalStatsSummary(ErrorCatchingResource):
     def _get(self):
         """Return number of namespaces, modules, module versions and downloads"""
         return {
-            'namespaces': Namespace.get_total_count(),
-            'modules': ModuleProvider.get_total_count(),
-            'module_versions': ModuleVersion.get_total_count(),
-            'downloads': AnalyticsEngine.get_total_downloads()
+            'namespaces': terrareg.models.Namespace.get_total_count(),
+            'modules': terrareg.models.ModuleProvider.get_total_count(),
+            'module_versions': terrareg.models.ModuleVersion.get_total_count(),
+            'downloads': terrareg.analytics.AnalyticsEngine.get_total_downloads()
         }

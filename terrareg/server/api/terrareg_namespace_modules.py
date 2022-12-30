@@ -2,7 +2,7 @@
 from flask_restful import reqparse
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.models import Namespace
+import terrareg.models
 
 
 class ApiTerraregNamespaceModules(ErrorCatchingResource):
@@ -21,7 +21,7 @@ class ApiTerraregNamespaceModules(ErrorCatchingResource):
         )
         args = parser.parse_args()
 
-        namespace_obj = Namespace.get(name=namespace)
+        namespace_obj = terrareg.models.Namespace.get(name=namespace)
         if namespace_obj is None:
             return self._get_404_response()
 

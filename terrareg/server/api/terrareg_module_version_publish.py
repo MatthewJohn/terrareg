@@ -1,12 +1,15 @@
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.auth_wrapper import auth_wrapper
+import terrareg.auth_wrapper
 
 
 class ApiTerraregModuleVersionPublish(ErrorCatchingResource):
     """Provide interface to publish module version."""
 
-    method_decorators = [auth_wrapper('can_publish_module_version', request_kwarg_map={'namespace': 'namespace'})]
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper(
+        'can_publish_module_version',
+        request_kwarg_map={'namespace': 'namespace'})
+    ]
 
     def _post(self, namespace, name, provider, version):
         """Publish module."""

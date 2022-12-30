@@ -518,9 +518,9 @@ class MockUserGroupNamespacePermission(UserGroupNamespacePermission):
 
 def mock_server_user_groups(request):
     """Mock UserGroup and UserGroupNamespacePermission classes"""
-    user_group_patch = unittest.mock.patch('terrareg.server.UserGroup', MockUserGroup)
+    user_group_patch = unittest.mock.patch('terrareg.models.UserGroup', MockUserGroup)
     user_group_namespace_permission_patch = unittest.mock.patch(
-        'terrareg.server.UserGroupNamespacePermission',
+        'terrareg.models.UserGroupNamespacePermission',
         MockUserGroupNamespacePermission)
 
     def cleanup_mock():
@@ -539,7 +539,7 @@ def mock_server_user_groups_fixture(request):
 def mocked_server_module_version(request):
     """Mock server ModuleVersion class."""
     patch = unittest.mock.patch('terrareg.server.ModuleVersion', MockModuleVersion)
-    module_version_file_patch = unittest.mock.patch('terrareg.server.ModuleVersionFile', MockModuleVersionFile)
+    module_version_file_patch = unittest.mock.patch('terrareg.models.ModuleVersionFile', MockModuleVersionFile)
 
     def cleanup_mock():
         module_version_file_patch.stop()
@@ -557,7 +557,7 @@ def mocked_server_module_version_fixture(request):
 
 def mocked_server_module_provider(request):
     """Mock server ModuleProvider class."""
-    patch = unittest.mock.patch('terrareg.server.ModuleProvider', MockModuleProvider)
+    patch = unittest.mock.patch('terrareg.models.ModuleProvider', MockModuleProvider)
 
     def cleanup_mock():
         patch.stop()
@@ -574,7 +574,7 @@ def mocked_server_module_provider_fixture(request):
 
 def mocked_server_module(request):
     """Mock server Module class."""
-    patch = unittest.mock.patch('terrareg.server.Module', MockModule)
+    patch = unittest.mock.patch('terrareg.models.Module', MockModule)
 
     def cleanup_mock():
         patch.stop()
@@ -592,7 +592,7 @@ def mocked_server_module_fixture(request):
 
 def mocked_server_namespace(request):
     """Mock server Module class."""
-    patch = unittest.mock.patch('terrareg.server.Namespace', MockNamespace)
+    patch = unittest.mock.patch('terrareg.models.Namespace', MockNamespace)
 
     def cleanup_mock():
         patch.stop()
@@ -610,7 +610,7 @@ def mocked_server_namespace_fixture(request):
 
 def mocked_server_session(request):
     """Mock Session model class in server module."""
-    patch = unittest.mock.patch('terrareg.server.Session', MockSession)
+    patch = unittest.mock.patch('terrareg.models.Session', MockSession)
 
     def cleanup_mock():
         patch.stop()

@@ -2,23 +2,21 @@
 from flask_restful import reqparse
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.auth_wrapper import auth_wrapper
-from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
-from terrareg.csrf import check_csrf_token
-from terrareg.errors import RepositoryUrlParseError
-from terrareg.models import (
-    Namespace, Module,
-    ModuleProvider, GitProvider
-)
-from terrareg.database import Database
+import terrareg.auth_wrapper
+import terrareg.user_group_namespace_permission_type
+import terrareg.csrf
+import terrareg.errors
+import terrareg.models
+import terrareg.database
 
 
 class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
     """Provide interface to create module provider."""
 
-    method_decorators = [auth_wrapper('check_namespace_access',
-                                      UserGroupNamespacePermissionType.FULL,
-                                      request_kwarg_map={'namespace': 'namespace'})]
+    method_decorators = [
+        terrareg.auth_wrapper.auth_wrapper('check_namespace_access',
+            terrareg.user_group_namespace_permission_type.UserGroupNamespacePermissionType.FULL,
+            request_kwarg_map={'namespace': 'namespace'})]
 
     def _post(self, namespace, name, provider):
         """Handle update to settings."""
@@ -75,26 +73,26 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
 
         args = parser.parse_args()
 
-        check_csrf_token(args.csrf_token)
+        terrareg.csrf.check_csrf_token(args.csrf_token)
 
         # Update repository URL of module version
-        namespace = Namespace.get(name=namespace)
+        namespace = terrareg.models.Namespace.get(name=namespace)
         if namespace is None:
             return {'message': 'Namespace does not exist'}, 400
-        module = Module(namespace=namespace, name=name)
+        module = terrareg.models.Module(namespace=namespace, name=name)
 
         # Check if module provider already exists
-        module_provider = ModuleProvider.get(module=module, name=provider)
+        module_provider = terrareg.models.ModuleProvider.get(module=module, name=provider)
         if module_provider is not None:
             return {'message': 'Module provider already exists'}, 400
 
-        with Database.start_transaction() as transaction_context:
-            module_provider = ModuleProvider.create(module=module, name=provider)
+        with terrareg.database.Database.start_transaction() as transaction_context:
+            module_provider = terrareg.models.ModuleProvider.create(module=module, name=provider)
 
             # If git provider ID has been specified,
             # validate it and update attribute of module provider.
             if args.git_provider_id is not None:
-                git_provider = GitProvider.get(id=args.git_provider_id)
+                git_provider = terrareg.models.GitProvider.get(id=args.git_provider_id)
                 # If a non-empty git provider ID was provided and none
                 # were returned, return an error about invalid
                 # git provider ID
@@ -115,7 +113,7 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
 
                 try:
                     module_provider.update_repo_base_url_template(repo_base_url_template=repo_base_url_template)
-                except RepositoryUrlParseError as exc:
+                except terrareg.errors.RepositoryUrlParseError as exc:
                     transaction_context.transaction.rollback()
                     return {'message': 'Repo base URL: {}'.format(str(exc))}, 400
 
@@ -130,7 +128,7 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
 
                 try:
                     module_provider.update_repo_clone_url_template(repo_clone_url_template=repo_clone_url_template)
-                except RepositoryUrlParseError as exc:
+                except terrareg.errors.RepositoryUrlParseError as exc:
                     transaction_context.transaction.rollback()
                     return {'message': 'Repo clone URL: {}'.format(str(exc))}, 400
 
@@ -143,7 +141,7 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
 
                 try:
                     module_provider.update_repo_browse_url_template(repo_browse_url_template=repo_browse_url_template)
-                except RepositoryUrlParseError as exc:
+                except terrareg.errors.RepositoryUrlParseError as exc:
                     transaction_context.transaction.rollback()
                     return {'message': 'Repo browse URL: {}'.format(str(exc))}, 400
 

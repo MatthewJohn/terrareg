@@ -2,7 +2,7 @@
 from flask import request
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.models import ExampleFile
+import terrareg.models
 
 
 class ApiTerraregExampleFile(ErrorCatchingResource):
@@ -14,7 +14,7 @@ class ApiTerraregExampleFile(ErrorCatchingResource):
         if error:
             return error
 
-        example_file_obj = ExampleFile.get_by_path(module_version=module_version, file_path=example_file)
+        example_file_obj = terrareg.models.ExampleFile.get_by_path(module_version=module_version, file_path=example_file)
 
         if example_file_obj is None:
             return {'message': 'Example file object does not exist.'}

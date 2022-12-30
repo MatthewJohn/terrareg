@@ -1,6 +1,6 @@
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.models import GitProvider
+import terrareg.models
 
 
 class ApiTerraregGitProviders(ErrorCatchingResource):
@@ -13,5 +13,5 @@ class ApiTerraregGitProviders(ErrorCatchingResource):
                 'id': git_provider.pk,
                 'name': git_provider.name
             }
-            for git_provider in GitProvider.get_all()
+            for git_provider in terrareg.models.GitProvider.get_all()
         ]

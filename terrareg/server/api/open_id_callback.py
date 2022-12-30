@@ -6,9 +6,10 @@ from flask import request, make_response, render_template, session, redirect
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.openid_connect
 import terrareg.config
-from terrareg.models import Session
-from terrareg.audit import AuditEvent
-from terrareg.audit_action import AuditAction
+import terrareg.models
+import terrareg.audit
+import terrareg.audit_action
+import terrareg.auth
 
 
 class ApiOpenIdCallback(ErrorCatchingResource):
@@ -42,7 +43,7 @@ class ApiOpenIdCallback(ErrorCatchingResource):
         user_info = terrareg.openid_connect.OpenidConnect.get_user_info(access_token=access_token['access_token'])
 
         session_obj = self.create_session()
-        if not isinstance(session_obj, Session):
+        if not isinstance(session_obj, terrareg.models.Session):
             res = make_response(render_template(
                 'error.html',
                 error_title='Login error',
@@ -74,8 +75,8 @@ Username:
         session.modified = True
 
         # Create audit event
-        AuditEvent.create_audit_event(
-            action=AuditAction.USER_LOGIN,
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.USER_LOGIN,
             object_type=None, object_id=None,
             old_value=None, new_value=None
         )

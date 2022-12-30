@@ -2,7 +2,7 @@
 from flask_restful import reqparse
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.module_search import ModuleSearch
+import terrareg.module_search
 
 
 class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
@@ -18,4 +18,4 @@ class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
         )
         args = parser.parse_args()
 
-        return ModuleSearch.get_search_filters(query=args.q)
+        return terrareg.module_search.ModuleSearch.get_search_filters(query=args.q)

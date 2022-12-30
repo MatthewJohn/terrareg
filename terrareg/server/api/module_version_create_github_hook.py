@@ -6,11 +6,11 @@ import re
 from flask import request
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.database import Database
+import terrareg.database
 import terrareg.config
-from terrareg.models import ModuleVersion
-from terrareg.module_extractor import GitModuleExtractor
-from terrareg.errors import TerraregError
+import terrareg.models
+import terrareg.module_extractor
+import terrareg.errors
 
 
 class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
@@ -18,7 +18,7 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
 
     def _post(self, namespace, name, provider):
         """Create, update or delete new version based on GitHub release hooks."""
-        with Database.start_transaction() as transaction_context:
+        with terrareg.database.Database.start_transaction() as transaction_context:
             _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
             if error:
                 return error
@@ -64,7 +64,7 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
                 return {'status': 'Error', 'message': 'Release tag does not match configured version regex'}, 400
 
             # Create module version
-            module_version = ModuleVersion(module_provider=module_provider, version=version)
+            module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version=version)
 
             action = github_data.get('action')
             if not action:
@@ -86,10 +86,10 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
                 # Perform import from git
                 try:
                     module_version.prepare_module()
-                    with GitModuleExtractor(module_version=module_version) as me:
+                    with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
                         me.process_upload()
 
-                except TerraregError as exc:
+                except terrareg.errors.TerraregError as exc:
                     # Roll back creation of module version
                     transaction_context.transaction.rollback()
 

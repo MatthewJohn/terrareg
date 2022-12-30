@@ -2,12 +2,8 @@
 from flask_restful import Resource
 
 from terrareg.server.base_handler import BaseHandler
-from terrareg.errors import TerraregError
-from terrareg.models import (
-    Namespace, Module,
-    ModuleProvider,
-    ModuleVersion
-)
+import terrareg.errors
+import terrareg.models
 
 
 class ErrorCatchingResource(Resource, BaseHandler):
@@ -21,7 +17,7 @@ class ErrorCatchingResource(Resource, BaseHandler):
         """Run subclasses get in error handling fashion."""
         try:
             return self._get(*args, **kwargs)
-        except TerraregError as exc:
+        except terrareg.errors.TerraregError as exc:
             return {
                 "status": "Error",
                 "message": str(exc)
@@ -35,7 +31,7 @@ class ErrorCatchingResource(Resource, BaseHandler):
         """Run subclasses post in error handling fashion."""
         try:
             return self._post(*args, **kwargs)
-        except TerraregError as exc:
+        except terrareg.errors.TerraregError as exc:
             return {
                 "status": "Error",
                 "message": str(exc)
@@ -49,7 +45,7 @@ class ErrorCatchingResource(Resource, BaseHandler):
         """Run subclasses delete in error handling fashion."""
         try:
             return self._delete(*args, **kwargs)
-        except TerraregError as exc:
+        except terrareg.errors.TerraregError as exc:
             return {
                 "status": "Error",
                 "message": str(exc)
@@ -68,13 +64,13 @@ class ErrorCatchingResource(Resource, BaseHandler):
 
     def get_module_provider_by_names(self, namespace, name, provider, create=False):
         """Obtain namespace, module, provider objects by name"""
-        namespace_obj = Namespace.get(namespace, create=create)
+        namespace_obj = terrareg.models.Namespace.get(namespace, create=create)
         if namespace_obj is None:
             return None, None, None, ({'message': 'Namespace does not exist'}, 400)
 
-        module_obj = Module(namespace=namespace_obj, name=name)
+        module_obj = terrareg.models.Module(namespace=namespace_obj, name=name)
 
-        module_provider_obj = ModuleProvider.get(module=module_obj, name=provider, create=create)
+        module_provider_obj = terrareg.models.ModuleProvider.get(module=module_obj, name=provider, create=create)
         if module_provider_obj is None:
             return None, None, None, ({'message': 'Module provider does not exist'}, 400)
 
@@ -86,7 +82,7 @@ class ErrorCatchingResource(Resource, BaseHandler):
         if error:
             return namespace_obj, module_obj, module_provider_obj, None, error
 
-        module_version_obj = ModuleVersion.get(module_provider=module_provider_obj, version=version)
+        module_version_obj = terrareg.models.ModuleVersion.get(module_provider=module_provider_obj, version=version)
         if module_version_obj is None:
             return namespace_obj, module_obj, module_provider_obj, None, ({'message': 'Module version does not exist'}, 400)
 

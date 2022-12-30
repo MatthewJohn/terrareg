@@ -1,6 +1,6 @@
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.analytics import AnalyticsEngine
+import terrareg.analytics
 
 
 class ApiModuleProviderDownloadsSummary(ErrorCatchingResource):
@@ -16,6 +16,6 @@ class ApiModuleProviderDownloadsSummary(ErrorCatchingResource):
             "data": {
                 "type": "module-downloads-summary",
                 "id": module_provider.id,
-                "attributes": AnalyticsEngine.get_module_provider_download_stats(module_provider)
+                "attributes": terrareg.analytics.AnalyticsEngine.get_module_provider_download_stats(module_provider)
             }
         }

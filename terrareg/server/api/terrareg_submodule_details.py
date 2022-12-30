@@ -1,6 +1,6 @@
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.models import Submodule
+import terrareg.models
 
 
 class ApiTerraregSubmoduleDetails(ErrorCatchingResource):
@@ -12,6 +12,6 @@ class ApiTerraregSubmoduleDetails(ErrorCatchingResource):
         if error:
             return error
 
-        submodule_obj = Submodule.get(module_version=module_version, module_path=submodule)
+        submodule_obj = terrareg.models.Submodule.get(module_version=module_version, module_path=submodule)
 
         return submodule_obj.get_terrareg_api_details()

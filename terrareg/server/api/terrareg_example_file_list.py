@@ -1,6 +1,6 @@
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.models import Example
+import terrareg.models
 
 
 class ApiTerraregExampleFileList(ErrorCatchingResource):
@@ -12,7 +12,7 @@ class ApiTerraregExampleFileList(ErrorCatchingResource):
         if error:
             return error
 
-        example_obj = Example(module_version=module_version, module_path=example)
+        example_obj = terrareg.models.Example(module_version=module_version, module_path=example)
 
         return [
             {

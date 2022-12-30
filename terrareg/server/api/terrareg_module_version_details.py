@@ -1,6 +1,6 @@
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.models import ModuleVersion
+import terrareg.models
 
 
 class ApiTerraregModuleVersionDetails(ErrorCatchingResource):
@@ -13,7 +13,7 @@ class ApiTerraregModuleVersionDetails(ErrorCatchingResource):
             return error
 
         if version is not None:
-            module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+            module_version = terrareg.models.ModuleVersion.get(module_provider=module_provider, version=version)
         else:
             module_version = module_provider.get_latest_version()
 

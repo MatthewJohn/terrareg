@@ -4,9 +4,9 @@ import re
 from flask import request, make_response
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.models import Namespace
+import terrareg.models
 import terrareg.config
-from terrareg.analytics import AnalyticsEngine
+import terrareg.analytics
 
 
 class ApiModuleVersionDownload(ErrorCatchingResource):
@@ -14,7 +14,7 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version):
         """Provide download header for location to download source."""
-        namespace, analytics_token = Namespace.extract_analytics_token(namespace)
+        namespace, analytics_token = terrareg.models.Namespace.extract_analytics_token(namespace)
         namespace, module, module_provider, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
         if error:
             return self._get_404_response()
@@ -46,7 +46,7 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
             )
         else:
             # Otherwise, if download is allowed and not internal, record the download
-            AnalyticsEngine.record_module_version_download(
+            terrareg.analytics.AnalyticsEngine.record_module_version_download(
                 module_version=module_version,
                 analytics_token=analytics_token,
                 terraform_version=request.headers.get('X-Terraform-Version', None),

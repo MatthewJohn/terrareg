@@ -2,19 +2,22 @@
 from flask_restful import reqparse, inputs
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.auth_wrapper import auth_wrapper
-from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
-from terrareg.csrf import check_csrf_token
-from terrareg.models import GitProvider
-from terrareg.errors import RepositoryUrlParseError
+import terrareg.auth_wrapper
+import terrareg.user_group_namespace_permission_type
+import terrareg.csrf
+import terrareg.models
+import terrareg.errors
 
 
 class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
     """Provide interface to update module provider settings."""
 
-    method_decorators = [auth_wrapper('check_namespace_access',
-                                      UserGroupNamespacePermissionType.MODIFY,
-                                      request_kwarg_map={'namespace': 'namespace'})]
+    method_decorators = [
+        terrareg.auth_wrapper.auth_wrapper('check_namespace_access',
+            terrareg.user_group_namespace_permission_type.UserGroupNamespacePermissionType.MODIFY,
+            request_kwarg_map={'namespace': 'namespace'}
+        )
+    ]
 
     def _post(self, namespace, name, provider):
         """Handle update to settings."""
@@ -78,7 +81,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
 
         args = parser.parse_args()
 
-        check_csrf_token(args.csrf_token)
+        terrareg.csrf.check_csrf_token(args.csrf_token)
 
         _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
         if error:
@@ -87,7 +90,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         # If git provider ID has been specified,
         # validate it and update attribute of module provider.
         if args.git_provider_id is not None:
-            git_provider = GitProvider.get(id=args.git_provider_id)
+            git_provider = terrareg.models.GitProvider.get(id=args.git_provider_id)
             # If a non-empty git provider ID was provided and none
             # were returned, return an error about invalid
             # git provider ID
@@ -107,7 +110,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
 
             try:
                 module_provider.update_repo_base_url_template(repo_base_url_template=repo_base_url_template)
-            except RepositoryUrlParseError as exc:
+            except terrareg.errors.RepositoryUrlParseError as exc:
                 return {'message': 'Repo base URL: {}'.format(str(exc))}, 400
 
         # Ensure repository URL is parsable
@@ -121,7 +124,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
 
             try:
                 module_provider.update_repo_clone_url_template(repo_clone_url_template=repo_clone_url_template)
-            except RepositoryUrlParseError as exc:
+            except terrareg.errors.RepositoryUrlParseError as exc:
                 return {'message': 'Repo clone URL: {}'.format(str(exc))}, 400
 
         # Ensure repository URL is parsable
@@ -133,7 +136,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
 
             try:
                 module_provider.update_repo_browse_url_template(repo_browse_url_template=repo_browse_url_template)
-            except RepositoryUrlParseError as exc:
+            except terrareg.errors.RepositoryUrlParseError as exc:
                 return {'message': 'Repo browse URL: {}'.format(str(exc))}, 400
 
         git_tag_format = args.git_tag_format

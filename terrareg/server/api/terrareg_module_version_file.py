@@ -1,6 +1,6 @@
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.models import ModuleVersionFile
+import terrareg.models
 
 
 class ApiTerraregModuleVersionFile(ErrorCatchingResource):
@@ -12,7 +12,7 @@ class ApiTerraregModuleVersionFile(ErrorCatchingResource):
         if error:
             return error
 
-        module_version_file = ModuleVersionFile.get(module_version=module_version, path=path)
+        module_version_file = terrareg.models.ModuleVersionFile.get(module_version=module_version, path=path)
 
         if module_version_file is None:
             return {'message': 'Module version file does not exist.'}, 400

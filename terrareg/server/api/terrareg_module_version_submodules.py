@@ -7,7 +7,8 @@ class ApiTerraregModuleVerisonSubmodules(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version):
         """Return list of submodules."""
-        _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+        _, _, _, module_version, error = self.get_module_version_by_name(
+            namespace, name, provider, version)
         if error:
             return error
 

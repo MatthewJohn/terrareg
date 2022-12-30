@@ -5,8 +5,8 @@ from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.config
 import terrareg.auth
 import terrareg.saml
-from terrareg.audit_action import AuditAction
-from terrareg.audit import AuditEvent
+import terrareg.audit_action
+import terrareg.audit
 
 
 class ApiSamlInitiate(ErrorCatchingResource):
@@ -76,8 +76,8 @@ Errors:
             return res
 
         # Create audit event
-        AuditEvent.create_audit_event(
-            action=AuditAction.USER_LOGIN,
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.USER_LOGIN,
             object_type=None, object_id=None,
             old_value=None, new_value=None
         )

@@ -2,14 +2,14 @@
 from flask_restful import reqparse
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.auth_wrapper import auth_wrapper
-from terrareg.audit import AuditEvent
+import terrareg.auth_wrapper
+import terrareg.audit
 
 
 class ApiTerraregAuditHistory(ErrorCatchingResource):
     """Interface to obtain audit history"""
 
-    method_decorators = [auth_wrapper('is_admin')]
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('is_admin')]
 
     def _get(self):
         """Obtain audit history events"""
@@ -68,7 +68,7 @@ class ApiTerraregAuditHistory(ErrorCatchingResource):
         if args.order_by < len(columns):
             order_by = columns[args.order_by]
 
-        events, total_count, filtered_count = AuditEvent.get_events(
+        events, total_count, filtered_count = terrareg.audit.AuditEvent.get_events(
             limit=args.length,
             offset=args.start,
             descending=args.order_dir == 'desc',

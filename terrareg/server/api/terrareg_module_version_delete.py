@@ -2,17 +2,19 @@
 from flask_restful import reqparse
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.csrf import check_csrf_token
-from terrareg.auth_wrapper import auth_wrapper
-from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
+import terrareg.csrf
+import terrareg.auth_wrapper
+import terrareg.user_group_namespace_permission_type
 
 
 class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
     """Provide interface to delete module version."""
 
-    method_decorators = [auth_wrapper('check_namespace_access',
-                                      UserGroupNamespacePermissionType.FULL,
-                                      request_kwarg_map={'namespace': 'namespace'})]
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper(
+        'check_namespace_access',
+        terrareg.user_group_namespace_permission_type.UserGroupNamespacePermissionType.FULL,
+        request_kwarg_map={'namespace': 'namespace'})
+    ]
 
     def _delete(self, namespace, name, provider, version):
         """Delete module version."""
@@ -27,7 +29,7 @@ class ApiTerraregModuleVersionDelete(ErrorCatchingResource):
 
         args = parser.parse_args()
 
-        check_csrf_token(args.csrf_token)
+        terrareg.csrf.check_csrf_token(args.csrf_token)
 
         _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
         if error:

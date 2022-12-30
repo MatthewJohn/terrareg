@@ -1,13 +1,13 @@
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.auth_wrapper import auth_wrapper
+import terrareg.auth_wrapper
 import terrareg.auth
 
 
 class ApiTerraregIsAuthenticated(ErrorCatchingResource):
     """Interface to teturn whether user is authenticated as an admin."""
 
-    method_decorators = [auth_wrapper('is_authenticated')]
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('is_authenticated')]
 
     def _get(self):
         """Return information about current user."""

@@ -1,6 +1,6 @@
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.models import ProviderLogo
+import terrareg.models
 
 
 class ApiTerraregProviderLogos(ErrorCatchingResource):
@@ -15,5 +15,5 @@ class ApiTerraregProviderLogos(ErrorCatchingResource):
                 'tos': provider_logo.tos,
                 'link': provider_logo.link
             }
-            for provider_logo in ProviderLogo.get_all()
+            for provider_logo in terrareg.models.ProviderLogo.get_all()
         }

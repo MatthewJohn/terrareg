@@ -6,11 +6,11 @@ import re
 from flask import request
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.database import Database
+import terrareg.database
 import terrareg.config
-from terrareg.models import ModuleVersion
-from terrareg.module_extractor import GitModuleExtractor
-from terrareg.errors import TerraregError
+import terrareg.models
+import terrareg.module_extractor
+import terrareg.errors
 
 
 class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
@@ -18,7 +18,7 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
 
     def _post(self, namespace, name, provider):
         """Create new version based on bitbucket hooks."""
-        with Database.start_transaction() as transaction_context:
+        with terrareg.database.Database.start_transaction() as transaction_context:
             _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
             if error:
                 return error
@@ -83,16 +83,16 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
                     continue
 
                 # Create module version
-                module_version = ModuleVersion(module_provider=module_provider, version=version)
+                module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version=version)
 
                 # Perform import from git
                 savepoint = transaction_context.connection.begin_nested()
                 try:
                     module_version.prepare_module()
-                    with GitModuleExtractor(module_version=module_version) as me:
+                    with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
                         me.process_upload()
 
-                except TerraregError as exc:
+                except terrareg.errors.TerraregError as exc:
                     # Roll back the transaction for this module version
                     savepoint.rollback()
 

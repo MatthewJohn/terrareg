@@ -1,6 +1,6 @@
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-from terrareg.models import Namespace
+import terrareg.models
 
 
 class ApiTerraregInitialSetupData(ErrorCatchingResource):
@@ -12,7 +12,7 @@ class ApiTerraregInitialSetupData(ErrorCatchingResource):
         namespace = None
         module = None
         module_provider = None
-        namespaces = Namespace.get_all(only_published=False)
+        namespaces = terrareg.models.Namespace.get_all(only_published=False)
         version = None
         integrations = {}
         if namespaces:
