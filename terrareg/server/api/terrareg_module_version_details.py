@@ -1,0 +1,23 @@
+
+from terrareg.server.error_catching_resource import ErrorCatchingResource
+from terrareg.models import ModuleVersion
+
+
+class ApiTerraregModuleVersionDetails(ErrorCatchingResource):
+    """Interface to obtain module verison details."""
+
+    def _get(self, namespace, name, provider, version=None):
+        """Return details about module version."""
+        _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+        if error:
+            return error
+
+        if version is not None:
+            module_version = ModuleVersion.get(module_provider=module_provider, version=version)
+        else:
+            module_version = module_provider.get_latest_version()
+
+        if module_version is None:
+            return self._get_404_response()
+
+        return module_version.get_terrareg_api_details()
