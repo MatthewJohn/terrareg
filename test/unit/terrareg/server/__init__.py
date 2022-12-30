@@ -7,7 +7,6 @@ from terrareg.filters import NamespaceTrustFilter
 from terrareg.module_search import ModuleSearch, ModuleSearchResults
 
 
-
 @pytest.fixture
 def mocked_search_module_providers(request):
     """Create mocked instance of search_module_providers method."""

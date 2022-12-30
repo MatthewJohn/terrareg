@@ -9,10 +9,7 @@ import pytest
 
 from terrareg.database import Database
 from terrareg.errors import NamespaceAlreadyExistsError
-from terrareg.models import (
-    GitProvider, Module, ModuleDetails,
-    ModuleProvider, ModuleVersion, ModuleVersionFile, Namespace, Session, UserGroup, UserGroupNamespacePermission
-)
+import terrareg.models
 from terrareg.server import Server
 import terrareg.config
 from test import BaseTest
@@ -104,7 +101,7 @@ def setup_test_data(test_data=None, user_group_data=None):
     return deco
 
 
-class MockGitProvider(GitProvider):
+class MockGitProvider(terrareg.models.GitProvider):
     """Mocked GitProvider."""
 
     @staticmethod
@@ -121,7 +118,7 @@ class MockGitProvider(GitProvider):
         data['id'] = self._id
         return data
 
-class MockModule(Module):
+class MockModule(terrareg.models.Module):
     """Mocked module."""
 
     @property
@@ -135,7 +132,7 @@ class MockModule(Module):
                 for module_provider in self._unittest_data]
 
 
-class MockModuleDetails(ModuleDetails):
+class MockModuleDetails(terrareg.models.ModuleDetails):
 
     @classmethod
     def create(cls):
@@ -157,7 +154,7 @@ class MockModuleDetails(ModuleDetails):
         return dict(TEST_MODULE_DETAILS[str(self._id)])
 
 
-class MockModuleVersion(ModuleVersion):
+class MockModuleVersion(terrareg.models.ModuleVersion):
     """Mocked module version."""
 
     @property
@@ -212,7 +209,7 @@ class MockModuleVersion(ModuleVersion):
         }
 
 
-class MockModuleVersionFile(ModuleVersionFile):
+class MockModuleVersionFile(terrareg.models.ModuleVersionFile):
     """Mocked module version file."""
 
     def __init__(self, *args, **kwargs):
@@ -235,7 +232,7 @@ class MockModuleVersionFile(ModuleVersionFile):
         return self._unittest_data
 
 
-class MockModuleProvider(ModuleProvider):
+class MockModuleProvider(terrareg.models.ModuleProvider):
     """Mocked module provider."""
 
     @property
@@ -310,7 +307,7 @@ class MockModuleProvider(ModuleProvider):
         self._unittest_data.update(kwargs)
 
 
-class MockNamespace(Namespace):
+class MockNamespace(terrareg.models.Namespace):
     """Mocked namespace."""
 
     @classmethod
@@ -385,14 +382,14 @@ class MockNamespace(Namespace):
         return TEST_MODULE_DATA[self._name] if self._name in TEST_MODULE_DATA else {}
 
 
-class MockSession(Session):
+class MockSession(terrareg.models.Session):
 
     MOCK_SESSIONS = {}
 
     @classmethod
     def create_session(cls):
         """Create new session object."""
-        session_id = secrets.token_urlsafe(Session.SESSION_ID_LENGTH)
+        session_id = secrets.token_urlsafe(terrareg.models.Session.SESSION_ID_LENGTH)
         cls.MOCK_SESSIONS[session_id] = (datetime.datetime.now() + datetime.timedelta(minutes=terrareg.config.Config().ADMIN_SESSION_EXPIRY_MINS))
         return cls(session_id=session_id)
 
@@ -419,7 +416,7 @@ class MockSession(Session):
             del MockSession.MOCK_SESSIONS[self.id]
 
 
-class MockUserGroup(UserGroup):
+class MockUserGroup(terrareg.models.UserGroup):
 
     @classmethod
     def get_by_group_name(cls, name):
@@ -467,7 +464,7 @@ class MockUserGroup(UserGroup):
         del USER_GROUP_CONFIG[self._name]
 
 
-class MockUserGroupNamespacePermission(UserGroupNamespacePermission):
+class MockUserGroupNamespacePermission(terrareg.models.UserGroupNamespacePermission):
 
     @classmethod
     def get_permissions_by_user_group(cls, user_group):
