@@ -1,6 +1,6 @@
 
 from unittest import mock
-from test.unit.terrareg import MockNamespace, TerraregUnitTest, setup_test_data, mocked_server_namespace_fixture
+from test.unit.terrareg import TerraregUnitTest, setup_test_data, mock_models
 from test import client
 
 
@@ -20,7 +20,7 @@ class TestApiTerraregNamespaceList(TerraregUnitTest):
             mocked_namespace_get_all.assert_called_once()
 
     @setup_test_data()
-    def test_with_namespaces_present(self, client, mocked_server_namespace_fixture):
+    def test_with_namespaces_present(self, client, mock_models):
         """Test endpoint with existing namespaces."""
         res = client.get('/v1/terrareg/namespaces')
         assert res.status_code == 200

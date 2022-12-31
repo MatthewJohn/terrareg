@@ -7,11 +7,11 @@ import pytest
 from terrareg.errors import GitCloneError
 
 from test.unit.terrareg import (
-    MockNamespace, MockModule, MockModuleProvider,
-    MockModuleVersion, TerraregUnitTest, setup_test_data
+    TerraregUnitTest, setup_test_data,
+    mock_models
 )
-from terrareg.models import Module, ModuleProvider, ModuleVersion, Namespace
 from terrareg.module_extractor import GitModuleExtractor
+import terrareg.models
 
 
 class TestGitModuleExtractor(TerraregUnitTest):
@@ -25,12 +25,12 @@ class TestGitModuleExtractor(TerraregUnitTest):
         ('complexgittagformat', 'ssh://localhost.com/moduleextraction/gitextraction-complexgittagformat', 'unittest4.3.2value')
     ])
     @setup_test_data()
-    def test__clone_repository(self, module_provider_name, expected_git_url, expected_git_tag):
+    def test__clone_repository(self, module_provider_name, expected_git_url, expected_git_tag, mock_models):
         """Test _clone_repository method"""
-        namespace = MockNamespace(name='moduleextraction')
-        module = MockModule(namespace=namespace, name='gitextraction')
-        module_provider = MockModuleProvider(module=module, name=module_provider_name)
-        module_version = MockModuleVersion(module_provider=module_provider, version='4.3.2')
+        namespace = terrareg.models.Namespace(name='moduleextraction')
+        module = terrareg.models.Module(namespace=namespace, name='gitextraction')
+        module_provider = terrareg.models.ModuleProvider(module=module, name=module_provider_name)
+        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
 
         check_call_mock = unittest.mock.MagicMock()
         module_extractor = GitModuleExtractor(module_version=module_version)
@@ -50,12 +50,12 @@ class TestGitModuleExtractor(TerraregUnitTest):
         assert check_call_mock.call_args.kwargs['env']['GIT_SSH_COMMAND'] == 'ssh -o StrictHostKeyChecking=accept-new'
 
     @setup_test_data()
-    def test_known_git_error(self):
+    def test_known_git_error(self, mock_models):
         """Test error thrown by git with expected format of error."""
-        namespace = MockNamespace(name='moduleextraction')
-        module = MockModule(namespace=namespace, name='gitextraction')
-        module_provider = MockModuleProvider(module=module, name='staticrepourl')
-        module_version = MockModuleVersion(module_provider=module_provider, version='4.3.2')
+        namespace = terrareg.models.Namespace(name='moduleextraction')
+        module = terrareg.models.Module(namespace=namespace, name='gitextraction')
+        module_provider = terrareg.models.ModuleProvider(module=module, name='staticrepourl')
+        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
 
         module_extractor = GitModuleExtractor(module_version=module_version)
 
@@ -72,12 +72,12 @@ class TestGitModuleExtractor(TerraregUnitTest):
                 assert str(error.value) == 'Error occurred during git clone: fatal: unittest error here'
 
     @setup_test_data()
-    def test_unknown_git_error(self):
+    def test_unknown_git_error(self, mock_models):
         """Test error thrown by git with expected format of error."""
-        namespace = MockNamespace(name='moduleextraction')
-        module = MockModule(namespace=namespace, name='gitextraction')
-        module_provider = MockModuleProvider(module=module, name='staticrepourl')
-        module_version = MockModuleVersion(module_provider=module_provider, version='4.3.2')
+        namespace = terrareg.models.Namespace(name='moduleextraction')
+        module = terrareg.models.Module(namespace=namespace, name='gitextraction')
+        module_provider = terrareg.models.ModuleProvider(module=module, name='staticrepourl')
+        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
 
         module_extractor = GitModuleExtractor(module_version=module_version)
 
@@ -134,12 +134,12 @@ class TestGitModuleExtractor(TerraregUnitTest):
         ('Terraform module designed to generate consistent helps and blanks for resources. Use this module to implement a test blank helps.\n\nThere are 6 inputs considered "helps" or "tests" (because the tests are used to construct the ID):',
         'Terraform module designed to generate consistent helps and blanks for resources')
     ])
-    def test_description_extraction(self, readme, expected_description):
+    def test_description_extraction(self, readme, expected_description, mock_models):
         """Test description extraction from README."""
         module_extractor = GitModuleExtractor(module_version=None)
         assert module_extractor._extract_description(readme) == expected_description
 
-    def test_description_extraction_when_disabled(self):
+    def test_description_extraction_when_disabled(self, mock_models):
         """Test that description extraction returns None when description extraction is disabled in the config"""
         test_text = "This is a perfectly valid description"
         module_extractor = GitModuleExtractor(module_version=None)

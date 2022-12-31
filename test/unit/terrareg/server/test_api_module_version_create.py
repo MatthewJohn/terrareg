@@ -2,7 +2,7 @@
 import unittest.mock
 
 from test.unit.terrareg import (
-    mocked_server_namespace_fixture,
+    mock_models,
     setup_test_data, TerraregUnitTest
 )
 from test import client
@@ -19,7 +19,7 @@ class TestApiModuleVersionCreate(TerraregUnitTest):
         return mock_get_current_auth_method
 
     @setup_test_data()
-    def test_creation_with_no_module_provider_repository_url(self, client, mocked_server_namespace_fixture):
+    def test_creation_with_no_module_provider_repository_url(self, client, mock_models):
         """Test creating a module version without who's module provider does not contain a repository URL."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
@@ -36,7 +36,7 @@ class TestApiModuleVersionCreate(TerraregUnitTest):
             mocked_process_upload.assert_not_called()
 
     @setup_test_data()
-    def test_creation_with_valid_repository_url(self, client, mocked_server_namespace_fixture):
+    def test_creation_with_valid_repository_url(self, client, mock_models):
         """Test creating a module version without who's module provider does not contain a repository URL."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
@@ -53,7 +53,7 @@ class TestApiModuleVersionCreate(TerraregUnitTest):
             mocked_process_upload.assert_called_once()
 
     @setup_test_data()
-    def test_creation_with_non_existent_module_provider(self, client, mocked_server_namespace_fixture):
+    def test_creation_with_non_existent_module_provider(self, client, mock_models):
         """Test creating a module version without who's module provider does not contain a repository URL."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
@@ -70,7 +70,7 @@ class TestApiModuleVersionCreate(TerraregUnitTest):
             mocked_process_upload.assert_not_called()
 
     @setup_test_data()
-    def test_creation_with_invalid_authentication(self, client, mocked_server_namespace_fixture):
+    def test_creation_with_invalid_authentication(self, client, mock_models):
         """Test creating a module version with invalid API authentication."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \

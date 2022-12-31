@@ -5,7 +5,7 @@ import unittest.mock
 import pytest
 
 from test.unit.terrareg import (
-    TEST_MODULE_DATA, mock_server_user_groups_fixture,
+    TEST_MODULE_DATA, mock_models,
     setup_test_data, TerraregUnitTest
 )
 from terrareg.auth import UserGroupNamespacePermissionType
@@ -54,7 +54,7 @@ class TestApiTerraregAuthUserGroups(TerraregUnitTest):
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_get(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
+            test_request_context, mock_models,
             client
         ):
         """Test update of repository URL."""
@@ -94,11 +94,11 @@ class TestApiTerraregAuthUserGroups(TerraregUnitTest):
             mock_auth_method.is_admin.assert_called_once()
 
     @setup_test_data()
-    def test_create_module_provider_without_permission(self, app_context, test_request_context, mock_server_user_groups_fixture, client):
+    def test_create_module_provider_without_permission(self, app_context, test_request_context, mock_models, client):
         """Test creation of module provider without permission."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(False)[0]), \
-                unittest.mock.patch('terrareg.server.check_csrf_token', return_value=True) as mock_check_csrf:
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf:
 
             res = client.get('/v1/terrareg/user-groups')
             assert res.json == {'message': "You don't have the permission to access the requested resource. "

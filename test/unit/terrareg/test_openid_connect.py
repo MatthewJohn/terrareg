@@ -7,6 +7,7 @@ import terrareg.config
 from terrareg.openid_connect import OpenidConnect
 from test.unit.terrareg import TerraregUnitTest
 
+
 class TestOpenidConnect(TerraregUnitTest):
 
     @pytest.mark.parametrize('config_values,expected_result', [

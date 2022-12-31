@@ -7,8 +7,7 @@ import pytest
 import terrareg.errors
 from test.unit.terrareg import TerraregUnitTest
 from test import client, app_context, test_request_context
-from terrareg.server import check_csrf_token
-from terrareg.auth import AuthenticationType
+from terrareg.csrf import check_csrf_token
 import terrareg.auth
 
 

@@ -3,10 +3,10 @@ import unittest.mock
 
 from test.unit.terrareg import (
     TerraregUnitTest,
-    mocked_server_namespace_fixture,
-    setup_test_data,
-    MockNamespace, MockModule, MockModuleProvider
+    mock_models,
+    setup_test_data
 )
+import terrareg.models
 from test import client
 from test.unit.terrareg.server import mocked_search_module_providers
 from terrareg.module_search import ModuleSearchResults
@@ -16,13 +16,13 @@ class TestApiModuleDetails(TerraregUnitTest):
     """Test ApiModuleDetails resource."""
 
     @setup_test_data()
-    def test_existing_module(self, client, mocked_server_namespace_fixture,
+    def test_existing_module(self, client, mock_models,
                              mocked_search_module_providers):
         """Test endpoint with existing module"""
 
-        namespace = MockNamespace(name='testnamespace')
-        module = MockModule(namespace=namespace, name='lonelymodule')
-        mock_module_provider = MockModuleProvider(module=module, name='testprovider')
+        namespace = terrareg.models.Namespace(name='testnamespace')
+        module = terrareg.models.Module(namespace=namespace, name='lonelymodule')
+        mock_module_provider = terrareg.models.ModuleProvider(module=module, name='testprovider')
 
         def return_results(*args, **kwargs):
             return ModuleSearchResults(
@@ -51,13 +51,13 @@ class TestApiModuleDetails(TerraregUnitTest):
             offset=0, limit=10, namespaces=['testnamespace'], modules=['lonelymodule'])
 
     @setup_test_data()
-    def test_unverified_module(self, client, mocked_server_namespace_fixture,
+    def test_unverified_module(self, client, mock_models,
                                mocked_search_module_providers):
         """Test endpoint with existing module"""
 
-        namespace = MockNamespace(name='testnamespace')
-        module = MockModule(namespace=namespace, name='unverifiedmodule')
-        mock_module_provider = MockModuleProvider(module=module, name='testprovider')
+        namespace = terrareg.models.Namespace(name='testnamespace')
+        module = terrareg.models.Module(namespace=namespace, name='unverifiedmodule')
+        mock_module_provider = terrareg.models.ModuleProvider(module=module, name='testprovider')
 
         def return_results(*args, **kwargs):
             return ModuleSearchResults(
@@ -85,7 +85,7 @@ class TestApiModuleDetails(TerraregUnitTest):
         mocked_search_module_providers.assert_called_once_with(
             offset=0, limit=10, namespaces=['testnamespace'], modules=['unverifiedmodule'])
 
-    def test_non_existent_module(self, client, mocked_server_namespace_fixture,
+    def test_non_existent_module(self, client, mock_models,
                                  mocked_search_module_providers):
         """Test endpoint with non-existent module"""
 
@@ -107,13 +107,13 @@ class TestApiModuleDetails(TerraregUnitTest):
             offset=0, limit=10, namespaces=['doesnotexist'], modules=['unittestdoesnotexist'])
 
     @setup_test_data()
-    def test_analytics_token(self, client, mocked_server_namespace_fixture,
+    def test_analytics_token(self, client, mock_models,
                              mocked_search_module_providers):
         """Test endpoint with analytics token and trusted namespace"""
 
-        namespace = MockNamespace(name='testnamespace')
-        module = MockModule(namespace=namespace, name='lonelymodule')
-        mock_module_provider = MockModuleProvider(module=module, name='testprovider')
+        namespace = terrareg.models.Namespace(name='testnamespace')
+        module = terrareg.models.Module(namespace=namespace, name='lonelymodule')
+        mock_module_provider = terrareg.models.ModuleProvider(module=module, name='testprovider')
 
         def return_results(*args, **kwargs):
             return ModuleSearchResults(
