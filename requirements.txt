@@ -23,7 +23,7 @@ SQLAlchemy==1.4.45
 Werkzeug==2.2.2
 zipp==3.11.0
 alembic==1.9.0
-mysql-connector-python==8.0.31
+mysql-connector-python==8.0.29
 beautifulsoup4==4.11.1
 bleach==5.0.1
 webencodings==0.5.1
