@@ -1397,7 +1397,7 @@ class ModuleProvider(object):
 
     def update_git_tag_format(self, git_tag_format):
         """Update git_tag_format."""
-        sanitised_git_tag_format = urllib.parse.quote(git_tag_format, safe='/{}')
+        sanitised_git_tag_format = urllib.parse.quote(git_tag_format, safe=r'/{}')
 
         if git_tag_format:
             # If tag format was provided, ensured it can be passed with 'format'
@@ -1466,7 +1466,7 @@ class ModuleProvider(object):
                     'Repository URL does not contain a path'
                 )
 
-            repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe='\{\}/:@%?=')
+            repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe=r'\{\}/:@%?=')
 
         original_value = self._get_db_row()['repo_clone_url_template']
         if original_value != repo_clone_url_template:
@@ -1514,7 +1514,7 @@ class ModuleProvider(object):
                     'Repository URL does not contain a path'
                 )
 
-            repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe='\{\}/:@%?=')
+            repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe=r'\{\}/:@%?=')
 
         original_value = self._get_db_row()['repo_browse_url_template']
         if original_value != repo_browse_url_template:
@@ -1555,7 +1555,7 @@ class ModuleProvider(object):
                     'Repository URL does not contain a path'
                 )
 
-            repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe='\{\}/:@%?=')
+            repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe=r'\{\}/:@%?=')
 
         original_value = self._get_db_row()['repo_base_url_template']
         if original_value != repo_base_url_template:
