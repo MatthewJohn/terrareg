@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.47.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.47.1...v2.47.2) (2022-12-31)
+
+
+### Bug Fixes
+
+* Hide version text on module provider, by default and increase padding of labels ([de9e477](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/de9e477d5403334af85b95f9fe9df03938048879)), closes [#282](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/282)
+
 ## [2.47.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.47.0...v2.47.1) (2022-12-16)
 
 

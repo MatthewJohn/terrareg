@@ -2,10 +2,9 @@
 import unittest.mock
 
 import pytest
-from terrareg.filters import NamespaceTrustFilter
 
-from terrareg.module_search import ModuleSearch, ModuleSearchResults
-
+import terrareg.filters
+import terrareg.module_search
 
 
 @pytest.fixture
@@ -19,13 +18,13 @@ def mocked_search_module_providers(request):
             namespaces: list=None,
             providers: list=None,
             verified: bool=False,
-            namespace_trust_filters: list=NamespaceTrustFilter.UNSPECIFIED):
-        return ModuleSearchResults(offset=offset, limit=limit, count=0, module_providers=[])
+            namespace_trust_filters: list=terrareg.filters.NamespaceTrustFilter.UNSPECIFIED):
+        return terrareg.module_search.ModuleSearchResults(offset=offset, limit=limit, count=0, module_providers=[])
 
     magic_mock = unittest.mock.MagicMock(
         side_effect=search_results_func
     )
-    mock = unittest.mock.patch('terrareg.server.ModuleSearch.search_module_providers', magic_mock)
+    mock = unittest.mock.patch('terrareg.module_search.ModuleSearch.search_module_providers', magic_mock)
 
     def cleanup_mocked_search_module_providers():
         mock.stop()
@@ -39,7 +38,7 @@ def mocked_search_module_providers(request):
 def mock_record_module_version_download(request):
     """Mock record_module_version_download function of AnalyticsEngine class."""
     magic_mock = unittest.mock.MagicMock(return_value=None)
-    mock = unittest.mock.patch('terrareg.server.AnalyticsEngine.record_module_version_download', magic_mock)
+    mock = unittest.mock.patch('terrareg.analytics.AnalyticsEngine.record_module_version_download', magic_mock)
 
     def cleanup_mocked_record_module_version_download():
         mock.stop()
@@ -56,7 +55,7 @@ def mock_server_get_module_provider_download_stats(request):
         'year': 127,
         'total': 226
     })
-    mock = unittest.mock.patch('terrareg.server.AnalyticsEngine.get_module_provider_download_stats', magic_mock)
+    mock = unittest.mock.patch('terrareg.analytics.AnalyticsEngine.get_module_provider_download_stats', magic_mock)
 
     def cleanup_mocked_record_module_version_download():
         mock.stop()

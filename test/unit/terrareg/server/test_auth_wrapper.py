@@ -8,7 +8,7 @@ import jwt
 
 from test.unit.terrareg import TerraregUnitTest
 from test import app_context, test_request_context
-from terrareg.server import auth_wrapper
+from terrareg.auth_wrapper import auth_wrapper
 
 
 class TestAuthWrapper(TerraregUnitTest):
