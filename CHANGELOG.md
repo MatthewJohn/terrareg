@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.47.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.47.2...v2.47.3) (2022-12-31)
+
+
+### Bug Fixes
+
+* Add warning to login page when no authentication methods are available ([170020d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/170020db3d2f928baa6b1a3e0915be2a5fbdfc0a)), closes [#259](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/259)
+* Hide admin authentication login when admin token has not been configured. ([153def6](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/153def61679de1976ec04683e24a8e8ccf169bc1)), closes [#259](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/259)
+* Update initial setup process to automatically redirect user back to initial setup after creating a module ([7ae2608](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7ae2608ba9914819f3c45c9b689f80ce55bd5088)), closes [#258](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/258)
+* Update initial setup process to automatically redirect user to initial-setup after creating a namespace ([05711ee](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/05711eeac344b97cce1271a3377b2f96930d0fd0)), closes [#258](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/258)
+* Update initial setup to check for any forms of authentication configured, rather than requiring admin token ([66c43f2](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/66c43f28c0e137d49cf589bf5c2f08f73090f46a)), closes [#258](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/258)
+
 ## [2.47.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.47.1...v2.47.2) (2022-12-31)
 
 
