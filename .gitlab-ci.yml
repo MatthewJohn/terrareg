@@ -43,9 +43,13 @@ unit-integration-selenium-tests:
     - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose --junitxml=./pytest-report.xml ./test
     - coverage report --include='./terrareg/*'
     - coverage xml
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     reports:
       junit: pytest-report.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: pytest-report.xml
 
 mysql-integration-selenium-tests:
   stage: test
