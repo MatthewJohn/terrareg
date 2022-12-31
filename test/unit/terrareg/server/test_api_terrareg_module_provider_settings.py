@@ -8,7 +8,7 @@ from test.unit.terrareg import (
     MockModule,
     MockModuleProvider,
     MockNamespace,
-    mocked_server_namespace_fixture,
+    mock_models,
     setup_test_data, TerraregUnitTest
 )
 from terrareg.auth import UserGroupNamespacePermissionType
@@ -35,7 +35,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
     @setup_test_data()
     def test_update_repository_url(
             self, repository_url, app_context,
-            test_request_context, mocked_server_namespace_fixture,
+            test_request_context, mock_models,
             client
         ):
         """Test update of repository URL."""
@@ -68,7 +68,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             )
 
     @setup_test_data()
-    def test_update_repository_url_invalid_protocol(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
+    def test_update_repository_url_invalid_protocol(self, app_context, test_request_context, mock_models, client):
         """Test update of repository URL with invalid protocol."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
@@ -92,7 +92,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             mock_create_audit_event.assert_not_called()
 
     @setup_test_data()
-    def test_update_repository_url_invalid_domain(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
+    def test_update_repository_url_invalid_domain(self, app_context, test_request_context, mock_models, client):
         """Test update of repository URL with an invalid domain."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
@@ -116,7 +116,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             mock_create_audit_event.assert_not_called()
 
     @setup_test_data()
-    def test_update_repository_url_without_path(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
+    def test_update_repository_url_without_path(self, app_context, test_request_context, mock_models, client):
         """Test update of repository URL without a path."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
@@ -140,7 +140,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             mock_create_audit_event.assert_not_called()
 
     @setup_test_data()
-    def test_update_repository_without_csrf(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
+    def test_update_repository_without_csrf(self, app_context, test_request_context, mock_models, client):
         """Test update of repository URL without a CSRF token."""
         mock_get_auth_method, mock_auth_method = self._get_mock_get_current_auth_method(True)
         with app_context, test_request_context, client, \
@@ -162,7 +162,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             mock_create_audit_event.assert_not_called()
 
     @setup_test_data()
-    def test_update_repository_invalid_auth(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
+    def test_update_repository_invalid_auth(self, app_context, test_request_context, mock_models, client):
         """Test update of repository URL without a CSRF token."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(False)[0]), \
@@ -187,7 +187,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
     @setup_test_data()
     def test_update_git_tag_format(
             self, app_context,
-            test_request_context, mocked_server_namespace_fixture,
+            test_request_context, mock_models,
             client
         ):
         """Test update of git tag format."""
@@ -221,7 +221,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
     @setup_test_data()
     def test_update_empty_git_tag_format(
             self, app_context,
-            test_request_context, mocked_server_namespace_fixture,
+            test_request_context, mock_models,
             client
         ):
         """Test update of git tag format with empty value."""
@@ -256,7 +256,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
     @setup_test_data()
     def test_update_verified_flag(
             self, verified_state, app_context,
-            test_request_context, mocked_server_namespace_fixture,
+            test_request_context, mock_models,
             client
         ):
         """Test update of verified flag."""
@@ -295,7 +295,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
     @setup_test_data()
     def test_update_verified_flag_invalid_value(
             self, verified_state, app_context,
-            test_request_context, mocked_server_namespace_fixture,
+            test_request_context, mock_models,
             client
         ):
         """Test update of verified flag with invalid value."""

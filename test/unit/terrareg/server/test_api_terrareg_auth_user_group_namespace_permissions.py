@@ -8,7 +8,7 @@ import pytest
 import terrareg.audit_action
 from test.unit.terrareg import (
     TEST_MODULE_DATA, MockUserGroup, MockUserGroupNamespacePermission,
-    mock_server_user_groups_fixture, mocked_server_namespace_fixture,
+    mock_server_user_groups_fixture, mock_models,
     setup_test_data, TerraregUnitTest
 )
 from terrareg.auth import UserGroupNamespacePermissionType
@@ -60,7 +60,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     def test_add_permission(
             self, app_context,
             test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            mock_models, client
         ):
         """Test creating new permission using endpoint."""
         mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
@@ -100,7 +100,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     def test_add_permission_invalid_permission_type(
             self, app_context,
             test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            mock_models, client
         ):
         """Test creating new permission with invalid permission type."""
         with app_context, test_request_context, client, \
@@ -126,7 +126,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     def test_add_permission_invalid_namespace(
             self, app_context,
             test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            mock_models, client
         ):
         """Test creating new permission with invalid namespace."""
         with app_context, test_request_context, client, \
@@ -153,7 +153,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     def test_add_permission_duplicate_permission(
             self, app_context,
             test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            mock_models, client
         ):
         """Test creating duplicate permission for user group."""
         with app_context, test_request_context, client, \
@@ -181,7 +181,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     def test_add_permission_duplicate_permission(
             self, app_context,
             test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            mock_models, client
         ):
         """Test update of repository URL."""
         with app_context, test_request_context, client, \
@@ -209,7 +209,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     def test_add_permission_without_permission(
             self, app_context,
             test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            mock_models, client
         ):
         """Test creating new permission without permission to perform action."""
         with app_context, test_request_context, client, \
@@ -236,7 +236,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     def test_delete_permission(
             self, app_context,
             test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            mock_models, client
         ):
         """Test deletion of permission."""
         mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
@@ -269,7 +269,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     def test_delete_non_existent_permission(
             self, app_context,
             test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            mock_models, client
         ):
         """Test deletion of non-existent permission."""
         mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
@@ -297,7 +297,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     def test_delete_without_permission(
             self, app_context,
             test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            mock_models, client
         ):
         """Test deletion of permission without authorization."""
         with app_context, test_request_context, client, \

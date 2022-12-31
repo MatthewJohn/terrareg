@@ -5,7 +5,7 @@ import unittest.mock
 import pytest
 
 from test.unit.terrareg import (
-    TEST_MODULE_DATA, MockModule, MockModuleProvider, MockNamespace, mocked_server_namespace_fixture,
+    TEST_MODULE_DATA, MockModule, MockModuleProvider, MockNamespace, mock_models,
     setup_test_data, TerraregUnitTest
 )
 from test import client, app_context, test_request_context

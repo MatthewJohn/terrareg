@@ -113,32 +113,49 @@ def mock_method(request, path, mocked_method):
 
 def mock_git_provider(request):
     """Mock GitProvider class"""
-    def mock_get_all():
+    def get_all():
         """Return all mocked git provider."""
         global TEST_GIT_PROVIDER_DATA
         return [
             terrareg.models.GitProvider(git_provider_id)
             for git_provider_id in TEST_GIT_PROVIDER_DATA
         ]
-    mock_method(request, 'terrareg.models.GitProvider.get_all', mock_get_all)
+    mock_method(request, 'terrareg.models.GitProvider.get_all', get_all)
 
-    def mock__get_db_row(self):
+    def _get_db_row(self):
         """Return mocked data for git provider."""
         global TEST_GIT_PROVIDER_DATA
         data = TEST_GIT_PROVIDER_DATA.get(self._id, None)
         data['id'] = self._id
         return data
-    mock_method(request, 'terrareg.models.GitProvider._get_db_row', mock__get_db_row)
+    mock_method(request, 'terrareg.models.GitProvider._get_db_row', _get_db_row)
 
+
+def get_namespace_mock_data(namespace):
+    global TEST_MODULE_DATA
+    return TEST_MODULE_DATA[namespace._name] if namespace._name in TEST_MODULE_DATA else {}
 
 def get_module_mock_data(module):
-    return module._namespace._unittest_data['modules'][module._name] if module._name in module._namespace._unittest_data['modules'] else {}
+    return get_namespace_mock_data(module._namespace)['modules'][module._name] if module._name in get_namespace_mock_data(module._namespace)['modules'] else {}
+
+def get_module_provider_mock_data(module_provider):
+    return get_module_mock_data(module_provider._module)[module_provider._name] if module_provider._name in get_module_mock_data(module_provider._module) else {}
+
+def get_module_version_mock_data(module_version):
+    """Return unit test data structure for namespace."""
+    module_provider_data = get_module_provider_mock_data(module_version._module_provider)
+    return (
+        module_provider_data['versions'][module_version._version]
+        if ('versions' in module_provider_data and
+            module_version._version in module_provider_data['versions']) else
+        None
+    )
 
 def mock_module(request):
     """Mock Module class"""
     def mock_get_providers(self):
         """Return all mocked git provider."""
-        return [self.__class__(module=self, name=module_provider)
+        return [terrareg.models.ModuleProvider(module=self, name=module_provider)
                 for module_provider in get_module_mock_data(self)]
 
     mock_method(request, 'terrareg.models.Module.get_providers', mock_get_providers)
@@ -167,43 +184,34 @@ def mock_module_details(request):
     mock_method(request, 'terrareg.models.ModuleDetails._get_db_row', _get_db_row)
 
 
-def module_version_unittest_data(module_version):
-    """Return unit test data structure for namespace."""
-    module_provider_data = module_provider_unittest_data(module_version._module_provider)
-    return (
-        module_provider_data['versions'][module_version._version]
-        if ('versions' in module_provider_data and
-            module_version._version in module_provider_data['versions']) else
-        None
-    )
-
-
 def mock_module_version(request):
+    @property
     def module_details(self):
         return terrareg.models.ModuleDetails(self._get_db_row()['module_details_id'])
-    mock_method(request, 'terrareg.models.ModuleVersion.module_details', property(module_details))
+    mock_method(request, 'terrareg.models.ModuleVersion.module_details', module_details)
 
+    @property
     def module_version_files(self):
         """Return list of mocked module version files"""
         return [
             terrareg.models.ModuleVersionFile(module_version=self, path=path)
-            for path in self._unittest_data.get('files', {})
+            for path in get_module_version_mock_data(self).get('files', {})
         ]
-    mock_method(request, 'terrareg.models.ModuleVersion.module_version_files', property(module_version_files))
+    mock_method(request, 'terrareg.models.ModuleVersion.module_version_files', module_version_files)
 
     def update_attributes(self, **kwargs):
         """Mock updating module version attributes"""
-        module_version_unittest_data(self).update(kwargs)
+        get_module_version_mock_data(self).update(kwargs)
     mock_method(request, 'terrareg.models.ModuleVersion.update_attributes', update_attributes)
 
     def _get_db_row(self):
         """Return mock DB row"""
-        unittest_data = module_version_unittest_data(self)
+        unittest_data = get_module_version_mock_data(self)
         if unittest_data is None:
             return None
         return {
             'id': unittest_data.get('id'),
-            'module_provider_id': module_provider_unittest_data(self._module_provider),
+            'module_provider_id': get_module_provider_mock_data(self._module_provider),
             'version': self._version,
             'owner': unittest_data.get('owner', 'Mock Owner'),
             'description': unittest_data.get('description', 'Mock description'),
@@ -224,36 +232,25 @@ def mock_module_version(request):
     mock_method(request, 'terrareg.models.ModuleVersion._get_db_row', _get_db_row)
 
 
-class MockModuleVersionFile(terrareg.models.ModuleVersionFile):
-    """Mocked module version file."""
+def mock_module_version_file(request):
 
-    def __init__(self, *args, **kwargs):
-        """Setup unittest data"""
-        super(MockModuleVersionFile, self).__init__(*args, **kwargs)
-        content = self._module_version._unittest_data.get('files', {}).get(self._path, None)
-        self._unittest_data = None if content is None else {
-            'content': Database.encode_blob(content),
-            'path': self._path
-        }
-
-    def update_attributes(self, **kwargs):
-        """Mock updating module version attributes"""
-        self._unittest_data.update(kwargs)
+    def update_attributes(self, *args, **kwargs):
+        raise Exception("update_attributes has not been implemented")
+    mock_method(request, 'terrareg.models.ModuleVersionFile.update_attributes', update_attributes)
 
     def _get_db_row(self):
-        """Return mock DB row"""
-        if self._unittest_data is None:
+        data = get_module_version_mock_data(self._module_version).get('files', {}).get(self._path, None)
+        print(data)
+        if data is None:
             return None
-        return self._unittest_data
+        return {
+            "content": Database.encode_blob(data),
+            "path": self._path
+        }
+    mock_method(request, "terrareg.models.ModuleVersionFile._get_db_row", _get_db_row)
 
 
-class MockModuleProvider(terrareg.models.ModuleProvider):
-    """Mocked module provider."""
-
-    @property
-    def _unittest_data(self):
-        """Return unit test data structure for namespace."""
-        return self._module._unittest_data[self._name] if self._name in self._module._unittest_data else {}
+def mock_module_provider(request):
 
     @classmethod
     def create(cls, module, name):
@@ -275,55 +272,63 @@ class MockModuleProvider(terrareg.models.ModuleProvider):
             }
         return cls(module=module, name=name)
 
+    mock_method(request, 'terrareg.models.ModuleProvider.create', create)
+
     def get_git_provider(self):
         """Return Mocked git provider"""
         if self._get_db_row()['git_provider_id']:
             return terrareg.models.GitProvider.get(self._get_db_row()['git_provider_id'])
         return None
+    mock_method(request, 'terrareg.models.ModuleProvider.get_git_provider', get_git_provider)
 
     def _get_db_row(self):
         """Return fake data in DB row."""
-        if self._name not in self._module._unittest_data:
+        if self._name not in get_module_mock_data(self._module):
             return None
+        data = get_module_provider_mock_data(self)
         return {
-            'id': self._unittest_data.get('id'),
+            'id': data.get('id'),
             'namespace': self._module._namespace.name,
             'module': self._module.name,
             'provider': self.name,
-            'verified': self._unittest_data.get('verified', False),
-            'repo_base_url_template': self._unittest_data.get('repo_base_url_template', None),
-            'repo_clone_url_template': self._unittest_data.get('repo_clone_url_template', None),
-            'repo_browse_url_template': self._unittest_data.get('repo_browse_url_template', None),
-            'git_provider_id': self._unittest_data.get('git_provider_id', None),
-            'git_tag_format': self._unittest_data.get('git_tag_format', None),
-            'git_path': self._unittest_data.get('git_path', None)
+            'verified': data.get('verified', False),
+            'repo_base_url_template': data.get('repo_base_url_template', None),
+            'repo_clone_url_template': data.get('repo_clone_url_template', None),
+            'repo_browse_url_template': data.get('repo_browse_url_template', None),
+            'git_provider_id': data.get('git_provider_id', None),
+            'git_tag_format': data.get('git_tag_format', None),
+            'git_path': data.get('git_path', None)
         }
+    mock_method(request, 'terrareg.models.ModuleProvider._get_db_row', _get_db_row)
 
     def get_latest_version(self):
         """Return mocked latest version of module"""
-        if 'latest_version' in self._unittest_data and self._unittest_data['latest_version']:
-            return MockModuleVersion.get(module_provider=self, version=self._unittest_data['latest_version'])
+        data = get_module_provider_mock_data(self)
+        if 'latest_version' in data and data['latest_version']:
+            return terrareg.models.ModuleVersion.get(module_provider=self, version=data['latest_version'])
         return None
+    mock_method(request, 'terrareg.models.ModuleProvider.get_latest_version', get_latest_version)
 
     def get_versions(self, include_beta=True, include_unpublished=False):
         """Return all MockModuleVersion objects for ModuleProvider."""
         versions = []
-        for version in self._unittest_data.get('versions', {}):
-            version_obj = MockModuleVersion(module_provider=self, version=version)
+        for version in get_module_provider_mock_data(self).get('versions', {}):
+            version_obj = terrareg.models.ModuleVersion(module_provider=self, version=version)
             if version_obj.beta and not include_beta:
                 continue
             if not version_obj.published and not include_unpublished:
                 continue
             versions.append(version_obj)
         return versions
+    mock_method(request, 'terrareg.models.ModuleProvider.get_versions', get_versions)
 
     def update_attributes(self, **kwargs):
         """Update mock data attributes"""
-        self._unittest_data.update(kwargs)
+        get_module_provider_mock_data(self).update(kwargs)
+    mock_method(request, 'terrareg.models.ModuleProvider.update_attributes', update_attributes)
 
 
-class MockNamespace(terrareg.models.Namespace):
-    """Mocked namespace."""
+def mock_namespace(request):
 
     @classmethod
     def create(cls, name):
@@ -336,6 +341,7 @@ class MockNamespace(terrareg.models.Namespace):
             'modules': {}
         }
         return cls(name)
+    mock_method(request, 'terrareg.models.Namespace.create', create)
 
     @classmethod
     def get(cls, name, create=False):
@@ -346,19 +352,20 @@ class MockNamespace(terrareg.models.Namespace):
             return cls.create(name)
         else:
             return None
+    mock_method(request, 'terrareg.models.Namespace.get', get)
 
     def _get_db_row(self):
         return {
             'namespace': self._name,
-            'id': self._unittest_data['id']
+            'id': get_namespace_mock_data(self)['id']
         }
+    mock_method(request, 'terrareg.models.Namespace._get_db_row', _get_db_row)
 
-    @staticmethod
     def get_total_count():
         """Get total number of namespaces."""
         return len(TEST_MODULE_DATA)
+    mock_method(request, 'terrareg.models.Namespace.get_total_count', get_total_count)
 
-    @staticmethod
     def get_all(only_published=False):
         """Return all namespaces."""
         valid_namespaces = []
@@ -366,7 +373,7 @@ class MockNamespace(terrareg.models.Namespace):
             # Iterate through all module versions of each namespace
             # to determine if the namespace has a published version
             for namespace_name in TEST_MODULE_DATA.keys():
-                namespace = MockNamespace(namespace_name)
+                namespace = terrareg.models.Namespace(namespace_name)
                 for module in namespace.get_all_modules():
                     for provider in module.get_providers():
                         for version in provider.get_versions():
@@ -378,23 +385,20 @@ class MockNamespace(terrareg.models.Namespace):
             valid_namespaces = TEST_MODULE_DATA.keys()
 
         return [
-            MockNamespace(namespace)
+            terrareg.models.Namespace(namespace)
             for namespace in valid_namespaces
         ]
+    mock_method(request, 'terrareg.models.Namespace.get_all', get_all)
 
     def get_all_modules(self):
         """Return all modules for namespace."""
         return [
-            MockModule(namespace=self, name=n)
+            terrareg.models.Module(namespace=self, name=n)
             for n in (TEST_MODULE_DATA[self._name]['modules'].keys()
                       if self._name in TEST_MODULE_DATA else
                       {})
         ]
-
-    @property
-    def _unittest_data(self):
-        """Return unit test data structure for namespace."""
-        return TEST_MODULE_DATA[self._name] if self._name in TEST_MODULE_DATA else {}
+    mock_method(request, 'terrareg.models.Namespace.get_all_modules', get_all_modules)
 
 
 class MockSession(terrareg.models.Session):
@@ -486,7 +490,7 @@ class MockUserGroupNamespacePermission(terrareg.models.UserGroupNamespacePermiss
         """Return permissions by user group"""
         global USER_GROUP_CONFIG
         return [
-            cls(user_group=user_group, namespace=MockNamespace.get(name=namespace))
+            cls(user_group=user_group, namespace=terrareg.models.Namespace.get(name=namespace))
             for namespace in USER_GROUP_CONFIG[user_group.name].get('namespace_permissions', {})
         ]
 
@@ -542,82 +546,6 @@ def mock_server_user_groups(request):
     user_group_patch.start()
     user_group_namespace_permission_patch.start()
 
-@pytest.fixture()
-def mock_server_user_groups_fixture(request):
-    """Mock UserGroup and UserGroupNamespacePermission as fixture"""
-    mock_server_user_groups(request)
-
-
-def mocked_server_module_version(request):
-    """Mock server ModuleVersion class."""
-    patch = unittest.mock.patch('terrareg.models.ModuleVersion', MockModuleVersion)
-    module_version_file_patch = unittest.mock.patch('terrareg.models.ModuleVersionFile', MockModuleVersionFile)
-
-    def cleanup_mock():
-        module_version_file_patch.stop()
-        patch.stop()
-    request.addfinalizer(cleanup_mock)
-    patch.start()
-    module_version_file_patch.start()
-
-
-@pytest.fixture()
-def mocked_server_module_version_fixture(request):
-    """Mock module version as fixture."""
-    mocked_server_module_version(request)
-
-
-def mocked_server_module_provider(request):
-    """Mock server ModuleProvider class."""
-    patch = unittest.mock.patch('terrareg.models.ModuleProvider', MockModuleProvider)
-
-    def cleanup_mock():
-        patch.stop()
-    request.addfinalizer(cleanup_mock)
-    patch.start()
-    mocked_server_module_version(request)
-
-@pytest.fixture()
-def mocked_git_provider_fixture(request):
-    mock_git_provider(request)
-
-@pytest.fixture()
-def mocked_server_module_provider_fixture(request):
-    """Mock module provider as fixture."""
-    mocked_server_module_provider(request)
-
-
-def mocked_server_module(request):
-    """Mock server Module class."""
-    mock_module(request)
-
-    mocked_server_module_provider(request)
-
-
-@pytest.fixture()
-def mocked_server_module_fixture(request):
-    """Mock module as fixture."""
-    mocked_server_module(request)
-
-
-def mocked_server_namespace(request):
-    """Mock server Module class."""
-    patch = unittest.mock.patch('terrareg.models.Namespace', MockNamespace)
-
-    def cleanup_mock():
-        patch.stop()
-    request.addfinalizer(cleanup_mock)
-    patch.start()
-
-    mocked_server_module(request)
-
-
-@pytest.fixture()
-def mocked_server_namespace_fixture(request):
-    """Mock namespace as fixture."""
-    mocked_server_namespace(request)
-
-
 def mocked_server_session(request):
     """Mock Session model class in server module."""
     patch = unittest.mock.patch('terrareg.models.Session', MockSession)
@@ -627,10 +555,12 @@ def mocked_server_session(request):
     request.addfinalizer(cleanup_mock)
     patch.start()
 
-    mocked_server_module(request)
-
-
 @pytest.fixture()
-def mocked_server_session_fixture(request):
-    """Mock namespace as fixture."""
+def mock_models(request):
+    mock_namespace(request)
+    mock_module_provider(request)
+    mock_module(request)
+    mock_module_version(request)
+    mock_module_version_file(request)
+    mock_server_user_groups(request)
     mocked_server_session(request)

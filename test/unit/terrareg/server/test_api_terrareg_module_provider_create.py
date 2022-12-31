@@ -5,7 +5,7 @@ import unittest.mock
 import pytest
 
 from test.unit.terrareg import (
-    TEST_MODULE_DATA, MockModule, MockModuleProvider, MockNamespace, mocked_server_namespace_fixture,
+    TEST_MODULE_DATA, MockModule, MockModuleProvider, MockNamespace, mock_models,
     setup_test_data, TerraregUnitTest
 )
 from terrareg.auth import UserGroupNamespacePermissionType
@@ -25,7 +25,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
     @setup_test_data()
     def test_pre_existing_module_provider(
             self, app_context,
-            test_request_context, mocked_server_namespace_fixture,
+            test_request_context, mock_models,
             client
         ):
         """Test update of repository URL."""
@@ -53,7 +53,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
 
     @setup_test_data()
     def test_create_without_repository_details(
-            self, app_context, test_request_context, mocked_server_namespace_fixture,
+            self, app_context, test_request_context, mock_models,
             client
         ):
         """Test update of repository URL."""
@@ -86,7 +86,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
             assert p._get_db_row() is not None
 
     @setup_test_data()
-    def test_create_module_provider_with_repo_and_tag(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
+    def test_create_module_provider_with_repo_and_tag(self, app_context, test_request_context, mock_models, client):
         """Test update of repository URL with invalid protocol."""
         mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
         with app_context, test_request_context, client, \
@@ -115,7 +115,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
             mock_update_git_tag_format.assert_called_once_with(git_tag_format='unitv{version}test')
 
     @setup_test_data()
-    def test_create_module_provider_with_non_existent_namespace(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
+    def test_create_module_provider_with_non_existent_namespace(self, app_context, test_request_context, mock_models, client):
         """Test creation of module provider with non-existent namespace."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]), \
@@ -134,7 +134,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
             mock_check_csrf.assert_called_once_with('unittestcsrf')
 
     @setup_test_data()
-    def test_create_module_provider_without_permission(self, app_context, test_request_context, mocked_server_namespace_fixture, client):
+    def test_create_module_provider_without_permission(self, app_context, test_request_context, mock_models, client):
         """Test creation of module provider without permission."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(False)[0]), \

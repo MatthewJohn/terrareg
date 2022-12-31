@@ -3,14 +3,14 @@ import unittest.mock
 
 import terrareg.audit_action
 from test.unit.terrareg import (
-    TerraregUnitTest, mocked_server_session_fixture
+    TerraregUnitTest, mock_models
 )
 from test import client
 
 
 class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
 
-    def test_authenticated(self, client, mocked_server_session_fixture):
+    def test_authenticated(self, client, mock_models):
         """Test endpoint when user is authenticated."""
         cookie_expiry_mins = 5
         mock_auth_method = unittest.mock.MagicMock()
@@ -47,7 +47,7 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
                 old_value=None,
                 new_value=None)
 
-    def test_authenticated_without_secret_key(self, client, mocked_server_session_fixture):
+    def test_authenticated_without_secret_key(self, client, mock_models):
         """Test endpoint and ensure session is not provided"""
         mock_auth_method = unittest.mock.MagicMock()
         mock_auth_method.is_built_in_admin = unittest.mock.MagicMock(return_value=True)
@@ -83,7 +83,7 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
             assert res.json == {'message': 'Sessions not enabled in configuration'}
             mock_create_audit_event.assert_not_called()
 
-    def test_unauthenticated(self, client, mocked_server_session_fixture):
+    def test_unauthenticated(self, client, mock_models):
         """Test endpoint when user is authenticated."""
         mock_auth_method = unittest.mock.MagicMock()
         mock_auth_method.is_built_in_admin = unittest.mock.MagicMock(return_value=False)

@@ -3,7 +3,7 @@ import unittest.mock
 
 import terrareg.audit_action
 from test.unit.terrareg import (
-    mocked_server_namespace_fixture,
+    mock_models,
     setup_test_data, TerraregUnitTest
 )
 from test import client
@@ -21,7 +21,7 @@ class TestApiModuleVersionPublish(TerraregUnitTest):
         return mock_get_current_auth_method
 
     @setup_test_data()
-    def test_publish_unpublished_module_version(self, client, mocked_server_namespace_fixture):
+    def test_publish_unpublished_module_version(self, client, mock_models):
         """Test publishing a module version."""
         with unittest.mock.patch(
                     'test.unit.terrareg.MockModuleVersion.update_attributes') as mocked_update_attributes, \
@@ -42,7 +42,7 @@ class TestApiModuleVersionPublish(TerraregUnitTest):
             )
 
     @setup_test_data()
-    def test_publish_published_module_version(self, client, mocked_server_namespace_fixture):
+    def test_publish_published_module_version(self, client, mock_models):
         """Test publishing a module version that is already in a published state."""
         with unittest.mock.patch(
                     'test.unit.terrareg.MockModuleVersion.update_attributes') as mocked_update_attributes, \
@@ -63,7 +63,7 @@ class TestApiModuleVersionPublish(TerraregUnitTest):
             mocked_update_attributes.assert_called_once_with(published=True)
 
     @setup_test_data()
-    def test_publish_non_existent_module_provider(self, client, mocked_server_namespace_fixture):
+    def test_publish_non_existent_module_provider(self, client, mock_models):
         """Test publishing endpoint against non-existent module provider."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.update_attributes') as mocked_update_attributes, \
@@ -79,7 +79,7 @@ class TestApiModuleVersionPublish(TerraregUnitTest):
             mocked_update_attributes.assert_not_called()
 
     @setup_test_data()
-    def test_publish_non_existent_module(self, client, mocked_server_namespace_fixture):
+    def test_publish_non_existent_module(self, client, mock_models):
         """Test publishing endpoint against non-existent module."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.update_attributes') as mocked_update_attributes, \
@@ -95,7 +95,7 @@ class TestApiModuleVersionPublish(TerraregUnitTest):
             mocked_update_attributes.assert_not_called()
 
     @setup_test_data()
-    def test_publish_non_existent_namespace(self, client, mocked_server_namespace_fixture):
+    def test_publish_non_existent_namespace(self, client, mock_models):
         """Test publishing endpoint against non-existent namespace."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.update_attributes') as mocked_update_attributes, \
@@ -111,7 +111,7 @@ class TestApiModuleVersionPublish(TerraregUnitTest):
             mocked_update_attributes.assert_not_called()
 
     @setup_test_data()
-    def test_publish_non_existent_version(self, client, mocked_server_namespace_fixture):
+    def test_publish_non_existent_version(self, client, mock_models):
         """Test publishing endpoint against non-existent version."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.update_attributes') as mocked_update_attributes, \
@@ -127,7 +127,7 @@ class TestApiModuleVersionPublish(TerraregUnitTest):
             mocked_update_attributes.assert_not_called()
 
     @setup_test_data()
-    def test_publish_invalid_api_key(self, client, mocked_server_namespace_fixture):
+    def test_publish_invalid_api_key(self, client, mock_models):
         """Test publishing endpoint with invalid API keys."""
         with unittest.mock.patch(
                     'test.unit.terrareg.MockModuleVersion.update_attributes') as mocked_update_attributes, \

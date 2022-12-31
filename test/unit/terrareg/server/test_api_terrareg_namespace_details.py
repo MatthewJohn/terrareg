@@ -6,7 +6,7 @@ from test import client
 from test.unit.terrareg import (
     TerraregUnitTest,
     MockModuleProvider, MockModule, MockNamespace,
-    setup_test_data, mocked_server_namespace_fixture
+    setup_test_data, mock_models
 )
 
 
@@ -14,7 +14,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
     """Test ApiTerraregNamespaceDetails resource."""
 
     @setup_test_data()
-    def test_with_non_existent_namespace(self, client, mocked_server_namespace_fixture):
+    def test_with_non_existent_namespace(self, client, mock_models):
         """Test namespace details with non-existent namespace."""
         res = client.get('/v1/terrareg/namespaces/doesnotexist')
 
@@ -22,7 +22,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
         assert res.json == {'errors': ['Not Found']}
 
     @setup_test_data()
-    def test_with_existing_namespace(self, client, mocked_server_namespace_fixture):
+    def test_with_existing_namespace(self, client, mock_models):
         """Test namespace details with existing namespace."""
         res = client.get('/v1/terrareg/namespaces/testnamespace')
 
@@ -30,7 +30,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
         assert res.json == {'is_auto_verified': False, 'trusted': False}
 
     @setup_test_data()
-    def test_with_trusted_namespace(self, client, mocked_server_namespace_fixture):
+    def test_with_trusted_namespace(self, client, mock_models):
         """Test namespace details with trusted namespace."""
         with mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['testnamespace']):
             res = client.get('/v1/terrareg/namespaces/testnamespace')
@@ -39,7 +39,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
             assert res.json == {'is_auto_verified': False, 'trusted': True}
 
     @setup_test_data()
-    def test_with_auto_verified_namespace(self, client, mocked_server_namespace_fixture):
+    def test_with_auto_verified_namespace(self, client, mock_models):
         """Test namespace details with auto-verified namespace."""
         with mock.patch('terrareg.config.Config.VERIFIED_MODULE_NAMESPACES', ['testnamespace']):
             res = client.get('/v1/terrareg/namespaces/testnamespace')

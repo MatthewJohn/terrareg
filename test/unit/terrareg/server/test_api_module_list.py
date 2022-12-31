@@ -5,9 +5,9 @@ from . import mocked_search_module_providers
 from test import client
 from test.unit.terrareg import (
     TerraregUnitTest,
-    MockModuleProvider, MockModule, MockNamespace,
     setup_test_data
 )
+import terrareg.models
 
 
 class TestApiModuleList(TerraregUnitTest):
@@ -69,9 +69,9 @@ class TestApiModuleList(TerraregUnitTest):
     @setup_test_data()
     def test_with_module_response(self, client, mocked_search_module_providers):
         """Test return of single module module"""
-        namespace = MockNamespace(name='testnamespace')
-        module = MockModule(namespace=namespace, name='mock-module')
-        mock_module_provider = MockModuleProvider(module=module, name='testprovider')
+        namespace = terrareg.models.Namespace(name='testnamespace')
+        module = terrareg.models.Module(namespace=namespace, name='mock-module')
+        mock_module_provider = terrareg.models.ModuleProvider(module=module, name='testprovider')
 
         def side_effect(*args, **kwargs):
             return ModuleSearchResults(
@@ -97,9 +97,9 @@ class TestApiModuleList(TerraregUnitTest):
     @setup_test_data()
     def test_with_module_response_with_more_results_available(self, client, mocked_search_module_providers):
         """Test return of single module module"""
-        namespace = MockNamespace(name='testnamespace')
-        module = MockModule(namespace=namespace, name='mock-module')
-        mock_module_provider = MockModuleProvider(module=module, name='testprovider')
+        namespace = terrareg.models.Namespace(name='testnamespace')
+        module = terrareg.models.Module(namespace=namespace, name='mock-module')
+        mock_module_provider = terrareg.models.ModuleProvider(module=module, name='testprovider')
 
         def side_effect(*args, **kwargs):
             return ModuleSearchResults(
@@ -125,13 +125,13 @@ class TestApiModuleList(TerraregUnitTest):
     @setup_test_data()
     def test_with_multiple_modules_response(self, client, mocked_search_module_providers):
         """Test multiple modules in results"""
-        namespace = MockNamespace(name='testnamespace')
-        module = MockModule(namespace=namespace, name='mock-module')
-        mock_module_provider = MockModuleProvider(module=module, name='testprovider')
+        namespace = terrareg.models.Namespace(name='testnamespace')
+        module = terrareg.models.Module(namespace=namespace, name='mock-module')
+        mock_module_provider = terrareg.models.ModuleProvider(module=module, name='testprovider')
         mock_module_provider.MOCK_LATEST_VERSION_NUMBER = '1.2.3'
-        mock_namespace_2 = MockNamespace(name='secondtestnamespace')
-        mock_module_2 = MockModule(namespace=mock_namespace_2, name='mockmodule2')
-        mock_module_provider_2 = MockModuleProvider(module=mock_module_2, name='secondprovider')
+        mock_namespace_2 = terrareg.models.Namespace(name='secondtestnamespace')
+        mock_module_2 = terrareg.models.Module(namespace=mock_namespace_2, name='mockmodule2')
+        mock_module_provider_2 = terrareg.models.ModuleProvider(module=mock_module_2, name='secondprovider')
         mock_module_provider_2.MOCK_LATEST_VERSION_NUMBER = '3.0.0'
 
         def side_effect(*args, **kwargs):

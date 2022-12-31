@@ -1,8 +1,7 @@
 
 from unittest import mock
 from test.unit.terrareg import (
-    MockModuleProvider, MockModule, MockModuleVersion, MockNamespace,
-    mocked_server_namespace_fixture,
+    mock_models,
     setup_test_data, TerraregUnitTest
 )
 from test import client
@@ -12,7 +11,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
     """Test ApiTerraregModuleVersionDetails resource."""
 
     @setup_test_data()
-    def test_existing_module_version_no_custom_urls(self, client, mocked_server_namespace_fixture):
+    def test_existing_module_version_no_custom_urls(self, client, mock_models):
         res = client.get('/v1/terrareg/modules/testnamespace/lonelymodule/testprovider/1.0.0')
 
         assert res.json == {
@@ -49,7 +48,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
         assert res.status_code == 200
 
     @setup_test_data()
-    def test_existing_module_version_with_git_provider(self, client, mocked_server_namespace_fixture):
+    def test_existing_module_version_with_git_provider(self, client, mock_models):
         """Test endpoint with module provider that is:
          - configured with a git provider
          - configured with a tag format
@@ -110,7 +109,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
         assert res.status_code == 200
 
     @setup_test_data()
-    def test_existing_module_version_with_custom_repo_urls_and_unpublished_version(self, client, mocked_server_namespace_fixture):
+    def test_existing_module_version_with_custom_repo_urls_and_unpublished_version(self, client, mock_models):
         """Test endpoint with module provider that is:
          - configured with a custom repo URLs
          - has no published versions
@@ -162,7 +161,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
         assert res.status_code == 200
 
     @setup_test_data()
-    def test_existing_module_version_with_no_git_provider_or_custom_urls_and_only_beta_version(self, client, mocked_server_namespace_fixture):
+    def test_existing_module_version_with_no_git_provider_or_custom_urls_and_only_beta_version(self, client, mock_models):
         """Test endpoint with module provider that is:
          - no custom repos URLS
          - no git provider
@@ -215,7 +214,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
         assert res.status_code == 200
 
     @setup_test_data()
-    def test_non_existent_namespace(self, client, mocked_server_namespace_fixture):
+    def test_non_existent_namespace(self, client, mock_models):
         """Test endpoint with non-existent namespace"""
 
         res = client.get('/v1/terrareg/modules/doesnotexist/unittestdoesnotexist/unittestproviderdoesnotexist/1.0.0')
@@ -224,7 +223,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
         assert res.status_code == 400
 
     @setup_test_data()
-    def test_non_existent_module(self, client, mocked_server_namespace_fixture):
+    def test_non_existent_module(self, client, mock_models):
         """Test endpoint with non-existent module"""
 
         res = client.get('/v1/terrareg/modules/emptynamespace/unittestdoesnotexist/unittestproviderdoesnotexist/1.0.0')
@@ -233,7 +232,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
         assert res.status_code == 400
 
     @setup_test_data()
-    def test_non_existent_module_version(self, client, mocked_server_namespace_fixture):
+    def test_non_existent_module_version(self, client, mock_models):
         """Test endpoint with non-existent version"""
 
         res = client.get('/v1/terrareg/modules/testnamespace/lonelymodule/testprovider/52.1.2')
@@ -242,7 +241,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
         assert res.status_code == 404
 
     @setup_test_data()
-    def test_analytics_token_not_converted(self, client, mocked_server_namespace_fixture):
+    def test_analytics_token_not_converted(self, client, mock_models):
         """Test endpoint with analytics token and ensure it doesn't convert the analytics token."""
 
         res = client.get('/v1/terrareg/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1')
@@ -251,7 +250,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
         assert res.status_code == 400
 
     @setup_test_data()
-    def test_matches_terrareg_api_details_function(self, client, mocked_server_namespace_fixture):
+    def test_matches_terrareg_api_details_function(self, client, mock_models):
         """Test endpoint with analytics token"""
 
         res = client.get('/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1')
@@ -265,7 +264,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
         assert res.status_code == 200
 
     @setup_test_data()
-    def test_additional_tab_files(self, client, mocked_server_namespace_fixture):
+    def test_additional_tab_files(self, client, mock_models):
         """Test additional tab files in API response"""
 
         with mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[]'):

@@ -1,7 +1,7 @@
 
 from test.unit.terrareg import (
     MockModuleProvider, MockModuleVersion, MockModule, MockNamespace,
-    mocked_server_namespace_fixture,
+    mock_models,
     setup_test_data, TerraregUnitTest
 )
 from test import client
@@ -11,7 +11,7 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
     """Test ApiModuleVersionDetails resource."""
 
     @setup_test_data()
-    def test_existing_module_version(self, client, mocked_server_namespace_fixture):
+    def test_existing_module_version(self, client, mock_models):
         res = client.get('/v1/modules/testnamespace/testmodulename/testprovider/1.0.0')
 
         assert res.json == {
@@ -34,7 +34,7 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
         assert res.status_code == 200
 
     @setup_test_data()
-    def test_unverified_module_version(self, client, mocked_server_namespace_fixture):
+    def test_unverified_module_version(self, client, mock_models):
         res = client.get('/v1/modules/testnamespace/unverifiedmodule/testprovider/1.2.3')
 
         assert res.json == {
@@ -56,7 +56,7 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
         assert res.status_code == 200
 
     @setup_test_data()
-    def test_internal_module_version(self, client, mocked_server_namespace_fixture):
+    def test_internal_module_version(self, client, mock_models):
         res = client.get('/v1/modules/testnamespace/internalmodule/testprovider/5.2.0')
 
         assert res.json == {
@@ -78,7 +78,7 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
         assert res.status_code == 200
 
     @setup_test_data()
-    def test_non_existent_module_version(self, client, mocked_server_namespace_fixture):
+    def test_non_existent_module_version(self, client, mock_models):
         """Test endpoint with non-existent module"""
 
         res = client.get('/v1/modules/namespacename/modulename/providername/0.1.2')
@@ -87,7 +87,7 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
         assert res.status_code == 404
 
     @setup_test_data()
-    def test_analytics_token(self, client, mocked_server_namespace_fixture):
+    def test_analytics_token(self, client, mock_models):
         """Test endpoint with analytics token"""
 
         res = client.get('/v1/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1')
