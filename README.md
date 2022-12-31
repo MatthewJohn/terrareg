@@ -12,6 +12,8 @@ Provides features to aid usage and discovery of modules, providing:
  * Interactive 'Usage builder', helping users build terraform to use the terraform modules;
  * Hooks for git SCM applications to automatically index modules;
 
+If you like and use this project and are happy to let us know, please raise an github issue, create a PR or contact [MatthewJohn](https://github.com/matthewjohn) so it can be added to the README :)
+
 ## Screenshots
 
 ![Homepage](./docs/screenshots/homepage.png)
