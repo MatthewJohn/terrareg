@@ -18,7 +18,8 @@
     margin-bottom: 20px;
 }
 #module-labels {
-    padding-bottom: 5px;
+    padding-top: 5px;
+    padding-bottom: 20px;
 }
 #current-submodule {
     font-weight: bold;
