@@ -399,50 +399,60 @@ def mock_namespace(request):
         ]
     mock_method(request, 'terrareg.models.Namespace.get_all_modules', get_all_modules)
 
+MOCK_SESSIONS = {}
 
-class MockSession(terrareg.models.Session):
-
+def mock_session(request):
+    global MOCK_SESSIONS
+    # Reset mock sessions on each fixture execution
     MOCK_SESSIONS = {}
 
     @classmethod
     def create_session(cls):
         """Create new session object."""
+        global MOCK_SESSIONS
         session_id = secrets.token_urlsafe(terrareg.models.Session.SESSION_ID_LENGTH)
-        cls.MOCK_SESSIONS[session_id] = (datetime.datetime.now() + datetime.timedelta(minutes=terrareg.config.Config().ADMIN_SESSION_EXPIRY_MINS))
+        MOCK_SESSIONS[session_id] = (datetime.datetime.now() + datetime.timedelta(minutes=terrareg.config.Config().ADMIN_SESSION_EXPIRY_MINS))
         return cls(session_id=session_id)
+    mock_method(request, 'terrareg.models.Session.create_session', create_session)
 
     @classmethod
     def cleanup_old_sessions(cls):
         """Mock cleanup old sessions"""
         pass
+    mock_method(request, 'terrareg.models.Session.cleanup_old_sessions', cleanup_old_sessions)
 
     @classmethod
     def check_session(cls, session_id):
         """Get session object."""
         # Check session ID is not empty
+        global MOCK_SESSIONS
         if not session_id:
             return None
 
-        if cls.MOCK_SESSIONS.get(session_id, None) and cls.MOCK_SESSIONS[session_id] >= datetime.datetime.now():
+        if MOCK_SESSIONS.get(session_id, None) and MOCK_SESSIONS[session_id] >= datetime.datetime.now():
             return cls(session_id)
 
         return None
+    mock_method(request, 'terrareg.models.Session.check_session', check_session)
 
     def delete(self):
         """Delete session from database"""
-        if self.id in MockSession.MOCK_SESSIONS:
-            del MockSession.MOCK_SESSIONS[self.id]
+        global MOCK_SESSIONS
+        if self.id in MOCK_SESSIONS:
+            del MOCK_SESSIONS[self.id]
+    mock_method(request, 'terrareg.models.Session.delete', delete)
 
 
-class MockUserGroup(terrareg.models.UserGroup):
+def mock_user_group(request):
 
     @classmethod
     def get_by_group_name(cls, name):
         """Obtain group by name."""
         global USER_GROUP_CONFIG
         if name in USER_GROUP_CONFIG:
-            return MockUserGroup(name)
+            return cls(name)
         return None
+    mock_method(request, 'terrareg.models.UserGroup.get_by_group_name', get_by_group_name)
 
     @classmethod
     def _insert_into_database(cls, name, site_admin):
@@ -456,6 +466,7 @@ class MockUserGroup(terrareg.models.UserGroup):
             'site_admin': site_admin,
             'namespace_permissions': {}
         }
+    mock_method(request, 'terrareg.models.UserGroup._insert_into_database', _insert_into_database)
 
     @classmethod
     def get_all_user_groups(cls):
@@ -465,6 +476,7 @@ class MockUserGroup(terrareg.models.UserGroup):
             cls(user_group_name)
             for user_group_name in USER_GROUP_CONFIG
         ]
+    mock_method(request, 'terrareg.models.UserGroup.get_all_user_groups', get_all_user_groups)
 
     def _get_db_row(self):
         """Return DB row for user group."""
@@ -475,14 +487,16 @@ class MockUserGroup(terrareg.models.UserGroup):
                 'name': self._name,
                 'site_admin': USER_GROUP_CONFIG[self._name].get('site_admin', False)
             }
+    mock_method(request, 'terrareg.models.UserGroup._get_db_row', _get_db_row)
 
     def _delete_from_database(self):
         """Delete user group"""
         global USER_GROUP_CONFIG
         del USER_GROUP_CONFIG[self._name]
+    mock_method(request, 'terrareg.models.UserGroup._delete_from_database', _delete_from_database)
 
 
-class MockUserGroupNamespacePermission(terrareg.models.UserGroupNamespacePermission):
+def mock_user_group_namespace_permission(request):
 
     @classmethod
     def get_permissions_by_user_group(cls, user_group):
@@ -492,6 +506,7 @@ class MockUserGroupNamespacePermission(terrareg.models.UserGroupNamespacePermiss
             cls(user_group=user_group, namespace=terrareg.models.Namespace.get(name=namespace))
             for namespace in USER_GROUP_CONFIG[user_group.name].get('namespace_permissions', {})
         ]
+    mock_method(request, 'terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group', get_permissions_by_user_group)
 
     @classmethod
     def get_permissions_by_user_groups_and_namespace(cls, user_groups, namespace):
@@ -500,9 +515,10 @@ class MockUserGroupNamespacePermission(terrareg.models.UserGroupNamespacePermiss
         permissions = []
         for user_group in user_groups:
             if user_group.name in USER_GROUP_CONFIG and namespace.name in USER_GROUP_CONFIG[user_group.name].get('namespace_permissions', {}):
-                permissions.append(MockUserGroupNamespacePermission(user_group, namespace))
+                permissions.append(terrareg.models.UserGroupNamespacePermission(user_group, namespace))
 
         return permissions
+    mock_method(request, 'terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_groups_and_namespace', get_permissions_by_user_groups_and_namespace)
 
     @classmethod
     def _insert_into_database(cls, user_group, namespace, permission_type):
@@ -513,6 +529,7 @@ class MockUserGroupNamespacePermission(terrareg.models.UserGroupNamespacePermiss
         if namespace.name in USER_GROUP_CONFIG[user_group.name]['namespace_permissions']:
             raise Exception('MOCK - namepsace_permission for namespace already exists')
         USER_GROUP_CONFIG[user_group.name]['namespace_permissions'][namespace.name] = permission_type
+    mock_method(request, 'terrareg.models.UserGroupNamespacePermission._insert_into_database', _insert_into_database)
 
     def _get_db_row(self):
         """Return DB row for user group."""
@@ -524,42 +541,22 @@ class MockUserGroupNamespacePermission(terrareg.models.UserGroupNamespacePermiss
                 'permission_type': USER_GROUP_CONFIG[self._user_group.name]['namespace_permissions'][self._namespace.name]
             }
         return None
+    mock_method(request, 'terrareg.models.UserGroupNamespacePermission._get_db_row', _get_db_row)
 
     def _delete_from_database(self):
         """Delete user group namespace permission."""
         global USER_GROUP_CONFIG
         del USER_GROUP_CONFIG[self.user_group.name]['namespace_permissions'][self.namespace.name]
-
-
-def mock_server_user_groups(request):
-    """Mock UserGroup and UserGroupNamespacePermission classes"""
-    user_group_patch = unittest.mock.patch('terrareg.models.UserGroup', MockUserGroup)
-    user_group_namespace_permission_patch = unittest.mock.patch(
-        'terrareg.models.UserGroupNamespacePermission',
-        MockUserGroupNamespacePermission)
-
-    def cleanup_mock():
-        user_group_namespace_permission_patch.stop()
-        user_group_patch.stop()
-    request.addfinalizer(cleanup_mock)
-    user_group_patch.start()
-    user_group_namespace_permission_patch.start()
-
-def mocked_server_session(request):
-    """Mock Session model class in server module."""
-    patch = unittest.mock.patch('terrareg.models.Session', MockSession)
-
-    def cleanup_mock():
-        patch.stop()
-    request.addfinalizer(cleanup_mock)
-    patch.start()
+    mock_method(request, 'terrareg.models.UserGroupNamespacePermission._delete_from_database', _delete_from_database)
 
 @pytest.fixture()
 def mock_models(request):
+    mock_git_provider(request)
     mock_namespace(request)
     mock_module_provider(request)
     mock_module(request)
     mock_module_version(request)
     mock_module_version_file(request)
-    mock_server_user_groups(request)
-    mocked_server_session(request)
+    mock_session(request)
+    mock_user_group(request)
+    mock_user_group_namespace_permission(request)

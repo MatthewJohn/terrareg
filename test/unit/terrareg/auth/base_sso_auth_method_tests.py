@@ -4,9 +4,9 @@ import pytest
 
 from terrareg.auth import UserGroupNamespacePermissionType
 from test import BaseTest
+import terrareg.models
 from test.unit.terrareg import (
-    mock_models, MockUserGroup,
-    MockUserGroupNamespacePermission, TerraregUnitTest,
+    mock_models,
     setup_test_data
 )
 
@@ -174,10 +174,7 @@ class BaseSsoAuthMethodTests:
         mock_get_group_memberships = mock.MagicMock(return_value=sso_groups)
         mock_is_admin = mock.MagicMock(return_value=is_site_admin)
 
-        with mock.patch('terrareg.models.UserGroup', MockUserGroup), \
-                mock.patch('terrareg.models.UserGroupNamespacePermission',
-                           MockUserGroupNamespacePermission), \
-                mock.patch(f'terrareg.auth.{self.CLS.__name__}.get_group_memberships', mock_get_group_memberships), \
+        with mock.patch(f'terrareg.auth.{self.CLS.__name__}.get_group_memberships', mock_get_group_memberships), \
                 mock.patch(f'terrareg.auth.{self.CLS.__name__}.is_admin', mock_is_admin):
             obj = self.CLS()
             assert obj.check_namespace_access(permission_type_to_check, namespace_to_check) is expected_result
@@ -262,10 +259,7 @@ class BaseSsoAuthMethodTests:
         """Test is_admin method"""
         mock_get_group_memberships = mock.MagicMock(return_value=sso_groups)
 
-        with mock.patch('terrareg.models.UserGroup', MockUserGroup), \
-                mock.patch('terrareg.models.UserGroupNamespacePermission',
-                           MockUserGroupNamespacePermission), \
-                mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', rbac_enabled), \
+        with mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', rbac_enabled), \
                 mock.patch(f'terrareg.auth.{self.CLS.__name__}.get_group_memberships', mock_get_group_memberships):
             obj = self.CLS()
             assert obj.is_admin() is expected_result

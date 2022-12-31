@@ -3,8 +3,7 @@ import unittest.mock
 
 from terrareg.auth import AdminApiKeyAuthMethod, NotAuthenticated, UserGroupNamespacePermissionType
 from test.unit.terrareg import (
-    TerraregUnitTest, mock_models, setup_test_data,
-    MockUserGroup, MockUserGroupNamespacePermission
+    TerraregUnitTest, mock_models, setup_test_data
 )
 import terrareg.models
 from test import client

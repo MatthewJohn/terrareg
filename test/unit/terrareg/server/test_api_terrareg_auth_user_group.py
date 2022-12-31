@@ -8,10 +8,11 @@ import pytest
 
 import terrareg.audit_action
 from test.unit.terrareg import (
-    TEST_MODULE_DATA, MockUserGroup,
+    TEST_MODULE_DATA,
     setup_test_data, TerraregUnitTest,
     mock_models
 )
+import terrareg.models
 from terrareg.auth import UserGroupNamespacePermissionType
 from test import client, app_context, test_request_context
 
@@ -48,7 +49,7 @@ class TestApiTerraregAuthUserGroup(TerraregUnitTest):
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
 
             # Ensure user group exists
-            assert len(MockUserGroup.get_all_user_groups()) == 1
+            assert len(terrareg.models.UserGroup.get_all_user_groups()) == 1
 
             res = client.delete('/v1/terrareg/user-groups/todelete')
             assert res.json == {}
@@ -56,11 +57,11 @@ class TestApiTerraregAuthUserGroup(TerraregUnitTest):
 
             # Ensure required checks are called
             mock_auth_method.is_admin.assert_called_once()
-            assert MockUserGroup.get_all_user_groups() == []
+            assert terrareg.models.UserGroup.get_all_user_groups() == []
 
             mock_create_audit_event.assert_called_once_with(
                 action=terrareg.audit_action.AuditAction.USER_GROUP_DELETE,
-                object_type='MockUserGroup', object_id='todelete',
+                object_type='UserGroup', object_id='todelete',
                 old_value=None, new_value=None
             )
 
