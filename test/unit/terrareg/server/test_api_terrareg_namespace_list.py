@@ -1,6 +1,6 @@
 
 from unittest import mock
-from test.unit.terrareg import MockNamespace, TerraregUnitTest, setup_test_data, mock_models
+from test.unit.terrareg import TerraregUnitTest, setup_test_data, mock_models
 from test import client
 
 

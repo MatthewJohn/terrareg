@@ -4,7 +4,11 @@ import pytest
 
 from terrareg.auth import UserGroupNamespacePermissionType
 from test import BaseTest
-from test.unit.terrareg import MockNamespace, MockUserGroup, MockUserGroupNamespacePermission, TerraregUnitTest, setup_test_data
+from test.unit.terrareg import (
+    mock_models, MockUserGroup,
+    MockUserGroupNamespacePermission, TerraregUnitTest,
+    setup_test_data
+)
 
 # Required as this is sued by BaseOpenidConnectAuthMethod
 from test import test_request_context
@@ -164,7 +168,7 @@ class BaseSsoAuthMethodTests:
         ),
     ])
     @setup_test_data(test_data, user_group_data=user_group_data)
-    def test_check_namespace_access(self, is_site_admin, sso_groups, namespace_to_check, permission_type_to_check, expected_result):
+    def test_check_namespace_access(self, is_site_admin, sso_groups, namespace_to_check, permission_type_to_check, expected_result, mock_models):
         """Test check_namespace_access method"""
 
         mock_get_group_memberships = mock.MagicMock(return_value=sso_groups)
@@ -173,7 +177,6 @@ class BaseSsoAuthMethodTests:
         with mock.patch('terrareg.models.UserGroup', MockUserGroup), \
                 mock.patch('terrareg.models.UserGroupNamespacePermission',
                            MockUserGroupNamespacePermission), \
-                mock.patch('terrareg.models.Namespace', MockNamespace), \
                 mock.patch(f'terrareg.auth.{self.CLS.__name__}.get_group_memberships', mock_get_group_memberships), \
                 mock.patch(f'terrareg.auth.{self.CLS.__name__}.is_admin', mock_is_admin):
             obj = self.CLS()
@@ -255,14 +258,13 @@ class BaseSsoAuthMethodTests:
         (['invalidgroup', 'validgroup', 'siteadmingroup'], False, True)
     ])
     @setup_test_data(None, user_group_data=user_group_data)
-    def test_is_admin(self, sso_groups, rbac_enabled, expected_result):
+    def test_is_admin(self, sso_groups, rbac_enabled, expected_result, mock_models):
         """Test is_admin method"""
         mock_get_group_memberships = mock.MagicMock(return_value=sso_groups)
 
         with mock.patch('terrareg.models.UserGroup', MockUserGroup), \
                 mock.patch('terrareg.models.UserGroupNamespacePermission',
                            MockUserGroupNamespacePermission), \
-                mock.patch('terrareg.models.Namespace', MockNamespace), \
                 mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', rbac_enabled), \
                 mock.patch(f'terrareg.auth.{self.CLS.__name__}.get_group_memberships', mock_get_group_memberships):
             obj = self.CLS()

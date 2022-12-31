@@ -7,7 +7,7 @@ import pytest
 import terrareg.models
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from test.unit.terrareg import (
-    TEST_MODULE_DATA, MockModule, MockModuleProvider, MockNamespace, mock_models,
+    TEST_MODULE_DATA, mock_models,
     setup_test_data, TerraregUnitTest
 )
 from test import client, app_context, test_request_context

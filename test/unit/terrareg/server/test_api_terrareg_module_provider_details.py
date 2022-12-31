@@ -3,11 +3,11 @@ from unittest import mock
 
 import pytest
 from test.unit.terrareg import (
-    MockModuleProvider, MockModule, MockNamespace,
     mock_models,
     setup_test_data, TerraregUnitTest
 )
 from test import client
+import terrareg.models
 
 
 class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
@@ -251,9 +251,9 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
 
         res = client.get('/v1/terrareg/modules/testnamespace/testmodulename/testprovider')
 
-        test_namespace = MockNamespace(name='testnamespace')
-        test_module = MockModule(namespace=test_namespace, name='testmodulename')
-        test_module_provider = MockModuleProvider(module=test_module, name='testprovider')
+        test_namespace = terrareg.models.Namespace(name='testnamespace')
+        test_module = terrareg.models.Module(namespace=test_namespace, name='testmodulename')
+        test_module_provider = terrareg.models.ModuleProvider(module=test_module, name='testprovider')
 
         assert res.json == test_module_provider.get_latest_version().get_terrareg_api_details()
         assert res.status_code == 200

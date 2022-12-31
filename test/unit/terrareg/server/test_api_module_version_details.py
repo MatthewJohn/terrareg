@@ -1,10 +1,10 @@
 
 from test.unit.terrareg import (
-    MockModuleProvider, MockModuleVersion, MockModule, MockNamespace,
     mock_models,
     setup_test_data, TerraregUnitTest
 )
 from test import client
+import terrareg.models
 
 
 class TestApiModuleVersionDetails(TerraregUnitTest):
@@ -92,10 +92,10 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
 
         res = client.get('/v1/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1')
 
-        test_namespace = MockNamespace(name='testnamespace')
-        test_module = MockModule(namespace=test_namespace, name='testmodulename')
-        test_module_provider = MockModuleProvider(module=test_module, name='testprovider')
-        test_module_version = MockModuleVersion(module_provider=test_module_provider, version='2.4.1')
+        test_namespace = terrareg.models.Namespace(name='testnamespace')
+        test_module = terrareg.models.Module(namespace=test_namespace, name='testmodulename')
+        test_module_provider = terrareg.models.ModuleProvider(module=test_module, name='testprovider')
+        test_module_version = terrareg.models.ModuleVersion(module_provider=test_module_provider, version='2.4.1')
 
         assert res.json == test_module_version.get_api_details()
         assert res.status_code == 200

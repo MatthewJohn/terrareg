@@ -5,7 +5,6 @@ from terrareg.module_search import ModuleSearch, ModuleSearchResults
 from test import client
 from test.unit.terrareg import (
     TerraregUnitTest,
-    MockModuleProvider, MockModule, MockNamespace,
     setup_test_data, mock_models
 )
 

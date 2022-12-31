@@ -24,7 +24,7 @@ class TestApiModuleVersionPublish(TerraregUnitTest):
     def test_publish_unpublished_module_version(self, client, mock_models):
         """Test publishing a module version."""
         with unittest.mock.patch(
-                    'test.unit.terrareg.MockModuleVersion.update_attributes') as mocked_update_attributes, \
+                    'terrareg.models.ModuleVersion.update_attributes') as mocked_update_attributes, \
                 unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)):
 
@@ -36,7 +36,7 @@ class TestApiModuleVersionPublish(TerraregUnitTest):
             mocked_update_attributes.assert_called_once_with(published=True)
             mock_create_audit_event.assert_called_once_with(
                 action=terrareg.audit_action.AuditAction.MODULE_VERSION_PUBLISH,
-                object_type='MockModuleVersion',
+                object_type='ModuleVersion',
                 object_id='testnamespace/modulenotpublished/testprovider/10.2.1',
                 old_value=None, new_value=None
             )
@@ -45,7 +45,7 @@ class TestApiModuleVersionPublish(TerraregUnitTest):
     def test_publish_published_module_version(self, client, mock_models):
         """Test publishing a module version that is already in a published state."""
         with unittest.mock.patch(
-                    'test.unit.terrareg.MockModuleVersion.update_attributes') as mocked_update_attributes, \
+                    'terrareg.models.ModuleVersion.update_attributes') as mocked_update_attributes, \
                 unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)):
 
@@ -56,7 +56,7 @@ class TestApiModuleVersionPublish(TerraregUnitTest):
 
             mock_create_audit_event.assert_called_once_with(
                 action=terrareg.audit_action.AuditAction.MODULE_VERSION_PUBLISH,
-                object_type='MockModuleVersion',
+                object_type='ModuleVersion',
                 object_id='testnamespace/testmodulename/testprovider/2.4.1',
                 old_value=None, new_value=None
             )
@@ -130,7 +130,7 @@ class TestApiModuleVersionPublish(TerraregUnitTest):
     def test_publish_invalid_api_key(self, client, mock_models):
         """Test publishing endpoint with invalid API keys."""
         with unittest.mock.patch(
-                    'test.unit.terrareg.MockModuleVersion.update_attributes') as mocked_update_attributes, \
+                    'terrareg.models.ModuleVersion.update_attributes') as mocked_update_attributes, \
                 unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(False)):
 

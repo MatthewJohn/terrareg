@@ -240,7 +240,6 @@ def mock_module_version_file(request):
 
     def _get_db_row(self):
         data = get_module_version_mock_data(self._module_version).get('files', {}).get(self._path, None)
-        print(data)
         if data is None:
             return None
         return {
@@ -310,7 +309,7 @@ def mock_module_provider(request):
     mock_method(request, 'terrareg.models.ModuleProvider.get_latest_version', get_latest_version)
 
     def get_versions(self, include_beta=True, include_unpublished=False):
-        """Return all MockModuleVersion objects for ModuleProvider."""
+        """Return all ModuleVersion objects for ModuleProvider."""
         versions = []
         for version in get_module_provider_mock_data(self).get('versions', {}):
             version_obj = terrareg.models.ModuleVersion(module_provider=self, version=version)

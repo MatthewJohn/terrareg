@@ -8,7 +8,7 @@ import pytest
 import terrareg.audit_action
 from test.unit.terrareg import (
     TEST_MODULE_DATA, MockUserGroup, MockUserGroupNamespacePermission,
-    mock_server_user_groups_fixture, mock_models,
+    mock_models,
     setup_test_data, TerraregUnitTest
 )
 from terrareg.auth import UserGroupNamespacePermissionType
@@ -59,7 +59,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_add_permission(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
+            test_request_context,
             mock_models, client
         ):
         """Test creating new permission using endpoint."""
@@ -99,7 +99,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_add_permission_invalid_permission_type(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
+            test_request_context,
             mock_models, client
         ):
         """Test creating new permission with invalid permission type."""
@@ -125,7 +125,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_add_permission_invalid_namespace(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
+            test_request_context,
             mock_models, client
         ):
         """Test creating new permission with invalid namespace."""
@@ -152,7 +152,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_add_permission_duplicate_permission(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
+            test_request_context,
             mock_models, client
         ):
         """Test creating duplicate permission for user group."""
@@ -180,7 +180,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_add_permission_duplicate_permission(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
+            test_request_context,
             mock_models, client
         ):
         """Test update of repository URL."""
@@ -208,7 +208,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_add_permission_without_permission(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
+            test_request_context,
             mock_models, client
         ):
         """Test creating new permission without permission to perform action."""
@@ -235,7 +235,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_delete_permission(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
+            test_request_context,
             mock_models, client
         ):
         """Test deletion of permission."""
@@ -268,7 +268,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_delete_non_existent_permission(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
+            test_request_context,
             mock_models, client
         ):
         """Test deletion of non-existent permission."""
@@ -296,7 +296,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_delete_without_permission(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
+            test_request_context,
             mock_models, client
         ):
         """Test deletion of permission without authorization."""

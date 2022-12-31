@@ -8,8 +8,9 @@ import pytest
 
 import terrareg.audit_action
 from test.unit.terrareg import (
-    TEST_MODULE_DATA, MockUserGroup, mock_server_user_groups_fixture,
-    setup_test_data, TerraregUnitTest
+    TEST_MODULE_DATA, MockUserGroup,
+    setup_test_data, TerraregUnitTest,
+    mock_models
 )
 from terrareg.auth import UserGroupNamespacePermissionType
 from test import client, app_context, test_request_context
@@ -37,7 +38,7 @@ class TestApiTerraregAuthUserGroup(TerraregUnitTest):
     @setup_test_data(user_group_data=test_usergroup_data)
     def test_delete(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
+            test_request_context, mock_models,
             client
         ):
         """Test update of repository URL."""
@@ -64,7 +65,7 @@ class TestApiTerraregAuthUserGroup(TerraregUnitTest):
             )
 
     @setup_test_data(user_group_data=test_usergroup_data)
-    def test_delete_non_existent(self, app_context, test_request_context, mock_server_user_groups_fixture, client):
+    def test_delete_non_existent(self, app_context, test_request_context, mock_models, client):
         """Test creation of module provider without permission."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
@@ -79,7 +80,7 @@ class TestApiTerraregAuthUserGroup(TerraregUnitTest):
 
 
     @setup_test_data(user_group_data=test_usergroup_data)
-    def test_delete_without_permissions(self, app_context, test_request_context, mock_server_user_groups_fixture, client):
+    def test_delete_without_permissions(self, app_context, test_request_context, mock_models, client):
         """Test creation of module provider without permission."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \

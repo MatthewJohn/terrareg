@@ -5,9 +5,10 @@ import unittest.mock
 import pytest
 
 from test.unit.terrareg import (
-    TEST_MODULE_DATA, MockModule, MockModuleProvider, MockNamespace, mock_models,
+    TEST_MODULE_DATA, mock_models,
     setup_test_data, TerraregUnitTest
 )
+import terrareg.models
 from terrareg.auth import UserGroupNamespacePermissionType
 from test import client, app_context, test_request_context
 
@@ -63,7 +64,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
 
-            namespace = MockNamespace.create('newnamespace')
+            namespace = terrareg.models.Namespace.create('newnamespace')
 
             res = client.post(
                 '/v1/terrareg/modules/newnamespace/newtestmodule/newprovider/create',
@@ -80,9 +81,9 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
             mock_update_repo_clone_url_template.assert_not_called()
             mock_update_git_tag_format.assert_not_called()
 
-            ns = MockNamespace(name='newnamespace')
-            m = MockModule(namespace=ns, name='newtestmodule')
-            p = MockModuleProvider(module=m, name='newprovider')
+            ns = terrareg.models.Namespace(name='newnamespace')
+            m = terrareg.models.Module(namespace=ns, name='newtestmodule')
+            p = terrareg.models.ModuleProvider(module=m, name='newprovider')
             assert p._get_db_row() is not None
 
     @setup_test_data()
@@ -95,7 +96,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
 
-            namespace = MockNamespace.create('newnamespace')
+            namespace = terrareg.models.Namespace.create('newnamespace')
 
             res = client.post(
                 '/v1/terrareg/modules/newnamespace/newm/newp/create',
