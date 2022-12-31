@@ -6,7 +6,7 @@ import pytest
 
 from terrareg.auth import AuthenticationType, SamlAuthMethod, UserGroupNamespacePermissionType
 from test import BaseTest
-from test.unit.terrareg import MockNamespace, MockUserGroup, MockUserGroupNamespacePermission, setup_test_data
+from test.unit.terrareg import mock_models
 from test.unit.terrareg.auth.base_session_auth_method_tests import BaseSessionAuthMethodTests
 from test.unit.terrareg.auth.base_sso_auth_method_tests import BaseSsoAuthMethodTests, test_data, user_group_data
 

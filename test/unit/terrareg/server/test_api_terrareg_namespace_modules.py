@@ -3,8 +3,7 @@ from unittest import mock
 
 import pytest
 from test.unit.terrareg import (
-    MockModuleProvider, MockModule, MockNamespace,
-    mocked_server_namespace_fixture,
+    mock_models,
     setup_test_data, TerraregUnitTest
 )
 from test import client
@@ -14,7 +13,7 @@ class TestApiTerraregNamespaceModules(TerraregUnitTest):
     """Test ApiTerraregNamespaceModules resource."""
 
     @setup_test_data()
-    def test_existing_namespace_with_mixed_modules(self, client, mocked_server_namespace_fixture):
+    def test_existing_namespace_with_mixed_modules(self, client, mock_models):
         res = client.get('/v1/terrareg/modules/smallernamespacelist')
 
         assert res.json == {
@@ -87,7 +86,7 @@ class TestApiTerraregNamespaceModules(TerraregUnitTest):
 
         assert res.status_code == 200
 
-    def test_non_existent_namespace(self, client, mocked_server_namespace_fixture):
+    def test_non_existent_namespace(self, client, mock_models):
         """Test endpoint with non-existent module"""
 
         res = client.get('/v1/terrareg/modules/doesnotexist')
@@ -96,7 +95,7 @@ class TestApiTerraregNamespaceModules(TerraregUnitTest):
         assert res.status_code == 404
 
     @setup_test_data()
-    def test_analytics_token_not_converted(self, client, mocked_server_namespace_fixture):
+    def test_analytics_token_not_converted(self, client, mock_models):
         """Test endpoint with analytics token and ensure it doesn't convert the analytics token."""
 
         res = client.get('/v1/terrareg/modules/test_token-name__testnamespace')
