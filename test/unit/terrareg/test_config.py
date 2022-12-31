@@ -79,7 +79,8 @@ class TestConfig:
         ('SAML2_PRIVATE_KEY', None),
         ('SAML2_PUBLIC_KEY', None),
         ('SAML2_GROUP_ATTRIBUTE', None),
-        ('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', None)
+        ('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', None),
+        ('MODULE_LINKS', None)
     ])
     def test_string_configs(self, config_name, override_expected_value):
         """Test string configs to ensure they are overriden with environment variables."""

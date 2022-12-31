@@ -1,16 +1,18 @@
 
+import json
 from time import sleep
-from unittest import mock
 
+from unittest import mock
 import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
-from terrareg.database import Database
 import selenium.common
-from test import mock_create_audit_event
 
+from terrareg.database import Database
+from test import mock_create_audit_event
 from test.selenium import SeleniumTest
 from terrareg.models import GitProvider, ModuleVersion, Namespace, Module, ModuleProvider
+
 
 class TestModuleProvider(SeleniumTest):
     """Test module provider page."""
@@ -26,6 +28,7 @@ class TestModuleProvider(SeleniumTest):
         cls._config_allow_custom_repo_urls_module_provider = mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', True)
         cls._config_allow_custom_repo_urls_module_version = mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', True)
         cls._config_enable_access_controls = mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', False)
+        cls._config_module_links = mock.patch('terrareg.config.Config.MODULE_LINKS', '[]')
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
@@ -35,6 +38,7 @@ class TestModuleProvider(SeleniumTest):
         cls.register_patch(cls._config_allow_custom_repo_urls_module_provider)
         cls.register_patch(cls._config_allow_custom_repo_urls_module_version)
         cls.register_patch(cls._config_enable_access_controls)
+        cls.register_patch(cls._config_module_links)
 
         super(TestModuleProvider, cls).setup_class()
 
@@ -760,6 +764,40 @@ module "fullypopulated" {{
         readme_content = self.selenium_instance.find_element(By.ID, 'module-tab-readme')
         assert readme_content.is_displayed() == True
         assert readme_content.text == expected_readme_content
+
+    def test_additional_links(self):
+        """Test additions links in module provider page."""
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+        # Wait for input tab to be present
+        self.wait_for_element(By.ID, 'module-tab-link-inputs')
+
+        # Ensure no links are present
+        links = self.selenium_instance.find_element(By.ID, 'custom-links')
+        assert len([el for el in links.find_elements(By.CLASS_NAME, 'custom-link')]) == 0
+
+        with self.update_mock(self._config_module_links, 'new', json.dumps([
+                    {"text": "Placeholders in text module:{module} provider:{provider} ns:{namespace}",
+                     "url": "https://example.com/placeholders-in-link/{namespace}/{module}-{provider}/end"},
+                    {"text": "Link that does not apply",
+                     "url": "https://mydomain.example.com/",
+                     "namespaces": ["not-the-namespace", "another-namespace"]},
+                    {"text": "Link that applies to this namespace",
+                     "url": "https://applies-to-this-module.com",
+                     "namespaces": ["another-namespace", "moduledetails", "another-another-one"]}
+                ])):
+            self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+            # Ensure all links are present
+            self.assert_equals(lambda: [
+                [link.text, link.get_attribute("href")]
+                for link in self.selenium_instance.find_element(By.ID, "custom-links").find_elements(By.CLASS_NAME, "custom-link")
+            ], [
+                ['Placeholders in text module:fullypopulated provider:testprovider ns:moduledetails',
+                 'https://example.com/placeholders-in-link/moduledetails/fullypopulated-testprovider/end'],
+                ['Link that applies to this namespace',
+                 'https://applies-to-this-module.com/']
+            ])
 
     @pytest.mark.parametrize('url,expected_inputs', [
         # Root module
