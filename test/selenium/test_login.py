@@ -14,26 +14,13 @@ class TestLogin(SeleniumTest):
     @classmethod
     def setup_class(cls):
         """Setup required mocks."""
-        cls._mock_openid_connect_is_enabled = mock.MagicMock(return_value=False)
-        cls._mock_openid_connect_get_authorize_redirect_url = mock.MagicMock(return_value=(None, None))
-        cls._mock_openid_connect_fetch_access_token = mock.MagicMock(return_value=None)
-        cls._mock_openid_connect_validate_session_token = mock.MagicMock(return_value=False)
-        cls._mock_saml2_is_enabled = mock.MagicMock(return_value=False)
-        cls._mock_saml2_initialise_request_auth_object = mock.MagicMock()
-        cls._config_secret_key_mock = mock.patch('terrareg.config.Config.SECRET_KEY', '')
         cls._config_openid_connect_button_text = mock.patch('terrareg.config.Config.OPENID_CONNECT_LOGIN_TEXT', '')
         cls._config_saml_button_text = mock.patch('terrareg.config.Config.SAML2_LOGIN_TEXT', '')
+        cls._config_enable_access_controls = mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', False)
 
-        cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.is_enabled', cls._mock_openid_connect_is_enabled))
-        cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.get_authorize_redirect_url', cls._mock_openid_connect_get_authorize_redirect_url))
-        cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.fetch_access_token', cls._mock_openid_connect_fetch_access_token))
-        cls.register_patch(mock.patch('terrareg.openid_connect.OpenidConnect.validate_session_token', cls._mock_openid_connect_validate_session_token))
-        cls.register_patch(mock.patch('terrareg.saml.Saml2.is_enabled', cls._mock_saml2_is_enabled))
-        cls.register_patch(mock.patch('terrareg.saml.Saml2.initialise_request_auth_object', cls._mock_saml2_initialise_request_auth_object))
-
-        cls.register_patch(cls._config_secret_key_mock)
         cls.register_patch(cls._config_openid_connect_button_text)
         cls.register_patch(cls._config_saml_button_text)
+        cls.register_patch(cls._config_enable_access_controls)
         super(TestLogin, cls).setup_class()
 
     def teardown_method(self, method):
@@ -50,16 +37,29 @@ class TestLogin(SeleniumTest):
             # Ensure OpenID Connect login is not displayed
             assert self.selenium_instance.find_element(By.ID, 'openid-connect-login').is_displayed() == False
 
-    def test_valid_openid_connect_login(self):
+    @pytest.mark.parametrize('enable_access_controls,group_memberships,has_site_admin,can_create_module', [
+        (True, ['nopermissions'], False, False),
+        (True, ['siteadmin'], True, True),
+        (True, ['moduledetailsfull'], False, True),
+        (True, [], False, False),
+        (False, ['nopermissions'], True, True),
+        (False, ['siteadmin'], True, True),
+        (False, ['moduledetailsfull'], True, True),
+        (False, [], True, True),
+    ])
+    def test_valid_openid_connect_login(self, enable_access_controls, group_memberships, has_site_admin, can_create_module):
         """Ensure OpenID Connect login works"""
-        with self.update_mock(self._mock_openid_connect_is_enabled, 'return_value', True), \
-                self.update_mock(self._mock_openid_connect_get_authorize_redirect_url, 'return_value',
-                                 ('/openid/callback?code=abcdefg&state=unitteststate', 'unitteststate')), \
-                self.update_mock(self._mock_openid_connect_fetch_access_token, 'return_value',
+        with self.update_multiple_mocks((self._mock_openid_connect_is_enabled, 'return_value', True),
+                (self._config_enable_access_controls, 'new', enable_access_controls),
+                (self._mock_openid_connect_get_authorize_redirect_url, 'return_value',
+                                 ('/openid/callback?code=abcdefg&state=unitteststate', 'unitteststate')),
+                (self._mock_openid_connect_fetch_access_token, 'return_value',
                                  {'access_token': 'unittestaccesstoken', 'id_token': 'unittestidtoken', 'expires_in': 6000}), \
-                self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
-                self.update_mock(self._config_openid_connect_button_text, 'new', 'Unittest OpenID Connect Login Button'), \
-                self.update_mock(self._mock_openid_connect_validate_session_token, 'return_value', True):
+                (self._mock_openid_connect_get_user_info, 'return_value',
+                                 {'groups': group_memberships}), \
+                (self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
+                (self._config_openid_connect_button_text, 'new', 'Unittest OpenID Connect Login Button'), \
+                (self._mock_openid_connect_validate_session_token, 'return_value', True)):
             self.selenium_instance.get(self.get_url('/login'))
             # Wait for SSO login button to be displayed
             self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'openid-connect-login').is_displayed(), True)
@@ -75,18 +75,26 @@ class TestLogin(SeleniumTest):
             # Ensure user is logged in
             self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbar_login_span').text, 'Logout')
 
+            # Ensure 'settings' drop-down is shown, depending on whether
+            # user is a site admin
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbarSettingsDropdown').is_displayed(), has_site_admin)
+
+            # Ensure 'create' drop-down is shown, depending on whether
+            # user has permissions to a namespace
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbarCreateDropdown').is_displayed(), can_create_module)
+
             self._mock_openid_connect_validate_session_token.assert_called_with('unittestidtoken')
 
     def test_invalid_openid_connect_response(self):
         """Test handling of invalid OpenID connect authentication error"""
         def raise_exception():
             raise Exception('Unittest exception')
-        with self.update_mock(self._mock_openid_connect_is_enabled, 'return_value', True), \
-                self.update_mock(self._mock_openid_connect_get_authorize_redirect_url, 'return_value',
+        with self.update_multiple_mocks((self._mock_openid_connect_is_enabled, 'return_value', True), \
+                (self._mock_openid_connect_get_authorize_redirect_url, 'return_value',
                                  ('/openid/callback?code=abcdefg&state=unitteststate', 'unitteststate')), \
-                self.update_mock(self._mock_openid_connect_fetch_access_token, 'side_effect',
+                (self._mock_openid_connect_fetch_access_token, 'side_effect',
                                  raise_exception), \
-                self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'):
+                (self._config_secret_key_mock, 'new', 'abcdefabcdef')):
 
             self.selenium_instance.get(self.get_url('/login'))
             # Wait for OpenID connect login button to be displayed and click
@@ -108,7 +116,17 @@ class TestLogin(SeleniumTest):
             # Ensure SAML login is not displayed
             assert self.selenium_instance.find_element(By.ID, 'saml-login').is_displayed() == False
 
-    def test_valid_saml_login(self):
+    @pytest.mark.parametrize('enable_access_controls,group_memberships,has_site_admin,can_create_module', [
+        (True, ['nopermissions'], False, False),
+        (True, ['siteadmin'], True, True),
+        (True, ['moduledetailsfull'], False, True),
+        (True, [], False, False),
+        (False, ['nopermissions'], True, True),
+        (False, ['siteadmin'], True, True),
+        (False, ['moduledetailsfull'], True, True),
+        (False, [], True, True),
+    ])
+    def test_valid_saml_login(self, enable_access_controls, group_memberships, has_site_admin, can_create_module):
         """Ensure SAML login works"""
 
         mock_auth_object = mock.MagicMock()
@@ -121,18 +139,19 @@ class TestLogin(SeleniumTest):
         mock_auth_object.process_response = mock.MagicMock()
         mock_auth_object.get_errors = mock.MagicMock(return_value=[])
         mock_auth_object.is_authenticated = mock.MagicMock(return_value=True)
-        mock_auth_object.get_attributes = mock.MagicMock(return_value='unittestSamlAttributes')
+        mock_auth_object.get_attributes = mock.MagicMock(return_value={'Login': ['testuser@localhost.com'], 'groups': group_memberships})
         mock_auth_object.get_nameid = mock.MagicMock(return_value='unittestSamlNamId')
         mock_auth_object.get_nameid_format = mock.MagicMock(return_value='unittestSamlNamIdFormat')
         mock_auth_object.get_nameid_nq = mock.MagicMock(return_value='unittestSamlNamIdNq')
         mock_auth_object.get_nameid_spnq = mock.MagicMock(return_value='unittestSamlNamIdSPNQ')
         mock_auth_object.get_session_index = mock.MagicMock(return_value='unittestSamlSessionIndex')
 
-        with self.update_mock(self._mock_saml2_is_enabled, 'return_value', True), \
-                self.update_mock(self._mock_saml2_initialise_request_auth_object, 'return_value',
+        with self.update_multiple_mocks((self._mock_saml2_is_enabled, 'return_value', True), \
+                (self._config_enable_access_controls, 'new', enable_access_controls), \
+                (self._mock_saml2_initialise_request_auth_object, 'return_value',
                                  mock_auth_object), \
-                self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
-                self.update_mock(self._config_saml_button_text, 'new', 'Unittest SAML Login Button'):
+                (self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
+                (self._config_saml_button_text, 'new', 'Unittest SAML Login Button')):
 
             self.selenium_instance.get(self.get_url('/login'))
             # Wait for SSO login button to be displayed
@@ -148,6 +167,14 @@ class TestLogin(SeleniumTest):
 
             # Ensure user is logged in
             self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbar_login_span').text, 'Logout')
+
+            # Ensure 'settings' drop-down is shown, depending on whether
+            # user is a site admin
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbarSettingsDropdown').is_displayed(), has_site_admin)
+
+            # Ensure 'create' drop-down is shown, depending on whether
+            # user has permissions to a namespace
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbarCreateDropdown').is_displayed(), can_create_module)
 
             mock_auth_object.process_response.assert_called_with(request_id='unittestAuthRequestId')
             mock_auth_object.get_errors.assert_called()
@@ -166,11 +193,11 @@ class TestLogin(SeleniumTest):
         mock_auth_object.is_authenticated = mock.MagicMock(return_value=True)
         mock_auth_object.get_attributes = mock.MagicMock(return_value='unittestSamlAttributes')
 
-        with self.update_mock(self._mock_saml2_is_enabled, 'return_value', True), \
-                self.update_mock(self._mock_saml2_initialise_request_auth_object, 'return_value',
+        with self.update_multiple_mocks((self._mock_saml2_is_enabled, 'return_value', True), \
+                (self._mock_saml2_initialise_request_auth_object, 'return_value',
                                  mock_auth_object), \
-                self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
-                self.update_mock(self._config_saml_button_text, 'new', 'Unittest SAML Login Button'):
+                (self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
+                (self._config_saml_button_text, 'new', 'Unittest SAML Login Button')):
 
             self.selenium_instance.get(self.get_url('/login'))
             # Wait for SSO login button to be displayed

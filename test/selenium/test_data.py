@@ -548,7 +548,8 @@ integration_test_data = {
                             {
                                 'name': 'random',
                                 'alias': 'random-alias',
-                                'version': '5.2.1'
+                                # Ensure GT and LT are displayed correctly in browser
+                                'version': '>= 5.2.1, < 6.0.0'
                             },
                             {
                                 'name': 'someothercompany/unsafe',
@@ -1184,4 +1185,37 @@ integration_test_data = {
         }}
     },
     'testmodulecreation': {}
+}
+
+two_empty_namespaces = {
+    'firstnamespace': {
+    },
+    'second-namespace': {
+    }
+}
+
+selenium_user_group_data = {
+    'nopermissions': {
+    },
+    'siteadmin': {
+        'site_admin': True
+    },
+    'moduledetailsmodify': {
+        'namespace_permissions': {
+            'moduledetails': 'MODIFY'
+        }
+    },
+    'moduledetailsfull': {
+        'namespace_permissions': {
+            'moduledetails': 'FULL'
+        }
+    },
+    'multiplenamespaces': {
+        'namespace_permissions': {
+            'moduledetails': 'FULL',
+            'trustednamespace': 'FULL',
+            'testnamespace': 'MODIFY',
+            'moduleextraction': 'MODIFY'
+        }
+    }
 }

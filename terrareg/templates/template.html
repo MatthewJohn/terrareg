@@ -9,7 +9,8 @@
 
         <!-- Data tables -->
         <link rel="stylesheet" href="/static/css/datatables/dataTables.bulma-1.11.5.min.css" />
-        <script src="/static/js/datatables/jquery.dataTables-1.11.5.min.js"></script>
+        <!-- <script src="/static/js/datatables/jquery.dataTables-1.11.5.min.js"></script> -->
+        <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js" ></script>
         <script src="/static/js/datatables/dataTables.bulma-1.11.5.min.js"></script>
 
         <link rel="stylesheet" href="/static/css/datatables/responsive.bulma-2.3.0.min.css" />
@@ -59,7 +60,25 @@
               $('#navbar_login_icon').removeClass('fa-lock');
               $('#navbar_login_icon').addClass('fa-right-from-bracket');
               $('#navbar_login_span').html('Logout');
-              $('#navbarCreateDropdown').css('display', 'flex');
+
+              let showCreateModule = false;
+              if (loggedIn.site_admin) {
+                // Show settings drop-down
+                $('#navbarSettingsDropdown').css('display', 'flex');
+
+                // Show create namespace button
+                $('#navbarCreateNamespaceButton').css('display', 'block');
+
+                showCreateModule = true;
+              } else if (Object.values(loggedIn.namespace_permissions).indexOf('FULL') !== -1) {
+                showCreateModule = true;
+              }
+              if (showCreateModule) {
+                // Show create drop-down
+                $('#navbarCreateDropdown').css('display', 'flex');
+                // Show create module button
+                $('#navbarCreateModuleButton').css('display', 'block');
+              }
             }
           }
 
@@ -108,8 +127,16 @@
                 <div style="display: none;" id="navbarCreateDropdown" class="navbar-item has-dropdown is-hoverable">
                   <a class="navbar-link" href="#">Create</a>
                   <div class="navbar-dropdown is-boxed">
-                    <a class="navbar-item" href="/create-namespace">Namespace</a>
-                    <a class="navbar-item" href="/create-module">Module</a>
+                    <a id="navbarCreateNamespaceButton" style="display: none;" class="navbar-item" href="/create-namespace">Namespace</a>
+                    <a id="navbarCreateModuleButton" style="display: none;" class="navbar-item" href="/create-module">Module</a>
+                  </div>
+                </div>
+
+                <div style="display: none;" id="navbarSettingsDropdown" class="navbar-item has-dropdown is-hoverable">
+                  <a class="navbar-link" href="#">Settings</a>
+                  <div class="navbar-dropdown is-boxed">
+                    <a id="navbarUserGroupsButton" class="navbar-item" href="/user-groups">User Groups</a>
+                    <a id="navbarAuditHistoryButton" class="navbar-item" href="/audit-history">Audit History</a>
                   </div>
                 </div>
 

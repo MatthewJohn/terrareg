@@ -7,12 +7,15 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 from terrareg.database import Database
 import selenium.common
+from test import mock_create_audit_event
 
 from test.selenium import SeleniumTest
 from terrareg.models import GitProvider, ModuleVersion, Namespace, Module, ModuleProvider
 
 class TestModuleProvider(SeleniumTest):
     """Test module provider page."""
+
+    _SECRET_KEY = '354867a669ef58d17d0513a0f3d02f4403354915139422a8931661a3dbccdffe'
 
     @classmethod
     def setup_class(cls):
@@ -22,15 +25,16 @@ class TestModuleProvider(SeleniumTest):
         cls._config_publish_api_keys_mock = mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', [])
         cls._config_allow_custom_repo_urls_module_provider = mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER', True)
         cls._config_allow_custom_repo_urls_module_version = mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', True)
+        cls._config_enable_access_controls = mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', False)
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
-        cls.register_patch(mock.patch('terrareg.config.Config.SECRET_KEY', '354867a669ef58d17d0513a0f3d02f4403354915139422a8931661a3dbccdffe'))
         cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
-        cls.register_patch(mock.patch('terrareg.server.ApiModuleVersionCreate._post', cls._api_version_create_mock))
-        cls.register_patch(mock.patch('terrareg.server.ApiTerraregModuleVersionPublish._post', cls._api_version_publish_mock))
+        cls.register_patch(mock.patch('terrareg.server.api.ApiModuleVersionCreate._post', cls._api_version_create_mock))
+        cls.register_patch(mock.patch('terrareg.server.api.ApiTerraregModuleVersionPublish._post', cls._api_version_publish_mock))
         cls.register_patch(cls._config_publish_api_keys_mock)
         cls.register_patch(cls._config_allow_custom_repo_urls_module_provider)
         cls.register_patch(cls._config_allow_custom_repo_urls_module_version)
+        cls.register_patch(cls._config_enable_access_controls)
 
         super(TestModuleProvider, cls).setup_class()
 
@@ -699,8 +703,8 @@ module "fullypopulated" {{
                 repo_base_url_template=module_provider_base_url_template
             )
 
-            with self.update_mock(self._config_allow_custom_repo_urls_module_provider, 'new', allow_custom_git_urls_module_provider), \
-                    self.update_mock(self._config_allow_custom_repo_urls_module_version, 'new', allow_custom_git_urls_module_version):
+            with self.update_multiple_mocks((self._config_allow_custom_repo_urls_module_provider, 'new', allow_custom_git_urls_module_provider), \
+                    (self._config_allow_custom_repo_urls_module_version, 'new', allow_custom_git_urls_module_version)):
 
                 self.selenium_instance.get(self.get_url(url))
 
@@ -933,7 +937,7 @@ module "fullypopulated" {{
         (
             '/modules/moduledetails/fullypopulated/testprovider/1.5.0',
             [
-                ['random', 'hashicorp', '', '5.2.1'],
+                ['random', 'hashicorp', '', '>= 5.2.1, < 6.0.0'],
                 ['unsafe', 'someothercompany', '', '2.0.0']
             ]
         ),
@@ -1124,9 +1128,46 @@ module "fullypopulated" {{
         self._api_version_create_mock.assert_called_once_with(namespace='moduledetails', name='fullypopulated', provider='testprovider', version='5.2.1')
         self._api_version_publish_mock.assert_called_once_with(namespace='moduledetails', name='fullypopulated', provider='testprovider', version='5.2.1')
 
+    @pytest.mark.parametrize('user_groups,expected_result', [
+        ([], False),
+        (['siteadmin'], True),
+        (['nopermissions'], False),
+        (['moduledetailsmodify'], True),
+        (['moduledetailsfull'], True)
+    ])
+    def test_integration_tab_publish_button_permissions(self, user_groups, expected_result):
+        """Test disabling of publish button, logged in with various user groups."""
+        with self.update_multiple_mocks((self._config_publish_api_keys_mock, 'new', ['abcdefg']), \
+                (self._config_enable_access_controls, 'new', True)):
+            # Clear cookies to remove authentication
+            self.selenium_instance.delete_all_cookies()
+
+            with self.log_in_with_openid_connect(user_groups):
+                self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+                # Wait for integrations tab button to be visible
+                integrations_tab_button = self.wait_for_element(By.ID, 'module-tab-link-integrations')
+
+                # Ensure the integrations tab content is not visible
+                assert self.wait_for_element(By.ID, 'module-tab-integrations', ensure_displayed=False).is_displayed() == False
+
+                # Click on integrations tab
+                integrations_tab_button.click()
+
+                integrations_tab_content = self.selenium_instance.find_element(By.ID, 'module-tab-integrations')
+
+                # Ensure publish button exists and is not disaplyed
+                assert integrations_tab_content.find_element(By.ID, 'indexModuleVersionPublish').is_displayed() == expected_result
+
+                # Ensure publish button container is not displayed
+                assert integrations_tab_content.find_element(By.ID, 'integrations-index-module-version-publish').is_displayed() == expected_result
+
     def test_integration_tab_index_version_with_publish_disabled(self):
         """Test indexing a new module version from the integration tab whilst publishing is not possible"""
         with self.update_mock(self._config_publish_api_keys_mock, 'new', ['abcdefg']):
+            # Clear cookies to remove authentication
+            self.selenium_instance.delete_all_cookies()
+
             self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
 
             # Wait for integrations tab button to be visible
@@ -1314,21 +1355,21 @@ module "fullypopulated" {{
         file_list[2].click()
         assert file_tab_content.find_element(By.ID, 'example-file-content').text == 'variable "test" {\n  description = "test variable"\n  type = string\n}'
 
-    def test_delete_module_version(self):
+    def test_delete_module_version(self, mock_create_audit_event):
         """Test the delete version functionality in settings tab."""
 
         self.perform_admin_authentication(password='unittest-password')
 
-        # Create test module version
         namespace = Namespace(name='moduledetails')
         module = Module(namespace=namespace, name='fullypopulated')
         module_provider = ModuleProvider.get(module=module, name='testprovider')
 
-        # Create test module version
-        module_version = ModuleVersion(module_provider=module_provider, version='2.5.5')
-        module_version.prepare_module()
-        module_version.publish()
-        module_version_pk = module_version.pk
+        with mock_create_audit_event:
+            # Create test module version
+            module_version = ModuleVersion(module_provider=module_provider, version='2.5.5')
+            module_version.prepare_module()
+            module_version.publish()
+            module_version_pk = module_version.pk
 
         self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/2.5.5'))
 
@@ -1400,16 +1441,17 @@ module "fullypopulated" {{
         module_provider._cache_db_row = None
         assert module_provider.git_path == None
 
-    def test_delete_module_provider(self):
+    def test_delete_module_provider(self, mock_create_audit_event):
         """Test the delete provider functionality in settings tab."""
 
         self.perform_admin_authentication(password='unittest-password')
 
-        # Create test module version
-        namespace = Namespace(name='moduledetails')
-        module = Module(namespace=namespace, name='fullypopulated')
-        module_provider = ModuleProvider.get(module=module, name='providertodelete', create=True)
-        module_provider_pk = module_provider.pk
+        with mock_create_audit_event:
+            # Create test module version
+            namespace = Namespace(name='moduledetails')
+            module = Module(namespace=namespace, name='fullypopulated')
+            module_provider = ModuleProvider.get(module=module, name='providertodelete', create=True)
+            module_provider_pk = module_provider.pk
 
         self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/providertodelete'))
 
@@ -1730,7 +1772,6 @@ module "fullypopulated" {{
                 'injectedSubemoduleFileContent']:
 
             with pytest.raises(selenium.common.exceptions.NoSuchElementException):
-                print('Checking for element:', injected_element)
                 self.selenium_instance.find_element(By.ID, injected_element)
 
     @pytest.mark.parametrize('enable_beta,enable_unpublished,expected_versions', [

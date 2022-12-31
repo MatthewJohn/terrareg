@@ -1,0 +1,35 @@
+{% extends 'template.html' %}
+
+{% block title %}Audit History{% endblock %}
+
+{% block header %}
+<script>
+    $(document).ready(() => {
+        $('#audit-history-table').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "ajax": "/v1/terrareg/audit-history",
+            columns: [
+                { title: 'Timestamp', data: 'timestamp' },
+                { title: 'Username', data: 'username' },
+                { title: 'Action', data: 'action' },
+                { title: 'Object', data: 'object_id' },
+                { title: 'Old value', data: 'old_value' },
+                { title: 'New value', data: 'new_value' },
+            ],
+        });
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li class="is-active"><a href="/audit-history">Audit History</a></li>
+    </ul>
+</nav>
+
+<table id="audit-history-table" class="display" width="100%"></table>
+
+{% endblock %}

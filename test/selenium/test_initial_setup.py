@@ -5,6 +5,7 @@ from unittest import mock
 import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
+from test import mock_create_audit_event
 
 from test.selenium import SeleniumTest
 from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
@@ -14,6 +15,7 @@ class TestInitialSetup(SeleniumTest):
 
     # Disable test data
     _TEST_DATA = {}
+    _USER_GROUP_DATA = None
 
     @classmethod
     def setup_class(cls):
@@ -22,13 +24,11 @@ class TestInitialSetup(SeleniumTest):
         cls._config_allow_module_uploads_mock = mock.patch('terrareg.config.Config.ALLOW_MODULE_HOSTING', True)
         cls._config_publish_api_keys_mock = mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', [])
         cls._config_admin_authentication_key_mock = mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', '')
-        cls._config_secret_key_mock = mock.patch('terrareg.config.Config.SECRET_KEY', '')
 
         cls.register_patch(cls._config_upload_api_keys_mock)
         cls.register_patch(cls._config_allow_module_uploads_mock)
         cls.register_patch(cls._config_publish_api_keys_mock)
         cls.register_patch(cls._config_admin_authentication_key_mock)
-        cls.register_patch(cls._config_secret_key_mock)
 
         super(TestInitialSetup, cls).setup_class()
 
@@ -292,7 +292,7 @@ class TestInitialSetup(SeleniumTest):
         self.check_only_card_is_displayed('complete')
         self.check_progress_bar(120)
 
-    def test_setup_page(self):
+    def test_setup_page(self, mock_create_audit_event):
         """Test functionality of setup page."""
         # Load homepage
         self.selenium_instance.get(self.get_url('/'))
@@ -307,22 +307,24 @@ class TestInitialSetup(SeleniumTest):
         self._test_auth_vars_step()
 
         # STEP 2 - Login
-        with self.update_mock(self._config_admin_authentication_key_mock, 'new', 'admin-setup-password'), \
-                self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'):
+        with self.update_multiple_mocks((self._config_admin_authentication_key_mock, 'new', 'admin-setup-password'), \
+                (self._config_secret_key_mock, 'new', 'abcdefabcdef')):
             self._test_login_step()
 
             # Step 3 - Create a namespace
             self._test_create_namespace_step()
 
-            # Create a namespace
-            namespace = Namespace.create('unittestnamespace')
+            with mock_create_audit_event:
+                # Create a namespace
+                namespace = Namespace.create('unittestnamespace')
 
             # Step 4 - Create a module
             self._test_create_module_step()
 
-            # Create module provider
-            module = Module(namespace=namespace, name='setupmodulename')
-            module_provider = ModuleProvider.get(module=module, name='setupprovider', create=True)
+            with mock_create_audit_event:
+                # Create module provider
+                module = Module(namespace=namespace, name='setupmodulename')
+                module_provider = ModuleProvider.get(module=module, name='setupprovider', create=True)
 
             # Step 5a. - Index module version from git
             self._test_index_version_git_step(module_provider)
@@ -330,9 +332,10 @@ class TestInitialSetup(SeleniumTest):
             # Step 5b. - Index module version from source
             self._test_index_version_upload_step(module_provider)
 
-            # Create module version to move to next step
-            module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
-            module_version.prepare_module()
+            with mock_create_audit_event:
+                # Create module version to move to next step
+                module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
+                module_version.prepare_module()
 
             # Check upload module version steps with unpublished version
             self._test_publish_module_version_upload_step(module_provider)
@@ -340,15 +343,16 @@ class TestInitialSetup(SeleniumTest):
             # Step 5a. (repeat with unpublished version)
             self._test_publish_module_version_git_step(module_provider)
 
-            # Publish module version to get to step 5
-            module_version.publish()
+            with mock_create_audit_event:
+                # Publish module version to get to step 5
+                module_version.publish()
 
             # Step 6 - Secure instance
             self._test_secure_instance_step()
 
             # STEP 7 - HTTPS
-            with self.update_mock(self._config_upload_api_keys_mock, 'new', ['some-api-upload-key']), \
-                    self.update_mock(self._config_publish_api_keys_mock, 'new', ['some-api-publish-key']):
+            with self.update_multiple_mocks((self._config_upload_api_keys_mock, 'new', ['some-api-upload-key']), \
+                    (self._config_publish_api_keys_mock, 'new', ['some-api-publish-key'])):
                 self._test_ssl_step()
 
                 # Step 7 - Success

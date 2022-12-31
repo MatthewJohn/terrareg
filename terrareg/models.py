@@ -15,8 +15,10 @@ import markdown
 import terrareg.analytics
 from terrareg.database import Database
 import terrareg.config
+import terrareg.audit
+import terrareg.audit_action
 from terrareg.errors import (
-    InvalidModuleNameError, InvalidModuleProviderNameError,
+    InvalidModuleNameError, InvalidModuleProviderNameError, InvalidUserGroupNameError,
     InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError,
     RepositoryUrlDoesNotContainValidSchemeError,
@@ -96,6 +98,312 @@ class Session:
         with db.get_connection() as conn:
             conn.execute(db.session.delete().where(
                 db.session.c.id==self.id
+            ))
+
+
+class UserGroup:
+
+    @staticmethod
+    def _validate_name(name):
+        """Validate name of user group"""
+        if not re.match(r'^[\s0-9a-zA-Z-_]+$', name):
+            raise InvalidUserGroupNameError('User group name is invalid')
+        return True
+
+    @classmethod
+    def get_by_group_name(cls, name):
+        """Obtain group by name."""
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(db.user_group.select().where(
+                db.user_group.c.name==name
+            ))
+            if row := res.fetchone():
+                return cls(name=row['name'])
+
+            return None
+
+    @classmethod
+    def create(cls, name, site_admin):
+        """Create usergroup"""
+        # Check if group exists with name
+        if cls.get_by_group_name(name=name):
+            return None
+
+        # Check group name
+        if not cls._validate_name(name):
+            return None
+
+        cls._insert_into_database(name=name, site_admin=site_admin)
+
+        obj = cls(name=name)
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.USER_GROUP_CREATE,
+            object_type=obj.__class__.__name__,
+            object_id=obj.name,
+            old_value=None, new_value=None
+        )
+
+        return obj
+
+    @classmethod
+    def _insert_into_database(cls, name, site_admin):
+        """Insert new user group into database."""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.user_group.insert().values(
+                name=name, site_admin=site_admin
+            ))
+
+    @classmethod
+    def get_all_user_groups(cls):
+        """Obtain all user groups."""
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(db.user_group.select())
+            return [
+                cls(row['name'])
+                for row in res.fetchall()
+            ]
+
+    @property
+    def pk(self):
+        """Return DB ID of user group"""
+        return self._get_db_row()['id']
+
+    @property
+    def name(self):
+        """Return name of user group"""
+        return self._name
+
+    @property
+    def site_admin(self):
+        """Return site_admin property of user group"""
+        return self._get_db_row()['site_admin']
+
+    def __init__(self, name):
+        """Store member variables"""
+        self._name = name
+        self._row_cache = None
+
+    def __eq__(self, __o):
+        """Check if two user groups are the same"""
+        if isinstance(__o, self.__class__):
+            return self.pk == __o.pk and self.name == __o.name and self.site_admin == __o.site_admin
+        return super(UserGroup, self).__eq__(__o)
+
+    def _get_db_row(self):
+        """Return DB row for user group."""
+        if self._row_cache is None:
+            db = Database.get()
+            # Obtain row from user group table.
+            select = db.user_group.select().where(
+                db.user_group.c.name == self._name
+            )
+            with db.get_connection() as conn:
+                res = conn.execute(select)
+                self._row_cache = res.fetchone()
+        return self._row_cache
+
+    def delete(self):
+        """Delete user group"""
+        for group_permission in UserGroupNamespacePermission.get_permissions_by_user_group(self):
+            group_permission.delete()
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.USER_GROUP_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.name,
+            old_value=None, new_value=None
+        )
+
+        self._delete_from_database()
+
+    def _delete_from_database(self):
+        """Delete row from database"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.user_group.delete().where(
+                db.user_group.c.id==self.pk
+            ))
+
+
+class UserGroupNamespacePermission:
+
+    @classmethod
+    def get_permissions_by_user_group(cls, user_group):
+        """Return permissions by user group"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            query = sqlalchemy.select(
+                db.user_group.c.name.label('user_group_name'),
+                db.namespace.c.namespace.label('namespace_name')
+            ).select_from(
+                db.user_group_namespace_permission
+            ).join(
+                db.user_group,
+                db.user_group_namespace_permission.c.user_group_id==db.user_group.c.id
+            ).join(
+                db.namespace,
+                db.user_group_namespace_permission.c.namespace_id==db.namespace.c.id
+            ).where(
+                db.user_group.c.id==user_group.pk
+            )
+            res = conn.execute(query)
+
+            return [
+                cls(
+                    user_group=UserGroup(name=r['user_group_name']),
+                    namespace=Namespace(name=r['namespace_name'])
+                )
+                for r in res.fetchall()
+            ]
+
+    @classmethod
+    def get_permissions_by_user_group_and_namespace(cls, user_group, namespace):
+        """Return permission by user group and namespace"""
+        permissions = cls.get_permissions_by_user_groups_and_namespace([user_group], namespace)
+        if len(permissions) > 1:
+            raise Exception('Found more than 1 permission for user group/namespace')
+        return permissions[0] if permissions else None
+
+    @classmethod
+    def get_permissions_by_user_groups_and_namespace(cls, user_groups, namespace):
+        """Obtain user permission by multiple user groups for a single namespace"""
+        db = Database.get()
+        user_group_ids = [user_group.pk for user_group in user_groups]
+        user_group_mapping = {
+            user_group.name: user_group
+            for user_group in user_groups
+        }
+        with db.get_connection() as conn:
+            query = sqlalchemy.select(
+                db.user_group.c.name.label('user_group_name')
+            ).join(
+                db.user_group,
+                db.user_group_namespace_permission.c.user_group_id==db.user_group.c.id
+            ).where(
+                db.user_group.c.id.in_(user_group_ids),
+                db.user_group_namespace_permission.c.namespace_id==namespace.pk
+            )
+            res = conn.execute(query)
+            permissions = [
+                cls(user_group=user_group_mapping[row['user_group_name']], namespace=namespace)
+                for row in res
+            ]
+
+            return permissions
+
+    @classmethod
+    def create(cls, user_group, namespace, permission_type):
+        """Create user group namespace permission"""
+        # Check if permission already exists
+        if cls.get_permissions_by_user_group_and_namespace(
+                user_group=user_group,
+                namespace=namespace):
+            return None
+
+        cls._insert_into_database(
+            user_group=user_group,
+            namespace=namespace,
+            permission_type=permission_type)
+
+        obj = cls(user_group=user_group, namespace=namespace)
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.USER_GROUP_NAMESPACE_PERMISSION_ADD,
+            object_type=obj.__class__.__name__,
+            object_id=obj.id,
+            old_value=None, new_value=None
+        )
+
+        return obj
+
+    @classmethod
+    def _insert_into_database(cls, user_group, namespace, permission_type):
+        """Insert permission into database"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.user_group_namespace_permission.insert().values(
+                user_group_id=user_group.pk,
+                namespace_id=namespace.pk,
+                permission_type=permission_type
+            ))
+
+    @property
+    def id(self):
+        """Return identifiable name of object"""
+        return '{user_group}/{namespace}'.format(
+            user_group=self.user_group.name,
+            namespace=self.namespace.name
+        )
+
+    @property
+    def user_group(self):
+        """Return user group."""
+        return self._user_group
+
+    @property
+    def namespace(self):
+        """Return namespace."""
+        return self._namespace
+
+    @property
+    def permission_type(self):
+        """Return permission."""
+        return self._get_db_row()['permission_type']
+
+    def __init__(self, user_group, namespace):
+        """Store member variables."""
+        self._user_group = user_group
+        self._namespace = namespace
+        self._row_cache = None
+
+    def __eq__(self, __o):
+        """Check if two user group namespace permissions are the same"""
+        if isinstance(__o, self.__class__):
+            return (
+                self.namespace.pk == __o.namespace.pk and
+                self.user_group.pk == __o.user_group.pk and
+                self.permission_type == __o.permission_type
+            )
+        return super(UserGroupNamespacePermission, self).__eq__(__o)
+
+    def _get_db_row(self):
+        """Return DB row for user group."""
+        if self._row_cache is None:
+            db = Database.get()
+            # Obtain row from user group table.
+            select = sqlalchemy.select(
+                db.user_group_namespace_permission
+            ).where(
+                db.user_group_namespace_permission.c.user_group_id==self._user_group.pk,
+                db.user_group_namespace_permission.c.namespace_id==self._namespace.pk
+            )
+            with db.get_connection() as conn:
+                res = conn.execute(select)
+                self._row_cache = res.fetchone()
+        return self._row_cache
+
+    def delete(self):
+        """Delete user group namespace permission."""
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.USER_GROUP_NAMESPACE_PERMISSION_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.id,
+            old_value=None, new_value=None
+        )
+
+        self._delete_from_database()
+
+    def _delete_from_database(self):
+        """Delete row from database"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.user_group_namespace_permission.delete().where(
+                db.user_group_namespace_permission.c.user_group_id==self.user_group.pk,
+                db.user_group_namespace_permission.c.namespace_id==self.namespace.pk
             ))
 
 
@@ -223,6 +531,12 @@ class GitProvider:
         """Return browse_url for git provider."""
         return self._get_db_row()['browse_url_template']
 
+    def __eq__(self, __o):
+        """Check if two git providers are the same"""
+        if isinstance(__o, self.__class__):
+            return self.pk == __o.pk
+        return super(GitProvider, self).__eq__(__o)
+
     def __init__(self, id):
         """Store member variable for ID."""
         self._id = id
@@ -296,7 +610,15 @@ class Namespace(object):
         with db.get_connection() as conn:
             conn.execute(module_provider_insert)
 
-        return cls(name=name)
+        obj = cls(name=name)
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.NAMESPACE_CREATE,
+            object_type=obj.__class__.__name__,
+            object_id=obj.name,
+            old_value=None, new_value=None
+        )
+        return obj
 
     @staticmethod
     def get_total_count():
@@ -802,7 +1124,16 @@ class ModuleProvider(object):
         with db.get_connection() as conn:
             conn.execute(module_provider_insert)
 
-        return cls(module=module, name=name)
+        obj = cls(module=module, name=name)
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_CREATE,
+            object_type=obj.__class__.__name__,
+            object_id=obj.id,
+            old_value=None, new_value=None
+        )
+
+        return obj
 
     @classmethod
     def get(cls, module, name, create=False):
@@ -982,6 +1313,13 @@ class ModuleProvider(object):
         for module_version in self.get_versions(include_beta=True, include_unpublished=True):
             module_version.delete()
 
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.id,
+            old_value=None, new_value=None
+        )
+
         db = Database.get()
 
         with db.get_connection() as conn:
@@ -1034,8 +1372,32 @@ class ModuleProvider(object):
         # Remove cached DB row
         self._cache_db_row = None
 
+    def update_verified(self, verified):
+        """Update verified flag of module provider."""
+        if verified in [True, False] and verified != self.verified:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_VERIFIED,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=self.verified,
+                new_value=verified
+            )
+            self.update_attributes(
+                verified=verified
+            )
+
     def update_git_provider(self, git_provider: GitProvider):
         """Update git provider associated with module provider."""
+        original_git_provider = self.get_git_provider()
+        if original_git_provider != git_provider:
+
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_PROVIDER,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_git_provider.name if original_git_provider else None,
+                new_value=git_provider.name if git_provider else None
+            )
         self.update_attributes(
             git_provider_id=(git_provider.pk if git_provider is not None else None)
         )
@@ -1054,6 +1416,16 @@ class ModuleProvider(object):
         else:
             # If not value was provided, default to None
             sanitised_git_tag_format = None
+
+        if sanitised_git_tag_format != self.git_tag_format:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_TAG_FORMAT,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=self.git_tag_format,
+                new_value=sanitised_git_tag_format
+            )
+
         self.update_attributes(git_tag_format=sanitised_git_tag_format)
 
     def update_git_path(self, git_path):
@@ -1063,6 +1435,16 @@ class ModuleProvider(object):
         if git_path and git_path != '/':
             # Sanity check path
             safe_join_paths('/somepath/somesubpath', git_path, allow_same_directory=True)
+
+        original_value = self._get_db_row()['git_path']
+        if original_value != git_path:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_PATH,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_value,
+                new_value=git_path
+            )
         self.update_attributes(git_path=git_path)
 
     def update_repo_clone_url_template(self, repo_clone_url_template):
@@ -1092,6 +1474,16 @@ class ModuleProvider(object):
                 )
 
             repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe='\{\}/:@%?=')
+
+        original_value = self._get_db_row()['repo_clone_url_template']
+        if original_value != repo_clone_url_template:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_CLONE_URL,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_value,
+                new_value=repo_clone_url_template
+            )
 
         self.update_attributes(repo_clone_url_template=repo_clone_url_template)
 
@@ -1131,6 +1523,16 @@ class ModuleProvider(object):
 
             repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe='\{\}/:@%?=')
 
+        original_value = self._get_db_row()['repo_browse_url_template']
+        if original_value != repo_browse_url_template:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BROWSE_URL,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_value,
+                new_value=repo_browse_url_template
+            )
+
         self.update_attributes(repo_browse_url_template=repo_browse_url_template)
 
     def update_repo_base_url_template(self, repo_base_url_template):
@@ -1161,6 +1563,16 @@ class ModuleProvider(object):
                 )
 
             repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe='\{\}/:@%?=')
+
+        original_value = self._get_db_row()['repo_base_url_template']
+        if original_value != repo_base_url_template:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BASE_URL,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_value,
+                new_value=repo_base_url_template
+            )
 
         self.update_attributes(repo_base_url_template=repo_base_url_template)
 
@@ -1984,6 +2396,14 @@ class ModuleVersion(TerraformSpecsObject):
 
     def publish(self):
         """Publish module version."""
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_VERSION_PUBLISH,
+            object_type=self.__class__.__name__,
+            object_id=self.id,
+            old_value=None,
+            new_value=None
+        )
+
         # Mark module version as published
         self.update_attributes(published=True)
 
@@ -2066,6 +2486,14 @@ class ModuleVersion(TerraformSpecsObject):
         self.create_data_directory()
         self._create_db_row()
 
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_VERSION_INDEX,
+            object_type=self.__class__.__name__,
+            object_id=self.id,
+            old_value=None,
+            new_value=None
+        )
+
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
         return statement.where(
@@ -2107,6 +2535,14 @@ class ModuleVersion(TerraformSpecsObject):
             module_details.delete()
 
         db = Database.get()
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_VERSION_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.id,
+            old_value=None,
+            new_value=None
+        )
 
         with db.get_connection() as conn:
             # Delete module from module_version table

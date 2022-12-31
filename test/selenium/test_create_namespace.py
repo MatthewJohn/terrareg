@@ -5,6 +5,7 @@ from unittest import mock
 import pytest
 from selenium.webdriver.common.by import By
 import selenium
+from test import mock_create_audit_event
 
 from test.selenium import SeleniumTest
 from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
@@ -12,11 +13,12 @@ from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
 class TestCreateNamespace(SeleniumTest):
     """Test create_module_provider page."""
 
+    _SECRET_KEY = '354867a669ef58d17d0513a0f3d02f4403354915139422a8931661a3dbccdffe'
+
     @classmethod
     def setup_class(cls):
         """Setup required mocks."""
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
-        cls.register_patch(mock.patch('terrareg.config.Config.SECRET_KEY', '354867a669ef58d17d0513a0f3d02f4403354915139422a8931661a3dbccdffe'))
 
         super(TestCreateNamespace, cls).setup_class()
 
@@ -83,11 +85,12 @@ If you were previously logged in, please re-authentication and try again."""
         namespace = Namespace.get('testnamespacecreation')
         assert namespace is not None
 
-    def test_duplicate_namespace(self):
+    def test_duplicate_namespace(self, mock_create_audit_event):
         """Test creating a namespace that already exists."""
         self.perform_admin_authentication('unittest-password')
 
-        pre_existing_namespace = Namespace.create('duplicate-namespace-create')
+        with mock_create_audit_event:
+            pre_existing_namespace = Namespace.create('duplicate-namespace-create')
 
         self.selenium_instance.get(self.get_url('/create-namespace'))
 

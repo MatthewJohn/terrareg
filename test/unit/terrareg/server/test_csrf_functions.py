@@ -1,14 +1,14 @@
 
 import datetime
+from unittest import mock
 
 import pytest
 
 import terrareg.errors
 from test.unit.terrareg import TerraregUnitTest
 from test import client, app_context, test_request_context
-from terrareg.server import (
-    AuthenticationType, check_csrf_token
-)
+from terrareg.csrf import check_csrf_token
+import terrareg.auth
 
 
 class TestCSRFFunctions(TerraregUnitTest):
@@ -17,91 +17,89 @@ class TestCSRFFunctions(TerraregUnitTest):
     def test_valid_csrf_with_session(self, app_context, test_request_context, client):
         """Test checking a valid CSRF token with a session."""
         self.SERVER._app.secret_key = 'averysecretkey'
-        with app_context, test_request_context:
 
-            # Create fake session
-            test_request_context.session['csrf_token'] = 'testcsrftoken'
-            test_request_context.session['is_authenticated'] = True
-            test_request_context.session['expires'] = datetime.datetime.now() + datetime.timedelta(minutes=1)
-            test_request_context.session.modified = True
+        mock_auth_method = mock.MagicMock()
+        mock_auth_method.requires_csrf_tokens = True
 
-            assert check_csrf_token('testcsrftoken') == True
+        # Mock get_current_auth_method to return  mock auth type
+        with mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock.MagicMock(return_value=mock_auth_method)):
+            with app_context, test_request_context:
+
+                # Create fake session
+                test_request_context.session['csrf_token'] = 'testcsrftoken'
+                test_request_context.session.modified = True
+
+                assert check_csrf_token('testcsrftoken') == True
 
     def test_incorrect_csrf_with_session(self, app_context, test_request_context, client):
         """Test checking an incorrect CSRF token with a session."""
         self.SERVER._app.secret_key = 'averysecretkey'
-        with app_context, test_request_context:
 
-            # Create fake session
-            test_request_context.session['csrf_token'] = 'testcsrftoken'
-            test_request_context.session['is_authenticated'] = True
-            test_request_context.session['expires'] = datetime.datetime.now() + datetime.timedelta(minutes=1)
-            test_request_context.session.modified = True
+        mock_auth_method = mock.MagicMock()
+        mock_auth_method.requires_csrf_tokens = True
 
-            with pytest.raises(terrareg.errors.IncorrectCSRFTokenError):
-                check_csrf_token('doesnotmatch')
+        # Mock get_current_auth_method to return  mock auth type
+        with mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock.MagicMock(return_value=mock_auth_method)):
 
-    def test_empty_csrf_with_session(self, app_context, test_request_context, client):
-        """Test checking an incorrect CSRF token with a session."""
-        self.SERVER._app.secret_key = 'averysecretkey'
-        with app_context, test_request_context:
+            with app_context, test_request_context:
 
-            # Create fake session
-            test_request_context.session['csrf_token'] = ''
-            test_request_context.session['is_authenticated'] = True
-            test_request_context.session['expires'] = datetime.datetime.now() + datetime.timedelta(minutes=1)
-            test_request_context.session.modified = True
+                # Create fake session
+                test_request_context.session['csrf_token'] = 'testcsrftoken'
+                test_request_context.session.modified = True
 
-            with pytest.raises(terrareg.errors.NoSessionSetError):
-                check_csrf_token('')
+                with pytest.raises(terrareg.errors.IncorrectCSRFTokenError):
+                    check_csrf_token('doesnotmatch')
 
-    def test_invalid_csrf_without_session(self, app_context, test_request_context, client):
-        """Test checking a invalid CSRF token with a session is not established."""
-        self.SERVER._app.secret_key = 'averysecretkey'
-        with app_context, test_request_context:
-
-            with pytest.raises(terrareg.errors.NoSessionSetError):
-                check_csrf_token('doesnotmatter')
-
-    def test_csrf_ignored_with_authentication_token(self, app_context, test_request_context, client):
-        """Test checking a CSRF token is ignored when using authentication token."""
-        self.SERVER._app.secret_key = 'averysecretkey'
-        with app_context, test_request_context:
-
-            # Set global context as authentication token
-            app_context.g.authentication_type = AuthenticationType.AUTHENTICATION_TOKEN
-
-            assert check_csrf_token(None) == False
-
-    @pytest.mark.parametrize('authentication_type', [
-        (AuthenticationType.NOT_AUTHENTICATED,),
-        (AuthenticationType.NOT_CHECKED, ),
-        (AuthenticationType.SESSION_PASSWORD,),
-        (AuthenticationType.SESSION_OPENID_CONNECT,),
-        (AuthenticationType.SESSION_SAML,)]
-    )
-    def test_csrf_not_ignored_with_non_authentication_token(self, authentication_type, app_context, test_request_context, client):
-        """Test that all authentication types throw errors when CSRF is not passed."""
+    def test_missing_csrf_token(self, app_context, test_request_context, client):
+        """Test checking an missing CSRF token with a session."""
         self.SERVER._app.secret_key = 'averysecretkey'
 
-        # Test that no session is thrown when no session is present
-        with app_context, test_request_context:
+        mock_auth_method = mock.MagicMock()
+        mock_auth_method.requires_csrf_tokens = True
 
-            app_context.g.authentication_type = authentication_type
+        # Mock get_current_auth_method to return  mock auth type
+        with mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock.MagicMock(return_value=mock_auth_method)):
 
-            with pytest.raises(terrareg.errors.NoSessionSetError):
-                check_csrf_token(None)
+            with app_context, test_request_context:
 
-        # Test that incorrect CSRF token is thrown, when incorrect token is provided
-        with app_context, test_request_context:
+                # Create fake session
+                test_request_context.session.modified = True
 
-            app_context.g.authentication_type = authentication_type
+                with pytest.raises(terrareg.errors.NoSessionSetError):
+                    check_csrf_token('doesnotmatch')
 
-            # Create fake session
-            test_request_context.session['csrf_token'] = 'iscorrect'
-            test_request_context.session['is_admin_authenticated'] = True
-            test_request_context.session['expires'] = datetime.datetime.now() + datetime.timedelta(minutes=1)
-            test_request_context.session.modified = True
+    def test_missing_csrf_ignored_with_non_authenticated_sessions(self, app_context, test_request_context, client):
+        """Test that only session-based authentication types throw errors when CSRF is not passed."""
+        self.SERVER._app.secret_key = 'averysecretkey'
 
-            with pytest.raises(terrareg.errors.IncorrectCSRFTokenError):
-                check_csrf_token(None)
+        mock_auth_method = mock.MagicMock()
+        mock_auth_method.requires_csrf_tokens = False
+
+        # Mock get_current_auth_method to return  mock auth type
+        with mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock.MagicMock(return_value=mock_auth_method)):
+            # Test that incorrect CSRF token is thrown, when incorrect token is provided
+            with app_context, test_request_context:
+
+                # Create fake CSRF token in session
+                test_request_context.session['csrf_token'] = 'iscorrect'
+                test_request_context.session.modified = True
+
+                assert check_csrf_token(None) == False
+
+    def test_incorrect_csrf_ignored_with_non_authenticated_sessions(self, app_context, test_request_context, client):
+        """Test that only session-based authentication types throw errors when CSRF is not passed."""
+        self.SERVER._app.secret_key = 'averysecretkey'
+
+        mock_auth_method = mock.MagicMock()
+        mock_auth_method.requires_csrf_tokens = False
+
+        # Mock get_current_auth_method to return  mock auth type
+        with mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock.MagicMock(return_value=mock_auth_method)):
+            # Test that incorrect CSRF token is thrown, when incorrect token is provided
+            with app_context, test_request_context:
+
+                # Create fake CSRF token in session
+                test_request_context.session['csrf_token'] = 'iscorrect'
+                test_request_context.session.modified = True
+
+                assert check_csrf_token(None) == False
