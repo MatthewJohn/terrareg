@@ -20,8 +20,8 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
         with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
                 unittest.mock.patch('terrareg.config.Config.SECRET_KEY', 'averysecretkey'), \
                 unittest.mock.patch('terrareg.config.Config.ADMIN_SESSION_EXPIRY_MINS', cookie_expiry_mins), \
-                unittest.mock.patch('terrareg.server.AuditEvent.create_audit_event') as mock_create_audit_event, \
-                unittest.mock.patch('terrareg.server.Session.cleanup_old_sessions', create=True) as cleanup_old_sessions_mock:
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.models.Session.cleanup_old_sessions', create=True) as cleanup_old_sessions_mock:
             # Update real app secret key
             self.SERVER._app.secret_key = 'averysecretkey'
 
@@ -54,8 +54,8 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
         mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
         with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
                 unittest.mock.patch('terrareg.config.Config.SECRET_KEY', ''), \
-                unittest.mock.patch('terrareg.server.AuditEvent.create_audit_event') as mock_create_audit_event, \
-                unittest.mock.patch('terrareg.server.Session.cleanup_old_sessions', create=True) as cleanup_old_sessions_mock:
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.models.Session.cleanup_old_sessions', create=True) as cleanup_old_sessions_mock:
             # Update real app secret key with fake value,
             # otherwise an error would be received when checking the session.
             self.SERVER._app.secret_key = 'test'
@@ -89,7 +89,7 @@ class TestApiTerraregAdminAuthenticate(TerraregUnitTest):
         mock_auth_method.is_built_in_admin = unittest.mock.MagicMock(return_value=False)
         mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
         with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
-            unittest.mock.patch('terrareg.server.AuditEvent.create_audit_event') as mock_create_audit_event:
+            unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event:
 
             res = client.post('/v1/terrareg/auth/admin/login')
 
