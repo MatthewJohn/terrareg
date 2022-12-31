@@ -555,6 +555,7 @@ def mock_models(request):
     mock_namespace(request)
     mock_module_provider(request)
     mock_module(request)
+    mock_module_details(request)
     mock_module_version(request)
     mock_module_version_file(request)
     mock_session(request)
