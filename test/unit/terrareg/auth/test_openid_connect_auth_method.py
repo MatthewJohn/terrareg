@@ -6,11 +6,11 @@ import pytest
 
 from terrareg.auth import AuthenticationType, OpenidConnectAuthMethod, UserGroupNamespacePermissionType
 from test import BaseTest
-from test.unit.terrareg import MockNamespace, MockUserGroup, MockUserGroupNamespacePermission, setup_test_data
+from test.unit.terrareg import setup_test_data, mock_models
 from test.unit.terrareg.auth.base_session_auth_method_tests import BaseSessionAuthMethodTests
 from test.unit.terrareg.auth.base_sso_auth_method_tests import BaseSsoAuthMethodTests, test_data, user_group_data
 
-# Required as this is sued by BaseOpenidConnectAuthMethod
+# Required as this is used by BaseOpenidConnectAuthMethod
 from test import test_request_context
 
 
@@ -105,3 +105,18 @@ class TestOpenidConnectAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodT
             
             obj = OpenidConnectAuthMethod()
             assert obj.check_session_auth_type() == expected_result
+
+    @pytest.mark.parametrize('openid_username', [
+        None,
+        '',
+        'ausername'
+    ])
+    def test_get_username(self, openid_username, test_request_context):
+        """Test get_username method"""
+        with test_request_context:
+
+            test_request_context.session['openid_username'] = openid_username
+            test_request_context.session.modified = True
+
+            obj = OpenidConnectAuthMethod()
+            assert obj.get_username() == openid_username

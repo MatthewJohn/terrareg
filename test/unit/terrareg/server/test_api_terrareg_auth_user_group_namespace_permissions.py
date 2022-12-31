@@ -5,13 +5,15 @@ import unittest.mock
 
 import pytest
 
+import terrareg.audit_action
 from test.unit.terrareg import (
-    TEST_MODULE_DATA, MockUserGroup, MockUserGroupNamespacePermission,
-    mock_server_user_groups_fixture, mocked_server_namespace_fixture,
+    TEST_MODULE_DATA,
+    mock_models,
     setup_test_data, TerraregUnitTest
 )
 from terrareg.auth import UserGroupNamespacePermissionType
 from test import client, app_context, test_request_context
+import terrareg.models
 
 
 test_data = {
@@ -51,23 +53,25 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
         """Return mock method for get_current_auth_method"""
         mock_auth_method = unittest.mock.MagicMock()
         mock_auth_method.is_admin = unittest.mock.MagicMock(return_value=has_permission)
+        mock_auth_method.get_username.return_value = 'unittest-mock-username'
         mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
         return mock_get_current_auth_method, mock_auth_method
 
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_add_permission(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            test_request_context,
+            mock_models, client
         ):
-        """Test update of repository URL."""
+        """Test creating new permission using endpoint."""
         mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
         with app_context, test_request_context, client, \
-                unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+                unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event:
 
-            user_group = MockUserGroup.get_by_group_name('nopermissions')
+            user_group = terrareg.models.UserGroup.get_by_group_name('nopermissions')
             # Ensure user group doesn't have any permissions
-            assert len(MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 0
+            assert len(terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 0
 
             res = client.post(
                 '/v1/terrareg/user-groups/nopermissions/permissions/namespace1',
@@ -82,7 +86,13 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
 
             # Ensure required checks are called
             mock_auth_method.is_admin.assert_called_once()
-            permissions = MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)
+            mock_create_audit_event.assert_called_once_with(
+                action=terrareg.audit_action.AuditAction.USER_GROUP_NAMESPACE_PERMISSION_ADD,
+                object_type='UserGroupNamespacePermission',
+                object_id='nopermissions/namespace1',
+                old_value=None, new_value=None
+            )
+            permissions = terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)
             assert len(permissions) == 1
             assert permissions[0].namespace.name == 'namespace1'
             assert permissions[0].permission_type == UserGroupNamespacePermissionType.MODIFY
@@ -90,16 +100,17 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_add_permission_invalid_permission_type(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            test_request_context,
+            mock_models, client
         ):
-        """Test update of repository URL."""
+        """Test creating new permission with invalid permission type."""
         with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]):
 
-            user_group = MockUserGroup.get_by_group_name('nopermissions')
+            user_group = terrareg.models.UserGroup.get_by_group_name('nopermissions')
             # Ensure user group doesn't have any permissions
-            assert len(MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 0
+            assert len(terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 0
 
             res = client.post(
                 '/v1/terrareg/user-groups/nopermissions/permissions/namespace1',
@@ -107,22 +118,25 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
             assert res.json == {'message': 'Invalid namespace permission type'}
             assert res.status_code == 400
 
-            permissions = MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)
+            mock_create_audit_event.assert_not_called()
+
+            permissions = terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)
             assert len(permissions) == 0
 
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_add_permission_invalid_namespace(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            test_request_context,
+            mock_models, client
         ):
-        """Test update of repository URL."""
+        """Test creating new permission with invalid namespace."""
         with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]):
 
-            user_group = MockUserGroup.get_by_group_name('nopermissions')
+            user_group = terrareg.models.UserGroup.get_by_group_name('nopermissions')
             # Ensure user group doesn't have any permissions
-            assert len(MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 0
+            assert len(terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 0
 
             res = client.post(
                 '/v1/terrareg/user-groups/nopermissions/permissions/doesnotexist',
@@ -130,24 +144,27 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
             assert res.json == {'message': 'Namespace does not exist.'}
             assert res.status_code == 400
 
-            permissions = MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)
+            mock_create_audit_event.assert_not_called()
+
+            permissions = terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)
             assert len(permissions) == 0
 
 
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_add_permission_duplicate_permission(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            test_request_context,
+            mock_models, client
         ):
-        """Test update of repository URL."""
+        """Test creating duplicate permission for user group."""
         with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]):
 
-            user_group = MockUserGroup.get_by_group_name('onepermissiongroup')
+            user_group = terrareg.models.UserGroup.get_by_group_name('onepermissiongroup')
             # Ensure user group doesn't have any permissions
-            assert len(MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
-            assert MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)[0].permission_type == UserGroupNamespacePermissionType.FULL
+            assert len(terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
+            assert terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)[0].permission_type == UserGroupNamespacePermissionType.FULL
 
             res = client.post(
                 '/v1/terrareg/user-groups/onepermissiongroup/permissions/namespace1',
@@ -155,24 +172,27 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
             assert res.json == {'message': 'Permission already exists for this user_group/namespace.'}
             assert res.status_code == 400
 
+            mock_create_audit_event.assert_not_called()
+
             # Assert permissions have not been modified
-            assert len(MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
-            assert MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)[0].permission_type == UserGroupNamespacePermissionType.FULL
+            assert len(terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
+            assert terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)[0].permission_type == UserGroupNamespacePermissionType.FULL
 
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_add_permission_duplicate_permission(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            test_request_context,
+            mock_models, client
         ):
         """Test update of repository URL."""
         with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]):
 
-            user_group = MockUserGroup.get_by_group_name('onepermissiongroup')
+            user_group = terrareg.models.UserGroup.get_by_group_name('onepermissiongroup')
             # Ensure user group doesn't have any permissions
-            assert len(MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
-            assert MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)[0].permission_type == UserGroupNamespacePermissionType.FULL
+            assert len(terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
+            assert terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)[0].permission_type == UserGroupNamespacePermissionType.FULL
 
             res = client.post(
                 '/v1/terrareg/user-groups/onepermissiongroup/permissions/namespace1',
@@ -180,23 +200,26 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
             assert res.json == {'message': 'Permission already exists for this user_group/namespace.'}
             assert res.status_code == 400
 
+            mock_create_audit_event.assert_not_called()
+
             # Assert permissions have not been modified
-            assert len(MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
-            assert MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)[0].permission_type == UserGroupNamespacePermissionType.FULL
+            assert len(terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
+            assert terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)[0].permission_type == UserGroupNamespacePermissionType.FULL
 
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_add_permission_without_permission(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            test_request_context,
+            mock_models, client
         ):
-        """Test update of repository URL."""
+        """Test creating new permission without permission to perform action."""
         with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(False)[0]):
 
-            user_group = MockUserGroup.get_by_group_name('nopermissions')
+            user_group = terrareg.models.UserGroup.get_by_group_name('nopermissions')
             # Ensure user group doesn't have any permissions
-            assert len(MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 0
+            assert len(terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 0
 
             res = client.post(
                 '/v1/terrareg/user-groups/nopermissions/permissions/namespace1',
@@ -205,73 +228,87 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
                                            "It is either read-protected or not readable by the server."}
             assert res.status_code == 403
 
+            mock_create_audit_event.assert_not_called()
+
             # Assert permissions have not been modified
-            assert len(MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 0
+            assert len(terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 0
 
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_delete_permission(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            test_request_context,
+            mock_models, client
         ):
-        """Test update of repository URL."""
+        """Test deletion of permission."""
         mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
         with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
 
-            user_group = MockUserGroup.get_by_group_name('onepermissiongroup')
+            user_group = terrareg.models.UserGroup.get_by_group_name('onepermissiongroup')
             # Ensure user group doesn't have any permissions
-            assert len(MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
-            assert MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)[0].permission_type == UserGroupNamespacePermissionType.FULL
+            assert len(terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
+            assert terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)[0].permission_type == UserGroupNamespacePermissionType.FULL
 
             res = client.delete(
                 '/v1/terrareg/user-groups/onepermissiongroup/permissions/namespace1')
             assert res.json == {}
             assert res.status_code == 200
 
+            mock_create_audit_event.assert_called_once_with(
+                action=terrareg.audit_action.AuditAction.USER_GROUP_NAMESPACE_PERMISSION_DELETE,
+                object_type='UserGroupNamespacePermission',
+                object_id='onepermissiongroup/namespace1',
+                old_value=None, new_value=None
+            )
+
             mock_auth_method.is_admin.assert_called_once()
             # Assert permissions have not been modified
-            assert len(MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 0
+            assert len(terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 0
 
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_delete_non_existent_permission(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            test_request_context,
+            mock_models, client
         ):
-        """Test update of repository URL."""
+        """Test deletion of non-existent permission."""
         mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
         with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
 
-            user_group = MockUserGroup.get_by_group_name('onepermissiongroup')
+            user_group = terrareg.models.UserGroup.get_by_group_name('onepermissiongroup')
             # Ensure user group doesn't have any permissions
-            assert len(MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
-            assert MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)[0].permission_type == UserGroupNamespacePermissionType.FULL
+            assert len(terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
+            assert terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)[0].permission_type == UserGroupNamespacePermissionType.FULL
 
             res = client.delete(
                 '/v1/terrareg/user-groups/onepermissiongroup/permissions/namespace2')
             assert res.json == {'message': 'Permission does not exist.'}
             assert res.status_code == 400
 
+            mock_create_audit_event.assert_not_called()
+
             mock_auth_method.is_admin.assert_called_once()
             # Assert permissions have not been modified
-            assert len(MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
+            assert len(terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
 
     @setup_test_data(test_data, user_group_data=test_usergroup_data)
     def test_delete_without_permission(
             self, app_context,
-            test_request_context, mock_server_user_groups_fixture,
-            mocked_server_namespace_fixture, client
+            test_request_context,
+            mock_models, client
         ):
-        """Test update of repository URL."""
+        """Test deletion of permission without authorization."""
         with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(False)[0]):
 
-            user_group = MockUserGroup.get_by_group_name('onepermissiongroup')
+            user_group = terrareg.models.UserGroup.get_by_group_name('onepermissiongroup')
             # Ensure user group doesn't have any permissions
-            assert len(MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
-            assert MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)[0].permission_type == UserGroupNamespacePermissionType.FULL
+            assert len(terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
+            assert terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)[0].permission_type == UserGroupNamespacePermissionType.FULL
 
             res = client.delete(
                 '/v1/terrareg/user-groups/onepermissiongroup/permissions/namespace1')
@@ -279,5 +316,7 @@ class TestApiTerraregAuthUserGroupNamespacePermissions(TerraregUnitTest):
                                            "It is either read-protected or not readable by the server."}
             assert res.status_code == 403
 
+            mock_create_audit_event.assert_not_called()
+
             # Assert permissions have not been modified
-            assert len(MockUserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1
+            assert len(terrareg.models.UserGroupNamespacePermission.get_permissions_by_user_group(user_group)) == 1

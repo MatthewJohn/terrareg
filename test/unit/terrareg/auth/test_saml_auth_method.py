@@ -6,7 +6,7 @@ import pytest
 
 from terrareg.auth import AuthenticationType, SamlAuthMethod, UserGroupNamespacePermissionType
 from test import BaseTest
-from test.unit.terrareg import MockNamespace, MockUserGroup, MockUserGroupNamespacePermission, setup_test_data
+from test.unit.terrareg import mock_models
 from test.unit.terrareg.auth.base_session_auth_method_tests import BaseSessionAuthMethodTests
 from test.unit.terrareg.auth.base_sso_auth_method_tests import BaseSsoAuthMethodTests, test_data, user_group_data
 
@@ -91,3 +91,18 @@ class TestSamlAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodTests):
             
             obj = SamlAuthMethod()
             assert obj.check_session_auth_type() == expected_result
+
+    @pytest.mark.parametrize('saml_name_id', [
+        None,
+        '',
+        'ausername'
+    ])
+    def test_get_username(self, saml_name_id, test_request_context):
+        """Test get_username method"""
+        with test_request_context:
+
+            test_request_context.session['samlNameId'] = saml_name_id
+            test_request_context.session.modified = True
+
+            obj = SamlAuthMethod()
+            assert obj.get_username() == saml_name_id

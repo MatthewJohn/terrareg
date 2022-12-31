@@ -104,3 +104,8 @@ class TestAdminSessionAuthMethod(BaseSessionAuthMethodTests):
             
             obj = AdminSessionAuthMethod()
             assert obj.check_session_auth_type() == expected_result
+
+    def test_get_username(self):
+        """Test get_username method"""
+        obj = AdminSessionAuthMethod()
+        assert obj.get_username() == 'Built-in admin'

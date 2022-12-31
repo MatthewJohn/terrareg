@@ -7,6 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 from terrareg.database import Database
 import selenium.common
+from test import mock_create_audit_event
 
 from test.selenium import SeleniumTest
 from terrareg.models import GitProvider, ModuleVersion, Namespace, Module, ModuleProvider
@@ -28,8 +29,8 @@ class TestModuleProvider(SeleniumTest):
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
-        cls.register_patch(mock.patch('terrareg.server.ApiModuleVersionCreate._post', cls._api_version_create_mock))
-        cls.register_patch(mock.patch('terrareg.server.ApiTerraregModuleVersionPublish._post', cls._api_version_publish_mock))
+        cls.register_patch(mock.patch('terrareg.server.api.ApiModuleVersionCreate._post', cls._api_version_create_mock))
+        cls.register_patch(mock.patch('terrareg.server.api.ApiTerraregModuleVersionPublish._post', cls._api_version_publish_mock))
         cls.register_patch(cls._config_publish_api_keys_mock)
         cls.register_patch(cls._config_allow_custom_repo_urls_module_provider)
         cls.register_patch(cls._config_allow_custom_repo_urls_module_version)
@@ -936,7 +937,7 @@ module "fullypopulated" {{
         (
             '/modules/moduledetails/fullypopulated/testprovider/1.5.0',
             [
-                ['random', 'hashicorp', '', '5.2.1'],
+                ['random', 'hashicorp', '', '>= 5.2.1, < 6.0.0'],
                 ['unsafe', 'someothercompany', '', '2.0.0']
             ]
         ),
@@ -1354,21 +1355,21 @@ module "fullypopulated" {{
         file_list[2].click()
         assert file_tab_content.find_element(By.ID, 'example-file-content').text == 'variable "test" {\n  description = "test variable"\n  type = string\n}'
 
-    def test_delete_module_version(self):
+    def test_delete_module_version(self, mock_create_audit_event):
         """Test the delete version functionality in settings tab."""
 
         self.perform_admin_authentication(password='unittest-password')
 
-        # Create test module version
         namespace = Namespace(name='moduledetails')
         module = Module(namespace=namespace, name='fullypopulated')
         module_provider = ModuleProvider.get(module=module, name='testprovider')
 
-        # Create test module version
-        module_version = ModuleVersion(module_provider=module_provider, version='2.5.5')
-        module_version.prepare_module()
-        module_version.publish()
-        module_version_pk = module_version.pk
+        with mock_create_audit_event:
+            # Create test module version
+            module_version = ModuleVersion(module_provider=module_provider, version='2.5.5')
+            module_version.prepare_module()
+            module_version.publish()
+            module_version_pk = module_version.pk
 
         self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/2.5.5'))
 
@@ -1440,16 +1441,17 @@ module "fullypopulated" {{
         module_provider._cache_db_row = None
         assert module_provider.git_path == None
 
-    def test_delete_module_provider(self):
+    def test_delete_module_provider(self, mock_create_audit_event):
         """Test the delete provider functionality in settings tab."""
 
         self.perform_admin_authentication(password='unittest-password')
 
-        # Create test module version
-        namespace = Namespace(name='moduledetails')
-        module = Module(namespace=namespace, name='fullypopulated')
-        module_provider = ModuleProvider.get(module=module, name='providertodelete', create=True)
-        module_provider_pk = module_provider.pk
+        with mock_create_audit_event:
+            # Create test module version
+            namespace = Namespace(name='moduledetails')
+            module = Module(namespace=namespace, name='fullypopulated')
+            module_provider = ModuleProvider.get(module=module, name='providertodelete', create=True)
+            module_provider_pk = module_provider.pk
 
         self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/providertodelete'))
 
