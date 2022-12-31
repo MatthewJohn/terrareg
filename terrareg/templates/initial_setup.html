@@ -45,7 +45,7 @@
                     The following environment variables must be setup to be able to login:
                     <ul>
                         <li id="setup-step-auth-vars-admin-authentication-token">
-                            <code>ADMIN_AUTHENTICATION_TOKEN</code> - Token to use for authorisation to be able to modify modules in the user interface.
+                            <code>ADMIN_AUTHENTICATION_TOKEN</code> - Token to use for authorisation to be able to modify modules in the user interface. Alternatively configure SAML2 or OpenID Connect (see <a target="blank" href="https://gitlab.dockstudios.co.uk/pub/terrareg/-/blob/main/README.md">README.md</a> for more information).
                         </li>
                         <li id="setup-step-auth-vars-secret-key">
                             <code>SECRET_KEY</code> - Key used for encrypting sessions. Can be generated using: <code>python -c 'import secrets; print(secrets.token_hex())'</code>
@@ -90,7 +90,7 @@
             </header>
             <div class="card-content">
                 <div class="content">
-                    Go to the <a  href="/create-namespace">create namespace page</a> and fill out the details for the namespace.<br /><br />
+                    Go to the <a  href="/create-namespace?initial_setup=1">create namespace page</a> and fill out the details for the namespace.<br /><br />
 
                     Once completed, return back to this page and refresh.
                 </div>
@@ -110,7 +110,7 @@
             </header>
             <div class="card-content">
                 <div class="content">
-                    Go to the <a href="/create-module">create module page</a> and fill out the details for the module.<br /><br />
+                    Go to the <a href="/create-module?initial_setup=1">create module page</a> and fill out the details for the module.<br /><br />
 
                     Once completed, return back to this page and refresh.
                 </div>

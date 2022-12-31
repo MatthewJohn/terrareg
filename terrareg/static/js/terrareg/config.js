@@ -111,3 +111,11 @@ function failedResponseToErrorString(response) {
         return 'An unexpected error occurred';
     }
 }
+
+/*
+ * Obtain object of URL get parameters
+ */
+function getUrlParams() {
+    const urlSearchParams = new URLSearchParams(window.location.search);
+    return Object.fromEntries(urlSearchParams.entries());;
+}
