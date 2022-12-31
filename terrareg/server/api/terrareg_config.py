@@ -2,6 +2,7 @@
 import terrareg.config
 import terrareg.openid_connect
 import terrareg.saml
+import terrareg.auth
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 
 
@@ -24,11 +25,11 @@ class ApiTerraregConfig(ErrorCatchingResource):
             'DISABLE_TERRAREG_EXCLUSIVE_LABELS': config.DISABLE_TERRAREG_EXCLUSIVE_LABELS,
             'ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER': config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
             'ALLOW_CUSTOM_GIT_URL_MODULE_VERSION': config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION,
-            'ADMIN_AUTHENTICATION_TOKEN_ENABLED': bool(config.ADMIN_AUTHENTICATION_TOKEN),
             'SECRET_KEY_SET': bool(config.SECRET_KEY),
             'ADDITIONAL_MODULE_TABS': config.ADDITIONAL_MODULE_TABS,
             'OPENID_CONNECT_ENABLED': terrareg.openid_connect.OpenidConnect.is_enabled(),
             'OPENID_CONNECT_LOGIN_TEXT': config.OPENID_CONNECT_LOGIN_TEXT,
             'SAML_ENABLED': terrareg.saml.Saml2.is_enabled(),
-            'SAML_LOGIN_TEXT': config.SAML2_LOGIN_TEXT
+            'SAML_LOGIN_TEXT': config.SAML2_LOGIN_TEXT,
+            'ADMIN_LOGIN_ENABLED': terrareg.auth.AdminApiKeyAuthMethod.is_enabled()
         }

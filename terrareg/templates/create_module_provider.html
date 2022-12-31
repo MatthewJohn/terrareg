@@ -24,7 +24,15 @@
             }),
             contentType: 'application/json'
         }).done((res) => {
-            window.location.href = `/modules/${res.id}`
+            // Obtain get parameters from URL
+            const urlParams = getUrlParams();
+            // If parameter from initial setup page is present,
+            // redirect user back to initial setup
+            if (urlParams.initial_setup) {
+                window.location.href = '/initial-setup';
+            } else {
+                window.location.href = `/modules/${res.id}`;
+            }
         }).fail((res) => {
             $('#create-error').html(failedResponseToErrorString(res));
             $('#create-error').css('display', 'block');

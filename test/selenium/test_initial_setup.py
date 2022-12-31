@@ -72,16 +72,21 @@ class TestInitialSetup(SeleniumTest):
 
         self.check_progress_bar(0)
 
-        # Set auth token
-        with self.update_mock(self._config_admin_authentication_key_mock, 'new', 'admin-setup-password'):
-            # Reload page and ensure admin password is striked through
-            self.selenium_instance.get(self.get_url('/initial-setup'))
+        # Set auth methods
+        for auth_mock_updates in [
+            (self._config_admin_authentication_key_mock, 'new', 'admin-setup-password'),
+            (self._mock_openid_connect_is_enabled, 'return_value', True),
+            (self._mock_saml2_is_enabled, 'return_value', True)
+            ]:
+            with self.update_mock(*auth_mock_updates):
+                # Reload page and ensure admin password is striked through
+                self.selenium_instance.get(self.get_url('/initial-setup'))
 
-            admin_token_li = self.wait_for_element(By.ID, 'setup-step-auth-vars-admin-authentication-token')
-            assert self.is_striked_through(admin_token_li) == True
-            secret_key_li = self.wait_for_element(By.ID, 'setup-step-auth-vars-secret-key')
-            assert self.is_striked_through(secret_key_li) == False
-            self.check_progress_bar(10)
+                admin_token_li = self.wait_for_element(By.ID, 'setup-step-auth-vars-admin-authentication-token')
+                assert self.is_striked_through(admin_token_li) == True
+                secret_key_li = self.wait_for_element(By.ID, 'setup-step-auth-vars-secret-key')
+                assert self.is_striked_through(secret_key_li) == False
+                self.check_progress_bar(10)
 
         # Set secret key
         with self.update_mock(self._config_secret_key_mock, 'new', 'abcdefabcdef'):
@@ -125,7 +130,14 @@ class TestInitialSetup(SeleniumTest):
 
         # Click link to create module
         create_module_card_content.find_element(By.TAG_NAME, 'a').click()
-        assert self.selenium_instance.current_url == self.get_url('/create-namespace')
+        assert self.selenium_instance.current_url == self.get_url('/create-namespace?initial_setup=1')
+
+        # Fill out namespace form and click create
+        self.selenium_instance.find_element(By.ID, 'namespace-name').send_keys('unittestnamespace')
+        self.selenium_instance.find_element(By.ID, 'create-namespace-form').find_element(By.TAG_NAME, 'button').click()
+
+        # Ensure user is redirected back to initial-setup page
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/initial-setup'))
 
     def _test_create_module_step(self):
         """Test create module step."""
@@ -140,7 +152,16 @@ class TestInitialSetup(SeleniumTest):
 
         # Click link to create module
         create_module_card_content.find_element(By.TAG_NAME, 'a').click()
-        assert self.selenium_instance.current_url == self.get_url('/create-module')
+        assert self.selenium_instance.current_url == self.get_url('/create-module?initial_setup=1')
+
+        # Fill out form to create module and submit
+        self.selenium_instance.find_element(By.ID, 'create-module-module').send_keys('setupmodulename')
+        self.selenium_instance.find_element(By.ID, 'create-module-provider').send_keys('setupprovider')
+        self.selenium_instance.find_element(By.ID, 'create-module-git-tag-format').send_keys('v{version}')
+        self.selenium_instance.find_element(By.ID, 'create-module-form').find_element(By.TAG_NAME, 'button').click()
+
+        # Ensure user is redirected back to initial-setup page
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/initial-setup'))
 
     def _test_index_version_git_step(self, module_provider):
         """Test step for importing a module version from git."""
@@ -314,17 +335,15 @@ class TestInitialSetup(SeleniumTest):
             # Step 3 - Create a namespace
             self._test_create_namespace_step()
 
-            with mock_create_audit_event:
-                # Create a namespace
-                namespace = Namespace.create('unittestnamespace')
+            # Get namespace object
+            namespace = Namespace.get('unittestnamespace')
 
             # Step 4 - Create a module
             self._test_create_module_step()
 
-            with mock_create_audit_event:
-                # Create module provider
-                module = Module(namespace=namespace, name='setupmodulename')
-                module_provider = ModuleProvider.get(module=module, name='setupprovider', create=True)
+            # Get module provider object
+            module = Module(namespace=namespace, name='setupmodulename')
+            module_provider = ModuleProvider.get(module=module, name='setupprovider')
 
             # Step 5a. - Index module version from git
             self._test_index_version_git_step(module_provider)
