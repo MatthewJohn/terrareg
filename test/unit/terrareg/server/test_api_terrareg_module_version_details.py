@@ -1,5 +1,9 @@
 
+import json
 from unittest import mock
+
+import pytest
+
 from test.unit.terrareg import (
     mock_models,
     setup_test_data, TerraregUnitTest,
@@ -217,6 +221,32 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
         }
 
         assert res.status_code == 200
+
+    @setup_test_data()
+    def test_existing_module_version_with_custom_links(self, client, mock_models):
+        """Test endpoint with custom links configured"""
+
+        with mock.patch('terrareg.config.Config.MODULE_LINKS', json.dumps([
+                    {"text": "Placeholders in text module:{module} provider:{provider} ns:{namespace}",
+                     "url": "https://example.com/placeholders-in-link/{namespace}/{module}-{provider}/end"},
+                    {"text": "Link that does not apply",
+                     "url": "https://mydomain.example.com/",
+                     "namespaces": ["not-the-namespace", "another-namespace"]},
+                    {"text": "Link that applies to this namespace",
+                     "url": "https://applies-to-this-module.com",
+                     "namespaces": ["another-namespace", "testnamespace", "another-another-one"]}
+                ])):
+
+            res = client.get('/v1/terrareg/modules/testnamespace/onlybeta/testprovider/2.2.4-beta')
+
+            assert res.json.get("custom_links") == [
+                {"text": "Placeholders in text module:onlybeta provider:testprovider ns:testnamespace",
+                 "url": "https://example.com/placeholders-in-link/testnamespace/onlybeta-testprovider/end"},
+                {"text": "Link that applies to this namespace",
+                 "url": "https://applies-to-this-module.com"},
+            ]
+
+            assert res.status_code == 200
 
     @setup_test_data()
     def test_non_existent_namespace(self, client, mock_models):
