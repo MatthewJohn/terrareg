@@ -1,4 +1,5 @@
 
+import json
 from unittest import mock
 
 import pytest
@@ -23,6 +24,7 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'version': '1.0.0', 'provider': 'testprovider',
             'description': 'Mock description',
             'source': None,
+            'custom_links': [],
             'published_at': '2020-01-01T23:18:12',
             'downloads': 0, 'verified': True, 'trusted': False, 'internal': False,
             'root': {
@@ -49,6 +51,32 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
         }
 
         assert res.status_code == 200
+
+    @setup_test_data()
+    def test_existing_module_provider_with_custom_links(self, client, mock_models):
+        """Test endpoint with custom links configured"""
+
+        with mock.patch('terrareg.config.Config.MODULE_LINKS', json.dumps([
+                    {"text": "Placeholders in text module:{module} provider:{provider} ns:{namespace}",
+                     "url": "https://example.com/placeholders-in-link/{namespace}/{module}-{provider}/end"},
+                    {"text": "Link that does not apply",
+                     "url": "https://mydomain.example.com/",
+                     "namespaces": ["not-the-namespace", "another-namespace"]},
+                    {"text": "Link that applies to this namespace",
+                     "url": "https://applies-to-this-module.com",
+                     "namespaces": ["another-namespace", "testnamespace", "another-another-one"]}
+                ])):
+
+            res = client.get('/v1/terrareg/modules/testnamespace/lonelymodule/testprovider')
+
+            assert res.json.get("custom_links") == [
+                {"text": "Placeholders in text module:lonelymodule provider:testprovider ns:testnamespace",
+                 "url": "https://example.com/placeholders-in-link/testnamespace/lonelymodule-testprovider/end"},
+                {"text": "Link that applies to this namespace",
+                 "url": "https://applies-to-this-module.com"},
+            ]
+
+            assert res.status_code == 200
 
     @setup_test_data()
     @pytest.mark.parametrize('security_issues_enabled,expected_security_issues,expected_security_results', [
@@ -108,6 +136,7 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
                 'version': '1.0.0', 'provider': 'testprovider',
                 'description': 'Mock description',
                 'source': None,
+                'custom_links': [],
                 'published_at': '2020-01-01T23:18:12',
                 'downloads': 0, 'verified': False, 'trusted': False, 'internal': False,
                 'root': {

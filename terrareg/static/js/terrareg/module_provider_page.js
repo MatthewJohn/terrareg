@@ -1607,6 +1607,23 @@ function setSourceUrl(sourceUrl) {
 }
 
 /*
+ * Set custom links
+ *
+ * @param moduleDetails
+ */
+function populateCustomLinks(moduleDetails) {
+    let customLinkParent = $('#custom-links');
+    for (let linkDetails of moduleDetails.custom_links) {
+        let link = $('<a></a>');
+        link.addClass('custom-link');
+        link.attr('href', linkDetails.url);
+        link.text(linkDetails.text);
+        customLinkParent.append(link);
+        customLinkParent.append('<br />');
+    }
+}
+
+/*
  * Populate submodule selection options
  *
  * @param moduleDetails Terrareg module details
@@ -2097,6 +2114,7 @@ async function setupRootModulePage(data) {
         populateTerraformUsageExample(moduleDetails);
         populateDownloadSummary(moduleDetails);
         setSourceUrl(moduleDetails.display_source_url);
+        populateCustomLinks(moduleDetails);
     }
 
     tabFactory.renderTabs();
