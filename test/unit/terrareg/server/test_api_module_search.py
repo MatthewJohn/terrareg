@@ -2,7 +2,7 @@
 from terrareg.module_search import ModuleSearch, ModuleSearchResults
 from terrareg.filters import NamespaceTrustFilter
 from test.unit.terrareg import (
-    setup_test_data, TerraregUnitTest
+    setup_test_data, TerraregUnitTest, mock_models
 )
 from test import client
 from . import mocked_search_module_providers
@@ -11,7 +11,7 @@ import terrareg.models
 
 class TestApiModuleSearch(TerraregUnitTest):
 
-    def test_with_no_params(self, client, mocked_search_module_providers):
+    def test_with_no_params(self, client, mocked_search_module_providers, mock_models):
         """Test ApiModuleSearch with no params"""
         res = client.get('/v1/modules/search')
         assert res.status_code == 400
@@ -30,7 +30,7 @@ class TestApiModuleSearch(TerraregUnitTest):
             namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
             offset=0, limit=10)
 
-    def test_with_limit_offset(self, client, mocked_search_module_providers):
+    def test_with_limit_offset(self, client, mocked_search_module_providers, mock_models):
         """Call with limit and offset"""
         res = client.get('/v1/modules/search?q=test&offset=23&limit=12')
 
@@ -43,7 +43,7 @@ class TestApiModuleSearch(TerraregUnitTest):
             namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
             offset=23, limit=12)
 
-    def test_with_provider(self, client, mocked_search_module_providers):
+    def test_with_provider(self, client, mocked_search_module_providers, mock_models):
         """Call with provider filter"""
         res = client.get('/v1/modules/search?q=test&provider=testprovider')
 
@@ -69,7 +69,7 @@ class TestApiModuleSearch(TerraregUnitTest):
             namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
             offset=0, limit=10)
 
-    def test_with_namespace(self, client, mocked_search_module_providers):
+    def test_with_namespace(self, client, mocked_search_module_providers, mock_models):
         """Call with namespace filter"""
         res = client.get('/v1/modules/search?q=test&namespace=testnamespace')
 
@@ -82,7 +82,7 @@ class TestApiModuleSearch(TerraregUnitTest):
             namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
             offset=0, limit=10)
 
-    def test_with_multiple_namespaces(self, client, mocked_search_module_providers):
+    def test_with_multiple_namespaces(self, client, mocked_search_module_providers, mock_models):
         """Call with namespace filter"""
         res = client.get('/v1/modules/search?q=test&namespace=testnamespace&namespace=unittestnamespace2')
 
@@ -95,7 +95,7 @@ class TestApiModuleSearch(TerraregUnitTest):
             namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
             offset=0, limit=10)
 
-    def test_with_namespace_trust_filters(self, client, mocked_search_module_providers):
+    def test_with_namespace_trust_filters(self, client, mocked_search_module_providers, mock_models):
         """Call with trusted namespace/contributed filters"""
         for namespace_filter in [['&trusted_namespaces=false', []],
                                 ['&trusted_namespaces=true', [NamespaceTrustFilter.TRUSTED_NAMESPACES]],
@@ -117,7 +117,7 @@ class TestApiModuleSearch(TerraregUnitTest):
                 namespace_trust_filters=namespace_filter[1],
                 offset=0, limit=10)
 
-    def test_with_verified_false(self, client, mocked_search_module_providers):
+    def test_with_verified_false(self, client, mocked_search_module_providers, mock_models):
         """Call with verified flag as false"""
         res = client.get('/v1/modules/search?q=test&verified=false')
 
@@ -130,7 +130,7 @@ class TestApiModuleSearch(TerraregUnitTest):
             namespace_trust_filters=NamespaceTrustFilter.UNSPECIFIED,
             offset=0, limit=10)
 
-    def test_with_verified_true(self, client, mocked_search_module_providers):
+    def test_with_verified_true(self, client, mocked_search_module_providers, mock_models):
         """Test call with verified as true"""
         res = client.get('/v1/modules/search?q=test&verified=true')
 
@@ -144,7 +144,7 @@ class TestApiModuleSearch(TerraregUnitTest):
             offset=0, limit=10)
 
     @setup_test_data()
-    def test_with_single_module_response(self, client, mocked_search_module_providers):
+    def test_with_single_module_response(self, client, mocked_search_module_providers, mock_models):
         """Test return of single module module"""
         namespace = terrareg.models.Namespace(name='testnamespace')
         module = terrareg.models.Module(namespace=namespace, name='mock-module')
@@ -175,7 +175,7 @@ class TestApiModuleSearch(TerraregUnitTest):
         }
 
     @setup_test_data()
-    def test_with_multiple_module_response(self, client, mocked_search_module_providers):
+    def test_with_multiple_module_response(self, client, mocked_search_module_providers, mock_models):
         """Test multiple modules in results"""
         namespace = terrareg.models.Namespace(name='testnamespace')
         module = terrareg.models.Module(namespace=namespace, name='mock-module')
@@ -206,7 +206,7 @@ class TestApiModuleSearch(TerraregUnitTest):
         }
 
     @setup_test_data()
-    def test_with_next_offset(self, client, mocked_search_module_providers):
+    def test_with_next_offset(self, client, mocked_search_module_providers, mock_models):
         """Test multiple modules in results"""
         namespace = terrareg.models.Namespace(name='testnamespace')
         module = terrareg.models.Module(namespace=namespace, name='mock-module')
