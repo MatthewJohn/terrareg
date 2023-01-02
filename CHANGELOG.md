@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.48.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.47.3...v2.48.0) (2022-12-31)
+
+
+### Features
+
+* Add ability to provide custom links on module provider pages ([3cfdd2b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3cfdd2be03a2d56d4918a8f4ddacc4ba6413576e)), closes [#275](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/275)
+
 ## [2.47.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.47.2...v2.47.3) (2022-12-31)
 
 
