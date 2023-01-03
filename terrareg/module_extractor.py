@@ -108,6 +108,14 @@ class ModuleExtractor:
 
         return tfsec_results
 
+    def _run_tf_init(self, module_path):
+        """Perform terraform init"""
+        try:
+            subprocess.check_call(["terraform-1.2.9", "init"], cwd=module_path)
+        except subprocess.CalledProcessError:
+            return False
+        return True
+
     def _run_inframap(self, module_path):
         """Run inframap and generate graphiz"""
         try:
@@ -117,7 +125,7 @@ class ModuleExtractor:
             cwd=module_path)
         except subprocess.CalledProcessError as exc:
             raise UnableToProcessTerraformError("Failed to run inframap")
-        
+
         return graph_file
 
     @staticmethod
@@ -243,7 +251,8 @@ class ModuleExtractor:
         tf_docs = self._run_terraform_docs(submodule_dir)
         tfsec = self._run_tfsec(submodule_dir)
         readme_content = self._get_readme_content(submodule_dir)
-        inframap = self._run_inframap(submodule_dir)
+        if self._run_tf_init(submodule_dir):
+            inframap = self._run_inframap(submodule_dir)
 
         infracost = None
         # Run infracost on examples, if API key is set
@@ -433,7 +442,8 @@ class ModuleExtractor:
         tfsec = self._run_tfsec(self.module_directory)
         readme_content = self._get_readme_content(self.module_directory)
 
-        inframap = self._run_inframap(self.module_directory)
+        if self._run_tf_init(self.module_directory):
+            inframap = self._run_inframap(self.module_directory)
 
         # Check for any terrareg metadata files
         terrareg_metadata = self._get_terrareg_metadata(self.module_directory)
