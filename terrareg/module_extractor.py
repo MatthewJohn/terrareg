@@ -108,6 +108,18 @@ class ModuleExtractor:
 
         return tfsec_results
 
+    def _run_inframap(self, module_path):
+        """Run inframap and generate graphiz"""
+        try:
+            graph_file = subprocess.check_output([
+                "inframap", "generate", ".", "--hcl"
+            ],
+            cwd=module_path)
+        except subprocess.CalledProcessError as exc:
+            raise UnableToProcessTerraformError("Failed to run inframap")
+        
+        return graph_file
+
     @staticmethod
     def _get_readme_content(module_path):
         """Obtain README contents for given module."""
@@ -231,6 +243,7 @@ class ModuleExtractor:
         tf_docs = self._run_terraform_docs(submodule_dir)
         tfsec = self._run_tfsec(submodule_dir)
         readme_content = self._get_readme_content(submodule_dir)
+        inframap = self._run_inframap(submodule_dir)
 
         infracost = None
         # Run infracost on examples, if API key is set
@@ -419,6 +432,8 @@ class ModuleExtractor:
         terraform_docs = self._run_terraform_docs(self.module_directory)
         tfsec = self._run_tfsec(self.module_directory)
         readme_content = self._get_readme_content(self.module_directory)
+
+        inframap = self._run_inframap(self.module_directory)
 
         # Check for any terrareg metadata files
         terrareg_metadata = self._get_terrareg_metadata(self.module_directory)
