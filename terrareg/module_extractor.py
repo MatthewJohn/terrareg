@@ -120,7 +120,7 @@ class ModuleExtractor:
         """Run inframap and generate graphiz"""
         try:
             graph_file = subprocess.check_output([
-                "inframap", "generate", ".", "--hcl"
+                "inframap", "generate", ".", "--hcl", "--raw", "--clean=false"
             ],
             cwd=module_path)
         except subprocess.CalledProcessError as exc:
