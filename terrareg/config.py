@@ -632,6 +632,13 @@ class Config:
         """
         return self.convert_boolean(os.environ.get('SAML2_DEBUG', 'False'))
 
+    @property
+    def DEFAULT_TERRAFORM_VERSION(self):
+        """
+        Default version of Terraform that will be used to extract module, if terraform required_version has not been specified.
+        """
+        return os.environ.get("DEFAULT_TERRAFORM_VERSION", "1.3.6")
+
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""
         if string.lower() in ['true', 'yes', '1']:

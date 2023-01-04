@@ -1,6 +1,8 @@
 """Provide extraction method of modules."""
 
+from contextlib import contextmanager
 import os
+import threading
 from typing import Type
 import tempfile
 import zipfile
@@ -36,6 +38,7 @@ class ModuleExtractor:
 
     TERRAREG_METADATA_FILES = ['terrareg.json', '.terrareg.json']
     TERRAFORM_BINARY = "terraform-1.2.9"
+    TERRAFORM_LOCK = threading.Lock()
 
     def __init__(self, module_version: ModuleVersion):
         """Create temporary directories and store member variables."""
@@ -87,6 +90,30 @@ class ModuleExtractor:
             raise UnableToProcessTerraformError('An error occurred whilst processing the terraform code.')
 
         return json.loads(terradocs_output)
+
+    @contextmanager
+    def _switch_terraform_versions(self, module_path):
+        """Switch terraform to required version for module"""
+        # Wait for global lock on terraform, so that only
+        # instance can run terraform at a time
+        ModuleExtractor.TERRAFORM_LOCK.acquire(blocking=True, timeout=60)
+        try:
+            default_terraform_version = Config().DEFAULT_TERRAFORM_VERSION
+            tfswitch_env = os.environ.copy()
+
+            if default_terraform_version:
+                tfswitch_env["TF_VERSION"] = default_terraform_version
+
+            # Run tfswitch
+            subprocess.check_output(
+                ["tfswitch"],
+                env=tfswitch_env,
+                cwd=module_path
+            )
+
+            yield
+        finally:
+            ModuleExtractor.TERRAFORM_LOCK.release()
 
     def _run_tfsec(self, module_path):
         """Run tfsec and return output."""
@@ -295,8 +322,9 @@ class ModuleExtractor:
         readme_content = self._get_readme_content(submodule_dir)
 
         terraform_graph = graph_json = None
-        if self._run_tf_init(submodule_dir):
-            terraform_graph, graph_json = self._get_graph_data(submodule_dir)
+        with self._switch_terraform_versions(submodule_dir):
+            if self._run_tf_init(submodule_dir):
+                terraform_graph, graph_json = self._get_graph_data(submodule_dir)
 
         infracost = None
         # Run infracost on examples, if API key is set
@@ -489,8 +517,9 @@ class ModuleExtractor:
         readme_content = self._get_readme_content(self.module_directory)
 
         terraform_graph = graph_json = None
-        if self._run_tf_init(self.module_directory):
-            terraform_graph, graph_json = self._get_graph_data(self.module_directory)
+        with self._switch_terraform_versions(self.module_directory):
+            if self._run_tf_init(self.module_directory):
+                terraform_graph, graph_json = self._get_graph_data(self.module_directory)
 
         # Check for any terrareg metadata files
         terrareg_metadata = self._get_terrareg_metadata(self.module_directory)

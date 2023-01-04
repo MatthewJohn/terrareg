@@ -230,6 +230,15 @@ Whether flask and sqlalchemy is setup in debug mode.
 Default: `False`
 
 
+### DEFAULT_TERRAFORM_VERSION
+
+
+Default version of Terraform that will be used to extract module, if terraform required_version has not been specified.
+
+
+Default: `1.3.6`
+
+
 ### DELETE_EXTERNALLY_HOSTED_ARTIFACTS
 
 
