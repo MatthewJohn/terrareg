@@ -35,6 +35,7 @@ class ModuleExtractor:
     """Provide extraction method of moduls."""
 
     TERRAREG_METADATA_FILES = ['terrareg.json', '.terrareg.json']
+    TERRAFORM_BINARY = "terraform-1.2.9"
 
     def __init__(self, module_version: ModuleVersion):
         """Create temporary directories and store member variables."""
@@ -111,22 +112,57 @@ class ModuleExtractor:
     def _run_tf_init(self, module_path):
         """Perform terraform init"""
         try:
-            subprocess.check_call(["terraform-1.2.9", "init"], cwd=module_path)
+            subprocess.check_call([self.TERRAFORM_BINARY, "init"], cwd=module_path)
         except subprocess.CalledProcessError:
             return False
         return True
 
-    def _run_inframap(self, module_path):
+    def _transform_terraform_graph(self, graph_data):
+        """Convert Terraform graph data to usable data"""
+        trimmed_graph_data = ""
+        for line in graph_data.split("\n"):
+            # Remove any references to variables, outputs or locals from graph
+            if " output" not in line and ".var." not in line and ".output." not in line and ".local." not in line:
+                trimmed_graph_data += line + "\n"
+
+        # Run graph through terraform-graph-beautifier
+        graph_json = None
+        try:
+            graph_json = subprocess.check_output(
+                ["terraform-graph-beautifier", "--embed-modules=false", "--output-type=cyto-json"],
+                input=trimmed_graph_data.encode("utf-8")
+            )
+
+            # Trim trailing whitespace
+            graph_json = graph_json.decode("utf-8").strip()
+        except subprocess.CalledProcessError as exc:
+            print("Failed to call terraform-graph-beautifier:", str(exc))
+
+        # Check output is valid JSON
+        if graph_json:
+            try:
+                json.loads(graph_json)
+            except:
+                print("Graph json doesn't appear to be valid:", graph_json)
+                graph_json = None
+
+        return graph_json
+
+    def _get_graph_data(self, module_path):
         """Run inframap and generate graphiz"""
         try:
-            graph_file = subprocess.check_output([
-                "inframap", "generate", ".", "--hcl", "--raw", "--clean=false"
-            ],
-            cwd=module_path)
+            terraform_graph_data = subprocess.check_output(
+                [self.TERRAFORM_BINARY, "graph"],
+                cwd=module_path
+            )
         except subprocess.CalledProcessError as exc:
-            raise UnableToProcessTerraformError("Failed to run inframap")
+            print("Failed to generate Terraform graph data:", str(exc))
+            raise UnableToProcessTerraformError("Failed to generate Terraform graph data")
 
-        return graph_file
+        terraform_graph_data = terraform_graph_data.decode("utf-8")
+        converted_graph_file = self._transform_terraform_graph(terraform_graph_data)
+
+        return terraform_graph_data, converted_graph_file
 
     @staticmethod
     def _get_readme_content(module_path):
@@ -201,14 +237,16 @@ class ModuleExtractor:
             'zip',
             self.extract_directory)
 
-    def _create_module_details(self, readme_content, terraform_docs, tfsec, infracost=None):
+    def _create_module_details(self, readme_content, terraform_docs, tfsec, terraform_graph, graph_json, infracost=None):
         """Create module details row."""
         module_details = ModuleDetails.create()
         module_details.update_attributes(
             readme_content=readme_content,
             terraform_docs=json.dumps(terraform_docs),
             tfsec=json.dumps(tfsec),
-            infracost=json.dumps(infracost) if infracost else None
+            infracost=json.dumps(infracost) if infracost else None,
+            terraform_graph=terraform_graph,
+            graph_json=graph_json
         )
         return module_details
 
@@ -218,13 +256,17 @@ class ModuleExtractor:
         readme_content: str,
         terraform_docs: dict,
         tfsec: dict,
-        terrareg_metadata: dict) -> int:
+        terrareg_metadata: dict,
+        terraform_graph: str,
+        graph_json: str) -> int:
         """Insert module into DB, overwrite any pre-existing"""
         # Create module details row
         module_details = self._create_module_details(
             terraform_docs=terraform_docs,
             readme_content=readme_content,
-            tfsec=tfsec
+            tfsec=tfsec,
+            terraform_graph=terraform_graph,
+            graph_json=graph_json
         )
         
         # Update attributes of module_version in database
@@ -251,8 +293,10 @@ class ModuleExtractor:
         tf_docs = self._run_terraform_docs(submodule_dir)
         tfsec = self._run_tfsec(submodule_dir)
         readme_content = self._get_readme_content(submodule_dir)
+
+        terraform_graph = graph_json = None
         if self._run_tf_init(submodule_dir):
-            inframap = self._run_inframap(submodule_dir)
+            terraform_graph, graph_json = self._get_graph_data(submodule_dir)
 
         infracost = None
         # Run infracost on examples, if API key is set
@@ -267,7 +311,9 @@ class ModuleExtractor:
             terraform_docs=tf_docs,
             readme_content=readme_content,
             tfsec=tfsec,
-            infracost=infracost
+            infracost=infracost,
+            terraform_graph=terraform_graph,
+            graph_json=graph_json
         )
 
         submodule.update_attributes(
@@ -442,8 +488,9 @@ class ModuleExtractor:
         tfsec = self._run_tfsec(self.module_directory)
         readme_content = self._get_readme_content(self.module_directory)
 
+        terraform_graph = graph_json = None
         if self._run_tf_init(self.module_directory):
-            inframap = self._run_inframap(self.module_directory)
+            terraform_graph, graph_json = self._get_graph_data(self.module_directory)
 
         # Check for any terrareg metadata files
         terrareg_metadata = self._get_terrareg_metadata(self.module_directory)
@@ -459,7 +506,9 @@ class ModuleExtractor:
             readme_content=readme_content,
             tfsec=tfsec,
             terraform_docs=terraform_docs,
-            terrareg_metadata=terrareg_metadata
+            terrareg_metadata=terrareg_metadata,
+            terraform_graph=terraform_graph,
+            graph_json=graph_json
         )
 
         # Generate the archive, unless the module has a git clone URL and

@@ -956,7 +956,7 @@ class ModuleDetails:
         """Update DB row."""
         # Check for any blob and encode the values
         for kwarg in kwargs:
-            if kwarg in ['readme_content', 'terraform_docs', 'tfsec', 'infracost']:
+            if kwarg in ['readme_content', 'terraform_docs', 'tfsec', 'infracost', 'terraform_graph', 'graph_json']:
                 kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
 
         db = Database.get()
