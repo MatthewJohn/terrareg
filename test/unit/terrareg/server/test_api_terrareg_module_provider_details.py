@@ -47,7 +47,8 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'security_failures': 0,
             'security_results': None,
             'git_path': None,
-            'additional_tab_files': {}
+            'additional_tab_files': {},
+            'graph_url': '/modules/testnamespace/lonelymodule/testprovider/1.0.0/graph'
         }
 
         assert res.status_code == 200
@@ -159,7 +160,8 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
                 'security_failures': expected_security_issues,
                 'security_results': expected_security_results,
                 'git_path': None,
-                'additional_tab_files': {}
+                'additional_tab_files': {},
+                'graph_url': '/modules/testnamespace/withsecurityissues/testprovider/1.0.0/graph'
             }
 
             assert res.status_code == 200
