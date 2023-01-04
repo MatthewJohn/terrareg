@@ -244,6 +244,23 @@ class Server(BaseHandler):
             '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/example/<path:submodule_path>'
         )(self._view_serve_example)
 
+        # Routes for graph
+        self._app.route(
+            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph',
+        )(self._view_serve_graph)
+        self._app.route(
+            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodule/<path:submodule_path>/graph',
+        )(self._view_serve_graph)
+        self._app.route(
+            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/example/<path:example_path>/graph'
+        )(self._view_serve_graph)
+        self._api.add_resource(
+            ApiTerraregGraphData,
+            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data',
+            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodule/<path:submodule_path>/graph/data',
+            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/example/<path:example_path>/graph/data'
+        )
+
 
         # OpenID connect endpoints
         self._api.add_resource(
@@ -546,6 +563,49 @@ class Server(BaseHandler):
     def _view_serve_initial_setup(self):
         """Rendew view for initial setup."""
         return self._render_template('initial_setup.html')
+
+    def _view_serve_graph(self, namespace, name, provider, version, submodule_path=None, example_path=None):
+        """Render view for graph"""
+        namespace_obj = terrareg.models.Namespace.get(namespace)
+        if namespace_obj is None:
+            return self._namespace_404(namespace_name=namespace)
+
+        module = terrareg.models.Module(namespace=namespace_obj, name=name)
+        module_provider = terrareg.models.ModuleProvider.get(module=module, name=provider)
+
+        if module_provider is None:
+            return self._module_provider_404(
+                namespace=namespace_obj,
+                module=module,
+                module_provider_name=provider
+            )
+
+        module_version = terrareg.models.ModuleVersion.get(module_provider=module_provider, version=version)
+        if module_version is None:
+            return self._module_provider_404(
+                namespace=namespace_obj,
+                module=module,
+                module_provider_name=provider
+            )
+
+        if example_path:
+            example = terrareg.models.Example.get(module_version=module_version, module_path=example_path)
+            if not example:
+                return self._module_provider_404(
+                    namespace=namespace_obj,
+                    module=module,
+                    module_provider_name=provider
+                )
+        elif submodule_path:
+            submodule = terrareg.models.Submodule.get(module_version=module_version, module_path=submodule_path)
+            if not submodule:
+                return self._module_provider_404(
+                    namespace=namespace_obj,
+                    module=module,
+                    module_provider_name=provider
+                )
+
+        return self._render_template("graph.html")
 
     def _view_serve_namespace_list(self):
         """Render view for display module."""

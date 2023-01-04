@@ -1,0 +1,90 @@
+
+{% extends 'template.html' %}
+
+{% block title %}Create Module{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block header %}
+
+<script src="/static/js/cytoscape/layout-base.js"></script>
+<script src="/static/js/cytoscape/cytoscape.min-3.26.0.js"></script>
+<script src="/static/js/cytoscape/cose-base.js"></script>
+<script src="/static/js/cytoscape/cytoscape-fcose.js"></script>
+
+<style>
+    #cy {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+    }
+</style>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div id="cy">
+</div>
+
+<div id="noGraphError">
+</div>
+
+<script>
+
+    // Obtain graph data from relative URL
+    jQuery.get('./graph/data').then((graphData) => {
+        if (graphData) {
+            const cy = cytoscape({
+                container: document.getElementById('cy'),
+                layout: {
+                    name: 'fcose',
+                    quality: "proof",
+                    avoidOverlap: true,
+                    fit: false
+                },
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'label': 'data(label)',
+                            'shape': 'rectangle',
+
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+
+                            'width': 'label',
+                            'height': 'label',
+                            'padding': '5px',
+
+                            'border-color': '#000000',
+                            'background-color': '#7681B3',
+                            'color': '#FFFFFF'
+                        }
+                    },
+                    {
+                        selector: 'node.module',
+                        style: {
+                            'color': '#000000',
+                            'background-color': '#F8F7F9',
+                            'font-weight': 'bold',
+                            'text-valign': 'top',
+                        }
+                    }
+                ],
+
+                // Decrease wheel sensitivity to allow more granular scrolling
+                wheelSensitivity: 0.5,
+                zoom: 0.5,
+                pan: { x: 700, y: 200 },
+
+                elements: graphData
+            });
+        } else {
+            $('#noGraphError').text("There is not graph data available for this module version.")
+        }
+    });
+</script>
+
+{% endblock %}

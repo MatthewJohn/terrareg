@@ -927,6 +927,14 @@ class ModuleDetails:
             return json.loads(db_row['infracost'])
         return {}
 
+    @property
+    def graph_json(self):
+        """Return graph JSON for resources."""
+        db_row = self._get_db_row()
+        if db_row is not None and db_row["graph_json"]:
+            return json.loads(db_row["graph_json"])
+        return None
+
     def __init__(self, id: int):
         """Store member variables."""
         self._id = id
@@ -2477,7 +2485,8 @@ class ModuleVersion(TerraformSpecsObject):
             "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
             "security_results": tfsec_failures,
             "additional_tab_files": tab_file_mapping,
-            "custom_links": self.custom_links
+            "custom_links": self.custom_links,
+            "graph_url": f"/modules/{self.id}/graph"
         })
         return api_details
 
@@ -2770,7 +2779,8 @@ class BaseSubmodule(TerraformSpecsObject):
         api_details.update({
             "display_source_url": source_browse_url if source_browse_url else self._module_version.get_source_base_url(),
             "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
-            "security_results": tfsec_failures
+            "security_results": tfsec_failures,
+            "graph_url": f"/modules/{self.module_version.id}/{self.TYPE}/{self.path}/graph"
         })
         return api_details
 

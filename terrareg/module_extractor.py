@@ -149,7 +149,7 @@ class ModuleExtractor:
         trimmed_graph_data = ""
         for line in graph_data.split("\n"):
             # Remove any references to variables, outputs or locals from graph
-            if " output" not in line and ".var." not in line and ".output." not in line and ".local." not in line:
+            if " output" not in line and " var" not in line and " local" not in line and ".var." not in line and ".output." not in line and ".local." not in line:
                 trimmed_graph_data += line + "\n"
 
         # Run graph through terraform-graph-beautifier
