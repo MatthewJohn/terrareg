@@ -37,7 +37,7 @@ class ModuleExtractor:
     """Provide extraction method of moduls."""
 
     TERRAREG_METADATA_FILES = ['terrareg.json', '.terrareg.json']
-    TERRAFORM_BINARY = "terraform-1.2.9"
+    TERRAFORM_BINARY = "terraform"
     TERRAFORM_LOCK = threading.Lock()
 
     def __init__(self, module_version: ModuleVersion):
