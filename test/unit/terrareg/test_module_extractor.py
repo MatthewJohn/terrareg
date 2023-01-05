@@ -1,16 +1,18 @@
 
+import os
 import subprocess
 from unittest.main import MODULE_EXAMPLES
 import unittest.mock
 
 import pytest
-from terrareg.errors import GitCloneError
+
+import terrareg.errors
 
 from test.unit.terrareg import (
     TerraregUnitTest, setup_test_data,
     mock_models
 )
-from terrareg.module_extractor import GitModuleExtractor
+from terrareg.module_extractor import GitModuleExtractor, ModuleExtractor
 import terrareg.models
 
 
@@ -66,7 +68,7 @@ class TestGitModuleExtractor(TerraregUnitTest):
 
         with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock):
             with module_extractor as me:
-                with pytest.raises(GitCloneError) as error:
+                with pytest.raises(terrareg.errors.GitCloneError) as error:
                     me._clone_repository()
 
                 assert str(error.value) == 'Error occurred during git clone: fatal: unittest error here'
@@ -88,7 +90,7 @@ class TestGitModuleExtractor(TerraregUnitTest):
 
         with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock):
             with module_extractor as me:
-                with pytest.raises(GitCloneError) as error:
+                with pytest.raises(terrareg.errors.GitCloneError) as error:
                     me._clone_repository()
 
                 assert str(error.value) == 'Unknown error occurred during git clone'
@@ -147,3 +149,181 @@ class TestGitModuleExtractor(TerraregUnitTest):
 
         with unittest.mock.patch('terrareg.config.Config.AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION', False):
             assert module_extractor._extract_description(test_text) == None
+
+    def test_run_tf_init(self):
+        pass
+
+    def test_switch_terraform_versions(self):
+        """Test switching terraform versions."""
+        module_extractor = GitModuleExtractor(module_version=None)
+        mock_lock = unittest.mock.MagicMock()
+        mock_lock.acquire.return_value = True
+
+        with unittest.mock.patch('terrareg.module_extractor.ModuleExtractor.TERRAFORM_LOCK', mock_lock), \
+                unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', unittest.mock.MagicMock()) as check_output_mock, \
+                unittest.mock.patch('terrareg.config.Config.DEFAULT_TERRAFORM_VERSION', 'unittest-tf-version'):
+
+            with module_extractor._switch_terraform_versions(module_path='/tmp/mock-patch/to/module'):
+                pass
+
+            mock_lock.acquire.assert_called_once_with(blocking=True, timeout=60)
+            expected_env = os.environ.copy()
+            expected_env['TF_VERSION'] = "unittest-tf-version"
+            check_output_mock.assert_called_once_with(
+                ['tfswitch'],
+                env=expected_env,
+                cwd='/tmp/mock-patch/to/module'
+            )
+
+    def test_switch_terraform_versions_error(self):
+        """Test running switch_terraform_version with erorr in tfswitch"""
+        module_extractor = GitModuleExtractor(module_version=None)
+        mock_lock = unittest.mock.MagicMock()
+        mock_lock.acquire.return_value = True
+        def raise_exception(*args, **kwargs):
+            raise subprocess.CalledProcessError(cmd="test", returncode=2)
+
+        with unittest.mock.patch('terrareg.module_extractor.ModuleExtractor.TERRAFORM_LOCK', mock_lock), \
+                unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', unittest.mock.MagicMock(side_effect=raise_exception)) as check_output_mock, \
+                unittest.mock.patch('terrareg.config.Config.DEFAULT_TERRAFORM_VERSION', 'unittest-tf-version'):
+
+            with pytest.raises(terrareg.errors.TerraformVersionSwitchError):
+                with module_extractor._switch_terraform_versions(module_path='/tmp/mock-patch/to/module'):
+                    pass
+
+    def test_switch_terraform_versions_with_lock(self):
+        """Test switching terraform versions whilst Terraform locked is already aquired."""
+        module_extractor = GitModuleExtractor(module_version=None)
+        mock_lock = unittest.mock.MagicMock()
+        mock_lock.acquire.return_value = False
+
+        with unittest.mock.patch('terrareg.module_extractor.ModuleExtractor.TERRAFORM_LOCK', mock_lock), \
+                unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', unittest.mock.MagicMock()) as check_output_mock:
+            
+            with pytest.raises(terrareg.errors.UnableToGetGlobalTerraformLockError):
+                with module_extractor._switch_terraform_versions(module_path='test'):
+                    pass
+
+            mock_lock.acquire.assert_called_once_with(blocking=True, timeout=60)
+            check_output_mock.assert_not_called()
+
+    def test_get_graph_data(self):
+        """Test call to terraform graph to generate graph output"""
+        module_extractor = GitModuleExtractor(module_version=None)
+
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output',
+                                 unittest.mock.MagicMock(return_value="Output graph data".encode("utf-8"))) as mock_check_output, \
+                unittest.mock.patch('terrareg.module_extractor.ModuleExtractor._transform_terraform_graph',
+                                    unittest.mock.MagicMock(return_value="tranformed output")) as mock_transform_terraform_graph:
+
+            module_extractor._get_graph_data(module_path='/tmp/mock-patch/to/module')
+
+            mock_check_output.assert_called_once_with(
+                ['terraform', 'graph'],
+                cwd='/tmp/mock-patch/to/module'
+            )
+            mock_transform_terraform_graph.assert_called_once_with("Output graph data")
+
+    def test_get_graph_data_terraform_error(self):
+        """Test call to terraform graph with error thrown"""
+        module_extractor = GitModuleExtractor(module_version=None)
+
+        def raise_error(*args, **kwargs):
+            raise subprocess.CalledProcessError(cmd="the command", returncode=2)
+
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output',
+                                 unittest.mock.MagicMock(side_effect=raise_error)) as mock_check_output, \
+                unittest.mock.patch('terrareg.module_extractor.ModuleExtractor._transform_terraform_graph',
+                                    unittest.mock.MagicMock(return_value="tranformed output")) as mock_transform_terraform_graph:
+
+            with pytest.raises(terrareg.errors.UnableToProcessTerraformError) as exc:
+                module_extractor._get_graph_data(module_path='/tmp/mock-patch/to/module')
+
+            mock_check_output.assert_called_once_with(
+                ['terraform', 'graph'],
+                cwd='/tmp/mock-patch/to/module'
+            )
+            mock_transform_terraform_graph.assert_not_called()
+
+    @pytest.mark.parametrize("prettifier_input,expected_output", [
+        ("", None),
+        ("Invalid JSON", None),
+        ("{\"valid\": \"json\"}", "{\"valid\": \"json\"}")
+    ])
+    def test_transform_terraform_graph(self, prettifier_input, expected_output):
+        """Test transfort_terraform_graph"""
+        module_extractor = GitModuleExtractor(module_version=None)
+
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output',
+                                 unittest.mock.MagicMock(return_value=prettifier_input.encode("utf-8"))) as mock_check_output:
+
+            # Graph generated using:
+            """
+resource "aws_s3_bucket" "test" {
+  name = var.name
+}
+
+variable "name" {
+  type = string
+}
+
+output "name" {
+  value = aws_s3_bucket.test.name
+}
+"""
+
+            input_data = """
+digraph {
+    compound = "true"
+    newrank = "true"
+    subgraph "root" {
+        "[root] aws_s3_bucket.test (expand)" [label = "aws_s3_bucket.test", shape = "box"]
+        "[root] output.name" [label = "output.name", shape = "note"]
+        "[root] provider[\"registry.terraform.io/hashicorp/aws\"]" [label = "provider[\"registry.terraform.io/hashicorp/aws\"]", shape = "diamond"]
+        "[root] var.name" [label = "var.name", shape = "note"]
+        "[root] aws_s3_bucket.test (expand)" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"]"
+        "[root] output.name" -> "[root] aws_s3_bucket.test (expand)"
+        "[root] provider[\"registry.terraform.io/hashicorp/aws\"] (close)" -> "[root] aws_s3_bucket.test (expand)"
+        "[root] root" -> "[root] output.name"
+        "[root] root" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"] (close)"
+        "[root] root" -> "[root] var.name"
+    }
+}"""
+
+            res = module_extractor._transform_terraform_graph(input_data)
+            assert res == expected_output
+
+            mock_check_output.assert_called_once_with(
+                ["terraform-graph-beautifier", "--embed-modules=false", "--output-type=cyto-json"],
+                input="""
+digraph {
+    compound = "true"
+    newrank = "true"
+    subgraph "root" {
+        "[root] aws_s3_bucket.test (expand)" [label = "aws_s3_bucket.test", shape = "box"]
+        "[root] provider["registry.terraform.io/hashicorp/aws"]" [label = "provider["registry.terraform.io/hashicorp/aws"]", shape = "diamond"]
+        "[root] aws_s3_bucket.test (expand)" -> "[root] provider["registry.terraform.io/hashicorp/aws"]"
+        "[root] provider["registry.terraform.io/hashicorp/aws"] (close)" -> "[root] aws_s3_bucket.test (expand)"
+        "[root] root" -> "[root] provider["registry.terraform.io/hashicorp/aws"] (close)"
+    }
+}
+""".encode("utf-8"))
+
+    def test_transform_terraform_graph_error(self):
+        """Test transfort_terraform_graph with failing prettifier"""
+        module_extractor = GitModuleExtractor(module_version=None)
+
+        def raise_exception(*args, **kwargs):
+            raise subprocess.CalledProcessError(cmd="Error", returncode=2)
+
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output',
+                                 unittest.mock.MagicMock(side_effect=raise_exception)) as mock_check_output:
+
+            # Graph generated using:
+            res = module_extractor._transform_terraform_graph("Fake input data")
+            assert res == None
+
+            mock_check_output.assert_called_once_with(
+                ["terraform-graph-beautifier", "--embed-modules=false", "--output-type=cyto-json"],
+                input="Fake input data\n".encode("utf-8")
+            )

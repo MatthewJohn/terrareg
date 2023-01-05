@@ -27,7 +27,9 @@ from terrareg.errors import (
     UnknownFiletypeError,
     InvalidTerraregMetadataFileError,
     MetadataDoesNotContainRequiredAttributeError,
-    GitCloneError
+    GitCloneError,
+    UnableToGetGlobalTerraformLockError,
+    TerraformVersionSwitchError
 )
 from terrareg.utils import PathDoesNotExistError, safe_iglob, safe_join_paths
 from terrareg.config import Config
@@ -96,7 +98,10 @@ class ModuleExtractor:
         """Switch terraform to required version for module"""
         # Wait for global lock on terraform, so that only
         # instance can run terraform at a time
-        ModuleExtractor.TERRAFORM_LOCK.acquire(blocking=True, timeout=60)
+        if not ModuleExtractor.TERRAFORM_LOCK.acquire(blocking=True, timeout=60):
+            raise UnableToGetGlobalTerraformLockError(
+                "Unable to obtain global Terraform lock in 60 seconds"
+            )
         try:
             default_terraform_version = Config().DEFAULT_TERRAFORM_VERSION
             tfswitch_env = os.environ.copy()
@@ -105,11 +110,15 @@ class ModuleExtractor:
                 tfswitch_env["TF_VERSION"] = default_terraform_version
 
             # Run tfswitch
-            subprocess.check_output(
-                ["tfswitch"],
-                env=tfswitch_env,
-                cwd=module_path
-            )
+            try:
+                subprocess.check_output(
+                    ["tfswitch"],
+                    env=tfswitch_env,
+                    cwd=module_path
+                )
+            except subprocess.CalledProcessError as exc:
+                print("An error occured whilst running tfswitch:", str(exc))
+                raise TerraformVersionSwitchError("An error occurred whilst initialising Terraform version")
 
             yield
         finally:
@@ -166,7 +175,7 @@ class ModuleExtractor:
             print("Failed to call terraform-graph-beautifier:", str(exc))
 
         # Check output is valid JSON
-        if graph_json:
+        if graph_json is not None:
             try:
                 json.loads(graph_json)
             except:

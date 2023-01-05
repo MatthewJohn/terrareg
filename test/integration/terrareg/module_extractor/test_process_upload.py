@@ -963,6 +963,10 @@ class TestProcessUpload(TerraregIntegrationTest):
             }
         ]
 
+    def test_graph_data(self):
+        """Test graph data for uploaded module."""
+        pass
+
     @pytest.mark.skipif(terrareg.config.Config().INFRACOST_API_KEY == None, reason="Requires valid infracost API key")
     def test_uploading_module_with_infracost(self):
         """Test uploading a module with real infracost API key."""
