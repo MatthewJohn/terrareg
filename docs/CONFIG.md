@@ -675,6 +675,15 @@ set or left empty.
 Default: ``
 
 
+### TERRAFORM_ARCHIVE_MIRROR
+
+
+Mirror for obtaining version list and downloading Terraform
+
+
+Default: `https://releases.hashicorp.com/terraform`
+
+
 ### TERRAFORM_EXAMPLE_VERSION_TEMPLATE
 
 

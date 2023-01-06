@@ -639,6 +639,13 @@ class Config:
         """
         return os.environ.get("DEFAULT_TERRAFORM_VERSION", "1.3.6")
 
+    @property
+    def TERRAFORM_ARCHIVE_MIRROR(self):
+        """
+        Mirror for obtaining version list and downloading Terraform
+        """
+        return os.environ.get("TERRAFORM_ARCHIVE_MIRROR", "https://releases.hashicorp.com/terraform")
+
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""
         if string.lower() in ['true', 'yes', '1']:

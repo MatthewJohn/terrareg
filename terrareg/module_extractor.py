@@ -112,7 +112,7 @@ class ModuleExtractor:
             # Run tfswitch
             try:
                 subprocess.check_output(
-                    ["tfswitch"],
+                    ["tfswitch", "--mirror", Config().TERRAFORM_ARCHIVE_MIRROR],
                     env=tfswitch_env,
                     cwd=module_path
                 )
