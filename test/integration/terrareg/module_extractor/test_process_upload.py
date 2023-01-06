@@ -975,26 +975,37 @@ class TestProcessUpload(TerraregIntegrationTest):
 
         with test_upload as zip_file:
             with test_upload as upload_directory:
-                with open(os.path.join(upload_directory, 'main.tf'), 'w') as fh:
-                    fh.write("""
-resource "aws_s3_bucket" "test_bucket" {
-  name = var.name
-}
+                # Create main.tf in root module, example and submodule
+                for identifier, directory_structure in [
+                        ("root_module", []),
+                        ("example", ["examples", "first-example"]),
+                        ("submodule", ["modules", "first-submodule"])]:
+                    # Generate parent directories for example/submodules
+                    parent_paths = [upload_directory]
+                    for directory in directory_structure:
+                        parent_paths.append(directory)
+                        os.mkdir(os.path.join(*parent_paths))
 
-resource "aws_s3_object" "test_obj" {
+                    with open(os.path.join(*parent_paths, 'main.tf'), 'w') as fh:
+                        fh.write(f"""
+resource "aws_s3_bucket" "test_bucket" {{
+  name = var.name
+}}
+
+resource "aws_s3_object" "test_obj_{identifier}" {{
   key     = "test/s3/bucket/object/key"
   bucket  = aws_s3_bucket.test_bucket.id
   content = "Important Content"
-}
+}}
 
-variable "name" {
+variable "name" {{
   type    = string
   default = "Test value"
-}
+}}
 
-output "name" {
+output "name" {{
   value = aws_s3_bucket.test.name
-}
+}}
 
 """)
 
@@ -1008,13 +1019,51 @@ output "name" {
                 {"data": {"id": "module.root.aws_s3_bucket.test_bucket", "parent": "module.root",
                           "label": "aws_s3_bucket.test_bucket", "type": "resource"},
                  "classes": ["resource"]},
-                {"data": {"id": "module.root.aws_s3_object.test_obj", "parent": "module.root",
-                          "label": "aws_s3_object.test_obj", "type": "resource"},
+                {"data": {"id": "module.root.aws_s3_object.test_obj_root_module", "parent": "module.root",
+                          "label": "aws_s3_object.test_obj_root_module", "type": "resource"},
                  "classes": ["resource"]}
             ],
             "edges": [
-                {"data": {"id": "module.root.aws_s3_object.test_obj-module.root.aws_s3_bucket.test_bucket",
-                          "source": "module.root.aws_s3_object.test_obj",
+                {"data": {"id": "module.root.aws_s3_object.test_obj_root_module-module.root.aws_s3_bucket.test_bucket",
+                          "source": "module.root.aws_s3_object.test_obj_root_module",
+                          "target": "module.root.aws_s3_bucket.test_bucket", "sourceType": "resource", "targetType": "resource"},
+                 "classes": ["resource-resource"]}
+            ]
+        }
+
+        assert module_version.get_examples()[0].module_details.graph_json == {
+            "nodes": [
+                {"data": {"id": "module.root", "label": "module.root", "type": "module"},
+                 "classes": ["module"]},
+                {"data": {"id": "module.root.aws_s3_bucket.test_bucket", "parent": "module.root",
+                          "label": "aws_s3_bucket.test_bucket", "type": "resource"},
+                 "classes": ["resource"]},
+                {"data": {"id": "module.root.aws_s3_object.test_obj_example", "parent": "module.root",
+                          "label": "aws_s3_object.test_obj_example", "type": "resource"},
+                 "classes": ["resource"]}
+            ],
+            "edges": [
+                {"data": {"id": "module.root.aws_s3_object.test_obj_example-module.root.aws_s3_bucket.test_bucket",
+                          "source": "module.root.aws_s3_object.test_obj_example",
+                          "target": "module.root.aws_s3_bucket.test_bucket", "sourceType": "resource", "targetType": "resource"},
+                 "classes": ["resource-resource"]}
+            ]
+        }
+
+        assert module_version.get_submodules()[0].module_details.graph_json == {
+            "nodes": [
+                {"data": {"id": "module.root", "label": "module.root", "type": "module"},
+                 "classes": ["module"]},
+                {"data": {"id": "module.root.aws_s3_bucket.test_bucket", "parent": "module.root",
+                          "label": "aws_s3_bucket.test_bucket", "type": "resource"},
+                 "classes": ["resource"]},
+                {"data": {"id": "module.root.aws_s3_object.test_obj_submodule", "parent": "module.root",
+                          "label": "aws_s3_object.test_obj_submodule", "type": "resource"},
+                 "classes": ["resource"]}
+            ],
+            "edges": [
+                {"data": {"id": "module.root.aws_s3_object.test_obj_submodule-module.root.aws_s3_bucket.test_bucket",
+                          "source": "module.root.aws_s3_object.test_obj_submodule",
                           "target": "module.root.aws_s3_bucket.test_bucket", "sourceType": "resource", "targetType": "resource"},
                  "classes": ["resource-resource"]}
             ]
