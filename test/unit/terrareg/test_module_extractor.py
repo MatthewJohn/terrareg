@@ -220,7 +220,7 @@ class TestGitModuleExtractor(TerraregUnitTest):
             module_extractor._get_graph_data(module_path='/tmp/mock-patch/to/module')
 
             mock_check_output.assert_called_once_with(
-                ['terraform', 'graph'],
+                [os.getcwd() + '/bin/terraform', 'graph'],
                 cwd='/tmp/mock-patch/to/module'
             )
             mock_transform_terraform_graph.assert_called_once_with("Output graph data")
@@ -241,7 +241,7 @@ class TestGitModuleExtractor(TerraregUnitTest):
                 module_extractor._get_graph_data(module_path='/tmp/mock-patch/to/module')
 
             mock_check_output.assert_called_once_with(
-                ['terraform', 'graph'],
+                [os.getcwd() + '/bin/terraform', 'graph'],
                 cwd='/tmp/mock-patch/to/module'
             )
             mock_transform_terraform_graph.assert_not_called()
