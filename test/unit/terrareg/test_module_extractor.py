@@ -161,7 +161,8 @@ class TestGitModuleExtractor(TerraregUnitTest):
 
         with unittest.mock.patch('terrareg.module_extractor.ModuleExtractor.TERRAFORM_LOCK', mock_lock), \
                 unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', unittest.mock.MagicMock()) as check_output_mock, \
-                unittest.mock.patch('terrareg.config.Config.DEFAULT_TERRAFORM_VERSION', 'unittest-tf-version'):
+                unittest.mock.patch('terrareg.config.Config.DEFAULT_TERRAFORM_VERSION', 'unittest-tf-version'), \
+                unittest.mock.patch('terrareg.config.Config.TERRAFORM_ARCHIVE_MIRROR', 'https://localhost-archive/mirror/terraform'):
 
             with module_extractor._switch_terraform_versions(module_path='/tmp/mock-patch/to/module'):
                 pass
@@ -170,9 +171,9 @@ class TestGitModuleExtractor(TerraregUnitTest):
             expected_env = os.environ.copy()
             expected_env['TF_VERSION'] = "unittest-tf-version"
             check_output_mock.assert_called_once_with(
-                ['tfswitch'],
+                ["tfswitch", "--mirror", "https://localhost-archive/mirror/terraform", "--bin", f"{os.getcwd()}/bin/terraform"],
                 env=expected_env,
-                cwd='/tmp/mock-patch/to/module'
+                cwd="/tmp/mock-patch/to/module"
             )
 
     def test_switch_terraform_versions_error(self):
