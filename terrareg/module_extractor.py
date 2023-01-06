@@ -39,7 +39,6 @@ class ModuleExtractor:
     """Provide extraction method of moduls."""
 
     TERRAREG_METADATA_FILES = ['terrareg.json', '.terrareg.json']
-    TERRAFORM_BINARY = "terraform"
     TERRAFORM_LOCK = threading.Lock()
 
     def __init__(self, module_version: ModuleVersion):
@@ -47,6 +46,11 @@ class ModuleExtractor:
         self._module_version = module_version
         self._extract_directory = tempfile.TemporaryDirectory()  # noqa: R1732
         self._upload_directory = tempfile.TemporaryDirectory()  # noqa: R1732
+
+    @property
+    def terraform_binary(self):
+        """Return path of terraform binary"""
+        return os.path.join(os.getcwd(), "bin", "terraform")
 
     @property
     def extract_directory(self):
@@ -112,7 +116,7 @@ class ModuleExtractor:
             # Run tfswitch
             try:
                 subprocess.check_output(
-                    ["tfswitch", "--mirror", Config().TERRAFORM_ARCHIVE_MIRROR],
+                    ["tfswitch", "--mirror", Config().TERRAFORM_ARCHIVE_MIRROR, "--bin", self.terraform_binary],
                     env=tfswitch_env,
                     cwd=module_path
                 )
@@ -148,7 +152,7 @@ class ModuleExtractor:
     def _run_tf_init(self, module_path):
         """Perform terraform init"""
         try:
-            subprocess.check_call([self.TERRAFORM_BINARY, "init"], cwd=module_path)
+            subprocess.check_call([self.terraform_binary, "init"], cwd=module_path)
         except subprocess.CalledProcessError:
             return False
         return True
@@ -188,7 +192,7 @@ class ModuleExtractor:
         """Run inframap and generate graphiz"""
         try:
             terraform_graph_data = subprocess.check_output(
-                [self.TERRAFORM_BINARY, "graph"],
+                [self.terraform_binary, "graph"],
                 cwd=module_path
             )
         except subprocess.CalledProcessError as exc:
