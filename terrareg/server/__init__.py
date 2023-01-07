@@ -249,16 +249,16 @@ class Server(BaseHandler):
             '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph',
         )(self._view_serve_graph)
         self._app.route(
-            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodule/<path:submodule_path>/graph',
+            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/submodule/<path:submodule_path>',
         )(self._view_serve_graph)
         self._app.route(
-            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/example/<path:example_path>/graph'
+            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/example/<path:example_path>'
         )(self._view_serve_graph)
         self._api.add_resource(
             ApiTerraregGraphData,
-            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data',
-            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodule/<path:submodule_path>/graph/data',
-            '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/example/<path:example_path>/graph/data'
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data',
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data/submodule/<path:submodule_path>',
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data/example/<path:example_path>'
         )
 
 
@@ -587,6 +587,7 @@ class Server(BaseHandler):
                 module=module,
                 module_provider_name=provider
             )
+        current_module = module_version
 
         if example_path:
             example = terrareg.models.Example.get(module_version=module_version, module_path=example_path)
@@ -594,8 +595,9 @@ class Server(BaseHandler):
                 return self._module_provider_404(
                     namespace=namespace_obj,
                     module=module,
-                    module_provider_name=provider
+                    module_provider_name=provider,
                 )
+            current_module = example
         elif submodule_path:
             submodule = terrareg.models.Submodule.get(module_version=module_version, module_path=submodule_path)
             if not submodule:
@@ -604,8 +606,9 @@ class Server(BaseHandler):
                     module=module,
                     module_provider_name=provider
                 )
+            current_module = submodule
 
-        return self._render_template("graph.html")
+        return self._render_template("graph.html", current_module=current_module)
 
     def _view_serve_namespace_list(self):
         """Render view for display module."""

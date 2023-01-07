@@ -2384,6 +2384,11 @@ class ModuleVersion(TerraformSpecsObject):
             return res.fetchall()
 
     @property
+    def graph_data_url(self):
+        """Return URl for graph data"""
+        return f"/v1/terrareg/modules/{self.id}/graph/data"
+
+    @property
     def custom_links(self):
         """Return list of links to be displayed in UI"""
         links = []
@@ -2826,6 +2831,11 @@ class BaseSubmodule(TerraformSpecsObject):
 
     TYPE = None
 
+    @property
+    def graph_data_url(self):
+        """Return URl for graph data"""
+        return f"/v1/terrareg/modules/{self.module_version.id}/graph/data/{self.TYPE}/{self.path}"
+
     @classmethod
     def get_by_id(cls, module_version: ModuleVersion, pk: int):
         """Return instance of submodule based on ID of submodule"""
@@ -2972,7 +2982,7 @@ class BaseSubmodule(TerraformSpecsObject):
             "display_source_url": source_browse_url if source_browse_url else self._module_version.get_source_base_url(),
             "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
             "security_results": tfsec_failures,
-            "graph_url": f"/modules/{self.module_version.id}/{self.TYPE}/{self.path}/graph"
+            "graph_url": f"/modules/{self.module_version.id}/graph/{self.TYPE}/{self.path}"
         })
         return api_details
 

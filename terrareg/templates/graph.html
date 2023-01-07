@@ -34,7 +34,7 @@
 <script>
 
     // Obtain graph data from relative URL
-    jQuery.get('./graph/data').then((graphData) => {
+    jQuery.get('{{ current_module.graph_data_url }}').then((graphData) => {
         if (graphData) {
             const cy = cytoscape({
                 container: document.getElementById('cy'),
