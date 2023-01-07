@@ -1,7 +1,6 @@
 
 from datetime import datetime
 import json
-import unittest.mock
 
 import pytest
 import sqlalchemy
@@ -84,3 +83,8 @@ class TestModuleDetails(TerraregIntegrationTest):
             ).fetchone()
 
         assert res == None
+
+    def test_graph_json(self):
+        """Test graph data conversion to JSON"""
+        module_version = ModuleVersion.get(ModuleProvider.get(Module(Namespace.get("moduledetails"), "graph-test"), "provider"), "1.0.0")
+        assert module_version.module_details.graph_json == ""
