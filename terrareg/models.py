@@ -946,6 +946,20 @@ class ModuleDetails:
         graph = pygraphviz.AGraph(terraform_graph)
         nx_graph = nx.nx_agraph.from_agraph(graph)
 
+        infracost = self.infracost
+        resource_costs = {}
+        remove_item_iteration_re = re.compile('^([^\[]*)\[.*\]$')
+        if infracost:
+            for resource in self.infracost["projects"][0]["breakdown"]["resources"]:
+                if not resource["monthlyCost"]:
+                    continue
+
+                name = resource["name"]
+                match_iterated_resource = remove_item_iteration_re.match(resource["name"])
+                if match_iterated_resource:
+                    name = match_iterated_resource.group(1)
+                resource_costs[name] = round((float(resource["monthlyCost"]) * 12), 2)
+
         module_var_output_local_re = re.compile(r'^(module\.[^\.]+\.)+(var|local|output)\.[^\.]+$')
         module_re = re.compile(r'^(?:module\.[^\.]+\.)*(?:module\.([^\.]+))$')
         data_re = re.compile(r'^((?:module\.[^\.]+\.)+)data\.([^\.]+)\.([^\.])+$')
@@ -1001,6 +1015,8 @@ class ModuleDetails:
                 elif resource_match:
                     type_mapping[name] = "resource"
                     labels[name] = f"{resource_match.group(2)}.{resource_match.group(3)}"
+                    if name in resource_costs:
+                        labels[name] += f" (${resource_costs[name]}/year)"
                     parents[name] = resource_match.group(1).strip(".") or "root"
 
                 # Discard any unrecognised types
