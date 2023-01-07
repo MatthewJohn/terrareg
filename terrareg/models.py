@@ -1034,7 +1034,8 @@ class ModuleDetails:
         for node in nx_graph.nodes:
             data = {
                 "id": node,
-                "label": labels.get(node)
+                "label": labels.get(node),
+                "child_count": list(parents.values()).count(node)
             }
 
             style = {}
