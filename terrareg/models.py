@@ -948,16 +948,13 @@ class ModuleDetails:
 
         infracost = self.infracost
         resource_costs = {}
-        remove_item_iteration_re = re.compile('^([^\[]*)\[.*\]$')
+        remove_item_iteration_re = re.compile('\[[^\]]+\]')
         if infracost:
             for resource in self.infracost["projects"][0]["breakdown"]["resources"]:
                 if not resource["monthlyCost"]:
                     continue
 
-                name = resource["name"]
-                match_iterated_resource = remove_item_iteration_re.match(resource["name"])
-                if match_iterated_resource:
-                    name = match_iterated_resource.group(1)
+                name = remove_item_iteration_re.sub("", resource["name"])
                 resource_costs[name] = round((float(resource["monthlyCost"]) * 12), 2)
 
         module_var_output_local_re = re.compile(r'^(module\.[^\.]+\.)+(var|local|output)\.[^\.]+$')
@@ -1040,6 +1037,19 @@ class ModuleDetails:
                 "label": labels.get(node)
             }
 
+            style = {}
+            if type_mapping[node] == "module":
+                style = {
+                    'color': '#000000',
+                    'background-color': '#F8F7F9',
+                    'font-weight': 'bold',
+                    'text-valign': 'top',
+                }
+            if node in resource_costs:
+                style['border-style'] = 'solid'
+                style['border-width'] = '1px'
+                style['border-color'] = 'red'
+
             # Add parent if available
             parent = parents.get(node, None)
             if parent:
@@ -1047,7 +1057,7 @@ class ModuleDetails:
 
             cytoscape_json["nodes"].append({
                 "data": data,
-                "classes": [type_mapping.get(node)]
+                "style": style
             })
 
         # Add edges to graph
