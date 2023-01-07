@@ -82,7 +82,7 @@ test-docker-image:
 build-wheel:
   stage: build
   extends: .test_image
-  dependencies:
+  needs:
     - build-docker-image
   script:
     - python setup.py bdist_wheel
