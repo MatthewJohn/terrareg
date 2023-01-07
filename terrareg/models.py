@@ -1067,7 +1067,7 @@ class ModuleDetails:
             if (type_mapping[edge[0]] == "module" and type_mapping[edge[1]] == "module" and
                     # Only link modules in one direction, where module is a sub-module of another,
                     # to avoid links in both directions
-                    edge[1] in edge[0]):
+                    edge[0] in edge[1]):
                 # Mark module as having been seen in edges
                 seen_module_links.append(edge[1])
 
