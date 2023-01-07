@@ -174,8 +174,7 @@ class BaseTest:
                                 readme_content=version_data.get('readme_content', None),
                                 terraform_docs=version_data.get('terraform_docs', None),
                                 tfsec=version_data.get('tfsec'),
-                                terraform_graph=version_data.get("terraform_graph", None),
-                                graph_json=version_data.get("graph_json", None)
+                                terraform_graph=version_data.get("terraform_graph", None)
                             )
 
                             data = {
@@ -201,8 +200,7 @@ class BaseTest:
                                 for attr in version_data
                                 if attr not in ['examples', 'submodules', 'published',
                                                 'readme_content', 'terraform_docs', 'tfsec',
-                                                'infracost', 'files', 'terraform_graph',
-                                                'graph_json']
+                                                'infracost', 'files', 'terraform_graph']
                             }
                             if values_to_update:
                                 module_version.update_attributes(**values_to_update)
@@ -225,15 +223,14 @@ class BaseTest:
                                     readme_content=submodule_config.get('readme_content', None),
                                     terraform_docs=submodule_config.get('terraform_docs', None),
                                     tfsec=submodule_config.get('tfsec', None),
-                                    terraform_graph=submodule_config.get("terraform_graph", None),
-                                    graph_json=submodule_config.get("graph_json", None)
+                                    terraform_graph=submodule_config.get("terraform_graph", None)
                                 )
 
                                 submodule = Submodule.create(module_version=module_version, module_path=submodule_path)
                                 attributes_to_update = {
                                     attr: submodule_config[attr]
                                     for attr in submodule_config
-                                    if attr not in ['readme_content', 'terraform_docs', 'tfsec', 'terraform_graph', 'graph_json']
+                                    if attr not in ['readme_content', 'terraform_docs', 'tfsec', 'terraform_graph']
                                 }
                                 attributes_to_update['module_details_id'] = module_details.pk
                                 submodule.update_attributes(
@@ -250,8 +247,7 @@ class BaseTest:
                                     terraform_docs=example_config.get('terraform_docs', None),
                                     tfsec=example_config.get('tfsec', None),
                                     infracost=example_config.get('infracost', None),
-                                    terraform_graph=example_config.get("terraform_graph", None),
-                                    graph_json=example_config.get("graph_json", None)
+                                    terraform_graph=example_config.get("terraform_graph", None)
                                 )
 
                                 example = Example.create(module_version=module_version, module_path=example_path)
@@ -259,7 +255,7 @@ class BaseTest:
                                     attr: example_config[attr]
                                     for attr in example_config
                                     if attr not in ['example_files', 'readme_content', 'terraform_docs',
-                                                    'tfsec', 'infracost', 'terraform_graph', 'graph_json']
+                                                    'tfsec', 'infracost', 'terraform_graph']
                                 }
                                 attributes_to_update['module_details_id'] = module_details.pk
                                 example.update_attributes(

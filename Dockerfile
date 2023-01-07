@@ -5,7 +5,7 @@ WORKDIR /
 RUN apt-get update && \
     apt-get install --assume-yes \
         curl unzip git \
-        pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 && \
+        pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 libgraphviz-dev && \
     apt-get clean all
 
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
@@ -40,19 +40,6 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
 
 # Download tfswitch
 RUN bash -c 'curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/release/install.sh | bash'
-
-# Download terraform-graph-beautifier
-RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
-    then \
-      arch=arm64; \
-    else \
-      arch=amd64; \
-    fi; \
-    wget https://github.com/pcasteran/terraform-graph-beautifier/releases/download/v0.3.1/terraform-graph-beautifier_0.3.1_linux_${arch}.tar.gz -O /tmp/terraform-graph-beautifier.tar.gz && \
-    tar -zxvf /tmp/terraform-graph-beautifier.tar.gz terraform-graph-beautifier && \
-    mv terraform-graph-beautifier /usr/local/bin/terraform-graph-beautifier && \
-    chmod +x /usr/local/bin/terraform-graph-beautifier && \
-    rm /tmp/terraform-graph-beautifier.tar.gz'
 
 WORKDIR /app
 COPY requirements.txt .

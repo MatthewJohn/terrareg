@@ -589,24 +589,6 @@ digraph {
 	}
 }
 """,
-                    "graph_json": json.dumps({
-                        "nodes": [
-                            {"data": {"id": "module.root", "label": "module.root", "type": "module"},
-                            "classes": ["module"]},
-                            {"data": {"id": "module.root.aws_s3_bucket.test_bucket", "parent": "module.root",
-                                    "label": "aws_s3_bucket.test_bucket", "type": "resource"},
-                            "classes": ["resource"]},
-                            {"data": {"id": "module.root.aws_s3_object.test_obj_root_module", "parent": "module.root",
-                                    "label": "aws_s3_object.test_obj_root_module", "type": "resource"},
-                            "classes": ["resource"]}
-                        ],
-                        "edges": [
-                            {"data": {"id": "module.root.aws_s3_object.test_obj_root_module-module.root.aws_s3_bucket.test_bucket",
-                                    "source": "module.root.aws_s3_object.test_obj_root_module",
-                                    "target": "module.root.aws_s3_bucket.test_bucket", "sourceType": "resource", "targetType": "resource"},
-                            "classes": ["resource-resource"]}
-                        ]
-                    }),
                     'files': {
                         'LICENSE': 'This is a license file\nAll rights are not reserved for this example file content',
                         'CHANGELOG.md': '# Changelog\n## 1.0.0\n * This is an initial release',
@@ -843,25 +825,7 @@ digraph {
 		"[root] root" -> "[root] var.name"
 	}
 }
-""",
-                            "graph_json": json.dumps({
-                                "nodes": [
-                                    {"data": {"id": "module.root", "label": "module.root", "type": "module"},
-                                    "classes": ["module"]},
-                                    {"data": {"id": "module.root.aws_s3_bucket.test_bucket", "parent": "module.root",
-                                            "label": "aws_s3_bucket.test_bucket", "type": "resource"},
-                                    "classes": ["resource"]},
-                                    {"data": {"id": "module.root.aws_s3_object.test_obj_example", "parent": "module.root",
-                                            "label": "aws_s3_object.test_obj_example", "type": "resource"},
-                                    "classes": ["resource"]}
-                                ],
-                                "edges": [
-                                    {"data": {"id": "module.root.aws_s3_object.test_obj_example-module.root.aws_s3_bucket.test_bucket",
-                                            "source": "module.root.aws_s3_object.test_obj_example",
-                                            "target": "module.root.aws_s3_bucket.test_bucket", "sourceType": "resource", "targetType": "resource"},
-                                    "classes": ["resource-resource"]}
-                                ]
-                            })
+"""
                         }
                     },
                     'submodules': {
@@ -924,25 +888,8 @@ digraph {
 		"[root] root" -> "[root] var.name"
 	}
 }
-""",
-                            "graph_json": json.dumps({
-                                "nodes": [
-                                    {"data": {"id": "module.root", "label": "module.root", "type": "module"},
-                                    "classes": ["module"]},
-                                    {"data": {"id": "module.root.aws_s3_bucket.test_bucket", "parent": "module.root",
-                                            "label": "aws_s3_bucket.test_bucket", "type": "resource"},
-                                    "classes": ["resource"]},
-                                    {"data": {"id": "module.root.aws_s3_object.test_obj_submodule", "parent": "module.root",
-                                            "label": "aws_s3_object.test_obj_submodule", "type": "resource"},
-                                    "classes": ["resource"]}
-                                ],
-                                "edges": [
-                                    {"data": {"id": "module.root.aws_s3_object.test_obj_submodule-module.root.aws_s3_bucket.test_bucket",
-                                            "source": "module.root.aws_s3_object.test_obj_submodule",
-                                            "target": "module.root.aws_s3_bucket.test_bucket", "sourceType": "resource", "targetType": "resource"},
-                                    "classes": ["resource-resource"]}
-                                ]
-                            })
+"""
+
                         }
                     }
                 },

@@ -1,7 +1,6 @@
 
 import datetime
 from enum import Enum
-from importlib.util import module_for_loader
 import os
 from distutils.version import LooseVersion
 import json
@@ -11,7 +10,8 @@ import sqlalchemy
 import urllib.parse
 
 import markdown
-
+import pygraphviz
+import networkx as nx
 import terrareg.analytics
 from terrareg.database import Database
 import terrareg.config
@@ -928,12 +928,152 @@ class ModuleDetails:
         return {}
 
     @property
+    def terraform_graph(self):
+        """Return decoded terraform graph data."""
+        db_row = self._get_db_row()
+        if db_row and db_row["terraform_graph"]:
+            return Database.decode_blob(db_row["terraform_graph"])
+        return None
+
+    @property
     def graph_json(self):
         """Return graph JSON for resources."""
-        db_row = self._get_db_row()
-        if db_row is not None and db_row["graph_json"]:
-            return json.loads(db_row["graph_json"])
-        return None
+        terraform_graph = self.terraform_graph
+        if not terraform_graph:
+            return None
+
+        # Generate NX graph from terraform graphviz output
+        graph = pygraphviz.AGraph(terraform_graph)
+        nx_graph = nx.nx_agraph.from_agraph(graph)
+
+        module_var_output_local_re = re.compile(r'^(module\.[^\.]+\.)+(var|local|output)\.[^\.]+$')
+        module_re = re.compile(r'^(?:module\.[^\.]+\.)*(?:module\.([^\.]+))$')
+        data_re = re.compile(r'^((?:module\.[^\.]+\.)+)data\.([^\.]+)\.([^\.])+$')
+        resource_re = re.compile(r'^((?:module\.[^\.]+\.)*)([^\.]+)\.([^\.]+)$')
+
+        renames = {}
+        to_remove = []
+        labels = {}
+        type_mapping = {}
+        parents = {}
+
+        def remove_node(node):
+            if node not in to_remove:
+                to_remove.append(node)
+
+        for node_label in nx_graph.nodes:
+            name = node_label.replace('[root] ', '').replace(' (expand)', '').replace(' (close)', '')
+
+            # Check for root vars, outputs and locals
+            if name.startswith('output.') or name.startswith('var.') or name.startswith('local.'):
+                remove_node(node_label)
+
+            elif module_var_output_local_re.match(name):
+                remove_node(node_label)
+
+            # Else rename
+            else:
+                renames[node_label] = name
+
+                # Match node name to type regexes
+                module_match = module_re.match(name)
+                resource_match = resource_re.match(name)
+                data_match = data_re.match(name)
+
+                # Create labels and type mapping
+                if name == "root":
+                    # Match root module
+                    labels[name] = "Root Module"
+                    type_mapping[name] = "module"
+
+                # Match submodules
+                elif module_match:
+                    labels[name] = module_match.group(1)
+                    type_mapping[name] = "module"
+
+                elif data_match:
+                    type_mapping[name] = "data"
+                    parents[name] = data_match.group(1).strip(".") or "root"
+                    labels[name] = f"(data) {data_match.group(2)}.{data_match.group(3)}"
+
+                # Ensure resource RE is performed last,
+                # as this could also match module_re
+                elif resource_match:
+                    type_mapping[name] = "resource"
+                    labels[name] = f"{resource_match.group(2)}.{resource_match.group(3)}"
+                    parents[name] = resource_match.group(1).strip(".") or "root"
+
+                # Discard any unrecognised types
+                else:
+                    remove_node(name)
+                    print("Unable to match node to type", name)
+
+        nx_graph = nx.relabel_nodes(nx_graph, renames)
+        for node in to_remove:
+            nx_graph.remove_node(node)
+
+        # Convert to JSON for cytoscape
+        cytoscape_json = {
+            "nodes": [],
+            "edges": []
+        }
+
+        for node in nx_graph.nodes:
+            data = {
+                "id": node,
+                "label": labels.get(node)
+            }
+
+            # Add parent if available
+            parent = parents.get(node, None)
+            if parent:
+                data["parent"] = parent
+
+            cytoscape_json["nodes"].append({
+                "data": data,
+                "classes": [type_mapping.get(node)]
+            })
+
+        # Add edges to graph
+        seen_module_links = []
+        for edge in nx_graph.edges:
+            # Only add edges for module-module links
+            if (type_mapping[edge[0]] == "module" and type_mapping[edge[1]] == "module" and
+                    # Only link modules in one direction, where module is a sub-module of another,
+                    # to avoid links in both directions
+                    edge[1] in edge[0]):
+                # Mark module as having been seen in edges
+                seen_module_links.append(edge[1])
+
+                cytoscape_json["edges"].append({
+                    "data": {
+                        "id": f"{edge[0]}.{edge[1]}",
+                        "source": edge[0],
+                        "target": edge[1]
+                    },
+                    "classes": [
+                        f"{type_mapping[edge[0]]}-{type_mapping[edge[1]]}"
+                    ]
+                })
+
+        # Iterate through all modukes...
+        for module, type_mapping in type_mapping.items():
+            if type_mapping == "module":
+                # If a module link has not already been seen,
+                # add a link to root module
+                if module not in seen_module_links and module != "root":
+                    cytoscape_json["edges"].append({
+                        "data": {
+                            "id": f"root.{module}",
+                            "source": module,
+                            "target": "root"
+                        },
+                        "classes": [
+                            f"{module}-root"
+                        ]
+                    })
+
+        return cytoscape_json
 
     def __init__(self, id: int):
         """Store member variables."""
@@ -964,7 +1104,7 @@ class ModuleDetails:
         """Update DB row."""
         # Check for any blob and encode the values
         for kwarg in kwargs:
-            if kwarg in ['readme_content', 'terraform_docs', 'tfsec', 'infracost', 'terraform_graph', 'graph_json']:
+            if kwarg in ['readme_content', 'terraform_docs', 'tfsec', 'infracost', 'terraform_graph']:
                 kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
 
         db = Database.get()
