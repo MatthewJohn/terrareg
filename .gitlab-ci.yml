@@ -85,9 +85,9 @@ build-wheel:
   needs:
     - build-docker-image
   script:
-    - python3 setup.py bdist_wheel
+    - python setup.py bdist_wheel
     # an alternative approach is to install and run:
-    - pip3 install dist/*
+    - pip install dist/*
       #- pip install --proxy=$http_proxy -r requirements.txt
     # run the command here
   artifacts:
