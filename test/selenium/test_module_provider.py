@@ -2086,3 +2086,18 @@ All rights are not reserved for this example file content</pre>
         for row in tab_content.find_elements(By.TAG_NAME, "tr"):
             column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
             assert column_data == expected_rows.pop(0)
+
+    def test_resource_graph(self):
+        """Test resource graph page"""
+
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+        # Wait for resources tab to load
+        resources_link = self.wait_for_element(By.ID, 'module-tab-link-resources')
+        resources_link.click()
+
+        # Ensure link to resource graph is displayed
+        resource_graph_link = self.selenium_instance.find_element(By.ID, "resourceDependencyGraphLink")
+        assert resource_graph_link.text == "View a resource dependency graph"
+        resource_graph_link.click()
+
+        assert self.selenium_instance.current_url == self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0/graph')

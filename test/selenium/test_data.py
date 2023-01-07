@@ -570,6 +570,43 @@ integration_test_data = {
                             }
                         ]
                     }),
+                    "terraform_graph": """
+digraph {
+	compound = "true"
+	newrank = "true"
+	subgraph "root" {
+		"[root] aws_s3_bucket.test_bucket (expand)" [label = "aws_s3_bucket.test_bucket", shape = "box"]
+		"[root] aws_s3_object.test_obj_root_module (expand)" [label = "aws_s3_object.test_obj_root_module", shape = "box"]
+		"[root] output.name" [label = "output.name", shape = "note"]
+		"[root] provider[\"registry.terraform.io/hashicorp/aws\"]" [label = "provider[\"registry.terraform.io/hashicorp/aws\"]", shape = "diamond"]
+		"[root] var.name" [label = "var.name", shape = "note"]
+		"[root] aws_s3_bucket.test_bucket (expand)" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"]"
+		"[root] aws_s3_object.test_obj_root_module (expand)" -> "[root] aws_s3_bucket.test_bucket (expand)"
+		"[root] provider[\"registry.terraform.io/hashicorp/aws\"] (close)" -> "[root] aws_s3_object.test_obj_root_module (expand)"
+		"[root] root" -> "[root] output.name"
+		"[root] root" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"] (close)"
+		"[root] root" -> "[root] var.name"
+	}
+}
+""",
+                    "graph_json": json.dumps({
+                        "nodes": [
+                            {"data": {"id": "module.root", "label": "module.root", "type": "module"},
+                            "classes": ["module"]},
+                            {"data": {"id": "module.root.aws_s3_bucket.test_bucket", "parent": "module.root",
+                                    "label": "aws_s3_bucket.test_bucket", "type": "resource"},
+                            "classes": ["resource"]},
+                            {"data": {"id": "module.root.aws_s3_object.test_obj_root_module", "parent": "module.root",
+                                    "label": "aws_s3_object.test_obj_root_module", "type": "resource"},
+                            "classes": ["resource"]}
+                        ],
+                        "edges": [
+                            {"data": {"id": "module.root.aws_s3_object.test_obj_root_module-module.root.aws_s3_bucket.test_bucket",
+                                    "source": "module.root.aws_s3_object.test_obj_root_module",
+                                    "target": "module.root.aws_s3_bucket.test_bucket", "sourceType": "resource", "targetType": "resource"},
+                            "classes": ["resource-resource"]}
+                        ]
+                    }),
                     'files': {
                         'LICENSE': 'This is a license file\nAll rights are not reserved for this example file content',
                         'CHANGELOG.md': '# Changelog\n## 1.0.0\n * This is an initial release',
@@ -787,6 +824,43 @@ integration_test_data = {
                                         'description': None
                                     }
                                 ]
+                            }),
+                            "terraform_graph": """
+digraph {
+	compound = "true"
+	newrank = "true"
+	subgraph "root" {
+		"[root] aws_s3_bucket.test_bucket (expand)" [label = "aws_s3_bucket.test_bucket", shape = "box"]
+		"[root] aws_s3_object.test_obj_example (expand)" [label = "aws_s3_object.test_obj_example", shape = "box"]
+		"[root] output.name" [label = "output.name", shape = "note"]
+		"[root] provider[\"registry.terraform.io/hashicorp/aws\"]" [label = "provider[\"registry.terraform.io/hashicorp/aws\"]", shape = "diamond"]
+		"[root] var.name" [label = "var.name", shape = "note"]
+		"[root] aws_s3_bucket.test_bucket (expand)" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"]"
+		"[root] aws_s3_object.test_obj_example (expand)" -> "[root] aws_s3_bucket.test_bucket (expand)"
+		"[root] provider[\"registry.terraform.io/hashicorp/aws\"] (close)" -> "[root] aws_s3_object.test_obj_example (expand)"
+		"[root] root" -> "[root] output.name"
+		"[root] root" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"] (close)"
+		"[root] root" -> "[root] var.name"
+	}
+}
+""",
+                            "graph_json": json.dumps({
+                                "nodes": [
+                                    {"data": {"id": "module.root", "label": "module.root", "type": "module"},
+                                    "classes": ["module"]},
+                                    {"data": {"id": "module.root.aws_s3_bucket.test_bucket", "parent": "module.root",
+                                            "label": "aws_s3_bucket.test_bucket", "type": "resource"},
+                                    "classes": ["resource"]},
+                                    {"data": {"id": "module.root.aws_s3_object.test_obj_example", "parent": "module.root",
+                                            "label": "aws_s3_object.test_obj_example", "type": "resource"},
+                                    "classes": ["resource"]}
+                                ],
+                                "edges": [
+                                    {"data": {"id": "module.root.aws_s3_object.test_obj_example-module.root.aws_s3_bucket.test_bucket",
+                                            "source": "module.root.aws_s3_object.test_obj_example",
+                                            "target": "module.root.aws_s3_bucket.test_bucket", "sourceType": "resource", "targetType": "resource"},
+                                    "classes": ["resource-resource"]}
+                                ]
                             })
                         }
                     },
@@ -830,6 +904,43 @@ integration_test_data = {
                                         'version': 'latest',
                                         'description': None
                                     }
+                                ]
+                            }),
+                            "terraform_graph": """
+digraph {
+	compound = "true"
+	newrank = "true"
+	subgraph "root" {
+		"[root] aws_s3_bucket.test_bucket (expand)" [label = "aws_s3_bucket.test_bucket", shape = "box"]
+		"[root] aws_s3_object.test_obj_submodule (expand)" [label = "aws_s3_object.test_obj_submodule", shape = "box"]
+		"[root] output.name" [label = "output.name", shape = "note"]
+		"[root] provider[\"registry.terraform.io/hashicorp/aws\"]" [label = "provider[\"registry.terraform.io/hashicorp/aws\"]", shape = "diamond"]
+		"[root] var.name" [label = "var.name", shape = "note"]
+		"[root] aws_s3_bucket.test_bucket (expand)" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"]"
+		"[root] aws_s3_object.test_obj_submodule (expand)" -> "[root] aws_s3_bucket.test_bucket (expand)"
+		"[root] provider[\"registry.terraform.io/hashicorp/aws\"] (close)" -> "[root] aws_s3_object.test_obj_submodule (expand)"
+		"[root] root" -> "[root] output.name"
+		"[root] root" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"] (close)"
+		"[root] root" -> "[root] var.name"
+	}
+}
+""",
+                            "graph_json": json.dumps({
+                                "nodes": [
+                                    {"data": {"id": "module.root", "label": "module.root", "type": "module"},
+                                    "classes": ["module"]},
+                                    {"data": {"id": "module.root.aws_s3_bucket.test_bucket", "parent": "module.root",
+                                            "label": "aws_s3_bucket.test_bucket", "type": "resource"},
+                                    "classes": ["resource"]},
+                                    {"data": {"id": "module.root.aws_s3_object.test_obj_submodule", "parent": "module.root",
+                                            "label": "aws_s3_object.test_obj_submodule", "type": "resource"},
+                                    "classes": ["resource"]}
+                                ],
+                                "edges": [
+                                    {"data": {"id": "module.root.aws_s3_object.test_obj_submodule-module.root.aws_s3_bucket.test_bucket",
+                                            "source": "module.root.aws_s3_object.test_obj_submodule",
+                                            "target": "module.root.aws_s3_bucket.test_bucket", "sourceType": "resource", "targetType": "resource"},
+                                    "classes": ["resource-resource"]}
                                 ]
                             })
                         }
