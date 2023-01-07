@@ -958,32 +958,53 @@ class ModuleDetails:
                 resource_costs[name] = round((float(resource["monthlyCost"]) * 12), 2)
 
         module_var_output_local_re = re.compile(r'^(module\.[^\.]+\.)+(var|local|output)\.[^\.]+$')
+        # Capture modules resources, such as:
+        # module.module1
+        # module.module1.module.module2
         module_re = re.compile(r'^(?:module\.[^\.]+\.)*(?:module\.([^\.]+))$')
+        # Capture data resources, such as:
+        # data.aws_s3_bucket.test
+        # module.module1.data.aws_s3_bucket.test
+        # module.module1.module.module2.data.aws_s3_bucket.test
         data_re = re.compile(r'^((?:module\.[^\.]+\.)+)data\.([^\.]+)\.([^\.])+$')
+        # Capture resources, such as:
+        # aws_s3_bucket.test
+        # module.module1.aws_s3_bucket.test
+        # module.module1.module.module2.aws_s3_bucket.test
         resource_re = re.compile(r'^((?:module\.[^\.]+\.)*)([^\.]+)\.([^\.]+)$')
 
+        # Store node renames, to be renamed after initial iteration
         renames = {}
+        # Store nodes to be removed
         to_remove = []
+        # Store labels to be pushed to graph JSON
         labels = {}
+        # Stoe type mappings for determing node attributes
         type_mapping = {}
+        # Store parents of attirbutes to modules, used for
+        # parent mapping in JSON
         parents = {}
 
         def remove_node(node):
+            """Add a node to the remove_nodes list, if they are not already present"""
             if node not in to_remove:
                 to_remove.append(node)
 
         for node_label in nx_graph.nodes:
+            # Remove leading '[root] ' name and expand/close suffices from node names
             name = node_label.replace('[root] ', '').replace(' (expand)', '').replace(' (close)', '')
 
             # Check for root vars, outputs and locals
             if name.startswith('output.') or name.startswith('var.') or name.startswith('local.'):
                 remove_node(node_label)
 
+            # Remove any module vars/outputs/locals
             elif module_var_output_local_re.match(name):
                 remove_node(node_label)
 
-            # Else rename
+            # handle all other nodes
             else:
+                # Rename to shortened name
                 renames[node_label] = name
 
                 # Match node name to type regexes
@@ -1021,7 +1042,10 @@ class ModuleDetails:
                     remove_node(name)
                     print("Unable to match node to type", name)
 
+        # Perform rename of nodes
         nx_graph = nx.relabel_nodes(nx_graph, renames)
+
+        # Remove any nodes marked for removal
         for node in to_remove:
             nx_graph.remove_node(node)
 
@@ -1046,6 +1070,7 @@ class ModuleDetails:
                     'font-weight': 'bold',
                     'text-valign': 'top',
                 }
+            # Add red outline to resources that have an associated cost
             if node in resource_costs:
                 style['border-style'] = 'solid'
                 style['border-width'] = '1px'
