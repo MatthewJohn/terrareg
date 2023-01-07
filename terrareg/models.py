@@ -1073,7 +1073,7 @@ class ModuleDetails:
             # Add red outline to resources that have an associated cost
             if node in resource_costs:
                 style['border-style'] = 'solid'
-                style['border-width'] = '1px'
+                style['border-width'] = '2px'
                 style['border-color'] = 'red'
 
             # Add parent if available
