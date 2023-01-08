@@ -102,6 +102,8 @@ class SeleniumTest(BaseTest):
         cls.selenium_instance.delete_all_cookies()
         cls.selenium_instance.implicitly_wait(1)
 
+        cls.selenium_instance.maximize_window()
+
         log = logging.getLogger('werkzeug')
         if not cls.RUN_INTERACTIVELY:
             log.disabled = True
