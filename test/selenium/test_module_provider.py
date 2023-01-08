@@ -2103,6 +2103,8 @@ All rights are not reserved for this example file content</pre>
         # with open(compare_filename, "wb") as fh:
         #     fh.write(image_data)
 
+        print("Actual image:", png_url)
+
         actual_image = Image.open(BytesIO(image_data), formats=["PNG"])
         expected_image = Image.open(compare_filename)
 
