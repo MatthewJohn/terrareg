@@ -2151,9 +2151,5 @@ All rights are not reserved for this example file content</pre>
             f"{base_filename}{'_full_resources' if full_resource_names else ''}{'_full_modules' if full_module_names else ''}.png"
         )
 
-        # Let canvas load
-        # @TODO Determine flakiness of test to decide
-        # if we need to wait for canvas to finish loading
-        sleep(1)
-
-        assert self._compare_canvas(file_name)
+        # Attempt check canvas data
+        self.assert_equals(lambda: self._compare_canvas(file_name), True, sleep_period=1)
