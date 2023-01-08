@@ -151,7 +151,33 @@ class TestGitModuleExtractor(TerraregUnitTest):
             assert module_extractor._extract_description(test_text) == None
 
     def test_run_tf_init(self):
-        pass
+        """Test running terraform init"""
+        module_extractor = GitModuleExtractor(module_version=None)
+
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_call', unittest.mock.MagicMock()) as check_output_mock:
+
+            assert module_extractor._run_tf_init(module_path='/tmp/mock-patch/to/module') is True
+
+            check_output_mock.assert_called_once_with(
+                [os.path.join(os.getcwd(), 'bin', 'terraform'), 'init'],
+                cwd='/tmp/mock-patch/to/module'
+            )
+
+    def test_run_tf_init_error(self):
+        """Test running terraform init with error returned"""
+        module_extractor = GitModuleExtractor(module_version=None)
+
+        def raise_exception(*args, **kwargs):
+            raise subprocess.CalledProcessError(cmd="test", returncode=2)
+
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_call', unittest.mock.MagicMock(side_effect=raise_exception)) as mock_check_call:
+
+            assert module_extractor._run_tf_init(module_path='/tmp/mock-patch/to/module') is False
+
+            mock_check_call.assert_called_once_with(
+                [os.path.join(os.getcwd(), 'bin', 'terraform'), 'init'],
+                cwd='/tmp/mock-patch/to/module'
+            )
 
     def test_switch_terraform_versions(self):
         """Test switching terraform versions."""
