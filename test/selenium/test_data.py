@@ -577,17 +577,34 @@ digraph {
 	subgraph "root" {
 		"[root] aws_s3_bucket.test_bucket (expand)" [label = "aws_s3_bucket.test_bucket", shape = "box"]
 		"[root] aws_s3_object.test_obj_root_module (expand)" [label = "aws_s3_object.test_obj_root_module", shape = "box"]
+		"[root] module.submodule-call.aws_ec2_instance.test_instance (expand)" [label = "module.submodule-call.aws_ec2_instance.test_instance", shape = "box"]
+		"[root] module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance (expand)" [label = "module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance", shape = "box"]
 		"[root] output.name" [label = "output.name", shape = "note"]
-		"[root] provider[\"registry.terraform.io/hashicorp/aws\"]" [label = "provider[\"registry.terraform.io/hashicorp/aws\"]", shape = "diamond"]
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]" [label = "provider[\\"registry.terraform.io/hashicorp/aws\\"]", shape = "diamond"]
 		"[root] var.name" [label = "var.name", shape = "note"]
-		"[root] aws_s3_bucket.test_bucket (expand)" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"]"
+		"[root] aws_s3_bucket.test_bucket (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
 		"[root] aws_s3_object.test_obj_root_module (expand)" -> "[root] aws_s3_bucket.test_bucket (expand)"
-		"[root] provider[\"registry.terraform.io/hashicorp/aws\"] (close)" -> "[root] aws_s3_object.test_obj_root_module (expand)"
+		"[root] module.submodule-call (close)" -> "[root] module.submodule-call.aws_ec2_instance.test_instance (expand)"
+		"[root] module.submodule-call (close)" -> "[root] module.submodule-call.module.second-module-call (close)"
+		"[root] module.submodule-call (close)" -> "[root] module.submodule-call.var.passing_name (expand)"
+		"[root] module.submodule-call.aws_ec2_instance.test_instance (expand)" -> "[root] module.submodule-call (expand)"
+		"[root] module.submodule-call.aws_ec2_instance.test_instance (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] module.submodule-call.module.second-module-call (close)" -> "[root] module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance (expand)"
+		"[root] module.submodule-call.module.second-module-call (expand)" -> "[root] module.submodule-call (expand)"
+		"[root] module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance (expand)" -> "[root] module.submodule-call.module.second-module-call (expand)"
+		"[root] module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] module.submodule-call.var.passing_name (expand)" -> "[root] module.submodule-call (expand)"
+		"[root] module.submodule-call.var.passing_name (expand)" -> "[root] var.name"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] aws_s3_object.test_obj_root_module (expand)"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] module.submodule-call.aws_ec2_instance.test_instance (expand)"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance (expand)"
+		"[root] root" -> "[root] module.submodule-call (close)"
 		"[root] root" -> "[root] output.name"
-		"[root] root" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"] (close)"
-		"[root] root" -> "[root] var.name"
+		"[root] root" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)"
 	}
 }
+
+
 """,
                     'files': {
                         'LICENSE': 'This is a license file\nAll rights are not reserved for this example file content',
@@ -812,19 +829,40 @@ digraph {
 	compound = "true"
 	newrank = "true"
 	subgraph "root" {
-		"[root] aws_s3_bucket.test_bucket (expand)" [label = "aws_s3_bucket.test_bucket", shape = "box"]
-		"[root] aws_s3_object.test_obj_example (expand)" [label = "aws_s3_object.test_obj_example", shape = "box"]
-		"[root] output.name" [label = "output.name", shape = "note"]
-		"[root] provider[\"registry.terraform.io/hashicorp/aws\"]" [label = "provider[\"registry.terraform.io/hashicorp/aws\"]", shape = "diamond"]
-		"[root] var.name" [label = "var.name", shape = "note"]
-		"[root] aws_s3_bucket.test_bucket (expand)" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"]"
-		"[root] aws_s3_object.test_obj_example (expand)" -> "[root] aws_s3_bucket.test_bucket (expand)"
-		"[root] provider[\"registry.terraform.io/hashicorp/aws\"] (close)" -> "[root] aws_s3_object.test_obj_example (expand)"
-		"[root] root" -> "[root] output.name"
-		"[root] root" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"] (close)"
-		"[root] root" -> "[root] var.name"
+		"[root] module.main_call.aws_s3_bucket.test_bucket (expand)" [label = "module.main_call.aws_s3_bucket.test_bucket", shape = "box"]
+		"[root] module.main_call.aws_s3_object.test_obj_root_module (expand)" [label = "module.main_call.aws_s3_object.test_obj_root_module", shape = "box"]
+		"[root] module.main_call.module.submodule-call.aws_ec2_instance.test_instance (expand)" [label = "module.main_call.module.submodule-call.aws_ec2_instance.test_instance", shape = "box"]
+		"[root] module.main_call.module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance (expand)" [label = "module.main_call.module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance", shape = "box"]
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]" [label = "provider[\\"registry.terraform.io/hashicorp/aws\\"]", shape = "diamond"]
+		"[root] module.main_call (close)" -> "[root] module.main_call.aws_s3_object.test_obj_root_module (expand)"
+		"[root] module.main_call (close)" -> "[root] module.main_call.module.submodule-call (close)"
+		"[root] module.main_call (close)" -> "[root] module.main_call.output.name (expand)"
+		"[root] module.main_call.aws_s3_bucket.test_bucket (expand)" -> "[root] module.main_call (expand)"
+		"[root] module.main_call.aws_s3_bucket.test_bucket (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] module.main_call.aws_s3_object.test_obj_root_module (expand)" -> "[root] module.main_call.aws_s3_bucket.test_bucket (expand)"
+		"[root] module.main_call.module.submodule-call (close)" -> "[root] module.main_call.module.submodule-call.aws_ec2_instance.test_instance (expand)"
+		"[root] module.main_call.module.submodule-call (close)" -> "[root] module.main_call.module.submodule-call.module.second-module-call (close)"
+		"[root] module.main_call.module.submodule-call (close)" -> "[root] module.main_call.module.submodule-call.var.passing_name (expand)"
+		"[root] module.main_call.module.submodule-call (expand)" -> "[root] module.main_call (expand)"
+		"[root] module.main_call.module.submodule-call.aws_ec2_instance.test_instance (expand)" -> "[root] module.main_call.module.submodule-call (expand)"
+		"[root] module.main_call.module.submodule-call.aws_ec2_instance.test_instance (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] module.main_call.module.submodule-call.module.second-module-call (close)" -> "[root] module.main_call.module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance (expand)"
+		"[root] module.main_call.module.submodule-call.module.second-module-call (expand)" -> "[root] module.main_call.module.submodule-call (expand)"
+		"[root] module.main_call.module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance (expand)" -> "[root] module.main_call.module.submodule-call.module.second-module-call (expand)"
+		"[root] module.main_call.module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] module.main_call.module.submodule-call.var.passing_name (expand)" -> "[root] module.main_call.module.submodule-call (expand)"
+		"[root] module.main_call.module.submodule-call.var.passing_name (expand)" -> "[root] module.main_call.var.name (expand)"
+		"[root] module.main_call.output.name (expand)" -> "[root] module.main_call (expand)"
+		"[root] module.main_call.var.name (expand)" -> "[root] module.main_call (expand)"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] module.main_call.aws_s3_object.test_obj_root_module (expand)"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] module.main_call.module.submodule-call.aws_ec2_instance.test_instance (expand)"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] module.main_call.module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance (expand)"
+		"[root] root" -> "[root] module.main_call (close)"
+		"[root] root" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)"
 	}
 }
+
+
 """
                         }
                     },
@@ -875,19 +913,22 @@ digraph {
 	compound = "true"
 	newrank = "true"
 	subgraph "root" {
-		"[root] aws_s3_bucket.test_bucket (expand)" [label = "aws_s3_bucket.test_bucket", shape = "box"]
-		"[root] aws_s3_object.test_obj_submodule (expand)" [label = "aws_s3_object.test_obj_submodule", shape = "box"]
-		"[root] output.name" [label = "output.name", shape = "note"]
-		"[root] provider[\"registry.terraform.io/hashicorp/aws\"]" [label = "provider[\"registry.terraform.io/hashicorp/aws\"]", shape = "diamond"]
-		"[root] var.name" [label = "var.name", shape = "note"]
-		"[root] aws_s3_bucket.test_bucket (expand)" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"]"
-		"[root] aws_s3_object.test_obj_submodule (expand)" -> "[root] aws_s3_bucket.test_bucket (expand)"
-		"[root] provider[\"registry.terraform.io/hashicorp/aws\"] (close)" -> "[root] aws_s3_object.test_obj_submodule (expand)"
-		"[root] root" -> "[root] output.name"
-		"[root] root" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"] (close)"
-		"[root] root" -> "[root] var.name"
+		"[root] aws_ec2_instance.test_instance (expand)" [label = "aws_ec2_instance.test_instance", shape = "box"]
+		"[root] module.second-module-call.aws_ec2_instance.test_second_instance (expand)" [label = "module.second-module-call.aws_ec2_instance.test_second_instance", shape = "box"]
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]" [label = "provider[\\"registry.terraform.io/hashicorp/aws\\"]", shape = "diamond"]
+		"[root] var.passing_name" [label = "var.passing_name", shape = "note"]
+		"[root] aws_ec2_instance.test_instance (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] module.second-module-call (close)" -> "[root] module.second-module-call.aws_ec2_instance.test_second_instance (expand)"
+		"[root] module.second-module-call.aws_ec2_instance.test_second_instance (expand)" -> "[root] module.second-module-call (expand)"
+		"[root] module.second-module-call.aws_ec2_instance.test_second_instance (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] aws_ec2_instance.test_instance (expand)"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] module.second-module-call.aws_ec2_instance.test_second_instance (expand)"
+		"[root] root" -> "[root] module.second-module-call (close)"
+		"[root] root" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)"
+		"[root] root" -> "[root] var.passing_name"
 	}
 }
+
 """
 
                         }

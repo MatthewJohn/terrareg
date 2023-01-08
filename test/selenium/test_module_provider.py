@@ -1,12 +1,18 @@
 
+import base64
+import inspect
 import json
+import os
+import re
 from time import sleep
-
+from io import BytesIO, StringIO
 from unittest import mock
+
 import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 import selenium.common
+from PIL import Image, ImageChops
 
 from terrareg.database import Database
 from test import mock_create_audit_event
@@ -2087,10 +2093,42 @@ All rights are not reserved for this example file content</pre>
             column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
             assert column_data == expected_rows.pop(0)
 
-    def test_resource_graph(self):
+    def _compare_canvas(self, compare_filename):
+        """Compare current canvas data for graph to expected image"""
+        png_url = self.selenium_instance.execute_script("return document.getElementById('cy').getElementsByTagName('canvas')[2].toDataURL('image/png');").replace("data:image/png;base64,", "")
+        image_data = base64.decodebytes(png_url.encode("utf-8"))
+        print("Comparing image:", compare_filename)
+
+        # Enable to regenerate expected images
+        # with open(compare_filename, "wb") as fh:
+        #     fh.write(image_data)
+
+        actual_image = Image.open(BytesIO(image_data), formats=["PNG"])
+        expected_image = Image.open(compare_filename)
+
+        return ImageChops.difference(actual_image, expected_image).getbbox() is None
+
+    @pytest.mark.parametrize("base_url,expected_url,base_filename,", [
+        ("/modules/moduledetails/fullypopulated/testprovider/1.5.0",
+         "/modules/moduledetails/fullypopulated/testprovider/1.5.0/graph",
+         "moduledetails_fullypopulated_testprovider_1.5.0_root_module"),
+        ("/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1",
+         "/modules/moduledetails/fullypopulated/testprovider/1.5.0/graph/submodule/modules/example-submodule1",
+         "moduledetails_fullypopulated_testprovider_1.5.0_submodule"),
+        ("/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example",
+         "/modules/moduledetails/fullypopulated/testprovider/1.5.0/graph/example/examples/test-example",
+         "moduledetails_fullypopulated_testprovider_1.5.0_example")
+    ])
+    @pytest.mark.parametrize("full_resource_names,full_module_names", [
+        (False, False),
+        (False, True),
+        (True, False),
+        (True, True)
+    ])
+    def test_resource_graph(self, base_url, expected_url, base_filename, full_resource_names, full_module_names):
         """Test resource graph page"""
 
-        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+        self.selenium_instance.get(self.get_url(base_url))
         # Wait for resources tab to load
         resources_link = self.wait_for_element(By.ID, 'module-tab-link-resources')
         resources_link.click()
@@ -2100,4 +2138,22 @@ All rights are not reserved for this example file content</pre>
         assert resource_graph_link.text == "View a resource dependency graph"
         resource_graph_link.click()
 
-        assert self.selenium_instance.current_url == self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0/graph')
+        assert self.selenium_instance.current_url == self.get_url(expected_url)
+
+        if full_resource_names:
+            self.selenium_instance.find_element(By.ID, "graphOptionsShowFullResourceNames").click()
+        if full_module_names:
+            self.selenium_instance.find_element(By.ID, "graphOptionsShowFullModuleNames").click()
+
+        file_name = os.path.join(
+            os.path.dirname(inspect.getfile(TestModuleProvider)),
+            "test_graph_canvas_images",
+            f"{base_filename}{'_full_resources' if full_resource_names else ''}{'_full_modules' if full_module_names else ''}.png"
+        )
+
+        # Let canvas load
+        # @TODO Determine flakiness of test to decide
+        # if we need to wait for canvas to finish loading
+        sleep(1)
+
+        assert self._compare_canvas(file_name)
