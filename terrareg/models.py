@@ -935,8 +935,7 @@ class ModuleDetails:
             return Database.decode_blob(db_row["terraform_graph"])
         return None
 
-    @property
-    def graph_json(self):
+    def get_graph_json(self, full_resource_names=False, full_module_names=False):
         """Return graph JSON for resources."""
         terraform_graph = self.terraform_graph
         if not terraform_graph:
@@ -1020,19 +1019,32 @@ class ModuleDetails:
 
                 # Match submodules
                 elif module_match:
-                    labels[name] = module_match.group(1)
+                    if full_module_names:
+                        labels[name] = name
+                    else:
+                        labels[name] = module_match.group(1)
+
                     type_mapping[name] = "module"
 
                 elif data_match:
                     type_mapping[name] = "data"
                     parents[name] = data_match.group(1).strip(".") or "root"
-                    labels[name] = f"(data) {data_match.group(2)}.{data_match.group(3)}"
+
+                    if full_resource_names:
+                        labels[name] = name
+                    else:
+                        labels[name] = f"(data) {data_match.group(2)}.{data_match.group(3)}"
 
                 # Ensure resource RE is performed last,
                 # as this could also match module_re
                 elif resource_match:
                     type_mapping[name] = "resource"
-                    labels[name] = f"{resource_match.group(2)}.{resource_match.group(3)}"
+                    if full_resource_names:
+                        labels[name] = name
+                    else:
+                        labels[name] = f"{resource_match.group(2)}.{resource_match.group(3)}"
+
+                    # Add cost to label, if available
                     if name in resource_costs:
                         labels[name] += f" (${resource_costs[name]}/year)"
                     parents[name] = resource_match.group(1).strip(".") or "root"

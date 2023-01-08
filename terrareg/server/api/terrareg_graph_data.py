@@ -1,4 +1,6 @@
 
+from flask_restful import reqparse, inputs
+
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.models
 
@@ -8,6 +10,20 @@ class ApiTerraregGraphData(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version, example_path=None, submodule_path=None):
         """Return graph data for module version."""
+        parser = reqparse.RequestParser()
+        parser.add_argument(
+            "full_resource_names", type=inputs.boolean,
+            default=False,
+            help="Show resource labels as full path",
+            location="args"
+        )
+        parser.add_argument(
+            "full_module_names", type=inputs.boolean,
+            default=False, help="Show module labels as full path",
+            location="args"
+        )
+        args = parser.parse_args()
+
         _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
         if error:
             return error
@@ -33,4 +49,6 @@ class ApiTerraregGraphData(ErrorCatchingResource):
             # Otherwise, use module version module details object
             module_details = module_version.module_details
 
-        return module_details.graph_json
+        return module_details.get_graph_json(
+            full_module_names=args.full_module_names,
+            full_resource_names=args.full_resource_names)

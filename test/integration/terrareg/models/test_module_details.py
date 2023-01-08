@@ -87,7 +87,7 @@ class TestModuleDetails(TerraregIntegrationTest):
     def test_graph_json(self):
         """Test graph data conversion to JSON"""
         module_version = ModuleVersion.get(ModuleProvider.get(Module(Namespace.get("moduledetails"), "graph-test"), "provider"), "1.0.0")
-        assert module_version.module_details.graph_json == {
+        assert module_version.module_details.get_graph_json() == {
             "nodes": [
                 {"data": {"child_count": 0, "id": "aws_s3_bucket.test_bucket", "label": "aws_s3_bucket.test_bucket", "parent": "root"}, "style": {}},
                 {"data": {"child_count": 0, "id": "aws_s3_object.test_obj_root_module", "label": "aws_s3_object.test_obj_root_module", "parent": "root"}, "style": {}},
@@ -100,7 +100,7 @@ class TestModuleDetails(TerraregIntegrationTest):
             ],
         }
 
-        assert module_version.get_submodules()[0].module_details.graph_json == {
+        assert module_version.get_submodules()[0].module_details.get_graph_json() == {
             "nodes": [
                 {"data": {"child_count": 0, "id": "aws_ec2_instance.test_instance", "label": "aws_ec2_instance.test_instance", "parent": "root"}, "style": {}},
                 {"data": {"child_count": 1, "id": "root", "label": "Root Module"}, "style": {"background-color": "#F8F7F9", "color": "#000000", "font-weight": "bold", "text-valign": "top"}}
@@ -108,7 +108,7 @@ class TestModuleDetails(TerraregIntegrationTest):
             "edges": [],
         }
 
-        assert module_version.get_examples()[0].module_details.graph_json == {
+        assert module_version.get_examples()[0].module_details.get_graph_json() == {
             "nodes": [
                 {"data": {"child_count": 0, "id": "module.main_call.aws_s3_bucket.test_bucket", "label": "aws_s3_bucket.test_bucket", "parent": "module.main_call"}, "style": {}},
                 {"data": {"child_count": 0, "id": "module.main_call.aws_s3_object.test_obj_root_module", "label": "aws_s3_object.test_obj_root_module", "parent": "module.main_call"}, "style": {}},
