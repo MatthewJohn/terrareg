@@ -2100,6 +2100,7 @@ All rights are not reserved for this example file content</pre>
         print("Comparing image:", compare_filename)
 
         # Enable to regenerate expected images
+        # sleep(5)
         # with open(compare_filename, "wb") as fh:
         #     fh.write(image_data)
 
