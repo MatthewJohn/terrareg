@@ -1,5 +1,4 @@
 
-import json
 from unittest import mock
 
 import pytest
@@ -8,7 +7,6 @@ from test.unit.terrareg import (
     mock_models,
     setup_test_data, TerraregUnitTest,
 )
-import terrareg.models
 from test import client
 
 
