@@ -2107,7 +2107,7 @@ All rights are not reserved for this example file content</pre>
         actual_image = Image.open(BytesIO(image_data), formats=["PNG"])
         expected_image = Image.open(compare_filename)
 
-        return imagehash.average_hash(actual_image) == imagehash.average_hash(expected_image)
+        return imagehash.crop_resistant_hash(actual_image).matches(imagehash.crop_resistant_hash(expected_image))
 
     @pytest.mark.parametrize("base_url,expected_url,base_filename,", [
         ("/modules/moduledetails/fullypopulated/testprovider/1.5.0",
