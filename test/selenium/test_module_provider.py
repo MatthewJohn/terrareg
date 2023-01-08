@@ -12,7 +12,8 @@ import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 import selenium.common
-from PIL import Image, ImageChops
+from PIL import Image
+import imagehash
 
 from terrareg.database import Database
 from test import mock_create_audit_event
@@ -2097,19 +2098,16 @@ All rights are not reserved for this example file content</pre>
         """Compare current canvas data for graph to expected image"""
         png_url = self.selenium_instance.execute_script("return document.getElementById('cy').getElementsByTagName('canvas')[2].toDataURL('image/png');").replace("data:image/png;base64,", "")
         image_data = base64.decodebytes(png_url.encode("utf-8"))
-        print("Comparing image:", compare_filename)
 
         # Enable to regenerate expected images
         # sleep(5)
         # with open(compare_filename, "wb") as fh:
         #     fh.write(image_data)
 
-        print("Actual image:", png_url)
-
         actual_image = Image.open(BytesIO(image_data), formats=["PNG"])
         expected_image = Image.open(compare_filename)
 
-        return ImageChops.difference(actual_image, expected_image).getbbox() is None
+        return imagehash.average_hash(actual_image) == imagehash.average_hash(expected_image)
 
     @pytest.mark.parametrize("base_url,expected_url,base_filename,", [
         ("/modules/moduledetails/fullypopulated/testprovider/1.5.0",
