@@ -2141,7 +2141,7 @@ All rights are not reserved for this example file content</pre>
         assert resource_graph_link.text == "View a resource dependency graph"
         resource_graph_link.click()
 
-        assert self.selenium_instance.current_url == self.get_url(expected_url)
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url(expected_url))
 
         if full_resource_names:
             self.selenium_instance.find_element(By.ID, "graphOptionsShowFullResourceNames").click()
