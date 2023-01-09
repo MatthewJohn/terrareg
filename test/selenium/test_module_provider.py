@@ -2105,14 +2105,10 @@ All rights are not reserved for this example file content</pre>
         #     fh.write(image_data)
 
         actual_image = Image.open(BytesIO(image_data), formats=["PNG"])
+        actual_image = actual_image.crop(actual_image.getbbox())
         expected_image = Image.open(compare_filename)
+        expected_image = expected_image.crop(expected_image.getbbox())
 
-        print(imagehash.phash(actual_image))
-        print(imagehash.phash(expected_image))
-        print(imagehash.average_hash(actual_image))
-        print(imagehash.average_hash(expected_image))
-        print(imagehash.whash(actual_image))
-        print(imagehash.whash(expected_image))
         return imagehash.phash(actual_image) == imagehash.phash(expected_image)
 
     @pytest.mark.parametrize("base_url,expected_url,base_filename,", [
