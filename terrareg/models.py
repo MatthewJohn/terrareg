@@ -2775,11 +2775,16 @@ class BaseSubmodule(TerraformSpecsObject):
         api_details = self.get_api_module_specs()
         source_browse_url = self.get_source_browse_url()
         tfsec_failures = self.get_tfsec_failures()
+        terraform_version_constraint = self.get_terraform_version_constraints()
         api_details.update({
             "display_source_url": source_browse_url if source_browse_url else self._module_version.get_source_base_url(),
             "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
             "security_results": tfsec_failures
         })
+        # Only update terraform version constraint if one is defined in the example,
+        # otherwise default to root module's constraint
+        if terraform_version_constraint:
+            api_details["terraform_version_constraint"] = terraform_version_constraint
         return api_details
 
 
