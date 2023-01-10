@@ -1919,6 +1919,13 @@ class TerraformSpecsObject(object):
             })
         return providers
 
+    def get_terraform_version_constraints(self):
+        """Obtain terraform version requirement"""
+        for requirement in self.get_module_specs().get("requirements", []):
+            if requirement["name"] == "terraform":
+                return requirement["version"]
+        return None
+
     def get_api_module_specs(self):
         """Return module specs for API."""
         return {
@@ -1929,7 +1936,7 @@ class TerraformSpecsObject(object):
             "outputs": self.get_terraform_outputs(),
             "dependencies": self.get_terraform_dependencies(),
             "provider_dependencies": self.get_terraform_provider_dependencies(),
-            "resources": self.get_terraform_resources(),
+            "resources": self.get_terraform_resources()
         }
 
     def replace_source_in_file(self, content: str, server_hostname: str):
@@ -2477,7 +2484,8 @@ class ModuleVersion(TerraformSpecsObject):
             "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
             "security_results": tfsec_failures,
             "additional_tab_files": tab_file_mapping,
-            "custom_links": self.custom_links
+            "custom_links": self.custom_links,
+            "terraform_version_constraint": self.get_terraform_version_constraints()
         })
         return api_details
 

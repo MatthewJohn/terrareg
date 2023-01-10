@@ -1716,6 +1716,13 @@ function onSubmoduleSelectChange(event) {
 async function populateTerraformUsageExample(moduleDetails, additionalPath = undefined) {
     let config = await getConfig();
 
+
+    // Populate supported Terraform versions
+    if (moduleDetails.terraform_version_constraint) {
+        $('#supported-terraform-versions-data').text(moduleDetails.terraform_version_constraint);
+        $('#supported-terraform-versions').removeClass('default-hidden');
+    }
+
     // Update labels for example analytics token and phrase
     $("#usage-example-analytics-token").text(config.EXAMPLE_ANALYTICS_TOKEN);
     $("#usage-example-analytics-token-phrase").text(config.ANALYTICS_TOKEN_PHRASE);
