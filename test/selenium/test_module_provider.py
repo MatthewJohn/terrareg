@@ -29,6 +29,7 @@ class TestModuleProvider(SeleniumTest):
         cls._config_allow_custom_repo_urls_module_version = mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', True)
         cls._config_enable_access_controls = mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', False)
         cls._config_module_links = mock.patch('terrareg.config.Config.MODULE_LINKS', '[]')
+        cls._config_terraform_example_version_template = mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major_plus_one}.0.0')
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
@@ -2086,3 +2087,90 @@ All rights are not reserved for this example file content</pre>
         for row in tab_content.find_elements(By.TAG_NAME, "tr"):
             column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
             assert column_data == expected_rows.pop(0)
+
+
+    @pytest.mark.parametrize('url,expected_module_name,expected_module_path,expected_module_version_constraint', [
+        # Base module
+        ('/modules/moduledetails/fullypopulated/testprovider',
+         'fullypopulated',
+         'moduledetails/fullypopulated/testprovider',
+         '>= 1.5.0, < 2.0.0'),
+        # Explicit version
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0',
+         'fullypopulated',
+         'moduledetails/fullypopulated/testprovider',
+         '>= 1.5.0, < 2.0.0'),
+        # Submodule
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+         'fullypopulated',
+         'moduledetails/fullypopulated/testprovider//modules/example-submodule1',
+         '>= 1.5.0, < 2.0.0'),
+        # Non-latest version
+        ('/modules/moduledetails/fullypopulated/testprovider/1.4.0',
+         'fullypopulated',
+         'moduledetails/fullypopulated/testprovider',
+         '1.4.0'),
+        # Beta version
+        ('/modules/moduledetails/fullypopulated/testprovider/1.7.0-beta',
+         'fullypopulated',
+         'moduledetails/fullypopulated/testprovider',
+         '1.7.0-beta')
+
+    ])
+    def test_example_usage(self, url, expected_module_name, expected_module_path, expected_module_version_constraint):
+        """Check example usage panel"""
+        self.selenium_instance.get(self.get_url(url))
+
+        # Wait for inputs tab to be ready
+        self.wait_for_element(By.ID, 'module-tab-link-inputs')
+
+        assert self.selenium_instance.find_element(By.ID, "usage-example-terraform").text == f"""
+module "{expected_module_name}" {{
+  source  = "localhost/my-tf-application__{expected_module_path}"
+  version = "{expected_module_version_constraint}"
+
+  # Provide variables here
+}}
+""".strip()
+
+    @pytest.mark.parametrize('url,expected_terraform_version', [
+        # Base module
+        ('/modules/moduledetails/fullypopulated/testprovider',
+         '>= 1.0, < 2.0.0'),
+        # Explicit version
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0',
+         '>= 1.0, < 2.0.0'),
+        # Submodule
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+         '>= 1.2.1, <= 2.0.0'),
+        # Non-latest version
+        ('/modules/moduledetails/fullypopulated/testprovider/1.2.0',
+         '>= 2.1.1, < 2.5.4'),
+        # Beta version
+        ('/modules/moduledetails/fullypopulated/testprovider/1.7.0-beta',
+         '>= 5.12, < 21.0.0'),
+        # Module without TF constraint
+        ('/modules/moduledetails/withsecurityissues/testprovider/1.2.0',
+         None)
+    ])
+    def test_example_usage_terraform_version(self, url, expected_terraform_version):
+        """Check example usage panel"""
+        self.selenium_instance.get(self.get_url(url))
+
+        # Wait for inputs tab to be ready
+        self.wait_for_element(By.ID, 'module-tab-link-inputs')
+
+        version_text = self.selenium_instance.find_element(By.ID, "supported-terraform-versions")
+        assert version_text.is_displayed() == (expected_terraform_version is not None)
+        if expected_terraform_version is not None:
+            assert version_text.text == f"Supported Terraform versions: {expected_terraform_version}"
+
+    def test_ensure_example_usage_not_shown_in_example(self):
+        """Ensure example usage section is not displayed in example submodule"""
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example"))
+
+        # Wait for inputs tab to be ready
+        self.wait_for_element(By.ID, 'module-tab-link-inputs')
+
+        version_text = self.selenium_instance.find_element(By.ID, "supported-terraform-versions")
+        assert version_text.is_displayed() == False
