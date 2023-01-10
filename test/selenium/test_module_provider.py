@@ -2109,18 +2109,12 @@ All rights are not reserved for this example file content</pre>
         expected_image = Image.open(compare_filename)
         expected_image = expected_image.crop(expected_image.getbbox())
 
-        print(imagehash.phash(expected_image))
-        print(imagehash.phash(actual_image))
-        print(imagehash.whash(expected_image))
-        print(imagehash.whash(actual_image))
-        print(imagehash.average_hash(expected_image))
-        print(imagehash.average_hash(actual_image))
-        print(imagehash.phash(expected_image))
-        print(imagehash.phash(actual_image))
-        print("END")
-
         return imagehash.phash(actual_image) == imagehash.phash(expected_image)
 
+    @pytest.mark.skipif(
+        not os.environ.get("RUNNING_IN_DOCKER"),
+        reason="Canvas image comparison does not work outsidde of docker"
+    )
     @pytest.mark.parametrize("base_url,expected_url,base_filename,", [
         ("/modules/moduledetails/fullypopulated/testprovider/1.5.0",
          "/modules/moduledetails/fullypopulated/testprovider/1.5.0/graph",

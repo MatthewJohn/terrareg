@@ -78,6 +78,8 @@ RUN apt-get update && apt-get install -y firefox firefox-geckodriver && apt-get 
 COPY requirements-dev.txt .
 RUN pip install --proxy=$http_proxy -r requirements-dev.txt
 
+ENV RUNNING_IN_DOCKER=1
+
 COPY . .
 
 ENTRYPOINT [""]
