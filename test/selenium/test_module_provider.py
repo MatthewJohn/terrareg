@@ -40,6 +40,7 @@ class TestModuleProvider(SeleniumTest):
         cls.register_patch(cls._config_allow_custom_repo_urls_module_version)
         cls.register_patch(cls._config_enable_access_controls)
         cls.register_patch(cls._config_module_links)
+        cls.register_patch(cls._config_terraform_example_version_template)
 
         super(TestModuleProvider, cls).setup_class()
 
