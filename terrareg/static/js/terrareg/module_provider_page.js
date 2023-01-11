@@ -1716,6 +1716,11 @@ function onSubmoduleSelectChange(event) {
 async function populateTerraformUsageExample(moduleDetails, terraformVersionConstraint, additionalPath = undefined) {
     let config = await getConfig();
 
+    // Check if module has been published - if not, do not
+    // show usage example
+    if (! moduleDetails.published) {
+        return;
+    }
 
     // Populate supported Terraform versions
     if (moduleDetails.terraform_version_constraint) {

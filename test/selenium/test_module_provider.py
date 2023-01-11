@@ -2166,12 +2166,18 @@ module "{expected_module_name}" {{
         if expected_terraform_version is not None:
             assert version_text.text == f"Supported Terraform versions: {expected_terraform_version}"
 
-    def test_ensure_example_usage_not_shown_in_example(self):
+    @pytest.mark.parametrize("url", [
+        # Example
+        ("/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example"),
+        # Unpublished version
+        ("/modules/moduledetails/fullypopulated/testprovider/1.6.0")
+    ])
+    def test_example_usage_ensure_not_shown(self, url):
         """Ensure example usage section is not displayed in example submodule"""
-        self.selenium_instance.get(self.get_url("/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example"))
+        self.selenium_instance.get(self.get_url(url))
 
         # Wait for inputs tab to be ready
         self.wait_for_element(By.ID, 'module-tab-link-inputs')
 
-        version_text = self.selenium_instance.find_element(By.ID, "supported-terraform-versions")
+        version_text = self.selenium_instance.find_element(By.ID, "usage-example-container")
         assert version_text.is_displayed() == False
