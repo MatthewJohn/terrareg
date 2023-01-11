@@ -13,6 +13,7 @@ Provides features to aid usage and discovery of modules, providing:
  * Module example source code within the UI, with automatic rewriting of 'source' arguments
  * Interactive 'Usage builder', helping users build terraform to use the terraform modules
  * Hooks for git SCM applications to automatically index modules
+ * Authentication via SSO (OpenIDConnect/SAML2)
 
 If you like and use this project and are happy to let us know, please raise a Github issue, create a PR or contact [MatthewJohn](https://github.com/matthewjohn) so it can be added to the README :)
 
