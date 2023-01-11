@@ -207,6 +207,21 @@ alembic revision --autogenerate
 alembic upgrade head
 ```
 
+## Running tests
+
+```
+# Run all tests
+pytest
+
+# Running unit/integration/selenium tests individually
+pytest ./test/unit
+pytest ./test/integration
+pytest ./test/selenium
+
+# Running a specific test
+pytest -k test_setup_page
+```
+
 # License
 
 This project and all associated code is covered by GNU General Public License v3.0.
