@@ -1713,13 +1713,13 @@ function onSubmoduleSelectChange(event) {
  *
  * @param moduleDetails Terrareg module details
  */
-async function populateTerraformUsageExample(moduleDetails, additionalPath = undefined) {
+async function populateTerraformUsageExample(moduleDetails, terraformVersionConstraint, additionalPath = undefined) {
     let config = await getConfig();
 
 
     // Populate supported Terraform versions
     if (moduleDetails.terraform_version_constraint) {
-        $('#supported-terraform-versions-data').text(moduleDetails.terraform_version_constraint);
+        $('#supported-terraform-versions-data').text(terraformVersionConstraint);
         $('#supported-terraform-versions').removeClass('default-hidden');
     }
 
@@ -2118,7 +2118,7 @@ async function setupRootModulePage(data) {
         setupModuleVersionDeletionSetting(moduleDetails);
         populateSubmoduleSelect(moduleDetails);
         populateExampleSelect(moduleDetails);
-        populateTerraformUsageExample(moduleDetails);
+        populateTerraformUsageExample(moduleDetails, moduleDetails.terraform_version_constraint);
         populateDownloadSummary(moduleDetails);
         setSourceUrl(moduleDetails.display_source_url);
         populateCustomLinks(moduleDetails);
@@ -2149,7 +2149,7 @@ async function setupSubmodulePage(data) {
     setOwner(moduleDetails);
     populateCurrentSubmodule(`Submodule: ${submodulePath}`)
     populateVersionText(moduleDetails);
-    populateTerraformUsageExample(moduleDetails, submodulePath);
+    populateTerraformUsageExample(moduleDetails, submoduleDetails.terraform_version_constraint, submodulePath);
     enableBackToParentLink(moduleDetails);
     showSecurityWarnings(submoduleDetails);
     setSourceUrl(submoduleDetails.display_source_url);
