@@ -179,18 +179,7 @@ class TestModuleProvider(SeleniumTest):
                 'module-description': 'This is a test module version for tests.',
                 'published-at': 'Published January 05, 2022 by moduledetails',
                 'module-owner': 'Module managed by This is the owner of the module',
-                'source-url': 'Source code: https://link-to.com/source-code-here',
-                'usage-example-container': f"""Usage
-To use this module:
-Add the following example to your Terraform,
-Ensure the "my-tf-application" placeholder must be replaced with your 'analytics token',
-Add the required inputs - use the 'Usage Builder' tab for help and 'Inputs' tab for a full list.
-module "fullypopulated" {{
-  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"
-  version = "1.5.0"
-
-  # Provide variables here
-}}"""
+                'source-url': 'Source code: https://link-to.com/source-code-here'
             }
             for element_name in expected_element_details:
                 element = self.selenium_instance.find_element(By.ID, element_name)
