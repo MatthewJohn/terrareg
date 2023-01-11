@@ -2106,10 +2106,10 @@ All rights are not reserved for this example file content</pre>
          'moduledetails/fullypopulated/testprovider//modules/example-submodule1',
          '>= 1.5.0, < 2.0.0'),
         # Non-latest version
-        ('/modules/moduledetails/fullypopulated/testprovider/1.4.0',
+        ('/modules/moduledetails/fullypopulated/testprovider/1.2.0',
          'fullypopulated',
          'moduledetails/fullypopulated/testprovider',
-         '1.4.0'),
+         '1.2.0'),
         # Beta version
         ('/modules/moduledetails/fullypopulated/testprovider/1.7.0-beta',
          'fullypopulated',
@@ -2142,7 +2142,7 @@ module "{expected_module_name}" {{
          '>= 1.0, < 2.0.0'),
         # Submodule
         ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
-         '>= 1.2.1, <= 2.0.0'),
+         '>= 2.0.0'),
         # Non-latest version
         ('/modules/moduledetails/fullypopulated/testprovider/1.2.0',
          '>= 2.1.1, < 2.5.4'),
