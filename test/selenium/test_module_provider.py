@@ -29,7 +29,7 @@ class TestModuleProvider(SeleniumTest):
         cls._config_allow_custom_repo_urls_module_version = mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', True)
         cls._config_enable_access_controls = mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', False)
         cls._config_module_links = mock.patch('terrareg.config.Config.MODULE_LINKS', '[]')
-        cls._config_terraform_example_version_template = mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major_plus_one}.0.0')
+        cls._config_terraform_example_version_template = mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major_plus_one}.0.0, unittest')
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
@@ -2095,22 +2095,22 @@ All rights are not reserved for this example file content</pre>
         ('/modules/moduledetails/fullypopulated/testprovider',
          'fullypopulated',
          'moduledetails/fullypopulated/testprovider',
-         '>= 1.5.0, < 2.0.0'),
+         '>= 1.5.0, < 2.0.0, unittest'),
         # Explicit version
         ('/modules/moduledetails/fullypopulated/testprovider/1.5.0',
          'fullypopulated',
          'moduledetails/fullypopulated/testprovider',
-         '>= 1.5.0, < 2.0.0'),
+         '>= 1.5.0, < 2.0.0, unittest'),
         # Submodule
         ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
          'fullypopulated',
          'moduledetails/fullypopulated/testprovider//modules/example-submodule1',
-         '>= 1.5.0, < 2.0.0'),
+         '>= 1.5.0, < 2.0.0, unittest'),
         # Non-latest version
         ('/modules/moduledetails/fullypopulated/testprovider/1.2.0',
          'fullypopulated',
          'moduledetails/fullypopulated/testprovider',
-         '1.2.0'),
+         '>= 1.2.0, < 2.0.0, unittest'),
         # Beta version
         ('/modules/moduledetails/fullypopulated/testprovider/1.7.0-beta',
          'fullypopulated',
