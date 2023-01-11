@@ -20,6 +20,8 @@ If you like and use this project and are happy to let us know, please raise a Gi
 
 ![Homepage](./docs/screenshots/homepage.png)
 
+![Search](./docs/screenshots/search.png)
+
 ![Module Provider](./docs/screenshots/module_provider.png)
 
 ![Example](./docs/screenshots/example.png)
