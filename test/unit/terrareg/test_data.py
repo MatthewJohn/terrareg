@@ -227,7 +227,8 @@ test_data_full = {
                                 {
                                     'name': 'random',
                                     'alias': 'random-alias',
-                                    'version': '5.2.1'
+                                    # Ensure GT and LT are displayed correctly in browser
+                                    'version': '>= 5.2.1, < 6.0.0'
                                 },
                                 {
                                     'name': 'someothercompany/unsafe',
@@ -235,7 +236,16 @@ test_data_full = {
                                     'version': '2.0.0'
                                 }
                             ],
-                            'requirements': [],
+                            'requirements': [
+                                {
+                                    "name": "terraform",
+                                    "version": ">= 1.0, < 2.0.0"
+                                },
+                                {
+                                    "name": "someothercompany/unsafe",
+                                    "version": ">= 4.45"
+                                }
+                            ],
                             'resources': [
                                 {
                                     'type': 'string',
@@ -453,7 +463,16 @@ test_data_full = {
                                             'version': None
                                         }
                                     ],
-                                    'requirements': [],
+                                    'requirements': [
+                                        {
+                                            "name": "terraform",
+                                            "version": ">= 1.2.1, <= 2.0.0"
+                                        },
+                                        {
+                                            "name": "someothercompany/example_random",
+                                            "version": ">= 4.47"
+                                        }
+                                    ],
                                     'resources': [
                                         {
                                             'type': 'string',
@@ -497,7 +516,16 @@ test_data_full = {
                                             'version': None
                                         }
                                     ],
-                                    'requirements': [],
+                                    'requirements': [
+                                        {
+                                            "name": "terraform",
+                                            "version": ">= 2.0.0"
+                                        },
+                                        {
+                                            "name": "someothercompany/submodule_random",
+                                            "version": ">= 4.49"
+                                        }
+                                    ],
                                     'resources': [
                                         {
                                             'type': 'string',
@@ -512,9 +540,9 @@ test_data_full = {
                                 })
                             }
                         }
-                    },
+                    }
                 }
-            }},
+            }}
         }
     },
     'secondtestnamespace': {
