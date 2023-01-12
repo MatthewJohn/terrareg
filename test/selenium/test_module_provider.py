@@ -1369,7 +1369,7 @@ class TestModuleProvider(SeleniumTest):
         assert [file.text for file in file_list] == ['main.tf', 'data.tf', 'variables.tf']
 
         # Ensure contents of main.tf is shown in data
-        expected_main_tf_content = f'# Call root module\nmodule "root" {{\n  source  = "localhost:{self.SERVER.port}/moduledetails/fullypopulated/testprovider"\n  version = "1.5.0"\n}}'
+        expected_main_tf_content = f'# Call root module\nmodule "root" {{\n  source  = "localhost:{self.SERVER.port}/moduledetails/fullypopulated/testprovider"\n  version = ">= 1.5.0, < 2.0.0, unittest"\n}}'
         assert file_tab_content.find_element(By.ID, 'example-file-content').text == expected_main_tf_content
 
         # Select main.tf file and check content
@@ -1805,9 +1805,9 @@ class TestModuleProvider(SeleniumTest):
 
     @pytest.mark.parametrize('enable_beta,enable_unpublished,expected_versions', [
         (False, False, ['1.5.0 (latest)', '1.2.0']),
-        (True, False, ['1.6.1-beta (beta)', '1.5.0 (latest)', '1.2.0']),
+        (True, False, ['1.7.0-beta (beta)', '1.6.1-beta (beta)', '1.5.0 (latest)', '1.2.0']),
         (False, True, ['1.6.0 (unpublished)', '1.5.0 (latest)', '1.2.0']),
-        (True, True, ['1.6.1-beta (beta)', '1.6.0 (unpublished)', '1.5.0 (latest)', '1.2.0', '1.0.0-beta (beta) (unpublished)']),
+        (True, True, ['1.7.0-beta (beta)', '1.6.1-beta (beta)', '1.6.0 (unpublished)', '1.5.0 (latest)', '1.2.0', '1.0.0-beta (beta) (unpublished)']),
     ])
     def test_user_preferences(self, enable_beta, enable_unpublished, expected_versions):
         """Test user preferences"""
