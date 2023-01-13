@@ -207,6 +207,7 @@ There are common attributes that can be added to each of variable objects, which
 |static|This does not appear in the 'Usage Builder' 'config input' table, but provides a static value in the 'terraform input'||
 |select|Provides a dropdown for the user to select from a list of choices|"choices" must be added to the object, which may either be a list of strings, or a list of objects. If using a list of objects, a "name" and "value" must be provided. Optionally an "additional_content" attribute can be added to the choice, which provides additional terraform to be added to the top of the terraform example. The main variable object may also contain a "allow_custom" boolean attribute, which allows the user to enter a custom text input.|
 
+
 ### Submodules
 
 
@@ -256,17 +257,65 @@ During indexing, cost analysis checks are performed against each example.
 
 To perform this accurately, it is best to ensure examples do not have any required variables - either with no variables present in the example or ensuring all variables have a 'default' value.
 
+
 #### Usage of main.tf
 
 Each of the Terraform files in the example is shown in the UI in alphabetical order, exception for `main.tf`, which is displayed first.
 
 It is recommended to put the 'main' functionality of the example (e.g. the call to the root module and other crucial code to demonstrate) in the main.tf, putting any 'supporting' terraform (state configuration etc.) into seperate files.
 
+#### Relative module calls
+
+We recommend using relative paths in the source of the "module blocks" in the examples (that call the local module's root/submodules).
+
+The Terrareg automatically converts this before displaying to users in the web interface, replacing the relative source path with a URL to the module's path within the registry and adds a version constraint.
+
+E.g., for an example with the code:
+```
+/examples/basic_vpc/main.tf:
+
+module "network" {
+  source = "../../"
+
+  vpc = module.vpc.vpc_id
+}
+
+module "vpc" {
+  source = "../../modules/vpc"
+
+  cidr = "10.0.0.0/24"
+}
+```
+
+will be rewritten in the UI to:
+```
+/examples/basic_vpc/main.tf:
+
+module "network" {
+  source  = "my-registry.example.com/mynamespace/mymodule/myprovider"
+  version = ">= 1.5.0, < 2.0.0"
+
+  vpc = module.vpc.vpc_id
+}
+
+module "vpc" {
+  source  = "my-registry.example.com/mynamespace/mymodule/myprovider//modules/vpc"
+  version = ">= 1.5.0, < 2.0.0"
+
+  cidr = "10.0.0.0/24"
+}
+```
+
+Note: We also recommend using a single line break before any variables being passing into the module call, as this results in a more consistent styling of the rewritten code.
+
+The version constraint template can be modified by setting [TERRAFORM_EXAMPLE_VERSION_TEMPLATE](./CONFIG.md#terraform_example_version_template).
+
+
 ## Security Scanning
 
 Security scanning of modules is performed automatically, without any additional setup.
 
-To disable security scanning results, set the [ENABLE_SECURITY_SCANNING](./CONFIG.md#enablesecurityscanning) configuration.
+To disable security scanning results, set the [ENABLE_SECURITY_SCANNING](./CONFIG.md#enable_security_scanning) configuration.
 
 This configuration does not change whether security scans are performing during module indexing, instead, it disables the display of security vulnerabilities in the UI. This means that if the configuration is reverted in future, the security issues are immediately displayed without having to re-index modules.
 
