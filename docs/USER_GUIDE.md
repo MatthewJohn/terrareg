@@ -332,6 +332,43 @@ Terrareg supports both:
 
 To disable TLS verification for a locally hosted Infracost pricing API, see [INFRACOST_TLS_INSECURE_SKIP_VERIFY](./CONFIG.md#infracosttlsinsecureskipverify)
 
+## Create modules in the registry
+
+### Terminology
+
+Each "terraform module" in the registry is identified by 3 components:
+ * Namespace (see (Namespace)[#namespace] documentation)
+ * Module name
+   * This is the descriptive name of the module
+ * Provider
+   * This refers to the 'primary' Terraform provider that is used within the module (e.g. 'aws' would be used for modules that only/primarily manage aws resources). A `null` provider can be used for any modules that do not use providers.
+
+We use the terminology 'Module' for a single module, where `namespace/module/provider1` and `namespace/module/provider2` are different modules.
+
+### Namespaces
+
+Namespaces form part of the module path and are created indepedently of modules.
+
+These can be used in several ways:
+ * Just a logical way to seperate modules
+ * Used in conjunction with [Git Providers](#git-providers) to determine part of the SCM path (e.g. the organisation/user for github or projects for stash)
+ * To manage user group permissions, which are set on a namespace level (see [Single Sign-on](#single-sign-on))
+
+Namespaces are managed by administrators of the registry using the 'Create Namespace' page (in the 'Create' menu drop-down)
+
+### Create a module
+
+Once logged in, as an admin or a user with 'Full' namespace permissions, to to 'Create -> Module' in the menu drop-down.
+
+The list of namespaces is provided (for non-admin users, only the namespaces that the user has 'Full' permissions to are displayed).
+
+Enter a module name and provider - these must adhere to Terraform's naming restrictions (using only lower-case characters and dashes)
+
+The git provider can be selected - for information on this see [Git Providers](#git-providers).
+
+If a [ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER](./CONFIG.md#allow_custom_git_url_module_provider) is enabled, the custom URLs (as docuented in the Git Providers section) can be entered specifically for the module.
+
+
 ## Module Usage Analytics
 
 Module analaytics allow each use of a module to be tracked - giving statistics such as:
