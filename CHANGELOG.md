@@ -1,5 +1,17 @@
 # Changelog
 
+# [2.49.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.48.0...v2.49.0) (2023-01-13)
+
+
+### Bug Fixes
+
+* Do not show Terraform example usage panel in module provider page if module version has not been published. ([1fdc0ae](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1fdc0ae749bb79f4f8ade7e30910ae25ccda7a55)), closes [#272](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/272)
+
+
+### Features
+
+* Add Terraform version constraint to module provider page. ([5d1e382](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5d1e382de8b8778a757f2587e10ec3fc1e356769)), closes [#272](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/272)
+
 # [2.48.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.47.3...v2.48.0) (2022-12-31)
 
 
