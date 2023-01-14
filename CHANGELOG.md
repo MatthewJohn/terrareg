@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.49.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.49.0...v2.49.1) (2023-01-14)
+
+
+### Bug Fixes
+
+* Add 'location' argument to all request parsers that expect arguments via query string ([36220b1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/36220b129a869b742ca85b7359384dfba3ac43dc)), closes [#283](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/283)
+
 # [2.49.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.48.0...v2.49.0) (2023-01-13)
 
 
