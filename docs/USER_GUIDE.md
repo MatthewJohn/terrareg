@@ -4,12 +4,16 @@
 
 * [Deployment](#deployment)
   * [Docker Environment Variables](#docker-environment-variables)
+  * [Application environment variables](#application-environment-variables)
   * [Database Migrations](#database-migrations)
 * [Security](#security)
    * [Single Single-On](#single-sign-on)
 * [Uploading Modules](#uploading-modules)
 * [Security Scanning](#security-scanning)
 * [Cost Analysis](#cost-analysis)
+* [Module storage](#module-storage)
+* [Git Providers](#git-providers)
+* [Create modules in the registry](#create-modules-in-the-registry)
 * [Module Usage Analytics](#module-usage-analytics)
 * [Customising Terrareg UI](#customising-terrareg-ui)
 
@@ -540,6 +544,12 @@ Analytics enforced can be disabled, allowing module usage with an analytics key 
 To disable this, see [ALLOW_UNIDENTIFIED_DOWNLOADS](./CONFIG.md#allowunidentifieddownloads)
 
 # Customising Terrareg UI
+
+## Rebranding
+
+The name of the application (in headings and titles) can be customised by setting [APPLICATION_NAME](./CONFIG.md#application_name)
+
+The logo displayed in the UI can be customised by setting [LOGO_URL](./CONFIG.md#logo_url) to a URL of an externally hosted image.
 
 ## Module page
 
