@@ -11,15 +11,16 @@
 * [Security Scanning](#security-scanning)
 * [Cost Analysis](#cost-analysis)
 * [Module Usage Analytics](#module-usage-analytics)
+* [Customising Terrareg UI](#customising-terrareg-ui)
 
 
-## Deployment
+# Deployment
 
-### Docker environment variables
+## Docker environment variables
 
 The following environment variables are available to configure the docker container
 
-#### MIGRATE_DATABASE
+### MIGRATE_DATABASE
 
 Whether to perform a database migration on container startup.
 
@@ -34,7 +35,7 @@ Use `MIGRATE_DATABASE_ONLY` to run an instance that will perform the necessary d
 
 Default: `False`
 
-#### MIGRATE_DATABASE_ONLY
+### MIGRATE_DATABASE_ONLY
 
 Whether to perform database migration and exit immediately.
 
@@ -46,7 +47,7 @@ The `MIGRATE_DATABASE` environment variable must also be set to `True` to perfor
 
 Default: `False`
 
-#### SSH_PRIVATE_KEY
+### SSH_PRIVATE_KEY
 
 Provide the contents of the SSH key to perform git clones.
 
@@ -55,12 +56,12 @@ This is an alternative to mounting the '.ssh' directory of the root user.
 Default: ''
 
 
-### Application environment variables
+## Application environment variables
 
 For a list of available application configuration environment variables, please see [docs/CONFIG.md](./CONFIG.md)
 
 
-### Database Migrations
+## Database Migrations
 
 Terrareg can be deployed via Docker and scaled out to support high-availability and load requirements.
 
@@ -80,8 +81,39 @@ To enable database migrations in all containers (assuming the service will be sc
 
 To dedicate a single container to DB migrations, set `MIGRATE_DATABASE` to `False` on all containers running the web application and create a new container
 
+## Allowing Terrareg to Communicate with itself
 
-## Security
+During module extraction/analysis, Terrareg will need to communicate with itself, which is required during cost analysis and graph generation.
+
+To configure this, set the [DOMAIN_NAME](./CONFIG.md#domain_name) configuration.
+
+## Docker storage
+
+### Module data
+
+If [module hosting](#module-hosting) is being used, ensure that a directory is mounted into the container for storing module data.
+This path can be customised by setting [DATA_DIRECTORY](./CONFIG.md#data_directory)
+
+
+## SSL
+
+Although Terrareg can be deployed without SSL - this is only recommended for testing and local development.
+Aside from the usualy reasons for using SSL, it is also required for Terraform to communicate with the registry to obtain modules.
+
+### Enabling SSL on the application
+
+SSL can be enabled on Terrareg itself - the certificates must be mounted inside the container (or be available on the filesystem, if running outside of a docker container) and the absolute path can be provided using the environment variables [SSL_CERT_PRIVATE_KEY](./CONFIG.md#ssl_cert_private_key) and [SSL_CERT_PUBLIC_KEY](./CONFIG.md#ssl_cert_public_key).
+
+If Terrareg is being run outside of a docker container, these can be provided as command line arguments `--ssl-cert-private-key` and `--ssl-cert-public-key`.
+
+### Offloading SSL using a reverse proxy
+
+SSL can also be provided by a reverse proxy in front of Terrareg and traffic to the Terrareg container can be served via HTTP.
+
+
+# Security
+
+Terrareg must be configured with a secret key to be able to login, which is used for encrypting sessions. This can be configured via [SECRET_KEY](./CONFIG.md#secret_key).
 
 By default, Terrareg administration is protected by an [ADMIN_AUTHENTICATION_TOKEN](./CONFIG.md#admin_authentication_token), which is set via environment variable, which becomes the password used for authentication on the login page.
 
@@ -90,7 +122,7 @@ Authentication is required to perform tasks such as: creating namespaces, creati
 However, indexing and publishing modules does *not* require authentication. To disable unauthorised indexing/publishing of modules, set up dedicated API keys for these functions, see [UPLOAD_API_KEYS](./CONFIG.MD#upload_api_keys) and [PUBLISH_API_KEYS](./CONFIG.MD#Ppublish_api_keys)
 
 
-### Single Sign-on
+## Single Sign-on
 
 Single sign-on can be used to allow authentication via external authentication providers.
 
@@ -104,7 +136,7 @@ Once single sign-on has been setup, the [ADMIN_AUTHENTICATION_TOKEN](./CONFIG.md
 
 It is advised to use with caution and avoid using on publicly hosted/accessible instances.
 
-### OpenID Connect
+## OpenID Connect
 
 To configure OpenID connect, setup an application in an identity provider (IdP) with the following:
 
@@ -128,7 +160,7 @@ The instance should be configured with SSL certificates ([SSL_CERT_PRIVATE_KEY](
 
 The text displayed on the login button can be customised by setting [OPENID_CONNECT_LOGIN_TEXT](./CONFIG.md#openidconnectlogintext)
 
-### SAML2
+## SAML2
 
 Generate a public and a private key, using:
 
@@ -150,13 +182,13 @@ In the IdP:
 * ensure at least one attribute is assigned.
 
 
-## Uploading Modules
+# Uploading Modules
 
 Terrareg has been extensively tested with Terraform modules of all shapes and sizes, meaning that it should be able to provide valuable information without any modification to modules before indexing.
 
 However, to get the _most_ out of Terrareg, there are some practices/guides that will help.
 
-### Terrareg metadata file
+## Terrareg metadata file
 
 A metadata file can be provided each an uploaded module's archive to provide additional metadata to terrareg.
 
@@ -175,13 +207,13 @@ The following attributes are available at the root of the JSON object:
 |repo_base_url|Formatted base URL for project's repo. E.g. `https://gitlab.corporate.com/{namespace}/{module}`|
 |repo_browse_url|Formatted URL for user-viewable source code. Must contain `{tag}` and `{path}` placeholders. E.g. `https://github.com/{namespace}/{module}-{provider}/blob/{tag}/{path}`|
 
-### Description
+## Description
 
 If a metadata file is not present or a description is not provided, Terrareg will attempt to automatically generate a description of the module, using the README.md from the module.
 
 This functionality can be disabled by setting [AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION](CONFIG.md#autogeneratemoduleproviderdescription)
 
-#### Usage builder configuration
+### Usage builder configuration
 
 The usage builder requires an array of objects, which define the name, type and description of the variable.
 
@@ -208,7 +240,7 @@ There are common attributes that can be added to each of variable objects, which
 |select|Provides a dropdown for the user to select from a list of choices|"choices" must be added to the object, which may either be a list of strings, or a list of objects. If using a list of objects, a "name" and "value" must be provided. Optionally an "additional_content" attribute can be added to the choice, which provides additional terraform to be added to the top of the terraform example. The main variable object may also contain a "allow_custom" boolean attribute, which allows the user to enter a custom text input.|
 
 
-### Submodules
+## Submodules
 
 
 By default, sub-modules are located in individual sub-directories of the `modules` directory of the module, e.g.:
@@ -230,7 +262,7 @@ By default, sub-modules are located in individual sub-directories of the `module
 
 This directory can be changed on a global level with [EXAMPLES_DIRECTORY](./CONFIG.md#examplesdirectory)
 
-### Examples
+## Examples
 
 By default, examples are located in individual sub-directories of the `examples` directory of the module, e.g.:
 
@@ -251,20 +283,20 @@ By default, examples are located in individual sub-directories of the `examples`
 
 This directory can be changed on a global level with [EXAMPLES_DIRECTORY](./CONFIG.md#examplesdirectory)
 
-#### Variable defaults
+### Variable defaults
 
 During indexing, cost analysis checks are performed against each example.
 
 To perform this accurately, it is best to ensure examples do not have any required variables - either with no variables present in the example or ensuring all variables have a 'default' value.
 
 
-#### Usage of main.tf
+### Usage of main.tf
 
 Each of the Terraform files in the example is shown in the UI in alphabetical order, exception for `main.tf`, which is displayed first.
 
 It is recommended to put the 'main' functionality of the example (e.g. the call to the root module and other crucial code to demonstrate) in the main.tf, putting any 'supporting' terraform (state configuration etc.) into seperate files.
 
-#### Relative module calls
+### Relative module calls
 
 We recommend using relative paths in the source of the "module blocks" in the examples (that call the local module's root/submodules).
 
@@ -311,7 +343,7 @@ Note: We also recommend using a single line break before any variables being pas
 The version constraint template can be modified by setting [TERRAFORM_EXAMPLE_VERSION_TEMPLATE](./CONFIG.md#terraform_example_version_template).
 
 
-## Security Scanning
+# Security Scanning
 
 Security scanning of modules is performed automatically, without any additional setup.
 
@@ -320,7 +352,7 @@ To disable security scanning results, set the [ENABLE_SECURITY_SCANNING](./CONFI
 This configuration does not change whether security scans are performing during module indexing, instead, it disables the display of security vulnerabilities in the UI. This means that if the configuration is reverted in future, the security issues are immediately displayed without having to re-index modules.
 
 
-## Cost Analysis
+# Cost Analysis
 
 Example cost analysis is performed using infracost.
 
@@ -332,9 +364,60 @@ Terrareg supports both:
 
 To disable TLS verification for a locally hosted Infracost pricing API, see [INFRACOST_TLS_INSECURE_SKIP_VERIFY](./CONFIG.md#infracosttlsinsecureskipverify)
 
-## Create modules in the registry
+# Module storage
 
-### Terminology
+Terrareg can work in one of two ways:
+ * Modules hosting
+ * Git-based
+
+If only one of these methods is to be used, the other can be disabled:
+
+ * [ALLOW_MODULE_HOSTING](./CONFIG.md#allow_module_hosting) - enables/disables hosting module source code
+ * [ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER](./CONFIG.md#allow_custom_git_url_module_provider) and [ALLOW_CUSTOM_GIT_URL_MODULE_VERSION](./CONFIG.md#allow_custom_git_url_module_version) - enables disables setting git URLs on modules/within metadata file.
+
+
+## Module hosting
+
+Modules are indexed by uploading a zip/tar archive of the code to the upload endpoint.
+
+Modules are stored in Terrareg in the [DATA_DIRECTORY](./CONFIG.md#data_directory) - it is important to ensure this path is mounted to persistent storage, so that the data is not lost between container rebuilds/upgrades.
+
+When a module is used in Terraform, Terraform obtains the module source code directly from Terrareg.
+
+Since there is not currently any global authentication to access modules in the registry, this means modules can be downloaded anonymously.
+
+## Git-based
+
+Git can be used as the source for modules.
+
+Each module can be configured with a repository clone url.
+
+When a module version is indexed, Terrareg clones the git repository and indexes the code.
+Terrareg will only store meta-data about the module version and store terraform files from each of the 'examples', to be displayed in the UI.
+
+When a module is used in Terraform, Terraform communicates with the registry, which provides a redirect URL to the original git repository. Terraform will then download the source code from the original git repository. If the git repository is authenticated via SSH, Terraform will automatically authenticate using the end-user's SSH key.
+
+This means modules remain secured, protected by the SCM tool.
+
+# Git Providers
+
+To fully utilise the features that Terraform provides for git, each module can be provided with three URLs:
+ * Repository base URL - the base URL of the repository
+ * Repository clone URL - the url for cloning the repository
+ * Repository source browse URL - the URL for browsing a single file, using a placeholders for git tag and file path
+
+The avoid having to set this up in each module, Git Providers collapse these configurations into an entity, which can be selected during module creation.
+
+Using git providers, the namespace, module name and provider of the module can be used in the templates of the URLs, meaning that the namespace can be used to determine the organisation/user of the repository (when using Github for example).
+
+Details of the format of this configuration and some examples can be found in the configuration documentation: [GIT_PROVIDER_CONFIG](./CONFIG.md#git_provider_config).
+
+Once enabled, users can be limited from providing custom URLs by disabling: [ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER](./CONFIG.md#allow_custom_git_url_module_provider) and [ALLOW_CUSTOM_GIT_URL_MODULE_VERSION](./CONFIG.md#allow_custom_git_url_module_version)
+
+
+# Create modules in the registry
+
+## Terminology
 
 Each "terraform module" in the registry is identified by 3 components:
  * Namespace (see (Namespace)[#namespace] documentation)
@@ -345,18 +428,18 @@ Each "terraform module" in the registry is identified by 3 components:
 
 We use the terminology 'Module' for a single module, where `namespace/module/provider1` and `namespace/module/provider2` are different modules.
 
-### Namespaces
+## Namespaces
 
 Namespaces form part of the module path and are created indepedently of modules.
 
 These can be used in several ways:
- * Just a logical way to seperate modules
+ * A logical way to seperate modules
  * Used in conjunction with [Git Providers](#git-providers) to determine part of the SCM path (e.g. the organisation/user for github or projects for stash)
  * To manage user group permissions, which are set on a namespace level (see [Single Sign-on](#single-sign-on))
 
 Namespaces are managed by administrators of the registry using the 'Create Namespace' page (in the 'Create' menu drop-down)
 
-### Create a module
+## Create a module
 
 Once logged in, as an admin or a user with 'Full' namespace permissions, to to 'Create -> Module' in the menu drop-down.
 
@@ -368,8 +451,11 @@ The git provider can be selected - for information on this see [Git Providers](#
 
 If a [ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER](./CONFIG.md#allow_custom_git_url_module_provider) is enabled, the custom URLs (as docuented in the Git Providers section) can be entered specifically for the module.
 
+## Restricting providers
 
-## Module Usage Analytics
+The names of providers that can be used in the registry can be restricted using [ALLOWED_PROVIDERS](./CONFIG.md#allowed_providers).
+
+# Module Usage Analytics
 
 Module analaytics allow each use of a module to be tracked - giving statistics such as:
  * Identifing IDs of the consumers of the modules
@@ -378,15 +464,77 @@ Module analaytics allow each use of a module to be tracked - giving statistics s
  * The 'highest' deployment environment that the consumer has deployed the module to
 
 
-### Identifying deployment environments
+## Identifying deployment environments
 
-### Customising the analytics token
+When Terraform (that is using a module) is deployed a particular environment, this environment can be captured in the analytics and show in the 'analytics' tab to display how the deployment of the instance of the module has progressed.
 
-### Enforcing analytics tokens
+Environments are defined in a heirarchy, e.g. dev->production. In this example, if a module is deployed to 'dev', it is show with the environment 'dev' in the Terrareg UI. If it's then deployed to 'production', it is shown with 'production'.
 
-By default, modules can be downloaded without an analytics token.
+This identification is performed using Terraform authentication.
 
-Analytics can be enforced by denying module downloads without an analytics token being passed.
+The keys used for each environment can be defined in [ANALYTICS_AUTH_KEYS](./CONFIG.md#analytics_auth_keys).
 
-To enable this, see [ALLOW_UNIDENTIFIED_DOWNLOADS](./CONFIG.md#allowunidentifieddownloads)
+The authentication keys must then be configured on the nodes that perform the deployment, setting up `~/.terraformrc` using the following example:
+```
+credentials "terrareg.my.domain" {
+  token = "<environment auth key>"
+}
+```
 
+If deployment nodes are shared between environments, this configuration will need to be dynamically regenerated based on the environment being deployed to.
+
+## Customising the analytics token
+
+The label used to describe analytics tokens and the example analytics token displayed in the UI can be customised by setting:
+ * [ANALYTICS_TOKEN_PHRASE](./CONFIG.md#analytics_token_phrase) - the phrase used to describe the analytics token
+ * [EXAMPLE_ANALAYTICS_TOKEN](./CONFIG.md#example_analytics_token) - a noun to describe the analytics token or .
+ * [ANALYTICS_TOKEN_DESCRIPTION](./CONFIG.md#analytics_token_description) - description of the token
+
+For example, to rebrand the analytics token as someone's first name, you could set:
+ * EXAMPLE_ANALAYTICS_TOKEN - "john"
+ * ANALYTICS_TOKEN_PHRASE - "first name"
+ * ANALYTICS_TOKEN_DESCRIPTION - "Set to your first name"
+
+The usage example would then read:
+```
+Ensure the "john" placeholder must be replaced with your 'first name',
+...
+module "terraform-aws-rds" {
+  source  = "terrareg.my.domain/john__namespace/module/null"
+
+```
+The 'usage bulder' table would a variable: "first name" with a description "Set to your first name"
+
+
+## Enforcing analytics tokens
+
+By default, analytics token must be provided to use a module.
+
+Analytics enforced can be disabled, allowing module usage with an analytics key being passed.
+
+To disable this, see [ALLOW_UNIDENTIFIED_DOWNLOADS](./CONFIG.md#allowunidentifieddownloads)
+
+# Customising Terrareg UI
+
+## Module page
+
+### Version constraint
+
+The version constraint shown in the UI can be customised to display a default version that matches how you'd like users to use the module.
+
+For example, it can be used to provide an example to pin the current version or to pin the current minor version or the pin the current major version.
+
+This can be set using [TERRAFORM_EXAMPLE_VERSION_TEMPLATE](./CONFIG.md#terraform_example_version_template), which contains the available placeholders and some examples.
+
+### Labels
+
+Modules can be labelled in two ways:
+ * Trusted - this is applied on a per-namespace basis and all modules within the namespace are labeled as 'Trusted'
+ * Contributed - this label is applied to any module that is not within a 'Trusted' namespace.
+ * Verified - this can be applied on a per-module basis and can be set by anyone with MODIFY privileges of the namespace that contains the module.
+
+These labels are available as filters in the search results.
+
+The list of trusted namespaces can be configured by setting [TRUSTED_NAMESPACES](./CONFIG.md#trusted_namespaces)
+
+The textual representation of these labels can be modified by setting [TRUSTED_NAMESPACE_LABEL](./CONFIG.md#trusted_namespace_label), [VERIFIED_MODULE_LABEL](./CONFIG.md#verified_module_label) and [CONTRIBUTED_NAMESPACE_LABEL](./CONFIG.md#contributed_namespace_label).
