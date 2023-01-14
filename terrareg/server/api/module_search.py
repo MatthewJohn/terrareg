@@ -13,40 +13,41 @@ class ApiModuleSearch(ErrorCatchingResource):
         parser.add_argument(
             'q', type=str,
             required=True,
+            location='args',
             help='The search string.'
         )
         parser.add_argument(
-            'offset', type=int,
+            'offset', type=int, location='args',
             default=0, help='Pagination offset')
         parser.add_argument(
-            'limit', type=int,
+            'limit', type=int, location='args',
             default=10, help='Pagination limit'
         )
         parser.add_argument(
-            'provider', type=str,
+            'provider', type=str, location='args',
             default=None, help='Limits modules to a specific provider.',
             action='append', dest='providers'
         )
         parser.add_argument(
-            'namespace', type=str,
+            'namespace', type=str, location='args',
             default=None, help='Limits modules to a specific namespace.',
             action='append', dest='namespaces'
         )
         parser.add_argument(
-            'verified', type=inputs.boolean,
+            'verified', type=inputs.boolean, location='args',
             default=False, help='Limits modules to only verified modules.'
         )
 
         parser.add_argument(
-            'trusted_namespaces', type=inputs.boolean,
+            'trusted_namespaces', type=inputs.boolean, location='args',
             default=None, help='Limits modules to include trusted namespaces.'
         )
         parser.add_argument(
-            'contributed', type=inputs.boolean,
+            'contributed', type=inputs.boolean, location='args',
             default=None, help='Limits modules to include contributed modules.'
         )
         parser.add_argument(
-            'include_count', type=inputs.boolean, default=False,
+            'include_count', type=inputs.boolean, location='args', default=False,
             help='Whether to include total result count. This is not part of the Terraform API spec.'
         )
 

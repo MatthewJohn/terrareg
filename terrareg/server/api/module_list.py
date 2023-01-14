@@ -10,19 +10,19 @@ class ApiModuleList(ErrorCatchingResource):
         """Return list of modules."""
         parser = reqparse.RequestParser()
         parser.add_argument(
-            'offset', type=int,
+            'offset', type=int, location='args',
             default=0, help='Pagination offset')
         parser.add_argument(
-            'limit', type=int,
+            'limit', type=int, location='args',
             default=10, help='Pagination limit'
         )
         parser.add_argument(
-            'provider', type=str,
+            'provider', type=str, location='args',
             default=None, help='Limits modules to a specific provider.',
             action='append', dest='providers'
         )
         parser.add_argument(
-            'verified', type=inputs.boolean,
+            'verified', type=inputs.boolean, location='args',
             default=False, help='Limits modules to only verified modules.'
         )
 

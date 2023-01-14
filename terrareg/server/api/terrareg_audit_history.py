@@ -19,6 +19,7 @@ class ApiTerraregAuditHistory(ErrorCatchingResource):
             'search[value]', type=str,
             required=False,
             default='',
+            location='args',
             help='Templated URL for browsing repository.',
             dest='query'
         )
@@ -26,18 +27,21 @@ class ApiTerraregAuditHistory(ErrorCatchingResource):
             'length', type=int,
             required=False,
             default=10,
+            location='args',
             help='Module provider git tag format.'
         )
         parser.add_argument(
             'start', type=int,
             required=False,
             default=0,
+            location='args',
             help='Path within git repository that the module exists.'
         )
         parser.add_argument(
             'order[0][dir]', type=str,
             required=False,
             default='desc',
+            location='args',
             help='Whether module provider is marked as verified.',
             dest='order_dir'
         )
@@ -46,12 +50,14 @@ class ApiTerraregAuditHistory(ErrorCatchingResource):
             required=False,
             help='CSRF token',
             default=0,
+            location='args',
             dest='order_by'
         )
         parser.add_argument(
             'draw', type=int,
             required=False,
             help='draw ID',
+            location='args',
             default=0
         )
 

@@ -13,10 +13,13 @@ class ApiTerraregModuleProviderVersions(ErrorCatchingResource):
         parser.add_argument(
             'include-beta', type=inputs.boolean,
             default=False, help='Whether to include beta versions',
-            dest='include_beta')
+            location='args',
+            dest='include_beta'
+        )
         parser.add_argument(
             'include-unpublished', type=inputs.boolean,
             default=False, help='Whether to include unpublished versions',
+            location='args',
             dest='include_unpublished'
         )
         args = parser.parse_args()

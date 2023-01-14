@@ -14,9 +14,11 @@ class ApiTerraregNamespaceModules(ErrorCatchingResource):
         parser = reqparse.RequestParser()
         parser.add_argument(
             'offset', type=int,
+            location='args',
             default=0, help='Pagination offset')
         parser.add_argument(
             'limit', type=int,
+            location='args',
             default=10, help='Pagination limit'
         )
         args = parser.parse_args()
