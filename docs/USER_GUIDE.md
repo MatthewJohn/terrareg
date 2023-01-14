@@ -207,6 +207,10 @@ The following attributes are available at the root of the JSON object:
 |repo_base_url|Formatted base URL for project's repo. E.g. `https://gitlab.corporate.com/{namespace}/{module}`|
 |repo_browse_url|Formatted URL for user-viewable source code. Must contain `{tag}` and `{path}` placeholders. E.g. `https://github.com/{namespace}/{module}-{provider}/blob/{tag}/{path}`|
 
+For information on the repo URLs, see [Git Providers](#git-providers)
+
+Each of these attributes can be enforced in modules uploaded to the registry by setting [REQUIRED_MODULE_METADATA_ATTRIBUTES](./CONFIG.md#required_module_metadata_attributes).
+
 ## Description
 
 If a metadata file is not present or a description is not provided, Terrareg will attempt to automatically generate a description of the module, using the README.md from the module.
@@ -398,6 +402,15 @@ Terrareg will only store meta-data about the module version and store terraform 
 When a module is used in Terraform, Terraform communicates with the registry, which provides a redirect URL to the original git repository. Terraform will then download the source code from the original git repository. If the git repository is authenticated via SSH, Terraform will automatically authenticate using the end-user's SSH key.
 
 This means modules remain secured, protected by the SCM tool.
+
+Modules can stil be uploaded via uploading a zip file, however, if module hosting is disabled, the module must be also configured with a git clone URL for Terraform to download the module, either via Git Provider, custom clone URL in the module or defined in the terrareg metadata file of the module.
+
+The git URLs can be set in several places:
+ * Globally using 'Git Providers'
+ * In the setting of a module
+ * In the terrareg metadata file within a module (though the module must be uploaded via source archive)
+
+These URLs can be provided in the terrareg metadata file within the repository, setting/overriding the URLs displayed for the version of the module.
 
 # Git Providers
 
