@@ -85,6 +85,7 @@
 
 ### Features
 
+* Add user groups and user groups namespace permissions, allowing SSO users to be delegated permissionsed per namespace
 * Add ability to delete user group permissions and user groups from UI ([1674817](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1674817a59fb252fbe3b81d6d14c41fabc3fe6af)), closes [#255](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/255)
 * Add configurations to output debug for SAML2 and OpenID connect ([8248929](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8248929bd89b894f97eb4dfcb1d713d09cb6d71a)), closes [#255](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/255)
 * Update authenticated endpoint to return list of namespace permissions ([4144c1b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4144c1bb45aa1585ac961a5f6a36026aaa54cf42)), closes [#255](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/255)
