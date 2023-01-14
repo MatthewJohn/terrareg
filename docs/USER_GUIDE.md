@@ -94,6 +94,15 @@ To configure this, set the [DOMAIN_NAME](./CONFIG.md#domain_name) configuration.
 If [module hosting](#module-hosting) is being used, ensure that a directory is mounted into the container for storing module data.
 This path can be customised by setting [DATA_DIRECTORY](./CONFIG.md#data_directory)
 
+## Database URL
+
+A database URL should be configured, otherwise Terrareg will default to a local sqlite database (though this _could_ be mounted via a docker volume, it certainly shouldn't be used for multiple containers).
+
+This should be configured by setting [DATABASE_URL](./CONFIG.md#database_url)
+
+## Listen port
+
+The port that Terrareg listens on can be configured with [LISTEN_PORT](./CONFIG.md#listen_port)
 
 ## SSL
 
@@ -215,7 +224,7 @@ Each of these attributes can be enforced in modules uploaded to the registry by 
 
 If a metadata file is not present or a description is not provided, Terrareg will attempt to automatically generate a description of the module, using the README.md from the module.
 
-This functionality can be disabled by setting [AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION](CONFIG.md#autogeneratemoduleproviderdescription)
+This functionality can be disabled by setting [AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION](CONFIG.md#autogeneratemoduleproviderdescription).
 
 ### Usage builder configuration
 
@@ -243,6 +252,7 @@ There are common attributes that can be added to each of variable objects, which
 |static|This does not appear in the 'Usage Builder' 'config input' table, but provides a static value in the 'terraform input'||
 |select|Provides a dropdown for the user to select from a list of choices|"choices" must be added to the object, which may either be a list of strings, or a list of objects. If using a list of objects, a "name" and "value" must be provided. Optionally an "additional_content" attribute can be added to the choice, which provides additional terraform to be added to the top of the terraform example. The main variable object may also contain a "allow_custom" boolean attribute, which allows the user to enter a custom text input.|
 
+Terrareg will automatically generated usage builder inputs based on discovered variables in the module. This functionality can be disabled by setting [AUTOGENERATE_USAGE_BUILDER_VARIABLES](./CONFIG.md#autogenerate_usage_builder_variables)
 
 ## Submodules
 
@@ -411,6 +421,8 @@ The git URLs can be set in several places:
  * In the terrareg metadata file within a module (though the module must be uploaded via source archive)
 
 These URLs can be provided in the terrareg metadata file within the repository, setting/overriding the URLs displayed for the version of the module.
+
+Terrareg will retain an archive of indexed modules, this can be disabled using [DELETE_EXTERNALLY_HOSTED_ARTIFACTS](./CONFIG.md#delete_externally_hosted_artifacts)
 
 # Git Providers
 
