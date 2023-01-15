@@ -36,6 +36,7 @@ class TestModuleProvider(SeleniumTest):
         cls._config_allow_custom_repo_urls_module_version = mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', True)
         cls._config_enable_access_controls = mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', False)
         cls._config_module_links = mock.patch('terrareg.config.Config.MODULE_LINKS', '[]')
+        cls._config_terraform_example_version_template = mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major_plus_one}.0.0, unittest')
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
@@ -46,6 +47,7 @@ class TestModuleProvider(SeleniumTest):
         cls.register_patch(cls._config_allow_custom_repo_urls_module_version)
         cls.register_patch(cls._config_enable_access_controls)
         cls.register_patch(cls._config_module_links)
+        cls.register_patch(cls._config_terraform_example_version_template)
 
         super(TestModuleProvider, cls).setup_class()
 
@@ -184,18 +186,7 @@ class TestModuleProvider(SeleniumTest):
                 'module-description': 'This is a test module version for tests.',
                 'published-at': 'Published January 05, 2022 by moduledetails',
                 'module-owner': 'Module managed by This is the owner of the module',
-                'source-url': 'Source code: https://link-to.com/source-code-here',
-                'usage-example-container': f"""Usage
-To use this module:
-Add the following example to your Terraform,
-Ensure the "my-tf-application" placeholder must be replaced with your 'analytics token',
-Add the required inputs - use the 'Usage Builder' tab for help and 'Inputs' tab for a full list.
-module "fullypopulated" {{
-  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"
-  version = "1.5.0"
-
-  # Provide variables here
-}}"""
+                'source-url': 'Source code: https://link-to.com/source-code-here'
             }
             for element_name in expected_element_details:
                 element = self.selenium_instance.find_element(By.ID, element_name)
@@ -1385,7 +1376,7 @@ module "fullypopulated" {{
         assert [file.text for file in file_list] == ['main.tf', 'data.tf', 'variables.tf']
 
         # Ensure contents of main.tf is shown in data
-        expected_main_tf_content = f'# Call root module\nmodule "root" {{\n  source  = "localhost:{self.SERVER.port}/moduledetails/fullypopulated/testprovider"\n  version = "1.5.0"\n}}'
+        expected_main_tf_content = f'# Call root module\nmodule "root" {{\n  source  = "localhost:{self.SERVER.port}/moduledetails/fullypopulated/testprovider"\n  version = ">= 1.5.0, < 2.0.0, unittest"\n}}'
         assert file_tab_content.find_element(By.ID, 'example-file-content').text == expected_main_tf_content
 
         # Select main.tf file and check content
@@ -1821,9 +1812,9 @@ module "fullypopulated" {{
 
     @pytest.mark.parametrize('enable_beta,enable_unpublished,expected_versions', [
         (False, False, ['1.5.0 (latest)', '1.2.0']),
-        (True, False, ['1.6.1-beta (beta)', '1.5.0 (latest)', '1.2.0']),
+        (True, False, ['1.7.0-beta (beta)', '1.6.1-beta (beta)', '1.5.0 (latest)', '1.2.0']),
         (False, True, ['1.6.0 (unpublished)', '1.5.0 (latest)', '1.2.0']),
-        (True, True, ['1.6.1-beta (beta)', '1.6.0 (unpublished)', '1.5.0 (latest)', '1.2.0', '1.0.0-beta (beta) (unpublished)']),
+        (True, True, ['1.7.0-beta (beta)', '1.6.1-beta (beta)', '1.6.0 (unpublished)', '1.5.0 (latest)', '1.2.0', '1.0.0-beta (beta) (unpublished)']),
     ])
     def test_user_preferences(self, enable_beta, enable_unpublished, expected_versions):
         """Test user preferences"""
@@ -2160,3 +2151,95 @@ All rights are not reserved for this example file content</pre>
 
         # Attempt check canvas data
         self.assert_equals(lambda: self._compare_canvas(file_name), True, sleep_period=1)
+
+    @pytest.mark.parametrize('url,expected_module_name,expected_module_path,expected_module_version_constraint', [
+        # Base module
+        ('/modules/moduledetails/fullypopulated/testprovider',
+         'fullypopulated',
+         'moduledetails/fullypopulated/testprovider',
+         '>= 1.5.0, < 2.0.0, unittest'),
+        # Explicit version
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0',
+         'fullypopulated',
+         'moduledetails/fullypopulated/testprovider',
+         '>= 1.5.0, < 2.0.0, unittest'),
+        # Submodule
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+         'fullypopulated',
+         'moduledetails/fullypopulated/testprovider//modules/example-submodule1',
+         '>= 1.5.0, < 2.0.0, unittest'),
+        # Non-latest version
+        ('/modules/moduledetails/fullypopulated/testprovider/1.2.0',
+         'fullypopulated',
+         'moduledetails/fullypopulated/testprovider',
+         '>= 1.2.0, < 2.0.0, unittest'),
+        # Beta version
+        ('/modules/moduledetails/fullypopulated/testprovider/1.7.0-beta',
+         'fullypopulated',
+         'moduledetails/fullypopulated/testprovider',
+         '1.7.0-beta')
+
+    ])
+    def test_example_usage(self, url, expected_module_name, expected_module_path, expected_module_version_constraint):
+        """Check example usage panel"""
+        self.selenium_instance.get(self.get_url(url))
+
+        # Wait for inputs tab to be ready
+        self.wait_for_element(By.ID, 'module-tab-link-inputs')
+
+        assert self.selenium_instance.find_element(By.ID, "usage-example-terraform").text == f"""
+module "{expected_module_name}" {{
+  source  = "localhost/my-tf-application__{expected_module_path}"
+  version = "{expected_module_version_constraint}"
+
+  # Provide variables here
+}}
+""".strip()
+
+    @pytest.mark.parametrize('url,expected_terraform_version', [
+        # Base module
+        ('/modules/moduledetails/fullypopulated/testprovider',
+         '>= 1.0, < 2.0.0'),
+        # Explicit version
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0',
+         '>= 1.0, < 2.0.0'),
+        # Submodule
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+         '>= 2.0.0'),
+        # Non-latest version
+        ('/modules/moduledetails/fullypopulated/testprovider/1.2.0',
+         '>= 2.1.1, < 2.5.4'),
+        # Beta version
+        ('/modules/moduledetails/fullypopulated/testprovider/1.7.0-beta',
+         '>= 5.12, < 21.0.0'),
+        # Module without TF constraint
+        ('/modules/moduledetails/withsecurityissues/testprovider/1.2.0',
+         None)
+    ])
+    def test_example_usage_terraform_version(self, url, expected_terraform_version):
+        """Check example usage panel"""
+        self.selenium_instance.get(self.get_url(url))
+
+        # Wait for inputs tab to be ready
+        self.wait_for_element(By.ID, 'module-tab-link-inputs')
+
+        version_text = self.selenium_instance.find_element(By.ID, "supported-terraform-versions")
+        assert version_text.is_displayed() == (expected_terraform_version is not None)
+        if expected_terraform_version is not None:
+            assert version_text.text == f"Supported Terraform versions: {expected_terraform_version}"
+
+    @pytest.mark.parametrize("url", [
+        # Example
+        ("/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example"),
+        # Unpublished version
+        ("/modules/moduledetails/fullypopulated/testprovider/1.6.0")
+    ])
+    def test_example_usage_ensure_not_shown(self, url):
+        """Ensure example usage section is not displayed in example submodule"""
+        self.selenium_instance.get(self.get_url(url))
+
+        # Wait for inputs tab to be ready
+        self.wait_for_element(By.ID, 'module-tab-link-inputs')
+
+        version_text = self.selenium_instance.find_element(By.ID, "usage-example-container")
+        assert version_text.is_displayed() == False

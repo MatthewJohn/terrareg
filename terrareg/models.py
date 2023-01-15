@@ -1616,7 +1616,7 @@ class ModuleProvider(object):
 
     def update_git_tag_format(self, git_tag_format):
         """Update git_tag_format."""
-        sanitised_git_tag_format = urllib.parse.quote(git_tag_format, safe='/{}')
+        sanitised_git_tag_format = urllib.parse.quote(git_tag_format, safe=r'/{}')
 
         if git_tag_format:
             # If tag format was provided, ensured it can be passed with 'format'
@@ -1685,7 +1685,7 @@ class ModuleProvider(object):
                     'Repository URL does not contain a path'
                 )
 
-            repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe='\{\}/:@%?=')
+            repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe=r'\{\}/:@%?=')
 
         original_value = self._get_db_row()['repo_clone_url_template']
         if original_value != repo_clone_url_template:
@@ -1733,7 +1733,7 @@ class ModuleProvider(object):
                     'Repository URL does not contain a path'
                 )
 
-            repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe='\{\}/:@%?=')
+            repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe=r'\{\}/:@%?=')
 
         original_value = self._get_db_row()['repo_browse_url_template']
         if original_value != repo_browse_url_template:
@@ -1774,7 +1774,7 @@ class ModuleProvider(object):
                     'Repository URL does not contain a path'
                 )
 
-            repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe='\{\}/:@%?=')
+            repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe=r'\{\}/:@%?=')
 
         original_value = self._get_db_row()['repo_base_url_template']
         if original_value != repo_base_url_template:
@@ -2131,6 +2131,13 @@ class TerraformSpecsObject(object):
             })
         return providers
 
+    def get_terraform_version_constraints(self):
+        """Obtain terraform version requirement"""
+        for requirement in self.get_module_specs().get("requirements", []):
+            if requirement["name"] == "terraform":
+                return requirement["version"]
+        return None
+
     def get_api_module_specs(self):
         """Return module specs for API."""
         return {
@@ -2141,7 +2148,7 @@ class TerraformSpecsObject(object):
             "outputs": self.get_terraform_outputs(),
             "dependencies": self.get_terraform_dependencies(),
             "provider_dependencies": self.get_terraform_provider_dependencies(),
-            "resources": self.get_terraform_resources(),
+            "resources": self.get_terraform_resources()
         }
 
     def replace_source_in_file(self, content: str, server_hostname: str):
@@ -2695,7 +2702,8 @@ class ModuleVersion(TerraformSpecsObject):
             "security_results": tfsec_failures,
             "additional_tab_files": tab_file_mapping,
             "custom_links": self.custom_links,
-            "graph_url": f"/modules/{self.id}/graph"
+            "graph_url": f"/modules/{self.id}/graph",
+            "terraform_version_constraint": self.get_terraform_version_constraints()
         })
         return api_details
 
@@ -2990,12 +2998,17 @@ class BaseSubmodule(TerraformSpecsObject):
         api_details = self.get_api_module_specs()
         source_browse_url = self.get_source_browse_url()
         tfsec_failures = self.get_tfsec_failures()
+        terraform_version_constraint = self.get_terraform_version_constraints()
         api_details.update({
             "display_source_url": source_browse_url if source_browse_url else self._module_version.get_source_base_url(),
             "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
             "security_results": tfsec_failures,
             "graph_url": f"/modules/{self.module_version.id}/graph/{self.TYPE}/{self.path}"
         })
+        # Only update terraform version constraint if one is defined in the example,
+        # otherwise default to root module's constraint
+        if terraform_version_constraint:
+            api_details["terraform_version_constraint"] = terraform_version_constraint
         return api_details
 
 

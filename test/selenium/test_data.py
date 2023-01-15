@@ -475,13 +475,57 @@ integration_test_data = {
             'repo_clone_url_template': 'ssh://mp-clone-url.com/{namespace}/{module}-{provider}',
             'versions': {
                 # Older version
-                '1.2.0': {'published': True},
+                '1.2.0': {
+                    'published': True,
+                    'terraform_docs': json.dumps({
+                        'header': '',
+                        'footer': '',
+                        'inputs': [],
+                        'modules': [],
+                        'outputs': [],
+                        'providers': [],
+                        'requirements': [
+                            {
+                                "name": "terraform",
+                                "version": ">= 2.1.1, < 2.5.4"
+                            },
+                            {
+                                "name": "someothercompany/unsafe",
+                                "version": ">= 4.45"
+                            }
+                        ],
+                        'resources': []
+                    }),
+                },
                 # Newer unpublished version
                 '1.6.0': {},
                 # Newer published beta version
                 '1.6.1-beta': {'published': True, 'beta': True},
                 # Unpublished and beta version
                 '1.0.0-beta': {'published': False, 'beta': True},
+                '1.7.0-beta': {
+                    'published': True,
+                    'beta': True,
+                    'terraform_docs': json.dumps({
+                        'header': '',
+                        'footer': '',
+                        'inputs': [],
+                        'modules': [],
+                        'outputs': [],
+                        'providers': [],
+                        'requirements': [
+                            {
+                                "name": "terraform",
+                                "version": ">= 5.12, < 21.0.0"
+                            },
+                            {
+                                "name": "someothercompany/unsafe",
+                                "version": ">= 4.45"
+                            }
+                        ],
+                        'resources': []
+                    }),
+                },
                 '1.5.0': {
                     'description': 'This is a test module version for tests.',
                     'owner': 'This is the owner of the module',
@@ -557,7 +601,16 @@ integration_test_data = {
                                 'version': '2.0.0'
                             }
                         ],
-                        'requirements': [],
+                        'requirements': [
+                            {
+                                "name": "terraform",
+                                "version": ">= 1.0, < 2.0.0"
+                            },
+                            {
+                                "name": "someothercompany/unsafe",
+                                "version": ">= 4.45"
+                            }
+                        ],
                         'resources': [
                             {
                                 'type': 'string',
@@ -811,7 +864,16 @@ digraph {
                                         'version': None
                                     }
                                 ],
-                                'requirements': [],
+                                'requirements': [
+                                    {
+                                        "name": "terraform",
+                                        "version": ">= 1.2.1, <= 2.0.0"
+                                    },
+                                    {
+                                        "name": "someothercompany/example_random",
+                                        "version": ">= 4.47"
+                                    }
+                                ],
                                 'resources': [
                                     {
                                         'type': 'string',
@@ -895,7 +957,16 @@ digraph {
                                         'version': None
                                     }
                                 ],
-                                'requirements': [],
+                                'requirements': [
+                                    {
+                                        "name": "terraform",
+                                        "version": ">= 2.0.0"
+                                    },
+                                    {
+                                        "name": "someothercompany/submodule_random",
+                                        "version": ">= 4.49"
+                                    }
+                                ],
                                 'resources': [
                                     {
                                         'type': 'string',
@@ -933,7 +1004,7 @@ digraph {
 
                         }
                     }
-                },
+                }
             }
         }},
         'infracost': {'testprovider': {

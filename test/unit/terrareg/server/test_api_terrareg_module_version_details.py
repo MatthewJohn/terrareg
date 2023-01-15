@@ -43,6 +43,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'repo_browse_url_template': None,
             'repo_clone_url_template': None,
             'terraform_example_version_string': '1.0.0',
+            'terraform_version_constraint': None,
             'beta': False,
             'published': True,
             'security_failures': 0,
@@ -52,6 +53,14 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'graph_url': '/modules/testnamespace/lonelymodule/testprovider/1.0.0/graph'
         }
 
+        assert res.status_code == 200
+
+    @setup_test_data()
+    def test_terraform_version_constraint(self, client, mock_models):
+        """Test terraform_version_constraint attribute"""
+        res = client.get('/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/1.5.0')
+
+        assert res.json["terraform_version_constraint"] == ">= 1.0, < 2.0.0"
         assert res.status_code == 200
 
     @setup_test_data()
@@ -96,6 +105,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'source': 'https://localhost.com/moduleextraction/gitextraction-usesgitproviderwithversions',
             'submodules': [],
             'terraform_example_version_string': '2.2.2',
+            'terraform_version_constraint': None,
             'version': '2.2.2',
             'providers': [
                 'staticrepourl',
@@ -159,6 +169,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'source': 'https://custom-localhost.com/testnamespace/modulenotpublished-testprovider',
             'submodules': [],
             'terraform_example_version_string': '10.2.1',
+            'terraform_version_constraint': None,
             'version': '10.2.1',
             'beta': False,
             'published': False,
@@ -214,6 +225,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'source': None,
             'submodules': [],
             'terraform_example_version_string': '2.2.4-beta',
+            'terraform_version_constraint': None,
             'version': '2.2.4-beta',
             'beta': True,
             'published': True,

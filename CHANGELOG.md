@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.49.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.49.0...v2.49.1) (2023-01-14)
+
+
+### Bug Fixes
+
+* Add 'location' argument to all request parsers that expect arguments via query string ([36220b1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/36220b129a869b742ca85b7359384dfba3ac43dc)), closes [#283](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/283)
+
+# [2.49.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.48.0...v2.49.0) (2023-01-13)
+
+
+### Bug Fixes
+
+* Do not show Terraform example usage panel in module provider page if module version has not been published. ([1fdc0ae](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1fdc0ae749bb79f4f8ade7e30910ae25ccda7a55)), closes [#272](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/272)
+
+
+### Features
+
+* Add Terraform version constraint to module provider page. ([5d1e382](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5d1e382de8b8778a757f2587e10ec3fc1e356769)), closes [#272](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/272)
+
 # [2.48.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.47.3...v2.48.0) (2022-12-31)
 
 
@@ -73,6 +92,7 @@
 
 ### Features
 
+* Add user groups and user groups namespace permissions, allowing SSO users to be delegated permissionsed per namespace
 * Add ability to delete user group permissions and user groups from UI ([1674817](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1674817a59fb252fbe3b81d6d14c41fabc3fe6af)), closes [#255](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/255)
 * Add configurations to output debug for SAML2 and OpenID connect ([8248929](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8248929bd89b894f97eb4dfcb1d713d09cb6d71a)), closes [#255](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/255)
 * Update authenticated endpoint to return list of namespace permissions ([4144c1b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4144c1bb45aa1585ac961a5f6a36026aaa54cf42)), closes [#255](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/255)

@@ -14,6 +14,7 @@ class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
         parser.add_argument(
             'q', type=str,
             required=True,
+            location='args',
             help='The search string.'
         )
         args = parser.parse_args()
