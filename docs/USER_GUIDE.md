@@ -143,7 +143,7 @@ SSO groups can be assigned global admin permissions, or per-namespace permission
 
 User groups and permissions can be configured on the 'User Groups' (/user-groups) page.
 
-Once single sign-on has been setup, the [ADMIN_AUTHENTICATION_TOKEN](./CONFIG.md#adminauthenticationtoken) can be disabled, stopping further sign-in via password authentication.
+Once single sign-on has been setup, the [ADMIN_AUTHENTICATION_TOKEN](./CONFIG.md#admin_authentication_token) can be disabled, stopping further sign-in via password authentication.
 
 *NOTE* OpenID and SAML2 authentication is currently experimental.
 
@@ -163,15 +163,15 @@ To configure OpenID connect, setup an application in an identity provider (IdP) 
 
 Obtain the client ID, client secret and issuer URL from the IdP provider and populate the following environment variables:
 
- * [DOMAIN_NAME](./CONFIG.md#domainname)
- * [OPENID_CONNECT_CLIENT_ID](./CONFIG.md#openidconnectclientid)
- * [OPENID_CONNECT_CLIENT_SECRET](./CONFIG.md#openidconnectclientsecret)
- * [OPENID_CONNECT_ISSUER](./CONFIG.md#openidconnectissuer)
+ * [DOMAIN_NAME](./CONFIG.md#domain_name)
+ * [OPENID_CONNECT_CLIENT_ID](./CONFIG.md#openid_connect_client_id)
+ * [OPENID_CONNECT_CLIENT_SECRET](./CONFIG.md#openid_connect_client_secret)
+ * [OPENID_CONNECT_ISSUER](./CONFIG.md#openid_connect_issuer)
 
 Note: Most IdP providers will require the terrareg installation to be accessed via https.
-The instance should be configured with SSL certificates ([SSL_CERT_PRIVATE_KEY](./CONFIG.md#sslcertprivatekey)/[SSL_CERT_PUBLIC_KEY](./CONFIG.md#sslcertpublickey)) or be hosted behind a reverse-proxy/load balancer.
+The instance should be configured with SSL certificates ([SSL_CERT_PRIVATE_KEY](./CONFIG.md#ssl_cert_private_key)/[SSL_CERT_PUBLIC_KEY](./CONFIG.md#ssl_cert_public_key)) or be hosted behind a reverse-proxy/load balancer.
 
-The text displayed on the login button can be customised by setting [OPENID_CONNECT_LOGIN_TEXT](./CONFIG.md#openidconnectlogintext)
+The text displayed on the login button can be customised by setting [OPENID_CONNECT_LOGIN_TEXT](./CONFIG.md#openid_connect_login_text)
 
 ## SAML2
 
@@ -182,11 +182,11 @@ Generate a public and a private key, using:
 
 Set the folllowing environment variables:
 
-* [SAML2_IDP_METADATA_URL](./CONFIG.md#saml2idpmetadataurl) (required)
-* [SAML2_ENTITY_ID](./CONFIG.md#saml2entityid) (required)
-* [SAML2_PRIVATE_KEY](./CONFIG.md#saml2privatekey) (required) (See above)
-* [SAML2_PUBLIC_KEY](./CONFIG.md#saml2publickey) (required) (See above)
-* [SAML2_ENTITY_ID](./CONFIG.md#saml2entityid) (optional)
+* [SAML2_IDP_METADATA_URL](./CONFIG.md#saml2_idp_metadata_url) (required)
+* [SAML2_ENTITY_ID](./CONFIG.md#saml2_entity_id) (required)
+* [SAML2_PRIVATE_KEY](./CONFIG.md#saml2_private_key) (required) (See above)
+* [SAML2_PUBLIC_KEY](./CONFIG.md#saml2_public_key) (required) (See above)
+* [SAML2_ISSUER_ENTITY_ID](./CONFIG.md#saml2_issuer_entity_id) (optional)
 
 In the IdP:
 
@@ -205,7 +205,7 @@ However, to get the _most_ out of Terrareg, there are some practices/guides that
 
 A metadata file can be provided each an uploaded module's archive to provide additional metadata to terrareg.
 
-This should be called `terrareg.json` and be placed in the root of the module.
+This should be called `terrareg.json` or `.terrareg.json` and be placed in the root of the module.
 
 For an example, please see: [docs/example-terrareg-module-metadata.json](./example-terrareg-module-metadata.json)
 
@@ -228,7 +228,7 @@ Each of these attributes can be enforced in modules uploaded to the registry by 
 
 If a metadata file is not present or a description is not provided, Terrareg will attempt to automatically generate a description of the module, using the README.md from the module.
 
-This functionality can be disabled by setting [AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION](CONFIG.md#autogeneratemoduleproviderdescription).
+This functionality can be disabled by setting [AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION](CONFIG.md#autogenerate_module_provider_description).
 
 ### Usage builder configuration
 
@@ -278,7 +278,7 @@ By default, sub-modules are located in individual sub-directories of the `module
      
 ```
 
-This directory can be changed on a global level with [EXAMPLES_DIRECTORY](./CONFIG.md#examplesdirectory)
+This directory can be changed on a global level with [MODULES_DIRECTORY](./CONFIG.md#modules_directory)
 
 ## Examples
 
@@ -299,7 +299,7 @@ By default, examples are located in individual sub-directories of the `examples`
      
 ```
 
-This directory can be changed on a global level with [EXAMPLES_DIRECTORY](./CONFIG.md#examplesdirectory)
+This directory can be changed on a global level with [EXAMPLES_DIRECTORY](./CONFIG.md#examples_directory)
 
 ### Variable defaults
 
@@ -377,10 +377,10 @@ Example cost analysis is performed using infracost.
 A valid API key must be provided to enable this functionality.
 
 Terrareg supports both:
- * Hosted Infracost solution (see [INFRACOST_API_KEY](./CONFIG.md#infracostapikey) to setup)
- * Locally hosted Infracost API (see [INFRACOST_PRICING_API_ENDPOINT](./CONFIG.md#infracostpricingapiendpoint), [INFRACOST_API_KEY](./CONFIG.md#infracostapikey)).
+ * Hosted Infracost solution (see [INFRACOST_API_KEY](./CONFIG.md#infracost_api_key) to setup)
+ * Locally hosted Infracost API (see [INFRACOST_PRICING_API_ENDPOINT](./CONFIG.md#infracost_pricing_api_endpoint), [INFRACOST_API_KEY](./CONFIG.md#infracost_api_key)).
 
-To disable TLS verification for a locally hosted Infracost pricing API, see [INFRACOST_TLS_INSECURE_SKIP_VERIFY](./CONFIG.md#infracosttlsinsecureskipverify)
+To disable TLS verification for a locally hosted Infracost pricing API, see [INFRACOST_TLS_INSECURE_SKIP_VERIFY](./CONFIG.md#infracost_tls_insecure_skip_verify)
 
 # Module storage
 
@@ -541,7 +541,7 @@ By default, analytics token must be provided to use a module.
 
 Analytics enforced can be disabled, allowing module usage with an analytics key being passed.
 
-To disable this, see [ALLOW_UNIDENTIFIED_DOWNLOADS](./CONFIG.md#allowunidentifieddownloads)
+To disable this, see [ALLOW_UNIDENTIFIED_DOWNLOADS](./CONFIG.md#allow_unidentified_downloads)
 
 # Customising Terrareg UI
 
