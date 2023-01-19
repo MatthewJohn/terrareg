@@ -1,6 +1,7 @@
 
 import os
 import subprocess
+import tempfile
 from unittest.main import MODULE_EXAMPLES
 import unittest.mock
 
@@ -152,9 +153,10 @@ class TestGitModuleExtractor(TerraregUnitTest):
 
     def test_run_tf_init(self):
         """Test running terraform init"""
-        module_extractor = GitModuleExtractor(module_version=None)
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_call', unittest.mock.MagicMock()) as check_output_mock, \
+                unittest.mock.patch("terrareg.module_extractor.ModuleExtractor._create_terraform_rc_file", unittest.mock.MagicMock()) as mock_create_terraform_rc_file:
 
-        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_call', unittest.mock.MagicMock()) as check_output_mock:
+            module_extractor = GitModuleExtractor(module_version=None)
 
             assert module_extractor._run_tf_init(module_path='/tmp/mock-patch/to/module') is True
 
@@ -162,15 +164,18 @@ class TestGitModuleExtractor(TerraregUnitTest):
                 [os.path.join(os.getcwd(), 'bin', 'terraform'), 'init'],
                 cwd='/tmp/mock-patch/to/module'
             )
+            mock_create_terraform_rc_file.assert_called_once_with()
 
     def test_run_tf_init_error(self):
         """Test running terraform init with error returned"""
-        module_extractor = GitModuleExtractor(module_version=None)
 
         def raise_exception(*args, **kwargs):
             raise subprocess.CalledProcessError(cmd="test", returncode=2)
 
-        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_call', unittest.mock.MagicMock(side_effect=raise_exception)) as mock_check_call:
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_call', unittest.mock.MagicMock(side_effect=raise_exception)) as mock_check_call, \
+                unittest.mock.patch("terrareg.module_extractor.ModuleExtractor._create_terraform_rc_file", unittest.mock.MagicMock()) as mock_create_terraform_rc_file:
+
+            module_extractor = GitModuleExtractor(module_version=None)
 
             assert module_extractor._run_tf_init(module_path='/tmp/mock-patch/to/module') is False
 
@@ -178,6 +183,7 @@ class TestGitModuleExtractor(TerraregUnitTest):
                 [os.path.join(os.getcwd(), 'bin', 'terraform'), 'init'],
                 cwd='/tmp/mock-patch/to/module'
             )
+            mock_create_terraform_rc_file.assert_called_once_with()
 
     def test_switch_terraform_versions(self):
         """Test switching terraform versions."""
@@ -265,3 +271,34 @@ class TestGitModuleExtractor(TerraregUnitTest):
                 [os.getcwd() + '/bin/terraform', 'graph'],
                 cwd='/tmp/mock-patch/to/module'
             )
+
+    @pytest.mark.parametrize("domain_name,manage_terraform_rc_file,should_create_file", [
+        ("", False, False),
+        ("", True, False),
+        ("unittest-example-domain.com", False, False),
+        ("unittest-example-domain.com", True, True)
+    ])
+    def test_create_terraform_rc_file(self, domain_name, manage_terraform_rc_file, should_create_file):
+        """Test terraform RC file"""
+        # Create temporary file and remove
+        temp_file = tempfile.mktemp()
+        # os.unlink(temp_file)
+
+        with unittest.mock.patch("terrareg.module_extractor.ModuleExtractor.terraform_rc_file", temp_file), \
+                unittest.mock.patch("terrareg.config.Config.MANAGE_TERRAFORM_RC_FILE", manage_terraform_rc_file), \
+                unittest.mock.patch("terrareg.config.Config.DOMAIN_NAME", domain_name):
+
+            module_extractor = GitModuleExtractor(module_version=None)
+            module_extractor._create_terraform_rc_file()
+
+            if should_create_file:
+                assert os.path.isfile(temp_file)
+                with open(temp_file, "r") as temp_file_fh:
+                    assert "".join(temp_file_fh.readlines()) == f"""
+credentials "unittest-example-domain.com" {{
+  token = "internal-terrareg-analytics-token"
+}}
+"""
+
+            else:
+                assert not os.path.isfile(temp_file)

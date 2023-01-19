@@ -53,6 +53,11 @@ class ModuleExtractor:
         return os.path.join(os.getcwd(), "bin", "terraform")
 
     @property
+    def terraform_rc_file(self):
+        """Return path to terraformrc file"""
+        return os.path.join(os.path.expanduser("~"), ".terraformrc")
+
+    @property
     def extract_directory(self):
         """Return path of extract directory."""
         return self._extract_directory.name
@@ -149,8 +154,22 @@ class ModuleExtractor:
 
         return tfsec_results
 
+    def _create_terraform_rc_file(self):
+        """Create terraform RC file, if enabled"""
+        # Create .terraformrc file, if configured to do so
+        config = Config()
+        if config.MANAGE_TERRAFORM_RC_FILE and config.DOMAIN_NAME:
+            with open(self.terraform_rc_file, "w") as terraform_rc_fh:
+                terraform_rc_fh.write(f"""
+credentials "{config.DOMAIN_NAME}" {{
+  token = "{config.INTERNAL_EXTRACTION_ANALYITCS_TOKEN}"
+}}
+""")
+
     def _run_tf_init(self, module_path):
         """Perform terraform init"""
+        self._create_terraform_rc_file()
+
         try:
             subprocess.check_call([self.terraform_binary, "init"], cwd=module_path)
         except subprocess.CalledProcessError:

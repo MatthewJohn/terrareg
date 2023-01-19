@@ -646,6 +646,20 @@ class Config:
         """
         return os.environ.get("TERRAFORM_ARCHIVE_MIRROR", "https://releases.hashicorp.com/terraform")
 
+    @property
+    def MANAGE_TERRAFORM_RC_FILE(self):
+        """
+        Whether terrareg with manage (overwrite) the terraform.rc file in the user's home directory.
+
+        This is required for terraform to authenticate to the registry to ignore any analytics when initialising Terraform modules during extraction.
+
+        When this is disabled, analytics will be recorded when Terrareg extracts modules that call to other modules in the registry.
+
+        This is disabled by default in the application, meaning that running terrareg locally, by default, will not manage this file.
+        The docker container, by default, overrides this to enable the functionality, since it is running in an isolated environment and unlikely to overwrite user's own configurations.
+        """
+        return self.convert_boolean(os.environ.get("MANAGE_TERRAFORM_RC_FILE", "False"))
+
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""
         if string.lower() in ['true', 'yes', '1']:
