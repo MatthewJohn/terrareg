@@ -17,7 +17,7 @@ Provides features to aid usage and discovery of modules, providing:
 
 If you like and use this project and are happy to let us know, please raise a Github issue, create a PR or contact [MatthewJohn](https://github.com/matthewjohn) so it can be added to the README :)
 
-For a full list of issues and pull requests, please see https://gitlab.dockstudios.co.uk/pub/terrareg
+For a full list of issues and pull requests, please see [https://gitlab.dockstudios.co.uk/pub/terrareg](https://gitlab.dockstudios.co.uk/pub/terrareg)
 
 ## Screenshots
 
