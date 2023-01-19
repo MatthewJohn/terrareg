@@ -91,6 +91,9 @@ During module extraction/analysis, Terrareg will need to communicate with itself
 
 To configure this, set the [DOMAIN_NAME](./CONFIG.md#domain_name) configuration.
 
+To ensure terraform does not generate unecessary analytics in the module, terrareg must manage the .terraformrc file in the user's home directory.
+This functionality is enabled by default in the docker container, by disabled outside of it. To enable/disable this functionality, see [MANAGE_TERRAFORM_RC_FILE](./CONFIG.md#manage_terraform_rc_file)
+
 ## Docker storage
 
 ### Module data

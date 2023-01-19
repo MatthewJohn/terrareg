@@ -623,6 +623,42 @@ integration_test_data = {
                             }
                         ]
                     }),
+                    "terraform_graph": """
+digraph {
+	compound = "true"
+	newrank = "true"
+	subgraph "root" {
+		"[root] aws_s3_bucket.test_bucket (expand)" [label = "aws_s3_bucket.test_bucket", shape = "box"]
+		"[root] aws_s3_object.test_obj_root_module (expand)" [label = "aws_s3_object.test_obj_root_module", shape = "box"]
+		"[root] module.submodule-call.aws_ec2_instance.test_instance (expand)" [label = "module.submodule-call.aws_ec2_instance.test_instance", shape = "box"]
+		"[root] module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance (expand)" [label = "module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance", shape = "box"]
+		"[root] output.name" [label = "output.name", shape = "note"]
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]" [label = "provider[\\"registry.terraform.io/hashicorp/aws\\"]", shape = "diamond"]
+		"[root] var.name" [label = "var.name", shape = "note"]
+		"[root] aws_s3_bucket.test_bucket (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] aws_s3_object.test_obj_root_module (expand)" -> "[root] aws_s3_bucket.test_bucket (expand)"
+		"[root] module.submodule-call (close)" -> "[root] module.submodule-call.aws_ec2_instance.test_instance (expand)"
+		"[root] module.submodule-call (close)" -> "[root] module.submodule-call.module.second-module-call (close)"
+		"[root] module.submodule-call (close)" -> "[root] module.submodule-call.var.passing_name (expand)"
+		"[root] module.submodule-call.aws_ec2_instance.test_instance (expand)" -> "[root] module.submodule-call (expand)"
+		"[root] module.submodule-call.aws_ec2_instance.test_instance (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] module.submodule-call.module.second-module-call (close)" -> "[root] module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance (expand)"
+		"[root] module.submodule-call.module.second-module-call (expand)" -> "[root] module.submodule-call (expand)"
+		"[root] module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance (expand)" -> "[root] module.submodule-call.module.second-module-call (expand)"
+		"[root] module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] module.submodule-call.var.passing_name (expand)" -> "[root] module.submodule-call (expand)"
+		"[root] module.submodule-call.var.passing_name (expand)" -> "[root] var.name"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] aws_s3_object.test_obj_root_module (expand)"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] module.submodule-call.aws_ec2_instance.test_instance (expand)"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] module.submodule-call.module.second-module-call.aws_ec2_instance.test_second_instance (expand)"
+		"[root] root" -> "[root] module.submodule-call (close)"
+		"[root] root" -> "[root] output.name"
+		"[root] root" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)"
+	}
+}
+
+
+""",
                     'files': {
                         'LICENSE': 'This is a license file\nAll rights are not reserved for this example file content',
                         'CHANGELOG.md': '# Changelog\n## 1.0.0\n * This is an initial release',
@@ -636,169 +672,431 @@ integration_test_data = {
                                 'examples/test-example/main.tf': '# Call root module\nmodule "root" {\n  source = "../../"\n}'
                             },
                             'readme_content': '# Example 1 README',
-                            'infracost': json.dumps({
-                                'totalMonthlyCost': '61.536',
-                                'totalHourlyCost': '0.0842958904109589',
-                                'timeGenerated': '2022-08-17T18:39:55.964808023Z',
-                                'currency': 'USD',
-                                'diffTotalHourlyCost':
-                                '0.0842958904109589',
-                                'version': '0.2',
-                                'pastTotalHourlyCost': '0',
-                                'pastTotalMonthlyCost': '0',
-                                'diffTotalMonthlyCost': '61.536',
-                                'summary': {
-                                    'totalNoPriceResources': 0,
-                                    'unsupportedResourceCounts': {},
-                                    'totalUsageBasedResources': 1,
-                                    'totalUnsupportedResources': 0,
-                                    'totalDetectedResources': 1,
-                                    'totalSupportedResources': 1,
-                                    'noPriceResourceCounts': {}
-                                },
-                                'projects': [
-                                    {
-                                        'pastBreakdown': {
-                                            'totalMonthlyCost': '0',
-                                            'totalHourlyCost': '0',
-                                            'resources': []
-                                        },
-                                        'breakdown': {
-                                            'totalMonthlyCost': '61.536',
-                                            'totalHourlyCost': '0.0842958904109589',
-                                            'resources': [
-                                                {
-                                                    'hourlyCost': '0.0842958904109589',
-                                                    'name': 'aws_instance.test',
-                                                    'monthlyCost': '61.536',
-                                                    'costComponents': [
-                                                        {
-                                                            'hourlyCost': '0.0832',
-                                                            'name': 'Instance usage (Linux/UNIX, on-demand, t3.large)',
-                                                            'hourlyQuantity': '1',
-                                                            'price': '0.0832',
-                                                            'monthlyCost': '60.736',
-                                                            'monthlyQuantity': '730',
-                                                            'unit': 'hours'
-                                                        },
-                                                        {
-                                                            'hourlyCost': '0',
-                                                            'name': 'CPU credits',
-                                                            'hourlyQuantity': '0',
-                                                            'price': '0.05',
-                                                            'monthlyCost': '0',
-                                                            'monthlyQuantity': '0',
-                                                            'unit': 'vCPU-hours'
-                                                        }
-                                                    ],
-                                                    'subresources': [
-                                                        {
-                                                            'costComponents': [
+                            'infracost': json.dumps(
+                                {
+                                    "version": "0.2",
+                                    "metadata": {
+                                        "infracostCommand": "breakdown",
+                                        "branch": "main",
+                                        "commit": "097c9bdf46a3f7087f35a7610609a62c4cc3afc7",
+                                        "commitAuthorName": "Matthew John",
+                                        "commitAuthorEmail": "matthew@dockstudios.co.uk",
+                                        "commitTimestamp": "2023-01-19T07:36:46Z",
+                                        "commitMessage": "Correct ec2 instance type",
+                                        "vcsRepoUrl": "https://gitlab.dockstudios.co.uk:2222/pub/terrareg/snippets/5.git"
+                                    },
+                                    "currency": "USD",
+                                    "projects": [
+                                        {
+                                            "name": "2222/pub/terrareg/snippets/5/examples/basic_usage",
+                                            "metadata": {
+                                                "path": ".",
+                                                "type": "terraform_dir",
+                                                "vcsSubPath": "examples/basic_usage"
+                                            },
+                                            "pastBreakdown": {
+                                                "resources": [],
+                                                "totalHourlyCost": "0",
+                                                "totalMonthlyCost": "0"
+                                            },
+                                            "breakdown": {
+                                                "resources": [
+                                                    {
+                                                        "name": "module.main_call.aws_s3_bucket.test_bucket",
+                                                        "metadata": {
+                                                            "calls": [
                                                                 {
-                                                                    'hourlyCost': '0.0010958904109589',
-                                                                    'name': 'Storage (general purpose SSD, gp2)',
-                                                                    'hourlyQuantity': '0.010958904109589',
-                                                                    'price': '0.1',
-                                                                    'monthlyCost': '0.8',
-                                                                    'monthlyQuantity': '8',
-                                                                    'unit': 'GB'
+                                                                    "blockName": "module.main_call",
+                                                                    "filename": "main.tf"
+                                                                },
+                                                                {
+                                                                    "blockName": "aws_s3_bucket.test_bucket",
+                                                                    "filename": "../../main.tf"
                                                                 }
                                                             ],
-                                                            'hourlyCost': '0.0010958904109589',
-                                                            'monthlyCost': '0.8',
-                                                            'name': 'root_block_device',
-                                                            'metadata': {}
-                                                        }
-                                                    ],
-                                                    'metadata': {
-                                                        'calls': [
+                                                            "filename": "../../main.tf"
+                                                        },
+                                                        "hourlyCost": None,
+                                                        "monthlyCost": None,
+                                                        "subresources": [
                                                             {
-                                                                'filename': 'main.tf',
-                                                                'blockName': 'aws_instance.test'
+                                                                "name": "Standard",
+                                                                "metadata": {},
+                                                                "hourlyCost": None,
+                                                                "monthlyCost": None,
+                                                                "costComponents": [
+                                                                    {
+                                                                        "name": "Storage",
+                                                                        "unit": "GB",
+                                                                        "hourlyQuantity": None,
+                                                                        "monthlyQuantity": None,
+                                                                        "price": "0.023",
+                                                                        "hourlyCost": None,
+                                                                        "monthlyCost": None
+                                                                    },
+                                                                    {
+                                                                        "name": "PUT, COPY, POST, LIST requests",
+                                                                        "unit": "1k requests",
+                                                                        "hourlyQuantity": None,
+                                                                        "monthlyQuantity": None,
+                                                                        "price": "0.005",
+                                                                        "hourlyCost": None,
+                                                                        "monthlyCost": None
+                                                                    },
+                                                                    {
+                                                                        "name": "GET, SELECT, and all other requests",
+                                                                        "unit": "1k requests",
+                                                                        "hourlyQuantity": None,
+                                                                        "monthlyQuantity": None,
+                                                                        "price": "0.0004",
+                                                                        "hourlyCost": None,
+                                                                        "monthlyCost": None
+                                                                    },
+                                                                    {
+                                                                        "name": "Select data scanned",
+                                                                        "unit": "GB",
+                                                                        "hourlyQuantity": None,
+                                                                        "monthlyQuantity": None,
+                                                                        "price": "0.002",
+                                                                        "hourlyCost": None,
+                                                                        "monthlyCost": None
+                                                                    },
+                                                                    {
+                                                                        "name": "Select data returned",
+                                                                        "unit": "GB",
+                                                                        "hourlyQuantity": None,
+                                                                        "monthlyQuantity": None,
+                                                                        "price": "0.0007",
+                                                                        "hourlyCost": None,
+                                                                        "monthlyCost": None
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "name": "module.main_call.module.submodule-call.aws_instance.web",
+                                                        "tags": {
+                                                            "Name": "HelloWorld"
+                                                        },
+                                                        "metadata": {
+                                                            "calls": [
+                                                                {
+                                                                    "blockName": "module.main_call",
+                                                                    "filename": "main.tf"
+                                                                },
+                                                                {
+                                                                    "blockName": "module.submodule-call",
+                                                                    "filename": "../../main.tf"
+                                                                },
+                                                                {
+                                                                    "blockName": "aws_instance.web",
+                                                                    "filename": "../../modules/test-submodule/main.tf"
+                                                                }
+                                                            ],
+                                                            "filename": "../../modules/test-submodule/main.tf"
+                                                        },
+                                                        "hourlyCost": "0.0114958904109589",
+                                                        "monthlyCost": "8.392",
+                                                        "costComponents": [
+                                                            {
+                                                                "name": "Instance usage (Linux/UNIX, on-demand, t3.micro)",
+                                                                "unit": "hours",
+                                                                "hourlyQuantity": "1",
+                                                                "monthlyQuantity": "730",
+                                                                "price": "0.0104",
+                                                                "hourlyCost": "0.0104",
+                                                                "monthlyCost": "7.592"
+                                                            },
+                                                            {
+                                                                "name": "CPU credits",
+                                                                "unit": "vCPU-hours",
+                                                                "hourlyQuantity": "0",
+                                                                "monthlyQuantity": "0",
+                                                                "price": "0.05",
+                                                                "hourlyCost": "0",
+                                                                "monthlyCost": "0"
                                                             }
                                                         ],
-                                                        'filename': 'main.tf'
-                                                    }
-                                                }
-                                            ]
-                                        },
-                                        'name': '2222/pub/terrareg/example/cost_example',
-                                        'summary': {
-                                            'totalNoPriceResources': 0,
-                                            'unsupportedResourceCounts': {},
-                                            'totalUsageBasedResources': 1,
-                                            'totalUnsupportedResources': 0,
-                                            'totalDetectedResources': 1,
-                                            'totalSupportedResources': 1,
-                                            'noPriceResourceCounts': {}
-                                        },
-                                        'diff': {
-                                            'totalMonthlyCost': '61.536',
-                                            'totalHourlyCost': '0.0842958904109589',
-                                            'resources': [
-                                                {
-                                                    'hourlyCost': '0.0842958904109589',
-                                                    'name': 'aws_instance.test',
-                                                    'monthlyCost': '61.536',
-                                                    'costComponents': [
-                                                        {
-                                                            'hourlyCost': '0.0832',
-                                                            'name': 'Instance usage (Linux/UNIX, on-demand, t3.large)',
-                                                            'hourlyQuantity': '1',
-                                                            'price': '0.0832',
-                                                            'monthlyCost': '60.736',
-                                                            'monthlyQuantity': '730',
-                                                            'unit': 'hours'
-                                                        },
-                                                        {
-                                                            'hourlyCost': '0',
-                                                            'name': 'CPU credits',
-                                                            'hourlyQuantity': '0',
-                                                            'price': '0.05',
-                                                            'monthlyCost': '0',
-                                                            'monthlyQuantity': '0',
-                                                            'unit': 'vCPU-hours'
-                                                        }
-                                                    ],
-                                                    'subresources': [
-                                                        {
-                                                            'costComponents': [
+                                                        "subresources": [
+                                                            {
+                                                                "name": "root_block_device",
+                                                                "metadata": {},
+                                                                "hourlyCost": "0.0010958904109589",
+                                                                "monthlyCost": "0.8",
+                                                                "costComponents": [
+                                                                    {
+                                                                        "name": "Storage (general purpose SSD, gp2)",
+                                                                        "unit": "GB",
+                                                                        "hourlyQuantity": "0.010958904109589",
+                                                                        "monthlyQuantity": "8",
+                                                                        "price": "0.1",
+                                                                        "hourlyCost": "0.0010958904109589",
+                                                                        "monthlyCost": "0.8"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "name": "module.main_call.module.submodule-call.module.second-module-call.aws_instance.test_second_instance",
+                                                        "metadata": {
+                                                            "calls": [
                                                                 {
-                                                                    'hourlyCost': '0.0010958904109589',
-                                                                    'name': 'Storage (general purpose SSD, gp2)',
-                                                                    'hourlyQuantity': '0.010958904109589',
-                                                                    'price': '0.1',
-                                                                    'monthlyCost': '0.8',
-                                                                    'monthlyQuantity': '8',
-                                                                    'unit': 'GB'
+                                                                    "blockName": "module.main_call",
+                                                                    "filename": "main.tf"
+                                                                },
+                                                                {
+                                                                    "blockName": "module.submodule-call",
+                                                                    "filename": "../../main.tf"
+                                                                },
+                                                                {
+                                                                    "blockName": "module.second-module-call",
+                                                                    "filename": "../../modules/test-submodule/main.tf"
+                                                                },
+                                                                {
+                                                                    "blockName": "aws_instance.test_second_instance",
+                                                                    "filename": "../../modules/second-submodule/main.tf"
                                                                 }
                                                             ],
-                                                            'hourlyCost': '0.0010958904109589',
-                                                            'monthlyCost': '0.8',
-                                                            'name': 'root_block_device',
-                                                            'metadata': {}
-                                                        }
-                                                    ],
-                                                    'metadata': {}
-                                                }
-                                            ]
-                                        },
-                                        'metadata': {
-                                            'path': '.',
-                                            'type': 'terraform_dir',
-                                            'vcsSubPath': 'example/cost_example'
+                                                            "filename": "../../modules/second-submodule/main.tf"
+                                                        },
+                                                        "hourlyCost": "0.0426958904109589",
+                                                        "monthlyCost": "31.168",
+                                                        "costComponents": [
+                                                            {
+                                                                "name": "Instance usage (Linux/UNIX, on-demand, t3.medium)",
+                                                                "unit": "hours",
+                                                                "hourlyQuantity": "1",
+                                                                "monthlyQuantity": "730",
+                                                                "price": "0.0416",
+                                                                "hourlyCost": "0.0416",
+                                                                "monthlyCost": "30.368"
+                                                            },
+                                                            {
+                                                                "name": "CPU credits",
+                                                                "unit": "vCPU-hours",
+                                                                "hourlyQuantity": "0",
+                                                                "monthlyQuantity": "0",
+                                                                "price": "0.05",
+                                                                "hourlyCost": "0",
+                                                                "monthlyCost": "0"
+                                                            }
+                                                        ],
+                                                        "subresources": [
+                                                            {
+                                                                "name": "root_block_device",
+                                                                "metadata": {},
+                                                                "hourlyCost": "0.0010958904109589",
+                                                                "monthlyCost": "0.8",
+                                                                "costComponents": [
+                                                                    {
+                                                                        "name": "Storage (general purpose SSD, gp2)",
+                                                                        "unit": "GB",
+                                                                        "hourlyQuantity": "0.010958904109589",
+                                                                        "monthlyQuantity": "8",
+                                                                        "price": "0.1",
+                                                                        "hourlyCost": "0.0010958904109589",
+                                                                        "monthlyCost": "0.8"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ],
+                                                "totalHourlyCost": "0.0541917808219178",
+                                                "totalMonthlyCost": "39.56"
+                                            },
+                                            "diff": {
+                                                "resources": [
+                                                    {
+                                                        "name": "module.main_call.aws_s3_bucket.test_bucket",
+                                                        "metadata": {},
+                                                        "hourlyCost": "0",
+                                                        "monthlyCost": "0",
+                                                        "subresources": [
+                                                            {
+                                                                "name": "Standard",
+                                                                "metadata": {},
+                                                                "hourlyCost": "0",
+                                                                "monthlyCost": "0",
+                                                                "costComponents": [
+                                                                    {
+                                                                        "name": "Storage",
+                                                                        "unit": "GB",
+                                                                        "hourlyQuantity": "0",
+                                                                        "monthlyQuantity": "0",
+                                                                        "price": "0.023",
+                                                                        "hourlyCost": "0",
+                                                                        "monthlyCost": "0"
+                                                                    },
+                                                                    {
+                                                                        "name": "PUT, COPY, POST, LIST requests",
+                                                                        "unit": "1k requests",
+                                                                        "hourlyQuantity": "0",
+                                                                        "monthlyQuantity": "0",
+                                                                        "price": "0.005",
+                                                                        "hourlyCost": "0",
+                                                                        "monthlyCost": "0"
+                                                                    },
+                                                                    {
+                                                                        "name": "GET, SELECT, and all other requests",
+                                                                        "unit": "1k requests",
+                                                                        "hourlyQuantity": "0",
+                                                                        "monthlyQuantity": "0",
+                                                                        "price": "0.0004",
+                                                                        "hourlyCost": "0",
+                                                                        "monthlyCost": "0"
+                                                                    },
+                                                                    {
+                                                                        "name": "Select data scanned",
+                                                                        "unit": "GB",
+                                                                        "hourlyQuantity": "0",
+                                                                        "monthlyQuantity": "0",
+                                                                        "price": "0.002",
+                                                                        "hourlyCost": "0",
+                                                                        "monthlyCost": "0"
+                                                                    },
+                                                                    {
+                                                                        "name": "Select data returned",
+                                                                        "unit": "GB",
+                                                                        "hourlyQuantity": "0",
+                                                                        "monthlyQuantity": "0",
+                                                                        "price": "0.0007",
+                                                                        "hourlyCost": "0",
+                                                                        "monthlyCost": "0"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "name": "module.main_call.module.submodule-call.aws_instance.web",
+                                                        "tags": {
+                                                            "Name": "HelloWorld"
+                                                        },
+                                                        "metadata": {},
+                                                        "hourlyCost": "0.0114958904109589",
+                                                        "monthlyCost": "8.392",
+                                                        "costComponents": [
+                                                            {
+                                                                "name": "Instance usage (Linux/UNIX, on-demand, t3.micro)",
+                                                                "unit": "hours",
+                                                                "hourlyQuantity": "1",
+                                                                "monthlyQuantity": "730",
+                                                                "price": "0.0104",
+                                                                "hourlyCost": "0.0104",
+                                                                "monthlyCost": "7.592"
+                                                            },
+                                                            {
+                                                                "name": "CPU credits",
+                                                                "unit": "vCPU-hours",
+                                                                "hourlyQuantity": "0",
+                                                                "monthlyQuantity": "0",
+                                                                "price": "0.05",
+                                                                "hourlyCost": "0",
+                                                                "monthlyCost": "0"
+                                                            }
+                                                        ],
+                                                        "subresources": [
+                                                            {
+                                                                "name": "root_block_device",
+                                                                "metadata": {},
+                                                                "hourlyCost": "0.0010958904109589",
+                                                                "monthlyCost": "0.8",
+                                                                "costComponents": [
+                                                                    {
+                                                                        "name": "Storage (general purpose SSD, gp2)",
+                                                                        "unit": "GB",
+                                                                        "hourlyQuantity": "0.010958904109589",
+                                                                        "monthlyQuantity": "8",
+                                                                        "price": "0.1",
+                                                                        "hourlyCost": "0.0010958904109589",
+                                                                        "monthlyCost": "0.8"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "name": "module.main_call.module.submodule-call.module.second-module-call.aws_instance.test_second_instance",
+                                                        "metadata": {},
+                                                        "hourlyCost": "0.0426958904109589",
+                                                        "monthlyCost": "31.168",
+                                                        "costComponents": [
+                                                            {
+                                                                "name": "Instance usage (Linux/UNIX, on-demand, t3.medium)",
+                                                                "unit": "hours",
+                                                                "hourlyQuantity": "1",
+                                                                "monthlyQuantity": "730",
+                                                                "price": "0.0416",
+                                                                "hourlyCost": "0.0416",
+                                                                "monthlyCost": "30.368"
+                                                            },
+                                                            {
+                                                                "name": "CPU credits",
+                                                                "unit": "vCPU-hours",
+                                                                "hourlyQuantity": "0",
+                                                                "monthlyQuantity": "0",
+                                                                "price": "0.05",
+                                                                "hourlyCost": "0",
+                                                                "monthlyCost": "0"
+                                                            }
+                                                        ],
+                                                        "subresources": [
+                                                            {
+                                                                "name": "root_block_device",
+                                                                "metadata": {},
+                                                                "hourlyCost": "0.0010958904109589",
+                                                                "monthlyCost": "0.8",
+                                                                "costComponents": [
+                                                                    {
+                                                                        "name": "Storage (general purpose SSD, gp2)",
+                                                                        "unit": "GB",
+                                                                        "hourlyQuantity": "0.010958904109589",
+                                                                        "monthlyQuantity": "8",
+                                                                        "price": "0.1",
+                                                                        "hourlyCost": "0.0010958904109589",
+                                                                        "monthlyCost": "0.8"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                ],
+                                                "totalHourlyCost": "0.0541917808219178",
+                                                "totalMonthlyCost": "39.56"
+                                            },
+                                            "summary": {
+                                                "totalDetectedResources": 4,
+                                                "totalSupportedResources": 3,
+                                                "totalUnsupportedResources": 1,
+                                                "totalUsageBasedResources": 3,
+                                                "totalNoPriceResources": 0,
+                                                "unsupportedResourceCounts": {
+                                                    "aws_s3_object": 1
+                                                },
+                                                "noPriceResourceCounts": {}
+                                            }
                                         }
-                                    }
-                                ],
-                                'metadata': {
-                                    'commitTimestamp': '2022-08-17T06:58:57Z',
-                                    'commitMessage': 'Add screenshot of example page to README',
-                                    'vcsRepoUrl': 'https://gitlab.dockstudios.co.uk:2222/pub/terrareg.git',
-                                    'commitAuthorName': 'Matthew John',
-                                    'infracostCommand': 'breakdown',
-                                    'branch': '226-investigate-showing-costs-of-each-module-examples',
-                                    'commit': '4822f3af904200b26ff0a3399750c76d20007f6b',
-                                    'commitAuthorEmail': 'matthew@dockstudios.co.uk'
+                                    ],
+                                    "totalHourlyCost": "0.0541917808219178",
+                                    "totalMonthlyCost": "39.56",
+                                    "pastTotalHourlyCost": "0",
+                                    "pastTotalMonthlyCost": "0",
+                                    "diffTotalHourlyCost": "0.0541917808219178",
+                                    "diffTotalMonthlyCost": "39.56",
+                                    "timeGenerated": "2023-01-19T07:48:43.266405205Z",
+                                    "summary": {
+                                        "totalDetectedResources": 4,
+                                        "totalSupportedResources": 3,
+                                        "totalUnsupportedResources": 1,
+                                        "totalUsageBasedResources": 3,
+                                        "totalNoPriceResources": 0,
+                                        "unsupportedResourceCounts": {
+                                            "aws_s3_object": 1
+                                        },
+                                        "noPriceResourceCounts": {}
                                     }
                                 }
                             ),
@@ -849,7 +1147,51 @@ integration_test_data = {
                                         'description': None
                                     }
                                 ]
-                            })
+                            }),
+                            "terraform_graph": """
+digraph {
+	compound = "true"
+	newrank = "true"
+	subgraph "root" {
+		"[root] module.main_call.aws_s3_bucket.test_bucket (expand)" [label = "module.main_call.aws_s3_bucket.test_bucket", shape = "box"]
+		"[root] module.main_call.aws_s3_object.test_obj_root_module (expand)" [label = "module.main_call.aws_s3_object.test_obj_root_module", shape = "box"]
+		"[root] module.main_call.module.submodule-call.aws_instance.web (expand)" [label = "module.main_call.module.submodule-call.aws_instance.web", shape = "box"]
+		"[root] module.main_call.module.submodule-call.data.aws_ami.ubuntu (expand)" [label = "module.main_call.module.submodule-call.data.aws_ami.ubuntu", shape = "box"]
+		"[root] module.main_call.module.submodule-call.module.second-module-call.aws_instance.test_second_instance (expand)" [label = "module.main_call.module.submodule-call.module.second-module-call.aws_instance.test_second_instance", shape = "box"]
+		"[root] module.main_call.module.submodule-call.module.second-module-call.data.aws_ami.ubuntu (expand)" [label = "module.main_call.module.submodule-call.module.second-module-call.data.aws_ami.ubuntu", shape = "box"]
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]" [label = "provider[\\"registry.terraform.io/hashicorp/aws\\"]", shape = "diamond"]
+		"[root] module.main_call (close)" -> "[root] module.main_call.aws_s3_object.test_obj_root_module (expand)"
+		"[root] module.main_call (close)" -> "[root] module.main_call.module.submodule-call (close)"
+		"[root] module.main_call (close)" -> "[root] module.main_call.output.name (expand)"
+		"[root] module.main_call.aws_s3_bucket.test_bucket (expand)" -> "[root] module.main_call.var.name (expand)"
+		"[root] module.main_call.aws_s3_bucket.test_bucket (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] module.main_call.aws_s3_object.test_obj_root_module (expand)" -> "[root] module.main_call.aws_s3_bucket.test_bucket (expand)"
+		"[root] module.main_call.module.submodule-call (close)" -> "[root] module.main_call.module.submodule-call.aws_instance.web (expand)"
+		"[root] module.main_call.module.submodule-call (close)" -> "[root] module.main_call.module.submodule-call.module.second-module-call (close)"
+		"[root] module.main_call.module.submodule-call (close)" -> "[root] module.main_call.module.submodule-call.var.passing_name (expand)"
+		"[root] module.main_call.module.submodule-call (expand)" -> "[root] module.main_call (expand)"
+		"[root] module.main_call.module.submodule-call.aws_instance.web (expand)" -> "[root] module.main_call.module.submodule-call.data.aws_ami.ubuntu (expand)"
+		"[root] module.main_call.module.submodule-call.data.aws_ami.ubuntu (expand)" -> "[root] module.main_call.module.submodule-call (expand)"
+		"[root] module.main_call.module.submodule-call.data.aws_ami.ubuntu (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] module.main_call.module.submodule-call.module.second-module-call (close)" -> "[root] module.main_call.module.submodule-call.module.second-module-call.aws_instance.test_second_instance (expand)"
+		"[root] module.main_call.module.submodule-call.module.second-module-call (expand)" -> "[root] module.main_call.module.submodule-call (expand)"
+		"[root] module.main_call.module.submodule-call.module.second-module-call.aws_instance.test_second_instance (expand)" -> "[root] module.main_call.module.submodule-call.module.second-module-call.data.aws_ami.ubuntu (expand)"
+		"[root] module.main_call.module.submodule-call.module.second-module-call.data.aws_ami.ubuntu (expand)" -> "[root] module.main_call.module.submodule-call.module.second-module-call (expand)"
+		"[root] module.main_call.module.submodule-call.module.second-module-call.data.aws_ami.ubuntu (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] module.main_call.module.submodule-call.var.passing_name (expand)" -> "[root] module.main_call.module.submodule-call (expand)"
+		"[root] module.main_call.module.submodule-call.var.passing_name (expand)" -> "[root] module.main_call.var.name (expand)"
+		"[root] module.main_call.output.name (expand)" -> "[root] module.main_call.aws_s3_bucket.test_bucket (expand)"
+		"[root] module.main_call.var.name (expand)" -> "[root] module.main_call (expand)"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] module.main_call.aws_s3_object.test_obj_root_module (expand)"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] module.main_call.module.submodule-call.aws_instance.web (expand)"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] module.main_call.module.submodule-call.module.second-module-call.aws_instance.test_second_instance (expand)"
+		"[root] root" -> "[root] module.main_call (close)"
+		"[root] root" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)"
+	}
+}
+
+
+"""
                         }
                     },
                     'submodules': {
@@ -902,7 +1244,30 @@ integration_test_data = {
                                         'description': None
                                     }
                                 ]
-                            })
+                            }),
+                            "terraform_graph": """
+digraph {
+	compound = "true"
+	newrank = "true"
+	subgraph "root" {
+		"[root] aws_ec2_instance.test_instance (expand)" [label = "aws_ec2_instance.test_instance", shape = "box"]
+		"[root] module.second-module-call.aws_ec2_instance.test_second_instance (expand)" [label = "module.second-module-call.aws_ec2_instance.test_second_instance", shape = "box"]
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]" [label = "provider[\\"registry.terraform.io/hashicorp/aws\\"]", shape = "diamond"]
+		"[root] var.passing_name" [label = "var.passing_name", shape = "note"]
+		"[root] aws_ec2_instance.test_instance (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] module.second-module-call (close)" -> "[root] module.second-module-call.aws_ec2_instance.test_second_instance (expand)"
+		"[root] module.second-module-call.aws_ec2_instance.test_second_instance (expand)" -> "[root] module.second-module-call (expand)"
+		"[root] module.second-module-call.aws_ec2_instance.test_second_instance (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] aws_ec2_instance.test_instance (expand)"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] module.second-module-call.aws_ec2_instance.test_second_instance (expand)"
+		"[root] root" -> "[root] module.second-module-call (close)"
+		"[root] root" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)"
+		"[root] root" -> "[root] var.passing_name"
+	}
+}
+
+"""
+
                         }
                     }
                 }

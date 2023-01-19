@@ -168,7 +168,7 @@ class SeleniumTest(BaseTest):
         cls._werzeug_server.shutdown()
         cls._server_thread.join()
 
-    def assert_equals(self, callback, value):
+    def assert_equals(self, callback, value, sleep_period=0.5):
         """Attempt to verify assertion and retry on failure."""
         max_attempts = 20
         for itx in range(max_attempts):
@@ -183,7 +183,7 @@ class SeleniumTest(BaseTest):
                 # sleep and retry until last attmept
                 # and then re-raise
                 if itx < (max_attempts - 1):
-                    sleep(0.5)
+                    sleep(sleep_period)
                 else:
                     print('Failed asserting that {} == {}'.format(actual, value))
                     raise

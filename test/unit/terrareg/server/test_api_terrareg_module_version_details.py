@@ -49,7 +49,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'security_failures': 0,
             'security_results': None,
             'git_path': None,
-            'additional_tab_files': {}
+            'additional_tab_files': {},
+            'graph_url': '/modules/testnamespace/lonelymodule/testprovider/1.0.0/graph'
         }
 
         assert res.status_code == 200
@@ -120,7 +121,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'security_failures': 0,
             'security_results': None,
             'git_path': None,
-            'additional_tab_files': {}
+            'additional_tab_files': {},
+            'graph_url': '/modules/moduleextraction/gitextraction/usesgitproviderwithversions/2.2.2/graph'
         }
 
         assert res.status_code == 200
@@ -174,7 +176,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'security_failures': 0,
             'security_results': None,
             'git_path': None,
-            'additional_tab_files': {}
+            'additional_tab_files': {},
+            'graph_url': '/modules/testnamespace/modulenotpublished/testprovider/10.2.1/graph'
         }
 
         assert res.status_code == 200
@@ -229,7 +232,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'security_failures': 0,
             'security_results': None,
             'git_path': None,
-            'additional_tab_files': {}
+            'additional_tab_files': {},
+            'graph_url': '/modules/testnamespace/onlybeta/testprovider/2.2.4-beta/graph'
         }
 
         assert res.status_code == 200

@@ -5,7 +5,7 @@ WORKDIR /
 RUN apt-get update && \
     apt-get install --assume-yes \
         curl unzip git \
-        pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 && \
+        pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 libgraphviz-dev && \
     apt-get clean all
 
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
@@ -38,10 +38,15 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     chmod +x /usr/local/bin/infracost && \
     rm /tmp/infracost.tar.gz'
 
+# Download tfswitch
+RUN bash -c 'curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/release/install.sh | bash'
+
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY . .
+
+ENV MANAGE_TERRAFORM_RC_FILE=True
 
 EXPOSE 5000
 

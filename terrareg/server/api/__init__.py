@@ -58,3 +58,4 @@ from .terrareg_submodule_details import ApiTerraregSubmoduleDetails
 from .terrareg_submodule_readme_html import ApiTerraregSubmoduleReadmeHtml
 from .terrareg_user_group_namespace_permissions import ApiTerraregAuthUserGroupNamespacePermissions
 from .terrareg_user_group import ApiTerraregAuthUserGroup
+from .terrareg_graph_data import ApiTerraregGraphData

@@ -1,12 +1,19 @@
 
+import base64
+import inspect
 import json
+import os
+import re
 from time import sleep
-
+from io import BytesIO, StringIO
 from unittest import mock
+
 import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 import selenium.common
+from PIL import Image
+import imagehash
 
 from terrareg.database import Database
 from test import mock_create_audit_event
@@ -258,7 +265,7 @@ class TestModuleProvider(SeleniumTest):
         assert security_issues.text == '1 Security issues'
 
     @pytest.mark.parametrize('url,cost', [
-        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example', '738.43'),
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example', '474.72'),
         ('/modules/moduledetails/infracost/testprovider/1.0.0/example/examples/with-cost', '150.15'),
         ('/modules/moduledetails/infracost/testprovider/1.0.0/example/examples/free', '0'),
         ('/modules/moduledetails/infracost/testprovider/1.0.0/example/examples/no-infracost-data', None),
@@ -2078,6 +2085,72 @@ All rights are not reserved for this example file content</pre>
             column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
             assert column_data == expected_rows.pop(0)
 
+    def _compare_canvas(self, compare_filename):
+        """Compare current canvas data for graph to expected image"""
+        png_url = self.selenium_instance.execute_script("return document.getElementById('cy').getElementsByTagName('canvas')[2].toDataURL('image/png');").replace("data:image/png;base64,", "")
+        image_data = base64.decodebytes(png_url.encode("utf-8"))
+
+        # Enable to regenerate expected images
+        # sleep(5)
+        # with open(compare_filename, "wb") as fh:
+        #     fh.write(image_data)
+
+        actual_image = Image.open(BytesIO(image_data), formats=["PNG"])
+        actual_image = actual_image.crop(actual_image.getbbox())
+        expected_image = Image.open(compare_filename)
+        expected_image = expected_image.crop(expected_image.getbbox())
+
+        return imagehash.phash(actual_image) == imagehash.phash(expected_image)
+
+    @pytest.mark.skipif(
+        not os.environ.get("RUNNING_IN_DOCKER"),
+        reason="Canvas image comparison does not work outsidde of docker"
+    )
+    @pytest.mark.parametrize("base_url,expected_url,base_filename,", [
+        ("/modules/moduledetails/fullypopulated/testprovider/1.5.0",
+         "/modules/moduledetails/fullypopulated/testprovider/1.5.0/graph",
+         "moduledetails_fullypopulated_testprovider_1.5.0_root_module"),
+        ("/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1",
+         "/modules/moduledetails/fullypopulated/testprovider/1.5.0/graph/submodule/modules/example-submodule1",
+         "moduledetails_fullypopulated_testprovider_1.5.0_submodule"),
+        ("/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example",
+         "/modules/moduledetails/fullypopulated/testprovider/1.5.0/graph/example/examples/test-example",
+         "moduledetails_fullypopulated_testprovider_1.5.0_example")
+    ])
+    @pytest.mark.parametrize("full_resource_names,full_module_names", [
+        (False, False),
+        (False, True),
+        (True, False),
+        (True, True)
+    ])
+    def test_resource_graph(self, base_url, expected_url, base_filename, full_resource_names, full_module_names):
+        """Test resource graph page"""
+
+        self.selenium_instance.get(self.get_url(base_url))
+        # Wait for resources tab to load
+        resources_link = self.wait_for_element(By.ID, 'module-tab-link-resources')
+        resources_link.click()
+
+        # Ensure link to resource graph is displayed
+        resource_graph_link = self.selenium_instance.find_element(By.ID, "resourceDependencyGraphLink")
+        assert resource_graph_link.text == "View a resource dependency graph"
+        resource_graph_link.click()
+
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url(expected_url))
+
+        if full_resource_names:
+            self.selenium_instance.find_element(By.ID, "graphOptionsShowFullResourceNames").click()
+        if full_module_names:
+            self.selenium_instance.find_element(By.ID, "graphOptionsShowFullModuleNames").click()
+
+        file_name = os.path.join(
+            os.path.dirname(inspect.getfile(TestModuleProvider)),
+            "test_graph_canvas_images",
+            f"{base_filename}{'_full_resources' if full_resource_names else ''}{'_full_modules' if full_module_names else ''}.png"
+        )
+
+        # Attempt check canvas data
+        self.assert_equals(lambda: self._compare_canvas(file_name), True, sleep_period=1)
 
     @pytest.mark.parametrize('url,expected_module_name,expected_module_path,expected_module_version_constraint', [
         # Base module

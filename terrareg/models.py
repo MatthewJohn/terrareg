@@ -1,7 +1,6 @@
 
 import datetime
 from enum import Enum
-from importlib.util import module_for_loader
 import os
 from distutils.version import LooseVersion
 import json
@@ -11,7 +10,8 @@ import sqlalchemy
 import urllib.parse
 
 import markdown
-
+import pygraphviz
+import networkx as nx
 import terrareg.analytics
 from terrareg.database import Database
 import terrareg.config
@@ -927,6 +927,218 @@ class ModuleDetails:
             return json.loads(db_row['infracost'])
         return {}
 
+    @property
+    def terraform_graph(self):
+        """Return decoded terraform graph data."""
+        db_row = self._get_db_row()
+        if db_row and db_row["terraform_graph"]:
+            return Database.decode_blob(db_row["terraform_graph"])
+        return None
+
+    def get_graph_json(self, full_resource_names=False, full_module_names=False):
+        """Return graph JSON for resources."""
+        terraform_graph = self.terraform_graph
+        if not terraform_graph:
+            return None
+
+        # Generate NX graph from terraform graphviz output
+        graph = pygraphviz.AGraph(terraform_graph)
+        nx_graph = nx.nx_agraph.from_agraph(graph)
+
+        infracost = self.infracost
+        resource_costs = {}
+        remove_item_iteration_re = re.compile('\[[^\]]+\]')
+        if infracost:
+            for resource in self.infracost["projects"][0]["breakdown"]["resources"]:
+                if not resource["monthlyCost"]:
+                    continue
+
+                name = remove_item_iteration_re.sub("", resource["name"])
+                resource_costs[name] = round((float(resource["monthlyCost"]) * 12), 2)
+
+        module_var_output_local_re = re.compile(r'^(module\.[^\.]+\.)+(var|local|output)\.[^\.]+$')
+        # Capture modules resources, such as:
+        # module.module1
+        # module.module1.module.module2
+        module_re = re.compile(r'^(?:module\.[^\.]+\.)*(?:module\.([^\.]+))$')
+        # Capture data resources, such as:
+        # data.aws_s3_bucket.test
+        # module.module1.data.aws_s3_bucket.test
+        # module.module1.module.module2.data.aws_s3_bucket.test
+        data_re = re.compile(r'^((?:module\.[^\.]+\.)+)data\.([^\.]+)\.([^\.])+$')
+        # Capture resources, such as:
+        # aws_s3_bucket.test
+        # module.module1.aws_s3_bucket.test
+        # module.module1.module.module2.aws_s3_bucket.test
+        resource_re = re.compile(r'^((?:module\.[^\.]+\.)*)([^\.]+)\.([^\.]+)$')
+
+        # Store node renames, to be renamed after initial iteration
+        renames = {}
+        # Store nodes to be removed
+        to_remove = []
+        # Store labels to be pushed to graph JSON
+        labels = {}
+        # Stoe type mappings for determing node attributes
+        type_mapping = {}
+        # Store parents of attirbutes to modules, used for
+        # parent mapping in JSON
+        parents = {}
+
+        def remove_node(node):
+            """Add a node to the remove_nodes list, if they are not already present"""
+            if node not in to_remove:
+                to_remove.append(node)
+
+        for node_label in nx_graph.nodes:
+            # Remove leading '[root] ' name and expand/close suffices from node names
+            name = node_label.replace('[root] ', '').replace(' (expand)', '').replace(' (close)', '')
+
+            # Check for root vars, outputs and locals
+            if name.startswith('output.') or name.startswith('var.') or name.startswith('local.'):
+                remove_node(node_label)
+
+            # Remove any module vars/outputs/locals
+            elif module_var_output_local_re.match(name):
+                remove_node(node_label)
+
+            # handle all other nodes
+            else:
+                # Rename to shortened name
+                renames[node_label] = name
+
+                # Match node name to type regexes
+                module_match = module_re.match(name)
+                resource_match = resource_re.match(name)
+                data_match = data_re.match(name)
+
+                # Create labels and type mapping
+                if name == "root":
+                    # Match root module
+                    labels[name] = "Root Module"
+                    type_mapping[name] = "module"
+
+                # Match submodules
+                elif module_match:
+                    if full_module_names:
+                        labels[name] = name
+                    else:
+                        labels[name] = module_match.group(1)
+
+                    type_mapping[name] = "module"
+
+                elif data_match:
+                    type_mapping[name] = "data"
+                    parents[name] = data_match.group(1).strip(".") or "root"
+
+                    if full_resource_names:
+                        labels[name] = name
+                    else:
+                        labels[name] = f"(data) {data_match.group(2)}.{data_match.group(3)}"
+
+                # Ensure resource RE is performed last,
+                # as this could also match module_re
+                elif resource_match:
+                    type_mapping[name] = "resource"
+                    if full_resource_names:
+                        labels[name] = name
+                    else:
+                        labels[name] = f"{resource_match.group(2)}.{resource_match.group(3)}"
+
+                    # Add cost to label, if available
+                    if name in resource_costs:
+                        labels[name] += f" (${resource_costs[name]}/year)"
+                    parents[name] = resource_match.group(1).strip(".") or "root"
+
+                # Discard any unrecognised types
+                else:
+                    remove_node(name)
+                    print("Unable to match node to type", name)
+
+        # Perform rename of nodes
+        nx_graph = nx.relabel_nodes(nx_graph, renames)
+
+        # Remove any nodes marked for removal
+        for node in to_remove:
+            nx_graph.remove_node(node)
+
+        # Convert to JSON for cytoscape
+        cytoscape_json = {
+            "nodes": [],
+            "edges": []
+        }
+
+        for node in nx_graph.nodes:
+            data = {
+                "id": node,
+                "label": labels.get(node),
+                "child_count": list(parents.values()).count(node)
+            }
+
+            style = {}
+            if type_mapping[node] == "module":
+                style = {
+                    'color': '#000000',
+                    'background-color': '#F8F7F9',
+                    'font-weight': 'bold',
+                    'text-valign': 'top',
+                }
+            # Add red outline to resources that have an associated cost
+            if node in resource_costs:
+                style['border-style'] = 'solid'
+                style['border-width'] = '2px'
+                style['border-color'] = 'red'
+
+            # Add parent if available
+            parent = parents.get(node, None)
+            if parent:
+                data["parent"] = parent
+
+            cytoscape_json["nodes"].append({
+                "data": data,
+                "style": style
+            })
+
+        # Add edges to graph
+        seen_module_links = []
+        for edge in nx_graph.edges:
+            # Only add edges for module-module links
+            if (type_mapping[edge[0]] == "module" and type_mapping[edge[1]] == "module" and
+                    # Only link modules in one direction, where module is a sub-module of another,
+                    # to avoid links in both directions
+                    edge[0] in edge[1]):
+                # Mark module as having been seen in edges
+                seen_module_links.append(edge[1])
+
+                cytoscape_json["edges"].append({
+                    "data": {
+                        "id": f"{edge[0]}.{edge[1]}",
+                        "source": edge[0],
+                        "target": edge[1]
+                    },
+                    "classes": [
+                        f"{type_mapping[edge[0]]}-{type_mapping[edge[1]]}"
+                    ]
+                })
+
+        # Iterate through all modukes...
+        for module, type_mapping in type_mapping.items():
+            if type_mapping == "module":
+                # If a module link has not already been seen,
+                # add a link to root module
+                if module not in seen_module_links and module != "root":
+                    cytoscape_json["edges"].append({
+                        "data": {
+                            "id": f"root.{module}",
+                            "source": module,
+                            "target": "root"
+                        },
+                        "classes": [
+                            f"{module}-root"
+                        ]
+                    })
+
+        return cytoscape_json
+
     def __init__(self, id: int):
         """Store member variables."""
         self._id = id
@@ -956,7 +1168,7 @@ class ModuleDetails:
         """Update DB row."""
         # Check for any blob and encode the values
         for kwarg in kwargs:
-            if kwarg in ['readme_content', 'terraform_docs', 'tfsec', 'infracost']:
+            if kwarg in ['readme_content', 'terraform_docs', 'tfsec', 'infracost', 'terraform_graph']:
                 kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
 
         db = Database.get()
@@ -2191,6 +2403,11 @@ class ModuleVersion(TerraformSpecsObject):
             return res.fetchall()
 
     @property
+    def graph_data_url(self):
+        """Return URl for graph data"""
+        return f"/v1/terrareg/modules/{self.id}/graph/data"
+
+    @property
     def custom_links(self):
         """Return list of links to be displayed in UI"""
         links = []
@@ -2485,6 +2702,7 @@ class ModuleVersion(TerraformSpecsObject):
             "security_results": tfsec_failures,
             "additional_tab_files": tab_file_mapping,
             "custom_links": self.custom_links,
+            "graph_url": f"/modules/{self.id}/graph",
             "terraform_version_constraint": self.get_terraform_version_constraints()
         })
         return api_details
@@ -2633,6 +2851,11 @@ class BaseSubmodule(TerraformSpecsObject):
 
     TYPE = None
 
+    @property
+    def graph_data_url(self):
+        """Return URl for graph data"""
+        return f"/v1/terrareg/modules/{self.module_version.id}/graph/data/{self.TYPE}/{self.path}"
+
     @classmethod
     def get_by_id(cls, module_version: ModuleVersion, pk: int):
         """Return instance of submodule based on ID of submodule"""
@@ -2779,7 +3002,8 @@ class BaseSubmodule(TerraformSpecsObject):
         api_details.update({
             "display_source_url": source_browse_url if source_browse_url else self._module_version.get_source_base_url(),
             "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
-            "security_results": tfsec_failures
+            "security_results": tfsec_failures,
+            "graph_url": f"/modules/{self.module_version.id}/graph/{self.TYPE}/{self.path}"
         })
         # Only update terraform version constraint if one is defined in the example,
         # otherwise default to root module's constraint

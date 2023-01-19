@@ -467,11 +467,18 @@ class SecurityIssuesTab extends ModuleDetailsTab {
 }
 
 class ResourcesTab extends ModuleDetailsTab {
+    constructor(moduleDetails, graphUrl) {
+        super(moduleDetails);
+        this._graphUrl = graphUrl;
+    }
     get name() {
         return 'resources';
     }
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
+            // Populate link to resources graph
+            $('#resourceDependencyGraphLink').attr("href", this._graphUrl);
+
             let resourceTab = $("#module-tab-resources");
             let resourceTabTbody = resourceTab.find("tbody");
             this._moduleDetails.resources.forEach((resource) => {
@@ -2113,7 +2120,7 @@ async function setupRootModulePage(data) {
 
         tabFactory.registerTab(new OutputsTab(moduleDetails.root));
         tabFactory.registerTab(new ProvidersTab(moduleDetails.root));
-        tabFactory.registerTab(new ResourcesTab(moduleDetails.root));
+        tabFactory.registerTab(new ResourcesTab(moduleDetails.root, moduleDetails.graph_url));
         tabFactory.registerTab(new SecurityIssuesTab(moduleDetails));
         tabFactory.registerTab(new AnalyticsTab(moduleDetails));
         tabFactory.registerTab(new UsageBuilderTab(moduleDetails));
@@ -2165,7 +2172,7 @@ async function setupSubmodulePage(data) {
     tabFactory.registerTab(new InputsTab(submoduleDetails));
     tabFactory.registerTab(new OutputsTab(submoduleDetails));
     tabFactory.registerTab(new ProvidersTab(submoduleDetails));
-    tabFactory.registerTab(new ResourcesTab(submoduleDetails));
+    tabFactory.registerTab(new ResourcesTab(submoduleDetails, submoduleDetails.graph_url));
     tabFactory.registerTab(new SecurityIssuesTab(submoduleDetails));
     tabFactory.renderTabs();
     tabFactory.setDefaultTab();
@@ -2201,7 +2208,7 @@ async function setupExamplePage(data) {
     tabFactory.registerTab(new InputsTab(submoduleDetails));
     tabFactory.registerTab(new OutputsTab(submoduleDetails));
     tabFactory.registerTab(new ProvidersTab(submoduleDetails));
-    tabFactory.registerTab(new ResourcesTab(submoduleDetails));
+    tabFactory.registerTab(new ResourcesTab(submoduleDetails, submoduleDetails.graph_url));
     tabFactory.registerTab(new SecurityIssuesTab(submoduleDetails));
     tabFactory.renderTabs();
     tabFactory.setDefaultTab();

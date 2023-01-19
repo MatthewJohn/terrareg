@@ -80,7 +80,9 @@ class TestConfig:
         ('SAML2_PUBLIC_KEY', None),
         ('SAML2_GROUP_ATTRIBUTE', None),
         ('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', None),
-        ('MODULE_LINKS', None)
+        ('MODULE_LINKS', None),
+        ('DEFAULT_TERRAFORM_VERSION', None),
+        ('TERRAFORM_ARCHIVE_MIRROR', None)
     ])
     def test_string_configs(self, config_name, override_expected_value):
         """Test string configs to ensure they are overriden with environment variables."""
@@ -157,7 +159,8 @@ class TestConfig:
         'INFRACOST_TLS_INSECURE_SKIP_VERIFY',
         'ENABLE_ACCESS_CONTROLS',
         'SAML2_DEBUG',
-        'OPENID_CONNECT_DEBUG'
+        'OPENID_CONNECT_DEBUG',
+        "MANAGE_TERRAFORM_RC_FILE"
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
         """Test boolean configs to ensure they are overriden with environment variables."""
