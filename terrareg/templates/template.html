@@ -3,7 +3,9 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <link rel="stylesheet" href="/static/css/bulma/bulma-0.9.3.min.css">
+
+        <script src="/static/js/terrareg/user-preferences.js"></script>
+
         <script defer src="/static/js/fontawesome/all-v6.0.0.js"></script>
         <script src="/static/js/jquery/jquery-6.3.0.min.js"></script>
 
@@ -36,7 +38,6 @@
 
         <script src="/static/js/terrareg/config.js"></script>
         <script src="/static/js/terrareg/module_provider.js"></script>
-        <script src="/static/js/terrareg/user-preferences.js"></script>
 
         <script>
           function navbar_search_modules() {
@@ -234,6 +235,17 @@
 
               <div class="field">
                 <label class="label"><input id="user-preferences-show-unpublished" class="checkbox" type="checkbox" /> Show 'unpublished' versions</label>
+              </div>
+
+              <div class="field">
+                <label class="label">
+                  Theme
+                </label>
+                <select id="user-preferences-theme">
+                  <option value="default">Default</option>
+                  <option value="lux">Lux</option>
+                  <option value="pulse">Pulse</option>
+                </select>
               </div>
 
               <br />
