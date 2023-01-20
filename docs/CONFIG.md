@@ -230,6 +230,15 @@ Whether flask and sqlalchemy is setup in debug mode.
 Default: `False`
 
 
+### DEFAULT_TERRAFORM_VERSION
+
+
+Default version of Terraform that will be used to extract module, if terraform required_version has not been specified.
+
+
+Default: `1.3.6`
+
+
 ### DELETE_EXTERNALLY_HOSTED_ARTIFACTS
 
 
@@ -425,6 +434,22 @@ Default: `5000`
 URL of logo to be used in web interface.
 
 Default: `/static/images/logo.png`
+
+
+### MANAGE_TERRAFORM_RC_FILE
+
+
+Whether terrareg with manage (overwrite) the terraform.rc file in the user's home directory.
+
+This is required for terraform to authenticate to the registry to ignore any analytics when initialising Terraform modules during extraction.
+
+When this is disabled, analytics will be recorded when Terrareg extracts modules that call to other modules in the registry.
+
+This is disabled by default in the application, meaning that running terrareg locally, by default, will not manage this file.
+The docker container, by default, overrides this to enable the functionality, since it is running in an isolated environment and unlikely to overwrite user's own configurations.
+
+
+Default: `False`
 
 
 ### MODULES_DIRECTORY
@@ -664,6 +689,15 @@ set or left empty.
 
 
 Default: ``
+
+
+### TERRAFORM_ARCHIVE_MIRROR
+
+
+Mirror for obtaining version list and downloading Terraform
+
+
+Default: `https://releases.hashicorp.com/terraform`
 
 
 ### TERRAFORM_EXAMPLE_VERSION_TEMPLATE

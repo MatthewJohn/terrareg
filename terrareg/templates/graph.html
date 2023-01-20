@@ -1,0 +1,117 @@
+
+{% extends 'template.html' %}
+
+{% block title %}Create Module{% endblock %}
+
+{% block footer %}{% endblock %}
+
+{% block header %}
+
+<script src="/static/js/cytoscape/layout-base.js"></script>
+<script src="/static/js/cytoscape/cytoscape.min-3.26.0.js"></script>
+<script src="/static/js/cytoscape/cose-base.js"></script>
+<script src="/static/js/cytoscape/cytoscape-fcose.js"></script>
+
+<style>
+    #cy {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+    }
+    #graphOptions {
+        width: 300px;
+    }
+</style>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div id="graphOptions">
+    <label class="checkbox">
+        <input onchange="updateGraphData()" id="graphOptionsShowFullModuleNames" type="checkbox">
+        Show full module addresses
+    </label>
+    <label class="checkbox">
+        <input onchange="updateGraphData()" id="graphOptionsShowFullResourceNames" type="checkbox">
+        Show full resource addresses
+    </label>
+</div>
+
+<div id="cy">
+</div>
+
+<div id="noGraphError">
+</div>
+
+<script>
+
+    const cy = cytoscape({
+        container: document.getElementById('cy'),
+        style: [
+            {
+                selector: 'node',
+                style: {
+                    'label': 'data(label)',
+                    'shape': 'rectangle',
+
+                    'text-valign': 'center',
+                    'text-halign': 'center',
+
+                    'width': 'label',
+                    'height': 'label',
+                    'padding': '5px',
+
+                    'border-color': '#000000',
+                    'background-color': '#7681B3',
+                    'color': '#FFFFFF'
+                }
+            }
+        ],
+
+        // Decrease wheel sensitivity to allow more granular scrolling
+        wheelSensitivity: 0.5,
+        zoom: 0.6,
+        pan: { x: ($('#cy').width() / 2), y: ($('#cy').height() / 2) }
+    });
+
+    function updateGraphData() {
+        // Obtain graph data from relative URL
+        jQuery.get(
+            '{{ current_module.graph_data_url }}',
+            {
+                'full_module_names': $('#graphOptionsShowFullModuleNames').is(':checked'),
+                'full_resource_names': $('#graphOptionsShowFullResourceNames').is(':checked')
+            }
+        ).then((graphData) => {
+            if (graphData) {
+                cy.json({elements: graphData});
+                let layout = cy.makeLayout({
+                    name: 'fcose',
+                    quality: "proof",
+                    avoidOverlap: true,
+                    fit: false,
+                    nodeDimensionsIncludeLabels: true,
+                    packComponents: false,
+                    randomize: false,
+                    animate: false,
+
+                    // Calculate node repulsion based on size of module (number of child resources)
+                    nodeRepulsion: node => {return node.data().child_count * 10000},
+
+                    // Disable tiling
+                    tile: false,
+
+                    condense:false,
+                });
+                layout.run();
+            } else {
+                $('#noGraphError').text("There is not graph data available for this module version.")
+            }
+        });
+    }
+    updateGraphData();
+</script>
+
+{% endblock %}
