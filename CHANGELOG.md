@@ -1,5 +1,32 @@
 # Changelog
 
+# [2.50.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.49.1...v2.50.0) (2023-01-20)
+
+
+### Bug Fixes
+
+* Add '--raw' and '--clean=false' to inframap to retain nodes that are being removed ([a0ee490](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a0ee49059d397b6436ad7248e872cfb8b0e108c3)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+* Add draft Terraform init command run before running inframap to make submodules available ([375f6ea](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/375f6ea7cf5c194f53a735df316fd25a7d2625be)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+* Add red border to resources with costs in resource graph. ([7d1f3e9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7d1f3e9a56c14ea543c39172b40e8dae43e2df67)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+* Implement management of terraformrc file to disable analytics generated from terraform during module extraction ([72e5970](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/72e597087edb93134aa0e5200980cdb99a40d918)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+* Improve layout of graph by spreading out modules based on number of child resources. This is helped by disabling tiling ([f2c7036](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f2c7036bb848490df23349e4b191a17ac6b82851)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+* Update initial graph pan based on size of cy div height/width ([bab8f93](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/bab8f93e1ddaf32eabef8838a5f413a7bd9d3cc8)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+* Update ModuleExtractor to use terraform graph and terraform-graph-beautifier to generate graph data and JSON ([afa4f65](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/afa4f65e6866956348a73645ac1bbda973f9b8e3)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+
+
+### Features
+
+* Add graph options to show full resource and module names ([796db76](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/796db7682b1d9c3f5e14a16368d92b7f45fa4d70)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+* Add page to view resource graph ([fe4129c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fe4129cacff8fffd65a6e1697a1cfe395880afbc)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+* Add yearly costs to resources in graph view, where available ([f7689ba](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f7689ba606d8bd06977a568ee6f7e39a861752dd)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+
+
+### Reverts
+
+* Revert "ci: Update build_wheel step to use test docker image" ([93540a2](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/93540a2fb646baabf7ecf2173d06a4dbd5cbd689))
+* Revert "ci: Update wheel build to use python3/pip3, since the test container is based Ubuntu" ([c21b497](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c21b49791af13722f9fad57270977a6ba13aaf3e))
+* Revert "ci: Add installation wheel package for building wheel inside test container" ([066ad26](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/066ad26c349037b91a897cde8e4169de6dcf318f))
+
 ## [2.49.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.49.0...v2.49.1) (2023-01-14)
 
 
