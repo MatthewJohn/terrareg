@@ -963,6 +963,113 @@ class TestProcessUpload(TerraregIntegrationTest):
             }
         ]
 
+    def test_graph_data(self):
+        """Test graph data for uploaded module."""
+        test_upload = UploadTestModule()
+
+        namespace = Namespace.get(name='testprocessupload', create=True)
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='12.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf in root module, example and submodule
+                for identifier, directory_structure in [
+                        ("root_module", []),
+                        ("example", ["examples", "first-example"]),
+                        ("submodule", ["modules", "first-submodule"])]:
+                    # Generate parent directories for example/submodules
+                    parent_paths = [upload_directory]
+                    for directory in directory_structure:
+                        parent_paths.append(directory)
+                        os.mkdir(os.path.join(*parent_paths))
+
+                    with open(os.path.join(*parent_paths, 'main.tf'), 'w') as fh:
+                        fh.write(f"""
+resource "aws_s3_bucket" "test_bucket" {{
+  name = var.name
+}}
+
+resource "aws_s3_object" "test_obj_{identifier}" {{
+  key     = "test/s3/bucket/object/key"
+  bucket  = aws_s3_bucket.test_bucket.id
+  content = "Important Content"
+}}
+
+variable "name" {{
+  type    = string
+  default = "Test value"
+}}
+
+output "name" {{
+  value = aws_s3_bucket.test.name
+}}
+
+""")
+
+            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+
+        # Ensure infracost output contains monthly cost
+        assert module_version.module_details.terraform_graph.strip() == """
+digraph {
+	compound = "true"
+	newrank = "true"
+	subgraph "root" {
+		"[root] aws_s3_bucket.test_bucket (expand)" [label = "aws_s3_bucket.test_bucket", shape = "box"]
+		"[root] aws_s3_object.test_obj_root_module (expand)" [label = "aws_s3_object.test_obj_root_module", shape = "box"]
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]" [label = "provider[\\"registry.terraform.io/hashicorp/aws\\"]", shape = "diamond"]
+		"[root] var.name" [label = "var.name", shape = "note"]
+		"[root] aws_s3_bucket.test_bucket (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] aws_s3_object.test_obj_root_module (expand)" -> "[root] aws_s3_bucket.test_bucket (expand)"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] aws_s3_object.test_obj_root_module (expand)"
+		"[root] root" -> "[root] output.name (expand)"
+		"[root] root" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)"
+		"[root] root" -> "[root] var.name"
+	}
+}
+""".strip()
+
+        assert module_version.get_examples()[0].module_details.terraform_graph.strip() == """
+digraph {
+	compound = "true"
+	newrank = "true"
+	subgraph "root" {
+		"[root] aws_s3_bucket.test_bucket (expand)" [label = "aws_s3_bucket.test_bucket", shape = "box"]
+		"[root] aws_s3_object.test_obj_example (expand)" [label = "aws_s3_object.test_obj_example", shape = "box"]
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]" [label = "provider[\\"registry.terraform.io/hashicorp/aws\\"]", shape = "diamond"]
+		"[root] var.name" [label = "var.name", shape = "note"]
+		"[root] aws_s3_bucket.test_bucket (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] aws_s3_object.test_obj_example (expand)" -> "[root] aws_s3_bucket.test_bucket (expand)"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] aws_s3_object.test_obj_example (expand)"
+		"[root] root" -> "[root] output.name (expand)"
+		"[root] root" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)"
+		"[root] root" -> "[root] var.name"
+	}
+}
+""".strip()
+
+        assert module_version.get_submodules()[0].module_details.terraform_graph.strip() == """
+digraph {
+	compound = "true"
+	newrank = "true"
+	subgraph "root" {
+		"[root] aws_s3_bucket.test_bucket (expand)" [label = "aws_s3_bucket.test_bucket", shape = "box"]
+		"[root] aws_s3_object.test_obj_submodule (expand)" [label = "aws_s3_object.test_obj_submodule", shape = "box"]
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]" [label = "provider[\\"registry.terraform.io/hashicorp/aws\\"]", shape = "diamond"]
+		"[root] var.name" [label = "var.name", shape = "note"]
+		"[root] aws_s3_bucket.test_bucket (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] aws_s3_object.test_obj_submodule (expand)" -> "[root] aws_s3_bucket.test_bucket (expand)"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] aws_s3_object.test_obj_submodule (expand)"
+		"[root] root" -> "[root] output.name (expand)"
+		"[root] root" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)"
+		"[root] root" -> "[root] var.name"
+	}
+}
+""".strip()
+
+
     @pytest.mark.skipif(terrareg.config.Config().INFRACOST_API_KEY == None, reason="Requires valid infracost API key")
     def test_uploading_module_with_infracost(self):
         """Test uploading a module with real infracost API key."""

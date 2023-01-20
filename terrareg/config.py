@@ -6,8 +6,17 @@ from terrareg.errors import InvalidBooleanConfigurationError
 
 class Config:
 
-    _INTERNAL_EXTRACTION_ANALYITCS_TOKEN = str(uuid.uuid4())
-    """Analaytics token used by Terraform initialised by the registry"""
+    @property
+    def INTERNAL_EXTRACTION_ANALYITCS_TOKEN(self):
+        """
+        Analaytics token used by Terraform initialised by the registry.
+
+        This is used by the registry to call back to itself when analysing module examples.
+
+        The value should be changed if it might result in a conflict with a legitimate analytics token used in Terraform
+        that calls modules from the registry.
+        """
+        return os.environ.get('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', 'internal-terrareg-analytics-token')
 
     @property
     def DOMAIN_NAME(self):
@@ -477,6 +486,43 @@ class Config:
         return os.environ.get('ADDITIONAL_MODULE_TABS', '[["Release Notes", ["RELEASE_NOTES.md", "CHANGELOG.md"]], ["License", ["LICENSE"]]]')
 
     @property
+    def MODULE_LINKS(self):
+        """
+        List of custom links to display on module provides.
+
+        Each link must contain a display and and link URL.
+        These can contain placeholders, such as:
+         * namespace
+         * module
+         * provider
+         * version
+
+        The links can be provided with a list of namespaces to limit the link to only modules within those namespaces.
+
+        The format should be similar to this example:
+        [
+            {"text": "Text for the link e.g. Github Issues for {module}",
+             "url": "https://github.com/{namespace}/{module}-{provider}/issues"},
+            {"text": "Second link limited to two namespaces",
+             "url": "https://mydomain.example.com/",
+             "namespaces": ["namespace1", "namespace2"]}
+        ]
+        """
+        return os.environ.get('MODULE_LINKS', '[]')
+
+    @property
+    def ENABLE_ACCESS_CONTROLS(self):
+        """
+        Enables role based access controls for SSO users.
+
+        Enabling this feature will restrict all SSO users from performing any admin tasks.
+        Group mappings can be setup in the settings page, providing SSO users and groups with global or namespace-based permissions.
+
+        When disabled, all SSO users will have global admin privileges.
+        """
+        return self.convert_boolean(os.environ.get('ENABLE_ACCESS_CONTROLS', 'False'))
+
+    @property
     def OPENID_CONNECT_LOGIN_TEXT(self):
         """
         Text for sign in button for OpenID Connect authentication
@@ -505,6 +551,15 @@ class Config:
         A well-known URL will be expected at `${OPENID_CONNECT_ISSUER}/.well-known/openid-configuration`
         """
         return os.environ.get('OPENID_CONNECT_ISSUER', None)
+
+    @property
+    def OPENID_CONNECT_DEBUG(self):
+        """
+        Enable debug of OpenID connect via stdout.
+
+        This should only be enabled for non-production environments.
+        """
+        return self.convert_boolean(os.environ.get('OPENID_CONNECT_DEBUG', 'False'))
 
     @property
     def SAML2_LOGIN_TEXT(self):
@@ -560,6 +615,50 @@ class Config:
         ```
         """
         return os.environ.get('SAML2_PRIVATE_KEY', None)
+
+    @property
+    def SAML2_GROUP_ATTRIBUTE(self):
+        """
+        SAML2 user data group attribute.
+        """
+        return os.environ.get('SAML2_GROUP_ATTRIBUTE', 'groups')
+
+    @property
+    def SAML2_DEBUG(self):
+        """
+        Enable debug of Saml2 via stdout.
+
+        This should only be enabled for non-production environments.
+        """
+        return self.convert_boolean(os.environ.get('SAML2_DEBUG', 'False'))
+
+    @property
+    def DEFAULT_TERRAFORM_VERSION(self):
+        """
+        Default version of Terraform that will be used to extract module, if terraform required_version has not been specified.
+        """
+        return os.environ.get("DEFAULT_TERRAFORM_VERSION", "1.3.6")
+
+    @property
+    def TERRAFORM_ARCHIVE_MIRROR(self):
+        """
+        Mirror for obtaining version list and downloading Terraform
+        """
+        return os.environ.get("TERRAFORM_ARCHIVE_MIRROR", "https://releases.hashicorp.com/terraform")
+
+    @property
+    def MANAGE_TERRAFORM_RC_FILE(self):
+        """
+        Whether terrareg with manage (overwrite) the terraform.rc file in the user's home directory.
+
+        This is required for terraform to authenticate to the registry to ignore any analytics when initialising Terraform modules during extraction.
+
+        When this is disabled, analytics will be recorded when Terrareg extracts modules that call to other modules in the registry.
+
+        This is disabled by default in the application, meaning that running terrareg locally, by default, will not manage this file.
+        The docker container, by default, overrides this to enable the functionality, since it is running in an isolated environment and unlikely to overwrite user's own configurations.
+        """
+        return self.convert_boolean(os.environ.get("MANAGE_TERRAFORM_RC_FILE", "False"))
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""

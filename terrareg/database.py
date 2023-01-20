@@ -5,9 +5,11 @@ import sqlalchemy.dialects.mysql
 
 from flask import has_request_context
 import flask
+from terrareg.audit_action import AuditAction
 
 import terrareg.config
 from terrareg.errors import DatabaseMustBeIniistalisedError
+from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 
 
 class Database():
@@ -44,6 +46,9 @@ class Database():
 
     def __init__(self):
         """Setup member variables."""
+        self._session = None
+        self._user_group = None
+        self._user_group_namespace_permission = None
         self._git_provider = None
         self._namespace = None
         self._module_provider = None
@@ -52,7 +57,6 @@ class Database():
         self._sub_module = None
         self._analytics = None
         self._example_file = None
-        self._session = None
         self._module_version_file = None
         self.transaction_connection = None
 
@@ -62,6 +66,20 @@ class Database():
         if self._session is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._session
+
+    @property
+    def user_group(self):
+        """Return namespace table."""
+        if self._user_group is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._user_group
+
+    @property
+    def user_group_namespace_permission(self):
+        """Return namespace table."""
+        if self._user_group_namespace_permission is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._user_group_namespace_permission
 
     @property
     def git_provider(self):
@@ -126,6 +144,13 @@ class Database():
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._module_version_file
 
+    @property
+    def audit_history(self):
+        """Audit history table."""
+        if self._audit_history is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._audit_history
+
     @classmethod
     def reset(cls):
         """Reset database connections."""
@@ -172,6 +197,38 @@ class Database():
             'session', meta,
             sqlalchemy.Column('id', sqlalchemy.String(128), primary_key=True),
             sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
+        )
+
+        self._user_group = sqlalchemy.Table(
+            'user_group', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False, unique=True),
+            sqlalchemy.Column('site_admin', sqlalchemy.Boolean, default=False, nullable=False)
+        )
+
+        self._user_group_namespace_permission = sqlalchemy.Table(
+            'user_group_namespace_permission', meta,
+            sqlalchemy.Column(
+                'user_group_id',
+                sqlalchemy.ForeignKey(
+                    'user_group.id',
+                    name='fk_user_group_namespace_permission_user_group_id_user_group_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False,
+                primary_key=True
+            ),
+            sqlalchemy.Column(
+                'namespace_id',
+                sqlalchemy.ForeignKey(
+                    'namespace.id',
+                    name='fk_user_group_namespace_permission_namespace_id_namespace_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False,
+                primary_key=True
+            ),
+            sqlalchemy.Column('permission_type', sqlalchemy.Enum(UserGroupNamespacePermissionType))
         )
 
         self._git_provider = sqlalchemy.Table(
@@ -237,7 +294,8 @@ class Database():
             sqlalchemy.Column('readme_content', Database.medium_blob()),
             sqlalchemy.Column('terraform_docs', Database.medium_blob()),
             sqlalchemy.Column('tfsec', Database.medium_blob()),
-            sqlalchemy.Column('infracost', Database.medium_blob())
+            sqlalchemy.Column('infracost', Database.medium_blob()),
+            sqlalchemy.Column('terraform_graph', Database.medium_blob())
         )
 
         self._module_version = sqlalchemy.Table(
@@ -345,6 +403,18 @@ class Database():
             ),
             sqlalchemy.Column('path', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
             sqlalchemy.Column('content', Database.medium_blob())
+        )
+
+        self._audit_history = sqlalchemy.Table(
+            'audit_history', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('timestamp', sqlalchemy.DateTime),
+            sqlalchemy.Column('username', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('action', sqlalchemy.Enum(AuditAction)),
+            sqlalchemy.Column('object_type', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('object_id', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('old_value', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('new_value', sqlalchemy.String(GENERAL_COLUMN_SIZE))
         )
 
     def select_module_version_joined_module_provider(self, *select_args):

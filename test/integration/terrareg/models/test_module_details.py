@@ -1,7 +1,6 @@
 
 from datetime import datetime
 import json
-import unittest.mock
 
 import pytest
 import sqlalchemy
@@ -84,3 +83,42 @@ class TestModuleDetails(TerraregIntegrationTest):
             ).fetchone()
 
         assert res == None
+
+    def test_graph_json(self):
+        """Test graph data conversion to JSON"""
+        module_version = ModuleVersion.get(ModuleProvider.get(Module(Namespace.get("moduledetails"), "graph-test"), "provider"), "1.0.0")
+        assert module_version.module_details.get_graph_json() == {
+            "nodes": [
+                {"data": {"child_count": 0, "id": "aws_s3_bucket.test_bucket", "label": "aws_s3_bucket.test_bucket", "parent": "root"}, "style": {}},
+                {"data": {"child_count": 0, "id": "aws_s3_object.test_obj_root_module", "label": "aws_s3_object.test_obj_root_module", "parent": "root"}, "style": {}},
+                {"data": {"child_count": 0, "id": "module.submodule-call.aws_ec2_instance.test_instance", "label": "aws_ec2_instance.test_instance", "parent": "module.submodule-call"}, "style": {}},
+                {"data": {"child_count": 1, "id": "module.submodule-call", "label": "submodule-call"}, "style": {"background-color": "#F8F7F9", "color": "#000000", "font-weight": "bold", "text-valign": "top"}},
+                {"data": {"child_count": 2, "id": "root", "label": "Root Module"}, "style": {"background-color": "#F8F7F9", "color": "#000000", "font-weight": "bold", "text-valign": "top"}}
+            ],
+            "edges": [
+                {"classes": ["module.submodule-call-root"], "data": {"id": "root.module.submodule-call", "source": "module.submodule-call", "target": "root"}}
+            ],
+        }
+
+        assert module_version.get_submodules()[0].module_details.get_graph_json() == {
+            "nodes": [
+                {"data": {"child_count": 0, "id": "aws_ec2_instance.test_instance", "label": "aws_ec2_instance.test_instance", "parent": "root"}, "style": {}},
+                {"data": {"child_count": 1, "id": "root", "label": "Root Module"}, "style": {"background-color": "#F8F7F9", "color": "#000000", "font-weight": "bold", "text-valign": "top"}}
+            ],
+            "edges": [],
+        }
+
+        assert module_version.get_examples()[0].module_details.get_graph_json() == {
+            "nodes": [
+                {"data": {"child_count": 0, "id": "module.main_call.aws_s3_bucket.test_bucket", "label": "aws_s3_bucket.test_bucket", "parent": "module.main_call"}, "style": {}},
+                {"data": {"child_count": 0, "id": "module.main_call.aws_s3_object.test_obj_root_module", "label": "aws_s3_object.test_obj_root_module", "parent": "module.main_call"}, "style": {}},
+                {"data": {"child_count": 0, "id": "module.main_call.module.submodule-call.aws_ec2_instance.test_instance", "label": "aws_ec2_instance.test_instance", "parent": "module.main_call.module.submodule-call"}, "style": {}},
+                {"data": {"child_count": 2, "id": "module.main_call", "label": "main_call"}, "style": {"background-color": "#F8F7F9", "color": "#000000", "font-weight": "bold", "text-valign": "top"}},
+                {"data": {"child_count": 1, "id": "module.main_call.module.submodule-call", "label": "submodule-call"}, "style": {"background-color": "#F8F7F9", "color": "#000000", "font-weight": "bold", "text-valign": "top"}},
+                {"data": {"child_count": 0, "id": "root", "label": "Root Module"}, "style": {"background-color": "#F8F7F9", "color": "#000000", "font-weight": "bold", "text-valign": "top"}}
+            ],
+            "edges": [
+                {"classes": ["module-module"], "data": {"id": "module.main_call.module.main_call.module.submodule-call", "source": "module.main_call", "target": "module.main_call.module.submodule-call"}},
+                {"classes": ["module.main_call-root"], "data": {"id": "root.module.main_call", "source": "module.main_call", "target": "root"}}
+            ]
+        }

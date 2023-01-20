@@ -46,7 +46,7 @@
                     </select>
                 </div>
             </section>
-            <p id="version-text" class="subtitle"></p>
+            <p id="version-text" class="subtitle default-hidden"></p>
             <div id="module-labels">
                 <span id="security-issues" class="tag is-danger is-light result-card-label result-card-label-security-issues default-hidden">
                     <span class="panel-icon">
@@ -61,12 +61,11 @@
             </div>
 
             <!-- Basic details about module -->
+            <p id="current-submodule" class="subtitle default-hidden"></p>
             <p id="module-title" class="title">
             </p>
             <p id="module-provider" class="subtitle">
             </p>
-
-            <p id="current-submodule" class="subtitle default-hidden"></p>
 
             <p id="unpublished-warning" class="subtitle default-hidden">
                 <b>WARNING:</b> This version of the module is not published.<br />
@@ -95,6 +94,9 @@
                 <span class="tag is-warning result-card-label result-card-label-security-issues">
                     <b>$<span id="yearly-cost-text"></span></b>
                 </span>
+            </div>
+
+            <div id="custom-links">
             </div>
 
             <br />
@@ -161,6 +163,10 @@
             <div id="usage-example-container" class="box default-hidden">
                 <h5 class="title is-5">Usage</h5>
                 <div class="content">
+                    <p class="default-hidden" id="supported-terraform-versions">
+                        Supported Terraform versions: <code id="supported-terraform-versions-data"></code>
+                    </p>
+
                     To use this module:
                     <ol>
                         <li>Add the following example to your Terraform,</li>
@@ -291,6 +297,9 @@
 
         <!-- Resources tab -->
         <div id="module-tab-resources" class="module-tabs default-hidden">
+
+            <a id="resourceDependencyGraphLink" href="#">View a resource dependency graph</a>
+
             <table class="table module-provider-tab-content-table">
                 <thead>
                     <tr>

@@ -1,6 +1,8 @@
 """Provide extraction method of modules."""
 
+from contextlib import contextmanager
 import os
+import threading
 from typing import Type
 import tempfile
 import zipfile
@@ -25,7 +27,9 @@ from terrareg.errors import (
     UnknownFiletypeError,
     InvalidTerraregMetadataFileError,
     MetadataDoesNotContainRequiredAttributeError,
-    GitCloneError
+    GitCloneError,
+    UnableToGetGlobalTerraformLockError,
+    TerraformVersionSwitchError
 )
 from terrareg.utils import PathDoesNotExistError, safe_iglob, safe_join_paths
 from terrareg.config import Config
@@ -35,12 +39,23 @@ class ModuleExtractor:
     """Provide extraction method of moduls."""
 
     TERRAREG_METADATA_FILES = ['terrareg.json', '.terrareg.json']
+    TERRAFORM_LOCK = threading.Lock()
 
     def __init__(self, module_version: ModuleVersion):
         """Create temporary directories and store member variables."""
         self._module_version = module_version
         self._extract_directory = tempfile.TemporaryDirectory()  # noqa: R1732
         self._upload_directory = tempfile.TemporaryDirectory()  # noqa: R1732
+
+    @property
+    def terraform_binary(self):
+        """Return path of terraform binary"""
+        return os.path.join(os.getcwd(), "bin", "terraform")
+
+    @property
+    def terraform_rc_file(self):
+        """Return path to terraformrc file"""
+        return os.path.join(os.path.expanduser("~"), ".terraformrc")
 
     @property
     def extract_directory(self):
@@ -87,6 +102,37 @@ class ModuleExtractor:
 
         return json.loads(terradocs_output)
 
+    @contextmanager
+    def _switch_terraform_versions(self, module_path):
+        """Switch terraform to required version for module"""
+        # Wait for global lock on terraform, so that only
+        # instance can run terraform at a time
+        if not ModuleExtractor.TERRAFORM_LOCK.acquire(blocking=True, timeout=60):
+            raise UnableToGetGlobalTerraformLockError(
+                "Unable to obtain global Terraform lock in 60 seconds"
+            )
+        try:
+            default_terraform_version = Config().DEFAULT_TERRAFORM_VERSION
+            tfswitch_env = os.environ.copy()
+
+            if default_terraform_version:
+                tfswitch_env["TF_VERSION"] = default_terraform_version
+
+            # Run tfswitch
+            try:
+                subprocess.check_output(
+                    ["tfswitch", "--mirror", Config().TERRAFORM_ARCHIVE_MIRROR, "--bin", self.terraform_binary],
+                    env=tfswitch_env,
+                    cwd=module_path
+                )
+            except subprocess.CalledProcessError as exc:
+                print("An error occured whilst running tfswitch:", str(exc))
+                raise TerraformVersionSwitchError("An error occurred whilst initialising Terraform version")
+
+            yield
+        finally:
+            ModuleExtractor.TERRAFORM_LOCK.release()
+
     def _run_tfsec(self, module_path):
         """Run tfsec and return output."""
         try:
@@ -107,6 +153,43 @@ class ModuleExtractor:
                 result['location']['filename'] = result['location']['filename'].replace(self._extract_directory.name + '/', '')
 
         return tfsec_results
+
+    def _create_terraform_rc_file(self):
+        """Create terraform RC file, if enabled"""
+        # Create .terraformrc file, if configured to do so
+        config = Config()
+        if config.MANAGE_TERRAFORM_RC_FILE and config.DOMAIN_NAME:
+            with open(self.terraform_rc_file, "w") as terraform_rc_fh:
+                terraform_rc_fh.write(f"""
+credentials "{config.DOMAIN_NAME}" {{
+  token = "{config.INTERNAL_EXTRACTION_ANALYITCS_TOKEN}"
+}}
+""")
+
+    def _run_tf_init(self, module_path):
+        """Perform terraform init"""
+        self._create_terraform_rc_file()
+
+        try:
+            subprocess.check_call([self.terraform_binary, "init"], cwd=module_path)
+        except subprocess.CalledProcessError:
+            return False
+        return True
+
+    def _get_graph_data(self, module_path):
+        """Run inframap and generate graphiz"""
+        try:
+            terraform_graph_data = subprocess.check_output(
+                [self.terraform_binary, "graph"],
+                cwd=module_path
+            )
+        except subprocess.CalledProcessError as exc:
+            print("Failed to generate Terraform graph data:", str(exc))
+            raise UnableToProcessTerraformError("Failed to generate Terraform graph data")
+
+        terraform_graph_data = terraform_graph_data.decode("utf-8")
+
+        return terraform_graph_data
 
     @staticmethod
     def _get_readme_content(module_path):
@@ -181,14 +264,15 @@ class ModuleExtractor:
             'zip',
             self.extract_directory)
 
-    def _create_module_details(self, readme_content, terraform_docs, tfsec, infracost=None):
+    def _create_module_details(self, readme_content, terraform_docs, tfsec, terraform_graph, infracost=None):
         """Create module details row."""
         module_details = ModuleDetails.create()
         module_details.update_attributes(
             readme_content=readme_content,
             terraform_docs=json.dumps(terraform_docs),
             tfsec=json.dumps(tfsec),
-            infracost=json.dumps(infracost) if infracost else None
+            infracost=json.dumps(infracost) if infracost else None,
+            terraform_graph=terraform_graph
         )
         return module_details
 
@@ -198,13 +282,15 @@ class ModuleExtractor:
         readme_content: str,
         terraform_docs: dict,
         tfsec: dict,
-        terrareg_metadata: dict) -> int:
+        terrareg_metadata: dict,
+        terraform_graph: str) -> int:
         """Insert module into DB, overwrite any pre-existing"""
         # Create module details row
         module_details = self._create_module_details(
             terraform_docs=terraform_docs,
             readme_content=readme_content,
-            tfsec=tfsec
+            tfsec=tfsec,
+            terraform_graph=terraform_graph
         )
         
         # Update attributes of module_version in database
@@ -232,6 +318,11 @@ class ModuleExtractor:
         tfsec = self._run_tfsec(submodule_dir)
         readme_content = self._get_readme_content(submodule_dir)
 
+        terraform_graph = None
+        with self._switch_terraform_versions(submodule_dir):
+            if self._run_tf_init(submodule_dir):
+                terraform_graph = self._get_graph_data(submodule_dir)
+
         infracost = None
         # Run infracost on examples, if API key is set
         if isinstance(submodule, Example) and Config().INFRACOST_API_KEY:
@@ -245,7 +336,8 @@ class ModuleExtractor:
             terraform_docs=tf_docs,
             readme_content=readme_content,
             tfsec=tfsec,
-            infracost=infracost
+            infracost=infracost,
+            terraform_graph=terraform_graph
         )
 
         submodule.update_attributes(
@@ -262,7 +354,7 @@ class ModuleExtractor:
 
         infracost_env = dict(os.environ)
         if Config().DOMAIN_NAME:
-            infracost_env['INFRACOST_TERRAFORM_CLOUD_TOKEN'] = Config()._INTERNAL_EXTRACTION_ANALYITCS_TOKEN
+            infracost_env['INFRACOST_TERRAFORM_CLOUD_TOKEN'] = Config().INTERNAL_EXTRACTION_ANALYITCS_TOKEN
             infracost_env['INFRACOST_TERRAFORM_CLOUD_HOST'] = Config().DOMAIN_NAME
 
         # Create temporary file safely and immediately close to
@@ -420,6 +512,11 @@ class ModuleExtractor:
         tfsec = self._run_tfsec(self.module_directory)
         readme_content = self._get_readme_content(self.module_directory)
 
+        terraform_graph = None
+        with self._switch_terraform_versions(self.module_directory):
+            if self._run_tf_init(self.module_directory):
+                terraform_graph = self._get_graph_data(self.module_directory)
+
         # Check for any terrareg metadata files
         terrareg_metadata = self._get_terrareg_metadata(self.module_directory)
 
@@ -434,7 +531,8 @@ class ModuleExtractor:
             readme_content=readme_content,
             tfsec=tfsec,
             terraform_docs=terraform_docs,
-            terrareg_metadata=terrareg_metadata
+            terrareg_metadata=terrareg_metadata,
+            terraform_graph=terraform_graph
         )
 
         # Generate the archive, unless the module has a git clone URL and

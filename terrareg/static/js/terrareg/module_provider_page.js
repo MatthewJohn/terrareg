@@ -332,7 +332,7 @@ class ProvidersTab extends ModuleDetailsTab {
                 providerRow.append(sourceTd);
 
                 let versionTd = $("<td></td>");
-                versionTd.text(provider.version);
+                versionTd.append(provider.version);
                 providerRow.append(versionTd);
 
                 providerTabTbody.append(providerRow);
@@ -467,11 +467,18 @@ class SecurityIssuesTab extends ModuleDetailsTab {
 }
 
 class ResourcesTab extends ModuleDetailsTab {
+    constructor(moduleDetails, graphUrl) {
+        super(moduleDetails);
+        this._graphUrl = graphUrl;
+    }
     get name() {
         return 'resources';
     }
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
+            // Populate link to resources graph
+            $('#resourceDependencyGraphLink').attr("href", this._graphUrl);
+
             let resourceTab = $("#module-tab-resources");
             let resourceTabTbody = resourceTab.find("tbody");
             this._moduleDetails.resources.forEach((resource) => {
@@ -522,10 +529,17 @@ class IntegrationsTab extends ModuleDetailsTab {
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
             let config = await getConfig();
+            let loggedIn = await isLoggedIn();
+
             if (config.ALLOW_MODULE_HOSTING) {
                 $("#module-integrations-upload-container").removeClass('default-hidden');
             }
-            if (!config.PUBLISH_API_KEYS_ENABLED) {
+            if (!config.PUBLISH_API_KEYS_ENABLED ||
+                    loggedIn && (
+                        loggedIn.site_admin ||
+                        Object.keys(loggedIn.namespace_permissions).indexOf(this._moduleDetails.namespace) !== -1
+                    )
+            ) {
                 $("#integrations-index-module-version-publish").removeClass('default-hidden');
             }
 
@@ -1600,6 +1614,23 @@ function setSourceUrl(sourceUrl) {
 }
 
 /*
+ * Set custom links
+ *
+ * @param moduleDetails
+ */
+function populateCustomLinks(moduleDetails) {
+    let customLinkParent = $('#custom-links');
+    for (let linkDetails of moduleDetails.custom_links) {
+        let link = $('<a></a>');
+        link.addClass('custom-link');
+        link.attr('href', linkDetails.url);
+        link.text(linkDetails.text);
+        customLinkParent.append(link);
+        customLinkParent.append('<br />');
+    }
+}
+
+/*
  * Populate submodule selection options
  *
  * @param moduleDetails Terrareg module details
@@ -1689,8 +1720,20 @@ function onSubmoduleSelectChange(event) {
  *
  * @param moduleDetails Terrareg module details
  */
-async function populateTerraformUsageExample(moduleDetails, additionalPath = undefined) {
+async function populateTerraformUsageExample(moduleDetails, terraformVersionConstraint, additionalPath = undefined) {
     let config = await getConfig();
+
+    // Check if module has been published - if not, do not
+    // show usage example
+    if (! moduleDetails.published) {
+        return;
+    }
+
+    // Populate supported Terraform versions
+    if (moduleDetails.terraform_version_constraint) {
+        $('#supported-terraform-versions-data').text(terraformVersionConstraint);
+        $('#supported-terraform-versions').removeClass('default-hidden');
+    }
 
     // Update labels for example analytics token and phrase
     $("#usage-example-analytics-token").text(config.EXAMPLE_ANALYTICS_TOKEN);
@@ -1826,11 +1869,7 @@ function indexModuleVersion(moduleDetails) {
                         inProgressMessage.addClass('default-hidden');
 
                         // Display any errors
-                        if (res.responseJSON && res.responseJSON.message) {
-                            errorMessage.html(res.responseJSON.message);
-                        } else {
-                            errorMessage.html("An unexpected error occurred when publishing module version");
-                        }
+                        errorMessage.html(failedResponseToErrorString(res));
                         errorMessage.removeClass('default-hidden');
                     });
             } else {
@@ -1840,11 +1879,7 @@ function indexModuleVersion(moduleDetails) {
         })
         .fail((res) => {
             // Render and show error
-            if (res.responseJSON && res.responseJSON.message) {
-                errorMessage.html(res.responseJSON.message);
-            } else {
-                errorMessage.html("An unexpected error occurred when indexing module");
-            }
+            errorMessage.html(failedResponseToErrorString(res));
             errorMessage.removeClass('default-hidden');
             // Hide in-progress
             inProgressMessage.addClass('default-hidden');
@@ -2085,7 +2120,7 @@ async function setupRootModulePage(data) {
 
         tabFactory.registerTab(new OutputsTab(moduleDetails.root));
         tabFactory.registerTab(new ProvidersTab(moduleDetails.root));
-        tabFactory.registerTab(new ResourcesTab(moduleDetails.root));
+        tabFactory.registerTab(new ResourcesTab(moduleDetails.root, moduleDetails.graph_url));
         tabFactory.registerTab(new SecurityIssuesTab(moduleDetails));
         tabFactory.registerTab(new AnalyticsTab(moduleDetails));
         tabFactory.registerTab(new UsageBuilderTab(moduleDetails));
@@ -2095,9 +2130,10 @@ async function setupRootModulePage(data) {
         setupModuleVersionDeletionSetting(moduleDetails);
         populateSubmoduleSelect(moduleDetails);
         populateExampleSelect(moduleDetails);
-        populateTerraformUsageExample(moduleDetails);
+        populateTerraformUsageExample(moduleDetails, moduleDetails.terraform_version_constraint);
         populateDownloadSummary(moduleDetails);
         setSourceUrl(moduleDetails.display_source_url);
+        populateCustomLinks(moduleDetails);
     }
 
     tabFactory.renderTabs();
@@ -2125,7 +2161,7 @@ async function setupSubmodulePage(data) {
     setOwner(moduleDetails);
     populateCurrentSubmodule(`Submodule: ${submodulePath}`)
     populateVersionText(moduleDetails);
-    populateTerraformUsageExample(moduleDetails, submodulePath);
+    populateTerraformUsageExample(moduleDetails, submoduleDetails.terraform_version_constraint, submodulePath);
     enableBackToParentLink(moduleDetails);
     showSecurityWarnings(submoduleDetails);
     setSourceUrl(submoduleDetails.display_source_url);
@@ -2136,7 +2172,7 @@ async function setupSubmodulePage(data) {
     tabFactory.registerTab(new InputsTab(submoduleDetails));
     tabFactory.registerTab(new OutputsTab(submoduleDetails));
     tabFactory.registerTab(new ProvidersTab(submoduleDetails));
-    tabFactory.registerTab(new ResourcesTab(submoduleDetails));
+    tabFactory.registerTab(new ResourcesTab(submoduleDetails, submoduleDetails.graph_url));
     tabFactory.registerTab(new SecurityIssuesTab(submoduleDetails));
     tabFactory.renderTabs();
     tabFactory.setDefaultTab();
@@ -2172,7 +2208,7 @@ async function setupExamplePage(data) {
     tabFactory.registerTab(new InputsTab(submoduleDetails));
     tabFactory.registerTab(new OutputsTab(submoduleDetails));
     tabFactory.registerTab(new ProvidersTab(submoduleDetails));
-    tabFactory.registerTab(new ResourcesTab(submoduleDetails));
+    tabFactory.registerTab(new ResourcesTab(submoduleDetails, submoduleDetails.graph_url));
     tabFactory.registerTab(new SecurityIssuesTab(submoduleDetails));
     tabFactory.renderTabs();
     tabFactory.setDefaultTab();

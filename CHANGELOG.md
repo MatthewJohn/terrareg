@@ -1,5 +1,129 @@
 # Changelog
 
+# [2.50.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.49.1...v2.50.0) (2023-01-20)
+
+
+### Bug Fixes
+
+* Add '--raw' and '--clean=false' to inframap to retain nodes that are being removed ([a0ee490](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a0ee49059d397b6436ad7248e872cfb8b0e108c3)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+* Add draft Terraform init command run before running inframap to make submodules available ([375f6ea](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/375f6ea7cf5c194f53a735df316fd25a7d2625be)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+* Add red border to resources with costs in resource graph. ([7d1f3e9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7d1f3e9a56c14ea543c39172b40e8dae43e2df67)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+* Implement management of terraformrc file to disable analytics generated from terraform during module extraction ([72e5970](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/72e597087edb93134aa0e5200980cdb99a40d918)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+* Improve layout of graph by spreading out modules based on number of child resources. This is helped by disabling tiling ([f2c7036](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f2c7036bb848490df23349e4b191a17ac6b82851)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+* Update initial graph pan based on size of cy div height/width ([bab8f93](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/bab8f93e1ddaf32eabef8838a5f413a7bd9d3cc8)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+* Update ModuleExtractor to use terraform graph and terraform-graph-beautifier to generate graph data and JSON ([afa4f65](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/afa4f65e6866956348a73645ac1bbda973f9b8e3)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+
+
+### Features
+
+* Add graph options to show full resource and module names ([796db76](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/796db7682b1d9c3f5e14a16368d92b7f45fa4d70)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+* Add page to view resource graph ([fe4129c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fe4129cacff8fffd65a6e1697a1cfe395880afbc)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+* Add yearly costs to resources in graph view, where available ([f7689ba](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f7689ba606d8bd06977a568ee6f7e39a861752dd)), closes [#286](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/286)
+
+
+### Reverts
+
+* Revert "ci: Update build_wheel step to use test docker image" ([93540a2](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/93540a2fb646baabf7ecf2173d06a4dbd5cbd689))
+* Revert "ci: Update wheel build to use python3/pip3, since the test container is based Ubuntu" ([c21b497](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c21b49791af13722f9fad57270977a6ba13aaf3e))
+* Revert "ci: Add installation wheel package for building wheel inside test container" ([066ad26](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/066ad26c349037b91a897cde8e4169de6dcf318f))
+
+## [2.49.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.49.0...v2.49.1) (2023-01-14)
+
+
+### Bug Fixes
+
+* Add 'location' argument to all request parsers that expect arguments via query string ([36220b1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/36220b129a869b742ca85b7359384dfba3ac43dc)), closes [#283](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/283)
+
+# [2.49.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.48.0...v2.49.0) (2023-01-13)
+
+
+### Bug Fixes
+
+* Do not show Terraform example usage panel in module provider page if module version has not been published. ([1fdc0ae](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1fdc0ae749bb79f4f8ade7e30910ae25ccda7a55)), closes [#272](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/272)
+
+
+### Features
+
+* Add Terraform version constraint to module provider page. ([5d1e382](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5d1e382de8b8778a757f2587e10ec3fc1e356769)), closes [#272](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/272)
+
+# [2.48.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.47.3...v2.48.0) (2022-12-31)
+
+
+### Features
+
+* Add ability to provide custom links on module provider pages ([3cfdd2b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3cfdd2be03a2d56d4918a8f4ddacc4ba6413576e)), closes [#275](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/275)
+
+## [2.47.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.47.2...v2.47.3) (2022-12-31)
+
+
+### Bug Fixes
+
+* Add warning to login page when no authentication methods are available ([170020d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/170020db3d2f928baa6b1a3e0915be2a5fbdfc0a)), closes [#259](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/259)
+* Hide admin authentication login when admin token has not been configured. ([153def6](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/153def61679de1976ec04683e24a8e8ccf169bc1)), closes [#259](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/259)
+* Update initial setup process to automatically redirect user back to initial setup after creating a module ([7ae2608](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7ae2608ba9914819f3c45c9b689f80ce55bd5088)), closes [#258](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/258)
+* Update initial setup process to automatically redirect user to initial-setup after creating a namespace ([05711ee](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/05711eeac344b97cce1271a3377b2f96930d0fd0)), closes [#258](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/258)
+* Update initial setup to check for any forms of authentication configured, rather than requiring admin token ([66c43f2](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/66c43f28c0e137d49cf589bf5c2f08f73090f46a)), closes [#258](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/258)
+
+## [2.47.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.47.1...v2.47.2) (2022-12-31)
+
+
+### Bug Fixes
+
+* Hide version text on module provider, by default and increase padding of labels ([de9e477](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/de9e477d5403334af85b95f9fe9df03938048879)), closes [#282](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/282)
+
+## [2.47.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.47.0...v2.47.1) (2022-12-16)
+
+
+### Bug Fixes
+
+* Fix display of < and > symbols in provider requirement version fields ([b10e9a3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b10e9a3cfc9e1ca7a7cd8cd0ec30600881077e66)), closes [#275](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/275)
+
+# [2.47.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.46.2...v2.47.0) (2022-12-16)
+
+
+### Features
+
+* Add audit event logging and audit history page ([9ed7222](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9ed72226833a4546c98886cb3355ce356f8b53fc)), closes [#253](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/253)
+* Add audit events for create/delete namespaces, module providers and module versions ([97ed1a0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/97ed1a0ca6675f268ef9da9926c00b4ebd9da276)), closes [#253](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/253)
+* Add audit events for logins ([b077ca5](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b077ca5fee06a71d3e7f4aff2fbc1fed927e59ab)), closes [#253](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/253)
+* Add audit events for modifications to module provider configuration. ([67826e8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/67826e8cda81330b9a127141fa8ad45610ced9b5)), closes [#253](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/253)
+* Create audit history page and API endpoint to return audit history ([0ce7156](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0ce71562cf98d199abd19f8cec3fa7a5b67024bc)), closes [#253](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/253)
+* Implement audit log querying, limit+offset, sorting and ordering in API and datatable ([5132e46](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5132e4615a1d272c345348d2f2ccc9bd3332cd78)), closes [#253](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/253)
+
+## [2.46.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.46.1...v2.46.2) (2022-12-12)
+
+
+### Bug Fixes
+
+* Update internal analaytics token to a config value, set by environment variable. ([3013b1b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3013b1b5190bf132c032f8507a1629e35e7801b4)), closes [#267](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/267)
+
+
+### Reverts
+
+* Revert "db: Add DB migration to handle deletion of erroneous analytics rows" ([6f44314](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6f44314fd29963847f648e3c7b6488c89192d371))
+
+## [2.46.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.46.0...v2.46.1) (2022-12-11)
+
+
+### Bug Fixes
+
+* Move title for current submodule/example above name of module ([f026850](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f02685065e07595d7969a65d75545bb13038ac6d)), closes [#224](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/224)
+
+# [2.46.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.45.3...v2.46.0) (2022-12-09)
+
+
+### Bug Fixes
+
+* Fix call to _module_provider_404 in example view ([14149f1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/14149f1ba0e9ff4f1a849cee47151dc89d1ad612)), closes [#255](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/255)
+
+
+### Features
+
+* Add user groups and user groups namespace permissions, allowing SSO users to be delegated permissionsed per namespace
+* Add ability to delete user group permissions and user groups from UI ([1674817](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1674817a59fb252fbe3b81d6d14c41fabc3fe6af)), closes [#255](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/255)
+* Add configurations to output debug for SAML2 and OpenID connect ([8248929](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8248929bd89b894f97eb4dfcb1d713d09cb6d71a)), closes [#255](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/255)
+* Update authenticated endpoint to return list of namespace permissions ([4144c1b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4144c1bb45aa1585ac961a5f6a36026aaa54cf42)), closes [#255](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/255)
+
 ## [2.45.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.45.2...v2.45.3) (2022-11-06)
 
 

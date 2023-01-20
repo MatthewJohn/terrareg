@@ -1,7 +1,6 @@
 
 import datetime
 from enum import Enum
-from importlib.util import module_for_loader
 import os
 from distutils.version import LooseVersion
 import json
@@ -11,12 +10,15 @@ import sqlalchemy
 import urllib.parse
 
 import markdown
-
+import pygraphviz
+import networkx as nx
 import terrareg.analytics
 from terrareg.database import Database
 import terrareg.config
+import terrareg.audit
+import terrareg.audit_action
 from terrareg.errors import (
-    InvalidModuleNameError, InvalidModuleProviderNameError,
+    InvalidModuleNameError, InvalidModuleProviderNameError, InvalidUserGroupNameError,
     InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError,
     RepositoryUrlDoesNotContainValidSchemeError,
@@ -96,6 +98,312 @@ class Session:
         with db.get_connection() as conn:
             conn.execute(db.session.delete().where(
                 db.session.c.id==self.id
+            ))
+
+
+class UserGroup:
+
+    @staticmethod
+    def _validate_name(name):
+        """Validate name of user group"""
+        if not re.match(r'^[\s0-9a-zA-Z-_]+$', name):
+            raise InvalidUserGroupNameError('User group name is invalid')
+        return True
+
+    @classmethod
+    def get_by_group_name(cls, name):
+        """Obtain group by name."""
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(db.user_group.select().where(
+                db.user_group.c.name==name
+            ))
+            if row := res.fetchone():
+                return cls(name=row['name'])
+
+            return None
+
+    @classmethod
+    def create(cls, name, site_admin):
+        """Create usergroup"""
+        # Check if group exists with name
+        if cls.get_by_group_name(name=name):
+            return None
+
+        # Check group name
+        if not cls._validate_name(name):
+            return None
+
+        cls._insert_into_database(name=name, site_admin=site_admin)
+
+        obj = cls(name=name)
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.USER_GROUP_CREATE,
+            object_type=obj.__class__.__name__,
+            object_id=obj.name,
+            old_value=None, new_value=None
+        )
+
+        return obj
+
+    @classmethod
+    def _insert_into_database(cls, name, site_admin):
+        """Insert new user group into database."""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.user_group.insert().values(
+                name=name, site_admin=site_admin
+            ))
+
+    @classmethod
+    def get_all_user_groups(cls):
+        """Obtain all user groups."""
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(db.user_group.select())
+            return [
+                cls(row['name'])
+                for row in res.fetchall()
+            ]
+
+    @property
+    def pk(self):
+        """Return DB ID of user group"""
+        return self._get_db_row()['id']
+
+    @property
+    def name(self):
+        """Return name of user group"""
+        return self._name
+
+    @property
+    def site_admin(self):
+        """Return site_admin property of user group"""
+        return self._get_db_row()['site_admin']
+
+    def __init__(self, name):
+        """Store member variables"""
+        self._name = name
+        self._row_cache = None
+
+    def __eq__(self, __o):
+        """Check if two user groups are the same"""
+        if isinstance(__o, self.__class__):
+            return self.pk == __o.pk and self.name == __o.name and self.site_admin == __o.site_admin
+        return super(UserGroup, self).__eq__(__o)
+
+    def _get_db_row(self):
+        """Return DB row for user group."""
+        if self._row_cache is None:
+            db = Database.get()
+            # Obtain row from user group table.
+            select = db.user_group.select().where(
+                db.user_group.c.name == self._name
+            )
+            with db.get_connection() as conn:
+                res = conn.execute(select)
+                self._row_cache = res.fetchone()
+        return self._row_cache
+
+    def delete(self):
+        """Delete user group"""
+        for group_permission in UserGroupNamespacePermission.get_permissions_by_user_group(self):
+            group_permission.delete()
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.USER_GROUP_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.name,
+            old_value=None, new_value=None
+        )
+
+        self._delete_from_database()
+
+    def _delete_from_database(self):
+        """Delete row from database"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.user_group.delete().where(
+                db.user_group.c.id==self.pk
+            ))
+
+
+class UserGroupNamespacePermission:
+
+    @classmethod
+    def get_permissions_by_user_group(cls, user_group):
+        """Return permissions by user group"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            query = sqlalchemy.select(
+                db.user_group.c.name.label('user_group_name'),
+                db.namespace.c.namespace.label('namespace_name')
+            ).select_from(
+                db.user_group_namespace_permission
+            ).join(
+                db.user_group,
+                db.user_group_namespace_permission.c.user_group_id==db.user_group.c.id
+            ).join(
+                db.namespace,
+                db.user_group_namespace_permission.c.namespace_id==db.namespace.c.id
+            ).where(
+                db.user_group.c.id==user_group.pk
+            )
+            res = conn.execute(query)
+
+            return [
+                cls(
+                    user_group=UserGroup(name=r['user_group_name']),
+                    namespace=Namespace(name=r['namespace_name'])
+                )
+                for r in res.fetchall()
+            ]
+
+    @classmethod
+    def get_permissions_by_user_group_and_namespace(cls, user_group, namespace):
+        """Return permission by user group and namespace"""
+        permissions = cls.get_permissions_by_user_groups_and_namespace([user_group], namespace)
+        if len(permissions) > 1:
+            raise Exception('Found more than 1 permission for user group/namespace')
+        return permissions[0] if permissions else None
+
+    @classmethod
+    def get_permissions_by_user_groups_and_namespace(cls, user_groups, namespace):
+        """Obtain user permission by multiple user groups for a single namespace"""
+        db = Database.get()
+        user_group_ids = [user_group.pk for user_group in user_groups]
+        user_group_mapping = {
+            user_group.name: user_group
+            for user_group in user_groups
+        }
+        with db.get_connection() as conn:
+            query = sqlalchemy.select(
+                db.user_group.c.name.label('user_group_name')
+            ).join(
+                db.user_group,
+                db.user_group_namespace_permission.c.user_group_id==db.user_group.c.id
+            ).where(
+                db.user_group.c.id.in_(user_group_ids),
+                db.user_group_namespace_permission.c.namespace_id==namespace.pk
+            )
+            res = conn.execute(query)
+            permissions = [
+                cls(user_group=user_group_mapping[row['user_group_name']], namespace=namespace)
+                for row in res
+            ]
+
+            return permissions
+
+    @classmethod
+    def create(cls, user_group, namespace, permission_type):
+        """Create user group namespace permission"""
+        # Check if permission already exists
+        if cls.get_permissions_by_user_group_and_namespace(
+                user_group=user_group,
+                namespace=namespace):
+            return None
+
+        cls._insert_into_database(
+            user_group=user_group,
+            namespace=namespace,
+            permission_type=permission_type)
+
+        obj = cls(user_group=user_group, namespace=namespace)
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.USER_GROUP_NAMESPACE_PERMISSION_ADD,
+            object_type=obj.__class__.__name__,
+            object_id=obj.id,
+            old_value=None, new_value=None
+        )
+
+        return obj
+
+    @classmethod
+    def _insert_into_database(cls, user_group, namespace, permission_type):
+        """Insert permission into database"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.user_group_namespace_permission.insert().values(
+                user_group_id=user_group.pk,
+                namespace_id=namespace.pk,
+                permission_type=permission_type
+            ))
+
+    @property
+    def id(self):
+        """Return identifiable name of object"""
+        return '{user_group}/{namespace}'.format(
+            user_group=self.user_group.name,
+            namespace=self.namespace.name
+        )
+
+    @property
+    def user_group(self):
+        """Return user group."""
+        return self._user_group
+
+    @property
+    def namespace(self):
+        """Return namespace."""
+        return self._namespace
+
+    @property
+    def permission_type(self):
+        """Return permission."""
+        return self._get_db_row()['permission_type']
+
+    def __init__(self, user_group, namespace):
+        """Store member variables."""
+        self._user_group = user_group
+        self._namespace = namespace
+        self._row_cache = None
+
+    def __eq__(self, __o):
+        """Check if two user group namespace permissions are the same"""
+        if isinstance(__o, self.__class__):
+            return (
+                self.namespace.pk == __o.namespace.pk and
+                self.user_group.pk == __o.user_group.pk and
+                self.permission_type == __o.permission_type
+            )
+        return super(UserGroupNamespacePermission, self).__eq__(__o)
+
+    def _get_db_row(self):
+        """Return DB row for user group."""
+        if self._row_cache is None:
+            db = Database.get()
+            # Obtain row from user group table.
+            select = sqlalchemy.select(
+                db.user_group_namespace_permission
+            ).where(
+                db.user_group_namespace_permission.c.user_group_id==self._user_group.pk,
+                db.user_group_namespace_permission.c.namespace_id==self._namespace.pk
+            )
+            with db.get_connection() as conn:
+                res = conn.execute(select)
+                self._row_cache = res.fetchone()
+        return self._row_cache
+
+    def delete(self):
+        """Delete user group namespace permission."""
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.USER_GROUP_NAMESPACE_PERMISSION_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.id,
+            old_value=None, new_value=None
+        )
+
+        self._delete_from_database()
+
+    def _delete_from_database(self):
+        """Delete row from database"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.user_group_namespace_permission.delete().where(
+                db.user_group_namespace_permission.c.user_group_id==self.user_group.pk,
+                db.user_group_namespace_permission.c.namespace_id==self.namespace.pk
             ))
 
 
@@ -223,6 +531,12 @@ class GitProvider:
         """Return browse_url for git provider."""
         return self._get_db_row()['browse_url_template']
 
+    def __eq__(self, __o):
+        """Check if two git providers are the same"""
+        if isinstance(__o, self.__class__):
+            return self.pk == __o.pk
+        return super(GitProvider, self).__eq__(__o)
+
     def __init__(self, id):
         """Store member variable for ID."""
         self._id = id
@@ -296,7 +610,15 @@ class Namespace(object):
         with db.get_connection() as conn:
             conn.execute(module_provider_insert)
 
-        return cls(name=name)
+        obj = cls(name=name)
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.NAMESPACE_CREATE,
+            object_type=obj.__class__.__name__,
+            object_id=obj.name,
+            old_value=None, new_value=None
+        )
+        return obj
 
     @staticmethod
     def get_total_count():
@@ -479,6 +801,13 @@ class Namespace(object):
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
 
+    def get_module_custom_links(self):
+        """Obtain module links that are applicable to namespace"""
+        links = filter(
+            lambda x: x.get('namespaces', None) is None or self.name in x.get('namespaces', []),
+            json.loads(terrareg.config.Config().MODULE_LINKS))
+        return links
+
 
 class Module(object):
 
@@ -598,6 +927,218 @@ class ModuleDetails:
             return json.loads(db_row['infracost'])
         return {}
 
+    @property
+    def terraform_graph(self):
+        """Return decoded terraform graph data."""
+        db_row = self._get_db_row()
+        if db_row and db_row["terraform_graph"]:
+            return Database.decode_blob(db_row["terraform_graph"])
+        return None
+
+    def get_graph_json(self, full_resource_names=False, full_module_names=False):
+        """Return graph JSON for resources."""
+        terraform_graph = self.terraform_graph
+        if not terraform_graph:
+            return None
+
+        # Generate NX graph from terraform graphviz output
+        graph = pygraphviz.AGraph(terraform_graph)
+        nx_graph = nx.nx_agraph.from_agraph(graph)
+
+        infracost = self.infracost
+        resource_costs = {}
+        remove_item_iteration_re = re.compile('\[[^\]]+\]')
+        if infracost:
+            for resource in self.infracost["projects"][0]["breakdown"]["resources"]:
+                if not resource["monthlyCost"]:
+                    continue
+
+                name = remove_item_iteration_re.sub("", resource["name"])
+                resource_costs[name] = round((float(resource["monthlyCost"]) * 12), 2)
+
+        module_var_output_local_re = re.compile(r'^(module\.[^\.]+\.)+(var|local|output)\.[^\.]+$')
+        # Capture modules resources, such as:
+        # module.module1
+        # module.module1.module.module2
+        module_re = re.compile(r'^(?:module\.[^\.]+\.)*(?:module\.([^\.]+))$')
+        # Capture data resources, such as:
+        # data.aws_s3_bucket.test
+        # module.module1.data.aws_s3_bucket.test
+        # module.module1.module.module2.data.aws_s3_bucket.test
+        data_re = re.compile(r'^((?:module\.[^\.]+\.)+)data\.([^\.]+)\.([^\.])+$')
+        # Capture resources, such as:
+        # aws_s3_bucket.test
+        # module.module1.aws_s3_bucket.test
+        # module.module1.module.module2.aws_s3_bucket.test
+        resource_re = re.compile(r'^((?:module\.[^\.]+\.)*)([^\.]+)\.([^\.]+)$')
+
+        # Store node renames, to be renamed after initial iteration
+        renames = {}
+        # Store nodes to be removed
+        to_remove = []
+        # Store labels to be pushed to graph JSON
+        labels = {}
+        # Stoe type mappings for determing node attributes
+        type_mapping = {}
+        # Store parents of attirbutes to modules, used for
+        # parent mapping in JSON
+        parents = {}
+
+        def remove_node(node):
+            """Add a node to the remove_nodes list, if they are not already present"""
+            if node not in to_remove:
+                to_remove.append(node)
+
+        for node_label in nx_graph.nodes:
+            # Remove leading '[root] ' name and expand/close suffices from node names
+            name = node_label.replace('[root] ', '').replace(' (expand)', '').replace(' (close)', '')
+
+            # Check for root vars, outputs and locals
+            if name.startswith('output.') or name.startswith('var.') or name.startswith('local.'):
+                remove_node(node_label)
+
+            # Remove any module vars/outputs/locals
+            elif module_var_output_local_re.match(name):
+                remove_node(node_label)
+
+            # handle all other nodes
+            else:
+                # Rename to shortened name
+                renames[node_label] = name
+
+                # Match node name to type regexes
+                module_match = module_re.match(name)
+                resource_match = resource_re.match(name)
+                data_match = data_re.match(name)
+
+                # Create labels and type mapping
+                if name == "root":
+                    # Match root module
+                    labels[name] = "Root Module"
+                    type_mapping[name] = "module"
+
+                # Match submodules
+                elif module_match:
+                    if full_module_names:
+                        labels[name] = name
+                    else:
+                        labels[name] = module_match.group(1)
+
+                    type_mapping[name] = "module"
+
+                elif data_match:
+                    type_mapping[name] = "data"
+                    parents[name] = data_match.group(1).strip(".") or "root"
+
+                    if full_resource_names:
+                        labels[name] = name
+                    else:
+                        labels[name] = f"(data) {data_match.group(2)}.{data_match.group(3)}"
+
+                # Ensure resource RE is performed last,
+                # as this could also match module_re
+                elif resource_match:
+                    type_mapping[name] = "resource"
+                    if full_resource_names:
+                        labels[name] = name
+                    else:
+                        labels[name] = f"{resource_match.group(2)}.{resource_match.group(3)}"
+
+                    # Add cost to label, if available
+                    if name in resource_costs:
+                        labels[name] += f" (${resource_costs[name]}/year)"
+                    parents[name] = resource_match.group(1).strip(".") or "root"
+
+                # Discard any unrecognised types
+                else:
+                    remove_node(name)
+                    print("Unable to match node to type", name)
+
+        # Perform rename of nodes
+        nx_graph = nx.relabel_nodes(nx_graph, renames)
+
+        # Remove any nodes marked for removal
+        for node in to_remove:
+            nx_graph.remove_node(node)
+
+        # Convert to JSON for cytoscape
+        cytoscape_json = {
+            "nodes": [],
+            "edges": []
+        }
+
+        for node in nx_graph.nodes:
+            data = {
+                "id": node,
+                "label": labels.get(node),
+                "child_count": list(parents.values()).count(node)
+            }
+
+            style = {}
+            if type_mapping[node] == "module":
+                style = {
+                    'color': '#000000',
+                    'background-color': '#F8F7F9',
+                    'font-weight': 'bold',
+                    'text-valign': 'top',
+                }
+            # Add red outline to resources that have an associated cost
+            if node in resource_costs:
+                style['border-style'] = 'solid'
+                style['border-width'] = '2px'
+                style['border-color'] = 'red'
+
+            # Add parent if available
+            parent = parents.get(node, None)
+            if parent:
+                data["parent"] = parent
+
+            cytoscape_json["nodes"].append({
+                "data": data,
+                "style": style
+            })
+
+        # Add edges to graph
+        seen_module_links = []
+        for edge in nx_graph.edges:
+            # Only add edges for module-module links
+            if (type_mapping[edge[0]] == "module" and type_mapping[edge[1]] == "module" and
+                    # Only link modules in one direction, where module is a sub-module of another,
+                    # to avoid links in both directions
+                    edge[0] in edge[1]):
+                # Mark module as having been seen in edges
+                seen_module_links.append(edge[1])
+
+                cytoscape_json["edges"].append({
+                    "data": {
+                        "id": f"{edge[0]}.{edge[1]}",
+                        "source": edge[0],
+                        "target": edge[1]
+                    },
+                    "classes": [
+                        f"{type_mapping[edge[0]]}-{type_mapping[edge[1]]}"
+                    ]
+                })
+
+        # Iterate through all modukes...
+        for module, type_mapping in type_mapping.items():
+            if type_mapping == "module":
+                # If a module link has not already been seen,
+                # add a link to root module
+                if module not in seen_module_links and module != "root":
+                    cytoscape_json["edges"].append({
+                        "data": {
+                            "id": f"root.{module}",
+                            "source": module,
+                            "target": "root"
+                        },
+                        "classes": [
+                            f"{module}-root"
+                        ]
+                    })
+
+        return cytoscape_json
+
     def __init__(self, id: int):
         """Store member variables."""
         self._id = id
@@ -627,7 +1168,7 @@ class ModuleDetails:
         """Update DB row."""
         # Check for any blob and encode the values
         for kwarg in kwargs:
-            if kwarg in ['readme_content', 'terraform_docs', 'tfsec', 'infracost']:
+            if kwarg in ['readme_content', 'terraform_docs', 'tfsec', 'infracost', 'terraform_graph']:
                 kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
 
         db = Database.get()
@@ -795,7 +1336,16 @@ class ModuleProvider(object):
         with db.get_connection() as conn:
             conn.execute(module_provider_insert)
 
-        return cls(module=module, name=name)
+        obj = cls(module=module, name=name)
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_CREATE,
+            object_type=obj.__class__.__name__,
+            object_id=obj.id,
+            old_value=None, new_value=None
+        )
+
+        return obj
 
     @classmethod
     def get(cls, module, name, create=False):
@@ -975,6 +1525,13 @@ class ModuleProvider(object):
         for module_version in self.get_versions(include_beta=True, include_unpublished=True):
             module_version.delete()
 
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.id,
+            old_value=None, new_value=None
+        )
+
         db = Database.get()
 
         with db.get_connection() as conn:
@@ -1027,15 +1584,39 @@ class ModuleProvider(object):
         # Remove cached DB row
         self._cache_db_row = None
 
+    def update_verified(self, verified):
+        """Update verified flag of module provider."""
+        if verified in [True, False] and verified != self.verified:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_VERIFIED,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=self.verified,
+                new_value=verified
+            )
+            self.update_attributes(
+                verified=verified
+            )
+
     def update_git_provider(self, git_provider: GitProvider):
         """Update git provider associated with module provider."""
+        original_git_provider = self.get_git_provider()
+        if original_git_provider != git_provider:
+
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_PROVIDER,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_git_provider.name if original_git_provider else None,
+                new_value=git_provider.name if git_provider else None
+            )
         self.update_attributes(
             git_provider_id=(git_provider.pk if git_provider is not None else None)
         )
 
     def update_git_tag_format(self, git_tag_format):
         """Update git_tag_format."""
-        sanitised_git_tag_format = urllib.parse.quote(git_tag_format, safe='/{}')
+        sanitised_git_tag_format = urllib.parse.quote(git_tag_format, safe=r'/{}')
 
         if git_tag_format:
             # If tag format was provided, ensured it can be passed with 'format'
@@ -1047,6 +1628,16 @@ class ModuleProvider(object):
         else:
             # If not value was provided, default to None
             sanitised_git_tag_format = None
+
+        if sanitised_git_tag_format != self.git_tag_format:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_TAG_FORMAT,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=self.git_tag_format,
+                new_value=sanitised_git_tag_format
+            )
+
         self.update_attributes(git_tag_format=sanitised_git_tag_format)
 
     def update_git_path(self, git_path):
@@ -1056,6 +1647,16 @@ class ModuleProvider(object):
         if git_path and git_path != '/':
             # Sanity check path
             safe_join_paths('/somepath/somesubpath', git_path, allow_same_directory=True)
+
+        original_value = self._get_db_row()['git_path']
+        if original_value != git_path:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_PATH,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_value,
+                new_value=git_path
+            )
         self.update_attributes(git_path=git_path)
 
     def update_repo_clone_url_template(self, repo_clone_url_template):
@@ -1084,7 +1685,17 @@ class ModuleProvider(object):
                     'Repository URL does not contain a path'
                 )
 
-            repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe='\{\}/:@%?=')
+            repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe=r'\{\}/:@%?=')
+
+        original_value = self._get_db_row()['repo_clone_url_template']
+        if original_value != repo_clone_url_template:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_CLONE_URL,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_value,
+                new_value=repo_clone_url_template
+            )
 
         self.update_attributes(repo_clone_url_template=repo_clone_url_template)
 
@@ -1122,7 +1733,17 @@ class ModuleProvider(object):
                     'Repository URL does not contain a path'
                 )
 
-            repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe='\{\}/:@%?=')
+            repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe=r'\{\}/:@%?=')
+
+        original_value = self._get_db_row()['repo_browse_url_template']
+        if original_value != repo_browse_url_template:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BROWSE_URL,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_value,
+                new_value=repo_browse_url_template
+            )
 
         self.update_attributes(repo_browse_url_template=repo_browse_url_template)
 
@@ -1153,7 +1774,17 @@ class ModuleProvider(object):
                     'Repository URL does not contain a path'
                 )
 
-            repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe='\{\}/:@%?=')
+            repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe=r'\{\}/:@%?=')
+
+        original_value = self._get_db_row()['repo_base_url_template']
+        if original_value != repo_base_url_template:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BASE_URL,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_value,
+                new_value=repo_base_url_template
+            )
 
         self.update_attributes(repo_base_url_template=repo_base_url_template)
 
@@ -1500,6 +2131,13 @@ class TerraformSpecsObject(object):
             })
         return providers
 
+    def get_terraform_version_constraints(self):
+        """Obtain terraform version requirement"""
+        for requirement in self.get_module_specs().get("requirements", []):
+            if requirement["name"] == "terraform":
+                return requirement["version"]
+        return None
+
     def get_api_module_specs(self):
         """Return module specs for API."""
         return {
@@ -1510,7 +2148,7 @@ class TerraformSpecsObject(object):
             "outputs": self.get_terraform_outputs(),
             "dependencies": self.get_terraform_dependencies(),
             "provider_dependencies": self.get_terraform_provider_dependencies(),
-            "resources": self.get_terraform_resources(),
+            "resources": self.get_terraform_resources()
         }
 
     def replace_source_in_file(self, content: str, server_hostname: str):
@@ -1764,6 +2402,28 @@ class ModuleVersion(TerraformSpecsObject):
             res = conn.execute(select)
             return res.fetchall()
 
+    @property
+    def graph_data_url(self):
+        """Return URl for graph data"""
+        return f"/v1/terrareg/modules/{self.id}/graph/data"
+
+    @property
+    def custom_links(self):
+        """Return list of links to be displayed in UI"""
+        links = []
+        placeholders = {
+            'namespace': self._module_provider._module._namespace.name,
+            'module': self.module_provider._module.name,
+            'provider': self.module_provider.name,
+            'version': self._version
+        }
+        for link in self._module_provider._module._namespace.get_module_custom_links():
+            links.append({
+                'text': link.get('text', '').format(**placeholders),
+                'url': link.get('url', '#').format(**placeholders)
+            })
+        return links
+
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
         self._extracted_beta_flag = self._validate_version(version)
@@ -1960,6 +2620,14 @@ class ModuleVersion(TerraformSpecsObject):
 
     def publish(self):
         """Publish module version."""
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_VERSION_PUBLISH,
+            object_type=self.__class__.__name__,
+            object_id=self.id,
+            old_value=None,
+            new_value=None
+        )
+
         # Mark module version as published
         self.update_attributes(published=True)
 
@@ -2032,7 +2700,10 @@ class ModuleVersion(TerraformSpecsObject):
             "published": self.published,
             "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
             "security_results": tfsec_failures,
-            "additional_tab_files": tab_file_mapping
+            "additional_tab_files": tab_file_mapping,
+            "custom_links": self.custom_links,
+            "graph_url": f"/modules/{self.id}/graph",
+            "terraform_version_constraint": self.get_terraform_version_constraints()
         })
         return api_details
 
@@ -2040,6 +2711,14 @@ class ModuleVersion(TerraformSpecsObject):
         """Handle file upload of module version."""
         self.create_data_directory()
         self._create_db_row()
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_VERSION_INDEX,
+            object_type=self.__class__.__name__,
+            object_id=self.id,
+            old_value=None,
+            new_value=None
+        )
 
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
@@ -2082,6 +2761,14 @@ class ModuleVersion(TerraformSpecsObject):
             module_details.delete()
 
         db = Database.get()
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_VERSION_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.id,
+            old_value=None,
+            new_value=None
+        )
 
         with db.get_connection() as conn:
             # Delete module from module_version table
@@ -2163,6 +2850,11 @@ class BaseSubmodule(TerraformSpecsObject):
     """Base submodule, for submodule and examples from a module version."""
 
     TYPE = None
+
+    @property
+    def graph_data_url(self):
+        """Return URl for graph data"""
+        return f"/v1/terrareg/modules/{self.module_version.id}/graph/data/{self.TYPE}/{self.path}"
 
     @classmethod
     def get_by_id(cls, module_version: ModuleVersion, pk: int):
@@ -2306,11 +2998,17 @@ class BaseSubmodule(TerraformSpecsObject):
         api_details = self.get_api_module_specs()
         source_browse_url = self.get_source_browse_url()
         tfsec_failures = self.get_tfsec_failures()
+        terraform_version_constraint = self.get_terraform_version_constraints()
         api_details.update({
             "display_source_url": source_browse_url if source_browse_url else self._module_version.get_source_base_url(),
             "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
-            "security_results": tfsec_failures
+            "security_results": tfsec_failures,
+            "graph_url": f"/modules/{self.module_version.id}/graph/{self.TYPE}/{self.path}"
         })
+        # Only update terraform version constraint if one is defined in the example,
+        # otherwise default to root module's constraint
+        if terraform_version_constraint:
+            api_details["terraform_version_constraint"] = terraform_version_constraint
         return api_details
 
 

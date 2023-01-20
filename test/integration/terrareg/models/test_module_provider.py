@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 from terrareg.database import Database
 
-from terrareg.models import Module, ModuleVersion, Namespace, ModuleProvider
+from terrareg.models import GitProvider, Module, ModuleVersion, Namespace, ModuleProvider
 import terrareg.errors
 from test.integration.terrareg import TerraregIntegrationTest
 
@@ -156,7 +156,7 @@ class TestModuleProvider(TerraregIntegrationTest):
 
     def test_get_total_count(self):
         """Test get_total_count method"""
-        assert ModuleProvider.get_total_count() == 42
+        assert ModuleProvider.get_total_count() == 43
 
     def test_get_module_provider_existing(self):
         """Attempt to get existing module provider"""
@@ -276,3 +276,39 @@ class TestModuleProvider(TerraregIntegrationTest):
             for mv_pk in module_version_pks:
                 res = conn.execute(db.module_version.select().where(db.module_version.c.id==mv_pk))
                 assert res.fetchone() is None
+
+    @pytest.mark.parametrize('original_git_provider_id, new_git_provider_id', [
+        (None, None),
+        (None, 1),
+        (1, None),
+        (1, 2),
+        (2, 2)
+    ])
+    def test_update_git_provider(self, original_git_provider_id, new_git_provider_id):
+        """Test update_git_provider method"""
+
+        original_git_provider = GitProvider(original_git_provider_id) if original_git_provider_id else None
+        new_git_provider = GitProvider(new_git_provider_id) if new_git_provider_id else None
+
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+        module_provider.update_attributes(git_provider_id=original_git_provider_id)
+
+        assert module_provider.get_git_provider() == original_git_provider
+
+        if original_git_provider_id != new_git_provider_id:
+            assert module_provider.get_git_provider() != new_git_provider
+        else:
+            assert module_provider.get_git_provider() == new_git_provider
+
+        # Update git provider
+        module_provider.update_git_provider(new_git_provider)
+
+        # Re-obtain module provider object
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+
+        assert module_provider.get_git_provider() == new_git_provider
+
+        if original_git_provider_id != new_git_provider_id:
+            assert module_provider.get_git_provider() != original_git_provider
+        else:
+            assert module_provider.get_git_provider() == original_git_provider

@@ -166,3 +166,21 @@ class NamespaceAlreadyExistsError(TerraregError):
     """A namespace already exists with the provided."""
 
     pass
+
+
+class InvalidUserGroupNameError(TerraregError):
+    """User group name is invalid."""
+
+    pass
+
+
+class UnableToGetGlobalTerraformLockError(TerraregError):
+    """Unable to aquire thread lock whilst switching Terraform"""
+
+    pass
+
+
+class TerraformVersionSwitchError(TerraregError):
+    """An error occurred whilst switching Terraform versions"""
+
+    pass

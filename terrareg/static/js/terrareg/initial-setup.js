@@ -41,10 +41,11 @@ async function loadSetupPage(overrideHttpsCheck = false) {
 
     let config = await getConfig();
     $.get('/v1/terrareg/initial_setup', async (setupData) => {
-        let progressbar = $('setup-progress-bar');
-
         // Strike through environment variables that have been set
-        if (config.ADMIN_AUTHENTICATION_TOKEN_ENABLED) {
+        let authenticationEnabled = false;
+        if (config.ADMIN_LOGIN_ENABLED || config.SAML_ENABLED || config.OPENID_CONNECT_ENABLED) {
+            authenticationEnabled = true;
+
             setProgress(10);
             strikeThrough($('#setup-step-auth-vars-admin-authentication-token'));
         }
@@ -53,7 +54,7 @@ async function loadSetupPage(overrideHttpsCheck = false) {
             strikeThrough($('#setup-step-auth-vars-secret-key'));
         }
         // If either have not been set, open card and return
-        if ((! config.ADMIN_AUTHENTICATION_TOKEN_ENABLED) || (! config.SECRET_KEY_SET)) {
+        if ((! authenticationEnabled) || (! config.SECRET_KEY_SET)) {
             toggleSetupCard(getSetupCardByName('auth-vars'));
             return;
         }

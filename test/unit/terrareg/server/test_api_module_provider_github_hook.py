@@ -8,7 +8,7 @@ import pytest
 
 import terrareg.errors
 from test.unit.terrareg import (
-    mocked_server_namespace_fixture,
+    mock_models,
     setup_test_data, TerraregUnitTest
 )
 from test import client
@@ -18,7 +18,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
     """Test TestApiModuleVersionCreateGithubHook resource."""
 
     @setup_test_data()
-    def test_hook_with_full_payload_single_change(self, client, mocked_server_namespace_fixture):
+    def test_hook_with_full_payload_single_change(self, client, mock_models):
         """Test hook call full payload."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
@@ -213,7 +213,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
 
 
     @setup_test_data()
-    def test_hook_with_module_provider_without_repository_url(self, client, mocked_server_namespace_fixture):
+    def test_hook_with_module_provider_without_repository_url(self, client, mock_models):
         """Test hook call to module provider with no repository url."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
@@ -237,7 +237,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
             mocked_process_upload.assert_not_called()
 
     @setup_test_data()
-    def test_hook_with_prepare_module_exception(self, client, mocked_server_namespace_fixture):
+    def test_hook_with_prepare_module_exception(self, client, mock_models):
         """Test hook call with multiple tag changes."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
@@ -267,7 +267,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
             mocked_process_upload.assert_not_called()
 
     @setup_test_data()
-    def test_hook_with_extraction_exception(self, client, mocked_server_namespace_fixture):
+    def test_hook_with_extraction_exception(self, client, mock_models):
         """Test hook call with multiple tag changes."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
@@ -320,7 +320,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
             mocked_process_upload.assert_not_called()
 
     @setup_test_data()
-    def test_hook_without_action(self, client, mocked_server_namespace_fixture):
+    def test_hook_without_action(self, client, mock_models):
         """Test hook call without action."""
         self._test_github_with_client_error_expected(client,
             {
@@ -332,7 +332,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
         )
 
     @setup_test_data()
-    def test_hook_without_release(self, client, mocked_server_namespace_fixture):
+    def test_hook_without_release(self, client, mock_models):
         """Test hook call with without release attribute."""
         self._test_github_with_client_error_expected(client,
             {
@@ -341,7 +341,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
         )
 
     @setup_test_data()
-    def test_hook_without_tag_name(self, client, mocked_server_namespace_fixture):
+    def test_hook_without_tag_name(self, client, mock_models):
         """Test hook call without tag name."""
         self._test_github_with_client_error_expected(client,
             {
@@ -353,7 +353,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
         )
 
     @setup_test_data()
-    def test_hook_with_invalid_tag(self, client, mocked_server_namespace_fixture):
+    def test_hook_with_invalid_tag(self, client, mock_models):
         """Test hook call with an invalid tag."""
         self._test_github_with_client_error_expected(client,
             {
@@ -366,7 +366,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
         )
 
     @setup_test_data()
-    def test_hook_with_invalid_release(self, client, mocked_server_namespace_fixture):
+    def test_hook_with_invalid_release(self, client, mock_models):
         """Test hook call with invalid release attribute."""
         self._test_github_with_client_error_expected(client,
             {
@@ -386,7 +386,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
         'sha256=invalidsignature'
     ])
     @setup_test_data()
-    def test_hook_with_invalid_signatures_with_api_keys_enabled(self, signature, client, mocked_server_namespace_fixture):
+    def test_hook_with_invalid_signatures_with_api_keys_enabled(self, signature, client, mock_models):
         """Test hook call with upload API keys enabled with invalid request signature."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
@@ -412,7 +412,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
             mocked_process_upload.assert_not_called()
 
     @setup_test_data()
-    def test_hook_with_valid_api_key_signature(self, client, mocked_server_namespace_fixture):
+    def test_hook_with_valid_api_key_signature(self, client, mock_models):
         """Test hook call with valid API key signature."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
