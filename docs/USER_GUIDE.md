@@ -519,11 +519,11 @@ If deployment nodes are shared between environments, this configuration will nee
 
 The label used to describe analytics tokens and the example analytics token displayed in the UI can be customised by setting:
  * [ANALYTICS_TOKEN_PHRASE](./CONFIG.md#analytics_token_phrase) - the phrase used to describe the analytics token
- * [EXAMPLE_ANALAYTICS_TOKEN](./CONFIG.md#example_analytics_token) - a noun to describe the analytics token or .
+ * [EXAMPLE_ANALYTICS_TOKEN](./CONFIG.md#example_analytics_token) - a noun to describe the analytics token or .
  * [ANALYTICS_TOKEN_DESCRIPTION](./CONFIG.md#analytics_token_description) - description of the token
 
 For example, to rebrand the analytics token as someone's first name, you could set:
- * EXAMPLE_ANALAYTICS_TOKEN - "john"
+ * EXAMPLE_ANALYTICS_TOKEN - "john"
  * ANALYTICS_TOKEN_PHRASE - "first name"
  * ANALYTICS_TOKEN_DESCRIPTION - "Set to your first name"
 
