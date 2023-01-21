@@ -3086,7 +3086,22 @@ class FileObject:
     @property
     def content(self):
         """Return content of example file."""
-        return santise_html_content(Database.decode_blob(self._get_db_row()['content']))
+        content = Database.decode_blob(self._get_db_row()["content"])
+        if content:
+            # Add pre tags before/after to allow for broken tags
+            # inside content, e.g. for heredocs
+            content = f"<pre>{content}</pre>"
+
+            # Sanitise content
+            sanitised_content = santise_html_content(
+                content
+            )
+
+            # Remove encoded 'pre' tags -
+            # "&lt;pre&gt;" at start and "&lt;/pre&gt;" after
+            sanitised_content = sanitised_content[11:][:-12]
+
+        return sanitised_content
 
     def __init__(self, path: str):
         """Store identifying data."""
