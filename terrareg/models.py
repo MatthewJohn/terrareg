@@ -20,7 +20,7 @@ import terrareg.audit_action
 from terrareg.errors import (
     InvalidModuleNameError, InvalidModuleProviderNameError, InvalidUserGroupNameError,
     InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
-    InvalidGitTagFormatError, InvalidNamespaceNameError,
+    InvalidGitTagFormatError, InvalidNamespaceNameError, ReindexingExistingModuleVersionsIsProhibitedError,
     RepositoryUrlDoesNotContainValidSchemeError,
     RepositoryUrlContainsInvalidSchemeError,
     RepositoryUrlDoesNotContainHostError,
@@ -2803,8 +2803,17 @@ class ModuleVersion(TerraformSpecsObject):
         old_module_version_pk = None
         previous_version_published = False
         if self._get_db_row():
+            # Determine if re-indexing of modules is allowed
+            if terrareg.config.Config().MODULE_VERSION_REINDEX_MODE is terrareg.config.ModuleVersionReindexMode.PROHIBIT:
+                raise ReindexingExistingModuleVersionsIsProhibitedError(
+                    "The module version already exists and re-indexing modules is disabled")
+
+            # If configured to auto re-publish module versions, return
+            # the current published state of previous module version
+            if terrareg.config.Config().MODULE_VERSION_REINDEX_MODE is terrareg.config.ModuleVersionReindexMode.AUTO_PUBLISH:
+                previous_version_published = self.published
+
             old_module_version_pk = self.pk
-            previous_version_published = self.published
             self.delete(delete_related_analytics=False)
 
         with db.get_connection() as conn:

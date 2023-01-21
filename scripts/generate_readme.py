@@ -1,5 +1,6 @@
 #!python
 
+from enum import EnumMeta
 import re
 import sys
 import os
@@ -23,6 +24,10 @@ for prop in dir(Config):
         continue
 
     default_value = getattr(Config(), prop)
+
+    # Convert enum types to the value of the default enum
+    if type(default_value.__class__) is EnumMeta:
+        default_value = default_value.value
 
     # If the config becomes a list,
     # default to empty string, as it will
