@@ -28,6 +28,11 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
         # during module extraction
         if auth_token == terrareg.config.Config().INTERNAL_EXTRACTION_ANALYITCS_TOKEN:
             pass
+
+        # Determine if auth token is one the auth tokens for ignore anlaytics token check
+        elif auth_token in terrareg.config.Config().IGNORE_ANALYTICS_TOKEN_AUTH_KEYS:
+            pass
+
         # otherwise, if module download should be rejected due to
         # non-existent analytics token
         elif not analytics_token and not terrareg.config.Config().ALLOW_UNIDENTIFIED_DOWNLOADS:

@@ -19,6 +19,28 @@ class Config:
         return os.environ.get('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', 'internal-terrareg-analytics-token')
 
     @property
+    def IGNORE_ANALYTICS_TOKEN_AUTH_KEYS(self):
+        """
+        A list of a Terraform auth keys that can be used to authenticate to the registry
+        to ignore check for valid analaytics token in module path.
+
+        It is recommended that examples in modules do not include analytics tokens in calls to other modules
+        hosted in the registry, to avoid having to add analytics tokens to test the examples during development
+        of the modules.
+
+        No analytics of the module usage are captured when this auth key is used.
+
+        The value should be a comma-seperated list of auth keys.
+
+        The auth key can be used by placing in a "credential" block in the user's .terraformrc file.
+        """
+        return [
+            auth_key
+            for auth_key in os.environ.get("IGNORE_ANALYTICS_TOKEN_AUTH_KEYS", "").split(",")
+            if auth_key
+        ]
+
+    @property
     def DOMAIN_NAME(self):
         """
         Domain name that the system is hosted on.
