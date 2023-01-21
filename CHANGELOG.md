@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.51.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.50.0...v2.51.0) (2023-01-21)
+
+
+### Features
+
+* Add alternative themes with user preferences option to select theme. ([1be14ee](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1be14ee7f9a0472b4c6621a4869ea3ac5cc1c6ce)), closes [#309](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/309)
+
 # [2.50.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.49.1...v2.50.0) (2023-01-20)
 
 
