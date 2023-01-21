@@ -1,6 +1,8 @@
 
 import unittest.mock
 
+import pytest
+
 from terrareg.analytics import AnalyticsEngine
 from test.unit.terrareg import (
     mock_models,
@@ -122,6 +124,31 @@ class TestApiModuleVersionDownload(TerraregUnitTest):
                 headers={'X-Terraform-Version': 'TestTerraformVersion',
                         'User-Agent': 'TestUserAgent',
                         'Authorization': 'Bearer unittest-internal-api-key'}
+            )
+
+        assert res.headers['X-Terraform-Get'] == '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'
+        assert res.status_code == 204
+
+        AnalyticsEngine.record_module_version_download.assert_not_called()
+
+    @setup_test_data()
+    @pytest.mark.parametrize("module_url", [
+        # Test without analytics token
+        "/v1/modules/testnamespace/testmodulename/testprovider/2.4.1/download",
+
+        # Test with analytics token
+        "/v1/modules/test_analytics_token__testnamespace/testmodulename/testprovider/2.4.1/download"
+    ])
+    def test_existing_module_with_ignore_analytics_auth_token(self, module_url, client, mock_models, mock_record_module_version_download):
+        """Test endpoint without analytics token and with an auth token to ignore analytics_token"""
+
+        with unittest.mock.patch('terrareg.config.Config.IGNORE_ANALYTICS_TOKEN_AUTH_KEYS',
+                                 ['unittest-ignore-analytics-auth-key', 'second-key']):
+            res = client.get(
+                module_url,
+                headers={'X-Terraform-Version': 'TestTerraformVersion',
+                        'User-Agent': 'TestUserAgent',
+                        'Authorization': 'Bearer unittest-ignore-analytics-auth-key'}
             )
 
         assert res.headers['X-Terraform-Get'] == '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'
