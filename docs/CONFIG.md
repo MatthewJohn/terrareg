@@ -370,6 +370,26 @@ An example for public repositories might be:
 Default: `[]`
 
 
+### IGNORE_ANALYTICS_TOKEN_AUTH_KEYS
+
+
+A list of a Terraform auth keys that can be used to authenticate to the registry
+to ignore check for valid analaytics token in module path.
+
+It is recommended that examples in modules do not include analytics tokens in calls to other modules
+hosted in the registry, to avoid having to add analytics tokens to test the examples during development
+of the modules.
+
+No analytics of the module usage are captured when this auth key is used.
+
+The value should be a comma-seperated list of auth keys.
+
+The auth key can be used by placing in a "credential" block in the user's .terraformrc file.
+
+
+Default: ``
+
+
 ### INFRACOST_API_KEY
 
 

@@ -546,6 +546,13 @@ Analytics enforced can be disabled, allowing module usage with an analytics key 
 
 To disable this, see [ALLOW_UNIDENTIFIED_DOWNLOADS](./CONFIG.md#allow_unidentified_downloads)
 
+## Disable analytics token enforcement for some users
+
+Where an example in a module requires another module from the registry to work, it is only useful to use a source URL without an analytics token, to avoid end-user copy+pasting the example and leaving an example analytics token.
+However, during the development of modules, to easily test the examples, the analayics token enforcement check can be disabled for the user by using a Terraform auth token (configured in the user's .terraformrc file) configured in the registry.
+
+The configure this, see [IGNORE_ANALYTICS_TOKEN_AUTH_KEYS](./CONFIG.md#ignore_analytics_token_auth_keys).
+
 # Customising Terrareg UI
 
 ## Rebranding
