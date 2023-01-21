@@ -44,7 +44,12 @@ RUN bash -c 'curl -L https://raw.githubusercontent.com/warrensbox/terraform-swit
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
-COPY . .
+
+COPY LICENSE .
+COPY alembic.ini .
+COPY terrareg.py .
+COPY terrareg terrareg
+COPY scripts scripts
 
 ENV MANAGE_TERRAFORM_RC_FILE=True
 
