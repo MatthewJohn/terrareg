@@ -204,6 +204,26 @@ def mock_module_version(request):
         get_module_version_mock_data(self).update(kwargs)
     mock_method(request, 'terrareg.models.ModuleVersion.update_attributes', update_attributes)
 
+    def _create_db_row(self):
+        """Mock create DB row"""
+
+        module_provider_data = get_module_provider_mock_data(self._module_provider)
+        previous_published = False
+        if 'versions' not in module_provider_data:
+            module_provider_data['versions'] = {}
+        if self._version in module_provider_data['versions']:
+            previous_published = module_provider_data['versions'][self._version].get('published', False)
+            del module_provider_data['versions'][self._version]
+        module_provider_data['versions'][self._verion] = {
+            'beta': False,
+            'internal': False,
+            'published': False
+        }
+        print(module_provider_data)
+        
+        return previous_published
+    mock_method(request, 'terrareg.models.ModuleVersion._create_db_row', _create_db_row)
+
     def _get_db_row(self):
         """Return mock DB row"""
         unittest_data = get_module_version_mock_data(self)

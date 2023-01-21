@@ -2708,9 +2708,13 @@ class ModuleVersion(TerraformSpecsObject):
         return api_details
 
     def prepare_module(self):
-        """Handle file upload of module version."""
+        """
+        Handle file upload of module version.
+
+        Returns boolean whethe previous DB row (if exists) was published.
+        """
         self.create_data_directory()
-        self._create_db_row()
+        previous_version_published = self._create_db_row()
 
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.MODULE_VERSION_INDEX,
@@ -2719,6 +2723,7 @@ class ModuleVersion(TerraformSpecsObject):
             old_value=None,
             new_value=None
         )
+        return previous_version_published
 
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
@@ -2787,13 +2792,19 @@ class ModuleVersion(TerraformSpecsObject):
         )
 
     def _create_db_row(self):
-        """Insert into datadabase, removing any existing duplicate versions."""
+        """
+        Insert into datadabase, removing any existing duplicate versions.
+
+        Returns boolean whethe previous DB row (if exists) was published.
+        """
         db = Database.get()
 
         # Delete pre-existing version, if it exists
         old_module_version_pk = None
+        previous_version_published = False
         if self._get_db_row():
             old_module_version_pk = self.pk
+            previous_version_published = self.published
             self.delete(delete_related_analytics=False)
 
         with db.get_connection() as conn:
@@ -2812,6 +2823,8 @@ class ModuleVersion(TerraformSpecsObject):
             terrareg.analytics.AnalyticsEngine.migrate_analytics_to_new_module_version(
                 old_version_version_pk=old_module_version_pk,
                 new_module_version=self)
+
+        return previous_version_published
 
     def get_submodules(self):
         """Return list of submodules."""
