@@ -3093,15 +3093,15 @@ class FileObject:
             content = f"<pre>{content}</pre>"
 
             # Sanitise content
-            sanitised_content = santise_html_content(
+            content = santise_html_content(
                 content
             )
 
             # Remove encoded 'pre' tags -
             # "&lt;pre&gt;" at start and "&lt;/pre&gt;" after
-            sanitised_content = sanitised_content[11:][:-12]
+            content = content[11:][:-12]
 
-        return sanitised_content
+        return content
 
     def __init__(self, path: str):
         """Store identifying data."""
