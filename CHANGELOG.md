@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.52.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.51.0...v2.52.0) (2023-01-21)
+
+
+### Features
+
+* Add Terraform auth tokens that ignore the analytics token checks. ([1ba2dbc](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1ba2dbc79750c9882cbc5595a59e9cf2e79ede6c)), closes [#244](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/244)
+
 # [2.51.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.50.0...v2.51.0) (2023-01-21)
 
 
