@@ -1220,6 +1220,30 @@ class ProviderLogo:
             'tos': 'All \'Datadog\' modules are designed to work with Datadog. Modules are in no way affiliated with nor endorsed by Datadog Inc.',
             'alt': 'Works with Datadog',
             'link': 'https://www.datadoghq.com/'
+        },
+        'consul': {
+            'source': '/static/images/consul.png',
+            'tos': ' ',
+            'alt': 'Hashicorp Consul',
+            'link': '#'
+        },
+        'nomad': {
+            'source': '/static/images/nomad.png',
+            'tos': ' ',
+            'alt': 'Hashicorp Nomad',
+            'link': '#'
+        },
+        'vagrant': {
+            'source': '/static/images/vagrant.png',
+            'tos': ' ',
+            'alt': 'Hashicorp Vagrant',
+            'link': '#'
+        },
+        'vault': {
+            'source': '/static/images/vault.png',
+            'tos': ' ',
+            'alt': 'Hashicorp Vault',
+            'link': '#'
         }
     }
 
