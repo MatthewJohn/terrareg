@@ -2185,7 +2185,7 @@ All rights are not reserved for this example file content</pre>
         ('/modules/moduledetails/fullypopulated/testprovider/1.2.0',
          'fullypopulated',
          'moduledetails/fullypopulated/testprovider',
-         '>= 1.2.0, < 2.0.0, unittest'),
+         '1.2.0'),
         # Beta version
         ('/modules/moduledetails/fullypopulated/testprovider/1.7.0-beta',
          'fullypopulated',
