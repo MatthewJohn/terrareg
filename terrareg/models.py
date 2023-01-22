@@ -2429,6 +2429,11 @@ class ModuleVersion(TerraformSpecsObject):
         """Whether the extracted module version data is up-to-date"""
         return self._get_db_row()["extraction_version"] == EXTRACTION_VERSION
 
+    @property
+    def is_latest_version(self):
+        """Return whether the version is the latest version for the module provider"""
+        return self._module_provider._get_db_row()["latest_version_id"] == self.pk
+
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
         self._extracted_beta_flag = self._validate_version(version)
@@ -2455,7 +2460,7 @@ class ModuleVersion(TerraformSpecsObject):
     def get_terraform_example_version_string(self):
         """Return formatted string of version parameter for example Terraform."""
         # For beta versions, pass an exact version constraint.
-        if self.beta:
+        if self.beta or not self.is_latest_version:
             return self.version
 
         # Generate list of template values for formatting
