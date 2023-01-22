@@ -9,6 +9,7 @@ from test.unit.terrareg import (
     setup_test_data, TerraregUnitTest,
 )
 import terrareg.models
+from terrareg.constants import EXTRACTION_VERSION
 from test import client
 
 
@@ -50,7 +51,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'security_results': None,
             'git_path': None,
             'additional_tab_files': {},
-            'graph_url': '/modules/testnamespace/lonelymodule/testprovider/1.0.0/graph'
+            'graph_url': '/modules/testnamespace/lonelymodule/testprovider/1.0.0/graph',
+            'module_extraction_up_to_date': True
         }
 
         assert res.status_code == 200
@@ -122,7 +124,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'security_results': None,
             'git_path': None,
             'additional_tab_files': {},
-            'graph_url': '/modules/moduleextraction/gitextraction/usesgitproviderwithversions/2.2.2/graph'
+            'graph_url': '/modules/moduleextraction/gitextraction/usesgitproviderwithversions/2.2.2/graph',
+            'module_extraction_up_to_date': True
         }
 
         assert res.status_code == 200
@@ -177,7 +180,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'security_results': None,
             'git_path': None,
             'additional_tab_files': {},
-            'graph_url': '/modules/testnamespace/modulenotpublished/testprovider/10.2.1/graph'
+            'graph_url': '/modules/testnamespace/modulenotpublished/testprovider/10.2.1/graph',
+            'module_extraction_up_to_date': True
         }
 
         assert res.status_code == 200
@@ -233,7 +237,8 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'security_results': None,
             'git_path': None,
             'additional_tab_files': {},
-            'graph_url': '/modules/testnamespace/onlybeta/testprovider/2.2.4-beta/graph'
+            'graph_url': '/modules/testnamespace/onlybeta/testprovider/2.2.4-beta/graph',
+            'module_extraction_up_to_date': True
         }
 
         assert res.status_code == 200
@@ -329,3 +334,27 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
 
             assert res.status_code == 200
             assert res.json['additional_tab_files'] == {'Changelog': 'CHANGELOG.md', 'License': 'LICENSE'}
+
+    @setup_test_data()
+    @pytest.mark.parametrize('extraction_version,expected_update_to_date_flag', [
+        (0, False),
+        (EXTRACTION_VERSION, True)
+    ])
+    def test_update_to_date_flag(self, extraction_version, expected_update_to_date_flag, client, mock_models):
+        """Test additional tab files in API response"""
+
+        terrareg.models.ModuleVersion(
+            terrareg.models.ModuleProvider(
+                terrareg.models.Module(
+                    terrareg.models.Namespace('moduledetails'),
+                    "fullypopulated"
+                ),
+                "testprovider"
+            ),
+            "1.5.0"
+        ).update_attributes(extraction_version=extraction_version)
+
+        res = client.get('/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/1.5.0')
+
+        assert res.status_code == 200
+        assert res.json['module_extraction_up_to_date'] == expected_update_to_date_flag
