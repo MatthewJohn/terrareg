@@ -2044,6 +2044,12 @@ function showCostAnalysis(moduleDetails) {
     }
 }
 
+function showOutdatedExtractionDataWarning(moduleDetails) {
+    if (moduleDetails.module_extraction_up_to_date === false) {
+        $('#outdated-extraction-warning').removeClass('default-hidden');
+    }
+}
+
 /*
  * Set HTML page title
  *
@@ -2126,6 +2132,7 @@ async function setupRootModulePage(data) {
         tabFactory.registerTab(new UsageBuilderTab(moduleDetails));
 
         showSecurityWarnings(moduleDetails);
+        showOutdatedExtractionDataWarning(moduleDetails);
         populateVersionSelect(moduleDetails);
         setupModuleVersionDeletionSetting(moduleDetails);
         populateSubmoduleSelect(moduleDetails);

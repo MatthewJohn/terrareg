@@ -331,7 +331,8 @@ class Database():
             sqlalchemy.Column('published_at', sqlalchemy.DateTime),
             sqlalchemy.Column('variable_template', Database.medium_blob()),
             sqlalchemy.Column('internal', sqlalchemy.Boolean, nullable=False),
-            sqlalchemy.Column('published', sqlalchemy.Boolean)
+            sqlalchemy.Column('published', sqlalchemy.Boolean),
+            sqlalchemy.Column('extraction_version', sqlalchemy.Integer)
         )
 
         self._sub_module = sqlalchemy.Table(

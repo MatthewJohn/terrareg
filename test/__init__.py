@@ -14,6 +14,7 @@ from terrareg.database import Database
 from terrareg.server import Server
 import terrareg.config
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
+from terrareg.constants import EXTRACTION_VERSION
 
 
 @pytest.fixture
@@ -184,7 +185,8 @@ class BaseTest:
                                 'beta': False,
                                 'published_at': datetime.now(),
                                 'internal': False,
-                                'module_details_id': module_details.pk
+                                'module_details_id': module_details.pk,
+                                'extraction_version': version_data.get('extraction_version', EXTRACTION_VERSION)
                             }
 
                             insert = Database.get().module_version.insert().values(

@@ -2256,3 +2256,30 @@ module "{expected_module_name}" {{
 
         version_text = self.selenium_instance.find_element(By.ID, "usage-example-container")
         assert version_text.is_displayed() == False
+
+    @pytest.mark.parametrize('url,expect_warning,wait_for_tab', [
+        # No versions should not produce the warning
+        ('/modules/moduledetails/noversion/testprovider', False, 'integrations'),
+        # Version with outdated extraction data
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0', True, 'resources'),
+        # Warning should not be displayed on examples/submodules
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example', False, 'resources'),
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1', False, 'resources'),
+        # Version with up-to-date extraction data
+        ('/modules/moduledetails/fullypopulated/testprovider/1.2.0', False, 'resources')
+    ])
+    def test_outdated_extraction_data_warning(self, url, expect_warning, wait_for_tab):
+        """Check outdated extraction data warning."""
+        self.selenium_instance.get(self.get_url(url))
+
+        # Wait for inputs tab to be ready
+        self.wait_for_element(By.ID, f'module-tab-link-{wait_for_tab}')
+
+        # Get warning element
+        warning_element = self.selenium_instance.find_element(By.ID, 'outdated-extraction-warning')
+        assert warning_element.is_displayed() == expect_warning
+        if expect_warning:
+            assert warning_element.text == """
+This module version was extracted using a previous version of Terrareg meaning that some data maybe not be available.
+Consider re-indexing this module version to enable all features.
+""".strip()
