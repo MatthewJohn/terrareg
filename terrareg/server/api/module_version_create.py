@@ -24,9 +24,12 @@ class ApiModuleVersionCreate(ErrorCatchingResource):
 
             module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version=version)
 
-            module_version.prepare_module()
+            previous_version_published = module_version.prepare_module()
             with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
                 me.process_upload()
+
+            if previous_version_published:
+                module_version.publish()
 
             return {
                 'status': 'Success'

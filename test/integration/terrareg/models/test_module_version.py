@@ -4,6 +4,7 @@ import unittest.mock
 import pytest
 import sqlalchemy
 from terrareg.analytics import AnalyticsEngine
+from terrareg.config import ModuleVersionReindexMode
 from terrareg.database import Database
 
 from terrareg.models import Example, ExampleFile, Module, Namespace, ModuleProvider, ModuleVersion
@@ -112,138 +113,177 @@ class TestModuleVersion(TerraregIntegrationTest):
                      'variable_template']:
             assert new_db_row[attr] == None
 
-    def test_create_db_row_replace_existing(self):
+    @pytest.mark.parametrize('module_version_reindex_mode,previous_publish_state,expected_return_value,should_raise_error', [
+        # Legacy mode should allow the re-index and ignore pre-existing version for setting published
+        (ModuleVersionReindexMode.LEGACY, False, False, False),
+        ## With previous version published
+        (ModuleVersionReindexMode.LEGACY, True, False, False),
+
+        # Auto-publish mode should return the previously indexed module's published state
+        (ModuleVersionReindexMode.AUTO_PUBLISH, False, False, False),
+        (ModuleVersionReindexMode.AUTO_PUBLISH, True, True, False),
+
+        # Prohibit mode should raise an error
+        (ModuleVersionReindexMode.PROHIBIT, False, False, True)
+    ])
+    def test_create_db_row_replace_existing(self, module_version_reindex_mode,
+                                            previous_publish_state, expected_return_value,
+                                            should_raise_error):
         """Test creating DB row with pre-existing module version"""
 
         db = Database.get()
 
-        with db.get_engine().connect() as conn:
-            conn.execute(db.namespace.insert().values(
-                id=9999,
-                namespace='testcreationunique'
-            ))
+        try:
+            with db.get_engine().connect() as conn:
+                conn.execute(db.namespace.insert().values(
+                    id=9999,
+                    namespace='testcreationunique'
+                ))
 
-            conn.execute(db.module_provider.insert().values(
-                id=10000,
-                namespace_id=9999,
-                module='test-module',
-                provider='testprovider'
-            ))
+                conn.execute(db.module_provider.insert().values(
+                    id=10000,
+                    namespace_id=9999,
+                    module='test-module',
+                    provider='testprovider'
+                ))
 
-            conn.execute(db.module_version.insert().values(
-                id=10001,
-                module_provider_id=10000,
-                version='1.1.0',
-                published=True,
-                beta=False,
-                internal=False
-            ))
+                conn.execute(db.module_version.insert().values(
+                    id=10001,
+                    module_provider_id=10000,
+                    version='1.1.0',
+                    published=previous_publish_state,
+                    beta=False,
+                    internal=False
+                ))
 
-            # Create submodules
-            conn.execute(db.sub_module.insert().values(
-                id=10002,
-                parent_module_version=10001,
-                type='example',
-                path='example/test-modal-db-row-create-here'
-            ))
-            conn.execute(db.sub_module.insert().values(
-                id=10003,
-                parent_module_version=10001,
-                type='submodule',
-                path='modules/test-modal-db-row-create-there'
-            ))
+                # Create submodules
+                conn.execute(db.sub_module.insert().values(
+                    id=10002,
+                    parent_module_version=10001,
+                    type='example',
+                    path='example/test-modal-db-row-create-here'
+                ))
+                conn.execute(db.sub_module.insert().values(
+                    id=10003,
+                    parent_module_version=10001,
+                    type='submodule',
+                    path='modules/test-modal-db-row-create-there'
+                ))
 
-            # Create example file
-            conn.execute(db.example_file.insert().values(
-                id=10004,
-                submodule_id=10002,
-                path='testfile.tf',
-                content=None
-            ))
+                # Create example file
+                conn.execute(db.example_file.insert().values(
+                    id=10004,
+                    submodule_id=10002,
+                    path='testfile.tf',
+                    content=None
+                ))
 
-            # Create download analytics
-            conn.execute(db.analytics.insert().values(
-                id=10005,
-                parent_module_version=10001,
-                timestamp=datetime.now(),
-                terraform_version='1.0.0',
-                analytics_token='unittest-download',
-                auth_token='abcefg',
-                environment='test'
-            ))
+                # Create download analytics
+                conn.execute(db.analytics.insert().values(
+                    id=10005,
+                    parent_module_version=10001,
+                    timestamp=datetime.now(),
+                    terraform_version='1.0.0',
+                    analytics_token='unittest-download',
+                    auth_token='abcefg',
+                    environment='test'
+                ))
 
-        namespace = Namespace.get(name='testcreationunique')
-        assert namespace is not None
-        module = Module(namespace=namespace, name='test-module')
-        module_provider = ModuleProvider.get(module=module, name='testprovider')
-        assert module_provider is not None
-        module_provider_row = module_provider._get_db_row()
-
-        module_version = ModuleVersion(module_provider=module_provider, version='1.1.0')
-
-        # Ensure that pre-existing row is returned
-        pre_existing_row = module_version._get_db_row()
-        assert pre_existing_row is not None
-        assert pre_existing_row['id'] == 10001
-
-        # Insert module version into database
-        module_version._create_db_row()
-
-        # Ensure that a DB row is now returned
-        new_db_row = module_version._get_db_row()
-        assert new_db_row['module_provider_id'] == module_provider_row['id']
-        assert type(new_db_row['id']) == int
-
-        assert new_db_row['published'] == False
-        assert new_db_row['version'] == '1.1.0'
-
-        for attr in ['description', 'module_details_id', 'owner',
-                     'published_at', 'repo_base_url_template',
-                     'repo_browse_url_template', 'repo_clone_url_template',
-                     'variable_template']:
-            assert new_db_row[attr] == None
-
-        # Ensure that all moduleversion, submodules and example files have been removed
-        with db.get_engine().connect() as conn:
-            mv_res = conn.execute(db.module_version.select(
-                db.module_version.c.id == 10001
-            ))
-            assert [r for r in mv_res] == []
-
-            # Check for any submodules with the original IDs
-            # or with the previous module ID or with the example
-            # paths
-            sub_module_res = conn.execute(db.sub_module.select().where(
-                sqlalchemy.or_(
-                    db.sub_module.c.id.in_((10002, 10003)),
-                    db.sub_module.c.parent_module_version == 10001,
-                    db.sub_module.c.path.in_(('example/test-modal-db-row-create-here',
-                                              'modules/test-modal-db-row-create-there'))
-                )
-            ))
-            assert [r for r in sub_module_res] == []
-
-            # Ensure example files have been removed
-            example_file_res = conn.execute(db.example_file.select().where(
-                db.example_file.c.id == 10004
-            ))
-            assert [r for r in example_file_res] == []
-
-            # Ensure analytics are retained
-            analytics_res = conn.execute(db.analytics.select().where(
-                db.analytics.c.id==10005
-            ))
-            analytics_res = list(analytics_res)
-            assert len(analytics_res) == 1
-            assert analytics_res[0]['id'] == 10005
-            # Assert that analytics row has been updated to new module version ID
-            assert analytics_res[0]['parent_module_version'] == new_db_row['id']
-            assert analytics_res[0]['environment'] == 'test'
-
-            # Ensure namespace still exists
-            namespace = Namespace.get('testcreationunique')
+            namespace = Namespace.get(name='testcreationunique')
             assert namespace is not None
-            assert namespace.pk == 9999
+            module = Module(namespace=namespace, name='test-module')
+            module_provider = ModuleProvider.get(module=module, name='testprovider')
+            assert module_provider is not None
+            module_provider_row = module_provider._get_db_row()
+
+            module_version = ModuleVersion(module_provider=module_provider, version='1.1.0')
+
+            # Ensure that pre-existing row is returned
+            pre_existing_row = module_version._get_db_row()
+            assert pre_existing_row is not None
+            assert pre_existing_row['id'] == 10001
+
+            with unittest.mock.patch('terrareg.config.Config.MODULE_VERSION_REINDEX_MODE', module_version_reindex_mode):
+                # If confiugred to raise an error, check that it is
+                if should_raise_error:
+                    with pytest.raises(terrareg.errors.ReindexingExistingModuleVersionsIsProhibitedError):
+                        module_version._create_db_row()
+
+                    # Do not run any further tests as the exception will
+                    # rollback any changes
+                    return
+                else:
+                    # Otherwise check the return value
+                    publish_flag = module_version._create_db_row()
+                    assert publish_flag == expected_return_value
+
+            # Ensure that a DB row is now returned
+            new_db_row = module_version._get_db_row()
+            assert new_db_row['module_provider_id'] == module_provider_row['id']
+            assert type(new_db_row['id']) == int
+
+            assert new_db_row['published'] == False
+            assert new_db_row['version'] == '1.1.0'
+
+            for attr in ['description', 'module_details_id', 'owner',
+                        'published_at', 'repo_base_url_template',
+                        'repo_browse_url_template', 'repo_clone_url_template',
+                        'variable_template']:
+                assert new_db_row[attr] == None
+
+            # Ensure that all moduleversion, submodules and example files have been removed
+            with db.get_engine().connect() as conn:
+                mv_res = conn.execute(db.module_version.select(
+                    db.module_version.c.id == 10001
+                ))
+                assert [r for r in mv_res] == []
+
+                # Check for any submodules with the original IDs
+                # or with the previous module ID or with the example
+                # paths
+                sub_module_res = conn.execute(db.sub_module.select().where(
+                    sqlalchemy.or_(
+                        db.sub_module.c.id.in_((10002, 10003)),
+                        db.sub_module.c.parent_module_version == 10001,
+                        db.sub_module.c.path.in_(('example/test-modal-db-row-create-here',
+                                                'modules/test-modal-db-row-create-there'))
+                    )
+                ))
+                assert [r for r in sub_module_res] == []
+
+                # Ensure example files have been removed
+                example_file_res = conn.execute(db.example_file.select().where(
+                    db.example_file.c.id == 10004
+                ))
+                assert [r for r in example_file_res] == []
+
+                # Ensure analytics are retained
+                analytics_res = conn.execute(db.analytics.select().where(
+                    db.analytics.c.id==10005
+                ))
+                analytics_res = list(analytics_res)
+                assert len(analytics_res) == 1
+                assert analytics_res[0]['id'] == 10005
+                # Assert that analytics row has been updated to new module version ID
+                assert analytics_res[0]['parent_module_version'] == new_db_row['id']
+                assert analytics_res[0]['environment'] == 'test'
+
+                # Ensure namespace still exists
+                namespace = Namespace.get('testcreationunique')
+                assert namespace is not None
+                assert namespace.pk == 9999
+        finally:
+            # Clear down test data
+            ns = Namespace.get('testcreationunique')
+            if ns:
+                module = Module(ns, 'test-module')
+                module_provider = ModuleProvider.get(module, 'testprovider')
+                if module_provider:
+                    module_provider.delete()
+                with db.get_engine().connect() as conn:
+                    conn.execute(db.namespace.delete().where(
+                        db.namespace.c.id==9999
+                    ))
 
 
     @pytest.mark.parametrize('template,version,expected_string', [

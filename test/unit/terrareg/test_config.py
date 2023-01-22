@@ -130,6 +130,23 @@ class TestConfig:
         with unittest.mock.patch('os.environ', {config_name: test_value}):
             assert getattr(terrareg.config.Config(), config_name) == expected_value
 
+    @pytest.mark.parametrize('config_name,enum,expected_default', [
+        ('MODULE_VERSION_REINDEX_MODE', terrareg.config.ModuleVersionReindexMode, terrareg.config.ModuleVersionReindexMode.LEGACY)
+    ])
+    def test_enum_configs(self, config_name, enum, expected_default):
+        """Test enum configs to ensure they are overriden with environment variables."""
+        self.register_checked_config(config_name)
+        check_dict = {None: expected_default}
+        check_dict.update({
+            i.value: i
+            for i in enum
+        })
+        # Check that input value produces expected list value
+        for test_env_value, expected_enum in check_dict.items():
+            os_env = {} if test_env_value is None else {config_name: test_env_value}
+            with unittest.mock.patch('os.environ', os_env):
+                assert getattr(terrareg.config.Config(), config_name) == expected_enum
+
     @pytest.mark.parametrize('test_value,expected_value', [
         ('true', True),
         ('True', True),

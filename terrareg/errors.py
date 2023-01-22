@@ -184,3 +184,9 @@ class TerraformVersionSwitchError(TerraregError):
     """An error occurred whilst switching Terraform versions"""
 
     pass
+
+
+class ReindexingExistingModuleVersionsIsProhibitedError(TerraregError):
+    """Attempting to re-index a module version when re-indexing module versions is disabled."""
+
+    pass
