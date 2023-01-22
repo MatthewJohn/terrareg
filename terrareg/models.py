@@ -30,7 +30,7 @@ from terrareg.errors import (
     NoModuleDownloadMethodConfiguredError,
     ProviderNameNotPermittedError
 )
-from terrareg.utils import convert_markdown_to_html, safe_join_paths, santise_html_content
+from terrareg.utils import convert_markdown_to_html, safe_join_paths, sanitise_html_content
 from terrareg.validators import GitUrlValidator
 
 
@@ -2085,7 +2085,7 @@ class TerraformSpecsObject(object):
         """Get readme contents"""
         module_details = self.module_details
         if module_details:
-            return santise_html_content(Database.decode_blob(module_details.readme_content))
+            return sanitise_html_content(Database.decode_blob(module_details.readme_content))
         return None
 
     def get_terraform_inputs(self):
@@ -2124,10 +2124,10 @@ class TerraformSpecsObject(object):
                 name = '/'.join(name_split[1:])
 
             providers.append({
-                'name': santise_html_content(name),
-                'namespace': santise_html_content(namespace),
+                'name': sanitise_html_content(name),
+                'namespace': sanitise_html_content(namespace),
                 'source': '',  # This data is not available
-                'version': santise_html_content(provider['version']) if provider['version'] else ''
+                'version': sanitise_html_content(provider['version']) if provider['version'] else ''
             })
         return providers
 
@@ -2241,7 +2241,7 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def owner(self):
         """Return owner of module."""
-        return santise_html_content(self._get_db_row()['owner'])
+        return sanitise_html_content(self._get_db_row()['owner'])
 
     @property
     def published(self):
@@ -2251,7 +2251,7 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def description(self):
         """Return description."""
-        return santise_html_content(self._get_db_row()['description'])
+        return sanitise_html_content(self._get_db_row()['description'])
 
     @property
     def version(self):
@@ -3093,7 +3093,7 @@ class FileObject:
             content = f"<pre>{content}</pre>"
 
             # Sanitise content
-            content = santise_html_content(
+            content = sanitise_html_content(
                 content
             )
 
