@@ -32,7 +32,7 @@ from terrareg.errors import (
 )
 from terrareg.utils import convert_markdown_to_html, safe_join_paths, sanitise_html_content
 from terrareg.validators import GitUrlValidator
-
+from terrareg.constants import EXTRACTION_VERSION
 
 
 class Session:
@@ -2424,6 +2424,11 @@ class ModuleVersion(TerraformSpecsObject):
             })
         return links
 
+    @property
+    def module_extraction_up_to_date(self):
+        """Whether the extracted module version data is up-to-date"""
+        return self._get_db_row()["extraction_version"] == EXTRACTION_VERSION
+
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
         self._extracted_beta_flag = self._validate_version(version)
@@ -2703,7 +2708,8 @@ class ModuleVersion(TerraformSpecsObject):
             "additional_tab_files": tab_file_mapping,
             "custom_links": self.custom_links,
             "graph_url": f"/modules/{self.id}/graph",
-            "terraform_version_constraint": self.get_terraform_version_constraints()
+            "terraform_version_constraint": self.get_terraform_version_constraints(),
+            "module_extraction_up_to_date": self.module_extraction_up_to_date
         })
         return api_details
 

@@ -495,7 +495,7 @@ integration_test_data = {
                             }
                         ],
                         'resources': []
-                    }),
+                    })
                 },
                 # Newer unpublished version
                 '1.6.0': {},
@@ -535,6 +535,7 @@ integration_test_data = {
                     'internal': False,
                     'published_at': datetime(2022, 1, 5, 22, 53, 12),
                     'readme_content': '# This is an exaple README!',
+                    'extraction_version': 0,
                     'variable_template': json.dumps([
                         {
                             'name': 'name_of_application',

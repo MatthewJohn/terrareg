@@ -14,6 +14,7 @@ from terrareg.server import Server
 import terrareg.config
 from test import BaseTest
 from .test_data import test_data_full, test_git_providers, test_user_group_data_full
+from terrareg.constants import EXTRACTION_VERSION
 
 
 class TerraregUnitTest(BaseTest):
@@ -214,12 +215,11 @@ def mock_module_version(request):
         if self._version in module_provider_data['versions']:
             previous_published = module_provider_data['versions'][self._version].get('published', False)
             del module_provider_data['versions'][self._version]
-        module_provider_data['versions'][self._verion] = {
+        module_provider_data['versions'][self._version] = {
             'beta': False,
             'internal': False,
             'published': False
         }
-        print(module_provider_data)
         
         return previous_published
     mock_method(request, 'terrareg.models.ModuleVersion._create_db_row', _create_db_row)
@@ -247,7 +247,8 @@ def mock_module_version(request):
             'internal': unittest_data.get('internal', False),
             'published': unittest_data.get('published', False),
             'beta': unittest_data.get('beta', False),
-            'module_details_id': unittest_data.get('module_details_id', None)
+            'module_details_id': unittest_data.get('module_details_id', None),
+            'extraction_version': unittest_data.get('extraction_version', EXTRACTION_VERSION)
         }
     mock_method(request, 'terrareg.models.ModuleVersion._get_db_row', _get_db_row)
 
