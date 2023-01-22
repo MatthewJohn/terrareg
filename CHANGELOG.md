@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.52.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.52.0...v2.52.1) (2023-01-22)
+
+
+### Bug Fixes
+
+* Fix display of heredocs in example file content. ([a6358ba](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a6358bae2130b245440fb271e6a75a1326f777ec)), closes [#310](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/310)
+
 # [2.52.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.51.0...v2.52.0) (2023-01-21)
 
 
