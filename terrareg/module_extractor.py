@@ -33,6 +33,7 @@ from terrareg.errors import (
 )
 from terrareg.utils import PathDoesNotExistError, safe_iglob, safe_join_paths
 from terrareg.config import Config
+from terrareg.constants import EXTRACTION_VERSION
 
 
 class ModuleExtractor:
@@ -307,7 +308,8 @@ credentials "{config.DOMAIN_NAME}" {{
             repo_base_url_template=terrareg_metadata.get('repo_base_url', None),
             variable_template=json.dumps(terrareg_metadata.get('variable_template', {})),
             published=Config().AUTO_PUBLISH_MODULE_VERSIONS,
-            internal=terrareg_metadata.get('internal', False)
+            internal=terrareg_metadata.get('internal', False),
+            extraction_version=EXTRACTION_VERSION
         )
 
     def _process_submodule(self, submodule: BaseSubmodule):
