@@ -514,6 +514,20 @@ The format should be similar to this example:
 Default: `[]`
 
 
+### MODULE_VERSION_REINDEX_MODE
+
+
+This configuration defines how re-indexes a module version, that already exists, behaves.
+
+This can be set to one of:
+* 'legacy' - The new module version will replace the old one. Until the version is re-published, it will not be available to Terraform. Analytics for the module version will be retained.
+* 'auto-publish' - The new module version will replace the old one. If the previous version was published, the new version will be automatically published. Analytics for the module version will be retained.
+* 'prohibit' - If a module version has already been indexed, it cannot be re-indexed via hooks/API calls without the version first being deleted.
+
+
+Default: `legacy`
+
+
 ### OPENID_CONNECT_CLIENT_ID
 
 

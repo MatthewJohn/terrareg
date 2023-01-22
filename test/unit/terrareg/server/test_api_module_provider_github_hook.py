@@ -21,7 +21,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
     def test_hook_with_full_payload_single_change(self, client, mock_models):
         """Test hook call full payload."""
         with unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
+                    'terrareg.models.ModuleVersion.prepare_module', return_value=False) as mocked_prepare_module, \
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
 
@@ -216,7 +216,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
     def test_hook_with_module_provider_without_repository_url(self, client, mock_models):
         """Test hook call to module provider with no repository url."""
         with unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
+                    'terrareg.models.ModuleVersion.prepare_module', return_value=False) as mocked_prepare_module, \
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
 
@@ -240,7 +240,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
     def test_hook_with_prepare_module_exception(self, client, mock_models):
         """Test hook call with multiple tag changes."""
         with unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
+                    'terrareg.models.ModuleVersion.prepare_module', return_value=False) as mocked_prepare_module, \
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
 
@@ -267,10 +267,44 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
             mocked_process_upload.assert_not_called()
 
     @setup_test_data()
+    @pytest.mark.parametrize('pre_existing_published_module_version', [
+        False,
+        True
+    ])
+    def test_hook_with_reindexing_published_module(self, pre_existing_published_module_version, client, mock_models):
+        """Test hook call whilst re-indexing a published module."""
+        with unittest.mock.patch(
+                    'terrareg.models.ModuleVersion.prepare_module', return_value=pre_existing_published_module_version) as mocked_prepare_module, \
+                unittest.mock.patch(
+                    'terrareg.models.ModuleVersion.publish') as mocked_publish, \
+                unittest.mock.patch(
+                    'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
+
+            res = client.post(
+                '/v1/terrareg/modules/moduleextraction/bitbucketexample/testprovider/hooks/github',
+                json={
+                    "action": "published",
+                    "release": {
+                        "tag_name": "v4.0.6"
+                    }
+                }
+            )
+
+            assert res.status_code == 200
+            assert res.json == {'status': 'Success', 'message': 'Imported provided tag', 'tag': 'v4.0.6'}
+
+            mocked_prepare_module.assert_called_once()
+            mocked_process_upload.assert_called_once()
+            if pre_existing_published_module_version:
+                mocked_publish.assert_called_once_with()
+            else:
+                mocked_publish.assert_not_called()
+
+    @setup_test_data()
     def test_hook_with_extraction_exception(self, client, mock_models):
         """Test hook call with multiple tag changes."""
         with unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
+                    'terrareg.models.ModuleVersion.prepare_module', return_value=False) as mocked_prepare_module, \
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
 
@@ -301,7 +335,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
         if expected_error is None:
             expected_error = 'Received a non-release hook request'
         with unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
+                    'terrareg.models.ModuleVersion.prepare_module', return_value=False) as mocked_prepare_module, \
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
 
@@ -389,7 +423,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
     def test_hook_with_invalid_signatures_with_api_keys_enabled(self, signature, client, mock_models):
         """Test hook call with upload API keys enabled with invalid request signature."""
         with unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
+                    'terrareg.models.ModuleVersion.prepare_module', return_value=False) as mocked_prepare_module, \
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload, \
                 unittest.mock.patch('terrareg.config.Config.UPLOAD_API_KEYS', ['test-api-key1', 'test-api-key2']):
@@ -415,7 +449,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
     def test_hook_with_valid_api_key_signature(self, client, mock_models):
         """Test hook call with valid API key signature."""
         with unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
+                    'terrareg.models.ModuleVersion.prepare_module', return_value=False) as mocked_prepare_module, \
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload, \
                 unittest.mock.patch('terrareg.config.Config.UPLOAD_API_KEYS', ['test-api-key1', 'test-api-key2']):

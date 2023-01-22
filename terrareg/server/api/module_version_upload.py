@@ -51,9 +51,12 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
             if not file or not self.allowed_file(file.filename):
                 raise terrareg.errors.UploadError('Error occurred - unknown file extension')
 
-            module_version.prepare_module()
+            previous_version_published = module_version.prepare_module()
             with terrareg.module_extractor.ApiUploadModuleExtractor(upload_file=file, module_version=module_version) as me:
                 me.process_upload()
+
+            if previous_version_published:
+                module_version.publish()
 
             return {
                 'status': 'Success'
