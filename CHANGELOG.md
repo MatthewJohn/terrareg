@@ -1,5 +1,13 @@
 # Changelog
 
+# [2.53.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.52.1...v2.53.0) (2023-01-22)
+
+
+### Features
+
+* Add ability to configure mode when re-uploaded a previously uploaded module version. ([e7c9dc9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e7c9dc90779eff18e9509e39423471adc3961809)), closes [#299](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/299)
+* Retain publish state when re-indexing module version ([3fe6daa](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3fe6daa7568b353fbefbe0819585b31d45f24dab)), closes [#299](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/299)
+
 ## [2.52.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.52.0...v2.52.1) (2023-01-22)
 
 
