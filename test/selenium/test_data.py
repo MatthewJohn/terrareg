@@ -1592,6 +1592,18 @@ digraph {
                             },
                             'readme_content': '# Example 1 README<script>var a = document.createElement("div"); a.id = "injectedExampleReadme"; document.body.appendChild(a);</script>',
                             'infracost': None
+                        },
+                        'examples/heredoc-tags': {
+                            'example_files': {
+                                'examples/heredoc-tags/main.tf': """
+module "test" {
+  input = <<EOF
+Test heredoc content
+EOF
+}
+""",
+                            },
+                            'infracost': None
                         }
                     },
                     'submodules': {

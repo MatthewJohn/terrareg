@@ -1391,6 +1391,19 @@ class TestModuleProvider(SeleniumTest):
         file_list[2].click()
         assert file_tab_content.find_element(By.ID, 'example-file-content').text == 'variable "test" {\n  description = "test variable"\n  type = string\n}'
 
+    def test_example_file_content_heredoc(self):
+        """Test example file with heredoc content"""
+        self.selenium_instance.get(self.get_url("/modules/javascriptinjection/modulename/testprovider/1.5.0/example/examples/heredoc-tags"))
+
+        file_tab_content = self.wait_for_element(By.ID, 'module-tab-example-files')
+        assert file_tab_content.find_element(By.ID, 'example-file-content').text == """
+module "test" {
+  input = <<EOF
+Test heredoc content
+EOF
+}
+""".strip()
+
     def test_delete_module_version(self, mock_create_audit_event):
         """Test the delete version functionality in settings tab."""
 
