@@ -8,6 +8,7 @@ from time import sleep
 from io import BytesIO, StringIO
 from unittest import mock
 
+import requests
 import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
@@ -18,7 +19,7 @@ import imagehash
 from terrareg.database import Database
 from test import mock_create_audit_event
 from test.selenium import SeleniumTest
-from terrareg.models import GitProvider, ModuleVersion, Namespace, Module, ModuleProvider
+from terrareg.models import GitProvider, ModuleVersion, Namespace, Module, ModuleProvider, ProviderLogo
 
 
 class TestModuleProvider(SeleniumTest):
@@ -2283,3 +2284,24 @@ module "{expected_module_name}" {{
 This module version was extracted using a previous version of Terrareg meaning that some data maybe not be available.
 Consider re-indexing this module version to enable all features.
 """.strip()
+
+    @pytest.mark.parametrize('provider', [
+        'aws',
+        'gcp',
+        'null',
+        'consul',
+        'nomad',
+        'vagrant',
+        'vault',
+    ])
+    def test_provider_logos(self, provider):
+        """Test provider logos"""
+        self.selenium_instance.get(self.get_url(f"/modules/real_providers/test-module/{provider}"))
+
+        # Get image object
+        image = self.selenium_instance.find_element(By.ID, "provider-logo-img")
+        self.assert_equals(lambda: image.get_attribute("src"), self.get_url(ProviderLogo(provider).source))
+
+        # Ensure image exists
+        res = requests.get(self.get_url(ProviderLogo(provider).source))
+        assert res.status_code == 200
