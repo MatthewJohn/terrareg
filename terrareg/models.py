@@ -2432,7 +2432,7 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def is_latest_version(self):
         """Return whether the version is the latest version for the module provider"""
-        return self._module_provider._get_db_row()["latest_version_id"] == self.pk
+        return self._module_provider.get_latest_version() == self
 
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
@@ -2441,6 +2441,12 @@ class ModuleVersion(TerraformSpecsObject):
         self._version = version
         self._cache_db_row = None
         super(ModuleVersion, self).__init__()
+
+    def __eq__(self, __o):
+        """Check if two module versions are the same"""
+        if isinstance(__o, self.__class__):
+            return self.pk == __o.pk
+        return super(ModuleVersion, self).__eq__(__o)
 
     def _get_db_row(self):
         """Get object from database"""
