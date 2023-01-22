@@ -92,7 +92,7 @@ def check_subdirectory_within_base_dir(base_dir, sub_dir, is_dir=False, is_file=
     return os.path.abspath(real_sub_dir)
 
 
-def santise_html_content(text):
+def sanitise_html_content(text):
     """Sanitise HTML content to be returned via API to be displayed in UI"""
     return bleach.clean(text) if text else text
 
