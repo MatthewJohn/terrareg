@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.53.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.53.0...v2.53.1) (2023-01-22)
+
+
+### Bug Fixes
+
+* Add warning to module provider page when new features have been added that require a module version to be re-indexed ([416998c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/416998cf0ec663ae3cdf04e865d541430c96453b)), closes [#314](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/314)
+
 # [2.53.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.52.1...v2.53.0) (2023-01-22)
 
 
