@@ -42,6 +42,7 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'repo_browse_url_template': None,
             'repo_clone_url_template': None,
             'terraform_example_version_string': '1.0.0',
+            'terraform_example_version_comment': [],
             'terraform_version_constraint': None,
             'beta': False,
             'published': True,
@@ -157,6 +158,7 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
                 'repo_browse_url_template': None,
                 'repo_clone_url_template': None,
                 'terraform_example_version_string': '1.0.0',
+                'terraform_example_version_comment': [],
                 'terraform_version_constraint': None,
                 'beta': False,
                 'published': True,
@@ -169,6 +171,15 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             }
 
             assert res.status_code == 200
+
+    @setup_test_data()
+    def test_terraform_example_version_comment(self, client, mock_models):
+        """Test example version comment is passed to API correctly"""
+        with mock.patch("terrareg.models.ModuleVersion.get_terraform_example_version_comment",
+                        mock.MagicMock(return_value=["a unit test", "comment value"])):
+            res = client.get('/v1/terrareg/modules/testnamespace/lonelymodule/testprovider')
+
+            assert res.json["terraform_example_version_comment"] == ["a unit test", "comment value"]
 
     @setup_test_data()
     def test_existing_module_provider_with_git_provider_and_no_versions(self, client, mock_models):

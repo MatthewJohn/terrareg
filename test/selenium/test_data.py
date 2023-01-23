@@ -495,10 +495,25 @@ integration_test_data = {
                             }
                         ],
                         'resources': []
-                    })
+                    }),
+                    'examples': {
+                        'examples/old-version-example': {
+                            'example_files': {
+                                'examples/test-example/main.tf': '# Call root module\nmodule "old_version_root_call" {\n  source = "../../"\n}'
+                            },
+                        }
+                    }
                 },
                 # Newer unpublished version
-                '1.6.0': {},
+                '1.6.0': {
+                    'examples': {
+                        'examples/unpublished-example': {
+                            'example_files': {
+                                'examples/test-example/main.tf': '# Call root module\nmodule "unpublished_root_call" {\n  source = "../../"\n}'
+                            },
+                        }
+                    }
+                },
                 # Newer published beta version
                 '1.6.1-beta': {'published': True, 'beta': True},
                 # Unpublished and beta version
@@ -525,6 +540,13 @@ integration_test_data = {
                         ],
                         'resources': []
                     }),
+                    'examples': {
+                        'examples/beta-example': {
+                            'example_files': {
+                                'examples/test-example/main.tf': '# Call root module\nmodule "beta_root_call" {\n  source = "../../"\n}'
+                            },
+                        }
+                    }
                 },
                 '1.5.0': {
                     'description': 'This is a test module version for tests.',
