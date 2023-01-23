@@ -89,7 +89,7 @@ class TestNamespace(SeleniumTest):
         module = self.wait_for_element(By.ID, 'moduledetails.fullypopulated.testprovider.1.5.0')
 
         card_title = module.find_element(By.CLASS_NAME, 'module-card-title')
-        assert card_title.get_attribute('href') == self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0')
+        assert card_title.get_attribute('href') == self.get_url('/modules/moduledetails/fullypopulated/testprovider')
         assert card_title.text == 'moduledetails / fullypopulated'
 
         # Ensure description and owner is in body

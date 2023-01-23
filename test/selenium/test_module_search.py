@@ -54,10 +54,10 @@ class TestModuleSearch(SeleniumTest):
             'modulesearch-trusted / mixedsearch-trusted-result-verified',
         ]
         expected_card_links = [
-            '/modules/modulesearch-trusted/mixedsearch-trusted-result/aws/1.0.0',
-            '/modules/modulesearch-trusted/mixedsearch-trusted-second-result/datadog/5.2.1',
-            '/modules/modulesearch-trusted/mixedsearch-trusted-result-multiversion/null/2.0.0',
-            '/modules/modulesearch-trusted/mixedsearch-trusted-result-verified/gcp/2.0.0',
+            '/modules/modulesearch-trusted/mixedsearch-trusted-result/aws',
+            '/modules/modulesearch-trusted/mixedsearch-trusted-second-result/datadog',
+            '/modules/modulesearch-trusted/mixedsearch-trusted-result-multiversion/null',
+            '/modules/modulesearch-trusted/mixedsearch-trusted-result-verified/gcp',
         ]
         expected_card_provider_text = [
             'Provider: aws',
