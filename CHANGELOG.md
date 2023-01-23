@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.53.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.53.1...v2.53.2) (2023-01-23)
+
+
+### Bug Fixes
+
+* Update links on module search results, module list and homepage module to direct to module provider page without a specific version ([9e2675d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9e2675d4f1e8bd996a149a6fb1e281bec7d3b676)), closes [#318](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/318)
+
 ## [2.53.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.53.0...v2.53.1) (2023-01-22)
 
 
