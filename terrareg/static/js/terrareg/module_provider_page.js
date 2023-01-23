@@ -1739,15 +1739,19 @@ async function populateTerraformUsageExample(moduleDetails, terraformVersionCons
     $("#usage-example-analytics-token").text(config.EXAMPLE_ANALYTICS_TOKEN);
     $("#usage-example-analytics-token-phrase").text(config.ANALYTICS_TOKEN_PHRASE);
 
-    // Add example Terraform call to source section
-    $("#usage-example-terraform").text(
-        `module "${moduleDetails.name}" {
+    let terraform = `module "${moduleDetails.name}" {
   source  = "${window.location.hostname}/${config.EXAMPLE_ANALYTICS_TOKEN}__${moduleDetails.module_provider_id}${additionalPath ? "//" + additionalPath : ""}"
-  version = "${moduleDetails.terraform_example_version_string}"
+`;
+    for (let commentLine of moduleDetails.terraform_example_version_comment) {
+        terraform += `  # ${commentLine}\n`;
+    }
+    terraform += `  version = "${moduleDetails.terraform_example_version_string}"
 
   # Provide variables here
-}`
-    );
+}`;
+
+    // Add example Terraform call to source section
+    $("#usage-example-terraform").text(terraform);
 
     // Show container
     $('#usage-example-container').removeClass('default-hidden');

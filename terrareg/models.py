@@ -2176,16 +2176,14 @@ class TerraformSpecsObject(object):
             if trailing_space_count < 2:
                 trailing_space_count = 2
 
-            return ('\n{leading_space}source{trailing_space}= "{server_hostname}/{module_provider_id}{sub_dir}"\n'
-                    '{leading_space}version{version_trailing_space}= "{version_string}"\n').format(
-                leading_space=match.group(1),
-                trailing_space=(' ' * trailing_space_count),
-                version_trailing_space=(' ' * (trailing_space_count - 1)),
-                server_hostname=server_hostname,
-                module_provider_id=self.module_version.module_provider.id,
-                sub_dir=module_path,
-                version_string=self.module_version.get_terraform_example_version_string()
-            )
+            leading_space = match.group(1)
+            trailing_space = (' ' * trailing_space_count)
+            version_trailing_space = (' ' * (trailing_space_count - 1))
+            version_string = self.module_version.get_terraform_example_version_string()
+
+            return (f'\n{leading_space}source{trailing_space}= "{server_hostname}/{self.module_version.module_provider.id}{module_path}"\n' +
+                    ''.join([f'{leading_space}# {comment}\n' for comment in self.module_version.get_terraform_example_version_comment()]) +
+                    f'{leading_space}version{version_trailing_space}= "{version_string}"\n')
 
         return re.sub(
             r'\n([ \t]*)source(\s+)=\s+"(\..*)"[ \t]*\n',
@@ -2429,6 +2427,11 @@ class ModuleVersion(TerraformSpecsObject):
         """Whether the extracted module version data is up-to-date"""
         return self._get_db_row()["extraction_version"] == EXTRACTION_VERSION
 
+    @property
+    def is_latest_version(self):
+        """Return whether the version is the latest version for the module provider"""
+        return self._module_provider.get_latest_version() == self
+
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
         self._extracted_beta_flag = self._validate_version(version)
@@ -2436,6 +2439,12 @@ class ModuleVersion(TerraformSpecsObject):
         self._version = version
         self._cache_db_row = None
         super(ModuleVersion, self).__init__()
+
+    def __eq__(self, __o):
+        """Check if two module versions are the same"""
+        if isinstance(__o, self.__class__):
+            return self.pk == __o.pk
+        return super(ModuleVersion, self).__eq__(__o)
 
     def _get_db_row(self):
         """Get object from database"""
@@ -2455,7 +2464,7 @@ class ModuleVersion(TerraformSpecsObject):
     def get_terraform_example_version_string(self):
         """Return formatted string of version parameter for example Terraform."""
         # For beta versions, pass an exact version constraint.
-        if self.beta:
+        if self.beta or not self.is_latest_version:
             return self.version
 
         # Generate list of template values for formatting
@@ -2471,6 +2480,16 @@ class ModuleVersion(TerraformSpecsObject):
         return terrareg.config.Config().TERRAFORM_EXAMPLE_VERSION_TEMPLATE.format(
             **kwargs
         )
+
+    def get_terraform_example_version_comment(self):
+        """Get comment displayed above version string in Terraform, used for warning about specific versions."""
+        if not self.published:
+            return ["This version of this module has not yet been published,", "meaning that it cannot yet be used by Terraform"]
+        elif self.beta:
+            return ["This version of the module is a beta version.", "To use this version, it must be pinned in Terraform"]
+        elif not self.is_latest_version:
+            return ["This version of the module is not the latest version.", "To use this specific version, it must be pinned in Terraform"]
+        return []
 
     def get_view_url(self):
         """Return view URL"""
@@ -2700,6 +2719,7 @@ class ModuleVersion(TerraformSpecsObject):
             "published_at_display": self.publish_date_display,
             "display_source_url": source_browse_url if source_browse_url else self.get_source_base_url(),
             "terraform_example_version_string": self.get_terraform_example_version_string(),
+            "terraform_example_version_comment": self.get_terraform_example_version_comment(),
             "versions": versions,
             "beta": self.beta,
             "published": self.published,

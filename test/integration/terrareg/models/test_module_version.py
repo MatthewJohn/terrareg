@@ -286,17 +286,22 @@ class TestModuleVersion(TerraregIntegrationTest):
                     ))
 
 
-    @pytest.mark.parametrize('template,version,expected_string', [
-        ('= {major}.{minor}.{patch}', '1.5.0', '= 1.5.0'),
-        ('<= {major_plus_one}.{minor_plus_one}.{patch_plus_one}', '1.5.0', '<= 2.6.1'),
-        ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '4.3.2', '>= 3.2.1'),
-        ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '0.0.0', '>= 0.0.0'),
-        ('< {major_plus_one}.0.0', '10584.321.564', '< 10585.0.0'),
+    @pytest.mark.parametrize('template,version,published,expected_string', [
+        ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '0.0.0', True, '>= 0.0.0'),
+        ('= {major}.{minor}.{patch}', '1.5.0', True, '= 1.5.0'),
+        ('<= {major_plus_one}.{minor_plus_one}.{patch_plus_one}', '1.5.0', True, '<= 2.6.1'),
+        ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '4.3.2', True, '>= 3.2.1'),
+        ('< {major_plus_one}.0.0', '10584.321.564', True, '< 10585.0.0'),
+        # Test older version to ensure it is shown as specific version
+        ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '0.0.1', True, '0.0.1'),
         # Test that beta version returns the version and
         # ignores the version template
-        ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '5.6.23-beta', '5.6.23-beta')
+        ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '5.6.23-beta', False, '5.6.23-beta'),
+        ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '5.6.24-beta', True, '5.6.24-beta'),
+        # Non-published version
+        ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '5.6.25', False, '5.6.25'),
     ])
-    def test_get_terraform_example_version_string(self, template, version, expected_string):
+    def test_get_terraform_example_version_string(self, template, version, published, expected_string):
         """Test get_terraform_example_version_string method"""
         with unittest.mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', template):
             namespace = Namespace.get(name='test', create=True)
@@ -304,6 +309,8 @@ class TestModuleVersion(TerraregIntegrationTest):
             module_provider = ModuleProvider.get(module=module, name='test', create=True)
             module_version = ModuleVersion(module_provider=module_provider, version=version)
             module_version.prepare_module()
+            if published:
+                module_version.publish()
             assert module_version.get_terraform_example_version_string() == expected_string
 
     def test_delete(self):
@@ -1261,3 +1268,27 @@ module &quot;test-usage3&quot; {
 
         finally:
             module_provider.update_git_path(None)
+
+    @pytest.mark.parametrize('published,beta,is_latest_version,expected_value', [
+        # Latest published non-beta
+        (True, False, True, []),
+        # Non-latest published non-beta
+        (True, False, False, ['This version of the module is not the latest version.', 'To use this specific version, it must be pinned in Terraform']),
+
+        # Non-latest un-published non-beta
+        (False, False, False, ['This version of this module has not yet been published,', 'meaning that it cannot yet be used by Terraform']),
+
+        # Un-published beta
+        (False, True, False, ['This version of this module has not yet been published,', 'meaning that it cannot yet be used by Terraform']),
+        # Published beta
+        (True, True, False, ['This version of the module is a beta version.', 'To use this version, it must be pinned in Terraform']),
+    ])
+    def test_get_terraform_example_version_comment(self, published, beta, is_latest_version, expected_value):
+        """Test get_terraform_example_version_comment"""
+        with unittest.mock.patch("terrareg.models.ModuleVersion.beta", beta), \
+                unittest.mock.patch("terrareg.models.ModuleVersion.published", published), \
+                unittest.mock.patch("terrareg.models.ModuleVersion.is_latest_version", is_latest_version):
+            module_provider = ModuleProvider.get(Module(Namespace('moduledetails'), 'withterraformdocs'), 'testprovider')
+            module_version = ModuleVersion.get(module_provider, '1.5.0')
+
+            assert module_version.get_terraform_example_version_comment() == expected_value
