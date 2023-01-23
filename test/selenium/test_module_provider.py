@@ -1350,6 +1350,76 @@ class TestModuleProvider(SeleniumTest):
         for itx, version_item in enumerate(version_options):
             assert version_item.text == expected_versions[itx]
 
+    @pytest.mark.parametrize('base_url,example_name,expected_file_list,example_root_module_call_name,expected_version_comment,expected_version_string', [
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.5.0',
+            'examples/test-example',
+            ['main.tf', 'data.tf', 'variables.tf'],
+            'root',
+            '',
+            '>= 1.5.0, < 2.0.0, unittest'
+        ),
+        # Test old version
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.2.0',
+            'examples/old-version-example',
+            ['main.tf'],
+            'old_version_root_call',
+            '# This version of the module is not the latest version.\n  # To use this specific version, it must be pinned in Terraform\n  ',
+            '1.2.0'
+        ),
+        # Test beta version
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.7.0-beta',
+            'examples/beta-example',
+            ['main.tf'],
+            'beta_root_call',
+            '# This version of the module is a beta version.\n  # To use this version, it must be pinned in Terraform\n  ',
+            '1.7.0-beta'
+        ),
+        # Test un-published version
+        (
+            '/modules/moduledetails/fullypopulated/testprovider/1.6.0',
+            'examples/unpublished-example',
+            ['main.tf'],
+            'unpublished_root_call',
+            '# This version of this module has not yet been published,\n  # meaning that it cannot yet be used by Terraform\n  ',
+            '1.6.0'
+        ),
+    ])
+    def test_example_file_version_string(
+            self, base_url, example_name, expected_file_list,
+            example_root_module_call_name,
+            expected_version_comment, expected_version_string):
+        """Test example version string in examples."""
+        self.selenium_instance.get(self.get_url(base_url))
+
+
+        # Select example from dropdown
+        select = Select(self.wait_for_element(By.ID, 'example-select'))
+        select.select_by_visible_text(example_name)
+
+        # Wait for page to reload and example title to be displayed
+        self.assert_equals(
+            lambda: self.selenium_instance.find_element(By.ID, 'current-submodule').text,
+            f'Example: {example_name}'
+        )
+
+        # Ensure example files tab is displayed
+        self.wait_for_element(By.ID, 'module-tab-link-example-files').click()
+
+        file_tab_content = self.wait_for_element(By.ID, 'module-tab-example-files')
+
+        # Ensure all files are displayed in file list
+        file_list = file_tab_content.find_element(By.ID, 'example-file-list-nav').find_elements(By.TAG_NAME, 'a')
+
+        # Ensure files match expected order and name
+        assert [file.text for file in file_list] == expected_file_list
+
+        # Ensure contents of main.tf is shown in data
+        expected_main_tf_content = f'# Call root module\nmodule "{example_root_module_call_name}" {{\n  source  = "localhost:{self.SERVER.port}/moduledetails/fullypopulated/testprovider"\n  {expected_version_comment}version = "{expected_version_string}"\n}}'
+        assert file_tab_content.find_element(By.ID, 'example-file-content').text == expected_main_tf_content
+
     def test_example_file_contents(self):
         """Check example files are displayed correctly."""
         self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
