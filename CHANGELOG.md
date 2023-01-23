@@ -1,5 +1,18 @@
 # Changelog
 
+# [2.54.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.53.2...v2.54.0) (2023-01-23)
+
+
+### Bug Fixes
+
+* Update example usage to show pinned version for non-latest module versions ([c0b0a2f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c0b0a2f80cb99763cf89aae643156e82a18354aa)), closes [#301](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/301)
+
+
+### Features
+
+* Add comment above example file Terraform version string when using a beta/unpublished/non-latest version of a module ([51dde84](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/51dde844fd2ff3df4b38ae37b97eb1908e9c59f9)), closes [#317](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/317)
+* Update usage example to include Terraform comment above version if using a beta/unpublished/non-latest version ([8dc51b0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8dc51b0801f67a38aba7c792f4a6ba6803317a57)), closes [#317](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/317)
+
 ## [2.53.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.53.1...v2.53.2) (2023-01-23)
 
 
