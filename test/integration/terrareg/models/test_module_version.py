@@ -1268,3 +1268,27 @@ module &quot;test-usage3&quot; {
 
         finally:
             module_provider.update_git_path(None)
+
+    @pytest.mark.parametrize('published,beta,is_latest_version,expected_value', [
+        # Latest published non-beta
+        (True, False, True, []),
+        # Non-latest published non-beta
+        (True, False, False, ['This version of the module is not the latest version.', 'To use this specific version, it must be pinned in Terraform']),
+
+        # Non-latest un-published non-beta
+        (False, False, False, ['This version of this module has not yet been published,', 'meaning that it cannot yet be used by Terraform']),
+
+        # Un-published beta
+        (False, True, False, ['This version of this module has not yet been published,', 'meaning that it cannot yet be used by Terraform']),
+        # Published beta
+        (True, True, False, ['This version of the module is a beta version.', 'To use this version, it must be pinned in Terraform']),
+    ])
+    def test_get_terraform_example_version_comment(self, published, beta, is_latest_version, expected_value):
+        """Test get_terraform_example_version_comment"""
+        with unittest.mock.patch("terrareg.models.ModuleVersion.beta", beta), \
+                unittest.mock.patch("terrareg.models.ModuleVersion.published", published), \
+                unittest.mock.patch("terrareg.models.ModuleVersion.is_latest_version", is_latest_version):
+            module_provider = ModuleProvider.get(Module(Namespace('moduledetails'), 'withterraformdocs'), 'testprovider')
+            module_version = ModuleVersion.get(module_provider, '1.5.0')
+
+            assert module_version.get_terraform_example_version_comment() == expected_value

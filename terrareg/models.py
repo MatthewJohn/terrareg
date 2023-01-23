@@ -2176,16 +2176,14 @@ class TerraformSpecsObject(object):
             if trailing_space_count < 2:
                 trailing_space_count = 2
 
-            return ('\n{leading_space}source{trailing_space}= "{server_hostname}/{module_provider_id}{sub_dir}"\n'
-                    '{leading_space}version{version_trailing_space}= "{version_string}"\n').format(
-                leading_space=match.group(1),
-                trailing_space=(' ' * trailing_space_count),
-                version_trailing_space=(' ' * (trailing_space_count - 1)),
-                server_hostname=server_hostname,
-                module_provider_id=self.module_version.module_provider.id,
-                sub_dir=module_path,
-                version_string=self.module_version.get_terraform_example_version_string()
-            )
+            leading_space = match.group(1)
+            trailing_space = (' ' * trailing_space_count)
+            version_trailing_space = (' ' * (trailing_space_count - 1))
+            version_string = self.module_version.get_terraform_example_version_string()
+
+            return (f'\n{leading_space}source{trailing_space}= "{server_hostname}/{self.module_version.module_provider.id}{module_path}"\n' +
+                    ''.join([f'{leading_space}# {comment}\n' for comment in self.module_version.get_terraform_example_version_comment()]) +
+                    f'{leading_space}version{version_trailing_space}= "{version_string}"\n')
 
         return re.sub(
             r'\n([ \t]*)source(\s+)=\s+"(\..*)"[ \t]*\n',
@@ -2483,6 +2481,16 @@ class ModuleVersion(TerraformSpecsObject):
             **kwargs
         )
 
+    def get_terraform_example_version_comment(self):
+        """Get comment displayed above version string in Terraform, used for warning about specific versions."""
+        if not self.published:
+            return ["This version of this module has not yet been published,", "meaning that it cannot yet be used by Terraform"]
+        elif self.beta:
+            return ["This version of the module is a beta version.", "To use this version, it must be pinned in Terraform"]
+        elif not self.is_latest_version:
+            return ["This version of the module is not the latest version.", "To use this specific version, it must be pinned in Terraform"]
+        return []
+
     def get_view_url(self):
         """Return view URL"""
         return '{module_provider_url}/{version}'.format(
@@ -2711,6 +2719,7 @@ class ModuleVersion(TerraformSpecsObject):
             "published_at_display": self.publish_date_display,
             "display_source_url": source_browse_url if source_browse_url else self.get_source_base_url(),
             "terraform_example_version_string": self.get_terraform_example_version_string(),
+            "terraform_example_version_comment": self.get_terraform_example_version_comment(),
             "versions": versions,
             "beta": self.beta,
             "published": self.published,
