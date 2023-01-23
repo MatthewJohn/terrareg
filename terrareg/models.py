@@ -2180,10 +2180,9 @@ class TerraformSpecsObject(object):
             trailing_space = (' ' * trailing_space_count)
             version_trailing_space = (' ' * (trailing_space_count - 1))
             version_string = self.module_version.get_terraform_example_version_string()
-            version_comment = self.module_version.get_terraform_example_version_comment()
 
             return (f'\n{leading_space}source{trailing_space}= "{server_hostname}/{self.module_version.module_provider.id}{module_path}"\n' +
-                    (f'{leading_space}{version_comment}\n' if version_comment else '') +
+                    ''.join([f'{leading_space}# {comment}\n' for comment in self.module_version.get_terraform_example_version_comment()]) +
                     f'{leading_space}version{version_trailing_space}= "{version_string}"\n')
 
         return re.sub(
@@ -2485,12 +2484,12 @@ class ModuleVersion(TerraformSpecsObject):
     def get_terraform_example_version_comment(self):
         """Get comment displayed above version string in Terraform, used for warning about specific versions."""
         if not self.published:
-            return "# This version of this module has not yet been published, meaning that it cannot yet be used by Terraform"
+            return ["This version of this module has not yet been published,", "meaning that it cannot yet be used by Terraform"]
         elif self.beta:
-            return "# This version of the module is a beta version, so must be pinned to the specific version"
+            return ["This version of the module is a beta version.", "To use this version, it must be pinned in Terraform"]
         elif not self.is_latest_version:
-            return "# This version of the module is not the latest version. To use this specific version, it must be pinned in Terraform"
-        return None
+            return ["This version of the module is not the latest version.", "To use this specific version, it must be pinned in Terraform"]
+        return []
 
     def get_view_url(self):
         """Return view URL"""
