@@ -45,6 +45,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'repo_clone_url_template': None,
             'terraform_example_version_string': '1.0.0',
             'terraform_version_constraint': None,
+            'terraform_example_version_comment': [],
             'beta': False,
             'published': True,
             'security_failures': 0,
@@ -108,6 +109,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'submodules': [],
             'terraform_example_version_string': '2.2.2',
             'terraform_version_constraint': None,
+            'terraform_example_version_comment': [],
             'version': '2.2.2',
             'providers': [
                 'staticrepourl',
@@ -173,6 +175,10 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'submodules': [],
             'terraform_example_version_string': '10.2.1',
             'terraform_version_constraint': None,
+            'terraform_example_version_comment': [
+                'This version of this module has not yet been published,',
+                'meaning that it cannot yet be used by Terraform'
+            ],
             'version': '10.2.1',
             'beta': False,
             'published': False,
@@ -230,6 +236,10 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'submodules': [],
             'terraform_example_version_string': '2.2.4-beta',
             'terraform_version_constraint': None,
+            'terraform_example_version_comment': [
+                'This version of the module is a beta version.',
+                'To use this version, it must be pinned in Terraform'
+            ],
             'version': '2.2.4-beta',
             'beta': True,
             'published': True,
@@ -358,3 +368,12 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
 
         assert res.status_code == 200
         assert res.json['module_extraction_up_to_date'] == expected_update_to_date_flag
+
+    @setup_test_data()
+    def test_terraform_example_version_comment(self, client, mock_models):
+        """Test example version comment is passed to API correctly"""
+        with mock.patch("terrareg.models.ModuleVersion.get_terraform_example_version_comment",
+                        mock.MagicMock(return_value=["a unit test", "comment value"])):
+            res = client.get('/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/1.5.0')
+
+            assert res.json["terraform_example_version_comment"] == ["a unit test", "comment value"]
