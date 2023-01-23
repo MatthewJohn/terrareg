@@ -2165,35 +2165,40 @@ All rights are not reserved for this example file content</pre>
         # Attempt check canvas data
         self.assert_equals(lambda: self._compare_canvas(file_name), True, sleep_period=1)
 
-    @pytest.mark.parametrize('url,expected_module_name,expected_module_path,expected_module_version_constraint', [
+    @pytest.mark.parametrize('url,expected_module_name,expected_module_path,expected_comment,expected_module_version_constraint', [
         # Base module
         ('/modules/moduledetails/fullypopulated/testprovider',
          'fullypopulated',
          'moduledetails/fullypopulated/testprovider',
+         '',
          '>= 1.5.0, < 2.0.0, unittest'),
         # Explicit version
         ('/modules/moduledetails/fullypopulated/testprovider/1.5.0',
          'fullypopulated',
          'moduledetails/fullypopulated/testprovider',
+         '',
          '>= 1.5.0, < 2.0.0, unittest'),
         # Submodule
         ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
          'fullypopulated',
          'moduledetails/fullypopulated/testprovider//modules/example-submodule1',
+         '',
          '>= 1.5.0, < 2.0.0, unittest'),
         # Non-latest version
         ('/modules/moduledetails/fullypopulated/testprovider/1.2.0',
          'fullypopulated',
          'moduledetails/fullypopulated/testprovider',
+         '\n  # This version of the module is not the latest version.\n  # To use this specific version, it must be pinned in Terraform',
          '1.2.0'),
         # Beta version
         ('/modules/moduledetails/fullypopulated/testprovider/1.7.0-beta',
          'fullypopulated',
          'moduledetails/fullypopulated/testprovider',
+         '\n  # This version of the module is a beta version.\n  # To use this version, it must be pinned in Terraform',
          '1.7.0-beta')
 
     ])
-    def test_example_usage(self, url, expected_module_name, expected_module_path, expected_module_version_constraint):
+    def test_example_usage(self, url, expected_module_name, expected_module_path, expected_comment, expected_module_version_constraint):
         """Check example usage panel"""
         self.selenium_instance.get(self.get_url(url))
 
@@ -2202,7 +2207,7 @@ All rights are not reserved for this example file content</pre>
 
         assert self.selenium_instance.find_element(By.ID, "usage-example-terraform").text == f"""
 module "{expected_module_name}" {{
-  source  = "localhost/my-tf-application__{expected_module_path}"
+  source  = "localhost/my-tf-application__{expected_module_path}"{expected_comment}
   version = "{expected_module_version_constraint}"
 
   # Provide variables here
