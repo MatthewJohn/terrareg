@@ -947,7 +947,7 @@ class ModuleDetails:
 
         infracost = self.infracost
         resource_costs = {}
-        remove_item_iteration_re = re.compile('\[[^\]]+\]')
+        remove_item_iteration_re = re.compile(r'\[[^\]]+\]')
         if infracost:
             for resource in self.infracost["projects"][0]["breakdown"]["resources"]:
                 if not resource["monthlyCost"]:
