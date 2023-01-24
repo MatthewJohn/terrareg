@@ -617,7 +617,7 @@ class SettingsTab extends ModuleDetailsTab {
             }
 
             // Check if namespace is auto-verified and, if so, show message
-            $.get(`/v1/terrareg/namespaces/${this._moduleDetails.namespace}`, (namespaceDetails) => {
+            getNamespaceDetails(this._moduleDetails.namespace).then((namespaceDetails) => {
                 if (namespaceDetails.is_auto_verified) {
                     $('#settings-verified-auto-verified-message').removeClass('default-hidden');
                 }
@@ -2226,10 +2226,17 @@ async function setupExamplePage(data) {
 }
 
 
-function createBreadcrumbs(data, subpath = undefined) {
+async function createBreadcrumbs(data, subpath = undefined) {
+
+    let namespaceName = data.namespace;
+    let namespaceDetails = await getNamespaceDetails(namespaceName);
+    if (namespaceDetails.display_name) {
+        namespaceName = namespaceDetails.display_name;
+    }
+
     let breadcrumbs = [
         ["Modules", "modules"],
-        [data.namespace, data.namespace],
+        [namespaceName, data.namespace],
         [data.module, data.module],
         [data.provider, data.provider]
     ];

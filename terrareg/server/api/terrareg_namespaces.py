@@ -20,7 +20,8 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
         return [
             {
                 "name": namespace.name,
-                "view_href": namespace.get_view_url()
+                "view_href": namespace.get_view_url(),
+                "display_name": namespace.display_name
             }
             for namespace in namespaces
         ]

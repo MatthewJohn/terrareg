@@ -743,6 +743,11 @@ class Namespace(object):
             return None
         return db_row['id']
 
+    @property
+    def display_name(self):
+        """Return display name for namespace"""
+        return self._get_db_row()["display_name"]
+
     def __init__(self, name: str):
         """Validate name and store member variables"""
         self._validate_name(name)
@@ -771,7 +776,8 @@ class Namespace(object):
         """Return custom terrareg details about namespace."""
         return {
             'is_auto_verified': self.is_auto_verified,
-            'trusted': self.trusted
+            'trusted': self.trusted,
+            'display_name': self.display_name
         }
 
     def get_all_modules(self):
