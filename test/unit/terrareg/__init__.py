@@ -377,7 +377,8 @@ def mock_namespace(request):
     def _get_db_row(self):
         return {
             'namespace': self._name,
-            'id': get_namespace_mock_data(self)['id']
+            'id': get_namespace_mock_data(self)['id'],
+            'display_name': get_namespace_mock_data(self).get('display_name')
         }
     mock_method(request, 'terrareg.models.Namespace._get_db_row', _get_db_row)
 

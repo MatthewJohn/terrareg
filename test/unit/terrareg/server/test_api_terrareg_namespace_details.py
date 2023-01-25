@@ -26,7 +26,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
         res = client.get('/v1/terrareg/namespaces/testnamespace')
 
         assert res.status_code == 200
-        assert res.json == {'is_auto_verified': False, 'trusted': False}
+        assert res.json == {'is_auto_verified': False, 'trusted': False, 'display_name': None}
 
     @setup_test_data()
     def test_with_trusted_namespace(self, client, mock_models):
@@ -35,7 +35,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
             res = client.get('/v1/terrareg/namespaces/testnamespace')
 
             assert res.status_code == 200
-            assert res.json == {'is_auto_verified': False, 'trusted': True}
+            assert res.json == {'is_auto_verified': False, 'trusted': True, 'display_name': None}
 
     @setup_test_data()
     def test_with_auto_verified_namespace(self, client, mock_models):
@@ -44,4 +44,13 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
             res = client.get('/v1/terrareg/namespaces/testnamespace')
 
             assert res.status_code == 200
-            assert res.json == {'is_auto_verified': True, 'trusted': False}
+            assert res.json == {'is_auto_verified': True, 'trusted': False, 'display_name': None}
+
+    @setup_test_data()
+    def test_with_display_name(self, client, mock_models):
+        """Test namespace details with auto-verified namespace."""
+        with mock.patch('terrareg.models.Namespace.display_name', 'Unit test display Name'):
+            res = client.get('/v1/terrareg/namespaces/testnamespace')
+
+            assert res.status_code == 200
+            assert res.json == {'is_auto_verified': False, 'trusted': False, 'display_name': 'Unit test display Name'}
