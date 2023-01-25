@@ -3099,7 +3099,7 @@ class Example(BaseSubmodule):
         api_details = super(Example, self).get_terrareg_api_details()
         yearly_cost = self.module_details.infracost.get('totalMonthlyCost', None)
         if yearly_cost:
-            yearly_cost = round((float(yearly_cost) * 12), 2)
+            yearly_cost = "{:.2f}".format(round((float(yearly_cost) * 12), 2))
         api_details['cost_analysis'] = {
             'yearly_cost': yearly_cost
         }
