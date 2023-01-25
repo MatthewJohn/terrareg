@@ -954,7 +954,9 @@ class ModuleDetails:
                     continue
 
                 name = remove_item_iteration_re.sub("", resource["name"])
-                resource_costs[name] = round((float(resource["monthlyCost"]) * 12), 2)
+                if name not in resource_costs:
+                    resource_costs[name] = 0
+                resource_costs[name] += round((float(resource["monthlyCost"]) * 12), 2)
 
         module_var_output_local_re = re.compile(r'^(module\.[^\.]+\.)+(var|local|output)\.[^\.]+$')
         # Capture modules resources, such as:
