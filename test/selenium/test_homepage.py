@@ -23,6 +23,10 @@ class TestHomepage(SeleniumTest):
         cls.register_patch(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACES', ['trustednamespace']))
         super(TestHomepage, cls).setup_class()
 
+    def test_setup_selenium_data(self):
+        """Fake test doing nothing, to allow selenium test data to be imported"""
+        pass
+
     def test_title(self):
         """Check homepage."""
         self.selenium_instance.get(self.get_url('/'))

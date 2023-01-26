@@ -947,14 +947,16 @@ class ModuleDetails:
 
         infracost = self.infracost
         resource_costs = {}
-        remove_item_iteration_re = re.compile('\[[^\]]+\]')
+        remove_item_iteration_re = re.compile(r'\[[^\]]+\]')
         if infracost:
             for resource in self.infracost["projects"][0]["breakdown"]["resources"]:
                 if not resource["monthlyCost"]:
                     continue
 
                 name = remove_item_iteration_re.sub("", resource["name"])
-                resource_costs[name] = round((float(resource["monthlyCost"]) * 12), 2)
+                if name not in resource_costs:
+                    resource_costs[name] = 0
+                resource_costs[name] += round((float(resource["monthlyCost"]) * 12), 2)
 
         module_var_output_local_re = re.compile(r'^(module\.[^\.]+\.)+(var|local|output)\.[^\.]+$')
         # Capture modules resources, such as:
@@ -3097,7 +3099,7 @@ class Example(BaseSubmodule):
         api_details = super(Example, self).get_terrareg_api_details()
         yearly_cost = self.module_details.infracost.get('totalMonthlyCost', None)
         if yearly_cost:
-            yearly_cost = round((float(yearly_cost) * 12), 2)
+            yearly_cost = "{:.2f}".format(round((float(yearly_cost) * 12), 2))
         api_details['cost_analysis'] = {
             'yearly_cost': yearly_cost
         }
