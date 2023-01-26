@@ -267,7 +267,7 @@ class TestModuleProvider(SeleniumTest):
     @pytest.mark.parametrize('url,cost', [
         ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example', '2373.60'),
         ('/modules/moduledetails/infracost/testprovider/1.0.0/example/examples/with-cost', '150.15'),
-        ('/modules/moduledetails/infracost/testprovider/1.0.0/example/examples/free', '0'),
+        ('/modules/moduledetails/infracost/testprovider/1.0.0/example/examples/free', '0.00'),
         ('/modules/moduledetails/infracost/testprovider/1.0.0/example/examples/no-infracost-data', None),
     ])
     def test_example_with_cost_analysis(self, url, cost):
