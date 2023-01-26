@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.54.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.54.0...v2.54.1) (2023-01-26)
+
+
+### Bug Fixes
+
+* Always show example cost to 2 decimal places ([9b73998](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9b739982defcd9e85bbb9aab87e11fa77d452634)), closes [#324](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/324)
+* Fix bug with resource cost calculations where each iteration of a module in a for_each will overwrite the previous cost. ([a258775](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a2587757a8f6dfe3bc47efad67882d07bfbf746b)), closes [#323](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/323)
+
 # [2.54.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.53.2...v2.54.0) (2023-01-23)
 
 
