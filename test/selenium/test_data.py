@@ -727,8 +727,19 @@ digraph {
 
 """,
                     'files': {
-                        'LICENSE': 'This is a license file\nAll rights are not reserved for this example file content',
-                        'CHANGELOG.md': '# Changelog\n## 1.0.0\n * This is an initial release',
+                        'LICENSE': """
+This is a license file
+All rights are not reserved for this example file content
+This license > tests
+various < characters that could be escaped.
+""".strip(),
+                        'CHANGELOG.md': """
+# Changelog
+## 1.0.0
+ * This is an initial release
+
+This tests > 2 < 3 escapable characters
+""".strip(),
                         'NOT_REFERENCED': 'This file is not referenced by a tab'
                     },
                     'examples': {
@@ -2584,6 +2595,10 @@ digraph {
                             }
                         ]
                     }),
+                    'files': {
+                        'LICENSE': '<script>var a = document.createElement("div"); a.id = "injectedAdditionalFilesPlainText"; document.body.appendChild(a);</script>',
+                        'CHANGELOG.md': '<script>var a = document.createElement("div"); a.id = "injectedAdditionalMarkDown"; document.body.appendChild(a);</script>'
+                    },
                     'examples': {
                         'examples/test-example': {
                             'example_files': {

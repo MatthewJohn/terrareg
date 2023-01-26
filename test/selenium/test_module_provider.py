@@ -1864,7 +1864,8 @@ EOF
         # Wait for tabs to be displayed
         self.wait_for_element(By.ID, 'module-tab-link-readme')
 
-        for injected_element in ['injectedDescription',
+        for injected_element in [
+                'injectedDescription',
                 'injectedOwner',
                 'injectedReadme',
                 'injectedVariableTemplateName',
@@ -1888,7 +1889,9 @@ EOF
                 'injectedTerraformDocsResourceDescription',
                 'injectedExampleFileContent',
                 'injectedExampleReadme',
-                'injectedSubemoduleFileContent']:
+                'injectedSubemoduleFileContent',
+                'injectedAdditionalTabsPlainText',
+                'injectedAdditionalTabsMarkDown']:
 
             with pytest.raises(selenium.common.exceptions.NoSuchElementException):
                 self.selenium_instance.find_element(By.ID, injected_element)
@@ -1999,7 +2002,9 @@ EOF
 
         # Ensure tabs exist
         license_tab_link = self.wait_for_element(By.ID, 'module-tab-link-custom-License')
+        assert license_tab_link.text == "License"
         changelog_tab_link = self.wait_for_element(By.ID, 'module-tab-link-custom-Changelog')
+        assert changelog_tab_link.text == "Changelog"
 
         # Ensure tab content is not shown
         assert self.selenium_instance.find_element(By.ID, 'module-tab-custom-License').is_displayed() == False
@@ -2011,7 +2016,9 @@ EOF
         # Check license content has been put into pre tags
         assert license_content.get_attribute('innerHTML') == """
 <pre>This is a license file
-All rights are not reserved for this example file content</pre>
+All rights are not reserved for this example file content
+This license &gt; tests
+various &lt; characters that could be escaped.</pre>
         """.strip()
 
         # Click license tab and check it's displayed and content is correct
@@ -2024,6 +2031,7 @@ All rights are not reserved for this example file content</pre>
 <ul>
 <li>This is an initial release</li>
 </ul>
+<p>This tests &gt; 2 &lt; 3 escapable characters</p>
         """.strip()
 
     def test_security_issues_tab(self):
