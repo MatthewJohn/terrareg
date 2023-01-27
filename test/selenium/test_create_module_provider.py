@@ -98,7 +98,8 @@ class TestCreateModuleProvider(SeleniumTest):
         module_provider = ModuleProvider.get(Module(Namespace('testmodulecreation'), 'minimal-module'), 'testprovider')
         assert module_provider is not None
         assert module_provider.git_tag_format == 'vunit{version}test'
-        module_provider.delete()
+        with self._patch_audit_event_creation():
+            module_provider.delete()
 
     def test_create_against_namespace_with_display_name(self):
         """Test creating module provider with inputs populated."""
@@ -120,7 +121,8 @@ class TestCreateModuleProvider(SeleniumTest):
         module_provider = ModuleProvider.get(Module(Namespace('withdisplayname'), 'minimal-module'), 'testprovider')
         assert module_provider is not None
         assert module_provider.git_tag_format == 'vunit{version}test'
-        module_provider.delete()
+        with self._patch_audit_event_creation():
+            module_provider.delete()
 
     def test_with_git_path(self):
         """Test creating module provider with inputs populated."""
@@ -144,7 +146,8 @@ class TestCreateModuleProvider(SeleniumTest):
         module_provider = ModuleProvider.get(Module(Namespace('testmodulecreation'), 'with-git-path'), 'testprovider')
         assert module_provider is not None
         assert module_provider._get_db_row()['git_path'] == './testmodulesubdir'
-        module_provider.delete()
+        with self._patch_audit_event_creation():
+            module_provider.delete()
 
     @pytest.mark.skip(reason="Not implemented")
     def test_unauthenticated(self):

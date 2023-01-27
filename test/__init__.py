@@ -98,6 +98,11 @@ class BaseTest:
         pass
 
     @classmethod
+    def _patch_audit_event_creation(cls):
+        """Return context manager for ignoring event creation"""
+        return unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event')
+
+    @classmethod
     def _setup_test_data(cls, test_data=None):
         """Setup test data in database"""
         # Delete any pre-existing data
@@ -117,8 +122,7 @@ class BaseTest:
             conn.execute(db.module_version_file.delete())
             conn.execute(db.namespace.delete())
 
-        with unittest.mock.patch(
-            'terrareg.audit.AuditEvent.create_audit_event'):
+        with cls._patch_audit_event_creation():
 
             # Setup test git providers
             for git_provider_id in cls._GIT_PROVIDER_DATA:
