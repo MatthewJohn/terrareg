@@ -1,5 +1,6 @@
 
 from datetime import datetime
+from time import sleep
 from unittest import mock
 
 import pytest
@@ -66,6 +67,28 @@ class TestCreateNamespace(SeleniumTest):
         # Ensure namespace was created
         namespace = Namespace.get('testnamespacecreation')
         assert namespace is not None
+
+    def test_create_with_display_name(self):
+        """Test creating module provider with display name."""
+        self.perform_admin_authentication('unittest-password')
+
+        self.selenium_instance.get(self.get_url('/create-namespace'))
+
+        self._fill_out_field_by_label('Name', 'testnamespacedisplayname')
+
+        self._fill_out_field_by_label('Display Name', 'Test namespace Creation')
+
+        self._click_create()
+
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/testnamespacedisplayname'))
+
+        # self.assert_equals(lambda: )
+
+        # Ensure namespace was created
+        namespace = Namespace.get('testnamespacedisplayname')
+        assert namespace is not None
+        assert namespace.name == 'testnamespacedisplayname'
+        assert namespace.display_name == 'Test namespace Creation'
 
     def test_unauthenticated(self):
         """Test creating a namespace when not authenticated."""
