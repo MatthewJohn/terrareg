@@ -351,13 +351,14 @@ def mock_module_provider(request):
 def mock_namespace(request):
 
     @classmethod
-    def create(cls, name):
+    def create(cls, name, display_name):
         """Create namespace"""
         global TEST_MODULE_DATA
         if name in TEST_MODULE_DATA:
             raise NamespaceAlreadyExistsError('Unittest namespace already exists')
         TEST_MODULE_DATA[name] = {
             'id': len(TEST_MODULE_DATA) + 1,
+            'display_name': display_name,
             'modules': {}
         }
         return cls(name)
