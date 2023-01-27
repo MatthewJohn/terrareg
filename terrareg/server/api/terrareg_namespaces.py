@@ -31,6 +31,9 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
         """Create namespace."""
         namespace_name = request.json.get('name')
         display_name = request.json.get('display_name')
+        csrf_token = request.json.get('csrf_token')
+
+        terrareg.csrf.check_csrf_token(csrf_token)
 
         namespace = terrareg.models.Namespace.create(
             name=namespace_name,
