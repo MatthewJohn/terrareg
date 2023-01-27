@@ -131,14 +131,20 @@ class BaseTest:
 
             # Setup test Namespaces, Modules, ModuleProvider and ModuleVersion
             import_data = cls._TEST_DATA if test_data is None else test_data
+            namespace_attributes = ["display_name"]
 
             # Iterate through namespaces
             for namespace_name in import_data:
                 namespace_data = import_data[namespace_name]
-                namespace = Namespace.get(name=namespace_name, create=True)
+                display_name = import_data[namespace_name].get("display_name")
+                namespace = Namespace.create(name=namespace_name, display_name=display_name)
 
                 # Iterate through modules
                 for module_name in namespace_data:
+                    # Ignore any module names that are namespace attributes
+                    if module_name in namespace_attributes:
+                        continue
+
                     module_data = namespace_data[module_name]
                     module = Module(namespace=namespace, name=module_name)
 
