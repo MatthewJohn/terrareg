@@ -33,7 +33,7 @@ class TestHomepage(SeleniumTest):
         assert self.selenium_instance.title == 'Home - unittest application name'
 
     @pytest.mark.parametrize('element,count', [
-        ('namespace', 18),
+        ('namespace', 19),
         ('module', 59),
         ('version', 89),
         ('download', 2005)

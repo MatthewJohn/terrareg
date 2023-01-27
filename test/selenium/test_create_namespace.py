@@ -6,8 +6,9 @@ from unittest import mock
 import pytest
 from selenium.webdriver.common.by import By
 import selenium
-from test import mock_create_audit_event
 
+from test import mock_create_audit_event
+from terrareg.database import Database
 from test.selenium import SeleniumTest
 from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
 
@@ -47,48 +48,61 @@ class TestCreateNamespace(SeleniumTest):
         assert self.selenium_instance.find_element(By.CLASS_NAME, 'breadcrumb').text == 'Create Namespace'
 
         expected_labels = [
-            'Name'
+            'Name',
+            'Display Name'
         ]
         for label in self.selenium_instance.find_element(By.ID, 'create-namespace-form').find_elements(By.TAG_NAME, 'label'):
             assert label.text == expected_labels.pop(0)
 
     def test_create_basic(self):
         """Test creating module provider with inputs populated."""
-        self.perform_admin_authentication('unittest-password')
+        try:
+            self.perform_admin_authentication('unittest-password')
 
-        self.selenium_instance.get(self.get_url('/create-namespace'))
+            self.selenium_instance.get(self.get_url('/create-namespace'))
 
-        self._fill_out_field_by_label('Name', 'testnamespacecreation')
+            self._fill_out_field_by_label('Name', 'testnamespacecreation')
 
-        self._click_create()
+            self._click_create()
 
-        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/testnamespacecreation'))
+            self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/testnamespacecreation'))
 
-        # Ensure namespace was created
-        namespace = Namespace.get('testnamespacecreation')
-        assert namespace is not None
+            # Ensure namespace was created
+            namespace = Namespace.get('testnamespacecreation')
+            assert namespace is not None
+        finally:
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.namespace.delete(db.namespace.c.namespace=="testnamespacecreation"))
+
 
     def test_create_with_display_name(self):
         """Test creating module provider with display name."""
-        self.perform_admin_authentication('unittest-password')
+        try:
+            self.perform_admin_authentication('unittest-password')
 
-        self.selenium_instance.get(self.get_url('/create-namespace'))
+            self.selenium_instance.get(self.get_url('/create-namespace'))
 
-        self._fill_out_field_by_label('Name', 'testnamespacedisplayname')
+            self._fill_out_field_by_label('Name', 'testnamespacedisplayname')
 
-        self._fill_out_field_by_label('Display Name', 'Test namespace Creation')
+            self._fill_out_field_by_label('Display Name', 'Test namespace Creation')
 
-        self._click_create()
+            self._click_create()
 
-        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/testnamespacedisplayname'))
+            self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/testnamespacedisplayname'))
 
-        # self.assert_equals(lambda: )
+            # self.assert_equals(lambda: )
 
-        # Ensure namespace was created
-        namespace = Namespace.get('testnamespacedisplayname')
-        assert namespace is not None
-        assert namespace.name == 'testnamespacedisplayname'
-        assert namespace.display_name == 'Test namespace Creation'
+            # Ensure namespace was created
+            namespace = Namespace.get('testnamespacedisplayname')
+            assert namespace is not None
+            assert namespace.name == 'testnamespacedisplayname'
+            assert namespace.display_name == 'Test namespace Creation'
+
+        finally:
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.namespace.delete(db.namespace.c.namespace=="testnamespacedisplayname"))
 
     def test_unauthenticated(self):
         """Test creating a namespace when not authenticated."""

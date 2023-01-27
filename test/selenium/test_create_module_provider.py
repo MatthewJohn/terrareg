@@ -73,6 +73,8 @@ class TestCreateModuleProvider(SeleniumTest):
             'testnamespace',
             'trustednamespace',
             'unpublished-beta-version-module-providers',
+            # Test displaying a module with a display name
+            'A Display Name'
         ]
 
 
@@ -96,6 +98,29 @@ class TestCreateModuleProvider(SeleniumTest):
         module_provider = ModuleProvider.get(Module(Namespace('testmodulecreation'), 'minimal-module'), 'testprovider')
         assert module_provider is not None
         assert module_provider.git_tag_format == 'vunit{version}test'
+        module_provider.delete()
+
+    def test_create_against_namespace_with_display_name(self):
+        """Test creating module provider with inputs populated."""
+        self.perform_admin_authentication('unittest-password')
+
+        self.selenium_instance.get(self.get_url('/create-module'))
+
+        Select(self.selenium_instance.find_element(By.ID, 'create-module-namespace')).select_by_visible_text('A Display Name')
+        self._fill_out_field_by_label('Module Name', 'minimal-module')
+        self._fill_out_field_by_label('Provider', 'testprovider')
+
+        self._fill_out_field_by_label('Git tag format', 'vunit{version}test')
+
+        self._click_create()
+
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/withdisplayname/minimal-module/testprovider'))
+
+        # Ensure module was created
+        module_provider = ModuleProvider.get(Module(Namespace('withdisplayname'), 'minimal-module'), 'testprovider')
+        assert module_provider is not None
+        assert module_provider.git_tag_format == 'vunit{version}test'
+        module_provider.delete()
 
     def test_with_git_path(self):
         """Test creating module provider with inputs populated."""
@@ -119,6 +144,7 @@ class TestCreateModuleProvider(SeleniumTest):
         module_provider = ModuleProvider.get(Module(Namespace('testmodulecreation'), 'with-git-path'), 'testprovider')
         assert module_provider is not None
         assert module_provider._get_db_row()['git_path'] == './testmodulesubdir'
+        module_provider.delete()
 
     @pytest.mark.skip(reason="Not implemented")
     def test_unauthenticated(self):
