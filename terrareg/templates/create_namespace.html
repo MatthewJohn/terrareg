@@ -12,6 +12,7 @@
             url: '/v1/terrareg/namespaces',
             data: JSON.stringify({
                 name: $('#namespace-name').val(),
+                display_name: $('#namespace-display-name').val(),
                 csrf_token: '{{ csrf_token }}'
             }),
             contentType: 'application/json'
@@ -54,6 +55,12 @@
                     <label class="label">Name</label>
                     <div class="control">
                     <input required id="namespace-name" class="input" type="text" placeholder="my-team">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label">Display Name</label>
+                    <div class="control">
+                    <input id="namespace-display-name" class="input" type="text" placeholder="My Team">
                     </div>
                 </div>
                 <div class="field">
