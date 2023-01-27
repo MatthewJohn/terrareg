@@ -26,10 +26,10 @@ class TestProviderLogo(TerraregIntegrationTest):
         ('gcp', 'Google Cloud and the Google Cloud logo are trademarks of Google LLC.'),
         ('null', ' '),
         ('datadog', 'All \'Datadog\' modules are designed to work with Datadog. Modules are in no way affiliated with nor endorsed by Datadog Inc.'),
-        ('consul', ' '),
-        ('nomad', ' '),
-        ('vagrant', ' '),
-        ('vault', ' '),
+        ('consul', 'All \'Consul\' modules are designed to work with HashiCorp Consul. Terrareg and modules hosted within it are in no way affiliated with, nor endorsed by, HashiCorp. HashiCorp, HashiCorp Consul and the HashiCorp Consul logo are trademarks of HashiCorp.'),
+        ('nomad', 'All \'Nomad\' modules are designed to work with HashiCorp Nomad. Terrareg and modules hosted within it are in no way affiliated with, nor endorsed by, HashiCorp. HashiCorp, HashiCorp Nomad and the HashiCorp Nomad logo are trademarks of HashiCorp.'),
+        ('vagrant', 'All \'Vagrant\' modules are designed to work with HashiCorp Vagrant. Terrareg and modules hosted within it are in no way affiliated with, nor endorsed by, HashiCorp. HashiCorp, HashiCorp Vagrant and the HashiCorp Vagrant logo are trademarks of HashiCorp.'),
+        ('vault', 'All \'Vault\' modules are designed to work with HashiCorp Vault. Terrareg and modules hosted within it are in no way affiliated with, nor endorsed by, HashiCorp. HashiCorp, HashiCorp Vault and the HashiCorp Vault logo are trademarks of HashiCorp.'),
         ('doesnotexist', None),
     ])
     def test_logo_tos(self, provider_name, expected_tos):
