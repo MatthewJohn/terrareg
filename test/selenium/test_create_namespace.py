@@ -118,9 +118,9 @@ If you were previously logged in, please re-authentication and try again."""
 
         self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/create-namespace'))
 
-        # Ensure namespace was created
-        namespace = Namespace.get('testnamespacecreation')
-        assert namespace is not None
+        # Ensure namespace was not created
+        namespace = Namespace.get('testnamespaceunauthenticated')
+        assert namespace is None
 
     def test_duplicate_namespace(self, mock_create_audit_event):
         """Test creating a namespace that already exists."""
