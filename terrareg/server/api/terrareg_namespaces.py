@@ -4,6 +4,7 @@ from flask import request
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.auth_wrapper
 import terrareg.models
+import terrareg.csrf
 
 
 class ApiTerraregNamespaces(ErrorCatchingResource):
@@ -20,7 +21,8 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
         return [
             {
                 "name": namespace.name,
-                "view_href": namespace.get_view_url()
+                "view_href": namespace.get_view_url(),
+                "display_name": namespace.display_name
             }
             for namespace in namespaces
         ]
@@ -28,9 +30,17 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
     def _post(self):
         """Create namespace."""
         namespace_name = request.json.get('name')
-        namespace = terrareg.models.Namespace.create(name=namespace_name)
+        display_name = request.json.get('display_name')
+        csrf_token = request.json.get('csrf_token')
+
+        terrareg.csrf.check_csrf_token(csrf_token)
+
+        namespace = terrareg.models.Namespace.create(
+            name=namespace_name,
+            display_name=display_name)
 
         return {
             "name": namespace.name,
-            "view_href": namespace.get_view_url()
+            "view_href": namespace.get_view_url(),
+            "display_name": namespace.display_name
         }

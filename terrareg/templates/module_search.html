@@ -159,17 +159,23 @@
                 let current_filtered_namespaces = getFilterNamespaces();
                 // Clear all namespaces
                 $('#namespace-filters').find('a').remove();
-                Object.keys(data.namespaces).forEach((namespace_name) => {
+                Object.keys(data.namespaces).forEach(async (namespaceName) => {
+
+                    let namespaceDisplayName = namespaceName;
+                    let namespaceDetails = await getNamespaceDetails(namespaceName);
+                    if (namespaceDetails.display_name) {
+                        namespaceDisplayName = namespaceDetails.display_name;
+                    }
 
                     // Check if provider already exists and is checked
-                    let checked = current_filtered_namespaces.indexOf(namespace_name) !== -1;
+                    let checked = current_filtered_namespaces.indexOf(namespaceName) !== -1;
 
                     // Add providers to provider filter
                     $('#namespace-filters').append(`
                     <a class="panel-block" onclick="toggleChildCheckbox(event);">
-                        <input data-namespace-name="${namespace_name}" id="namespace-filter-${namespace_name}" onchange="performSearch();" ${checked ? 'checked' : ''} type="checkbox" />
-                            ${namespace_name}
-                        <span class="tag">${data.namespaces[namespace_name]}</span>
+                        <input data-namespace-name="${namespaceName}" id="namespace-filter-${namespaceName}" onchange="performSearch();" ${checked ? 'checked' : ''} type="checkbox" />
+                            ${namespaceDisplayName}
+                        <span class="tag">${data.namespaces[namespaceName]}</span>
                     </a>
                     `);
                 });

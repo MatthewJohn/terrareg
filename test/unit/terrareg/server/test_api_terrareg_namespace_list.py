@@ -25,10 +25,10 @@ class TestApiTerraregNamespaceList(TerraregUnitTest):
         res = client.get('/v1/terrareg/namespaces')
         assert res.status_code == 200
         assert res.json == [
-            {'name': 'testnamespace', 'view_href': '/modules/testnamespace'},
-            {'name': 'moduledetails', 'view_href': '/modules/moduledetails'},
-            {'name': 'secondtestnamespace', 'view_href': '/modules/secondtestnamespace'},
-            {'name': 'smallernamespacelist', 'view_href': '/modules/smallernamespacelist'},
-            {'name': 'moduleextraction', 'view_href': '/modules/moduleextraction'},
-            {'name': 'emptynamespace', 'view_href': '/modules/emptynamespace'}
+            {'name': 'testnamespace', 'view_href': '/modules/testnamespace', 'display_name': None},
+            {'name': 'moduledetails', 'view_href': '/modules/moduledetails', 'display_name': None},
+            {'name': 'secondtestnamespace', 'view_href': '/modules/secondtestnamespace', 'display_name': None},
+            {'name': 'smallernamespacelist', 'view_href': '/modules/smallernamespacelist', 'display_name': 'Smaller Namespace List'},
+            {'name': 'moduleextraction', 'view_href': '/modules/moduleextraction', 'display_name': None},
+            {'name': 'emptynamespace', 'view_href': '/modules/emptynamespace', 'display_name': None}
         ]

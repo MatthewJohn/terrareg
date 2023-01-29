@@ -64,7 +64,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
 
-            namespace = terrareg.models.Namespace.create('newnamespace')
+            namespace = terrareg.models.Namespace.create('newnamespace', None)
 
             res = client.post(
                 '/v1/terrareg/modules/newnamespace/newtestmodule/newprovider/create',
@@ -96,7 +96,7 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
 
-            namespace = terrareg.models.Namespace.create('newnamespace')
+            namespace = terrareg.models.Namespace.create('newnamespace', None)
 
             res = client.post(
                 '/v1/terrareg/modules/newnamespace/newm/newp/create',

@@ -557,6 +557,7 @@ test_data_full = {
     },
     'smallernamespacelist': {
         'id': 4,
+        'display_name': 'Smaller Namespace List',
         'modules': {
             'publishedone': {
                 'testprovider': {

@@ -35,6 +35,24 @@ async function getNamespaces() {
     return terraregNamespacesPromiseSingleton;
 }
 
+terraregNamespaceDetailsPromiseSingleton = {};
+async function getNamespaceDetails(namespace) {
+    // Create promise if it hasn't already been defined
+    if (terraregNamespaceDetailsPromiseSingleton[namespace] === undefined) {
+        terraregNamespaceDetailsPromiseSingleton[namespace] = new Promise((resolve, reject) => {
+            // Perform request to obtain the config
+            $.ajax({
+                type: "GET",
+                url: `/v1/terrareg/namespaces/${namespace}`,
+                success: function (data) {
+                    resolve(data);
+                }
+            });
+        });
+    }
+    return terraregNamespaceDetailsPromiseSingleton[namespace];
+}
+
 async function checkInitialSetup() {
     let namespaces = await getNamespaces();
     if (! namespaces.length) {
