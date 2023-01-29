@@ -370,7 +370,7 @@ def mock_namespace(request):
         if name in TEST_MODULE_DATA:
             return cls(name)
         elif create:
-            return cls.create(name)
+            return cls.create(name, display_name=None)
         else:
             return None
     mock_method(request, 'terrareg.models.Namespace.get', get)
