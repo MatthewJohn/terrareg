@@ -82,7 +82,9 @@ class TestConfig:
         ('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', None),
         ('MODULE_LINKS', None),
         ('DEFAULT_TERRAFORM_VERSION', None),
-        ('TERRAFORM_ARCHIVE_MIRROR', None)
+        ('TERRAFORM_ARCHIVE_MIRROR', None),
+        ('SENTRY_DSN', None),
+        ('SENTRY_TRACES_SAMPLE_RATE', None)
     ])
     def test_string_configs(self, config_name, override_expected_value):
         """Test string configs to ensure they are overriden with environment variables."""
