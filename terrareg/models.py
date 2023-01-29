@@ -569,7 +569,7 @@ class Namespace(object):
             # If set to create and auto module-provider creation
             # is enabled in config, create the module provider
             if create and terrareg.config.Config().AUTO_CREATE_NAMESPACE:
-                cls.create(name=name)
+                cls.create(name=name, display_name=None)
 
                 return obj
 
