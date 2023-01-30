@@ -83,6 +83,13 @@ async function createSearchResultCard(parent_id, module) {
 
     let display_published = timeDifference(new Date(module.published_at));
     let provider_logo_html = '';
+
+    let namespaceDisplayName = module.namespace;
+    let namespaceDetails = await getNamespaceDetails(module.namespace);
+    if (namespaceDetails.display_name) {
+        namespaceDisplayName = namespaceDetails.display_name;
+    }
+
     if (provider_logos[module.provider] !== undefined) {
         let provider_logo_details = provider_logos[module.provider];
         provider_logo_html = `
@@ -105,7 +112,7 @@ async function createSearchResultCard(parent_id, module) {
             <header class="card-header">
                 <p class="card-header-title">
                     ${provider_logo_html}
-                    <a class="module-card-title" href="${link}">${module.namespace} / ${module.name}</a>
+                    <a class="module-card-title" href="${link}">${namespaceDisplayName} / ${module.name}</a>
                 </p>
                 <a class="module-provider-card-provider-text" href="${link}">
                     <button class="card-header-icon" aria-label="more options">

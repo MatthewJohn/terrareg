@@ -467,6 +467,9 @@ integration_test_data = {
             }
         }},
     },
+    'withdisplayname': {
+        'display_name': 'A Display Name'
+    },
     'moduledetails': {
         'fullypopulated': {'testprovider': {
             'id': 56,

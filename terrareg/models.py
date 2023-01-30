@@ -18,7 +18,7 @@ import terrareg.config
 import terrareg.audit
 import terrareg.audit_action
 from terrareg.errors import (
-    InvalidModuleNameError, InvalidModuleProviderNameError, InvalidUserGroupNameError,
+    DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
     InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError, ReindexingExistingModuleVersionsIsProhibitedError,
     RepositoryUrlDoesNotContainValidSchemeError,
@@ -569,7 +569,7 @@ class Namespace(object):
             # If set to create and auto module-provider creation
             # is enabled in config, create the module provider
             if create and terrareg.config.Config().AUTO_CREATE_NAMESPACE:
-                cls.create(name=name)
+                cls.create(name=name, display_name=None)
 
                 return obj
 
@@ -580,10 +580,11 @@ class Namespace(object):
         return obj
 
     @classmethod
-    def create(cls, name):
+    def create(cls, name, display_name=None):
         """Create instance of object in database."""
         # Validate name
         cls._validate_name(name)
+        cls._validate_display_name(display_name)
 
         db = Database.get()
 
@@ -605,7 +606,8 @@ class Namespace(object):
 
         # Create namespace
         module_provider_insert = db.namespace.insert().values(
-            namespace=name
+            namespace=name,
+            display_name=display_name if display_name else None
         )
         with db.get_connection() as conn:
             conn.execute(module_provider_insert)
@@ -732,8 +734,29 @@ class Namespace(object):
     @staticmethod
     def _validate_name(name):
         """Validate name of namespace"""
-        if not re.match(r'^[0-9a-zA-Z][0-9a-zA-Z-_]+[0-9A-Za-z]$', name):
+        if name is None or not re.match(r'^[0-9a-zA-Z][0-9a-zA-Z-_]+[0-9A-Za-z]$', name):
             raise InvalidNamespaceNameError('Namespace name is invalid')
+
+    @staticmethod
+    def _validate_display_name(display_name):
+        """Determine if display name is valid"""
+        if not display_name:
+            return
+
+        if not re.match(r'^[A-Za-z0-9][0-9A-Za-z\s\-_]+[A-Za-z0-9]$', display_name):
+            raise InvalidNamespaceDisplayNameError('Namespace display name is invalid')
+
+        db = Database.get()
+        display_name_query = sqlalchemy.select(
+            db.namespace.c.namespace
+        ).select_from(
+            db.namespace
+        ).where(
+            db.namespace.c.display_name==display_name
+        )
+        with db.get_connection() as conn:
+            if conn.execute(display_name_query).fetchone():
+                raise DuplicateNamespaceDisplayNameError("A namespace already has this display name")
 
     @property
     def pk(self):
@@ -742,6 +765,11 @@ class Namespace(object):
         if not db_row:
             return None
         return db_row['id']
+
+    @property
+    def display_name(self):
+        """Return display name for namespace"""
+        return self._get_db_row()["display_name"]
 
     def __init__(self, name: str):
         """Validate name and store member variables"""
@@ -771,7 +799,8 @@ class Namespace(object):
         """Return custom terrareg details about namespace."""
         return {
             'is_auto_verified': self.is_auto_verified,
-            'trusted': self.trusted
+            'trusted': self.trusted,
+            'display_name': self.display_name
         }
 
     def get_all_modules(self):

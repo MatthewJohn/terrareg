@@ -190,3 +190,15 @@ class ReindexingExistingModuleVersionsIsProhibitedError(TerraregError):
     """Attempting to re-index a module version when re-indexing module versions is disabled."""
 
     pass
+
+
+class InvalidNamespaceDisplayNameError(TerraregError):
+    """Namespace display name is invalid"""
+
+    pass
+
+
+class DuplicateNamespaceDisplayNameError(TerraregError):
+    """A namespace already exists with this display name"""
+
+    pass
