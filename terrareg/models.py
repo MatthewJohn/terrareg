@@ -1251,6 +1251,30 @@ class ProviderLogo:
             'tos': 'All \'Datadog\' modules are designed to work with Datadog. Modules are in no way affiliated with nor endorsed by Datadog Inc.',
             'alt': 'Works with Datadog',
             'link': 'https://www.datadoghq.com/'
+        },
+        'consul': {
+            'source': '/static/images/consul.png',
+            'tos': 'All \'Consul\' modules are designed to work with HashiCorp Consul. Terrareg and modules hosted within it are in no way affiliated with, nor endorsed by, HashiCorp. HashiCorp, HashiCorp Consul and the HashiCorp Consul logo are trademarks of HashiCorp.',
+            'alt': 'Hashicorp Consul',
+            'link': '#'
+        },
+        'nomad': {
+            'source': '/static/images/nomad.png',
+            'tos': 'All \'Nomad\' modules are designed to work with HashiCorp Nomad. Terrareg and modules hosted within it are in no way affiliated with, nor endorsed by, HashiCorp. HashiCorp, HashiCorp Nomad and the HashiCorp Nomad logo are trademarks of HashiCorp.',
+            'alt': 'Hashicorp Nomad',
+            'link': '#'
+        },
+        'vagrant': {
+            'source': '/static/images/vagrant.png',
+            'tos': 'All \'Vagrant\' modules are designed to work with HashiCorp Vagrant. Terrareg and modules hosted within it are in no way affiliated with, nor endorsed by, HashiCorp. HashiCorp, HashiCorp Vagrant and the HashiCorp Vagrant logo are trademarks of HashiCorp.',
+            'alt': 'Hashicorp Vagrant',
+            'link': '#'
+        },
+        'vault': {
+            'source': '/static/images/vault.png',
+            'tos': 'All \'Vault\' modules are designed to work with HashiCorp Vault. Terrareg and modules hosted within it are in no way affiliated with, nor endorsed by, HashiCorp. HashiCorp, HashiCorp Vault and the HashiCorp Vault logo are trademarks of HashiCorp.',
+            'alt': 'Hashicorp Vault',
+            'link': '#'
         }
     }
 
