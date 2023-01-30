@@ -1,5 +1,20 @@
 # Changelog
 
+# [2.55.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.54.1...v2.55.0) (2023-01-30)
+
+
+### Bug Fixes
+
+* Add CSFR token validation to namespace create API ([bc68795](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/bc68795334f81dc60270a55057f0772e62541fb9)), closes [#325](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/325)
+* Fix exception thrown when attempting to create a namespace with a None name or without provide a name attribute ([4574778](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/457477845d01dbffee662e566078780c9700ed9c)), closes [#327](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/327)
+* Fix mis-aligned tags in create module provider page in description of templating for clone/browse URL templates ([83db99f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/83db99f5d55f9ef5aa503ebfce652eacefcfcb1f)), closes [#329](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/329)
+
+
+### Features
+
+* Add support to add 'Display name' to namespace during creation. ([4ac011e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4ac011eb466890d0d9186ad0294d17b6e8f699aa)), closes [#294](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/294)
+* Display namespace "display name" in namespace list and module provider page breadcrumbs. ([8406815](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8406815a47b393000ed53d74bac90bc4df9dbcb6)), closes [#294](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/294)
+
 ## [2.54.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.54.0...v2.54.1) (2023-01-26)
 
 
