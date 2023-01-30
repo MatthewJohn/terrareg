@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.56.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.55.0...v2.56.0) (2023-01-30)
+
+
+### Features
+
+* Add provider logos for hashicorp products: vault, nomad, vagrant and consul ([81c9d8a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/81c9d8ac4eca6f2de07b9eb93d5256162bb6f661))
+
 # [2.55.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.54.1...v2.55.0) (2023-01-30)
 
 
