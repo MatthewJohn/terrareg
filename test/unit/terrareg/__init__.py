@@ -351,13 +351,14 @@ def mock_module_provider(request):
 def mock_namespace(request):
 
     @classmethod
-    def create(cls, name):
+    def create(cls, name, display_name):
         """Create namespace"""
         global TEST_MODULE_DATA
         if name in TEST_MODULE_DATA:
             raise NamespaceAlreadyExistsError('Unittest namespace already exists')
         TEST_MODULE_DATA[name] = {
             'id': len(TEST_MODULE_DATA) + 1,
+            'display_name': display_name,
             'modules': {}
         }
         return cls(name)
@@ -369,7 +370,7 @@ def mock_namespace(request):
         if name in TEST_MODULE_DATA:
             return cls(name)
         elif create:
-            return cls.create(name)
+            return cls.create(name, display_name=None)
         else:
             return None
     mock_method(request, 'terrareg.models.Namespace.get', get)
@@ -377,7 +378,8 @@ def mock_namespace(request):
     def _get_db_row(self):
         return {
             'namespace': self._name,
-            'id': get_namespace_mock_data(self)['id']
+            'id': get_namespace_mock_data(self)['id'],
+            'display_name': get_namespace_mock_data(self).get('display_name')
         }
     mock_method(request, 'terrareg.models.Namespace._get_db_row', _get_db_row)
 

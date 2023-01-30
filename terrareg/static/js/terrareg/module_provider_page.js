@@ -617,7 +617,7 @@ class SettingsTab extends ModuleDetailsTab {
             }
 
             // Check if namespace is auto-verified and, if so, show message
-            $.get(`/v1/terrareg/namespaces/${this._moduleDetails.namespace}`, (namespaceDetails) => {
+            getNamespaceDetails(this._moduleDetails.namespace).then((namespaceDetails) => {
                 if (namespaceDetails.is_auto_verified) {
                     $('#settings-verified-auto-verified-message').removeClass('default-hidden');
                 }
@@ -1739,15 +1739,19 @@ async function populateTerraformUsageExample(moduleDetails, terraformVersionCons
     $("#usage-example-analytics-token").text(config.EXAMPLE_ANALYTICS_TOKEN);
     $("#usage-example-analytics-token-phrase").text(config.ANALYTICS_TOKEN_PHRASE);
 
-    // Add example Terraform call to source section
-    $("#usage-example-terraform").text(
-        `module "${moduleDetails.name}" {
+    let terraform = `module "${moduleDetails.name}" {
   source  = "${window.location.hostname}/${config.EXAMPLE_ANALYTICS_TOKEN}__${moduleDetails.module_provider_id}${additionalPath ? "//" + additionalPath : ""}"
-  version = "${moduleDetails.terraform_example_version_string}"
+`;
+    for (let commentLine of moduleDetails.terraform_example_version_comment) {
+        terraform += `  # ${commentLine}\n`;
+    }
+    terraform += `  version = "${moduleDetails.terraform_example_version_string}"
 
   # Provide variables here
-}`
-    );
+}`;
+
+    // Add example Terraform call to source section
+    $("#usage-example-terraform").text(terraform);
 
     // Show container
     $('#usage-example-container').removeClass('default-hidden');
@@ -2222,10 +2226,17 @@ async function setupExamplePage(data) {
 }
 
 
-function createBreadcrumbs(data, subpath = undefined) {
+async function createBreadcrumbs(data, subpath = undefined) {
+
+    let namespaceName = data.namespace;
+    let namespaceDetails = await getNamespaceDetails(namespaceName);
+    if (namespaceDetails.display_name) {
+        namespaceName = namespaceDetails.display_name;
+    }
+
     let breadcrumbs = [
         ["Modules", "modules"],
-        [data.namespace, data.namespace],
+        [namespaceName, data.namespace],
         [data.module, data.module],
         [data.provider, data.provider]
     ];

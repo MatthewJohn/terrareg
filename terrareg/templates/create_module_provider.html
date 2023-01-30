@@ -66,7 +66,7 @@
         $.get('/v1/terrareg/namespaces').then((data) => {
             data.forEach((namespace) => {
                 if (auth.site_admin || auth.namespace_permissions[namespace.name] == 'FULL') {
-                    $('#create-module-namespace').append($(`<option value="${namespace.name}">${namespace.name}</option>`))
+                    $('#create-module-namespace').append($(`<option value="${namespace.name}">${namespace.display_name || namespace.name}</option>`))
                 }
             });
         });
@@ -149,7 +149,7 @@
                         <input placeholder="ssh://git@github.com:my-team/my-module-provider.git" class="input" type="text" id="create-module-clone-url-template">
                     </div>
                     This URL must be valid for cloning the repository.<br />
-                    It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>>.<br />
+                    It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
                     E.g. <code>ssh://git@github.com/{namespace}/{module}-{provider}.git</code><br />
                     NOTE: Setting this field will override the repository provider configuration.
                 </div>
@@ -160,7 +160,7 @@
                     </div>
                     This URL must be valid for browsing the source code of the repository at a particular tag/path.<br />
                     It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
-                    It must include the following template values: <code>code>{tag}</code> and {path}</code><br />
+                    It must include the following template values: <code>{tag}</code> and <code>{path}</code><br />
                     E.g. <code>https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}</code><br />
                     NOTE: Setting this field will override the repository provider configuration.
                 </div>

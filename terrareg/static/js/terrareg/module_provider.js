@@ -83,6 +83,13 @@ async function createSearchResultCard(parent_id, module) {
 
     let display_published = timeDifference(new Date(module.published_at));
     let provider_logo_html = '';
+
+    let namespaceDisplayName = module.namespace;
+    let namespaceDetails = await getNamespaceDetails(module.namespace);
+    if (namespaceDetails.display_name) {
+        namespaceDisplayName = namespaceDetails.display_name;
+    }
+
     if (provider_logos[module.provider] !== undefined) {
         let provider_logo_details = provider_logos[module.provider];
         provider_logo_html = `
@@ -96,6 +103,8 @@ async function createSearchResultCard(parent_id, module) {
     // Replace slashes in ID with full stops
     let card_id = module.id.replace(/\//g, '.');
 
+    let link = `/modules/${module.namespace}/${module.name}/${module.provider}`;
+
     // Add module to search results
     let result_card = $(
         `
@@ -103,15 +112,15 @@ async function createSearchResultCard(parent_id, module) {
             <header class="card-header">
                 <p class="card-header-title">
                     ${provider_logo_html}
-                    <a class="module-card-title" href="/modules/${module.id}">${module.namespace} / ${module.name}</a>
+                    <a class="module-card-title" href="${link}">${namespaceDisplayName} / ${module.name}</a>
                 </p>
-                <a class="module-provider-card-provider-text" href="/modules/${module.id}">
+                <a class="module-provider-card-provider-text" href="${link}">
                     <button class="card-header-icon" aria-label="more options">
                         Provider: ${module.provider}
                     </button>
                 </a>
             </header>
-            <a href="/modules/${module.id}">
+            <a href="${link}">
                 <div class="card-content">
                     <div class="content">
                         ${module.description ? module.description : (module.version ? '' : 'This module does not have any published versions')}

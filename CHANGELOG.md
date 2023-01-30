@@ -1,5 +1,48 @@
 # Changelog
 
+# [2.55.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.54.1...v2.55.0) (2023-01-30)
+
+
+### Bug Fixes
+
+* Add CSFR token validation to namespace create API ([bc68795](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/bc68795334f81dc60270a55057f0772e62541fb9)), closes [#325](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/325)
+* Fix exception thrown when attempting to create a namespace with a None name or without provide a name attribute ([4574778](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/457477845d01dbffee662e566078780c9700ed9c)), closes [#327](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/327)
+* Fix mis-aligned tags in create module provider page in description of templating for clone/browse URL templates ([83db99f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/83db99f5d55f9ef5aa503ebfce652eacefcfcb1f)), closes [#329](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/329)
+
+
+### Features
+
+* Add support to add 'Display name' to namespace during creation. ([4ac011e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4ac011eb466890d0d9186ad0294d17b6e8f699aa)), closes [#294](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/294)
+* Display namespace "display name" in namespace list and module provider page breadcrumbs. ([8406815](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8406815a47b393000ed53d74bac90bc4df9dbcb6)), closes [#294](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/294)
+
+## [2.54.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.54.0...v2.54.1) (2023-01-26)
+
+
+### Bug Fixes
+
+* Always show example cost to 2 decimal places ([9b73998](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9b739982defcd9e85bbb9aab87e11fa77d452634)), closes [#324](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/324)
+* Fix bug with resource cost calculations where each iteration of a module in a for_each will overwrite the previous cost. ([a258775](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a2587757a8f6dfe3bc47efad67882d07bfbf746b)), closes [#323](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/323)
+
+# [2.54.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.53.2...v2.54.0) (2023-01-23)
+
+
+### Bug Fixes
+
+* Update example usage to show pinned version for non-latest module versions ([c0b0a2f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c0b0a2f80cb99763cf89aae643156e82a18354aa)), closes [#301](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/301)
+
+
+### Features
+
+* Add comment above example file Terraform version string when using a beta/unpublished/non-latest version of a module ([51dde84](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/51dde844fd2ff3df4b38ae37b97eb1908e9c59f9)), closes [#317](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/317)
+* Update usage example to include Terraform comment above version if using a beta/unpublished/non-latest version ([8dc51b0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8dc51b0801f67a38aba7c792f4a6ba6803317a57)), closes [#317](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/317)
+
+## [2.53.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.53.1...v2.53.2) (2023-01-23)
+
+
+### Bug Fixes
+
+* Update links on module search results, module list and homepage module to direct to module provider page without a specific version ([9e2675d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9e2675d4f1e8bd996a149a6fb1e281bec7d3b676)), closes [#318](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/318)
+
 ## [2.53.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.53.0...v2.53.1) (2023-01-22)
 
 

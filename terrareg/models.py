@@ -18,7 +18,7 @@ import terrareg.config
 import terrareg.audit
 import terrareg.audit_action
 from terrareg.errors import (
-    InvalidModuleNameError, InvalidModuleProviderNameError, InvalidUserGroupNameError,
+    DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
     InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError, ReindexingExistingModuleVersionsIsProhibitedError,
     RepositoryUrlDoesNotContainValidSchemeError,
@@ -569,7 +569,7 @@ class Namespace(object):
             # If set to create and auto module-provider creation
             # is enabled in config, create the module provider
             if create and terrareg.config.Config().AUTO_CREATE_NAMESPACE:
-                cls.create(name=name)
+                cls.create(name=name, display_name=None)
 
                 return obj
 
@@ -580,10 +580,11 @@ class Namespace(object):
         return obj
 
     @classmethod
-    def create(cls, name):
+    def create(cls, name, display_name=None):
         """Create instance of object in database."""
         # Validate name
         cls._validate_name(name)
+        cls._validate_display_name(display_name)
 
         db = Database.get()
 
@@ -605,7 +606,8 @@ class Namespace(object):
 
         # Create namespace
         module_provider_insert = db.namespace.insert().values(
-            namespace=name
+            namespace=name,
+            display_name=display_name if display_name else None
         )
         with db.get_connection() as conn:
             conn.execute(module_provider_insert)
@@ -732,8 +734,29 @@ class Namespace(object):
     @staticmethod
     def _validate_name(name):
         """Validate name of namespace"""
-        if not re.match(r'^[0-9a-zA-Z][0-9a-zA-Z-_]+[0-9A-Za-z]$', name):
+        if name is None or not re.match(r'^[0-9a-zA-Z][0-9a-zA-Z-_]+[0-9A-Za-z]$', name):
             raise InvalidNamespaceNameError('Namespace name is invalid')
+
+    @staticmethod
+    def _validate_display_name(display_name):
+        """Determine if display name is valid"""
+        if not display_name:
+            return
+
+        if not re.match(r'^[A-Za-z0-9][0-9A-Za-z\s\-_]+[A-Za-z0-9]$', display_name):
+            raise InvalidNamespaceDisplayNameError('Namespace display name is invalid')
+
+        db = Database.get()
+        display_name_query = sqlalchemy.select(
+            db.namespace.c.namespace
+        ).select_from(
+            db.namespace
+        ).where(
+            db.namespace.c.display_name==display_name
+        )
+        with db.get_connection() as conn:
+            if conn.execute(display_name_query).fetchone():
+                raise DuplicateNamespaceDisplayNameError("A namespace already has this display name")
 
     @property
     def pk(self):
@@ -742,6 +765,11 @@ class Namespace(object):
         if not db_row:
             return None
         return db_row['id']
+
+    @property
+    def display_name(self):
+        """Return display name for namespace"""
+        return self._get_db_row()["display_name"]
 
     def __init__(self, name: str):
         """Validate name and store member variables"""
@@ -771,7 +799,8 @@ class Namespace(object):
         """Return custom terrareg details about namespace."""
         return {
             'is_auto_verified': self.is_auto_verified,
-            'trusted': self.trusted
+            'trusted': self.trusted,
+            'display_name': self.display_name
         }
 
     def get_all_modules(self):
@@ -947,14 +976,16 @@ class ModuleDetails:
 
         infracost = self.infracost
         resource_costs = {}
-        remove_item_iteration_re = re.compile('\[[^\]]+\]')
+        remove_item_iteration_re = re.compile(r'\[[^\]]+\]')
         if infracost:
             for resource in self.infracost["projects"][0]["breakdown"]["resources"]:
                 if not resource["monthlyCost"]:
                     continue
 
                 name = remove_item_iteration_re.sub("", resource["name"])
-                resource_costs[name] = round((float(resource["monthlyCost"]) * 12), 2)
+                if name not in resource_costs:
+                    resource_costs[name] = 0
+                resource_costs[name] += round((float(resource["monthlyCost"]) * 12), 2)
 
         module_var_output_local_re = re.compile(r'^(module\.[^\.]+\.)+(var|local|output)\.[^\.]+$')
         # Capture modules resources, such as:
@@ -2200,16 +2231,14 @@ class TerraformSpecsObject(object):
             if trailing_space_count < 2:
                 trailing_space_count = 2
 
-            return ('\n{leading_space}source{trailing_space}= "{server_hostname}/{module_provider_id}{sub_dir}"\n'
-                    '{leading_space}version{version_trailing_space}= "{version_string}"\n').format(
-                leading_space=match.group(1),
-                trailing_space=(' ' * trailing_space_count),
-                version_trailing_space=(' ' * (trailing_space_count - 1)),
-                server_hostname=server_hostname,
-                module_provider_id=self.module_version.module_provider.id,
-                sub_dir=module_path,
-                version_string=self.module_version.get_terraform_example_version_string()
-            )
+            leading_space = match.group(1)
+            trailing_space = (' ' * trailing_space_count)
+            version_trailing_space = (' ' * (trailing_space_count - 1))
+            version_string = self.module_version.get_terraform_example_version_string()
+
+            return (f'\n{leading_space}source{trailing_space}= "{server_hostname}/{self.module_version.module_provider.id}{module_path}"\n' +
+                    ''.join([f'{leading_space}# {comment}\n' for comment in self.module_version.get_terraform_example_version_comment()]) +
+                    f'{leading_space}version{version_trailing_space}= "{version_string}"\n')
 
         return re.sub(
             r'\n([ \t]*)source(\s+)=\s+"(\..*)"[ \t]*\n',
@@ -2453,6 +2482,11 @@ class ModuleVersion(TerraformSpecsObject):
         """Whether the extracted module version data is up-to-date"""
         return self._get_db_row()["extraction_version"] == EXTRACTION_VERSION
 
+    @property
+    def is_latest_version(self):
+        """Return whether the version is the latest version for the module provider"""
+        return self._module_provider.get_latest_version() == self
+
     def __init__(self, module_provider: ModuleProvider, version: str):
         """Setup member variables."""
         self._extracted_beta_flag = self._validate_version(version)
@@ -2460,6 +2494,12 @@ class ModuleVersion(TerraformSpecsObject):
         self._version = version
         self._cache_db_row = None
         super(ModuleVersion, self).__init__()
+
+    def __eq__(self, __o):
+        """Check if two module versions are the same"""
+        if isinstance(__o, self.__class__):
+            return self.pk == __o.pk
+        return super(ModuleVersion, self).__eq__(__o)
 
     def _get_db_row(self):
         """Get object from database"""
@@ -2479,7 +2519,7 @@ class ModuleVersion(TerraformSpecsObject):
     def get_terraform_example_version_string(self):
         """Return formatted string of version parameter for example Terraform."""
         # For beta versions, pass an exact version constraint.
-        if self.beta:
+        if self.beta or not self.is_latest_version:
             return self.version
 
         # Generate list of template values for formatting
@@ -2495,6 +2535,16 @@ class ModuleVersion(TerraformSpecsObject):
         return terrareg.config.Config().TERRAFORM_EXAMPLE_VERSION_TEMPLATE.format(
             **kwargs
         )
+
+    def get_terraform_example_version_comment(self):
+        """Get comment displayed above version string in Terraform, used for warning about specific versions."""
+        if not self.published:
+            return ["This version of this module has not yet been published,", "meaning that it cannot yet be used by Terraform"]
+        elif self.beta:
+            return ["This version of the module is a beta version.", "To use this version, it must be pinned in Terraform"]
+        elif not self.is_latest_version:
+            return ["This version of the module is not the latest version.", "To use this specific version, it must be pinned in Terraform"]
+        return []
 
     def get_view_url(self):
         """Return view URL"""
@@ -2724,6 +2774,7 @@ class ModuleVersion(TerraformSpecsObject):
             "published_at_display": self.publish_date_display,
             "display_source_url": source_browse_url if source_browse_url else self.get_source_base_url(),
             "terraform_example_version_string": self.get_terraform_example_version_string(),
+            "terraform_example_version_comment": self.get_terraform_example_version_comment(),
             "versions": versions,
             "beta": self.beta,
             "published": self.published,
@@ -3101,7 +3152,7 @@ class Example(BaseSubmodule):
         api_details = super(Example, self).get_terrareg_api_details()
         yearly_cost = self.module_details.infracost.get('totalMonthlyCost', None)
         if yearly_cost:
-            yearly_cost = round((float(yearly_cost) * 12), 2)
+            yearly_cost = "{:.2f}".format(round((float(yearly_cost) * 12), 2))
         api_details['cost_analysis'] = {
             'yearly_cost': yearly_cost
         }
