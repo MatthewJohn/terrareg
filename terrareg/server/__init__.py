@@ -4,6 +4,8 @@ from functools import wraps
 
 from flask import Flask, session, redirect
 from flask_restful import Api
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
 
 import terrareg.config
 import terrareg.database
@@ -87,6 +89,15 @@ class Server(BaseHandler):
 
     def __init__(self, ssl_public_key=None, ssl_private_key=None):
         """Create flask app and store member variables"""
+
+        if terrareg.config.Config().SENTRY_DSN:
+            sentry_sdk.init(
+                dsn=terrareg.config.Config().SENTRY_DSN,
+                integrations=[
+                    FlaskIntegration(),
+                ],
+                traces_sample_rate=terrareg.config.Config().SENTRY_TRACES_SAMPLE_RATE,
+            )
         self._app = Flask(
             __name__,
             static_folder=os.path.join('..', 'static'),

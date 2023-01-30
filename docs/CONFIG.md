@@ -695,6 +695,24 @@ Can be generated using: `python -c 'import secrets; print(secrets.token_hex())'`
 Default: ``
 
 
+### SENTRY_DSN
+
+DSN Integration URL for sentry
+
+Default: ``
+
+
+### SENTRY_TRACES_SAMPLE_RATE
+
+
+Sample rate for capturing traces in sentry.
+
+Must be a number between 0.0 and 1.0
+
+
+Default: `1.0`
+
+
 ### SSL_CERT_PRIVATE_KEY
 
 

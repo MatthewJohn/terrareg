@@ -82,13 +82,23 @@ class TestConfig:
         ('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', None),
         ('MODULE_LINKS', None),
         ('DEFAULT_TERRAFORM_VERSION', None),
-        ('TERRAFORM_ARCHIVE_MIRROR', None)
+        ('TERRAFORM_ARCHIVE_MIRROR', None),
+        ('SENTRY_DSN', None)
     ])
     def test_string_configs(self, config_name, override_expected_value):
         """Test string configs to ensure they are overriden with environment variables."""
         self.register_checked_config(config_name)
         with unittest.mock.patch('os.environ', {config_name: 'unittest-value'}):
             assert getattr(terrareg.config.Config(), config_name) == (override_expected_value if override_expected_value is not None else 'unittest-value')
+
+    @pytest.mark.parametrize('config_name, test_value, test_expected', [
+        ('SENTRY_TRACES_SAMPLE_RATE', '1.523', 1.523)
+    ])
+    def test_custom_string_configs(self, config_name, test_value, test_expected):
+        """Test string configs with custom values to ensure they are overriden with environment variables."""
+        self.register_checked_config(config_name)
+        with unittest.mock.patch('os.environ', {config_name: test_value}):
+            assert getattr(terrareg.config.Config(), config_name) == test_expected
 
     @pytest.mark.parametrize('config_name', [
         'ADMIN_SESSION_EXPIRY_MINS',

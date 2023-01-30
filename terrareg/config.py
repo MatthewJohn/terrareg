@@ -702,6 +702,20 @@ class Config:
         """
         return self.convert_boolean(os.environ.get("MANAGE_TERRAFORM_RC_FILE", "False"))
 
+    @property
+    def SENTRY_DSN(self):
+        """DSN Integration URL for sentry"""
+        return os.environ.get("SENTRY_DSN", "")
+
+    @property
+    def SENTRY_TRACES_SAMPLE_RATE(self):
+        """
+        Sample rate for capturing traces in sentry.
+
+        Must be a number between 0.0 and 1.0
+        """
+        return float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "1.0"))
+
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""
         if string.lower() in ['true', 'yes', '1']:
