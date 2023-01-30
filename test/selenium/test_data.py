@@ -154,6 +154,30 @@ integration_test_data = {
                 'versions': {
                     '1.0.0': {'published': True}
                 }
+            },
+            'consul': {
+                'id': 79,
+                'versions': {
+                    '1.0.0': {'published': True}
+                }
+            },
+            'nomad': {
+                'id': 80,
+                'versions': {
+                    '1.0.0': {'published': True}
+                }
+            },
+            'vagrant': {
+                'id': 81,
+                'versions': {
+                    '1.0.0': {'published': True}
+                }
+            },
+            'vault': {
+                'id': 82,
+                'versions': {
+                    '1.0.0': {'published': True}
+                }
             }
         }
     },
