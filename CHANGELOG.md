@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.57.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.56.0...v2.57.0) (2023-01-31)
+
+
+### Features
+
+* Add sentry integration. ([6ea7e82](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6ea7e825b25d23815411723bd7a6a209b8916b0a)), closes [#205](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/205)
+
 # [2.56.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.55.0...v2.56.0) (2023-01-30)
 
 
