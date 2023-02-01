@@ -157,8 +157,9 @@ For full license, see [LICENSE](LICENSE)
 # Contributors
 
  * Matt Comben <matthew@dockstudios.co.uk>
+ * Michael Holt <mike@holtit.com>
 
 ## Special thanks
 
- *  David Soff <david@soff.nl> for implementing Github hook support
+ * David Soff <david@soff.nl> for implementing Github hook support
 
