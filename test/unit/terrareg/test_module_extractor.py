@@ -272,13 +272,13 @@ class TestGitModuleExtractor(TerraregUnitTest):
                 cwd='/tmp/mock-patch/to/module'
             )
 
-    @pytest.mark.parametrize("domain_name,manage_terraform_rc_file,should_create_file", [
-        ("", False, False),
-        ("", True, False),
-        ("unittest-example-domain.com", False, False),
-        ("unittest-example-domain.com", True, True)
+    @pytest.mark.parametrize("domain_name,manage_terraform_rc_file,should_create_file,should_contain_credentials_block", [
+        ("", False, False, False),
+        ("", True, True, False),
+        ("unittest-example-domain.com", False, False, False),
+        ("unittest-example-domain.com", True, True, True)
     ])
-    def test_create_terraform_rc_file(self, domain_name, manage_terraform_rc_file, should_create_file):
+    def test_create_terraform_rc_file(self, domain_name, manage_terraform_rc_file, should_create_file, should_contain_credentials_block):
         """Test terraform RC file"""
         # Create temporary file and remove
         temp_file = tempfile.mktemp()
@@ -294,10 +294,24 @@ class TestGitModuleExtractor(TerraregUnitTest):
             if should_create_file:
                 assert os.path.isfile(temp_file)
                 with open(temp_file, "r") as temp_file_fh:
-                    assert "".join(temp_file_fh.readlines()) == f"""
+                    if should_contain_credentials_block:
+                        assert "".join(temp_file_fh.readlines()) == f"""
+# Cache plugins
+plugin_cache_dir   = "$HOME/.terraform.d/plugin-cache"
+disable_checkpoint = true
+
+
 credentials "unittest-example-domain.com" {{
   token = "internal-terrareg-analytics-token"
 }}
+"""
+
+                    else:
+                        assert "".join(temp_file_fh.readlines()) == f"""
+# Cache plugins
+plugin_cache_dir   = "$HOME/.terraform.d/plugin-cache"
+disable_checkpoint = true
+
 """
 
             else:
