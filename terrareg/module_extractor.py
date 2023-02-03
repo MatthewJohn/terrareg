@@ -159,13 +159,22 @@ class ModuleExtractor:
         """Create terraform RC file, if enabled"""
         # Create .terraformrc file, if configured to do so
         config = Config()
-        if config.MANAGE_TERRAFORM_RC_FILE and config.DOMAIN_NAME:
-            with open(self.terraform_rc_file, "w") as terraform_rc_fh:
-                terraform_rc_fh.write(f"""
+        if config.MANAGE_TERRAFORM_RC_FILE:
+            terraform_rc_file_content = """
+# Cache plugins
+plugin_cache_dir   = "$HOME/.terraform.d/plugin-cache"
+disable_checkpoint = true
+
+"""
+
+            if config.DOMAIN_NAME:
+                terraform_rc_file_content += f"""
 credentials "{config.DOMAIN_NAME}" {{
   token = "{config.INTERNAL_EXTRACTION_ANALYITCS_TOKEN}"
 }}
-""")
+"""
+            with open(self.terraform_rc_file, "w") as terraform_rc_fh:
+                terraform_rc_fh.write(terraform_rc_file_content)
 
     def _run_tf_init(self, module_path):
         """Perform terraform init"""
