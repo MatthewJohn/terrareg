@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.58.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.57.0...v2.58.0) (2023-02-14)
+
+
+### Features
+
+* Add caching of terraform providers in terrareg container. ([bf050d7](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/bf050d74f79cbd36aaeedae3a934f59318af1180)), closes [#316](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/316)
+
 # [2.57.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.56.0...v2.57.0) (2023-01-31)
 
 
