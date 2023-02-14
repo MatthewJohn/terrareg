@@ -11,3 +11,4 @@ mysql.env
 terrareg.env
 .env
 certs/*
+.idea

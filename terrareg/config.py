@@ -78,7 +78,7 @@ class Config:
         """
         Port for server to listen on.
         """
-        return int(os.environ.get('LISTEN_PORT', 5000))
+        return int(os.environ.get('LISTEN_PORT', 5001))
 
     @property
     def SSL_CERT_PRIVATE_KEY(self):

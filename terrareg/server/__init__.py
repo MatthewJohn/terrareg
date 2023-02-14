@@ -488,6 +488,15 @@ class Server(BaseHandler):
             ApiTerraregHealth,
             '/v1/terrareg/health'
         )
+        self._api.add_resource(
+            ApiProviderList,
+            '/v1/providers/<string:namespace>/<string:provider_type>/versions'
+        ),
+        self._api.add_resource(
+            ApiProviderFindPackage,
+            '/v1/providers/<string:namespace>/<string:provider_type>/<string:version>/download/<string:os>/<string:arch>'
+        ),
+
 
     def run(self, debug=None):
         """Run flask server."""
