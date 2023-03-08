@@ -2,7 +2,7 @@
 import hashlib
 import os
 
-from flask import render_template, session
+from flask import render_template, session, request
 
 import terrareg.csrf
 import terrareg.config
@@ -11,6 +11,17 @@ import terrareg.models
 
 class BaseHandler:
     """Provide base methods for handling requests and serving pages."""
+
+    def _get_theme_path(self):
+        """Return CSS path for theme based on theme cookie"""
+        theme = request.cookies.get("theme", "default")
+        theme_url = '/static/css/bulma/'
+        if theme in ["lux", "pulse"]:
+            theme_url += f'{theme}/bulmaswatch.min.css'
+        else:
+            theme_url += 'bulma-0.9.3.min.css'
+
+        return theme_url
 
     def _render_template(self, *args, **kwargs):
         """Override render_template, passing in base variables."""
@@ -22,7 +33,8 @@ class BaseHandler:
             TRUSTED_NAMESPACE_LABEL=terrareg.config.Config().TRUSTED_NAMESPACE_LABEL,
             CONTRIBUTED_NAMESPACE_LABEL=terrareg.config.Config().CONTRIBUTED_NAMESPACE_LABEL,
             VERIFIED_MODULE_LABEL=terrareg.config.Config().VERIFIED_MODULE_LABEL,
-            csrf_token=terrareg.csrf.get_csrf_token()
+            csrf_token=terrareg.csrf.get_csrf_token(),
+            theme_path=self._get_theme_path()
         )
 
     def _module_provider_404(self, namespace: terrareg.models.Namespace,

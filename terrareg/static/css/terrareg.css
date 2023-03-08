@@ -32,3 +32,7 @@ table.dataTable .select {
     padding-top: 10px;
     padding-bottom: 10px;
 }
+
+.input,.select select,.textarea{
+    color: black;
+}
