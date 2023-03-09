@@ -740,7 +740,7 @@ class Namespace(object):
             raise InvalidNamespaceNameError(
                 'Namespace name is invalid - '
                 'it can only contain alpha-numeric characters, '
-                'dashes and underscores, and must start/end with '
+                'hyphens and underscores, and must start/end with '
                 'an alphanumeric character. '
                 'Sequential underscores are not allowed.'
             )
