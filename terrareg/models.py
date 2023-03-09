@@ -781,7 +781,6 @@ class Namespace(object):
 
     def __init__(self, name: str):
         """Validate name and store member variables"""
-        self._validate_name(name)
         self._name = name
         self._cache_db_row = None
 
