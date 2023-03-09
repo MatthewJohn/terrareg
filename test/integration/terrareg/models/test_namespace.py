@@ -19,7 +19,8 @@ class TestNamespace(TerraregIntegrationTest):
         'endwithunscore_',
         'a:colon',
         'or;semicolon',
-        'who?knows'
+        'who?knows',
+        'contains__doubleunderscore'
     ])
     def test_invalid_namespace_names(self, namespace_name):
         """Test invalid namespace names"""
