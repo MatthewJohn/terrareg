@@ -735,7 +735,12 @@ class Namespace(object):
     def _validate_name(name):
         """Validate name of namespace"""
         if name is None or not re.match(r'^[0-9a-zA-Z][0-9a-zA-Z-_]+[0-9A-Za-z]$', name):
-            raise InvalidNamespaceNameError('Namespace name is invalid')
+            raise InvalidNamespaceNameError(
+                'Namespace name is invalid - '
+                'it can only contain alpha-numeric characters, '
+                'dashes and underscores, and must start/end with '
+                'an alphanumeric character. '
+            )
 
     @staticmethod
     def _validate_display_name(display_name):
