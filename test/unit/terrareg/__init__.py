@@ -351,25 +351,15 @@ def mock_module_provider(request):
 def mock_namespace(request):
 
     @classmethod
-    def create(cls, name, display_name):
+    def insert_into_database(cls, name, display_name):
         """Create namespace"""
         global TEST_MODULE_DATA
-        if cls.get(name):
-            raise NamespaceAlreadyExistsError("A namespace already exists with this name")
-
-        if cls.get_by_display_name(display_name):
-            raise DuplicateNamespaceDisplayNameError("A namespace already has this display name")
-
-        cls._validate_name(name)
-        cls._validate_display_name(display_name)
-
         TEST_MODULE_DATA[name] = {
             'id': len(TEST_MODULE_DATA) + 1,
             'display_name': display_name,
             'modules': {}
         }
-        return cls(name)
-    mock_method(request, 'terrareg.models.Namespace.create', create)
+    mock_method(request, 'terrareg.models.Namespace.insert_into_database', insert_into_database)
 
     @classmethod
     def get(cls, name, create=False):
@@ -381,6 +371,14 @@ def mock_namespace(request):
         else:
             return None
     mock_method(request, 'terrareg.models.Namespace.get', get)
+
+    @classmethod
+    def get_by_case_insensitive_name(cls, name):
+        global TEST_MODULE_DATA
+        if name in TEST_MODULE_DATA:
+            return cls(name)
+        return None
+    mock_method(request, 'terrareg.models.Namespace.get_by_case_insensitive_name', get_by_case_insensitive_name)
 
     @classmethod
     def get_by_display_name(cls, display_name):

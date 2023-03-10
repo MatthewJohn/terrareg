@@ -603,16 +603,11 @@ class Namespace(object):
         return None
 
     @classmethod
-    def create(cls, name, display_name=None):
-        """Create instance of object in database."""
-        # Validate name
-        cls._validate_name(name)
-        cls._validate_display_name(display_name)
-
+    def get_by_case_insensitive_name(cls, name):
+        """Get namespace by case-insensitive name match."""
         db = Database.get()
 
-        # Ensure namespace doesn't already exist
-        pre_existing_select = sqlalchemy.select(
+        select = sqlalchemy.select(
             db.namespace
         ).select_from(
             db.namespace
@@ -622,21 +617,38 @@ class Namespace(object):
             db.namespace.c.namespace.like(name)
         )
         with db.get_connection() as conn:
-            pre_existing = conn.execute(pre_existing_select)
+            res = conn.execute(select).fetchone()
 
-            if pre_existing.fetchone():
-                raise NamespaceAlreadyExistsError("A namespace already exists with this name")
+            if res:
+                return cls.get(res.namespace)
+        return None
 
-        if cls.get_by_display_name(display_name):
-            raise DuplicateNamespaceDisplayNameError("A namespace already has this display name")
-
-        # Create namespace
+    @classmethod
+    def insert_into_database(cls, name, display_name):
+        """Insert new namespace into database"""
+        db = Database.get()
         module_provider_insert = db.namespace.insert().values(
             namespace=name,
             display_name=display_name if display_name else None
         )
         with db.get_connection() as conn:
             conn.execute(module_provider_insert)
+
+    @classmethod
+    def create(cls, name, display_name=None):
+        """Create instance of object in database."""
+        # Validate name
+        cls._validate_name(name)
+        cls._validate_display_name(display_name)
+
+        if cls.get_by_case_insensitive_name(name):
+            raise NamespaceAlreadyExistsError("A namespace already exists with this name")
+
+        if cls.get_by_display_name(display_name):
+            raise DuplicateNamespaceDisplayNameError("A namespace already has this display name")
+
+        # Create namespace
+        cls.insert_into_database(name=name, display_name=display_name)
 
         obj = cls(name=name)
 
