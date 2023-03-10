@@ -86,7 +86,7 @@ class TestNamespace(TerraregIntegrationTest):
         original = Namespace.create(name="test-duplicate", display_name="Test Duplicate")
         try:
             with pytest.raises(terrareg.errors.DuplicateNamespaceDisplayNameError):
-                Namespace._validate_display_name("Test Duplicate")
+                Namespace.create(name="is-not-duplicate", display_name="Test Duplicate")
 
         finally:
             db = Database.get()
