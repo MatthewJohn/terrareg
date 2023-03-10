@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.59.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.58.1...v2.59.0) (2023-03-10)
+
+
+### Features
+
+* Allow 'latest' in URLs instead of a specific version number. ([c347b03](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c347b03ac72ac91ee8dfdd7fe28b711724fa9581)), closes [#333](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/333)
+
 ## [2.58.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.58.0...v2.58.1) (2023-03-09)
 
 
