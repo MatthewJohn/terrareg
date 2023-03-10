@@ -580,6 +580,29 @@ class Namespace(object):
         return obj
 
     @classmethod
+    def get_by_display_name(cls, display_name):
+        """Create object and ensure the object exists."""
+        if not display_name:
+            return None
+
+        db = Database.get()
+        display_name_query = sqlalchemy.select(
+            db.namespace.c.namespace
+        ).select_from(
+            db.namespace
+        ).where(
+            # Use a like to use case-insentive
+            # match for pre-existing namespaces
+            db.namespace.c.display_name.like(display_name)
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(display_name_query).fetchone()
+            if res:
+                return cls.get(res.namespace)
+
+        return None
+
+    @classmethod
     def create(cls, name, display_name=None):
         """Create instance of object in database."""
         # Validate name
@@ -602,7 +625,10 @@ class Namespace(object):
             pre_existing = conn.execute(pre_existing_select)
 
             if pre_existing.fetchone():
-                raise NamespaceAlreadyExistsError('A namespace already exists with this name')
+                raise NamespaceAlreadyExistsError("A namespace already exists with this name")
+
+        if cls.get_by_display_name(display_name):
+            raise DuplicateNamespaceDisplayNameError("A namespace already has this display name")
 
         # Create namespace
         module_provider_insert = db.namespace.insert().values(
@@ -745,18 +771,6 @@ class Namespace(object):
 
         if not re.match(r'^[A-Za-z0-9][0-9A-Za-z\s\-_]+[A-Za-z0-9]$', display_name):
             raise InvalidNamespaceDisplayNameError('Namespace display name is invalid')
-
-        db = Database.get()
-        display_name_query = sqlalchemy.select(
-            db.namespace.c.namespace
-        ).select_from(
-            db.namespace
-        ).where(
-            db.namespace.c.display_name==display_name
-        )
-        with db.get_connection() as conn:
-            if conn.execute(display_name_query).fetchone():
-                raise DuplicateNamespaceDisplayNameError("A namespace already has this display name")
 
     @property
     def pk(self):

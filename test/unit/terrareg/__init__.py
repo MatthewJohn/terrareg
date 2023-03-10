@@ -8,7 +8,7 @@ import unittest.mock
 import pytest
 
 from terrareg.database import Database
-from terrareg.errors import NamespaceAlreadyExistsError
+from terrareg.errors import DuplicateNamespaceDisplayNameError, NamespaceAlreadyExistsError
 import terrareg.models
 from terrareg.server import Server
 import terrareg.config
@@ -354,8 +354,15 @@ def mock_namespace(request):
     def create(cls, name, display_name):
         """Create namespace"""
         global TEST_MODULE_DATA
-        if name in TEST_MODULE_DATA:
-            raise NamespaceAlreadyExistsError('Unittest namespace already exists')
+        if cls.get(name):
+            raise NamespaceAlreadyExistsError("A namespace already exists with this name")
+
+        if cls.get_by_display_name(display_name):
+            raise DuplicateNamespaceDisplayNameError("A namespace already has this display name")
+
+        cls._validate_name(name)
+        cls._validate_display_name(display_name)
+
         TEST_MODULE_DATA[name] = {
             'id': len(TEST_MODULE_DATA) + 1,
             'display_name': display_name,
@@ -374,6 +381,17 @@ def mock_namespace(request):
         else:
             return None
     mock_method(request, 'terrareg.models.Namespace.get', get)
+
+    @classmethod
+    def get_by_display_name(cls, display_name):
+        global TEST_MODULE_DATA
+        if not display_name:
+            return None
+        for namespace_name in TEST_MODULE_DATA:
+            if TEST_MODULE_DATA[namespace_name].get('display_name') == display_name:
+                return cls(namespace_name)
+        return None
+    mock_method(request, 'terrareg.models.Namespace.get_by_display_name', get_by_display_name)
 
     def _get_db_row(self):
         return {

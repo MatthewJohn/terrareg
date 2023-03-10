@@ -6,6 +6,14 @@ import terrareg.errors
 import terrareg.models
 
 
+def api_error(msg):
+    """Return API error message"""
+    return {
+        "status": "Error",
+        "message": msg
+    }
+
+
 class ErrorCatchingResource(Resource, BaseHandler):
     """Provide resource that catches terrareg errors."""
 

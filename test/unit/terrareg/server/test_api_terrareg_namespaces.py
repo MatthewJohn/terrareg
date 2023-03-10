@@ -42,8 +42,8 @@ class TestApiTerraregNamespaces(TerraregUnitTest):
                     'csrf_token': 'unittestcsrf'
                 }
             )
-            assert res.json == {'message': 'Unittest namespace already exists', 'status': 'Error'}
-            assert res.status_code == 500
+            assert res.json == {'message': 'A namespace already exists with this name', 'status': 'Error'}
+            assert res.status_code == 400
 
             # Ensure required checks are called
             mock_check_csrf.assert_called_once_with('unittestcsrf')
@@ -96,7 +96,32 @@ class TestApiTerraregNamespaces(TerraregUnitTest):
                 'message': 'Namespace name is invalid',
                 'status': 'Error'
             }
-            assert res.status_code == 500
+            assert res.status_code == 400
+
+            # Ensure required checks are called
+            mock_check_csrf.assert_called_once_with('unittestcsrf')
+
+    @setup_test_data()
+    def test_create_with_duplicate_display_name(self, app_context, test_request_context, mock_models, client):
+        """Test update of repository URL with invalid protocol."""
+        mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf:
+
+            res = client.post(
+                '/v1/terrareg/namespaces',
+                json={
+                    'csrf_token': 'unittestcsrf',
+                    'name': 'uniquename',
+                    'display_name': 'Smaller Namespace List'
+                }
+            )
+            assert res.json == {
+                'message': 'A namespace already has this display name',
+                'status': 'Error'
+            }
+            assert res.status_code == 400
 
             # Ensure required checks are called
             mock_check_csrf.assert_called_once_with('unittestcsrf')
