@@ -291,6 +291,49 @@ class TestModuleProvider(SeleniumTest):
             self.assert_equals(lambda: cost_label.is_displayed(), True)
             assert cost_label.text == f'${cost}/yr'
 
+    @pytest.mark.parametrize('base_url, drop_down_type, drop_down_text, expected_url, expected_version_string, expected_submodule_title, expected_module_title, expected_provider', [
+        # Test sub-module
+        ('/modules/moduledetails/fullypopulated/testprovider',
+         'submodule-select', 'modules/example-submodule1',
+         '/modules/moduledetails/fullypopulated/testprovider/1.5.0/submodule/modules/example-submodule1',
+         'Version: 1.5.0', 'Submodule: modules/example-submodule1',
+         'fullypopulated', 'Provider: testprovider'),
+        # Test example
+        ('/modules/moduledetails/fullypopulated/testprovider',
+         'example-select', 'examples/test-example',
+         '/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example',
+         'Version: 1.5.0', 'Example: examples/test-example',
+         'fullypopulated', 'Provider: testprovider'),
+        # Test submodule using 'latest'
+        ('/modules/moduledetails/fullypopulated/testprovider/latest/submodule/modules/example-submodule1',
+         None, None,
+         '/modules/moduledetails/fullypopulated/testprovider/latest/submodule/modules/example-submodule1',
+         'Version: 1.5.0', 'Submodule: modules/example-submodule1',
+         'fullypopulated', 'Provider: testprovider'),
+        # Test example using 'latest
+        ('/modules/moduledetails/fullypopulated/testprovider/latest/example/examples/test-example',
+         None, None,
+         '/modules/moduledetails/fullypopulated/testprovider/latest/example/examples/test-example',
+         'Version: 1.5.0', 'Example: examples/test-example',
+         'fullypopulated', 'Provider: testprovider'),
+    ])
+    def test_submodule_example_basic_details(self, base_url, drop_down_type, drop_down_text, expected_url, expected_version_string, expected_submodule_title, expected_module_title, expected_provider):
+        """Test basic details shown on submodule/example page."""
+        self.selenium_instance.get(self.get_url(base_url))
+
+        # If a drop-down type/value is provided, select from the dropdown
+        if drop_down_type:
+            # Select from dropdown
+            select = Select(self.wait_for_element(By.ID, drop_down_type))
+            select.select_by_visible_text(drop_down_text)
+
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url(expected_url))
+
+        # Check title, version, module title, provider
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'version-text').text, expected_version_string)
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'current-submodule').text, expected_submodule_title)
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'module-title').text, expected_module_title)
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'module-provider').text, expected_provider)
 
     @pytest.mark.parametrize('url,git_provider_id,module_provider_browse_url_template,module_provider_base_url_template,module_version_browse_url_template,module_version_base_url_template,allow_custom_git_urls_module_provider,allow_custom_git_urls_module_version,expected_source', [
         # Test with all URLs configured and all custom URLs allowed
@@ -1318,6 +1361,8 @@ class TestModuleProvider(SeleniumTest):
     @pytest.mark.parametrize('current_version,expected_versions,expected_selected_version', [
         # On root page without version
         (None, ['1.5.0 (latest)', '1.2.0'], '1.5.0 (latest)'),
+        # With 'latest' in URL
+        ('latest', ['1.5.0 (latest)', '1.2.0'], '1.5.0 (latest)'),
         # On latest version
         ('1.5.0', ['1.5.0 (latest)', '1.2.0'], '1.5.0 (latest)'),
         # On previous version

@@ -1371,7 +1371,7 @@ function getCurrentObjectId(data, stopAt = undefined) {
         return id;
     }
 
-    if (!data.version) {
+    if (!data.version || data.version == 'latest') {
         return id;
     }
     id += `/${data.version}`;

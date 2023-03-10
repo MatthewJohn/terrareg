@@ -675,7 +675,7 @@ class Server(BaseHandler):
                 module=module,
                 module_provider_name=provider)
 
-        if version is None:
+        if version is None or version == 'latest':
             module_version = module_provider.get_latest_version()
 
         else:
@@ -703,7 +703,10 @@ class Server(BaseHandler):
                 module=name,
                 module_provider_name=provider)
 
-        module_version = terrareg.models.ModuleVersion.get(module_provider=module_provider, version=version)
+        if version == 'latest':
+            module_version = module_provider.get_latest_version()
+        else:
+            module_version = terrareg.models.ModuleVersion.get(module_provider=module_provider, version=version)
 
         if module_version is None:
             return redirect(module_provider.get_view_url())
@@ -727,7 +730,10 @@ class Server(BaseHandler):
                 module=name,
                 module_provider_name=provider)
 
-        module_version = terrareg.models.ModuleVersion.get(module_provider=module_provider, version=version)
+        if version == 'latest':
+            module_version = module_provider.get_latest_version()
+        else:
+            module_version = terrareg.models.ModuleVersion.get(module_provider=module_provider, version=version)
 
         if module_version is None:
             return redirect(module_provider.get_view_url())
