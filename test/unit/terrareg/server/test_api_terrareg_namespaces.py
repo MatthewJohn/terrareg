@@ -102,7 +102,10 @@ class TestApiTerraregNamespaces(TerraregUnitTest):
                 }
             )
             assert res.json == {
-                'message': 'Namespace name is invalid',
+                'message': ('Namespace name is invalid - '
+                           'it can only contain alpha-numeric characters, hyphens and underscores, '
+                           'and must start/end with an alphanumeric character. '
+                           'Sequential underscores are not allowed.'),
                 'status': 'Error'
             }
             assert res.status_code == 400
