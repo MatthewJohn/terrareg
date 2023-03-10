@@ -1318,6 +1318,8 @@ class TestModuleProvider(SeleniumTest):
     @pytest.mark.parametrize('current_version,expected_versions,expected_selected_version', [
         # On root page without version
         (None, ['1.5.0 (latest)', '1.2.0'], '1.5.0 (latest)'),
+        # With 'latest' in URL
+        ('latest', ['1.5.0 (latest)', '1.2.0'], '1.5.0 (latest)'),
         # On latest version
         ('1.5.0', ['1.5.0 (latest)', '1.2.0'], '1.5.0 (latest)'),
         # On previous version
