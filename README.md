@@ -56,7 +56,9 @@ For information about running with docker-compose, SSL certificate generation or
 
 * Goto http://localhost:5000
 * Login, using the button in the top-right hand corner
-* Goto Modules -> Create (http://localhost:5000/create-module)
+* Goto 'Create' -> 'Namespace' (http://localhost:5000/create-namespace)
+  * Provide a name for the namespace and create.
+* Goto 'Create' -> 'Modules' (http://localhost:5000/create-module)
 * Fill in the details for your module and 'Create'
 * Use the 'Manually index version' form of your module, filling out the verison and select 'Publish' and then press 'Index Version'
 

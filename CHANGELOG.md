@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.58.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.58.0...v2.58.1) (2023-03-09)
+
+
+### Bug Fixes
+
+* Fix text color of text inputs in pulse theme ([81f3982](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/81f398218463e022227fcf312d70830c6cd80fef)), closes [#336](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/336)
+* Speed up page load and reduce content shift by rendering theme CSS path server-side ([6c96faf](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6c96faff745bb1078bddc1961378110fe34d63d7)), closes [#336](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/336)
+
 # [2.58.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.57.0...v2.58.0) (2023-02-14)
 
 

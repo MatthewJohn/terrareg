@@ -9,6 +9,7 @@ from test.unit.terrareg import (
     setup_test_data, TerraregUnitTest
 )
 import terrareg.models
+from terrareg.audit_action import AuditAction
 from terrareg.auth import UserGroupNamespacePermissionType
 from test import client, app_context, test_request_context
 
@@ -32,6 +33,7 @@ class TestApiTerraregNamespaces(TerraregUnitTest):
         """Test update of repository URL."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]), \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf:
 
             res = client.post(
@@ -42,11 +44,12 @@ class TestApiTerraregNamespaces(TerraregUnitTest):
                     'csrf_token': 'unittestcsrf'
                 }
             )
-            assert res.json == {'message': 'Unittest namespace already exists', 'status': 'Error'}
-            assert res.status_code == 500
+            assert res.json == {'message': 'A namespace already exists with this name', 'status': 'Error'}
+            assert res.status_code == 400
 
             # Ensure required checks are called
             mock_check_csrf.assert_called_once_with('unittestcsrf')
+            mock_create_audit_event.assert_not_called()
 
     @setup_test_data()
     def test_create_without_display_name(
@@ -56,6 +59,7 @@ class TestApiTerraregNamespaces(TerraregUnitTest):
         """Test update of repository URL."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]), \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf:
 
             res = client.post(
@@ -75,6 +79,10 @@ class TestApiTerraregNamespaces(TerraregUnitTest):
             # Ensure required checks are called
             mock_check_csrf.assert_called_once_with('unittestcsrf')
 
+            mock_create_audit_event.assert_called_once_with(
+                action=AuditAction.NAMESPACE_CREATE, object_type='Namespace',
+                object_id='missing-display-name', old_value=None, new_value=None)
+
             ns = terrareg.models.Namespace(name='missing-display-name')
             assert ns._get_db_row() is not None
 
@@ -84,6 +92,7 @@ class TestApiTerraregNamespaces(TerraregUnitTest):
         mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf:
 
             res = client.post(
@@ -96,10 +105,38 @@ class TestApiTerraregNamespaces(TerraregUnitTest):
                 'message': 'Namespace name is invalid',
                 'status': 'Error'
             }
-            assert res.status_code == 500
+            assert res.status_code == 400
 
             # Ensure required checks are called
             mock_check_csrf.assert_called_once_with('unittestcsrf')
+            mock_create_audit_event.assert_not_called()
+
+    @setup_test_data()
+    def test_create_with_duplicate_display_name(self, app_context, test_request_context, mock_models, client):
+        """Test update of repository URL with invalid protocol."""
+        mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf:
+
+            res = client.post(
+                '/v1/terrareg/namespaces',
+                json={
+                    'csrf_token': 'unittestcsrf',
+                    'name': 'uniquename',
+                    'display_name': 'Smaller Namespace List'
+                }
+            )
+            assert res.json == {
+                'message': 'A namespace already has this display name',
+                'status': 'Error'
+            }
+            assert res.status_code == 400
+
+            # Ensure required checks are called
+            mock_check_csrf.assert_called_once_with('unittestcsrf')
+            mock_create_audit_event.assert_not_called()
 
     @setup_test_data()
     def test_create_namespace_without_permission(self, app_context, test_request_context, mock_models, client):
