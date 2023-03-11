@@ -1,7 +1,11 @@
 
 from flask import request
 
-from terrareg.server.error_catching_resource import ErrorCatchingResource
+from terrareg.server.error_catching_resource import ErrorCatchingResource, api_error
+from terrareg.errors import (
+    DuplicateNamespaceDisplayNameError, NamespaceAlreadyExistsError,
+    InvalidNamespaceNameError, InvalidNamespaceDisplayNameError
+)
 import terrareg.auth_wrapper
 import terrareg.models
 import terrareg.csrf
@@ -35,9 +39,13 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
 
         terrareg.csrf.check_csrf_token(csrf_token)
 
-        namespace = terrareg.models.Namespace.create(
-            name=namespace_name,
-            display_name=display_name)
+        try:
+            namespace = terrareg.models.Namespace.create(
+                name=namespace_name,
+                display_name=display_name)
+        except (InvalidNamespaceNameError, NamespaceAlreadyExistsError,
+                InvalidNamespaceDisplayNameError, DuplicateNamespaceDisplayNameError) as exc:
+            return api_error(str(exc)), 400
 
         return {
             "name": namespace.name,
