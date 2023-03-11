@@ -491,10 +491,10 @@ class Database():
         return Transaction(conn)
 
     @classmethod
-    def get_connection(cls):
+    def get_connection(cls, ignore_transaction=False):
         """Get connection, checking for transaction and returning it."""
         current_transaction = cls.get_current_transaction()
-        if current_transaction is not None:
+        if current_transaction is not None and not ignore_transaction:
             # Wrap current transaction in fake 'with' wrapper,
             # to handle 'with get_connection():'
             return TransactionConnectionWrapper(current_transaction)
