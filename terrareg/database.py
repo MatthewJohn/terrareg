@@ -5,8 +5,9 @@ import sqlalchemy.dialects.mysql
 
 from flask import has_request_context
 import flask
-from terrareg.audit_action import AuditAction
 
+from terrareg.audit_action import AuditAction
+from terrareg.module_extraction_status_type import ModuleExtractionStatusType
 import terrareg.config
 from terrareg.errors import DatabaseMustBeIniistalisedError
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
@@ -58,6 +59,7 @@ class Database():
         self._analytics = None
         self._example_file = None
         self._module_version_file = None
+        self._module_extraction_status = None
         self.transaction_connection = None
 
     @property
@@ -150,6 +152,13 @@ class Database():
         if self._audit_history is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._audit_history
+
+    @property
+    def module_extraction_status(self):
+        """Audit history table."""
+        if self._module_extraction_status is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._module_extraction_status
 
     @classmethod
     def reset(cls):
@@ -388,6 +397,24 @@ class Database():
             ),
             sqlalchemy.Column('path', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
             sqlalchemy.Column('content', Database.medium_blob())
+        )
+
+        self._module_extraction_status = sqlalchemy.Table(
+            'module_extraction_status', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column(
+                'module_version_id',
+                sqlalchemy.ForeignKey(
+                    'module_version.id',
+                    name='fk_module_extraction_status_module_version_id_module_version_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            ),
+            sqlalchemy.Column('timestamp', sqlalchemy.DateTime),
+            sqlalchemy.Column('last_update', sqlalchemy.DateTime),
+            sqlalchemy.Column('status', sqlalchemy.Enum(ModuleExtractionStatusType)),
+            sqlalchemy.Column('message', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
         )
 
         # Additional files for module provider (e.g. additional README files)
