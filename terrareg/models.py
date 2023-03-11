@@ -580,16 +580,34 @@ class Namespace(object):
         return obj
 
     @classmethod
-    def create(cls, name, display_name=None):
-        """Create instance of object in database."""
-        # Validate name
-        cls._validate_name(name)
-        cls._validate_display_name(display_name)
+    def get_by_display_name(cls, display_name):
+        """Create object and ensure the object exists."""
+        if not display_name:
+            return None
 
         db = Database.get()
+        display_name_query = sqlalchemy.select(
+            db.namespace.c.namespace
+        ).select_from(
+            db.namespace
+        ).where(
+            # Use a like to use case-insentive
+            # match for pre-existing namespaces
+            db.namespace.c.display_name.like(display_name)
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(display_name_query).fetchone()
+            if res:
+                return cls.get(res.namespace)
 
-        # Ensure namespace doesn't already exist
-        pre_existing_select = sqlalchemy.select(
+        return None
+
+    @classmethod
+    def get_by_case_insensitive_name(cls, name):
+        """Get namespace by case-insensitive name match."""
+        db = Database.get()
+
+        select = sqlalchemy.select(
             db.namespace
         ).select_from(
             db.namespace
@@ -599,18 +617,38 @@ class Namespace(object):
             db.namespace.c.namespace.like(name)
         )
         with db.get_connection() as conn:
-            pre_existing = conn.execute(pre_existing_select)
+            res = conn.execute(select).fetchone()
 
-            if pre_existing.fetchone():
-                raise NamespaceAlreadyExistsError('A namespace already exists with this name')
+            if res:
+                return cls.get(res.namespace)
+        return None
 
-        # Create namespace
+    @classmethod
+    def insert_into_database(cls, name, display_name):
+        """Insert new namespace into database"""
+        db = Database.get()
         module_provider_insert = db.namespace.insert().values(
             namespace=name,
             display_name=display_name if display_name else None
         )
         with db.get_connection() as conn:
             conn.execute(module_provider_insert)
+
+    @classmethod
+    def create(cls, name, display_name=None):
+        """Create instance of object in database."""
+        # Validate name
+        cls._validate_name(name)
+        cls._validate_display_name(display_name)
+
+        if cls.get_by_case_insensitive_name(name):
+            raise NamespaceAlreadyExistsError("A namespace already exists with this name")
+
+        if cls.get_by_display_name(display_name):
+            raise DuplicateNamespaceDisplayNameError("A namespace already has this display name")
+
+        # Create namespace
+        cls.insert_into_database(name=name, display_name=display_name)
 
         obj = cls(name=name)
 
@@ -734,8 +772,16 @@ class Namespace(object):
     @staticmethod
     def _validate_name(name):
         """Validate name of namespace"""
-        if name is None or not re.match(r'^[0-9a-zA-Z][0-9a-zA-Z-_]+[0-9A-Za-z]$', name):
-            raise InvalidNamespaceNameError('Namespace name is invalid')
+        if (name is None or
+                not re.match(r'^[0-9a-zA-Z][0-9a-zA-Z-_]+[0-9A-Za-z]$', name) or
+                '__' in name):
+            raise InvalidNamespaceNameError(
+                'Namespace name is invalid - '
+                'it can only contain alpha-numeric characters, '
+                'hyphens and underscores, and must start/end with '
+                'an alphanumeric character. '
+                'Sequential underscores are not allowed.'
+            )
 
     @staticmethod
     def _validate_display_name(display_name):
@@ -745,18 +791,6 @@ class Namespace(object):
 
         if not re.match(r'^[A-Za-z0-9][0-9A-Za-z\s\-_]+[A-Za-z0-9]$', display_name):
             raise InvalidNamespaceDisplayNameError('Namespace display name is invalid')
-
-        db = Database.get()
-        display_name_query = sqlalchemy.select(
-            db.namespace.c.namespace
-        ).select_from(
-            db.namespace
-        ).where(
-            db.namespace.c.display_name==display_name
-        )
-        with db.get_connection() as conn:
-            if conn.execute(display_name_query).fetchone():
-                raise DuplicateNamespaceDisplayNameError("A namespace already has this display name")
 
     @property
     def pk(self):
@@ -773,7 +807,6 @@ class Namespace(object):
 
     def __init__(self, name: str):
         """Validate name and store member variables"""
-        self._validate_name(name)
         self._name = name
         self._cache_db_row = None
 

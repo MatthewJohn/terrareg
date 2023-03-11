@@ -64,7 +64,8 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
 
-            namespace = terrareg.models.Namespace.create('newnamespace', None)
+            with unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event'):
+                ns = terrareg.models.Namespace.create('newnamespace', None)
 
             res = client.post(
                 '/v1/terrareg/modules/newnamespace/newtestmodule/newprovider/create',
@@ -81,7 +82,6 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
             mock_update_repo_clone_url_template.assert_not_called()
             mock_update_git_tag_format.assert_not_called()
 
-            ns = terrareg.models.Namespace(name='newnamespace')
             m = terrareg.models.Module(namespace=ns, name='newtestmodule')
             p = terrareg.models.ModuleProvider(module=m, name='newprovider')
             assert p._get_db_row() is not None
@@ -96,7 +96,8 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
 
-            namespace = terrareg.models.Namespace.create('newnamespace', None)
+            with unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event'):
+                terrareg.models.Namespace.create('newnamespace', None)
 
             res = client.post(
                 '/v1/terrareg/modules/newnamespace/newm/newp/create',

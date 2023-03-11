@@ -19,12 +19,13 @@ class TestNamespace(TerraregIntegrationTest):
         'endwithunscore_',
         'a:colon',
         'or;semicolon',
-        'who?knows'
+        'who?knows',
+        'contains__doubleunderscore'
     ])
     def test_invalid_namespace_names(self, namespace_name):
         """Test invalid namespace names"""
         with pytest.raises(terrareg.errors.InvalidNamespaceNameError):
-            Namespace(name=namespace_name)
+            Namespace._validate_name(name=namespace_name)
 
     @pytest.mark.parametrize('namespace_name', [
         'normalname',
@@ -39,7 +40,7 @@ class TestNamespace(TerraregIntegrationTest):
     ])
     def test_valid_namespace_names(self, namespace_name):
         """Test valid namespace names"""
-        Namespace(name=namespace_name)
+        Namespace._validate_name(name=namespace_name)
 
     def test_get_total_count(self):
         """Test get_total_count method"""
@@ -85,7 +86,7 @@ class TestNamespace(TerraregIntegrationTest):
         original = Namespace.create(name="test-duplicate", display_name="Test Duplicate")
         try:
             with pytest.raises(terrareg.errors.DuplicateNamespaceDisplayNameError):
-                Namespace._validate_display_name("Test Duplicate")
+                Namespace.create(name="is-not-duplicate", display_name="Test Duplicate")
 
         finally:
             db = Database.get()
