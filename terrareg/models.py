@@ -2865,8 +2865,7 @@ class ModuleVersion(TerraformSpecsObject):
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
         return statement.where(
-            db.module_version.c.module_provider_id == self._module_provider.pk,
-            db.module_version.c.version == self.version
+            db.module_version.c.id==self.pk
         )
 
     def update_attributes(self, **kwargs):
