@@ -13,25 +13,24 @@ class ApiModuleVersionCreate(ErrorCatchingResource):
 
     def _post(self, namespace, name, provider, version):
         """Handle creation of module version."""
-        with terrareg.database.Database.start_transaction():
-            _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
-            if error:
-                return error[0], 400
+        _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+        if error:
+            return error[0], 400
 
-            # Ensure that the module provider has a repository url configured.
-            if not module_provider.get_git_clone_url():
-                return {'message': 'Module provider is not configured with a repository'}, 400
+        # Ensure that the module provider has a repository url configured.
+        if not module_provider.get_git_clone_url():
+            return {'message': 'Module provider is not configured with a repository'}, 400
 
-            module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version=version)
+        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version=version)
 
-            previous_version_published = module_version.prepare_module()
-            with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
-                me.process_upload()
+        previous_version_published, old_module_version_pk = module_version.prepare_module()
+        with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
+            me.process_upload()
+        module_version.finalise_module(old_module_version_pk)
 
-            if previous_version_published:
-                module_version.publish()
+        if previous_version_published:
+            module_version.publish()
 
-            return {
-                'status': 'Success'
-            }
-
+        return {
+            'status': 'Success'
+        }

@@ -331,6 +331,8 @@ class Database():
                 ),
                 nullable=True
             ),
+            # Whether extraction has completed
+            sqlalchemy.Column('extraction_complete', sqlalchemy.BOOLEAN),
             # Whether the module version is a beta version
             sqlalchemy.Column('beta', sqlalchemy.BOOLEAN, nullable=False),
             sqlalchemy.Column('owner', sqlalchemy.String(GENERAL_COLUMN_SIZE)),

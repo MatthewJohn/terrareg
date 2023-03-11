@@ -2542,7 +2542,8 @@ class ModuleVersion(TerraformSpecsObject):
                 db.module_provider, db.module_version.c.module_provider_id == db.module_provider.c.id
             ).where(
                 db.module_provider.c.id == self._module_provider.pk,
-                db.module_version.c.version == self.version
+                db.module_version.c.version == self.version,
+                db.module_version.c.extraction_complete == True
             )
             with db.get_connection() as conn:
                 res = conn.execute(select)
@@ -2828,7 +2829,7 @@ class ModuleVersion(TerraformSpecsObject):
         Returns boolean whethe previous DB row (if exists) was published.
         """
         self.create_data_directory()
-        previous_version_published = self._create_db_row()
+        previous_version_published, old_module_version_pk = self._create_db_row()
 
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.MODULE_VERSION_INDEX,
@@ -2837,6 +2838,28 @@ class ModuleVersion(TerraformSpecsObject):
             old_value=None,
             new_value=None
         )
+        return previous_version_published, old_module_version_pk
+
+    def finalise_module(self, old_module_version_pk):
+        """Finalise module, after import"""
+        previous_version_published = False
+        if old_module_version_pk:
+            # Determine if re-indexing of modules is allowed
+            if terrareg.config.Config().MODULE_VERSION_REINDEX_MODE is terrareg.config.ModuleVersionReindexMode.PROHIBIT:
+                raise ReindexingExistingModuleVersionsIsProhibitedError(
+                    "The module version already exists and re-indexing modules is disabled")
+
+            # If configured to auto re-publish module versions, return
+            # the current published state of previous module version
+            if terrareg.config.Config().MODULE_VERSION_REINDEX_MODE is terrareg.config.ModuleVersionReindexMode.AUTO_PUBLISH:
+                previous_version_published = self.published
+
+            self.delete(delete_related_analytics=False)
+
+            # Migrate analytics from old module version ID to new module version
+            terrareg.analytics.AnalyticsEngine.migrate_analytics_to_new_module_version(
+                old_version_version_pk=old_module_version_pk,
+                new_module_version=self)
         return previous_version_published
 
     def get_db_where(self, db, statement):
@@ -2914,9 +2937,10 @@ class ModuleVersion(TerraformSpecsObject):
         db = Database.get()
 
         # Delete pre-existing version, if it exists
-        old_module_version_pk = None
         previous_version_published = False
+        old_module_version_pk = None
         if self._get_db_row():
+            old_module_version_pk = self.pk
             # Determine if re-indexing of modules is allowed
             if terrareg.config.Config().MODULE_VERSION_REINDEX_MODE is terrareg.config.ModuleVersionReindexMode.PROHIBIT:
                 raise ReindexingExistingModuleVersionsIsProhibitedError(
@@ -2927,9 +2951,6 @@ class ModuleVersion(TerraformSpecsObject):
             if terrareg.config.Config().MODULE_VERSION_REINDEX_MODE is terrareg.config.ModuleVersionReindexMode.AUTO_PUBLISH:
                 previous_version_published = self.published
 
-            old_module_version_pk = self.pk
-            self.delete(delete_related_analytics=False)
-
         with db.get_connection() as conn:
             # Insert new module into table
             insert_statement = db.module_version.insert().values(
@@ -2939,15 +2960,16 @@ class ModuleVersion(TerraformSpecsObject):
                 beta=self._extracted_beta_flag,
                 internal=False
             )
-            conn.execute(insert_statement)
+            insert_res = conn.execute(insert_statement)
+            new_insert_id = insert_res.lastrowid
+            select = db.module_version.select().where(
+                db.module_version.c.id == new_insert_id
+            )
+            res = conn.execute(select)
+            # Set current module cache directly from ID
+            self._cache_db_row = res.fetchone()
 
-        # Migrate analytics from old module version ID to new module version
-        if old_module_version_pk is not None:
-            terrareg.analytics.AnalyticsEngine.migrate_analytics_to_new_module_version(
-                old_version_version_pk=old_module_version_pk,
-                new_module_version=self)
-
-        return previous_version_published
+        return previous_version_published, old_module_version_pk
 
     def get_submodules(self):
         """Return list of submodules."""

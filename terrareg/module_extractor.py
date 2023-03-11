@@ -146,7 +146,7 @@ class ModuleExtractor:
             status=ModuleExtractionStatusType.IN_PROGRESS,
             message="Initialising"
         )
-        with db.get_connection(ignore_transaction=True) as conn:
+        with db.get_connection() as conn:
             res = conn.execute(insert_statement)
             return res.lastrowid
 
@@ -160,7 +160,7 @@ class ModuleExtractor:
             status=status,
             message=message
         )
-        with db.get_connection(ignore_transaction=True) as conn:
+        with db.get_connection() as conn:
             conn.execute(insert_statement)
 
     def _run_tfsec(self, module_path):
