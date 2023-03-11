@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.59.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.0...v2.59.1) (2023-03-11)
+
+
+### Bug Fixes
+
+* Disable validation of namespace name, allowing namespaces that have an invalid name to still be used. ([8443861](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8443861bfe45bb0460a05c55b73313adf8980a6b)), closes [#330](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/330)
+* Disallow namespace names with double underscores ([fe694ef](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fe694ef7db1359817b708cd999b58a873bacf949)), closes [#330](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/330)
+* Improve error message when namespace name is invalid, providing details of what is required for a valid name. ([400f6d1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/400f6d11227b7e1339ba23f17a1a70f77e30a509)), closes [#330](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/330)
+* Update namespace endpoint to return 400 on invalid namespace name/display name and duplicate names ([85e0010](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/85e00108e1bc11dc3fe774f44f244e4b999f5145)), closes [#326](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/326)
+
 # [2.59.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.58.1...v2.59.0) (2023-03-10)
 
 
