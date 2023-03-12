@@ -9,7 +9,7 @@ class ApiModuleProviderDetails(ErrorCatchingResource):
         """Return list of version."""
 
         namespace, _ = terrareg.models.Namespace.extract_analytics_token(namespace)
-        _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider, create=True)
+        _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
         if error:
             return self._get_404_response()
         module_version = module_provider.get_latest_version()
