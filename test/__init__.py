@@ -196,7 +196,8 @@ class BaseTest:
                                 'published_at': datetime.now(),
                                 'internal': False,
                                 'module_details_id': module_details.pk,
-                                'extraction_version': version_data.get('extraction_version', EXTRACTION_VERSION)
+                                'extraction_version': version_data.get('extraction_version', EXTRACTION_VERSION),
+                                'extraction_complete': version_data.get('extraction_complete', True)
                             }
 
                             insert = Database.get().module_version.insert().values(
