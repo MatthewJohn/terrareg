@@ -2311,22 +2311,6 @@ class ModuleVersion(TerraformSpecsObject):
             raise InvalidVersionError('Version is invalid')
         return bool(match.group(1))
 
-    @classmethod
-    def get_by_pk(cls, module_provider, module_version, pk):
-        """Get module version by pk"""
-        db = Database.get()
-        with db.get_connection() as conn:
-            res = conn.execute(db.module_version.select(db.module_version.c.id==pk)).fetchone()
-
-        if res is None:
-            return None
-
-        inst = cls(module_provider, module_version)
-        # Override pk property to specific value
-        inst.pk = pk
-        inst._cache_db_row = res
-        return inst
-
     @property
     def is_submodule(self):
         """Whether object is submodule."""
@@ -2536,12 +2520,13 @@ class ModuleVersion(TerraformSpecsObject):
         """Return whether the version is the latest version for the module provider"""
         return self._module_provider.get_latest_version() == self
 
-    def __init__(self, module_provider: ModuleProvider, version: str):
+    def __init__(self, module_provider: ModuleProvider, version: str, pk: int=None):
         """Setup member variables."""
         self._extracted_beta_flag = self._validate_version(version)
         self._module_provider = module_provider
         self._version = version
         self._cache_db_row = None
+        self._pk = pk
         super(ModuleVersion, self).__init__()
 
     def __eq__(self, __o):
@@ -2558,9 +2543,19 @@ class ModuleVersion(TerraformSpecsObject):
                 db.module_provider, db.module_version.c.module_provider_id == db.module_provider.c.id
             ).where(
                 db.module_provider.c.id == self._module_provider.pk,
-                db.module_version.c.version == self.version,
-                db.module_version.c.extraction_complete == True
+                db.module_version.c.version == self.version
             )
+            # If a specific primary key has been specified,
+            # select based on this
+            if self._pk:
+                select = select.where(
+                    db.module_version.c.id == self._pk
+                )
+            # Otherwise, obtain based on whether extraction is complete
+            else:
+                select = select.where(
+                    db.module_version.c.extraction_complete == True
+                )
             with db.get_connection() as conn:
                 res = conn.execute(select)
                 self._cache_db_row = res.fetchone()
@@ -2845,7 +2840,7 @@ class ModuleVersion(TerraformSpecsObject):
         Returns boolean whethe previous DB row (if exists) was published.
         """
         self.create_data_directory()
-        previous_version_published = self._create_db_row()
+        self._create_db_row()
 
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.MODULE_VERSION_INDEX,
@@ -2854,37 +2849,49 @@ class ModuleVersion(TerraformSpecsObject):
             old_value=None,
             new_value=None
         )
-        return previous_version_published
 
     def finalise_module(self):
-        """Finalise module, after import"""
+        """Finalise module, after import. Delete old versions and activate the new version."""
         previous_version_published = False
         # Get previous instances of module
         db = Database.get()
-        with db.get_connection() as conn:
-            res = conn.execute(sqlalchemy.select(
-                db.module_version
-            ).where(
-                db.module_version.c.module_provider_id==self.module_provider.pk,
-                db.module_version.c.version==self.version,
-                db.module_version.c.id!=self.pk
-            )).fetchall()
-            res = [r for r in res]
+        with db.start_transaction():
+            with db.get_connection() as conn:
+                res = conn.execute(sqlalchemy.select(
+                    db.module_version
+                ).where(
+                    db.module_version.c.module_provider_id==self.module_provider.pk,
+                    db.module_version.c.version==self.version,
+                    db.module_version.c.id!=self.pk
+                )).fetchall()
+                res = [r for r in res]
 
-        if res:
-            for row in res:
-                old_module_version = ModuleVersion.get_by_pk(
-                    module_provider=self.module_provider,
-                    module_version=self.version,
-                    pk=row['id']
-                )
-                old_module_version.delete(delete_related_analytics=False)
+            if res:
+                for row in res:
+                    old_module_version = ModuleVersion.get(
+                        module_provider=self.module_provider,
+                        version=self.version,
+                        pk=row['id']
+                    )
 
-                # Migrate analytics from old module version ID to new module version
-                terrareg.analytics.AnalyticsEngine.migrate_analytics_to_new_module_version(
-                    old_version_version_pk=old_module_version.pk,
-                    new_module_version=self)
-        return previous_version_published
+                    # If configured to auto re-publish module versions, use
+                    # the current published state of previous module version
+                    # to determine if publishing should happen
+                    if terrareg.config.Config().MODULE_VERSION_REINDEX_MODE is terrareg.config.ModuleVersionReindexMode.AUTO_PUBLISH:
+                        previous_version_published = previous_version_published or old_module_version.published
+
+                    # Delete previous module version
+                    old_module_version.delete(delete_related_analytics=False)
+
+                    # Migrate analytics from old module version ID to new module version
+                    terrareg.analytics.AnalyticsEngine.migrate_analytics_to_new_module_version(
+                        old_version_version_pk=row['id'],
+                        new_module_version=self)
+
+            # Publish new module version, if previous module version
+            # was found to be.
+            if previous_version_published:
+                self.publish()
 
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
@@ -2967,11 +2974,6 @@ class ModuleVersion(TerraformSpecsObject):
                 raise ReindexingExistingModuleVersionsIsProhibitedError(
                     "The module version already exists and re-indexing modules is disabled")
 
-            # If configured to auto re-publish module versions, return
-            # the current published state of previous module version
-            if terrareg.config.Config().MODULE_VERSION_REINDEX_MODE is terrareg.config.ModuleVersionReindexMode.AUTO_PUBLISH:
-                previous_version_published = self.published
-
         with db.get_connection() as conn:
             # Insert new module into table
             insert_statement = db.module_version.insert().values(
@@ -2987,8 +2989,9 @@ class ModuleVersion(TerraformSpecsObject):
                 db.module_version.c.id == new_insert_id
             )
             res = conn.execute(select)
-            # Set current module cache directly from ID
-            self._cache_db_row = res.fetchone()
+            # Set current module pk directly from ID and clear cache
+            self._pk = res.lastrowid
+            self._cache_db_row = None
 
         return previous_version_published
 

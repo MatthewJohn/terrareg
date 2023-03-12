@@ -88,13 +88,10 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
                 # Perform import from git
                 savepoint = transaction_context.connection.begin_nested()
                 try:
-                    previous_version_published = module_version.prepare_module()
+                    module_version.prepare_module()
                     with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
                         me.process_upload()
                     module_version.finalise_module()
-
-                    if previous_version_published:
-                        module_version.publish()
 
                 except terrareg.errors.TerraregError as exc:
                     # Roll back the transaction for this module version
