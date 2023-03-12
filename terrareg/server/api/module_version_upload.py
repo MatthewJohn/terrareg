@@ -8,6 +8,7 @@ import terrareg.models
 import terrareg.database
 import terrareg.errors
 import terrareg.module_extractor
+import terrareg.module_version_create
 
 
 class ApiModuleVersionUpload(ErrorCatchingResource):
@@ -49,10 +50,9 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
         if not file or not self.allowed_file(file.filename):
             raise terrareg.errors.UploadError('Error occurred - unknown file extension')
 
-        module_version.prepare_module()
-        with terrareg.module_extractor.ApiUploadModuleExtractor(upload_file=file, module_version=module_version) as me:
-            me.process_upload()
-        module_version.finalise_module()
+        with terrareg.module_version_create.module_version_create(module_version):
+            with terrareg.module_extractor.ApiUploadModuleExtractor(upload_file=file, module_version=module_version) as me:
+                me.process_upload()
 
         return {
             'status': 'Success'

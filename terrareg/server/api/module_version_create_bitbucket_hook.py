@@ -11,6 +11,7 @@ import terrareg.config
 import terrareg.models
 import terrareg.module_extractor
 import terrareg.errors
+import terrareg.module_version_create
 
 
 class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
@@ -88,10 +89,9 @@ class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
                 # Perform import from git
                 savepoint = transaction_context.connection.begin_nested()
                 try:
-                    module_version.prepare_module()
-                    with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
-                        me.process_upload()
-                    module_version.finalise_module()
+                    with terrareg.module_version_create.module_version_create(module_version):
+                        with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
+                            me.process_upload()
 
                 except terrareg.errors.TerraregError as exc:
                     # Roll back the transaction for this module version

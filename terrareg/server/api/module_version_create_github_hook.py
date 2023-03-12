@@ -6,6 +6,7 @@ import re
 from flask import request
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
+import terrareg.module_version_create
 import terrareg.database
 import terrareg.config
 import terrareg.models
@@ -85,11 +86,9 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
             else:
                 # Perform import from git
                 try:
-                    module_version.prepare_module()
-                    with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
-                        me.process_upload()
-
-                    module_version.finalise_module()
+                    with terrareg.module_version_create.module_version_create(module_version):
+                        with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
+                            me.process_upload()
 
                 except terrareg.errors.TerraregError as exc:
                     # Roll back creation of module version
