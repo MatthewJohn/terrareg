@@ -2311,6 +2311,22 @@ class ModuleVersion(TerraformSpecsObject):
             raise InvalidVersionError('Version is invalid')
         return bool(match.group(1))
 
+    @classmethod
+    def get_by_pk(cls, module_provider, module_version, pk):
+        """Get module version by pk"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(db.module_version.select(db.module_version.c.id==pk)).fetchone()
+
+        if res is None:
+            return None
+
+        inst = cls(module_provider, module_version)
+        # Override pk property to specific value
+        inst.pk = pk
+        inst._cache_db_row = res
+        return inst
+
     @property
     def is_submodule(self):
         """Whether object is submodule."""
@@ -2829,7 +2845,7 @@ class ModuleVersion(TerraformSpecsObject):
         Returns boolean whethe previous DB row (if exists) was published.
         """
         self.create_data_directory()
-        previous_version_published, old_module_version_pk = self._create_db_row()
+        previous_version_published = self._create_db_row()
 
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.MODULE_VERSION_INDEX,
@@ -2838,28 +2854,36 @@ class ModuleVersion(TerraformSpecsObject):
             old_value=None,
             new_value=None
         )
-        return previous_version_published, old_module_version_pk
+        return previous_version_published
 
-    def finalise_module(self, old_module_version_pk):
+    def finalise_module(self):
         """Finalise module, after import"""
         previous_version_published = False
-        if old_module_version_pk:
-            # Determine if re-indexing of modules is allowed
-            if terrareg.config.Config().MODULE_VERSION_REINDEX_MODE is terrareg.config.ModuleVersionReindexMode.PROHIBIT:
-                raise ReindexingExistingModuleVersionsIsProhibitedError(
-                    "The module version already exists and re-indexing modules is disabled")
+        # Get previous instances of module
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(sqlalchemy.select(
+                db.module_version
+            ).where(
+                db.module_version.c.module_provider_id==self.module_provider.pk,
+                db.module_version.c.version==self.version,
+                db.module_version.c.id!=self.pk
+            )).fetchall()
+            res = [r for r in res]
 
-            # If configured to auto re-publish module versions, return
-            # the current published state of previous module version
-            if terrareg.config.Config().MODULE_VERSION_REINDEX_MODE is terrareg.config.ModuleVersionReindexMode.AUTO_PUBLISH:
-                previous_version_published = self.published
+        if res:
+            for row in res:
+                old_module_version = ModuleVersion.get_by_pk(
+                    module_provider=self.module_provider,
+                    module_version=self.version,
+                    pk=row['id']
+                )
+                old_module_version.delete(delete_related_analytics=False)
 
-            self.delete(delete_related_analytics=False)
-
-            # Migrate analytics from old module version ID to new module version
-            terrareg.analytics.AnalyticsEngine.migrate_analytics_to_new_module_version(
-                old_version_version_pk=old_module_version_pk,
-                new_module_version=self)
+                # Migrate analytics from old module version ID to new module version
+                terrareg.analytics.AnalyticsEngine.migrate_analytics_to_new_module_version(
+                    old_version_version_pk=old_module_version.pk,
+                    new_module_version=self)
         return previous_version_published
 
     def get_db_where(self, db, statement):
@@ -2937,9 +2961,7 @@ class ModuleVersion(TerraformSpecsObject):
 
         # Delete pre-existing version, if it exists
         previous_version_published = False
-        old_module_version_pk = None
         if self._get_db_row():
-            old_module_version_pk = self.pk
             # Determine if re-indexing of modules is allowed
             if terrareg.config.Config().MODULE_VERSION_REINDEX_MODE is terrareg.config.ModuleVersionReindexMode.PROHIBIT:
                 raise ReindexingExistingModuleVersionsIsProhibitedError(
@@ -2968,7 +2990,7 @@ class ModuleVersion(TerraformSpecsObject):
             # Set current module cache directly from ID
             self._cache_db_row = res.fetchone()
 
-        return previous_version_published, old_module_version_pk
+        return previous_version_published
 
     def get_submodules(self):
         """Return list of submodules."""
