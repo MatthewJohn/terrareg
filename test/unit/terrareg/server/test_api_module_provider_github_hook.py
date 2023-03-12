@@ -20,8 +20,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
     @setup_test_data()
     def test_hook_with_full_payload_single_change(self, client, mock_models):
         """Test hook call full payload."""
-        with unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.prepare_module', return_value=False) as mocked_prepare_module, \
+        with unittest.mock.patch('terrareg.module_version_create.module_version_create') as mocked_module_version_create, \
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
 
@@ -208,15 +207,14 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
             }
             assert res.status_code == 200
 
-            mocked_prepare_module.assert_called_once()
+            mocked_module_version_create.assert_called_once()
             mocked_process_upload.assert_called_once()
 
 
     @setup_test_data()
     def test_hook_with_module_provider_without_repository_url(self, client, mock_models):
         """Test hook call to module provider with no repository url."""
-        with unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.prepare_module', return_value=False) as mocked_prepare_module, \
+        with unittest.mock.patch('terrareg.module_version_create.module_version_create') as mocked_module_version_create, \
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
 
@@ -233,18 +231,17 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
             assert res.status_code == 400
             assert res.json == {'status': 'Error', 'message': 'Module provider is not configured with a repository'}
 
-            mocked_prepare_module.assert_not_called()
+            mocked_module_version_create.assert_not_called()
             mocked_process_upload.assert_not_called()
 
     @setup_test_data()
     def test_hook_with_prepare_module_exception(self, client, mock_models):
         """Test hook call with multiple tag changes."""
-        with unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.prepare_module', return_value=False) as mocked_prepare_module, \
+        with unittest.mock.patch('terrareg.module_version_create.module_version_create') as mocked_module_version_create, \
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
 
-            mocked_prepare_module.side_effect = unittest.mock.Mock(side_effect=terrareg.errors.TerraregError('Unittest error'))
+            mocked_module_version_create.side_effect = unittest.mock.Mock(side_effect=terrareg.errors.TerraregError('Unittest error'))
 
             res = client.post(
                 '/v1/terrareg/modules/moduleextraction/githubexample/testprovider/hooks/github',
@@ -263,20 +260,13 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
                 'tag': 'v6.2.0'
             }
 
-            mocked_prepare_module.assert_called()
+            mocked_module_version_create.assert_called()
             mocked_process_upload.assert_not_called()
 
     @setup_test_data()
-    @pytest.mark.parametrize('pre_existing_published_module_version', [
-        False,
-        True
-    ])
-    def test_hook_with_reindexing_published_module(self, pre_existing_published_module_version, client, mock_models):
+    def test_hook_with_reindexing_published_module(self, client, mock_models):
         """Test hook call whilst re-indexing a published module."""
-        with unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.prepare_module', return_value=pre_existing_published_module_version) as mocked_prepare_module, \
-                unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.publish') as mocked_publish, \
+        with unittest.mock.patch('terrareg.module_version_create.module_version_create') as mocked_module_version_create, \
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
 
@@ -293,18 +283,13 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
             assert res.status_code == 200
             assert res.json == {'status': 'Success', 'message': 'Imported provided tag', 'tag': 'v4.0.6'}
 
-            mocked_prepare_module.assert_called_once()
+            mocked_module_version_create.assert_called_once()
             mocked_process_upload.assert_called_once()
-            if pre_existing_published_module_version:
-                mocked_publish.assert_called_once_with()
-            else:
-                mocked_publish.assert_not_called()
 
     @setup_test_data()
     def test_hook_with_extraction_exception(self, client, mock_models):
         """Test hook call with multiple tag changes."""
-        with unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.prepare_module', return_value=False) as mocked_prepare_module, \
+        with unittest.mock.patch('terrareg.module_version_create.module_version_create') as mocked_module_version_create, \
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
 
@@ -327,15 +312,14 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
                 'tag': 'v6.2.0'
             }
 
-            mocked_prepare_module.assert_called()
+            mocked_module_version_create.assert_called()
             mocked_process_upload.assert_called()
 
     def _test_github_with_client_error_expected(self, client, payload, expected_error=None):
         """Test github call with invalid payload."""
         if expected_error is None:
             expected_error = 'Received a non-release hook request'
-        with unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.prepare_module', return_value=False) as mocked_prepare_module, \
+        with unittest.mock.patch('terrareg.module_version_create.module_version_create') as mocked_module_version_create, \
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload:
 
@@ -350,7 +334,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
                 'message': expected_error
             }
 
-            mocked_prepare_module.assert_not_called()
+            mocked_module_version_create.assert_not_called()
             mocked_process_upload.assert_not_called()
 
     @setup_test_data()
@@ -422,8 +406,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
     @setup_test_data()
     def test_hook_with_invalid_signatures_with_api_keys_enabled(self, signature, client, mock_models):
         """Test hook call with upload API keys enabled with invalid request signature."""
-        with unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.prepare_module', return_value=False) as mocked_prepare_module, \
+        with unittest.mock.patch('terrareg.module_version_create.module_version_create') as mocked_module_version_create, \
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload, \
                 unittest.mock.patch('terrareg.config.Config.UPLOAD_API_KEYS', ['test-api-key1', 'test-api-key2']):
@@ -442,14 +425,13 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
                            'the credentials required.'
             }
 
-            mocked_prepare_module.assert_not_called()
+            mocked_module_version_create.assert_not_called()
             mocked_process_upload.assert_not_called()
 
     @setup_test_data()
     def test_hook_with_valid_api_key_signature(self, client, mock_models):
         """Test hook call with valid API key signature."""
-        with unittest.mock.patch(
-                    'terrareg.models.ModuleVersion.prepare_module', return_value=False) as mocked_prepare_module, \
+        with unittest.mock.patch('terrareg.module_version_create.module_version_create') as mocked_module_version_create, \
                 unittest.mock.patch(
                     'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload, \
                 unittest.mock.patch('terrareg.config.Config.UPLOAD_API_KEYS', ['test-api-key1', 'test-api-key2']):
@@ -476,5 +458,5 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
             assert res.status_code == 200
             assert res.json == {'status': 'Success', 'message': 'Imported provided tag', 'tag': 'v4.0.6'}
 
-            mocked_prepare_module.assert_called_once()
+            mocked_module_version_create.assert_called_once()
             mocked_process_upload.assert_called_once()
