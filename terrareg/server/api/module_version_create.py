@@ -24,7 +24,7 @@ class ApiModuleVersionCreate(ErrorCatchingResource):
         # If a request that contains data that can be loaded
         # by json, extract request_id
         try:
-            request_id = request.json().get('request_id')
+            request_id = request.json.get('request_id')
         except:
             pass
 
