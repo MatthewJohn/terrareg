@@ -25,6 +25,7 @@ def upgrade():
         sa.Column('last_update', sa.DateTime(), nullable=True),
         sa.Column('status', sa.Enum('IN_PROGRESS', 'FAILED', 'COMPLETE', name='moduleextractionstatustype'), nullable=True),
         sa.Column('message', sa.String(length=128), nullable=True),
+        sa.Column('request_id', sa.String(length=128), nullable=True),
         sa.ForeignKeyConstraint(['module_version_id'], ['module_version.id'], name='fk_module_extraction_status_module_version_id_module_version_id', onupdate='CASCADE', ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('id')
     )

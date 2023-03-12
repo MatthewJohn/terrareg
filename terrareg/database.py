@@ -413,6 +413,7 @@ class Database():
                     ondelete='CASCADE'),
                 nullable=False
             ),
+            sqlalchemy.Column('request_id', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('timestamp', sqlalchemy.DateTime),
             sqlalchemy.Column('last_update', sqlalchemy.DateTime),
             sqlalchemy.Column('status', sqlalchemy.Enum(ModuleExtractionStatusType)),

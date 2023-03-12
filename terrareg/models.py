@@ -2888,6 +2888,8 @@ class ModuleVersion(TerraformSpecsObject):
                         old_version_version_pk=row['id'],
                         new_module_version=self)
 
+            self.update_attributes(extraction_complete=True)
+
             # Publish new module version, if previous module version
             # was found to be.
             if previous_version_published:
@@ -3471,3 +3473,42 @@ class ModuleVersionFile(FileObject):
         else:
             content = '<pre>' + content + '</pre>'
         return content
+
+
+class ModuleVersionExtractionStatus:
+
+    @classmethod
+    def get_by_request_id(cls, module_provider, request_id):
+        """Get by request id"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(
+                sqlalchemy.select(
+                    db.module_extraction_status
+                ).join(
+                    db.module_version,
+                    db.module_extraction_status.c.module_version_id==db.module_version.c.id
+                ).join(
+                    db.module_provider,
+                    db.module_version.c.module_provider_id==db.module_provider.c.id
+                ).where(
+                    db.module_extraction_status.c.request_id==request_id,
+                    db.module_provider.c.id==module_provider.pk
+                )).fetchone()
+            if not res:
+                return None
+            return cls(res)
+
+    def __init__(self, row):
+        """Store member variables"""
+        self._row = row
+
+    @property
+    def json(self):
+        """Return JSON value for status"""
+        return {
+            # 'timestamp': self._row['timestamp'],
+            # 'last_update': self._row['last_update'],
+            'status': self._row['status'].value,
+            'message': self._row['message']
+        }

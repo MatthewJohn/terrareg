@@ -43,9 +43,10 @@ class ModuleExtractor:
     TERRAREG_METADATA_FILES = ['terrareg.json', '.terrareg.json']
     TERRAFORM_LOCK = threading.Lock()
 
-    def __init__(self, module_version: ModuleVersion):
+    def __init__(self, module_version: ModuleVersion, request_id: str=None):
         """Create temporary directories and store member variables."""
         self._module_version = module_version
+        self._request_id = request_id
         self._extract_directory = tempfile.TemporaryDirectory()  # noqa: R1732
         self._upload_directory = tempfile.TemporaryDirectory()  # noqa: R1732
         self._extraction_status_id = self._generate_module_extraction_status_row()
@@ -139,29 +140,35 @@ class ModuleExtractor:
     def _generate_module_extraction_status_row(self):
         """Genertate module extraction status row in database"""
         db = Database.get()
-        insert_statement = db.module_extraction_status.insert().values(
-            module_version_id=self._module_version.pk,
-            timestamp=datetime.datetime.now(),
-            last_update=datetime.datetime.now(),
-            status=ModuleExtractionStatusType.IN_PROGRESS,
-            message="Initialising"
-        )
-        with db.get_connection() as conn:
-            res = conn.execute(insert_statement)
-            return res.lastrowid
+        if self._request_id:
+            insert_statement = db.module_extraction_status.insert().values(
+                module_version_id=self._module_version.pk,
+                timestamp=datetime.datetime.now(),
+                last_update=datetime.datetime.now(),
+                status=ModuleExtractionStatusType.IN_PROGRESS,
+                request_id=self._request_id,
+                message="Initialising"
+            )
+            with db.get_connection() as conn:
+                res = conn.execute(insert_statement)
+                return res.lastrowid
+        # If a request Id has not been provided, do not setup logging
+        return None
 
     def _update_progress_message(self, message, status=ModuleExtractionStatusType.IN_PROGRESS):
         """Update module extraction status row"""
-        db = Database.get()
-        insert_statement = db.module_extraction_status.update().where(
-            db.module_extraction_status.c.id==self._extraction_status_id
-        ).values(
-            last_update=datetime.datetime.now(),
-            status=status,
-            message=message
-        )
-        with db.get_connection() as conn:
-            conn.execute(insert_statement)
+        if self._extraction_status_id:
+            db = Database.get()
+
+            insert_statement = db.module_extraction_status.update().where(
+                db.module_extraction_status.c.id==self._extraction_status_id
+            ).values(
+                last_update=datetime.datetime.now(),
+                status=status,
+                message=message
+            )
+            with db.get_connection() as conn:
+                conn.execute(insert_statement)
 
     def _run_tfsec(self, module_path):
         """Run tfsec and return output."""

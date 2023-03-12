@@ -1850,8 +1850,23 @@ function indexModuleVersion(moduleDetails) {
     inProgressMessage.html('Indexing module version in progress...');
     inProgressMessage.removeClass('default-hidden');
 
-    $.post(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/import`)
-        .done(() => {
+    let requestId = crypto.randomUUID();;
+
+    let intervalId = setInterval(() => {
+        $.post(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/extraction_status/${requestId}`).done((data) => {
+            inProgressMessage.html(data.message);
+        });
+    }, 500);
+
+    $.ajax({
+        url: `/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/import`,
+        method: 'post',
+        data: JSON.stringify({
+            request_id: requestId
+        }),
+        contentType: 'application/json'
+    }).done(() => {
+            clearInterval(intervalId);
             // Show success message for importing module
             successMessage.html("Successfully indexed version");
             successMessage.removeClass('default-hidden');
@@ -1887,6 +1902,7 @@ function indexModuleVersion(moduleDetails) {
             errorMessage.removeClass('default-hidden');
             // Hide in-progress
             inProgressMessage.addClass('default-hidden');
+            clearInterval(intervalId);
         });
 }
 
