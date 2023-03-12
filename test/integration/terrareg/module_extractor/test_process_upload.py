@@ -17,6 +17,7 @@ from test.integration.terrareg import TerraregIntegrationTest
 from test import client
 from test.integration.terrareg.module_extractor import UploadTestModule
 import terrareg.utils
+import terrareg.module_version_create
 
 
 class TestProcessUpload(TerraregIntegrationTest):
@@ -30,15 +31,18 @@ class TestProcessUpload(TerraregIntegrationTest):
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
-        module_version.prepare_module()
 
-        with test_upload as zip_file:
-            with test_upload as upload_directory:
-                # Create main.tf
-                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
+        with terrareg.module_version_create.module_version_create(module_version):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    # Create main.tf
+                    with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
-            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+
+        # Recreate module version object
+        module_version = ModuleVersion.get(module_provider=module_provider, version='1.0.0')
 
         # Ensure terraform docs output contains variable and output
         assert module_version.get_terraform_inputs() == [
@@ -71,25 +75,25 @@ class TestProcessUpload(TerraregIntegrationTest):
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='2.0.0')
-        module_version.prepare_module()
 
-        with test_upload as zip_file:
-            with test_upload as upload_directory:
-                # Create main.tf
-                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
+        with terrareg.module_version_create.module_version_create(module_version):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    # Create main.tf
+                    with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
-                with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
-                    metadata_fh.writelines(json.dumps({
-                        'description': 'unittestdescription!',
-                        'owner': 'unittestowner.',
-                        'variable_template': [
-                            {"name": "test_variable","type": "number", "quote_value": True, 'required': False},
-                            {"name": "test_defaults"}
-                        ],
-                    }))
+                    with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
+                        metadata_fh.writelines(json.dumps({
+                            'description': 'unittestdescription!',
+                            'owner': 'unittestowner.',
+                            'variable_template': [
+                                {"name": "test_variable","type": "number", "quote_value": True, 'required': False},
+                                {"name": "test_defaults"}
+                            ],
+                        }))
 
-            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         assert module_version.description == 'unittestdescription!'
         assert module_version.owner == 'unittestowner.'
@@ -128,22 +132,22 @@ class TestProcessUpload(TerraregIntegrationTest):
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='2.0.0')
-        module_version.prepare_module()
 
-        with test_upload as zip_file:
-            with test_upload as upload_directory:
-                # Create main.tf
-                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
+        with terrareg.module_version_create.module_version_create(module_version):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    # Create main.tf
+                    with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
-                with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
-                    metadata_fh.writelines(json.dumps({
-                        'description': 'unittestdescription!',
-                        'owner': 'unittestowner.',
-                        'variable_template': [{"name": "test_input","type": "text","quote_value": True,'required': False}],
-                    }))
+                    with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
+                        metadata_fh.writelines(json.dumps({
+                            'description': 'unittestdescription!',
+                            'owner': 'unittestowner.',
+                            'variable_template': [{"name": "test_input","type": "text","quote_value": True,'required': False}],
+                        }))
 
-            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         assert module_version.description == 'unittestdescription!'
         assert module_version.owner == 'unittestowner.'
@@ -168,22 +172,22 @@ class TestProcessUpload(TerraregIntegrationTest):
             module = Module(namespace=namespace, name='test-module')
             module_provider = ModuleProvider.get(module=module, name='aws', create=True)
             module_version = ModuleVersion(module_provider=module_provider, version='3.0.0')
-            module_version.prepare_module()
 
-            with test_upload as zip_file:
-                with test_upload as upload_directory:
-                    # Create main.tf
-                    with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                        main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
+            with terrareg.module_version_create.module_version_create(module_version):
+                with test_upload as zip_file:
+                    with test_upload as upload_directory:
+                        # Create main.tf
+                        with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                            main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
-                    with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
-                        metadata_fh.writelines(json.dumps({
-                            'description': 'unittestdescription!',
-                            'owner': 'unittestowner.',
-                            'variable_template': [{"name": "test_variable","type": "text","quote_value": True,'required': False}],
-                        }))
+                        with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
+                            metadata_fh.writelines(json.dumps({
+                                'description': 'unittestdescription!',
+                                'owner': 'unittestowner.',
+                                'variable_template': [{"name": "test_variable","type": "text","quote_value": True,'required': False}],
+                            }))
 
-                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                    UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
             assert module_version.description == 'unittestdescription!'
             assert module_version.owner == 'unittestowner.'
@@ -221,20 +225,20 @@ class TestProcessUpload(TerraregIntegrationTest):
             module = Module(namespace=namespace, name='test-module')
             module_provider = ModuleProvider.get(module=module, name='aws', create=True)
             module_version = ModuleVersion(module_provider=module_provider, version='4.0.0')
-            module_version.prepare_module()
 
-            with test_upload as zip_file:
-                with test_upload as upload_directory:
-                    # Create main.tf
-                    with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                        main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
+            with terrareg.module_version_create.module_version_create(module_version):
+                with test_upload as zip_file:
+                    with test_upload as upload_directory:
+                        # Create main.tf
+                        with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                            main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
-                    with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
-                        metadata_fh.writelines(json.dumps(terrareg_json))
+                        with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
+                            metadata_fh.writelines(json.dumps(terrareg_json))
 
-                # Ensure an exception is raised about missing attributes
-                with pytest.raises(terrareg.errors.MetadataDoesNotContainRequiredAttributeError):
-                    UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                    # Ensure an exception is raised about missing attributes
+                    with pytest.raises(terrareg.errors.MetadataDoesNotContainRequiredAttributeError):
+                        UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
 
     def test_invalid_terrareg_metadata_file(self):
@@ -245,20 +249,20 @@ class TestProcessUpload(TerraregIntegrationTest):
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='5.0.0')
-        module_version.prepare_module()
 
-        with test_upload as zip_file:
-            with test_upload as upload_directory:
-                # Create main.tf
-                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
+        with terrareg.module_version_create.module_version_create(module_version):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    # Create main.tf
+                    with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
-                with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
-                    metadata_fh.writelines('This is invalid JSON!')
+                    with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
+                        metadata_fh.writelines('This is invalid JSON!')
 
-            # Ensure an exception is raised about invalid metadata JSON
-            with pytest.raises(terrareg.errors.InvalidTerraregMetadataFileError):
-                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                # Ensure an exception is raised about invalid metadata JSON
+                with pytest.raises(terrareg.errors.InvalidTerraregMetadataFileError):
+                    UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
     def test_override_repo_urls_with_metadata(self):
         """Test module upload with repo urls in metadata file."""
@@ -276,27 +280,27 @@ class TestProcessUpload(TerraregIntegrationTest):
         assert module_provider._get_db_row()['git_provider_id']
 
         module_version = ModuleVersion(module_provider=module_provider, version='1.5.0')
-        module_version.prepare_module()
 
-        with test_upload as zip_file:
-            with test_upload as upload_directory:
-                # Create main.tf
-                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
+        with terrareg.module_version_create.module_version_create(module_version):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    # Create main.tf
+                    with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
-                with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
-                    metadata_fh.writelines(json.dumps({
-                        'repo_clone_url': 'ssh://overrideurl_here.com/{namespace}/{module}-{provider}',
-                        'repo_base_url': 'https://realoverride.com/blah/{namespace}-{module}-{provider}',
-                        'repo_browse_url': 'https://base_url.com/{namespace}-{module}-{provider}-{tag}/{path}'
-                    }))
+                    with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
+                        metadata_fh.writelines(json.dumps({
+                            'repo_clone_url': 'ssh://overrideurl_here.com/{namespace}/{module}-{provider}',
+                            'repo_base_url': 'https://realoverride.com/blah/{namespace}-{module}-{provider}',
+                            'repo_browse_url': 'https://base_url.com/{namespace}-{module}-{provider}-{tag}/{path}'
+                        }))
 
-            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
-            assert module_version.get_source_base_url() == 'https://realoverride.com/blah/repo_url_tests-module-provider-override-git-provider-test'
-            assert module_version.get_git_clone_url() == 'ssh://overrideurl_here.com/repo_url_tests/module-provider-override-git-provider-test'
-            assert module_version.get_source_browse_url() == 'https://base_url.com/repo_url_tests-module-provider-override-git-provider-test-1.5.0/'
-            assert module_version.get_source_browse_url(path='subdir') == 'https://base_url.com/repo_url_tests-module-provider-override-git-provider-test-1.5.0/subdir'
+                assert module_version.get_source_base_url() == 'https://realoverride.com/blah/repo_url_tests-module-provider-override-git-provider-test'
+                assert module_version.get_git_clone_url() == 'ssh://overrideurl_here.com/repo_url_tests/module-provider-override-git-provider-test'
+                assert module_version.get_source_browse_url() == 'https://base_url.com/repo_url_tests-module-provider-override-git-provider-test-1.5.0/'
+                assert module_version.get_source_browse_url(path='subdir') == 'https://base_url.com/repo_url_tests-module-provider-override-git-provider-test-1.5.0/subdir'
 
     def test_sub_modules(self):
         """Test uploading module with submodules."""
@@ -306,24 +310,24 @@ class TestProcessUpload(TerraregIntegrationTest):
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='6.0.0')
-        module_version.prepare_module()
 
-        with test_upload as zip_file:
-            with test_upload as upload_directory:
-                # Create main.tf
-                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
+        with terrareg.module_version_create.module_version_create(module_version):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    # Create main.tf
+                    with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
-                os.mkdir(os.path.join(upload_directory, 'modules'))
+                    os.mkdir(os.path.join(upload_directory, 'modules'))
 
-                # Create main.tf in each of the submodules
-                for itx in [1, 2]:
-                    root_dir = os.path.join(upload_directory, 'modules', 'testmodule{itx}'.format(itx=itx))
-                    os.mkdir(root_dir)
-                    with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
-                        main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
+                    # Create main.tf in each of the submodules
+                    for itx in [1, 2]:
+                        root_dir = os.path.join(upload_directory, 'modules', 'testmodule{itx}'.format(itx=itx))
+                        os.mkdir(root_dir)
+                        with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
+                            main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
 
-            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         submodules = module_version.get_submodules()
         # Order submodules by path
@@ -358,24 +362,24 @@ class TestProcessUpload(TerraregIntegrationTest):
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='7.0.0')
-        module_version.prepare_module()
 
-        with test_upload as zip_file:
-            with test_upload as upload_directory:
-                # Create main.tf
-                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
+        with terrareg.module_version_create.module_version_create(module_version):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    # Create main.tf
+                    with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
-                os.mkdir(os.path.join(upload_directory, 'examples'))
+                    os.mkdir(os.path.join(upload_directory, 'examples'))
 
-                # Create main.tf in each of the examples
-                for itx in [1, 2]:
-                    root_dir = os.path.join(upload_directory, 'examples', 'testexample{itx}'.format(itx=itx))
-                    os.mkdir(root_dir)
-                    with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
-                        main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
+                    # Create main.tf in each of the examples
+                    for itx in [1, 2]:
+                        root_dir = os.path.join(upload_directory, 'examples', 'testexample{itx}'.format(itx=itx))
+                        os.mkdir(root_dir)
+                        with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
+                            main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
 
-            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         examples = module_version.get_examples()
         # Order submodules by path
@@ -410,19 +414,19 @@ class TestProcessUpload(TerraregIntegrationTest):
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='8.0.0')
-        module_version.prepare_module()
 
-        with test_upload as zip_file:
-            with test_upload as upload_directory:
-                # Create main.tf
-                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
+        with terrareg.module_version_create.module_version_create(module_version):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    # Create main.tf
+                    with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
-                # Create README
-                with open(os.path.join(upload_directory, 'README.md'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(UploadTestModule.TEST_README_CONTENT)
+                    # Create README
+                    with open(os.path.join(upload_directory, 'README.md'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(UploadTestModule.TEST_README_CONTENT)
 
-            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         # Ensure README is present in module version
         assert module_version.get_readme_content() == UploadTestModule.TEST_README_CONTENT
@@ -435,47 +439,47 @@ class TestProcessUpload(TerraregIntegrationTest):
         module = Module(namespace=namespace, name='module-provider-override-git-provider')
         module_provider = ModuleProvider.get(module=module, name='test')
         module_version = ModuleVersion(module_provider=module_provider, version='9.0.0')
-        module_version.prepare_module()
 
-        with test_upload as zip_file:
-            with test_upload as upload_directory:
-                # Create main.tf
-                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
+        with terrareg.module_version_create.module_version_create(module_version):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    # Create main.tf
+                    with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
-                with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
-                    metadata_fh.writelines(json.dumps({
-                        'description': 'Test unittest description',
-                        'owner': 'Test unittest owner',
-                        'variable_template': [{"name": "test_variable","type": "text","quote_value": True,'required': False}],
-                        'repo_clone_url': 'ssh://overrideurl_here.com/{namespace}/{module}-{provider}',
-                        'repo_base_url': 'https://realoverride.com/blah/{namespace}-{module}-{provider}',
-                        'repo_browse_url': 'https://base_url.com/{namespace}-{module}-{provider}-{tag}/{path}'
-                    }))
+                    with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
+                        metadata_fh.writelines(json.dumps({
+                            'description': 'Test unittest description',
+                            'owner': 'Test unittest owner',
+                            'variable_template': [{"name": "test_variable","type": "text","quote_value": True,'required': False}],
+                            'repo_clone_url': 'ssh://overrideurl_here.com/{namespace}/{module}-{provider}',
+                            'repo_base_url': 'https://realoverride.com/blah/{namespace}-{module}-{provider}',
+                            'repo_browse_url': 'https://base_url.com/{namespace}-{module}-{provider}-{tag}/{path}'
+                        }))
 
-                # Create README
-                with open(os.path.join(upload_directory, 'README.md'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(UploadTestModule.TEST_README_CONTENT)
+                    # Create README
+                    with open(os.path.join(upload_directory, 'README.md'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(UploadTestModule.TEST_README_CONTENT)
 
-                os.mkdir(os.path.join(upload_directory, 'modules'))
+                    os.mkdir(os.path.join(upload_directory, 'modules'))
 
-                # Create main.tf in each of the submodules
-                for itx in [1, 2]:
-                    root_dir = os.path.join(upload_directory, 'modules', 'testmodule{itx}'.format(itx=itx))
-                    os.mkdir(root_dir)
-                    with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
-                        main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
+                    # Create main.tf in each of the submodules
+                    for itx in [1, 2]:
+                        root_dir = os.path.join(upload_directory, 'modules', 'testmodule{itx}'.format(itx=itx))
+                        os.mkdir(root_dir)
+                        with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
+                            main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
 
-                os.mkdir(os.path.join(upload_directory, 'examples'))
+                    os.mkdir(os.path.join(upload_directory, 'examples'))
 
-                # Create main.tf in each of the examples
-                for itx in [1, 2]:
-                    root_dir = os.path.join(upload_directory, 'examples', 'testexample{itx}'.format(itx=itx))
-                    os.mkdir(root_dir)
-                    with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
-                        main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
+                    # Create main.tf in each of the examples
+                    for itx in [1, 2]:
+                        root_dir = os.path.join(upload_directory, 'examples', 'testexample{itx}'.format(itx=itx))
+                        os.mkdir(root_dir)
+                        with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
+                            main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
 
-            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         # Ensure README is present in module version
         assert module_version.get_readme_content() == UploadTestModule.TEST_README_CONTENT
@@ -532,47 +536,47 @@ class TestProcessUpload(TerraregIntegrationTest):
         module_provider.update_git_path('subdirectory/in/repo')
 
         module_version = ModuleVersion(module_provider=module_provider, version='1.1.0')
-        module_version.prepare_module()
 
-        with test_upload as zip_file:
-            with test_upload as upload_directory:
+        with terrareg.module_version_create.module_version_create(module_version):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
 
-                module_dir = os.path.join(upload_directory, 'subdirectory/in/repo')
-                os.makedirs(module_dir)
+                    module_dir = os.path.join(upload_directory, 'subdirectory/in/repo')
+                    os.makedirs(module_dir)
 
-                # Create main.tf
-                with open(os.path.join(module_dir, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
+                    # Create main.tf
+                    with open(os.path.join(module_dir, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
 
-                with open(os.path.join(module_dir, 'terrareg.json'), 'w') as metadata_fh:
-                    metadata_fh.writelines(json.dumps({
-                        'description': 'Test unittest description',
-                        'owner': 'Test unittest owner'
-                    }))
+                    with open(os.path.join(module_dir, 'terrareg.json'), 'w') as metadata_fh:
+                        metadata_fh.writelines(json.dumps({
+                            'description': 'Test unittest description',
+                            'owner': 'Test unittest owner'
+                        }))
 
-                # Create README
-                with open(os.path.join(module_dir, 'README.md'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(UploadTestModule.TEST_README_CONTENT)
+                    # Create README
+                    with open(os.path.join(module_dir, 'README.md'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines(UploadTestModule.TEST_README_CONTENT)
 
-                os.mkdir(os.path.join(module_dir, 'modules'))
+                    os.mkdir(os.path.join(module_dir, 'modules'))
 
-                # Create main.tf in each of the submodules
-                for itx in [1, 2]:
-                    root_dir = os.path.join(module_dir, 'modules', 'testmodule{itx}'.format(itx=itx))
-                    os.mkdir(root_dir)
-                    with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
-                        main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
+                    # Create main.tf in each of the submodules
+                    for itx in [1, 2]:
+                        root_dir = os.path.join(module_dir, 'modules', 'testmodule{itx}'.format(itx=itx))
+                        os.mkdir(root_dir)
+                        with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
+                            main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
 
-                os.mkdir(os.path.join(module_dir, 'examples'))
+                    os.mkdir(os.path.join(module_dir, 'examples'))
 
-                # Create main.tf in each of the examples
-                for itx in [1, 2]:
-                    root_dir = os.path.join(module_dir, 'examples', 'testexample{itx}'.format(itx=itx))
-                    os.mkdir(root_dir)
-                    with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
-                        main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
+                    # Create main.tf in each of the examples
+                    for itx in [1, 2]:
+                        root_dir = os.path.join(module_dir, 'examples', 'testexample{itx}'.format(itx=itx))
+                        os.mkdir(root_dir)
+                        with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
+                            main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
 
-            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         # Ensure README is present in module version
         assert module_version.get_readme_content() == UploadTestModule.TEST_README_CONTENT
@@ -618,18 +622,18 @@ class TestProcessUpload(TerraregIntegrationTest):
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='10.0.0')
-        module_version.prepare_module()
 
-        with test_upload as zip_file:
-            with test_upload as upload_directory:
-                # Create main.tf
-                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines("""
-                    this is { not_Really } valid "terraform"
-                    """)
+        with terrareg.module_version_create.module_version_create(module_version):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    # Create main.tf
+                    with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines("""
+                        this is { not_Really } valid "terraform"
+                        """)
 
-            with pytest.raises(terrareg.errors.UnableToProcessTerraformError):
-                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                with pytest.raises(terrareg.errors.UnableToProcessTerraformError):
+                    UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
     def test_uploading_module_with_security_issue(self):
         """Test uploading a module with security issue."""
@@ -639,32 +643,32 @@ class TestProcessUpload(TerraregIntegrationTest):
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='11.0.0')
-        module_version.prepare_module()
 
-        with test_upload as zip_file:
-            with test_upload as upload_directory:
-                # Create main.tf
-                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines("""
-                    resource "aws_s3_bucket" "mybucket" {
-                      bucket = "mybucket"
+        with terrareg.module_version_create.module_version_create(module_version):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    # Create main.tf
+                    with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines("""
+                        resource "aws_s3_bucket" "mybucket" {
+                        bucket = "mybucket"
 
-                      versioning {
-                        enabled = true
-                      }
-                    }
+                        versioning {
+                            enabled = true
+                        }
+                        }
 
-                    resource "aws_s3_bucket_public_access_block" "mybucket" {
-                      bucket = aws_s3_bucket.mybucket.id
+                        resource "aws_s3_bucket_public_access_block" "mybucket" {
+                        bucket = aws_s3_bucket.mybucket.id
 
-                      block_public_acls       = true
-                      block_public_policy     = true
-                      ignore_public_acls      = true
-                      restrict_public_buckets = true
-                    }
-                    """)
+                        block_public_acls       = true
+                        block_public_policy     = true
+                        ignore_public_acls      = true
+                        restrict_public_buckets = true
+                        }
+                        """)
 
-            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         # Ensure tfsec output contains security issue about missing encryption key
         assert module_version.module_details.tfsec == {'results': [
@@ -971,23 +975,23 @@ class TestProcessUpload(TerraregIntegrationTest):
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='12.0.0')
-        module_version.prepare_module()
 
-        with test_upload as zip_file:
-            with test_upload as upload_directory:
-                # Create main.tf in root module, example and submodule
-                for identifier, directory_structure in [
-                        ("root_module", []),
-                        ("example", ["examples", "first-example"]),
-                        ("submodule", ["modules", "first-submodule"])]:
-                    # Generate parent directories for example/submodules
-                    parent_paths = [upload_directory]
-                    for directory in directory_structure:
-                        parent_paths.append(directory)
-                        os.mkdir(os.path.join(*parent_paths))
+        with terrareg.module_version_create.module_version_create(module_version):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    # Create main.tf in root module, example and submodule
+                    for identifier, directory_structure in [
+                            ("root_module", []),
+                            ("example", ["examples", "first-example"]),
+                            ("submodule", ["modules", "first-submodule"])]:
+                        # Generate parent directories for example/submodules
+                        parent_paths = [upload_directory]
+                        for directory in directory_structure:
+                            parent_paths.append(directory)
+                            os.mkdir(os.path.join(*parent_paths))
 
-                    with open(os.path.join(*parent_paths, 'main.tf'), 'w') as fh:
-                        fh.write(f"""
+                        with open(os.path.join(*parent_paths, 'main.tf'), 'w') as fh:
+                            fh.write(f"""
 resource "aws_s3_bucket" "test_bucket" {{
   name = var.name
 }}
@@ -1009,7 +1013,7 @@ output "name" {{
 
 """)
 
-            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         # Ensure infracost output contains monthly cost
         assert module_version.module_details.terraform_graph.strip() == """
@@ -1079,20 +1083,20 @@ digraph {
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='12.0.0')
-        module_version.prepare_module()
 
-        with test_upload as zip_file:
-            with test_upload as upload_directory:
-                os.mkdir(os.path.join(upload_directory, 'examples'))
-                os.mkdir(os.path.join(upload_directory, 'examples', 'test_example'))
-                with open(os.path.join(upload_directory, 'examples', 'test_example', 'main.tf'), 'w') as fh:
-                    fh.write("""
+        with terrareg.module_version_create.module_version_create(module_version):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    os.mkdir(os.path.join(upload_directory, 'examples'))
+                    os.mkdir(os.path.join(upload_directory, 'examples', 'test_example'))
+                    with open(os.path.join(upload_directory, 'examples', 'test_example', 'main.tf'), 'w') as fh:
+                        fh.write("""
 resource "aws_s3_bucket" "test" {
   name = "test-s3-bucket"
 }
 """)
 
-            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         # Ensure infracost output contains monthly cost
         assert 'totalMonthlyCost' in module_version.get_examples()[0].module_details.infracost
@@ -1105,7 +1109,6 @@ resource "aws_s3_bucket" "test" {
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='12.0.0')
-        module_version.prepare_module()
 
         check_output = subprocess.check_output
         infracost_called = False
@@ -1118,14 +1121,15 @@ resource "aws_s3_bucket" "test" {
         # Mock subprocess.check_output to mock call to infracost
         with mock.patch('terrareg.module_extractor.subprocess.check_output', mock_check_ouput) as mocked_check_output, \
                 mock.patch('terrareg.config.Config.INFRACOST_API_KEY', None):
-            with test_upload as zip_file:
-                with test_upload as upload_directory:
-                    os.mkdir(os.path.join(upload_directory, 'examples'))
-                    os.mkdir(os.path.join(upload_directory, 'examples', 'test_example'))
-                    with open(os.path.join(upload_directory, 'examples', 'test_example', 'main.tf'), 'w') as fh:
-                        fh.write('#example file')
+            with terrareg.module_version_create.module_version_create(module_version):
+                with test_upload as zip_file:
+                    with test_upload as upload_directory:
+                        os.mkdir(os.path.join(upload_directory, 'examples'))
+                        os.mkdir(os.path.join(upload_directory, 'examples', 'test_example'))
+                        with open(os.path.join(upload_directory, 'examples', 'test_example', 'main.tf'), 'w') as fh:
+                            fh.write('#example file')
 
-                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                    UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         # Ensure tfsec output contains security issue about missing encryption key
         assert module_version.get_examples()[0].module_details.infracost == {}
@@ -1140,7 +1144,6 @@ resource "aws_s3_bucket" "test" {
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='13.0.0')
-        module_version.prepare_module()
 
         check_output = subprocess.check_output
         infracost_called = False
@@ -1152,14 +1155,15 @@ resource "aws_s3_bucket" "test" {
         # Mock subprocess.check_output to mock call to infracost
         with mock.patch('terrareg.module_extractor.subprocess.check_output', mock_check_ouput) as mocked_check_output, \
                 mock.patch('terrareg.config.Config.INFRACOST_API_KEY', 'some-api-key'):
-            with test_upload as zip_file:
-                with test_upload as upload_directory:
-                    os.mkdir(os.path.join(upload_directory, 'examples'))
-                    os.mkdir(os.path.join(upload_directory, 'examples', 'test_example'))
-                    with open(os.path.join(upload_directory, 'examples', 'test_example', 'main.tf'), 'w') as fh:
-                        fh.write('#example file')
+            with terrareg.module_version_create.module_version_create(module_version):
+                with test_upload as zip_file:
+                    with test_upload as upload_directory:
+                        os.mkdir(os.path.join(upload_directory, 'examples'))
+                        os.mkdir(os.path.join(upload_directory, 'examples', 'test_example'))
+                        with open(os.path.join(upload_directory, 'examples', 'test_example', 'main.tf'), 'w') as fh:
+                            fh.write('#example file')
 
-                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                    UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         # Ensure tfsec output contains security issue about missing encryption key
         assert module_version.get_examples()[0].module_details.infracost == {}
@@ -1172,7 +1176,6 @@ resource "aws_s3_bucket" "test" {
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='14.0.0')
-        module_version.prepare_module()
 
         check_output = subprocess.check_output
         def mock_check_ouput(command, *args, **kwargs):
@@ -1357,14 +1360,15 @@ resource "aws_s3_bucket" "test" {
         # Mock subprocess.check_output to mock call to infracost
         with mock.patch('terrareg.module_extractor.subprocess.check_output', mock_check_ouput) as mocked_check_output, \
                 mock.patch('terrareg.config.Config.INFRACOST_API_KEY', 'test-infracost-api-key'):
-            with test_upload as zip_file:
-                with test_upload as upload_directory:
-                    os.mkdir(os.path.join(upload_directory, 'examples'))
-                    os.mkdir(os.path.join(upload_directory, 'examples', 'test_example'))
-                    with open(os.path.join(upload_directory, 'examples', 'test_example', 'main.tf'), 'w') as fh:
-                        fh.write('#example file')
+            with terrareg.module_version_create.module_version_create(module_version):
+                with test_upload as zip_file:
+                    with test_upload as upload_directory:
+                        os.mkdir(os.path.join(upload_directory, 'examples'))
+                        os.mkdir(os.path.join(upload_directory, 'examples', 'test_example'))
+                        with open(os.path.join(upload_directory, 'examples', 'test_example', 'main.tf'), 'w') as fh:
+                            fh.write('#example file')
 
-                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                    UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         # Ensure tfsec output contains security issue about missing encryption key
         assert module_version.get_examples()[0].module_details.infracost == {
@@ -1498,19 +1502,19 @@ resource "aws_s3_bucket" "test" {
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='15.0.0')
-        module_version.prepare_module()
 
-        with test_upload as zip_file:
-            with test_upload as upload_directory:
-                # Create main.tf
-                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines("""
-                    module "inaccessible" {
-                      source = "http://example.com/not-accessible.zip"
-                    }
-                    """)
+        with terrareg.module_version_create.module_version_create(module_version):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    # Create main.tf
+                    with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                        main_tf_fh.writelines("""
+module "inaccessible" {
+  source = "http://example.com/not-accessible.zip"
+}
+""")
 
-            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
     def test_upload_via_server(self, client):
         """Test basic module upload with single depth."""
@@ -1574,7 +1578,7 @@ resource "aws_s3_bucket" "test" {
         namespace = Namespace(name='testprocessupload')
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='badupload')
-        
+
         assert module_provider is None
 
     def test_uploading_module_with_custom_tab_files(self):
@@ -1585,30 +1589,30 @@ resource "aws_s3_bucket" "test" {
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='16.0.0')
-        module_version.prepare_module()
 
-        with test_upload as zip_file:
-            with test_upload as upload_directory:
-                with open(os.path.join(upload_directory, 'UNITTEST_NO_EXT'), 'w') as fh:
-                    fh.write("""
+        with terrareg.module_version_create.module_version_create(module_version):
+            with test_upload as zip_file:
+                with test_upload as upload_directory:
+                    with open(os.path.join(upload_directory, 'UNITTEST_NO_EXT'), 'w') as fh:
+                        fh.write("""
 # Unit test no extension
 """)
-                with open(os.path.join(upload_directory, 'unittest_backup_file'), 'w') as fh:
-                    fh.write("""
+                    with open(os.path.join(upload_directory, 'unittest_backup_file'), 'w') as fh:
+                        fh.write("""
 # Unit test backup file name
 """)
 
-                with open(os.path.join(upload_directory, 'unittest_file.md'), 'w') as fh:
-                    fh.write("""
+                    with open(os.path.join(upload_directory, 'unittest_file.md'), 'w') as fh:
+                        fh.write("""
 # Unit test markdown file
 """)
 
-            with mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS',
-                            """[["Does Not Exist", ["does_not_exist"]],
-                                ["No Extension", ["UNITTEST_NO_EXT"]],
-                                ["Multiple files", ["primary_file", "unittest_backup_file"]],
-                                ["markdown file", ["unittest_file.md"]]]"""):
-                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+                with mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS',
+                                """[["Does Not Exist", ["does_not_exist"]],
+                                    ["No Extension", ["UNITTEST_NO_EXT"]],
+                                    ["Multiple files", ["primary_file", "unittest_backup_file"]],
+                                    ["markdown file", ["unittest_file.md"]]]"""):
+                    UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
         # Ensure files were created correctly
         expected_files = {
@@ -1629,7 +1633,6 @@ resource "aws_s3_bucket" "test" {
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
         module_version = ModuleVersion(module_provider=module_provider, version='17.0.0')
-        module_version.prepare_module()
 
         # Root directory, outside of root path
         temp_directory = mkdtemp()
@@ -1648,16 +1651,17 @@ resource "aws_s3_bucket" "test" {
             def __init__(self, source):
                 self._source = source
                 self.filename = 'upload.zip'
-            
+
             def save(self, dest):
                 shutil.copy(self._source, dest)
 
         mock_upload = MockUpload(os.path.join(temp_directory, 'upload.zip'))
 
-        with ApiUploadModuleExtractor(upload_file=mock_upload, module_version=module_version) as me:
+        with terrareg.module_version_create.module_version_create(module_version):
+            with ApiUploadModuleExtractor(upload_file=mock_upload, module_version=module_version) as me:
 
-            # Ensure the upload raises an exception due to zip member being outside
-            # the root directory
-            with pytest.raises(terrareg.utils.PathIsNotWithinBaseDirectoryError):
-                # Perform base module upload
-                me.process_upload()
+                # Ensure the upload raises an exception due to zip member being outside
+                # the root directory
+                with pytest.raises(terrareg.utils.PathIsNotWithinBaseDirectoryError):
+                    # Perform base module upload
+                    me.process_upload()
