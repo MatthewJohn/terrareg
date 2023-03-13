@@ -292,6 +292,123 @@ class TestModuleVersion(TerraregIntegrationTest):
                         db.namespace.c.id==9999
                     ))
 
+    def test_module_version_create_error(self):
+        """Test module_version_create with extraction error"""
+
+        db = Database.get()
+
+        try:
+            with db.get_engine().connect() as conn:
+                conn.execute(db.namespace.insert().values(
+                    id=9999,
+                    namespace='testcreationunique'
+                ))
+
+                conn.execute(db.module_provider.insert().values(
+                    id=10000,
+                    namespace_id=9999,
+                    module='test-module',
+                    provider='testprovider'
+                ))
+
+                conn.execute(db.module_version.insert().values(
+                    id=10001,
+                    module_provider_id=10000,
+                    version='1.1.0',
+                    published=True,
+                    beta=False,
+                    internal=False,
+                    extraction_complete=True
+                ))
+
+                # Create submodules
+                conn.execute(db.sub_module.insert().values(
+                    id=10002,
+                    parent_module_version=10001,
+                    type='example',
+                    path='example/test-modal-db-row-create-here'
+                ))
+                conn.execute(db.sub_module.insert().values(
+                    id=10003,
+                    parent_module_version=10001,
+                    type='submodule',
+                    path='modules/test-modal-db-row-create-there'
+                ))
+
+                # Create example file
+                conn.execute(db.example_file.insert().values(
+                    id=10004,
+                    submodule_id=10002,
+                    path='testfile.tf',
+                    content=None
+                ))
+
+                # Create download analytics
+                conn.execute(db.analytics.insert().values(
+                    id=10005,
+                    parent_module_version=10001,
+                    timestamp=datetime.now(),
+                    terraform_version='1.0.0',
+                    analytics_token='unittest-download',
+                    auth_token='abcefg',
+                    environment='test'
+                ))
+
+            namespace = Namespace.get(name='testcreationunique')
+            assert namespace is not None
+            module = Module(namespace=namespace, name='test-module')
+            module_provider = ModuleProvider.get(module=module, name='testprovider')
+            assert module_provider is not None
+
+            old_module_version = ModuleVersion(module_provider=module_provider, version='1.1.0')
+
+            # Ensure that pre-existing row is returned
+            pre_existing_row = old_module_version._get_db_row()
+            assert pre_existing_row is not None
+            assert pre_existing_row['id'] == 10001
+
+            # Create new instance for creation
+            create_module_version = ModuleVersion(module_provider=module_provider, version='1.1.0')
+
+            class UnittestException(Exception):
+                pass
+
+            with unittest.mock.patch('terrareg.config.Config.MODULE_VERSION_REINDEX_MODE', ModuleVersionReindexMode.AUTO_PUBLISH):
+                # If confiugred to raise an error, check that it is
+                with pytest.raises(UnittestException):
+                    with module_version_create(create_module_version):
+                        raise UnittestException('Unit test extraction exception')
+
+            # Check member variable for PK pinning of old version
+            new_module_pk = create_module_version._pk
+            assert type(new_module_pk) is int
+
+            # Ensure previous module version is in it's previous state
+            # and the new module has been rememoved from the database
+            check_module_version = ModuleVersion(module_provider=module_provider, version='1.1.0')
+            assert check_module_version._get_db_row() is not None
+            assert check_module_version._get_db_row() == pre_existing_row
+
+            # Check that new module version no longer exists
+            new_module_version = ModuleVersion(module_provider=module_provider, version='1.1.0')
+            ## Pin to PK of new module version
+            new_module_version._pk = new_module_pk
+            assert new_module_version._get_db_row() is None
+
+            # @TODO Check that all submodules and indexed files are still present
+
+        finally:
+            # Clear down test data
+            ns = Namespace.get('testcreationunique')
+            if ns:
+                module = Module(ns, 'test-module')
+                module_provider = ModuleProvider.get(module, 'testprovider')
+                if module_provider:
+                    module_provider.delete()
+                with db.get_engine().connect() as conn:
+                    conn.execute(db.namespace.delete().where(
+                        db.namespace.c.id==9999
+                    ))
 
     @pytest.mark.parametrize('template,version,published,expected_string', [
         ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '0.0.0', True, '>= 0.0.0'),
