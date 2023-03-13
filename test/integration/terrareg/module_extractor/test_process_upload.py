@@ -1111,12 +1111,11 @@ resource "aws_s3_bucket" "test" {
         module_version = ModuleVersion(module_provider=module_provider, version='12.0.0')
 
         check_output = subprocess.check_output
-        infracost_called = False
         def mock_check_ouput(command, *args, **kwargs):
             if command[0] == 'infracost':
-                global infracost_called
-                infracost_called = True
+                mock_check_ouput.infracost_called = True
             return check_output(command, *args, **kwargs)
+        mock_check_ouput.infracost_called = False
 
         # Mock subprocess.check_output to mock call to infracost
         with mock.patch('terrareg.module_extractor.subprocess.check_output', mock_check_ouput) as mocked_check_output, \
@@ -1134,7 +1133,7 @@ resource "aws_s3_bucket" "test" {
         # Ensure tfsec output contains security issue about missing encryption key
         assert module_version.get_examples()[0].module_details.infracost == {}
 
-        assert infracost_called == False
+        assert mock_check_ouput.infracost_called == False
 
     def test_uploading_module_with_infracost_run_error(self):
         """Test uploading a module with infracost throwing an error."""
@@ -1146,7 +1145,6 @@ resource "aws_s3_bucket" "test" {
         module_version = ModuleVersion(module_provider=module_provider, version='13.0.0')
 
         check_output = subprocess.check_output
-        infracost_called = False
         def mock_check_ouput(command, *args, **kwargs):
             if command[0] == 'infracost':
                 raise subprocess.CalledProcessError(cmd='Unit test error', returncode=1)
