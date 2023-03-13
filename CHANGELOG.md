@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.59.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.2...v2.59.3) (2023-03-13)
+
+
+### Bug Fixes
+
+* Update unauthenticated/unpriviledged access to module upload/publish endpoints when API keys are not set and access controls are enabled ([0afc6a8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0afc6a8e1aee289c9705f8f6575465c47935a907)), closes [#339](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/339)
+
 ## [2.59.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.1...v2.59.2) (2023-03-13)
 
 
