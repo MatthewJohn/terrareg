@@ -569,9 +569,7 @@ class Namespace(object):
             # If set to create and auto module-provider creation
             # is enabled in config, create the module provider
             if create and terrareg.config.Config().AUTO_CREATE_NAMESPACE:
-                cls.create(name=name, display_name=None)
-
-                return obj
+                return cls.create(name=name, display_name=None)
 
             # If not creating, return None
             return None
@@ -651,6 +649,9 @@ class Namespace(object):
         cls.insert_into_database(name=name, display_name=display_name)
 
         obj = cls(name=name)
+
+        # Indicate that object was created
+        obj.created = True
 
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.NAMESPACE_CREATE,
@@ -808,6 +809,7 @@ class Namespace(object):
     def __init__(self, name: str):
         """Validate name and store member variables"""
         self._name = name
+        self.created = False
         self._cache_db_row = None
 
     def _get_db_row(self):
@@ -823,6 +825,28 @@ class Namespace(object):
                 self._cache_db_row = res.fetchone()
 
         return self._cache_db_row
+
+    def delete(self):
+        """Delete namespace"""
+        assert self.pk is not None
+
+        # Delete all module providers
+        for module in self.get_all_modules():
+            for provider in module.get_providers():
+                provider.delete()
+
+        # Delete namespace from database
+        db = Database.get()
+
+        with db.get_connection() as conn:
+            # Delete module details from module_details table
+            delete_statement = db.namespace.delete().where(
+                db.namespace.c.id == self.pk
+            )
+            conn.execute(delete_statement)
+
+        # Clear cached DB row
+        self._cache_db_row = None
 
     def get_view_url(self):
         """Return view URL"""
@@ -1425,6 +1449,7 @@ class ModuleProvider(object):
             conn.execute(module_provider_insert)
 
         obj = cls(module=module, name=name)
+        obj.created = True
 
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_CREATE,
@@ -1446,9 +1471,7 @@ class ModuleProvider(object):
             # If set to create and auto module-provider creation
             # is enabled in config, create the module provider
             if create and terrareg.config.Config().AUTO_CREATE_MODULE_PROVIDER:
-                cls.create(module=module, name=name)
-
-                return obj
+                return cls.create(module=module, name=name)
 
             # If not creating, return None
             return None
@@ -1581,6 +1604,7 @@ class ModuleProvider(object):
         self._module = module
         self._name = name
         self._cache_db_row = None
+        self.created = False
 
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""

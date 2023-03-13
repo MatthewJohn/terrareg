@@ -31,28 +31,40 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
             return {'message': 'Module upload is disabled.'}, 400
 
         # Get module provider and, optionally create, if it doesn't exist
-        _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider, create=True)
+        namespace_obj, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider, create=True)
         if error:
             return error
 
-        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version=version)
+        try:
+            module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version=version)
 
-        if len(request.files) != 1:
-            raise terrareg.errors.UploadError('One file can be uploaded')
+            if len(request.files) != 1:
+                raise terrareg.errors.UploadError('One file can be uploaded')
 
-        file = request.files[[f for f in request.files.keys()][0]]
+            file = request.files[[f for f in request.files.keys()][0]]
 
-        # If the user does not select a file, the browser submits an
-        # empty file without a filename.
-        if file.filename == '':
-            raise terrareg.errors.UploadError('No selected file')
+            # If the user does not select a file, the browser submits an
+            # empty file without a filename.
+            if file.filename == '':
+                raise terrareg.errors.UploadError('No selected file')
 
-        if not file or not self.allowed_file(file.filename):
-            raise terrareg.errors.UploadError('Error occurred - unknown file extension')
+            if not file or not self.allowed_file(file.filename):
+                raise terrareg.errors.UploadError('Error occurred - unknown file extension')
 
-        with terrareg.module_version_create.module_version_create(module_version):
-            with terrareg.module_extractor.ApiUploadModuleExtractor(upload_file=file, module_version=module_version) as me:
-                me.process_upload()
+            with terrareg.module_version_create.module_version_create(module_version):
+                with terrareg.module_extractor.ApiUploadModuleExtractor(upload_file=file, module_version=module_version) as me:
+                    me.process_upload()
+        except:
+            # Remove module provider/namespace, if created in this request
+            print("GOT HERE")
+            if module_provider.created:
+                print("DELETRING MODULE PROVIDER")
+                module_provider.delete()
+
+            if namespace_obj.created:
+                namespace_obj.delete()
+
+            raise
 
         return {
             'status': 'Success'
