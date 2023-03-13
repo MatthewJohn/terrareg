@@ -118,7 +118,7 @@ class TestModuleVersion(TerraregIntegrationTest):
                      'variable_template']:
             assert new_db_row[attr] == None
 
-    @pytest.mark.parametrize('module_version_reindex_mode,previous_publish_state,expected_return_value,should_raise_error', [
+    @pytest.mark.parametrize('module_version_reindex_mode,previous_publish_state,expected_published_state,should_raise_error', [
         # Legacy mode should allow the re-index and ignore pre-existing version for setting published
         (ModuleVersionReindexMode.LEGACY, False, False, False),
         ## With previous version published
@@ -132,7 +132,7 @@ class TestModuleVersion(TerraregIntegrationTest):
         (ModuleVersionReindexMode.PROHIBIT, False, False, True)
     ])
     def test_module_version_create_replace_existing(self, module_version_reindex_mode,
-                                            previous_publish_state, expected_return_value,
+                                            previous_publish_state, expected_published_state,
                                             should_raise_error):
         """Test module_version_create with pre-existing module version"""
 
@@ -223,14 +223,13 @@ class TestModuleVersion(TerraregIntegrationTest):
                     # Otherwise check the return value
                     with module_version_create(module_version):
                         pass
-                    assert module_version.published is expected_return_value
 
             # Ensure that a DB row is now returned
             new_db_row = module_version._get_db_row()
             assert new_db_row['module_provider_id'] == module_provider_row['id']
             assert type(new_db_row['id']) == int
 
-            assert new_db_row['published'] == False
+            assert new_db_row['published'] == expected_published_state
             assert new_db_row['version'] == '1.1.0'
 
             for attr in ['description', 'module_details_id', 'owner',
