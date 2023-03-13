@@ -26,6 +26,7 @@ class TestNamespaceList(SeleniumTest):
         assert content.find_element(By.TAG_NAME, 'h1').text == 'Namespaces'
 
         expected_namespaces = [
+            ['emptynamespace', 'emptynamespace'],
             ['javascriptinjection', 'javascriptinjection'], ['moduledetails', 'moduledetails'],
             ['moduleextraction', 'moduleextraction'], ['modulesearch', 'modulesearch'],
             ['modulesearch-contributed', 'modulesearch-contributed'],
