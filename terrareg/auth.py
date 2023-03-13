@@ -140,17 +140,17 @@ class NotAuthenticated(BaseAuthMethod):
 
     def can_publish_module_version(self, namespace):
         """Whether user can publish module version within a namespace."""
-        # If API key authentication is not configured for publishing modules,
-        # allow unauthenticated access
-        if not PublishApiKeyAuthMethod.is_enabled():
+        # If API key authentication is not configured for publishing modules and
+        # RBAC is not enabled, allow unauthenticated access
+        if (not terrareg.config.Config().ENABLE_ACCESS_CONTROLS) and (not PublishApiKeyAuthMethod.is_enabled()):
             return True
         return False
 
     def can_upload_module_version(self, namespace):
         """Whether user can upload/index module version within a namespace."""
-        # If API key authentication is not configured for uploading modules,
-        # allow unauthenticated access
-        if not UploadApiKeyAuthMethod.is_enabled():
+        # If API key authentication is not configured for uploading modules and
+        # RBAC is not enabled, allow unauthenticated access
+        if (not terrareg.config.Config().ENABLE_ACCESS_CONTROLS) and (not UploadApiKeyAuthMethod.is_enabled()):
             return True
         return False
 
@@ -334,10 +334,11 @@ class BaseSsoAuthMethod(BaseSessionAuthMethod):
     def can_publish_module_version(self, namespace):
         """Determine if user can publish a module version to given namespace."""
         return (
-            # If PUBLISH API keys have not been enabled,
+            # If PUBLISH API keys have not been enabled and
+            # RBAC has not been enabled,
             # allow user to publish module versions, as this
             # can be performed without authentication
-            (not PublishApiKeyAuthMethod.is_enabled()) or
+            ((not terrareg.config.Config().ENABLE_ACCESS_CONTROLS) and (not PublishApiKeyAuthMethod.is_enabled())) or
             # Otherwise, check for MODIFY namespace access
             self.check_namespace_access(namespace=namespace, permission_type=UserGroupNamespacePermissionType.MODIFY)
         )
@@ -345,10 +346,11 @@ class BaseSsoAuthMethod(BaseSessionAuthMethod):
     def can_upload_module_version(self, namespace):
         """Determine if user can upload a module version to given namespace."""
         return (
-            # If UPLOAD API keys have not been enabled,
+            # If UPLOAD API keys have not been enabled and
+            # RBAC has not been enabled,
             # allow user to publish module versions, as this
             # can be performed without authentication
-            (not UploadApiKeyAuthMethod.is_enabled()) or
+            ((not terrareg.config.Config().ENABLE_ACCESS_CONTROLS) and (not UploadApiKeyAuthMethod.is_enabled())) or
             # Otherwise, check for MODIFY namespace access
             self.check_namespace_access(namespace=namespace, permission_type=UserGroupNamespacePermissionType.MODIFY)
         )
