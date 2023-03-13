@@ -31,5 +31,7 @@ class ApiTerraregConfig(ErrorCatchingResource):
             'OPENID_CONNECT_LOGIN_TEXT': config.OPENID_CONNECT_LOGIN_TEXT,
             'SAML_ENABLED': terrareg.saml.Saml2.is_enabled(),
             'SAML_LOGIN_TEXT': config.SAML2_LOGIN_TEXT,
-            'ADMIN_LOGIN_ENABLED': terrareg.auth.AdminApiKeyAuthMethod.is_enabled()
+            'ADMIN_LOGIN_ENABLED': terrareg.auth.AdminApiKeyAuthMethod.is_enabled(),
+            'AUTO_CREATE_NAMESPACE': config.AUTO_CREATE_NAMESPACE,
+            'AUTO_CREATE_MODULE_PROVIDER': config.AUTO_CREATE_MODULE_PROVIDER
         }
