@@ -53,7 +53,7 @@ class TestModuleVersion(TerraregIntegrationTest):
         module_version = ModuleVersion(module_provider=module_provider, version=version)
         assert module_version._extracted_beta_flag == beta
 
-    def test_create_db_row(self):
+    def test_module_version_create(self):
         """Test creating DB row"""
         namespace = Namespace.get(name='testcreation', create=True)
         module = Module(namespace=namespace, name='test-module')
@@ -66,11 +66,13 @@ class TestModuleVersion(TerraregIntegrationTest):
         assert module_version._get_db_row() == None
 
         # Insert module version into database
-        module_version._create_db_row()
+        with module_version_create(module_version):
+            pass
 
         # Ensure that a DB row is now returned
         new_db_row = module_version._get_db_row()
         assert new_db_row['module_provider_id'] == module_provider_row['id']
+        assert new_db_row['extraction_complete'] is True
         assert type(new_db_row['id']) == int
 
         assert new_db_row['published'] == False
@@ -84,7 +86,7 @@ class TestModuleVersion(TerraregIntegrationTest):
                      'variable_template']:
             assert new_db_row[attr] == None
 
-    def test_create_beta_version(self):
+    def test_module_version_create_beta_version(self):
         """Test creating DB row for beta version"""
         namespace = Namespace.get(name='testcreation', create=True)
         module = Module(namespace=namespace, name='test-module')
@@ -97,7 +99,8 @@ class TestModuleVersion(TerraregIntegrationTest):
         assert module_version._get_db_row() == None
 
         # Insert module version into database
-        module_version._create_db_row()
+        with module_version_create(module_version):
+            pass
 
         # Ensure that a DB row is now returned
         new_db_row = module_version._get_db_row()
@@ -128,10 +131,10 @@ class TestModuleVersion(TerraregIntegrationTest):
         # Prohibit mode should raise an error
         (ModuleVersionReindexMode.PROHIBIT, False, False, True)
     ])
-    def test_create_db_row_replace_existing(self, module_version_reindex_mode,
+    def test_module_version_create_replace_existing(self, module_version_reindex_mode,
                                             previous_publish_state, expected_return_value,
                                             should_raise_error):
-        """Test creating DB row with pre-existing module version"""
+        """Test module_version_create with pre-existing module version"""
 
         db = Database.get()
 
@@ -155,7 +158,8 @@ class TestModuleVersion(TerraregIntegrationTest):
                     version='1.1.0',
                     published=previous_publish_state,
                     beta=False,
-                    internal=False
+                    internal=False,
+                    extraction_complete=True
                 ))
 
                 # Create submodules
@@ -209,15 +213,17 @@ class TestModuleVersion(TerraregIntegrationTest):
                 # If confiugred to raise an error, check that it is
                 if should_raise_error:
                     with pytest.raises(terrareg.errors.ReindexingExistingModuleVersionsIsProhibitedError):
-                        module_version._create_db_row()
+                        with module_version_create(module_version):
+                            pass
 
                     # Do not run any further tests as the exception will
                     # rollback any changes
                     return
                 else:
                     # Otherwise check the return value
-                    publish_flag = module_version._create_db_row()
-                    assert publish_flag == expected_return_value
+                    with module_version_create(module_version):
+                        pass
+                    assert module_version.published is expected_return_value
 
             # Ensure that a DB row is now returned
             new_db_row = module_version._get_db_row()
