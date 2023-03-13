@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.59.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.1...v2.59.2) (2023-03-13)
+
+
+### Bug Fixes
+
+* Fallback to use openid connect user's email address, if username is not available ([c7e057a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c7e057a713ca12a7b5fd31a0641c4190d29ab176)), closes [#276](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/276)
+* Fix authentication using OpenID connect with Azure ([29bcb1d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/29bcb1d5365cdebb1367be27c5e62cf75ec15ff3)), closes [#276](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/276)
+
 ## [2.59.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.0...v2.59.1) (2023-03-11)
 
 
