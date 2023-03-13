@@ -714,7 +714,8 @@ class Namespace(object):
 
             modules_query = modules_query.where(
                 db.module_version.c.published == True,
-                db.module_version.c.beta == False
+                db.module_version.c.beta == False,
+                db.module_version.c.extraction_complete == True
             )
 
             modules_query = modules_query.subquery()
@@ -1414,6 +1415,8 @@ class ModuleProvider(object):
         ).join(
             db.namespace,
             db.module_provider.c.namespace_id==db.namespace.c.id
+        ).where(
+            db.module_version.c.extraction_complete==True
         )
         if only_published:
             counts = counts.where(
@@ -1933,7 +1936,8 @@ class ModuleProvider(object):
         ).where(
             db.module_provider.c.id == self.pk,
             db.module_version.c.published == True,
-            db.module_version.c.beta == False
+            db.module_version.c.beta == False,
+            db.module_version.c.extraction_complete == True
         )
         with db.get_connection() as conn:
             res = conn.execute(select)
@@ -1967,7 +1971,8 @@ class ModuleProvider(object):
         select = db.select_module_version_joined_module_provider(
             db.module_version.c.version
         ).where(
-            db.module_provider.c.id == self.pk
+            db.module_provider.c.id == self.pk,
+            db.module_version.c.extraction_complete == True
         )
         # Remove unpublished versions, it not including them
         if not include_unpublished:
@@ -2313,6 +2318,8 @@ class ModuleVersion(TerraformSpecsObject):
         db = Database.get()
         counts = db.select_module_version_joined_module_provider(
             db.module_version.c.version
+        ).where(
+            db.module_version.c.extraction_complete == True
         ).group_by(
             db.namespace.c.namespace,
             db.module_provider.c.module,
@@ -3007,16 +3014,13 @@ class ModuleVersion(TerraformSpecsObject):
                 version=self.version,
                 published=False,
                 beta=self._extracted_beta_flag,
-                internal=False
+                internal=False,
+                extraction_complete=False
             )
             insert_res = conn.execute(insert_statement)
-            new_insert_id = insert_res.lastrowid
-            select = db.module_version.select().where(
-                db.module_version.c.id == new_insert_id
-            )
-            res = conn.execute(select)
+
             # Set current module pk directly from ID and clear cache
-            self._pk = res.lastrowid
+            self._pk = insert_res.lastrowid
             self._cache_db_row = None
 
         return previous_version_published

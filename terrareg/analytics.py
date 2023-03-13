@@ -154,7 +154,9 @@ class AnalyticsEngine:
         ).where(
             # Filter unpublished and beta versions
             db.module_version.c.published == True,
-            db.module_version.c.beta == False
+            db.module_version.c.beta == False,
+            # Filter modules that haven't completed extraction
+            db.module_version.c.extraction_complete == True
         )
         # Filter rows with empty auth token, if including them is not enabled
         if not include_empty_auth_token:
