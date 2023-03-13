@@ -12,12 +12,24 @@ import terrareg.analytics
 class ApiModuleVersionDownload(ErrorCatchingResource):
     """Provide download endpoint."""
 
-    def _get(self, namespace, name, provider, version):
+    def _get(self, namespace, name, provider, version=None):
         """Provide download header for location to download source."""
         namespace, analytics_token = terrareg.models.Namespace.extract_analytics_token(namespace)
-        namespace, module, module_provider, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
-        if error:
-            return self._get_404_response()
+
+        # If a version has been provided, get the exact version
+        if version:
+            namespace, module, module_provider, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+            if error:
+                return self._get_404_response()
+        else:
+            # Otherwise, get the module provider, returning an error if it doesn't exist
+            namespace, module, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+            if error:
+                return self._get_404_response()
+            # Get the latest module version, returning an error if one doesn't exist
+            module_version = module_provider.get_latest_version()
+            if not module_version:
+                return self._get_404_response()
 
         auth_token = None
         auth_token_match = re.match(r'Bearer (.*)', request.headers.get('Authorization', ''))
