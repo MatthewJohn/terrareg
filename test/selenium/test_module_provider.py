@@ -20,6 +20,7 @@ from terrareg.database import Database
 from test import mock_create_audit_event
 from test.selenium import SeleniumTest
 from terrareg.models import GitProvider, ModuleVersion, Namespace, Module, ModuleProvider, ProviderLogo
+from terrareg.module_version_create import module_version_create
 
 
 class TestModuleProvider(SeleniumTest):
@@ -1532,7 +1533,8 @@ EOF
         with mock_create_audit_event:
             # Create test module version
             module_version = ModuleVersion(module_provider=module_provider, version='2.5.5')
-            module_version.prepare_module()
+            with module_version_create(module_version):
+                pass
             module_version.publish()
             module_version_pk = module_version.pk
 

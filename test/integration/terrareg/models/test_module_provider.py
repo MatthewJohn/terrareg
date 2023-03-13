@@ -6,6 +6,7 @@ from terrareg.database import Database
 from terrareg.models import GitProvider, Module, ModuleVersion, Namespace, ModuleProvider
 import terrareg.errors
 from test.integration.terrareg import TerraregIntegrationTest
+from terrareg.module_version_create import module_version_create
 
 
 class TestModuleProvider(TerraregIntegrationTest):
@@ -245,7 +246,8 @@ class TestModuleProvider(TerraregIntegrationTest):
         module_version_pks = []
         for itx in ['1.0.0', '1.1.1', '1.2.3']:
             module_version = ModuleVersion(module_provider=module_provider, version=itx)
-            module_version.prepare_module()
+            with module_version_create(module_version):
+                pass
             module_version.publish()
             module_version_pks.append(module_version.pk)
 

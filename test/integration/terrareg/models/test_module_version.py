@@ -10,6 +10,8 @@ from terrareg.database import Database
 from terrareg.models import Example, ExampleFile, Module, Namespace, ModuleProvider, ModuleVersion
 import terrareg.errors
 from test.integration.terrareg import TerraregIntegrationTest
+from terrareg.module_version_create import module_version_create
+
 
 class TestModuleVersion(TerraregIntegrationTest):
 
@@ -308,7 +310,8 @@ class TestModuleVersion(TerraregIntegrationTest):
             module = Module(namespace=namespace, name='test')
             module_provider = ModuleProvider.get(module=module, name='test', create=True)
             module_version = ModuleVersion(module_provider=module_provider, version=version)
-            module_version.prepare_module()
+            with module_version_create(module_version):
+                pass
             if published:
                 module_version.publish()
             assert module_version.get_terraform_example_version_string() == expected_string
@@ -324,7 +327,8 @@ class TestModuleVersion(TerraregIntegrationTest):
 
         # Create test module version
         module_version = ModuleVersion(module_provider=module_provider, version='2.5.5')
-        module_version.prepare_module()
+        with module_version_create(module_version):
+            pass
         module_version.publish()
         module_version_pk = module_version.pk
 
