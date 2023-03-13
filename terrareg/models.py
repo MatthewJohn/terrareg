@@ -2878,7 +2878,7 @@ class ModuleVersion(TerraformSpecsObject):
                     # the current published state of previous module version
                     # to determine if publishing should happen
                     if terrareg.config.Config().MODULE_VERSION_REINDEX_MODE is terrareg.config.ModuleVersionReindexMode.AUTO_PUBLISH:
-                        previous_version_published = previous_version_published or old_module_version.published
+                        previous_version_published = previous_version_published or (row['extraction_complete'] and old_module_version.published)
 
                     # Delete previous module version
                     old_module_version.delete(delete_related_analytics=False)
