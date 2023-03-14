@@ -138,7 +138,7 @@ class ModuleExtractor:
             ModuleExtractor.TERRAFORM_LOCK.release()
 
     def _generate_module_extraction_status_row(self):
-        """Genertate module extraction status row in database"""
+        """Generate module extraction status row in database"""
         db = Database.get()
         if self._request_id:
             insert_statement = db.module_extraction_status.insert().values(
