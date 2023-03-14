@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.60.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.60.0...v2.60.1) (2023-03-14)
+
+
+### Bug Fixes
+
+* Update namespace module list endpoint to return empty module list rather than 404 when a namespace has no modules ([6ca3441](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6ca3441f309c52d89ff8fe0f36e1c6da851cc8ea)), closes [#328](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/328)
+* Update namespace page to display error about no modules when a namespace exists, rather than an eror that the namespace does not exist. ([ec0b3c9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ec0b3c9d362e8c3fa39a10d33f87199546270a8f)), closes [#328](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/328)
+
 # [2.60.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.5...v2.60.0) (2023-03-14)
 
 
