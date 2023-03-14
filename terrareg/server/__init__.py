@@ -182,6 +182,7 @@ class Server(BaseHandler):
         )
         self._api.add_resource(
             ApiModuleVersionDownload,
+            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/download',
             '/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/download'
         )
         self._api.add_resource(

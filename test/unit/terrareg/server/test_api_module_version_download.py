@@ -16,17 +16,23 @@ from . import mock_record_module_version_download
 class TestApiModuleVersionDownload(TerraregUnitTest):
     """Test ApiModuleVersionDownload resource."""
 
+    @pytest.mark.parametrize('version', ['1.0.0', None])
     @setup_test_data()
-    def test_existing_module_version_without_alaytics_token(self, client, mock_models):
-        res = client.get('/v1/modules/testnamespace/testmodulename/testprovider/1.0.0/download')
+    def test_existing_module_version_without_alaytics_token(self, version, client, mock_models):
+        res = client.get(f"/v1/modules/testnamespace/testmodulename/testprovider/{f'{version}/' if version else ''}download")
         assert res.status_code == 401
         assert res.data == b'\nAn analytics token must be provided.\nPlease update module source to include analytics token.\n\nFor example:\n  source = "localhost/my-tf-application__testnamespace/testmodulename/testprovider"'
 
+    @pytest.mark.parametrize('version', [
+        # Test with version
+        '0.1.2',
+        # Test without version
+        None
+    ])
     @setup_test_data()
-    def test_non_existent_module_version(self, client, mock_models):
+    def test_non_existent_module_version(self, version, client, mock_models):
         """Test endpoint with non-existent module"""
-
-        res = client.get('/v1/modules/namespacename/modulename/testprovider/0.1.2/download')
+        res = client.get(f"/v1/modules/namespacename/modulename/testprovider/{f'{version}/' if version else ''}download")
 
         assert res.json == {'errors': ['Not Found']}
         assert res.status_code == 404
@@ -62,14 +68,22 @@ class TestApiModuleVersionDownload(TerraregUnitTest):
         )
         assert AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'].id == test_module_version.id
 
+    @pytest.mark.parametrize('version,expected_version', [
+        # Explicit latest version
+        ('2.4.1', '2.4.1'),
+        # Non-latest version
+        ('1.0.0', '1.0.0'),
+        # Latest endpoint
+        (None, '2.4.1')
+    ])
     @setup_test_data()
     def test_existing_module_internal_download_with_auth_token(
-        self, client, mock_models,
+        self, version, expected_version, client, mock_models,
         mock_record_module_version_download):
         """Test endpoint with analytics token and auth token"""
 
         res = client.get(
-            '/v1/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1/download',
+            f"/v1/modules/test_token-name__testnamespace/testmodulename/testprovider/{f'{version}/' if version else ''}download",
             headers={'X-Terraform-Version': 'TestTerraformVersion',
                      'User-Agent': 'TestUserAgent',
                      'Authorization': 'Bearer test123-authorization-token'}
@@ -78,9 +92,9 @@ class TestApiModuleVersionDownload(TerraregUnitTest):
         test_namespace = terrareg.models.Namespace(name='testnamespace')
         test_module = terrareg.models.Module(namespace=test_namespace, name='testmodulename')
         test_module_provider = terrareg.models.ModuleProvider(module=test_module, name='testprovider')
-        test_module_version = terrareg.models.ModuleVersion(module_provider=test_module_provider, version='2.4.1')
+        test_module_version = terrareg.models.ModuleVersion(module_provider=test_module_provider, version=expected_version)
 
-        assert res.headers['X-Terraform-Get'] == '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'
+        assert res.headers['X-Terraform-Get'] == f'/v1/terrareg/modules/testnamespace/testmodulename/testprovider/{expected_version}/source.zip'
         assert res.status_code == 204
 
         AnalyticsEngine.record_module_version_download.assert_called_with(
