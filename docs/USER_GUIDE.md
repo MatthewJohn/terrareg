@@ -130,14 +130,35 @@ SSL can also be provided by a reverse proxy in front of Terrareg and traffic to 
 
 # Security
 
-Terrareg must be configured with a secret key to be able to login, which is used for encrypting sessions. This can be configured via [SECRET_KEY](./CONFIG.md#secret_key).
+Terrareg must be configured with a secret key, which is used for encrypting sessions, to enable authentication. This can be configured via [SECRET_KEY](./CONFIG.md#secret_key).
 
 By default, Terrareg administration is protected by an [ADMIN_AUTHENTICATION_TOKEN](./CONFIG.md#admin_authentication_token), which is set via environment variable, which becomes the password used for authentication on the login page.
 
-Authentication is required to perform tasks such as: creating namespaces, creating/deleting modules and managing additional user permissions.
+Authentication is required to perform tasks such as: creating namespaces, creating/deleting modules and managing additional user permissions, with a few exceptions:
 
-However, indexing and publishing modules does *not* require authentication. To disable unauthorised indexing/publishing of modules, set up dedicated API keys for these functions, see [UPLOAD_API_KEYS](./CONFIG.MD#upload_api_keys) and [PUBLISH_API_KEYS](./CONFIG.MD#Ppublish_api_keys)
+### Securing module creation/indexing
 
+By default, indexing and publishing modules does *not* require authentication. To disable unauthorised indexing/publishing of modules, set up dedicated API keys for these functions, see [UPLOAD_API_KEYS](./CONFIG.MD#upload_api_keys) and [PUBLISH_API_KEYS](./CONFIG.MD#Ppublish_api_keys).
+
+Enabling [access controls](#access-controls) will disable unauthenticated indexing/publishing of modules, requiring authentication via SSO or Admin password or, once set, the upload/publish API keys.
+
+### Auto creation of namespaces/modules
+
+By default, the module upload endpoint will create a namespace/module if it does not exist.
+
+For a secure installation, it is recommended to disable this, forcing all namespaces/modules to be created by authenticated users.
+
+The disable this functionality, set [AUTO_CREATE_NAMESPACE](./CONFIG.md#auto_create_namespace) and [AUTO_CREATE_MODULE_PROVIDER](./CONFIG.md#auto_create_module_provider)
+
+## Access controls
+
+By default, all authenticated users will have global admin permissions, allowing the creation/deletion of all namespaces, modules and module versions.
+
+Role based access controls (RBAC) can be enabled by setting [ENABLE_ACCESS_CONTROLS](./CONFIG.md#enable_access_controls).
+
+This will remove any default privilges given to SSO users. The admin user will still retain global admin privileges.
+
+For information about user groups, see [Single Sign-on](#single-sign-on).
 
 ## Single Sign-on
 
@@ -147,7 +168,7 @@ SSO groups can be assigned global admin permissions, or per-namespace permission
 
 User groups and permissions can be configured on the 'User Groups' (/user-groups) page.
 
-Once single sign-on has been setup, the [ADMIN_AUTHENTICATION_TOKEN](./CONFIG.md#admin_authentication_token) can be disabled, stopping further sign-in via password authentication.
+Once single sign-on has been setup, the [ADMIN_AUTHENTICATION_TOKEN](./CONFIG.md#admin_authentication_token) can be removed, stopping further sign-in via password authentication.
 
 *NOTE* OpenID and SAML2 authentication is currently experimental.
 
