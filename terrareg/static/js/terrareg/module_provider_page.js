@@ -2025,11 +2025,27 @@ function updateModuleProviderSettings(moduleDetails) {
     return false;
 }
 
+function capitaliseWord(string) {
+    return string[0].toUpperCase() + string.slice(1).toLowerCase();
+  }
+
 function showSecurityWarnings(moduleDetails) {
-    let securityIssuesContainer = $('#security-issues')
+    if (! moduleDetails.security_results) {
+        return;
+    }
+    let securityIssuesContainer = $('#security-issues');
+    let highestSeverity = 0;
+    let severityLevels = ['', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
+
+    for (let securityIssue of moduleDetails.security_results) {
+        if (severityLevels.indexOf(securityIssue.severity) > highestSeverity) {
+            highestSeverity = severityLevels.indexOf(securityIssue.severity);
+        }
+    }
+
     if (moduleDetails.security_failures) {
         securityIssuesContainer.removeClass('default-hidden');
-        $('#security-issues-text').text(`${moduleDetails.security_failures} Security issues`);
+        $('#security-issues-text').text(`${moduleDetails.security_failures} ${capitaliseWord(severityLevels[highestSeverity])} or lower security issues`);
     } else {
         securityIssuesContainer.addClass('default-hidden');
     }
