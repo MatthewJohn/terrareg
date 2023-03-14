@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.59.5](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.4...v2.59.5) (2023-03-14)
+
+
+### Bug Fixes
+
+* Add steps to initial setup to disable AUTO_CREATE_NAMESPACE and AUTO_CREATE_MODULE_PROVIDER ([f18398b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f18398b78b0485cbe02e01a19a6bf9b400cfafd3)), closes [#337](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/337)
+
 ## [2.59.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.3...v2.59.4) (2023-03-14)
 
 
