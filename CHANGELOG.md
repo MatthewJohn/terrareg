@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.60.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.5...v2.60.0) (2023-03-14)
+
+
+### Features
+
+* Add support for 'latest' module provider download endpoint ([18f14e8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/18f14e86cc6aa091f573f446a9d1f5428f14302d)), closes [#322](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/322)
+
 ## [2.59.5](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.4...v2.59.5) (2023-03-14)
 
 
