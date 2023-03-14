@@ -131,8 +131,20 @@ async function loadSetupPage(overrideHttpsCheck = false) {
             secureTasksRemaining += 1;
         }
 
+        // Check auto create namespace/module provider
+        if (! config.AUTO_CREATE_NAMESPACE) {
+            strikeThrough($('#setup-step-secure-auto-create-namespace'));
+        } else {
+            secureTasksRemaining += 1;
+        }
+        if (! config.AUTO_CREATE_MODULE_PROVIDER) {
+            strikeThrough($('#setup-step-secure-auto-create-module-provider'));
+        } else {
+            secureTasksRemaining += 1;
+        }
+
         if (secureTasksRemaining) {
-            setProgress(100 - (secureTasksRemaining * 10));
+            setProgress(100 - (secureTasksRemaining * 5));
             toggleSetupCard(getSetupCardByName('secure'));
             return;
         }
