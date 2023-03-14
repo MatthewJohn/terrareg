@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.59.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.3...v2.59.4) (2023-03-14)
+
+
+### Bug Fixes
+
+* Disable autocreation of namespaces, modules and module providers in module provider details API endpoint ([e015a7f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e015a7f92248f533f436aeed933f49f05a44afb1)), closes [#338](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/338)
+
 ## [2.59.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.2...v2.59.3) (2023-03-13)
 
 
