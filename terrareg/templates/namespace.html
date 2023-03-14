@@ -29,13 +29,21 @@
             $('#prevButton').prop('disabled', (data.meta.prev_offset === undefined));
             $('#nextButton').prop('disabled', (data.meta.next_offset === undefined));
 
+            // If there are no results, hide the list table and show error about
+            // no modules
+            if (data.modules.length== 0) {
+                $('#result-list').addClass('default-hidden')
+                $('#no-results').removeClass('default-hidden');
+            }
+
             // Add each of the modules to the page
             $.each(data.modules, (itx, module_data) => {
                 createSearchResultCard('module-list-table', module_data);
             });
         }).fail(() => {
-            // Check for no modules
-            $('#module-list-table').append('<p>There is no such namespace or no modules that contain published versions');
+            // Check for non-existent namespace
+            $('#result-list').addClass('default-hidden')
+            $('#namespace-does-not-exist').removeClass('default-hidden');
 
             $('#prevButton').hide();
             $('#nextButton').hide();
@@ -57,7 +65,13 @@
 </nav>
 
 <div class="columns">
-    <div class="column is-three-fifths is-offset-one-fifth">
+    <div id="namespace-does-not-exist" class="column is-three-fifths is-offset-one-fifth default-hidden">
+        This namespace does not exist
+    </div>
+    <div id="no-results" class="column is-three-fifths is-offset-one-fifth default-hidden">
+        There are no modules in this namespace
+    </div>
+    <div id="result-list" class="column is-three-fifths is-offset-one-fifth">
 
         <section id="module-list-table">
         </section>

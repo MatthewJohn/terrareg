@@ -55,6 +55,7 @@ class TestCreateModuleProvider(SeleniumTest):
                 self.selenium_instance.find_element(By.ID, 'create-module-namespace')
             ).options
         ] == [
+            'emptynamespace',
             'javascriptinjection',
             'moduledetails',
             'moduleextraction',

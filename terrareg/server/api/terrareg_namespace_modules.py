@@ -32,8 +32,6 @@ class ApiTerraregNamespaceModules(ErrorCatchingResource):
             for module in namespace_obj.get_all_modules()
             for module_provider in module.get_providers()
         ]
-        if not module_providers:
-            return self._get_404_response()
 
         meta = {
             'limit': args.limit,

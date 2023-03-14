@@ -95,6 +95,21 @@ class TestApiTerraregNamespaceModules(TerraregUnitTest):
         assert res.status_code == 404
 
     @setup_test_data()
+    def test_namespace_with_no_modules(self, client, mock_models):
+        """Test endpoint with namespace with no modules"""
+
+        res = client.get('/v1/terrareg/modules/emptynamespace')
+
+        assert res.json == res.json == {
+            'meta': {
+                'current_offset': 0,
+                'limit': 10
+            },
+            'modules': []
+        }
+        assert res.status_code == 200
+
+    @setup_test_data()
     def test_analytics_token_not_converted(self, client, mock_models):
         """Test endpoint with analytics token and ensure it doesn't convert the analytics token."""
 

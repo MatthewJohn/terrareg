@@ -192,3 +192,35 @@ class TestNamespace(SeleniumTest):
         for card in self.selenium_instance.find_element(By.ID, 'module-list-table').find_elements(By.CLASS_NAME, 'card'):
             assert re.match(card_updated.pop(0), card.find_element(By.CLASS_NAME, 'card-last-updated').text)
 
+    def test_with_non_existent_namespace(self):
+        """Test namespace page with non-existent namespace"""
+        self.selenium_instance.get(self.get_url('/modules/doesnotexist'))
+
+        # Ensure warning about non-existent namespace is displayed
+        namespace_does_not_exist = self.wait_for_element(By.ID, 'namespace-does-not-exist', ensure_displayed=False)
+        self.assert_equals(lambda: namespace_does_not_exist.is_displayed(), True)
+        assert namespace_does_not_exist.text == "This namespace does not exist"
+
+        # Ensure warning about no modules is not displayed
+        no_result = self.wait_for_element(By.ID, 'no-results', ensure_displayed=False)
+        self.assert_equals(lambda: no_result.is_displayed(), False)
+
+        # Ensure result table is not displayed
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, "result-list").is_displayed(), False)
+
+
+    def test_with_no_modules(self):
+        """Test namespace page with namespace that has no modules"""
+        self.selenium_instance.get(self.get_url('/modules/emptynamespace'))
+
+        # Ensure warning about non-existent namespace is not displayed
+        namespace_does_not_exist = self.wait_for_element(By.ID, 'namespace-does-not-exist', ensure_displayed=False)
+        self.assert_equals(lambda: namespace_does_not_exist.is_displayed(), False)
+
+        # Ensure warning about no modules is displayed
+        no_result = self.wait_for_element(By.ID, 'no-results', ensure_displayed=False)
+        self.assert_equals(lambda: no_result.is_displayed(), True)
+        assert no_result.text == "There are no modules in this namespace"
+
+        # Ensure result table is not displayed
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, "result-list").is_displayed(), False)
