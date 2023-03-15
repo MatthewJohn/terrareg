@@ -558,14 +558,6 @@ class GitProvider:
 
 class Namespace(object):
 
-    _RESERVED_NAMES = [
-        "namespace",
-        # Clashes with root URLs when accessing
-        # a module with HTTP
-        "modules",
-        "api"
-    ]
-
     @classmethod
     def get(cls, name, create=False):
         """Create object and ensure the object exists."""
@@ -777,8 +769,8 @@ class Namespace(object):
         """Whether namespace is trusted."""
         return self.name in terrareg.config.Config().TRUSTED_NAMESPACES
 
-    @classmethod
-    def _validate_name(cls, name):
+    @staticmethod
+    def _validate_name(name):
         """Validate name of namespace"""
         if (name is None or
                 not re.match(r'^[0-9a-zA-Z][0-9a-zA-Z-_]+[0-9A-Za-z]$', name) or
@@ -789,12 +781,6 @@ class Namespace(object):
                 'hyphens and underscores, and must start/end with '
                 'an alphanumeric character. '
                 'Sequential underscores are not allowed.'
-            )
-
-        if name in cls._RESERVED_NAMES:
-            raise InvalidNamespaceNameError(
-                'Namespace name is a reserved name. '
-                f'The following names are reserved: {", ".join(cls._RESERVED_NAMES)}'
             )
 
     @staticmethod

@@ -9,42 +9,23 @@ from test.integration.terrareg import TerraregIntegrationTest
 
 class TestNamespace(TerraregIntegrationTest):
 
-    invalid_name_error = (
-        'Namespace name is invalid - '
-        'it can only contain alpha-numeric characters, '
-        'hyphens and underscores, and must start/end with '
-        'an alphanumeric character. '
-        'Sequential underscores are not allowed.'
-    )
-
-    reserved_name_error = (
-        'Namespace name is a reserved name. '
-        f'The following names are reserved: namespace, modules, api'
-    )
-
-    @pytest.mark.parametrize('namespace_name,expected_exception_message', [
-        ('invalid@atsymbol', invalid_name_error),
-        ('invalid"doublequote', invalid_name_error),
-        ("invalid'singlequote", invalid_name_error),
-        ('-startwithdash', invalid_name_error),
-        ('endwithdash-', invalid_name_error),
-        ('_startwithunderscore', invalid_name_error),
-        ('endwithunscore_', invalid_name_error),
-        ('a:colon', invalid_name_error),
-        ('or;semicolon', invalid_name_error),
-        ('who?knows', invalid_name_error),
-        ('contains__doubleunderscore', invalid_name_error),
-
-        # Check reserved names
-        ('namespace', reserved_name_error),
-        ('modules', reserved_name_error),
-        ('api', reserved_name_error),
+    @pytest.mark.parametrize('namespace_name', [
+        'invalid@atsymbol',
+        'invalid"doublequote',
+        "invalid'singlequote",
+        '-startwithdash',
+        'endwithdash-',
+        '_startwithunderscore',
+        'endwithunscore_',
+        'a:colon',
+        'or;semicolon',
+        'who?knows',
+        'contains__doubleunderscore'
     ])
-    def test_invalid_namespace_names(self, namespace_name, expected_exception_message):
+    def test_invalid_namespace_names(self, namespace_name):
         """Test invalid namespace names"""
-        with pytest.raises(terrareg.errors.InvalidNamespaceNameError) as exc:
+        with pytest.raises(terrareg.errors.InvalidNamespaceNameError):
             Namespace._validate_name(name=namespace_name)
-        assert str(exc.value) == expected_exception_message
 
     @pytest.mark.parametrize('namespace_name', [
         'normalname',
