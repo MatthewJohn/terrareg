@@ -1740,7 +1740,7 @@ async function populateTerraformUsageExample(moduleDetails, terraformVersionCons
     $("#usage-example-analytics-token-phrase").text(config.ANALYTICS_TOKEN_PHRASE);
 
     let terraform = `module "${moduleDetails.name}" {
-  source  = "${window.location.hostname}/${config.EXAMPLE_ANALYTICS_TOKEN}__${moduleDetails.module_provider_id}${additionalPath ? "//" + additionalPath : ""}"
+  source  = "${window.location.hostname}${window.location.port ? ":" + window.location.port : ""}/${config.EXAMPLE_ANALYTICS_TOKEN}__${moduleDetails.module_provider_id}${additionalPath ? "//" + additionalPath : ""}"
 `;
     for (let commentLine of moduleDetails.terraform_example_version_comment) {
         terraform += `  # ${commentLine}\n`;
