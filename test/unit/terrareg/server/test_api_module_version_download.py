@@ -68,33 +68,44 @@ class TestApiModuleVersionDownload(TerraregUnitTest):
         )
         assert AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'].id == test_module_version.id
 
-    @pytest.mark.parametrize('version,expected_version', [
+    @pytest.mark.parametrize('namespace,module,provider,version,expected_version,expected_return_url', [
+        ## Archive download
         # Explicit latest version
-        ('2.4.1', '2.4.1'),
+        ('testnamespace', 'testmodulename', 'testprovider', '2.4.1', '2.4.1', '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'),
         # Non-latest version
-        ('1.0.0', '1.0.0'),
+        ('testnamespace', 'testmodulename', 'testprovider', '1.0.0', '1.0.0', '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/1.0.0/source.zip'),
         # Latest endpoint
-        (None, '2.4.1')
+        ('testnamespace', 'testmodulename', 'testprovider', None, '2.4.1', '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'),
+
+        ## Git provider
+        ('moduleextraction', 'gitextraction', 'usesgitproviderwithversions', '2.2.2', '2.2.2', 'git::ssh://localhost.com/moduleextraction/gitextraction-usesgitproviderwithversions?ref=v2.2.2'),
+        ('moduleextraction', 'gitextraction', 'usesgitproviderwithversions', '2.1.0', '2.1.0', 'git::ssh://localhost.com/moduleextraction/gitextraction-usesgitproviderwithversions?ref=v2.1.0'),
+        ('moduleextraction', 'gitextraction', 'usesgitproviderwithversions', None, '2.2.2', 'git::ssh://localhost.com/moduleextraction/gitextraction-usesgitproviderwithversions?ref=v2.2.2'),
+
+        ## Custom git URL
+        ('moduleextraction', 'gitextraction', 'placeholdercloneurl', '5.2.3', '5.2.3', 'git::ssh://git@localhost:7999/moduleextraction/gitextraction-placeholdercloneurl.git?ref=v5.2.3'),
+        ('moduleextraction', 'gitextraction', 'placeholdercloneurl', '4.0.0', '4.0.0', 'git::ssh://git@localhost:7999/moduleextraction/gitextraction-placeholdercloneurl.git?ref=v4.0.0'),
+        ('moduleextraction', 'gitextraction', 'placeholdercloneurl', None, '5.2.3', 'git::ssh://git@localhost:7999/moduleextraction/gitextraction-placeholdercloneurl.git?ref=v5.2.3'),
     ])
     @setup_test_data()
     def test_existing_module_internal_download_with_auth_token(
-        self, version, expected_version, client, mock_models,
+        self, namespace, module, provider, version, expected_version, expected_return_url, client, mock_models,
         mock_record_module_version_download):
         """Test endpoint with analytics token and auth token"""
 
         res = client.get(
-            f"/v1/modules/test_token-name__testnamespace/testmodulename/testprovider/{f'{version}/' if version else ''}download",
+            f"/v1/modules/test_token-name__{namespace}/{module}/{provider}/{f'{version}/' if version else ''}download",
             headers={'X-Terraform-Version': 'TestTerraformVersion',
                      'User-Agent': 'TestUserAgent',
                      'Authorization': 'Bearer test123-authorization-token'}
         )
 
-        test_namespace = terrareg.models.Namespace(name='testnamespace')
-        test_module = terrareg.models.Module(namespace=test_namespace, name='testmodulename')
-        test_module_provider = terrareg.models.ModuleProvider(module=test_module, name='testprovider')
+        test_namespace = terrareg.models.Namespace(name=namespace)
+        test_module = terrareg.models.Module(namespace=test_namespace, name=module)
+        test_module_provider = terrareg.models.ModuleProvider(module=test_module, name=provider)
         test_module_version = terrareg.models.ModuleVersion(module_provider=test_module_provider, version=expected_version)
 
-        assert res.headers['X-Terraform-Get'] == f'/v1/terrareg/modules/testnamespace/testmodulename/testprovider/{expected_version}/source.zip'
+        assert res.headers['X-Terraform-Get'] == expected_return_url
         assert res.status_code == 204
 
         AnalyticsEngine.record_module_version_download.assert_called_with(
