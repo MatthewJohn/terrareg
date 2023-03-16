@@ -5,6 +5,7 @@ Open source Terraform Registry.
 Provides features to aid usage and discovery of modules, providing:
 
  * Fully implemented Terraform modules API
+ * Completely API driven for automating all features
  * Host Terraform modules internally or from an exteral Git source
  * Analytics about the usage of modules
  * All information about a module - README, inputs, outputs, provider requirements and managed resources
