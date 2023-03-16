@@ -53,7 +53,16 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'git_path': None,
             'additional_tab_files': {},
             'graph_url': '/modules/testnamespace/lonelymodule/testprovider/1.0.0/graph',
-            'module_extraction_up_to_date': True
+            'module_extraction_up_to_date': True,
+            'usage_example': (
+                'module "lonelymodule" {\n'
+                '  source  = '
+                '"localhost/my-tf-application__testnamespace/lonelymodule/testprovider"\n'
+                '  version = "1.0.0"\n'
+                '\n'
+                '  # Provide variables here\n'
+                '}'
+            )
         }
 
         assert res.status_code == 200
@@ -89,7 +98,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'repo_base_url_template': None,
             'repo_browse_url_template': None,
             'repo_clone_url_template': None,
-            'versions': ['2.2.2'],
+            'versions': ['2.2.2', '2.1.0'],
             'description': 'Mock description',
             'display_source_url': 'https://localhost.com/moduleextraction/gitextraction-usesgitproviderwithversions/browse/v2.2.2/',
             'downloads': 0,
@@ -127,7 +136,16 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'git_path': None,
             'additional_tab_files': {},
             'graph_url': '/modules/moduleextraction/gitextraction/usesgitproviderwithversions/2.2.2/graph',
-            'module_extraction_up_to_date': True
+            'module_extraction_up_to_date': True,
+            'usage_example': (
+                'module "gitextraction" {\n'
+                '  source  = '
+                '"localhost/my-tf-application__moduleextraction/gitextraction/usesgitproviderwithversions"\n'
+                '  version = "2.2.2"\n'
+                '\n'
+                '  # Provide variables here\n'
+                '}'
+            )
         }
 
         assert res.status_code == 200
@@ -187,7 +205,19 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'git_path': None,
             'additional_tab_files': {},
             'graph_url': '/modules/testnamespace/modulenotpublished/testprovider/10.2.1/graph',
-            'module_extraction_up_to_date': True
+            'module_extraction_up_to_date': True,
+            'usage_example': (
+                'module "modulenotpublished" {\n'
+                '  source  = '
+                '"localhost/my-tf-application__testnamespace/modulenotpublished/testprovider"\n'
+                '  # This version of this module has not yet been '
+                'published,\n'
+                '  # meaning that it cannot yet be used by Terraform\n'
+                '  version = "10.2.1"\n'
+                '\n'
+                '  # Provide variables here\n'
+                '}'
+            )
         }
 
         assert res.status_code == 200
@@ -248,7 +278,19 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
             'git_path': None,
             'additional_tab_files': {},
             'graph_url': '/modules/testnamespace/onlybeta/testprovider/2.2.4-beta/graph',
-            'module_extraction_up_to_date': True
+            'module_extraction_up_to_date': True,
+            'usage_example': (
+                'module "onlybeta" {\n'
+                '  source  = '
+                '"localhost/my-tf-application__testnamespace/onlybeta/testprovider"\n'
+                '  # This version of the module is a beta version.\n'
+                '  # To use this version, it must be pinned in Terraform\n'
+                '  version = "2.2.4-beta"\n'
+                '\n'
+                '  # Provide variables here\n'
+                '}'
+            ),
+
         }
 
         assert res.status_code == 200
