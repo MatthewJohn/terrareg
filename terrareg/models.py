@@ -1466,6 +1466,11 @@ class ModuleProvider(object):
         return self._name
 
     @property
+    def module(self):
+        """Return module object of provider"""
+        return self._module
+
+    @property
     def id(self):
         """Return ID in form of namespace/name/provider/version"""
         return '{namespace}/{name}/{provider}'.format(
@@ -2143,7 +2148,7 @@ class TerraformSpecsObject(object):
         """Base method to create usage example terraform"""
         source_url, version = self.get_terraform_url_and_version_strings(request_domain=request_domain, module_path=self.path)
         terraform = f"""
-module "{self.module_version.module_provider.name}" {{
+module "{self.module_version.module_provider.module.name}" {{
 {self.get_source_version_terraform(source_url, version)}
 
   # Provide variables here\n}}
