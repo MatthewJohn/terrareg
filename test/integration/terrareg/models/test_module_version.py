@@ -228,6 +228,7 @@ class TestModuleVersion(TerraregIntegrationTest):
             new_db_row = module_version._get_db_row()
             assert new_db_row['module_provider_id'] == module_provider_row['id']
             assert type(new_db_row['id']) == int
+            assert new_db_row['id'] != 10001
 
             assert new_db_row['published'] == expected_published_state
             assert new_db_row['version'] == '1.1.0'
@@ -514,6 +515,80 @@ class TestModuleVersion(TerraregIntegrationTest):
                 )
             )
             assert analytics_res.fetchone() is None
+
+    @pytest.mark.parametrize('delete_module_extracted', [
+        True,
+        False
+    ])
+    def test_delete_with_duplicate_module_versions(self, delete_module_extracted):
+        """Test deletion of module version."""
+        namespace = Namespace.get(name='test_delete_with_duplicate_module_versions', create=True)
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='testprovider', create=True)
+
+        try:
+            existing_module_versions = [v.version for v in module_provider.get_versions()]
+            assert '33.0.0' not in existing_module_versions
+
+            # Create test module version to keep
+            module_version_to_keep = ModuleVersion(module_provider=module_provider, version='33.0.0')
+            module_version_to_keep.prepare_module()
+            module_version_to_keep.update_attributes(extraction_complete=not delete_module_extracted)
+            module_version_to_keep_pk = module_version_to_keep.pk
+            module_version_to_keep_row = module_version_to_keep._get_db_row()
+
+            module_version_to_delete = ModuleVersion(module_provider=module_provider, version='33.0.0')
+            module_version_to_delete.prepare_module()
+            module_version_to_delete.update_attributes(extraction_complete=delete_module_extracted)
+            module_version_to_delete_pk = module_version_to_delete.pk
+
+            module_version_to_delete.delete()
+
+            test_module_version = ModuleVersion(module_provider=module_provider, version='33.0.0', pk=module_version_to_keep_pk)
+            assert test_module_version._get_db_row() == module_version_to_keep_row
+
+            test_module_version = ModuleVersion(module_provider=module_provider, version='33.0.0', pk=module_version_to_delete_pk)
+            assert test_module_version._get_db_row() == None
+        finally:
+            module_provider.delete()
+            namespace.delete()
+
+    def test_get(self):
+        """Test deletion of module version."""
+        namespace = Namespace.get(name='test_delete_with_duplicate_module_versions', create=True)
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='testprovider', create=True)
+
+        try:
+            existing_module_versions = [v.version for v in module_provider.get_versions()]
+            assert '33.0.0' not in existing_module_versions
+
+            # Create test module version to keep
+            previous_version = ModuleVersion(module_provider=module_provider, version='33.0.0')
+            previous_version.prepare_module()
+            previous_version.update_attributes(extraction_complete=False)
+            previous_pk = previous_version.pk
+
+            test_version = ModuleVersion(module_provider=module_provider, version='33.0.0')
+            test_version.prepare_module()
+
+            test_version.update_attributes(extraction_complete=True)
+            expected_id = test_version.pk
+            expected_row = test_version._get_db_row()
+
+            # Ensure previous and new version does not have the same pk
+            assert previous_pk != expected_id
+
+            post_version = ModuleVersion(module_provider=module_provider, version='33.0.0')
+            post_version.prepare_module()
+            post_version.update_attributes(extraction_complete=False)
+
+            test_module_version = ModuleVersion.get(module_provider=module_provider, version='33.0.0')
+            assert test_module_version.pk == expected_id
+            assert test_module_version._get_db_row() == expected_row
+        finally:
+            module_provider.delete()
+            namespace.delete()
 
     def test_variable_template(self):
         """Test variable template of module version."""
