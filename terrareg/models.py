@@ -2150,12 +2150,20 @@ module "{self.module_version.module_provider.name}" {{
 """.strip()
         return terraform
 
-    def get_source_version_terraform(self, source, version):
+    def get_source_version_terraform(self, source, version, leading_indentation="  ", trailing_indentation=None):
         """Return terraform"""
-        extra_source_indentation = " " if version else ""
-        terraform = f'  source {extra_source_indentation}= "{source}"'
+        calculated_extra_source_indentation = "  " if version else " "
+        if trailing_indentation and len(trailing_indentation) >= len(calculated_extra_source_indentation):
+            actual_trailing_indentation = trailing_indentation
+        else:
+            actual_trailing_indentation = calculated_extra_source_indentation
+
+        terraform = f'{leading_indentation}source{actual_trailing_indentation}= "{source}"'
         if version:
-            terraform += f'\n  version = "{version}"'
+            version_comments = self.module_version.get_terraform_example_version_comment()
+            for version_comment in version_comments:
+                terraform += f'\n{leading_indentation}# {version_comment}'
+            terraform += f'\n{leading_indentation}version{actual_trailing_indentation[1:]}= "{version}"'
         return terraform
 
     def get_terraform_url_and_version_strings(self, request_domain, module_path):
@@ -2175,10 +2183,15 @@ module "{self.module_version.module_provider.name}" {{
         source_url += '' if isDefaultPort else f':{port}'
         # Add /modules URL path if over http
         source_url += '' if isHttps else '/modules'
-        # Add example analytics token and module provider ID
-        source_url += f'/{terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN}__{self.module_version.module_provider.id}'
+        source_url += '/'
+        # Add example analytics token
+        source_url += f'{terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN}__' if terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN else ''
+        # Add module provider ID
+        source_url += self.module_version.module_provider.id
         # Add exact module version, if using http
         source_url += '' if isHttps else f'/{self.module_version.version}'
+        # Remove any leading slashes from module_path
+        module_path = re.sub(r'^\/+', '', module_path)
         # Add sub-module path, if it exists
         source_url += f'//{module_path}' if module_path else ''
 
@@ -2303,26 +2316,22 @@ module "{self.module_version.module_provider.name}" {{
             # leave the path blank
             if module_path == '/':
                 module_path = ''
-            else:
-                # Otherwise, prepend with additional leading slash,
-                # for the Terraform annotation for a sub-directory within
-                # the module
-                module_path = '/{module_path}'.format(module_path=module_path)
-
-            trailing_space_count = len(match.group(2))
-            # If only 1 leading space before source '=' character,
-            # increment by 1 to align to 'version'
-            if trailing_space_count < 2:
-                trailing_space_count = 2
 
             leading_space = match.group(1)
-            trailing_space = (' ' * trailing_space_count)
-            version_trailing_space = (' ' * (trailing_space_count - 1))
-            version_string = self.module_version.get_terraform_example_version_string()
+            trailing_space = match.group(2)
 
-            return (f'\n{leading_space}source{trailing_space}= "{server_hostname}/{self.module_version.module_provider.id}{module_path}"\n' +
-                    ''.join([f'{leading_space}# {comment}\n' for comment in self.module_version.get_terraform_example_version_comment()]) +
-                    f'{leading_space}version{version_trailing_space}= "{version_string}"\n')
+            source_url, version_string = self.get_terraform_url_and_version_strings(request_domain=server_hostname, module_path=module_path)
+
+            return (
+                '\n' +
+                self.get_source_version_terraform(
+                    source_url,
+                    version_string,
+                    leading_indentation=leading_space,
+                    trailing_indentation=trailing_space
+                ) +
+                '\n'
+            )
 
         return re.sub(
             r'\n([ \t]*)source(\s+)=\s+"(\..*)"[ \t]*\n',
