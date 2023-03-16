@@ -2139,6 +2139,62 @@ class TerraformSpecsObject(object):
 
         return failures
 
+    def get_usage_example(self, protocol, domain, port):
+        """Base method to create usage example terraform"""
+        source_url, version = self.get_terraform_url_and_version_strings(protocol, domain, port, module_path=None)
+        terraform = f"""
+module "{self.module_version.module_provider.name}" {{
+{self.get_source_version_terraform(source_url, version)}
+
+  # Provide variables here\n}}
+""".strip()
+        return terraform
+
+    def get_source_version_terraform(self, source, version):
+        """Return terraform"""
+        extra_source_indentation = " " if version else ""
+        terraform = f'  source {extra_source_indentation}= "{source}"'
+        if version:
+            terraform += f'\n  version = "{version}"'
+        return terraform
+
+    def get_terraform_url_and_version_strings(self, protocol, domain, port, module_path):
+        """Return terraform source URL and version values for given requested protoco, domain, port and module path"""
+        # Set default protocol to https
+        if protocol is None:
+            protocol = "https"
+        # If protocol ends with a : (as window.location.protocol contains in javascipt, strip this)
+        elif protocol.endswith(':'):
+            protocol = protocol[:-1]
+
+        isHttps = protocol.lower() == "https"
+
+        # Set default port if port is None or empty string, or port matches the default port for the protocol
+        isDefaultPort = not port or (str(port) == "443" and isHttps) or (str(port) == "80" and not isHttps)
+
+        # Add protocl for http
+        source_url = '' if isHttps else 'http://'
+        # Add domain name
+        source_url += domain
+        # Add port is non-default
+        source_url += '' if isDefaultPort else f':{port}'
+        # Add /modules URL path if over http
+        source_url += '' if isHttps else '/modules'
+        # Add example analytics token and module provider ID
+        source_url += f'/{terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN}__{self.module_version.module_provider.id}'
+        # Add exact module version, if using http
+        source_url += '' if isHttps else f'/{self.module_version.version}'
+        # Add sub-module path, if it exists
+        source_url += f'//{module_path}' if module_path else ''
+
+        # Use module version example terraform version string, if HTTPS otherwise provide a None version string, as
+        # the version is incorporated into the URL and http downloads don't support 'version' attribute
+        version_string = self.module_version.get_terraform_example_version_string() if isHttps else None
+
+        # Return source URL and version
+        return source_url, version_string
+
+
     def get_module_specs(self):
         """Return module specs"""
         if self._module_specs is None:
@@ -2783,7 +2839,7 @@ class ModuleVersion(TerraformSpecsObject):
         })
         return api_details
 
-    def get_terrareg_api_details(self):
+    def get_terrareg_api_details(self, protocol, domain, port):
         """Return dict of version details with additional attributes used by terrareg UI."""
         api_details = self._module_provider.get_terrareg_api_details()
 
@@ -2817,7 +2873,8 @@ class ModuleVersion(TerraformSpecsObject):
             "custom_links": self.custom_links,
             "graph_url": f"/modules/{self.id}/graph",
             "terraform_version_constraint": self.get_terraform_version_constraints(),
-            "module_extraction_up_to_date": self.module_extraction_up_to_date
+            "module_extraction_up_to_date": self.module_extraction_up_to_date,
+            "usage_example": self.get_usage_example(protocol=protocol, domain=domain, port=port)
         })
         return api_details
 
@@ -3129,7 +3186,7 @@ class BaseSubmodule(TerraformSpecsObject):
             submodule_path=self.path
         )
 
-    def get_terrareg_api_details(self):
+    def get_terrareg_api_details(self, protocol, domain, port):
         """Return dict of submodule details with additional attributes used by terrareg UI."""
         api_details = self.get_api_module_specs()
         source_browse_url = self.get_source_browse_url()
@@ -3139,7 +3196,8 @@ class BaseSubmodule(TerraformSpecsObject):
             "display_source_url": source_browse_url if source_browse_url else self._module_version.get_source_base_url(),
             "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
             "security_results": tfsec_failures,
-            "graph_url": f"/modules/{self.module_version.id}/graph/{self.TYPE}/{self.path}"
+            "graph_url": f"/modules/{self.module_version.id}/graph/{self.TYPE}/{self.path}",
+            "usage_example": self.get_usage_example(protocol=protocol, domain=domain, port=port)
         })
         # Only update terraform version constraint if one is defined in the example,
         # otherwise default to root module's constraint

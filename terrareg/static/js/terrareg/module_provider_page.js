@@ -1739,25 +1739,8 @@ async function populateTerraformUsageExample(moduleDetails, terraformVersionCons
     $("#usage-example-analytics-token").text(config.EXAMPLE_ANALYTICS_TOKEN);
     $("#usage-example-analytics-token-phrase").text(config.ANALYTICS_TOKEN_PHRASE);
 
-    let isHttps = window.location.protocol == "https:";
-    let sourceUrl = `${isHttps ? '' : 'http://'}${window.location.hostname}${window.location.port ? ":" + window.location.port : ""}${isHttps ? '' : '/modules'}/${config.EXAMPLE_ANALYTICS_TOKEN}__${moduleDetails.module_provider_id}${isHttps ? '' : '/' + moduleDetails.version}${additionalPath ? "//" + additionalPath : ""}`;
-
-    let terraform = `module "${moduleDetails.name}" {
-  source  = "${sourceUrl}"
-`;
-
-    for (let commentLine of moduleDetails.terraform_example_version_comment) {
-        terraform += `  # ${commentLine}\n`;
-    }
-    if (isHttps) {
-        terraform += `  version = "${moduleDetails.terraform_example_version_string}"\n`;
-    }
-    terraform += `
-  # Provide variables here
-}`;
-
     // Add example Terraform call to source section
-    $("#usage-example-terraform").text(terraform);
+    $("#usage-example-terraform").text(moduleDetails.usage_example);
 
     // Show container
     $('#usage-example-container').removeClass('default-hidden');
