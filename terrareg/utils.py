@@ -117,8 +117,11 @@ def get_public_url_details(fallback_domain=None):
 
     if config.PUBLIC_URL:
         parsed_url = urllib.parse.urlparse(config.PUBLIC_URL)
-        protocol = parsed_url.scheme or 'https'
-        port = parsed_url.port or (80 if protocol == 'http' else 443)
-        domain = parsed_url.hostname
+        # Only use values from parsed URL if it has a hostname,
+        # otherwise it is invalid
+        if parsed_url.hostname:
+            protocol = parsed_url.scheme or 'https'
+            port = parsed_url.port or (80 if protocol == 'http' else 443)
+            domain = parsed_url.hostname
 
     return protocol, domain, port
