@@ -1,14 +1,10 @@
 
-from datetime import datetime
 import unittest.mock
 import pytest
-import sqlalchemy
-from terrareg.analytics import AnalyticsEngine
-from terrareg.database import Database
 
-from terrareg.models import Example, ExampleFile, Module, Namespace, ModuleProvider, ModuleVersion
-import terrareg.errors
+from terrareg.models import Example, Module, Namespace, ModuleProvider, ModuleVersion
 from test.integration.terrareg.models.test_base_submodule import CommonBaseSubmodule
+
 
 class TestExample(CommonBaseSubmodule):
 
