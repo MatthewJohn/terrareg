@@ -1,4 +1,6 @@
 
+import urllib.parse
+
 from flask import request
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
@@ -22,4 +24,5 @@ class ApiTerraregModuleVersionDetails(ErrorCatchingResource):
         if module_version is None:
             return self._get_404_response()
 
-        return module_version.get_terrareg_api_details(request_domain=request.host)
+        return module_version.get_terrareg_api_details(
+            request_domain=urllib.parse.urlparse(request.base_url).hostname)
