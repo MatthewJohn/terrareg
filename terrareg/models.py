@@ -30,7 +30,7 @@ from terrareg.errors import (
     NoModuleDownloadMethodConfiguredError,
     ProviderNameNotPermittedError
 )
-from terrareg.utils import convert_markdown_to_html, safe_join_paths, sanitise_html_content
+from terrareg.utils import convert_markdown_to_html, get_public_url_details, safe_join_paths, sanitise_html_content
 from terrareg.validators import GitUrlValidator
 from terrareg.constants import EXTRACTION_VERSION
 
@@ -2139,9 +2139,9 @@ class TerraformSpecsObject(object):
 
         return failures
 
-    def get_usage_example(self, protocol, domain, port):
+    def get_usage_example(self, request_domain):
         """Base method to create usage example terraform"""
-        source_url, version = self.get_terraform_url_and_version_strings(protocol, domain, port, module_path=None)
+        source_url, version = self.get_terraform_url_and_version_strings(request_domain=request_domain, module_path=self.path)
         terraform = f"""
 module "{self.module_version.module_provider.name}" {{
 {self.get_source_version_terraform(source_url, version)}
@@ -2158,14 +2158,9 @@ module "{self.module_version.module_provider.name}" {{
             terraform += f'\n  version = "{version}"'
         return terraform
 
-    def get_terraform_url_and_version_strings(self, protocol, domain, port, module_path):
+    def get_terraform_url_and_version_strings(self, request_domain, module_path):
         """Return terraform source URL and version values for given requested protoco, domain, port and module path"""
-        # Set default protocol to https
-        if protocol is None:
-            protocol = "https"
-        # If protocol ends with a : (as window.location.protocol contains in javascipt, strip this)
-        elif protocol.endswith(':'):
-            protocol = protocol[:-1]
+        protocol, domain, port = get_public_url_details(fallback_domain=request_domain)
 
         isHttps = protocol.lower() == "https"
 
@@ -2839,7 +2834,7 @@ class ModuleVersion(TerraformSpecsObject):
         })
         return api_details
 
-    def get_terrareg_api_details(self, protocol, domain, port):
+    def get_terrareg_api_details(self, request_domain):
         """Return dict of version details with additional attributes used by terrareg UI."""
         api_details = self._module_provider.get_terrareg_api_details()
 
@@ -2874,7 +2869,7 @@ class ModuleVersion(TerraformSpecsObject):
             "graph_url": f"/modules/{self.id}/graph",
             "terraform_version_constraint": self.get_terraform_version_constraints(),
             "module_extraction_up_to_date": self.module_extraction_up_to_date,
-            "usage_example": self.get_usage_example(protocol=protocol, domain=domain, port=port)
+            "usage_example": self.get_usage_example(request_domain)
         })
         return api_details
 
@@ -3186,7 +3181,7 @@ class BaseSubmodule(TerraformSpecsObject):
             submodule_path=self.path
         )
 
-    def get_terrareg_api_details(self, protocol, domain, port):
+    def get_terrareg_api_details(self, request_domain):
         """Return dict of submodule details with additional attributes used by terrareg UI."""
         api_details = self.get_api_module_specs()
         source_browse_url = self.get_source_browse_url()
@@ -3197,7 +3192,7 @@ class BaseSubmodule(TerraformSpecsObject):
             "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
             "security_results": tfsec_failures,
             "graph_url": f"/modules/{self.module_version.id}/graph/{self.TYPE}/{self.path}",
-            "usage_example": self.get_usage_example(protocol=protocol, domain=domain, port=port)
+            "usage_example": self.get_usage_example(request_domain)
         })
         # Only update terraform version constraint if one is defined in the example,
         # otherwise default to root module's constraint
@@ -3239,8 +3234,8 @@ class Example(BaseSubmodule):
         # Call super method to delete self
         super(Example, self).delete()
 
-    def get_terrareg_api_details(self):
-        api_details = super(Example, self).get_terrareg_api_details()
+    def get_terrareg_api_details(self, *args, **kwargs):
+        api_details = super(Example, self).get_terrareg_api_details(*args, **kwargs)
         yearly_cost = self.module_details.infracost.get('totalMonthlyCost', None)
         if yearly_cost:
             yearly_cost = "{:.2f}".format(round((float(yearly_cost) * 12), 2))

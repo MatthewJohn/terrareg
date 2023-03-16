@@ -1,11 +1,13 @@
 
 import os
 import glob
+import urllib.parse
 
 import bleach
 import markdown
 
 from terrareg.errors import TerraregError
+import terrareg.config
 
 
 class PathDoesNotExistError(TerraregError):
@@ -103,3 +105,20 @@ def convert_markdown_to_html(markdown_html):
         markdown_html,
         extensions=['fenced_code', 'tables', 'mdx_truly_sane_lists']
     )
+
+def get_public_url_details(fallback_domain=None):
+    """Get protocol, domain and port used to access terrareg."""
+    config = terrareg.config.Config()
+
+    # Set default values
+    domain = config.DOMAIN_NAME or fallback_domain
+    port = 443
+    protocol = 'https'
+
+    if config.PUBLIC_URL:
+        parsed_url = urllib.parse.urlparse(config.PUBLIC_URL)
+        protocol = parsed_url.scheme or 'https'
+        port = parsed_url.port or (80 if protocol == 'http' else 443)
+        domain = parsed_url.hostname
+
+    return protocol, domain, port

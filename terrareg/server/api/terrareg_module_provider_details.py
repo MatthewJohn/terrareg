@@ -1,5 +1,6 @@
 
-from terrareg.server.api.utils import get_request_domain, get_request_port, get_request_protocol
+from flask import request
+
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 
 
@@ -15,9 +16,7 @@ class ApiTerraregModuleProviderDetails(ErrorCatchingResource):
         # If a version exists, obtain the details for that
         latest_version = module_provider.get_latest_version()
         if latest_version is not None:
-            return latest_version.get_terrareg_api_details(
-                domain=get_request_domain(), port=get_request_port(), protocol=get_request_protocol()
-            )
+            return latest_version.get_terrareg_api_details(request_domain=request.host)
 
         # Otherwise, return module provider details
         return module_provider.get_terrareg_api_details()

@@ -272,13 +272,13 @@ class TestGitModuleExtractor(TerraregUnitTest):
                 cwd='/tmp/mock-patch/to/module'
             )
 
-    @pytest.mark.parametrize("domain_name,manage_terraform_rc_file,should_create_file,should_contain_credentials_block", [
+    @pytest.mark.parametrize("public_url,manage_terraform_rc_file,should_create_file,should_contain_credentials_block", [
         ("", False, False, False),
         ("", True, True, False),
-        ("unittest-example-domain.com", False, False, False),
-        ("unittest-example-domain.com", True, True, True)
+        ("https://unittest-example-domain.com", False, False, False),
+        ("https://unittest-example-domain.com", True, True, True)
     ])
-    def test_create_terraform_rc_file(self, domain_name, manage_terraform_rc_file, should_create_file, should_contain_credentials_block):
+    def test_create_terraform_rc_file(self, public_url, manage_terraform_rc_file, should_create_file, should_contain_credentials_block):
         """Test terraform RC file"""
         # Create temporary file and remove
         temp_file = tempfile.mktemp()
@@ -286,7 +286,7 @@ class TestGitModuleExtractor(TerraregUnitTest):
 
         with unittest.mock.patch("terrareg.module_extractor.ModuleExtractor.terraform_rc_file", temp_file), \
                 unittest.mock.patch("terrareg.config.Config.MANAGE_TERRAFORM_RC_FILE", manage_terraform_rc_file), \
-                unittest.mock.patch("terrareg.config.Config.DOMAIN_NAME", domain_name):
+                unittest.mock.patch("terrareg.config.Config.PUBLIC_URL", public_url):
 
             module_extractor = GitModuleExtractor(module_version=None)
             module_extractor._create_terraform_rc_file()

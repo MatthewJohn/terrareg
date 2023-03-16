@@ -301,5 +301,5 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
         test_module = terrareg.models.Module(namespace=test_namespace, name='testmodulename')
         test_module_provider = terrareg.models.ModuleProvider(module=test_module, name='testprovider')
 
-        assert res.json == test_module_provider.get_latest_version().get_terrareg_api_details()
+        assert res.json == test_module_provider.get_latest_version().get_terrareg_api_details(request_domain="localhost")
         assert res.status_code == 200

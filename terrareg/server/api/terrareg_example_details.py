@@ -1,4 +1,6 @@
 
+from flask import request
+
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.models
 
@@ -14,4 +16,4 @@ class ApiTerraregExampleDetails(ErrorCatchingResource):
 
         example_obj = terrareg.models.Example.get(module_version=module_version, module_path=example)
 
-        return example_obj.get_terrareg_api_details()
+        return example_obj.get_terrareg_api_details(request_domain=request.host)

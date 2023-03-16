@@ -153,7 +153,7 @@ async function getModuleDetails(module_id) {
             // Perform request to obtain module details
             $.ajax({
                 type: "GET",
-                url: `/v1/terrareg/modules/${module_id}?domain=${window.location.hostname}&port=${window.location.port}&protocol=${window.location.protocol}`,
+                url: `/v1/terrareg/modules/${module_id}`,
                 success: function (data) {
                     resolve(data);
                 },

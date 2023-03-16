@@ -326,7 +326,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
         test_module_provider = terrareg.models.ModuleProvider(module=test_module, name='testprovider')
         test_module_version = terrareg.models.ModuleVersion(version='2.4.1', module_provider=test_module_provider)
 
-        assert res.json == test_module_version.get_terrareg_api_details()
+        assert res.json == test_module_version.get_terrareg_api_details(request_domain="localhost")
         assert res.status_code == 200
 
     @setup_test_data()

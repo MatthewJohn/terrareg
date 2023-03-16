@@ -12,51 +12,55 @@ from test.unit.terrareg import TerraregUnitTest
 
 class TestSaml(TerraregUnitTest):
 
-    @classmethod
-    def test_is_enabled(cls):
-        """Whether SAML auithentication is enabled"""
-        config = terrareg.config.Config()
-        return (config.DOMAIN_NAME is not None and
-                config.SAML2_ENTITY_ID is not None and
-                config.SAML2_IDP_METADATA_URL is not None and
-                config.SAML2_PUBLIC_KEY is not None and
-                config.SAML2_PRIVATE_KEY is not None)
-
     @pytest.mark.parametrize('config_values,expected_result', [
         ({'SAML2_ENTITY_ID': 'testclientid',
           'SAML2_PUBLIC_KEY': '--- saml2publickey ---',
           'SAML2_PRIVATE_KEY': '--- SAML2PRIVATE KEY! ---',
           'SAML2_IDP_METADATA_URL': 'https://testissuer',
+          'PUBLIC_URL': 'https://unittest.local',
+          'DOMAIN_NAME': None},
+         True),
+        ## Test fallback to DOMAIN_NAME
+        ({'SAML2_ENTITY_ID': 'testclientid',
+          'SAML2_PUBLIC_KEY': '--- saml2publickey ---',
+          'SAML2_PRIVATE_KEY': '--- SAML2PRIVATE KEY! ---',
+          'SAML2_IDP_METADATA_URL': 'https://testissuer',
+          'PUBLIC_URL': None,
           'DOMAIN_NAME': 'unittest.local'},
          True),
         ({'SAML2_ENTITY_ID': None,
           'SAML2_PUBLIC_KEY': '--- saml2publickey ---',
           'SAML2_PRIVATE_KEY': '--- SAML2PRIVATE KEY! ---',
           'SAML2_IDP_METADATA_URL': 'https://testissuer',
-          'DOMAIN_NAME': 'unittest.local'},
+          'PUBLIC_URL': 'https://unittest.local',
+          'DOMAIN_NAME': None},
          False),
         ({'SAML2_ENTITY_ID': 'testclientid',
           'SAML2_PUBLIC_KEY': None,
           'SAML2_PRIVATE_KEY': '--- SAML2PRIVATE KEY! ---',
           'SAML2_IDP_METADATA_URL': 'https://testissuer',
-          'DOMAIN_NAME': 'unittest.local'},
+          'PUBLIC_URL': 'https://unittest.local',
+          'DOMAIN_NAME': None},
          False),
         ({'SAML2_ENTITY_ID': 'testclientid',
           'SAML2_PUBLIC_KEY': '--- saml2publickey ---',
           'SAML2_PRIVATE_KEY': '--- SAML2PRIVATE KEY! ---',
           'SAML2_IDP_METADATA_URL': None,
-          'DOMAIN_NAME': 'unittest.local'},
+          'PUBLIC_URL': 'https://unittest.local',
+          'DOMAIN_NAME': None},
          False),
         ({'SAML2_ENTITY_ID': 'testclientid',
           'SAML2_PUBLIC_KEY': '--- saml2publickey ---',
           'SAML2_PRIVATE_KEY': None,
           'SAML2_IDP_METADATA_URL': 'https://testissuer',
-          'DOMAIN_NAME': 'unittest.local'},
+          'PUBLIC_URL': 'https://unittest.local',
+          'DOMAIN_NAME': None},
          False),
         ({'SAML2_ENTITY_ID': 'testclientid',
           'SAML2_PUBLIC_KEY': '--- saml2publickey ---',
           'SAML2_PRIVATE_KEY': '--- SAML2PRIVATE KEY! ---',
           'SAML2_IDP_METADATA_URL': 'https://testissuer',
+          'PUBLIC_URL': None,
           'DOMAIN_NAME': None},
          False)
     ])
@@ -73,7 +77,7 @@ class TestSaml(TerraregUnitTest):
         """Test get_settings"""
         with mock.patch('terrareg.saml.Saml2.get_idp_metadata', return_value={
                     'idp': {'some': 'key'}, 'sp': {'is': 'ignored', 'entityId': 'somethingelse'}}), \
-                mock.patch('terrareg.config.Config.DOMAIN_NAME', 'unittest-domain.com'), \
+                mock.patch('terrareg.config.Config.PUBLIC_URL', 'https://unittest-domain.com'), \
                 mock.patch('terrareg.config.Config.SAML2_PUBLIC_KEY', '--- SAML PUBLIC KEY ---'), \
                 mock.patch('terrareg.config.Config.SAML2_PRIVATE_KEY', '!--- SAML PRIVATE KEY ---!'), \
                 mock.patch('terrareg.config.Config.SAML2_ENTITY_ID', 'mock-saml2-entity-id'), \

@@ -8,6 +8,7 @@ import requests
 import oauthlib.oauth2
 
 import terrareg.config
+from terrareg.utils import get_public_url_details
 
 
 class OpenidConnect:
@@ -20,7 +21,8 @@ class OpenidConnect:
     def is_enabled(cls):
         """Whether OpenID connect authentication is enabled"""
         config = terrareg.config.Config()
-        return bool(config.OPENID_CONNECT_CLIENT_ID and config.OPENID_CONNECT_CLIENT_SECRET and config.OPENID_CONNECT_ISSUER and config.DOMAIN_NAME)
+        _, domain, _ = get_public_url_details()
+        return bool(config.OPENID_CONNECT_CLIENT_ID and config.OPENID_CONNECT_CLIENT_SECRET and config.OPENID_CONNECT_ISSUER and domain)
 
     def get_client():
         """Return oauth2 web application client"""
@@ -29,8 +31,8 @@ class OpenidConnect:
     @staticmethod
     def get_redirect_url():
         """Obtain redirect URL for Terrareg instance"""
-        config = terrareg.config.Config()
-        return f'https://{config.DOMAIN_NAME}/openid/callback'
+        _, domain, _ = get_public_url_details()
+        return f'https://{domain}/openid/callback'
 
     @classmethod
     def get_jwks_client(cls):
