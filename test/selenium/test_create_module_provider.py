@@ -44,7 +44,7 @@ class TestCreateModuleProvider(SeleniumTest):
 
         expected_fields = [
             # label, placeholder value, default value
-            ('Namespace', None, 'javascriptinjection'),
+            ('Namespace', None, 'emptynamespace'),
             ('Module Name', 'my-module', ''),
             ('Provider', 'e.g. aws, null...', ''),
             ('Git Repository Provider', None, 'Custom'),

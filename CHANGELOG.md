@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.60.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.60.1...v2.60.2) (2023-03-15)
+
+
+### Bug Fixes
+
+* Add default value to git tag format field in module provider create page. ([fc516b9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fc516b9d495e81a026073f86c45cf441f8dd6409)), closes [#311](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/311)
+
 ## [2.60.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.60.0...v2.60.1) (2023-03-14)
 
 
