@@ -4,6 +4,7 @@ from functools import wraps
 
 from flask import Flask, session, redirect
 from flask_restful import Api
+from flask_restful_swagger import swagger
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
 
@@ -107,6 +108,7 @@ class Server(BaseHandler):
             self._app,
             #prefix='v1'
         )
+        self._swagger = swagger.docs(self._api, apiVersion='0.1')
 
         self.host = '0.0.0.0'
         self.port = terrareg.config.Config().LISTEN_PORT
@@ -134,61 +136,61 @@ class Server(BaseHandler):
     def _register_routes(self):
         """Register routes with flask."""
 
-        # Terraform registry routes
-        self._api.add_resource(
-            ApiTerraformWellKnown,
-            '/.well-known/terraform.json'
-        )
+        # # Terraform registry routes
+        # self._api.add_resource(
+        #     ApiTerraformWellKnown,
+        #     '/.well-known/terraform.json'
+        # )
 
-        # Prometheus metrics
-        self._api.add_resource(
-            PrometheusMetrics,
-            '/metrics'
-        )
+        # # Prometheus metrics
+        # self._api.add_resource(
+        #     PrometheusMetrics,
+        #     '/metrics'
+        # )
 
-        self._api.add_resource(
-            ApiModuleList,
-            '/v1/modules',
-            '/v1/modules/'
-        )
-        self._api.add_resource(
-            ApiModuleSearch,
-            '/v1/modules/search',
-            '/v1/modules/search/'
-        )
-        self._api.add_resource(
-            ApiNamespaceModules,
-            '/v1/modules/<string:namespace>',
-            '/v1/modules/<string:namespace>/'
-        )
+        # self._api.add_resource(
+        #     ApiModuleList,
+        #     '/v1/modules',
+        #     '/v1/modules/'
+        # )
+        # self._api.add_resource(
+        #     ApiModuleSearch,
+        #     '/v1/modules/search',
+        #     '/v1/modules/search/'
+        # )
+        # self._api.add_resource(
+        #     ApiNamespaceModules,
+        #     '/v1/modules/<string:namespace>',
+        #     '/v1/modules/<string:namespace>/'
+        # )
         self._api.add_resource(
             ApiModuleDetails,
             '/v1/modules/<string:namespace>/<string:name>',
-            '/v1/modules/<string:namespace>/<string:name>/'
+            # '/v1/modules/<string:namespace>/<string:name>/'
         )
-        self._api.add_resource(
-            ApiModuleProviderDetails,
-            '/v1/modules/<string:namespace>/<string:name>/<string:provider>',
-            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/')
-        self._api.add_resource(
-            ApiModuleVersions,
-            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/versions',
-            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/versions/'
-        )
-        self._api.add_resource(
-            ApiModuleVersionDetails,
-            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>',
-            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/'
-        )
-        self._api.add_resource(
-            ApiModuleVersionDownload,
-            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/download',
-            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/download'
-        )
-        self._api.add_resource(
-            ApiModuleProviderDownloadsSummary,
-            '/v1/modules/<string:namespace>/<string:name>/<string:provider>/downloads/summary'
-        )
+        # self._api.add_resource(
+        #     ApiModuleProviderDetails,
+        #     '/v1/modules/<string:namespace>/<string:name>/<string:provider>',
+        #     '/v1/modules/<string:namespace>/<string:name>/<string:provider>/')
+        # self._api.add_resource(
+        #     ApiModuleVersions,
+        #     '/v1/modules/<string:namespace>/<string:name>/<string:provider>/versions',
+        #     '/v1/modules/<string:namespace>/<string:name>/<string:provider>/versions/'
+        # )
+        # self._api.add_resource(
+        #     ApiModuleVersionDetails,
+        #     '/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>',
+        #     '/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/'
+        # )
+        # self._api.add_resource(
+        #     ApiModuleVersionDownload,
+        #     '/v1/modules/<string:namespace>/<string:name>/<string:provider>/download',
+        #     '/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/download'
+        # )
+        # self._api.add_resource(
+        #     ApiModuleProviderDownloadsSummary,
+        #     '/v1/modules/<string:namespace>/<string:name>/<string:provider>/downloads/summary'
+        # )
 
         # Views
         self._app.route('/')(self._view_serve_static_index)
@@ -266,229 +268,229 @@ class Server(BaseHandler):
         self._app.route(
             '/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/example/<path:example_path>'
         )(self._view_serve_graph)
-        self._api.add_resource(
-            ApiTerraregGraphData,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data',
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data/submodule/<path:submodule_path>',
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data/example/<path:example_path>'
-        )
+        # self._api.add_resource(
+        #     ApiTerraregGraphData,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data',
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data/submodule/<path:submodule_path>',
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data/example/<path:example_path>'
+        # )
 
 
-        # OpenID connect endpoints
-        self._api.add_resource(
-            ApiOpenIdInitiate,
-            '/openid/login'
-        )
-        self._api.add_resource(
-            ApiOpenIdCallback,
-            '/openid/callback'
-        )
+        # # OpenID connect endpoints
+        # self._api.add_resource(
+        #     ApiOpenIdInitiate,
+        #     '/openid/login'
+        # )
+        # self._api.add_resource(
+        #     ApiOpenIdCallback,
+        #     '/openid/callback'
+        # )
 
-        # Saml2 endpoints
-        self._api.add_resource(
-            ApiSamlInitiate,
-            '/saml/login'
-        )
-        self._api.add_resource(
-            ApiSamlMetadata,
-            '/saml/metadata'
-        )
+        # # Saml2 endpoints
+        # self._api.add_resource(
+        #     ApiSamlInitiate,
+        #     '/saml/login'
+        # )
+        # self._api.add_resource(
+        #     ApiSamlMetadata,
+        #     '/saml/metadata'
+        # )
 
-        # Terrareg APIs
-        ## Config endpoint
-        self._api.add_resource(
-            ApiTerraregConfig,
-            '/v1/terrareg/config'
-        )
-        self._api.add_resource(
-            ApiTerraregGitProviders,
-            '/v1/terrareg/git_providers'
-        )
-        ## Analytics URLs /v1/terrareg/analytics
-        self._api.add_resource(
-            ApiTerraregGlobalStatsSummary,
-            '/v1/terrareg/analytics/global/stats_summary'
-        )
-        self._api.add_resource(
-            ApiTerraregMostRecentlyPublishedModuleVersion,
-            '/v1/terrareg/analytics/global/most_recently_published_module_version'
-        )
-        self._api.add_resource(
-            ApiTerraregGlobalUsageStats,
-            '/v1/terrareg/analytics/global/usage_stats'
-        )
-        self._api.add_resource(
-            ApiTerraregModuleProviderAnalyticsTokenVersions,
-            '/v1/terrareg/analytics/<string:namespace>/<string:name>/<string:provider>/token_versions'
-        )
-        self._api.add_resource(
-            ApiTerraregMostDownloadedModuleProviderThisWeek,
-            '/v1/terrareg/analytics/global/most_downloaded_module_provider_this_week'
-        )
+        # # Terrareg APIs
+        # ## Config endpoint
+        # self._api.add_resource(
+        #     ApiTerraregConfig,
+        #     '/v1/terrareg/config'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregGitProviders,
+        #     '/v1/terrareg/git_providers'
+        # )
+        # ## Analytics URLs /v1/terrareg/analytics
+        # self._api.add_resource(
+        #     ApiTerraregGlobalStatsSummary,
+        #     '/v1/terrareg/analytics/global/stats_summary'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregMostRecentlyPublishedModuleVersion,
+        #     '/v1/terrareg/analytics/global/most_recently_published_module_version'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregGlobalUsageStats,
+        #     '/v1/terrareg/analytics/global/usage_stats'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregModuleProviderAnalyticsTokenVersions,
+        #     '/v1/terrareg/analytics/<string:namespace>/<string:name>/<string:provider>/token_versions'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregMostDownloadedModuleProviderThisWeek,
+        #     '/v1/terrareg/analytics/global/most_downloaded_module_provider_this_week'
+        # )
 
-        # Initial setup
-        self._api.add_resource(
-            ApiTerraregInitialSetupData,
-            '/v1/terrareg/initial_setup'
-        )
+        # # Initial setup
+        # self._api.add_resource(
+        #     ApiTerraregInitialSetupData,
+        #     '/v1/terrareg/initial_setup'
+        # )
 
-        ## namespaces endpoint
-        self._api.add_resource(
-            ApiTerraregNamespaces,
-            '/v1/terrareg/namespaces'
-        )
-        self._api.add_resource(
-            ApiTerraregNamespaceDetails,
-            '/v1/terrareg/namespaces/<string:namespace>'
-        )
+        # ## namespaces endpoint
+        # self._api.add_resource(
+        #     ApiTerraregNamespaces,
+        #     '/v1/terrareg/namespaces'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregNamespaceDetails,
+        #     '/v1/terrareg/namespaces/<string:namespace>'
+        # )
 
-        ## Module endpoints /v1/terreg/modules
-        self._api.add_resource(
-            ApiTerraregNamespaceModules,
-            '/v1/terrareg/modules/<string:namespace>'
-        )
-        self._api.add_resource(
-            ApiTerraregModuleProviderDetails,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>'
-        )
-        self._api.add_resource(
-            ApiTerraregModuleVersionDetails,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>'
-        )
-        self._api.add_resource(
-            ApiTerraregModuleProviderVersions,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/versions'
-        )
-        self._api.add_resource(
-            ApiTerraregModuleProviderCreate,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/create'
-        )
-        self._api.add_resource(
-            ApiTerraregModuleProviderDelete,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/delete'
-        )
-        self._api.add_resource(
-            ApiTerraregModuleProviderSettings,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/settings'
-        )
-        self._api.add_resource(
-            ApiTerraregModuleProviderIntegrations,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/integrations'
-        )
-        self._api.add_resource(
-            ApiModuleVersionCreateBitBucketHook,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/hooks/bitbucket'
-        )
-        self._api.add_resource(
-            ApiModuleVersionCreateGitHubHook,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/hooks/github'
-        )
-        self._api.add_resource(
-            ApiTerraregModuleVersionVariableTemplate,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
-        )
-        self._api.add_resource(
-            ApiTerraregModuleVersionFile,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/files/<string:path>'
-        )
-        self._api.add_resource(
-            ApiTerraregModuleVersionReadmeHtml,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/readme_html'
-        )
-        self._api.add_resource(
-            ApiModuleVersionUpload,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload'
-        )
-        self._api.add_resource(
-            ApiModuleVersionCreate,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/import'
-        )
-        self._api.add_resource(
-            ApiModuleVersionSourceDownload,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/source.zip'
-        )
-        self._api.add_resource(
-            ApiTerraregModuleVersionPublish,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/publish'
-        )
-        self._api.add_resource(
-            ApiTerraregModuleVersionDelete,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/delete'
-        )
-        self._api.add_resource(
-            ApiTerraregModuleVerisonSubmodules,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodules'
-        )
-        self._api.add_resource(
-            ApiTerraregSubmoduleDetails,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodules/details/<path:submodule>'
-        )
-        self._api.add_resource(
-            ApiTerraregSubmoduleReadmeHtml,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodules/readme_html/<path:submodule>'
-        )
-        self._api.add_resource(
-            ApiTerraregModuleVersionExamples,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples'
-        )
-        self._api.add_resource(
-            ApiTerraregExampleDetails,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples/details/<path:example>'
-        )
-        self._api.add_resource(
-            ApiTerraregExampleReadmeHtml,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples/readme_html/<path:example>'
-        )
-        self._api.add_resource(
-            ApiTerraregExampleFileList,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples/filelist/<path:example>'
-        )
-        self._api.add_resource(
-            ApiTerraregExampleFile,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples/file/<path:example_file>'
-        )
+        # ## Module endpoints /v1/terreg/modules
+        # self._api.add_resource(
+        #     ApiTerraregNamespaceModules,
+        #     '/v1/terrareg/modules/<string:namespace>'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregModuleProviderDetails,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregModuleVersionDetails,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregModuleProviderVersions,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/versions'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregModuleProviderCreate,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/create'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregModuleProviderDelete,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/delete'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregModuleProviderSettings,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/settings'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregModuleProviderIntegrations,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/integrations'
+        # )
+        # self._api.add_resource(
+        #     ApiModuleVersionCreateBitBucketHook,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/hooks/bitbucket'
+        # )
+        # self._api.add_resource(
+        #     ApiModuleVersionCreateGitHubHook,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/hooks/github'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregModuleVersionVariableTemplate,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/variable_template'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregModuleVersionFile,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/files/<string:path>'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregModuleVersionReadmeHtml,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/readme_html'
+        # )
+        # self._api.add_resource(
+        #     ApiModuleVersionUpload,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload'
+        # )
+        # self._api.add_resource(
+        #     ApiModuleVersionCreate,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/import'
+        # )
+        # self._api.add_resource(
+        #     ApiModuleVersionSourceDownload,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/source.zip'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregModuleVersionPublish,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/publish'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregModuleVersionDelete,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/delete'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregModuleVerisonSubmodules,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodules'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregSubmoduleDetails,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodules/details/<path:submodule>'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregSubmoduleReadmeHtml,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/submodules/readme_html/<path:submodule>'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregModuleVersionExamples,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregExampleDetails,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples/details/<path:example>'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregExampleReadmeHtml,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples/readme_html/<path:example>'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregExampleFileList,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples/filelist/<path:example>'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregExampleFile,
+        #     '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/examples/file/<path:example_file>'
+        # )
 
-        self._api.add_resource(
-            ApiTerraregProviderLogos,
-            '/v1/terrareg/provider_logos'
-        )
+        # self._api.add_resource(
+        #     ApiTerraregProviderLogos,
+        #     '/v1/terrareg/provider_logos'
+        # )
 
-        self._api.add_resource(
-            ApiTerraregModuleSearchFilters,
-            '/v1/terrareg/search_filters'
-        )
-        self._api.add_resource(
-            ApiTerraregAuditHistory,
-            '/v1/terrareg/audit-history'
-        )
-        self._api.add_resource(
-            ApiTerraregAuthUserGroups,
-            '/v1/terrareg/user-groups'
-        )
-        self._api.add_resource(
-            ApiTerraregAuthUserGroup,
-            '/v1/terrareg/user-groups/<string:user_group>'
-        )
-        self._api.add_resource(
-            ApiTerraregAuthUserGroupNamespacePermissions,
-            '/v1/terrareg/user-groups/<string:user_group>/permissions/<string:namespace>'
-        )
+        # self._api.add_resource(
+        #     ApiTerraregModuleSearchFilters,
+        #     '/v1/terrareg/search_filters'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregAuditHistory,
+        #     '/v1/terrareg/audit-history'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregAuthUserGroups,
+        #     '/v1/terrareg/user-groups'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregAuthUserGroup,
+        #     '/v1/terrareg/user-groups/<string:user_group>'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregAuthUserGroupNamespacePermissions,
+        #     '/v1/terrareg/user-groups/<string:user_group>/permissions/<string:namespace>'
+        # )
 
-        ## Auth endpoints /v1/terrareg/auth
-        self._api.add_resource(
-            ApiTerraregAdminAuthenticate,
-            '/v1/terrareg/auth/admin/login'
-        )
-        self._api.add_resource(
-            ApiTerraregIsAuthenticated,
-            '/v1/terrareg/auth/admin/is_authenticated'
-        )
+        # ## Auth endpoints /v1/terrareg/auth
+        # self._api.add_resource(
+        #     ApiTerraregAdminAuthenticate,
+        #     '/v1/terrareg/auth/admin/login'
+        # )
+        # self._api.add_resource(
+        #     ApiTerraregIsAuthenticated,
+        #     '/v1/terrareg/auth/admin/is_authenticated'
+        # )
 
-        # Healthcheck endpoint
-        self._api.add_resource(
-            ApiTerraregHealth,
-            '/v1/terrareg/health'
-        )
+        # # Healthcheck endpoint
+        # self._api.add_resource(
+        #     ApiTerraregHealth,
+        #     '/v1/terrareg/health'
+        # )
 
     def run(self, debug=None):
         """Run flask server."""
