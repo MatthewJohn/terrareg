@@ -100,6 +100,20 @@ class ReadmeTab extends BaseTab {
                 readmeContentDiv.find("h3").addClass("subtitle").addClass("is-5");
                 readmeContentDiv.find("h4").addClass("subtitle").addClass("is-6");
 
+                for (let codeDiv of readmeContentDiv.find("code")) {
+                    // If code is within pre block, perform syntax highlighting.
+                    if (codeDiv.parentElement.nodeName.toLowerCase() == "pre") {
+                        window.Prism.highlightElement(codeDiv);
+                    } else {
+                        // Otherwise, removall all "language" classes
+                        for (let className of codeDiv.className.split(/\s+/)) {
+                            if (className.indexOf('language-') !== -1) {
+                                $(codeDiv).removeClass(className)
+                            }
+                        }
+                    }
+                }
+
                 // Show README tab button
                 $("#module-tab-link-readme").removeClass('default-hidden');
 
