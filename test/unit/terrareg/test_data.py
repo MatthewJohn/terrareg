@@ -650,7 +650,8 @@ test_data_full = {
                     'id': 10,
                     'repo_clone_url_template': 'ssh://git@localhost:7999/{namespace}/{module}-{provider}.git',
                     'git_tag_format': 'v{version}',
-                    'versions': {}
+                    'latest_version': '5.2.3',
+                    'versions': {'5.2.3': {'published': True}, '4.0.0': {'published': True}}
                 },
                 'usesgitprovider': {
                     'id': 11,
@@ -663,7 +664,7 @@ test_data_full = {
                     'git_provider_id': 1,
                     'git_tag_format': 'v{version}',
                     'latest_version': '2.2.2',
-                    'versions': {'2.2.2': {'published': True}}
+                    'versions': {'2.2.2': {'published': True}, '2.1.0': {'published': True}}
                 },
                 'nogittagformat': {
                     'id': 30,

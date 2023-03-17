@@ -6,6 +6,7 @@ import onelogin.saml2.idp_metadata_parser
 import onelogin.saml2.utils
 
 import terrareg.config
+from terrareg.utils import get_public_url_details
 
 class Saml2:
 
@@ -18,7 +19,8 @@ class Saml2:
     def is_enabled(cls):
         """Whether SAML auithentication is enabled"""
         config = terrareg.config.Config()
-        return (config.DOMAIN_NAME is not None and
+        _, domain, _ = get_public_url_details()
+        return (domain is not None and
                 config.SAML2_ENTITY_ID is not None and
                 config.SAML2_IDP_METADATA_URL is not None and
                 config.SAML2_PUBLIC_KEY is not None and
@@ -29,17 +31,18 @@ class Saml2:
         """Create settings for saml2"""
         config = terrareg.config.Config()
 
+        _, domain, _ = get_public_url_details()
         settings = {
             "strict": True,
             "debug": config.DEBUG,
             "sp": {
                 "entityId": config.SAML2_ENTITY_ID,
                 "assertionConsumerService": {
-                    "url": f"https://{config.DOMAIN_NAME}/saml/login?acs",
+                    "url": f"https://{domain}/saml/login?acs",
                     "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
                 },
                 "singleLogoutService": {
-                    "url": f"https://{config.DOMAIN_NAME}/saml/login?sls",
+                    "url": f"https://{domain}/saml/login?sls",
                     "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
                 },
                 "NameIDFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
@@ -54,8 +57,9 @@ class Saml2:
     @classmethod
     def get_request_data(cls, request):
         """Obtain request data for saml2"""
+        _, domain, _ = get_public_url_details()
         return {
-            'http_host': terrareg.config.Config().DOMAIN_NAME,
+            'http_host': domain,
             'server_port': 443,
             'https': True,
             'script_name': request.path,

@@ -66,6 +66,7 @@ class TestConfig:
         ('INFRACOST_API_KEY', None),
         ('INFRACOST_PRICING_API_ENDPOINT', None),
         ('DOMAIN_NAME', None),
+        ('PUBLIC_URL', None),
         ('ADDITIONAL_MODULE_TABS', None),
         ('OPENID_CONNECT_LOGIN_TEXT', None),
         ('OPENID_CONNECT_CLIENT_ID', None),

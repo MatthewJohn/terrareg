@@ -1,4 +1,5 @@
 
+from unittest import mock
 import pytest
 
 import terrareg.utils
@@ -71,3 +72,43 @@ class TestSafeJoinPaths(TerraregUnitTest):
             with pytest.raises(terrareg.utils.PathIsNotWithinBaseDirectoryError):
                 assert terrareg.utils.safe_join_paths(base_dir, *sub_paths)
 
+
+    @pytest.mark.parametrize('public_url, domain_name, fallback_domain, expected_protocol, expected_domain, expected_port', [
+        # Test with no configurations and no fallback
+        (None, None, None,
+         'https', None, 443),
+        # Test with fallback domain
+        (None, None, 'fallbackdomain',
+         'https', 'fallbackdomain', 443),
+        # Test that domain overrides fallback domain
+        (None, 'domain_name.config', 'fallbackdomain',
+         'https', 'domain_name.config', 443),
+
+        # Test that public URL overrides domain_name and fallback domain
+        ('https://publicurl.com', 'domain_name.config', 'fallbackdomain',
+         'https', 'publicurl.com', 443),
+        # Test that public URL with port works
+        ('https://publicurl.com:8123', 'domain_name.config', 'fallbackdomain',
+         'https', 'publicurl.com', 8123),
+        # Test that public URL with different protocol works
+        ('http://publicurl.com', 'domain_name.config', 'fallbackdomain',
+         'http', 'publicurl.com', 80),
+
+        # Test that invalid public URL falls back other configurations
+        ('adgadg.com', 'domain_name.config', 'fallbackdomain',
+         'https', 'domain_name.config', 443),
+        ('adgadg.com', None, 'fallbackdomain',
+         'https', 'fallbackdomain', 443),
+    ])
+    def test_get_public_url_details(self, public_url, domain_name, fallback_domain, expected_protocol, expected_domain, expected_port):
+        """Test get_public_url_details method"""
+        class MockConfig:
+            PUBLIC_URL = public_url
+            DOMAIN_NAME = domain_name
+
+        with mock.patch('terrareg.config.Config', MockConfig):
+            actual_protocol, actual_domain, actual_port = terrareg.utils.get_public_url_details(fallback_domain=fallback_domain)
+        
+        assert actual_protocol == expected_protocol
+        assert actual_domain == expected_domain
+        assert actual_port == expected_port

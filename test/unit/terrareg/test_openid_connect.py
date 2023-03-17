@@ -14,26 +14,38 @@ class TestOpenidConnect(TerraregUnitTest):
         ({'OPENID_CONNECT_CLIENT_ID': 'testclientid',
           'OPENID_CONNECT_CLIENT_SECRET': 'testclientsecret',
           'OPENID_CONNECT_ISSUER': 'https://testissuer',
+          'PUBLIC_URL': 'https://unittest.local',
+          'DOMAIN_NAME': None},
+         True),
+        ## Test fallback to DOMAIN_NAME
+        ({'OPENID_CONNECT_CLIENT_ID': 'testclientid',
+          'OPENID_CONNECT_CLIENT_SECRET': 'testclientsecret',
+          'OPENID_CONNECT_ISSUER': 'https://testissuer',
+          'PUBLIC_URL': None,
           'DOMAIN_NAME': 'unittest.local'},
          True),
         ({'OPENID_CONNECT_CLIENT_ID': None,
           'OPENID_CONNECT_CLIENT_SECRET': 'testclientsecret',
           'OPENID_CONNECT_ISSUER': 'https://testissuer',
-          'DOMAIN_NAME': 'unittest.local'},
+          'PUBLIC_URL': 'https://unittest.local',
+          'DOMAIN_NAME': None},
          False),
         ({'OPENID_CONNECT_CLIENT_ID': 'testclientid',
           'OPENID_CONNECT_CLIENT_SECRET': None,
           'OPENID_CONNECT_ISSUER': 'https://testissuer',
-          'DOMAIN_NAME': 'unittest.local'},
+          'PUBLIC_URL': 'https://unittest.local',
+          'DOMAIN_NAME': None},
          False),
         ({'OPENID_CONNECT_CLIENT_ID': 'testclientid',
           'OPENID_CONNECT_CLIENT_SECRET': 'testclientsecret',
           'OPENID_CONNECT_ISSUER': None,
-          'DOMAIN_NAME': 'unittest.local'},
+          'PUBLIC_URL': 'https://unittest.local',
+          'DOMAIN_NAME': None},
          False),
         ({'OPENID_CONNECT_CLIENT_ID': 'testclientid',
           'OPENID_CONNECT_CLIENT_SECRET': 'testclientsecret',
           'OPENID_CONNECT_ISSUER': 'https://testissuer',
+          'PUBLIC_URL': None,
           'DOMAIN_NAME': None},
          False)
     ])
@@ -58,8 +70,13 @@ class TestOpenidConnect(TerraregUnitTest):
 
     def test_get_redirect_url(self):
         """test get_redirect_url"""
-        with mock.patch('terrareg.config.Config.DOMAIN_NAME', 'unittest.domain'):
+        with mock.patch('terrareg.config.Config.PUBLIC_URL', 'https://unittest.domain'):
             assert OpenidConnect.get_redirect_url() == 'https://unittest.domain/openid/callback'
+
+    def test_get_redirect_url_domain_name(self):
+        """test get_redirect_url with fallback to domain name"""
+        with mock.patch('terrareg.config.Config.DOMAIN_NAME', 'unittest.domainfallback'):
+            assert OpenidConnect.get_redirect_url() == 'https://unittest.domainfallback/openid/callback'
 
     def test_obtain_issuer_metadata(self):
         """Obtain wellknown metadata from issuer"""

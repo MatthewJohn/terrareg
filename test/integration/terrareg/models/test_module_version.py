@@ -464,7 +464,7 @@ class TestModuleVersion(TerraregIntegrationTest):
                 }
             ]
 
-    @pytest.mark.parametrize('readme_content,expected_output', [
+    @pytest.mark.parametrize('readme_content,example_analaytics_token,expected_output', [
         # Test README with basic formatting
         (
             """
@@ -478,7 +478,8 @@ It performs the following:
  * Tests the README
  * Passes tests
 """,
-"""
+            "unittest-analytics_token",
+            """
 <h1>Test terraform module</h1>
 <p>This is a terraform module to create a README example.</p>
 <p>It performs the following:</p>
@@ -504,7 +505,8 @@ module "test-usage" {
 }
 ```
 """,
-"""
+            "unittest-analytics_token",
+            """
 <h1>Test external module</h1>
 <pre><code>module &quot;test-usage&quot; {
   source  = &quot;an-external-module/test&quot;
@@ -530,10 +532,11 @@ module "test-usage" {
 }
 ```
 """,
-"""
+            "unittest-analytics_token",
+            """
 <h1>Test external module</h1>
 <pre><code>module &quot;test-usage&quot; {
-  source  = &quot;example.com/moduledetails/readme-tests/provider&quot;
+  source  = &quot;example.com/unittest-analytics_token__moduledetails/readme-tests/provider&quot;
   version = &quot;&gt;= 1.0.0, &lt; 2.0.0&quot;
 
   some_variable = true
@@ -557,10 +560,11 @@ module "test-usage" {
 }
 ```
 """,
-"""
+            "unittest-analytics_token",
+            """
 <h1>Test external module</h1>
 <pre><code>module &quot;test-usage&quot; {
-  source  = &quot;example.com/moduledetails/readme-tests/provider&quot;
+  source  = &quot;example.com/unittest-analytics_token__moduledetails/readme-tests/provider&quot;
   version = &quot;&gt;= 1.0.0, &lt; 2.0.0&quot;
 
   some_variable = true
@@ -584,10 +588,11 @@ module "test-usage" {
 }
 ```
 """,
-"""
+            "unittest-analytics_token",
+            """
 <h1>Test external module</h1>
 <pre><code>module &quot;test-usage&quot; {
-  source  = &quot;example.com/moduledetails/readme-tests/provider//modules/testsubmodule&quot;
+  source  = &quot;example.com/unittest-analytics_token__moduledetails/readme-tests/provider//modules/testsubmodule&quot;
   version = &quot;&gt;= 1.0.0, &lt; 2.0.0&quot;
 
   some_variable = true
@@ -611,10 +616,11 @@ module "test-usage" {
 }
 ```
 """,
-"""
+            "unittest-analytics_token",
+            """
 <h1>Test external module</h1>
 <pre><code>module &quot;test-usage&quot; {
-  source  = &quot;example.com/moduledetails/readme-tests/provider//modules/testsubmodule&quot;
+  source  = &quot;example.com/unittest-analytics_token__moduledetails/readme-tests/provider//modules/testsubmodule&quot;
   version = &quot;&gt;= 1.0.0, &lt; 2.0.0&quot;
 
   some_variable = true
@@ -648,7 +654,56 @@ module "test-external-call" {
 }
 ```
 """,
+            "unittest-analytics_token",
+            """
+<h1>Test external module</h1>
+<pre><code>module &quot;test-usage1&quot; {
+  source  = &quot;example.com/unittest-analytics_token__moduledetails/readme-tests/provider&quot;
+  version = &quot;&gt;= 1.0.0, &lt; 2.0.0&quot;
+
+  some_variable = true
+  another       = &quot;value&quot;
+}
+module &quot;test-usage2&quot; {
+  source  = &quot;example.com/unittest-analytics_token__moduledetails/readme-tests/provider//modules/testsubmodule&quot;
+  version = &quot;&gt;= 1.0.0, &lt; 2.0.0&quot;
+
+  some_variable = true
+  another       = &quot;value&quot;
+}
+module &quot;test-external-call&quot; {
+  source  = &quot;external-module&quot;
+  version = &quot;1.0.3&quot;
+}
+</code></pre>
 """
+        ),
+        # Test without analytics token
+        (
+            """
+# Test external module
+
+```
+module "test-usage1" {
+  source = "./"
+
+  some_variable = true
+  another       = "value"
+}
+module "test-usage2" {
+  source = "./modules/testsubmodule"
+
+  some_variable = true
+  another       = "value"
+}
+module "test-external-call" {
+  source  = "external-module"
+  version = "1.0.3"
+}
+```
+""",
+            "",
+            """
 <h1>Test external module</h1>
 <pre><code>module &quot;test-usage1&quot; {
   source  = &quot;example.com/moduledetails/readme-tests/provider&quot;
@@ -671,7 +726,6 @@ module &quot;test-external-call&quot; {
 </code></pre>
 """
         ),
-
         # Test module call with different indentation
         (
             """
@@ -691,30 +745,32 @@ module "test-usage3" {
 }
 ```
 """,
-"""
+            "unittest-analytics_token",
+            """
 <h1>Test external module</h1>
 <pre><code>module &quot;test-usage1&quot; {
-  source        = &quot;example.com/moduledetails/readme-tests/provider&quot;
+  source        = &quot;example.com/unittest-analytics_token__moduledetails/readme-tests/provider&quot;
   version       = &quot;&gt;= 1.0.0, &lt; 2.0.0&quot;
   some_variable = true
   another       = &quot;value&quot;
 }
 module &quot;test-usage2&quot; {
-    source  = &quot;example.com/moduledetails/readme-tests/provider//modules/testsubmodule&quot;
+    source  = &quot;example.com/unittest-analytics_token__moduledetails/readme-tests/provider//modules/testsubmodule&quot;
     version = &quot;&gt;= 1.0.0, &lt; 2.0.0&quot;
 }
 module &quot;test-usage3&quot; {
-          source  = &quot;example.com/moduledetails/readme-tests/provider//modules/testsubmodule&quot;
+          source  = &quot;example.com/unittest-analytics_token__moduledetails/readme-tests/provider//modules/testsubmodule&quot;
           version = &quot;&gt;= 1.0.0, &lt; 2.0.0&quot;
 }
 </code></pre>
 """
         ),
     ])
-    def test_get_readme_html(self, readme_content, expected_output):
+    def test_get_readme_html(self, readme_content, example_analaytics_token, expected_output):
         """Test get_readme_html method, ensuring it replaces example source and converts from markdown to HTML."""
 
-        with unittest.mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major_plus_one}.0.0'):
+        with unittest.mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major_plus_one}.0.0'), \
+                unittest.mock.patch('terrareg.config.Config.EXAMPLE_ANALYTICS_TOKEN', example_analaytics_token):
             module_version = ModuleVersion(ModuleProvider(Module(Namespace('moduledetails'), 'readme-tests'), 'provider'), '1.0.0')
             # Set README in module version
             module_version.module_details.update_attributes(readme_content=readme_content)

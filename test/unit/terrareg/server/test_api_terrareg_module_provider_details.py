@@ -51,7 +51,16 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'git_path': None,
             'additional_tab_files': {},
             'graph_url': '/modules/testnamespace/lonelymodule/testprovider/1.0.0/graph',
-            'module_extraction_up_to_date': True
+            'module_extraction_up_to_date': True,
+            'usage_example': (
+                'module "lonelymodule" {\n'
+                '  source  = '
+                '"localhost/my-tf-application__testnamespace/lonelymodule/testprovider"\n'
+                '  version = "1.0.0"\n'
+                '\n'
+                '  # Provide variables here\n'
+                '}'
+            )
         }
 
         assert res.status_code == 200
@@ -167,7 +176,16 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
                 'git_path': None,
                 'additional_tab_files': {},
                 'graph_url': '/modules/testnamespace/withsecurityissues/testprovider/1.0.0/graph',
-                'module_extraction_up_to_date': True
+                'module_extraction_up_to_date': True,
+                'usage_example': (
+                    'module "withsecurityissues" {\n'
+                    '  source  = '
+                    '"localhost/my-tf-application__testnamespace/withsecurityissues/testprovider"\n'
+                    '  version = "1.0.0"\n'
+                    '\n'
+                    '  # Provide variables here\n'
+                    '}'
+                )
             }
 
             assert res.status_code == 200
@@ -301,5 +319,5 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
         test_module = terrareg.models.Module(namespace=test_namespace, name='testmodulename')
         test_module_provider = terrareg.models.ModuleProvider(module=test_module, name='testprovider')
 
-        assert res.json == test_module_provider.get_latest_version().get_terrareg_api_details()
+        assert res.json == test_module_provider.get_latest_version().get_terrareg_api_details(request_domain="localhost")
         assert res.status_code == 200

@@ -115,7 +115,10 @@ The port that Terrareg listens on can be configured with [LISTEN_PORT](./CONFIG.
 ## SSL
 
 Although Terrareg can be deployed without SSL - this is only recommended for testing and local development.
-Aside from the usualy reasons for using SSL, it is also required for Terraform to communicate with the registry to obtain modules.
+Aside from the usualy reasons for using SSL, it is also required for Terraform to communicate with the registry to obtain modules as a registry provider. If SSL is not used, Terrareg will fall-back to providing Terrareform examples using a 'http' download URL for Terraform.
+
+Terrareg must be configured with the URL that the registry is accessible. To configure this, please see [PUBLIC_URL](./CONFIG.md#public_url)
+
 
 ### Enabling SSL on the application
 
@@ -188,7 +191,7 @@ To configure OpenID connect, setup an application in an identity provider (IdP) 
 
 Obtain the client ID, client secret and issuer URL from the IdP provider and populate the following environment variables:
 
- * [DOMAIN_NAME](./CONFIG.md#domain_name)
+ * [PUBLIC_URL](./CONFIG.md#public_url)
  * [OPENID_CONNECT_CLIENT_ID](./CONFIG.md#openid_connect_client_id)
  * [OPENID_CONNECT_CLIENT_SECRET](./CONFIG.md#openid_connect_client_secret)
  * [OPENID_CONNECT_ISSUER](./CONFIG.md#openid_connect_issuer)
@@ -207,6 +210,7 @@ Generate a public and a private key, using:
 
 Set the folllowing environment variables:
 
+* [PUBLIC_URL](./CONFIG.md#public_url) (required)
 * [SAML2_IDP_METADATA_URL](./CONFIG.md#saml2_idp_metadata_url) (required)
 * [SAML2_ENTITY_ID](./CONFIG.md#saml2_entity_id) (required)
 * [SAML2_PRIVATE_KEY](./CONFIG.md#saml2_private_key) (required) (See above)
@@ -647,3 +651,15 @@ These labels are available as filters in the search results.
 The list of trusted namespaces can be configured by setting [TRUSTED_NAMESPACES](./CONFIG.md#trusted_namespaces)
 
 The textual representation of these labels can be modified by setting [TRUSTED_NAMESPACE_LABEL](./CONFIG.md#trusted_namespace_label), [VERIFIED_MODULE_LABEL](./CONFIG.md#verified_module_label) and [CONTRIBUTED_NAMESPACE_LABEL](./CONFIG.md#contributed_namespace_label).
+
+
+# Diagnosing issues
+
+## The domain shown in Terraform snippets contains the wrong URL
+
+This can happen if the following are true:
+ * [PUBLIC_URL](./CONFIG.md#public_url) has not been set
+ * [DOMAIN_NAME](./CONFIG.md#domain_name) (deprecated) has not been set
+ * The domain is rewritten by a reverse proxy before traffic reaches Terrareg
+
+To fix this, set [PUBLIC_URL](./CONFIG.md#public_url) to the URL that users access the Terrareg instance.
