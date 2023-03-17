@@ -20,13 +20,12 @@ class TerraformModuleOutline:
 class MetaResponseModel:
 
     resource_fields = {
-        "limit": fields.Integer,
-        "offset": fields.Integer,
-        "prev_page": fields.Integer,
-        "next_page": fields.Integer
+        "limit": fields.Integer(),
+        "current_offset": fields.Integer,
+        "next_offset": fields.Integer
     }
 
-    def __init__(self, limit: int=0, offset: int=0, prev_page: int=0, next_page: int=0):
+    def __init__(self, limit: int, current_offset: int, next_offset: int):
         pass
 
 @swagger.model
@@ -45,38 +44,28 @@ class TerraformSearchResponseModel:
         pass
 
 
-
 class ApiModuleDetails(ErrorCatchingResource):
     """Provide interface to module providers within a module"""
 
     @swagger.operation(
         responseClass=TerraformSearchResponseModel,
-        # parameters=[
-        #     {
-        #         "name": "namespace",
-        #         "description": "Namespace name",
-        #         "required": True,
-        #         "paramType": "path"
-        #     },
-        #     {
-        #         "name": "namespace",
-        #         "description": "Module name",
-        #         "required": True,
-        #         "paramType": "path"
-        #     },
-        #     {
-        #         "name": "offset",
-        #         "description": "Offset of results",
-        #         "required": False,
-        #         "paramType": "query"
-        #     },
-        #     {
-        #         "name": "limit",
-        #         "description": "Result limit",
-        #         "required": False,
-        #         "paramType": "query"
-        #     },
-        # ],
+        parameters=[
+            {
+                "name": "offset",
+                "description": "Offset of results",
+                "type": "int",
+                # "required": False,
+                "paramType": "query",
+                "dataType": "int"
+            },
+            {
+                "name": "limit",
+                "description": "Result limit",
+                # "required": False,
+                "paramType": "query",
+                "dataType": "int"
+            },
+        ],
         responseMessages=[
             {
                 "code": 200,
