@@ -1820,6 +1820,7 @@ function selectExampleFile(eventTarget) {
         url: `/v1/terrareg/modules/${moduleId}/examples/file/${filePath}`,
         success: function (data) {
             $("#example-file-content").html(data);
+            window.Prism.highlightElement(document.getElementById("example-file-content"));
         },
     });
 }

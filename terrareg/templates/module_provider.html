@@ -6,8 +6,13 @@
 <script src="/static/js/terrareg/module_provider_page.js"></script>
 <link rel="stylesheet" href="/static/css/module_provider_page.css" />
 
+<link href="/static/css/prism/prism-hcl-1.29.0.css" rel="stylesheet" />
+<script src="/static/js/prism/prism-hcl-1.29.0.js" data-manual></script>
+
 <script>
     $(document).ready(function () {
+        window.Prism = window.Prism || {};
+        window.Prism.manual = true;
         renderPage();
     });
 </script>
@@ -251,7 +256,7 @@
                 </div>
 
                 <div class="column is-four-fifths">
-                    <pre><code id="example-file-content" class="language-hcl" data-lang="html"></code></pre>
+                    <pre><code id="example-file-content" class="language-hcl" data-lang="hcl"></code></pre>
                 </div>
             </div>
         </div>
