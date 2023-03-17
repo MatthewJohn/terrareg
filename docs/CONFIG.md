@@ -268,6 +268,8 @@ Domain name that the system is hosted on.
 
 This should be setup for all installations, but is required for infracost and OpenID authentication.
 
+Note: The configuration is deprecated, please set the `PUBLIC_URL` configuration instead.
+
 
 Default: ``
 
@@ -575,6 +577,26 @@ Text for sign in button for OpenID Connect authentication
 
 
 Default: `Login using OpenID Connect`
+
+
+### PUBLIC_URL
+
+
+The URL that is used for accessing Terrareg by end-users.
+
+E.g.:
+`https://terrareg.mycorp.com`
+`https://terrareg.mycorg.com:8443`
+
+
+Ensure the protocol is https if Terrareg is accessible over https.
+Provide the port if necessary.
+
+If left empty, the protocol will be assumed to be HTTPS, the port will be assumed to be 443
+and the domain will fallback to be the value set in `DOMAIN_NAME`.
+
+
+Default: ``
 
 
 ### PUBLISH_API_KEYS

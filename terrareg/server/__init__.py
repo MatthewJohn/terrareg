@@ -2,7 +2,7 @@
 import os
 from functools import wraps
 
-from flask import Flask, session, redirect
+from flask import Flask, session, redirect, request
 from flask_restful import Api
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
@@ -662,6 +662,14 @@ class Server(BaseHandler):
     @catch_name_exceptions
     def _view_serve_module_provider(self, namespace, name, provider, version=None):
         """Render view for displaying module provider information"""
+
+        # Check if used by terraform and return module download Api
+        if request.args.get("terraform-get") == "1":
+            # Convert name 'latest' for version to None
+            if version == 'latest':
+                version = None
+            return ApiModuleVersionDownload().get(namespace=namespace, name=name, provider=provider, version=version)
+
         namespace_obj = terrareg.models.Namespace.get(namespace)
         if namespace_obj is None:
             return self._namespace_404(
