@@ -1,5 +1,20 @@
 # Changelog
 
+# [2.61.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.60.2...v2.61.0) (2023-03-17)
+
+
+### Bug Fixes
+
+* Add new 'PUBLIC_URL' config which is the source of protocol, domain and port used for end-user communication ([79baa0f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/79baa0f5a8178623a66dc25cd40a3c4eb7a09302)), closes [#347](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/347)
+* Add port to usage example if port is a non-standard port ([5c3c024](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5c3c02429ed50e80d226f216d24f4c93a2ce321f)), closes [#348](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/348)
+
+
+### Features
+
+* Add support for using /modules/ endpoint in terraform, allowing the use of the registry without HTTPS ([4a3e3a2](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4a3e3a2454c5c698c2c517c9f22f9b197fdd5af8)), closes [#347](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/347)
+* Update usage example in module provider page to display "source" url with http download URL, if https is not being used ([b06d562](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b06d56252cc3f925f0f2ff152ac63490baf946f7)), closes [#347](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/347)
+* Use new http-accessible source URL in example files and README terraform. ([4a2f0b4](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4a2f0b484fa65eceada854d77ca129e282b10215)), closes [#347](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/347) [#349](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/349)
+
 ## [2.60.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.60.1...v2.60.2) (2023-03-15)
 
 
