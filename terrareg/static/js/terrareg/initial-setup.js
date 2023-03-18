@@ -82,7 +82,7 @@ async function loadSetupPage(overrideHttpsCheck = false) {
         }
         setProgress(60);
 
-        // Populat integration URLs for module's indexing
+        // Populate integration URLs for module's indexing
         $('#module-integrations-link').attr('href', setupData.module_view_url + '#integrations');
         $('.module-upload-endpoint').each((itx, div) => {
             $(div).text(pathToUrl(setupData.module_upload_endpoint));
@@ -90,6 +90,17 @@ async function loadSetupPage(overrideHttpsCheck = false) {
         $('.module-publish-endpoint').each((itx, div) => {
             $(div).text(pathToUrl(setupData.module_publish_endpoint));
         });
+        // Populate API key header arguments
+        if (config.UPLOAD_API_KEYS_ENABLED) {
+            $('.module-upload-api-key-header-argument').each((itx, div) => {
+                $(div).text('-H "X-Terrareg-ApiKey: <Insert your UPLOAD_API_KEY>" ');
+            });
+        }
+        if (config.PUBLISH_API_KEYS_ENABLED) {
+            $('.module-publish-api-key-header-argument').each((itx, div) => {
+                $(div).text('-H "X-Terrareg-ApiKey: <Insert your PUBLISH_API_KEY>" ');
+            });
+        }
 
         // Check if module version has been indexed
         if (!setupData.version_indexed || !setupData.version_published) {
