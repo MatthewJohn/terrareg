@@ -4,7 +4,7 @@ import glob
 import urllib.parse
 
 import bleach
-import markdown
+from terrareg.markdown_link_modifier import markdown
 
 from terrareg.errors import TerraregError
 import terrareg.config
@@ -99,11 +99,12 @@ def sanitise_html_content(text):
     return bleach.clean(text) if text else text
 
 
-def convert_markdown_to_html(markdown_html):
+def convert_markdown_to_html(file_name, markdown_html):
     """Convert markdown to HTML"""
-    return markdown.markdown(
+    return markdown(
         markdown_html,
-        extensions=['fenced_code', 'tables', 'mdx_truly_sane_lists']
+        file_name=file_name,
+        extensions=['fenced_code', 'tables', 'mdx_truly_sane_lists', 'terrareg.markdown_link_modifier']
     )
 
 def get_public_url_details(fallback_domain=None):

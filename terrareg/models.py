@@ -2227,7 +2227,7 @@ module "{self.module_version.module_provider.module.name}" {{
         if readme_md:
             readme_md = self.replace_source_in_file(
                 readme_md, server_hostname)
-            return convert_markdown_to_html(readme_md)
+            return convert_markdown_to_html(file_name='README.md', markdown_html=readme_md)
         return None
 
     @property
@@ -3488,7 +3488,7 @@ class ModuleVersionFile(FileObject):
         content = self.content
         # Convert markdown files to HTML
         if self.path.lower().endswith('.md'):
-            content = convert_markdown_to_html(content)
+            content = convert_markdown_to_html(file_name=self.file_name, markdown_html=content)
         else:
             content = '<pre>' + content + '</pre>'
         return content
