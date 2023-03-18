@@ -1756,6 +1756,9 @@ async function populateTerraformUsageExample(moduleDetails, submoduleDetails) {
     // Add example Terraform call to source section
     $("#usage-example-terraform").text(submoduleDetails.usage_example);
 
+    // Perform syntax highlighting
+    window.Prism.highlightElement(document.getElementById("usage-example-terraform"));
+
     // Show container
     $('#usage-example-container').removeClass('default-hidden');
 }
