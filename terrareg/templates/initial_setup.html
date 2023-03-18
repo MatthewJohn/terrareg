@@ -174,12 +174,12 @@ zip -r ../module.zip *
 version=1.0.0
 
 # Upload module version
-curl -X POST \
+curl -X POST <span class="module-upload-api-key-header-argument"></span>\
     "<span class="module-upload-endpoint"></span>" \
     -F file=@../module.zip
 
 # Publish module version
-curl -X POST \
+curl -X POST <span class="module-publish-api-key-header-argument"></span>\
     "<span class="module-publish-endpoint"></span>"</pre>
                 </div>
             </div>
