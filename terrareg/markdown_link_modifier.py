@@ -3,8 +3,13 @@ import re
 
 from markdown import Markdown
 from markdown.treeprocessors import Treeprocessor
+from markdown.preprocessors import Preprocessor
+from markdown.htmlparser import HTMLExtractor
 # Avoid overlap with markdown method
 import markdown.extensions as markdown_extensions
+
+def _convert_id(id):
+    return f"terrareg-markdown-anchor-{id}"
 
 
 class CustomMarkdown(Markdown):
@@ -19,10 +24,6 @@ class CustomMarkdown(Markdown):
 class LinkAnchorReplacement(Treeprocessor):
     """Add IDs to headings and convert links to current filename"""
 
-    @staticmethod
-    def _convert_id(id):
-        return f"terrareg-markdown-anchor-{id}"
-
     def run(self, root):
         """Replace IDs of anchorable elements and replace anchor links with correct ID"""
         escaped_file_name = re.escape(self.md.terrareg_file_name)
@@ -32,19 +33,37 @@ class LinkAnchorReplacement(Treeprocessor):
         for link in root.findall('.//a'):
             link_match = link_re.match(link.attrib.get('href', ''))
             if link_match:
-                link.attrib['href'] = f"#{self._convert_id(link_match.group(1))}"
+                link.attrib['href'] = f"#{_convert_id(link_match.group(1))}"
 
         # Add ID to head h1, h2, etc.
         for tag_name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
             for tag in root.findall(f'.//{tag_name}'):
                 # Generate anchor from text and convert to ID
                 if tag.text:
-                    tag.attrib['id'] = self._convert_id(tag.text.lower().replace(' ', '-'))
-        
-        # Convert pre-existing name tags
-        for tag in root.findall('.//a'):
-            if name_attribute := tag.attrib.get('name'):
-                tag.attrib['name'] = self._convert_id(name_attribute)
+                    tag.attrib['id'] = _convert_id(tag.text.lower().replace(' ', '-'))
+
+
+class HTMLExtractorWithAttribs(HTMLExtractor):
+
+    def handle_starttag(self, tag, attrs):
+        """Convert name attributes to use custom ID"""
+        # Replace name attribute values with converted ID
+        for itx, attr in enumerate(attrs):
+            if attr[0] == 'name':
+                attrs[itx] = (attr[0], _convert_id(attr[1]))
+
+        return super(HTMLExtractorWithAttribs, self).handle_starttag(tag, attrs)
+
+
+class HtmlBlockPreprocessorWithAttribs(Preprocessor):
+    """Preprocessor to override HtmlBlockPreprocessor, using HTMLExtractorWithAttribs"""
+
+    def run(self, lines):
+        source = '\n'.join(lines)
+        parser = HTMLExtractorWithAttribs(self.md)
+        parser.feed(source)
+        parser.close()
+        return ''.join(parser.cleandoc).split('\n')
 
 
 class TerraregMarkdownExtension(markdown_extensions.Extension):
@@ -53,6 +72,7 @@ class TerraregMarkdownExtension(markdown_extensions.Extension):
     def extendMarkdown(self, md):
         """Register processors"""
         # Replace raw HTML preprocessor
+        md.preprocessors.register(HtmlBlockPreprocessorWithAttribs(md), 'html_block', 20)
         md.treeprocessors.register(LinkAnchorReplacement(md), 'linkanchorreplacement', 1)
 
 
