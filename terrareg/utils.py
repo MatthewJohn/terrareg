@@ -104,7 +104,11 @@ def convert_markdown_to_html(file_name, markdown_html):
     return markdown(
         markdown_html,
         file_name=file_name,
-        extensions=['fenced_code', 'tables', 'mdx_truly_sane_lists', 'terrareg.markdown_link_modifier']
+        extensions=[
+            'fenced_code',
+            'tables',
+            'mdx_truly_sane_lists',
+            'terrareg.markdown_link_modifier']
     )
 
 def get_public_url_details(fallback_domain=None):

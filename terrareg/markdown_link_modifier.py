@@ -3,6 +3,8 @@ import re
 
 from markdown import Markdown
 from markdown.treeprocessors import Treeprocessor
+from markdown.preprocessors import Preprocessor
+from markdown.htmlparser import HTMLExtractor
 # Avoid overlap with markdown method
 import markdown.extensions as markdown_extensions
 
@@ -40,6 +42,32 @@ class LinkAnchorReplacement(Treeprocessor):
                 # Generate anchor from text and convert to ID
                 if tag.text:
                     tag.attrib['id'] = self._convert_id(tag.text.lower().replace(' ', '-'))
+        
+        # Convert pre-existing name tags
+        for tag in root.findall('.//a'):
+            if name_attribute := tag.attrib.get('name'):
+                tag.attrib['name'] = self._convert_id(name_attribute)
+
+
+class HTMLExtractorWithAttribs(HTMLExtractor):
+
+    def handle_starttag(self, tag, attrs):
+        return super(HTMLExtractorWithAttribs, self).handle_starttag(tag, attrs)
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_empty_tag(self.get_starttag_text(), is_block=self.md.is_block_level(tag))
+
+
+class HtmlBlockPreprocessorWithAttribs(Preprocessor):
+    """Preprocessor to override HtmlBlockPreprocessor, using HTMLExtractorWithAttribs"""
+
+    def run(self, lines):
+        source = '\n'.join(lines)
+        parser = HTMLExtractorWithAttribs(self.md)
+        parser.feed(source)
+        parser.close()
+        return ''.join(parser.cleandoc).split('\n')
+
 
 
 class TerraregMarkdownExtension(markdown_extensions.Extension):
@@ -47,6 +75,8 @@ class TerraregMarkdownExtension(markdown_extensions.Extension):
 
     def extendMarkdown(self, md):
         """Register processors"""
+        # Replace raw HTML preprocessor
+        md.preprocessors.register(HtmlBlockPreprocessorWithAttribs(md), 'html_block', 20)
         md.treeprocessors.register(LinkAnchorReplacement(md), 'linkanchorreplacement', 1)
 
 
