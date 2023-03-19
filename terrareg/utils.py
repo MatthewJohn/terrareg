@@ -96,7 +96,14 @@ def check_subdirectory_within_base_dir(base_dir, sub_dir, is_dir=False, is_file=
 
 def sanitise_html_content(text):
     """Sanitise HTML content to be returned via API to be displayed in UI"""
-    return bleach.clean(text) if text else text
+    return (
+        bleach.clean(
+            text,
+            attributes={'a': ['href', 'title', 'name'], 'acronym': ['title'], 'abbr': ['title']}
+        )
+        if text else
+        text
+    )
 
 
 def convert_markdown_to_html(file_name, markdown_html):
