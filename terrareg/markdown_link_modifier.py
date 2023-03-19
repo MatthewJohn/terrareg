@@ -1,5 +1,6 @@
 
 import re
+import xml.etree.ElementTree as etree
 
 from markdown import Markdown
 from markdown.treeprocessors import Treeprocessor
@@ -44,15 +45,33 @@ class LinkAnchorReplacement(Treeprocessor):
 
 
 class HTMLExtractorWithAttribs(HTMLExtractor):
+    """Custom HTMLExtractor override, replacing name attributes of embedded HTML"""
+
+    def reset(self):
+        """Reset/setup member varibales."""
+        self.__starttag_text = None
+        return super().reset()
 
     def handle_starttag(self, tag, attrs):
         """Convert name attributes to use custom ID"""
         # Replace name attribute values with converted ID
+        converted_attribute = False
         for itx, attr in enumerate(attrs):
             if attr[0] == 'name':
                 attrs[itx] = (attr[0], _convert_id(attr[1]))
+                converted_attribute = True
+
+        if converted_attribute:
+            attribute_string = " ".join([f'{attr[0]}="{attr[1]}"' for attr in attrs])
+            self.__starttag_text = f"<{tag} {attribute_string}>"
 
         return super(HTMLExtractorWithAttribs, self).handle_starttag(tag, attrs)
+
+    def get_starttag_text(self):
+        """Return modified start tag text, if attribute modifications were made"""
+        if self.__starttag_text:
+            return self.__starttag_text
+        return super(HTMLExtractorWithAttribs, self).get_starttag_text()
 
 
 class HtmlBlockPreprocessorWithAttribs(Preprocessor):
