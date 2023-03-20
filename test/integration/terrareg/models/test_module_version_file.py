@@ -58,13 +58,63 @@ class TestModuleVersionFile(TerraregIntegrationTest):
         (
             'randomcharacters.md',
             """
-# heading with !"£$%^&*()_+}{][~@:#';?></.,]}
+# Heading With 123 !"£$%^&*()_+}{][~@:#';?></.,]}
 
 Should only show alphanumeric in ID
 """,
             """
-<h1 id="terrareg-anchor-randomcharactersmd-heading-with-">heading with !"£$%^&amp;*()_+}{][~@:#';?&gt;&lt;/.,]}</h1>
+<h1 id="terrareg-anchor-randomcharactersmd-heading-with-123-">Heading With 123 !"£$%^&amp;*()_+}{][~@:#';?&gt;&lt;/.,]}</h1>
 <p>Should only show alphanumeric in ID</p>
+""".strip()
+        ),
+
+        (
+            'linkreplacement.md',
+            """
+[Just anchor](#some-heading)
+[With filename](linkreplacement.md#some-heading)
+[With leading slash](./linkreplacement.md#some-heading)
+
+[Another MD file](anotherfile.md#some-heading)
+[Another MD file with leading slash](./anotherfile.md#some-heading)
+
+[A different file](../source/tags/blah)
+
+[External link](https://example.com)
+""",
+            """
+<p><a href="#terrareg-anchor-linkreplacementmd-some-heading">Just anchor</a>
+<a href="#terrareg-anchor-linkreplacementmd-some-heading">With filename</a>
+<a href="#terrareg-anchor-linkreplacementmd-some-heading">With leading slash</a></p>
+<p><a href="anotherfile.md#some-heading">Another MD file</a>
+<a href="./anotherfile.md#some-heading">Another MD file with leading slash</a></p>
+<p><a href="../source/tags/blah">A different file</a></p>
+<p><a href="https://example.com">External link</a></p>
+""".strip()
+        ),
+
+        (
+            'embeddedhtml.md',
+            """
+<a href="https://www.github.com">Github</a>
+<a href="#someanchor">Just Anchor</a>
+<a href="embeddedhtml.md#someanchor">MD File</a>
+<a href="./embeddedhtml.md#someanchor">MD File trailing leading slash</a>
+<a href="readme.md#anotheranchor">Different MD file</a>
+<a href="./readme.md#anotheranchor">Different MD file leading slash</a>
+
+<a id="test-id">With ID</a>
+<a name="test-name">With Name</a>
+""",
+            """
+<p><a href="https://www.github.com">Github</a>
+<a href="#terrareg-anchor-embeddedhtmlmd-someanchor">Just Anchor</a>
+<a href="embeddedhtml.md#terrareg-anchor-embeddedhtmlmd-someanchor">MD File</a>
+<a href="./embeddedhtml.md#terrareg-anchor-embeddedhtmlmd-someanchor">MD File trailing leading slash</a>
+<a href="readme.md#anotheranchor">Different MD file</a>
+<a href="./readme.md#anotheranchor">Different MD file leading slash</a></p>
+<p><a id="terrareg-anchor-embeddedhtmlmd-test-id">With ID</a>
+<a name="terrareg-anchor-embeddedhtmlmd-test-name">With Name</a></p>
 """.strip()
         ),
 
