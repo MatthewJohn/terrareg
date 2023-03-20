@@ -32,7 +32,7 @@ from terrareg.errors import (
     TerraformVersionSwitchError
 )
 from terrareg.module_extraction_status_type import ModuleExtractionStatusType
-from terrareg.utils import PathDoesNotExistError, safe_iglob, safe_join_paths
+from terrareg.utils import PathDoesNotExistError, safe_iglob, safe_join_paths, get_public_url_details
 from terrareg.config import Config
 from terrareg.constants import EXTRACTION_VERSION
 
@@ -203,9 +203,11 @@ disable_checkpoint = true
 
 """
 
-            if config.DOMAIN_NAME:
+            _, domain_name, _ = get_public_url_details()
+
+            if domain_name:
                 terraform_rc_file_content += f"""
-credentials "{config.DOMAIN_NAME}" {{
+credentials "{domain_name}" {{
   token = "{config.INTERNAL_EXTRACTION_ANALYITCS_TOKEN}"
 }}
 """
@@ -410,9 +412,10 @@ credentials "{config.DOMAIN_NAME}" {{
         safe_join_paths(self.module_directory, example.path)
 
         infracost_env = dict(os.environ)
-        if Config().DOMAIN_NAME:
+        _, domain_name, _ = get_public_url_details()
+        if domain_name:
             infracost_env['INFRACOST_TERRAFORM_CLOUD_TOKEN'] = Config().INTERNAL_EXTRACTION_ANALYITCS_TOKEN
-            infracost_env['INFRACOST_TERRAFORM_CLOUD_HOST'] = Config().DOMAIN_NAME
+            infracost_env['INFRACOST_TERRAFORM_CLOUD_HOST'] = domain_name
 
         # Create temporary file safely and immediately close to
         # pass path to infracost

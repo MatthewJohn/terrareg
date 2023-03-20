@@ -115,7 +115,10 @@ The port that Terrareg listens on can be configured with [LISTEN_PORT](./CONFIG.
 ## SSL
 
 Although Terrareg can be deployed without SSL - this is only recommended for testing and local development.
-Aside from the usualy reasons for using SSL, it is also required for Terraform to communicate with the registry to obtain modules.
+Aside from the usualy reasons for using SSL, it is also required for Terraform to communicate with the registry to obtain modules as a registry provider. If SSL is not used, Terrareg will fall-back to providing Terrareform examples using a 'http' download URL for Terraform.
+
+Terrareg must be configured with the URL that the registry is accessible. To configure this, please see [PUBLIC_URL](./CONFIG.md#public_url)
+
 
 ### Enabling SSL on the application
 
@@ -130,14 +133,35 @@ SSL can also be provided by a reverse proxy in front of Terrareg and traffic to 
 
 # Security
 
-Terrareg must be configured with a secret key to be able to login, which is used for encrypting sessions. This can be configured via [SECRET_KEY](./CONFIG.md#secret_key).
+Terrareg must be configured with a secret key, which is used for encrypting sessions, to enable authentication. This can be configured via [SECRET_KEY](./CONFIG.md#secret_key).
 
 By default, Terrareg administration is protected by an [ADMIN_AUTHENTICATION_TOKEN](./CONFIG.md#admin_authentication_token), which is set via environment variable, which becomes the password used for authentication on the login page.
 
-Authentication is required to perform tasks such as: creating namespaces, creating/deleting modules and managing additional user permissions.
+Authentication is required to perform tasks such as: creating namespaces, creating/deleting modules and managing additional user permissions, with a few exceptions:
 
-However, indexing and publishing modules does *not* require authentication. To disable unauthorised indexing/publishing of modules, set up dedicated API keys for these functions, see [UPLOAD_API_KEYS](./CONFIG.MD#upload_api_keys) and [PUBLISH_API_KEYS](./CONFIG.MD#Ppublish_api_keys)
+### Securing module creation/indexing
 
+By default, indexing and publishing modules does *not* require authentication. To disable unauthorised indexing/publishing of modules, set up dedicated API keys for these functions, see [UPLOAD_API_KEYS](./CONFIG.MD#upload_api_keys) and [PUBLISH_API_KEYS](./CONFIG.MD#Ppublish_api_keys).
+
+Enabling [access controls](#access-controls) will disable unauthenticated indexing/publishing of modules, requiring authentication via SSO or Admin password or, once set, the upload/publish API keys.
+
+### Auto creation of namespaces/modules
+
+By default, the module upload endpoint will create a namespace/module if it does not exist.
+
+For a secure installation, it is recommended to disable this, forcing all namespaces/modules to be created by authenticated users.
+
+The disable this functionality, set [AUTO_CREATE_NAMESPACE](./CONFIG.md#auto_create_namespace) and [AUTO_CREATE_MODULE_PROVIDER](./CONFIG.md#auto_create_module_provider)
+
+## Access controls
+
+By default, all authenticated users will have global admin permissions, allowing the creation/deletion of all namespaces, modules and module versions.
+
+Role based access controls (RBAC) can be enabled by setting [ENABLE_ACCESS_CONTROLS](./CONFIG.md#enable_access_controls).
+
+This will remove any default privilges given to SSO users. The admin user will still retain global admin privileges.
+
+For information about user groups, see [Single Sign-on](#single-sign-on).
 
 ## Single Sign-on
 
@@ -147,7 +171,7 @@ SSO groups can be assigned global admin permissions, or per-namespace permission
 
 User groups and permissions can be configured on the 'User Groups' (/user-groups) page.
 
-Once single sign-on has been setup, the [ADMIN_AUTHENTICATION_TOKEN](./CONFIG.md#admin_authentication_token) can be disabled, stopping further sign-in via password authentication.
+Once single sign-on has been setup, the [ADMIN_AUTHENTICATION_TOKEN](./CONFIG.md#admin_authentication_token) can be removed, stopping further sign-in via password authentication.
 
 *NOTE* OpenID and SAML2 authentication is currently experimental.
 
@@ -167,7 +191,7 @@ To configure OpenID connect, setup an application in an identity provider (IdP) 
 
 Obtain the client ID, client secret and issuer URL from the IdP provider and populate the following environment variables:
 
- * [DOMAIN_NAME](./CONFIG.md#domain_name)
+ * [PUBLIC_URL](./CONFIG.md#public_url)
  * [OPENID_CONNECT_CLIENT_ID](./CONFIG.md#openid_connect_client_id)
  * [OPENID_CONNECT_CLIENT_SECRET](./CONFIG.md#openid_connect_client_secret)
  * [OPENID_CONNECT_ISSUER](./CONFIG.md#openid_connect_issuer)
@@ -186,6 +210,7 @@ Generate a public and a private key, using:
 
 Set the folllowing environment variables:
 
+* [PUBLIC_URL](./CONFIG.md#public_url) (required)
 * [SAML2_IDP_METADATA_URL](./CONFIG.md#saml2_idp_metadata_url) (required)
 * [SAML2_ENTITY_ID](./CONFIG.md#saml2_entity_id) (required)
 * [SAML2_PRIVATE_KEY](./CONFIG.md#saml2_private_key) (required) (See above)
@@ -626,3 +651,15 @@ These labels are available as filters in the search results.
 The list of trusted namespaces can be configured by setting [TRUSTED_NAMESPACES](./CONFIG.md#trusted_namespaces)
 
 The textual representation of these labels can be modified by setting [TRUSTED_NAMESPACE_LABEL](./CONFIG.md#trusted_namespace_label), [VERIFIED_MODULE_LABEL](./CONFIG.md#verified_module_label) and [CONTRIBUTED_NAMESPACE_LABEL](./CONFIG.md#contributed_namespace_label).
+
+
+# Diagnosing issues
+
+## The domain shown in Terraform snippets contains the wrong URL
+
+This can happen if the following are true:
+ * [PUBLIC_URL](./CONFIG.md#public_url) has not been set
+ * [DOMAIN_NAME](./CONFIG.md#domain_name) (deprecated) has not been set
+ * The domain is rewritten by a reverse proxy before traffic reaches Terrareg
+
+To fix this, set [PUBLIC_URL](./CONFIG.md#public_url) to the URL that users access the Terrareg instance.

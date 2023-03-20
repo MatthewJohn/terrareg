@@ -1,5 +1,71 @@
 # Changelog
 
+# [2.61.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.60.2...v2.61.0) (2023-03-17)
+
+
+### Bug Fixes
+
+* Add new 'PUBLIC_URL' config which is the source of protocol, domain and port used for end-user communication ([79baa0f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/79baa0f5a8178623a66dc25cd40a3c4eb7a09302)), closes [#347](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/347)
+* Add port to usage example if port is a non-standard port ([5c3c024](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5c3c02429ed50e80d226f216d24f4c93a2ce321f)), closes [#348](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/348)
+
+
+### Features
+
+* Add support for using /modules/ endpoint in terraform, allowing the use of the registry without HTTPS ([4a3e3a2](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4a3e3a2454c5c698c2c517c9f22f9b197fdd5af8)), closes [#347](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/347)
+* Update usage example in module provider page to display "source" url with http download URL, if https is not being used ([b06d562](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b06d56252cc3f925f0f2ff152ac63490baf946f7)), closes [#347](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/347)
+* Use new http-accessible source URL in example files and README terraform. ([4a2f0b4](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4a2f0b484fa65eceada854d77ca129e282b10215)), closes [#347](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/347) [#349](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/349)
+
+## [2.60.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.60.1...v2.60.2) (2023-03-15)
+
+
+### Bug Fixes
+
+* Add default value to git tag format field in module provider create page. ([fc516b9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fc516b9d495e81a026073f86c45cf441f8dd6409)), closes [#311](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/311)
+
+## [2.60.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.60.0...v2.60.1) (2023-03-14)
+
+
+### Bug Fixes
+
+* Update namespace module list endpoint to return empty module list rather than 404 when a namespace has no modules ([6ca3441](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6ca3441f309c52d89ff8fe0f36e1c6da851cc8ea)), closes [#328](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/328)
+* Update namespace page to display error about no modules when a namespace exists, rather than an eror that the namespace does not exist. ([ec0b3c9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ec0b3c9d362e8c3fa39a10d33f87199546270a8f)), closes [#328](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/328)
+
+# [2.60.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.5...v2.60.0) (2023-03-14)
+
+
+### Features
+
+* Add support for 'latest' module provider download endpoint ([18f14e8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/18f14e86cc6aa091f573f446a9d1f5428f14302d)), closes [#322](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/322)
+
+## [2.59.5](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.4...v2.59.5) (2023-03-14)
+
+
+### Bug Fixes
+
+* Add steps to initial setup to disable AUTO_CREATE_NAMESPACE and AUTO_CREATE_MODULE_PROVIDER ([f18398b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f18398b78b0485cbe02e01a19a6bf9b400cfafd3)), closes [#337](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/337)
+
+## [2.59.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.3...v2.59.4) (2023-03-14)
+
+
+### Bug Fixes
+
+* Disable autocreation of namespaces, modules and module providers in module provider details API endpoint ([e015a7f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e015a7f92248f533f436aeed933f49f05a44afb1)), closes [#338](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/338)
+
+## [2.59.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.2...v2.59.3) (2023-03-13)
+
+
+### Bug Fixes
+
+* Update unauthenticated/unpriviledged access to module upload/publish endpoints when API keys are not set and access controls are enabled ([0afc6a8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0afc6a8e1aee289c9705f8f6575465c47935a907)), closes [#339](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/339)
+
+## [2.59.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.1...v2.59.2) (2023-03-13)
+
+
+### Bug Fixes
+
+* Fallback to use openid connect user's email address, if username is not available ([c7e057a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c7e057a713ca12a7b5fd31a0641c4190d29ab176)), closes [#276](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/276)
+* Fix authentication using OpenID connect with Azure ([29bcb1d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/29bcb1d5365cdebb1367be27c5e62cf75ec15ff3)), closes [#276](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/276)
+
 ## [2.59.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.59.0...v2.59.1) (2023-03-11)
 
 

@@ -2673,7 +2673,8 @@ EOF
             }
         }}
     },
-    'testmodulecreation': {}
+    'testmodulecreation': {},
+    'emptynamespace': {}
 }
 
 two_empty_namespaces = {

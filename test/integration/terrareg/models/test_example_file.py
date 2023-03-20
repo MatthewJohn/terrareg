@@ -45,20 +45,21 @@ class TestExampleFile(TerraregIntegrationTest):
         file_list = sorted(file_list)
         assert [file.file_name for file in file_list] == ['main.tf', 'data.tf', 'outputs.tf', 'variables.tf']
 
-    @pytest.mark.parametrize('file_content,expected_output', [
+    @pytest.mark.parametrize('file_content,example_analytics_token,expected_output', [
         # Test empty file
-        ('', ''),
+        ('', '', ''),
 
         # Basic call to example module (bit cyclic, so won't happen in real life)
         (
-"""
+            """
 module "test-module" {
     source = "./"
 }
 """,
-"""
+            'unittest-example-analytics',
+            """
 module "test-module" {
-    source  = "example.com/moduledetails/readme-tests/provider//examples/testreadmeexample"
+    source  = "example.com/unittest-example-analytics__moduledetails/readme-tests/provider//examples/testreadmeexample"
     version = ">= 1.0.0, < 1.1.0"
 }
 """
@@ -66,24 +67,76 @@ module "test-module" {
 
         # Basic call to root module
         (
-"""
+            """
 module "test-module" {
     source = "../../"
 
     some_attribute = "test"
 }
 """,
-"""
+            'unittest-example-analytics',
+            """
 module "test-module" {
-    source  = "example.com/moduledetails/readme-tests/provider"
+    source  = "example.com/unittest-example-analytics__moduledetails/readme-tests/provider"
     version = ">= 1.0.0, < 1.1.0"
 
     some_attribute = "test"
 }
 """
+        ),
+        # Test leading indentation
+        (
+            """
+module "test-module" {
+        source = "../../"
+        some_attribute = "test"
+}
+""",
+            'unittest-example-analytics',
+            """
+module "test-module" {
+        source  = "example.com/unittest-example-analytics__moduledetails/readme-tests/provider"
+        version = ">= 1.0.0, < 1.1.0"
+        some_attribute = "test"
+}
+"""
+        ),
+        # Test trailing key indentation
+        (
+            """
+module "test-module" {
+  source         = "../../"
+  some_attribute = "test"
+}
+""",
+            'unittest-example-analytics',
+            """
+module "test-module" {
+  source         = "example.com/unittest-example-analytics__moduledetails/readme-tests/provider"
+  version        = ">= 1.0.0, < 1.1.0"
+  some_attribute = "test"
+}
+"""
+        ),
+        # Without analytics token set
+        (
+            """
+module "test-module" {
+  source = "../../"
+  some_attribute = "test"
+}
+""",
+            '',
+            """
+module "test-module" {
+  source  = "example.com/moduledetails/readme-tests/provider"
+  version = ">= 1.0.0, < 1.1.0"
+  some_attribute = "test"
+}
+"""
         )
     ])
-    def test_source_replacement_in_file_content(self, file_content, expected_output):
+    def test_source_replacement_in_file_content(self, file_content, example_analytics_token, expected_output):
         """Test source replacement in example file content."""
 
         module_version = ModuleVersion(ModuleProvider(Module(Namespace('moduledetails'), 'readme-tests'), 'provider'), '1.0.0')
@@ -91,5 +144,6 @@ module "test-module" {
         example_file = ExampleFile(example, 'examples/testreadmeexample/main.tf')
         example_file.update_attributes(content=file_content)
 
-        with unittest.mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major}.{minor_plus_one}.0'):
+        with unittest.mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major}.{minor_plus_one}.0'), \
+                unittest.mock.patch('terrareg.config.Config.EXAMPLE_ANALYTICS_TOKEN', example_analytics_token):
             assert example_file.get_content(server_hostname='example.com') == expected_output

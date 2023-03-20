@@ -26,11 +26,15 @@ class TestInitialSetup(SeleniumTest):
         cls._config_allow_module_uploads_mock = mock.patch('terrareg.config.Config.ALLOW_MODULE_HOSTING', True)
         cls._config_publish_api_keys_mock = mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', [])
         cls._config_admin_authentication_key_mock = mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', '')
+        cls._config_auto_create_namespace_mock = mock.patch('terrareg.config.Config.AUTO_CREATE_NAMESPACE', True)
+        cls._config_auto_create_module_provider_mock = mock.patch('terrareg.config.Config.AUTO_CREATE_MODULE_PROVIDER', True)
 
         cls.register_patch(cls._config_upload_api_keys_mock)
         cls.register_patch(cls._config_allow_module_uploads_mock)
         cls.register_patch(cls._config_publish_api_keys_mock)
         cls.register_patch(cls._config_admin_authentication_key_mock)
+        cls.register_patch(cls._config_auto_create_namespace_mock)
+        cls.register_patch(cls._config_auto_create_module_provider_mock)
 
         super(TestInitialSetup, cls).setup_class()
 
@@ -283,7 +287,11 @@ class TestInitialSetup(SeleniumTest):
             assert self.is_striked_through(secure_upload_li) == True
             secure_publish_li = self.wait_for_element(By.ID, 'setup-step-secure-publish')
             assert self.is_striked_through(secure_publish_li) == False
-            self.check_progress_bar(90)
+            secure_auto_create_namespace_li = self.wait_for_element(By.ID, 'setup-step-secure-auto-create-namespace')
+            assert self.is_striked_through(secure_auto_create_namespace_li) == False
+            secure_auto_create_module_provider_li = self.wait_for_element(By.ID, 'setup-step-secure-auto-create-module-provider')
+            assert self.is_striked_through(secure_auto_create_module_provider_li) == False
+            self.check_progress_bar(85)
 
         # Set publish API keys
         with self.update_mock(self._config_publish_api_keys_mock, 'new', ['some-api-publish-key']):
@@ -294,7 +302,41 @@ class TestInitialSetup(SeleniumTest):
             assert self.is_striked_through(secure_upload_li) == False
             secure_publish_li = self.wait_for_element(By.ID, 'setup-step-secure-publish')
             assert self.is_striked_through(secure_publish_li) == True
-            self.check_progress_bar(90)
+            secure_auto_create_namespace_li = self.wait_for_element(By.ID, 'setup-step-secure-auto-create-namespace')
+            assert self.is_striked_through(secure_auto_create_namespace_li) == False
+            secure_auto_create_module_provider_li = self.wait_for_element(By.ID, 'setup-step-secure-auto-create-module-provider')
+            assert self.is_striked_through(secure_auto_create_module_provider_li) == False
+            self.check_progress_bar(85)
+
+        # Disable auto create namespace
+        with self.update_mock(self._config_auto_create_namespace_mock, 'new', False):
+            # Reload page and ensure secret is striked through
+            self.selenium_instance.get(self.get_url('/initial-setup'))
+
+            secure_upload_li = self.wait_for_element(By.ID, 'setup-step-secure-upload')
+            assert self.is_striked_through(secure_upload_li) == False
+            secure_publish_li = self.wait_for_element(By.ID, 'setup-step-secure-publish')
+            assert self.is_striked_through(secure_publish_li) == False
+            secure_auto_create_namespace_li = self.wait_for_element(By.ID, 'setup-step-secure-auto-create-namespace')
+            assert self.is_striked_through(secure_auto_create_namespace_li) == True
+            secure_auto_create_module_provider_li = self.wait_for_element(By.ID, 'setup-step-secure-auto-create-module-provider')
+            assert self.is_striked_through(secure_auto_create_module_provider_li) == False
+            self.check_progress_bar(85)
+
+        # Disable auto create module provider
+        with self.update_mock(self._config_auto_create_module_provider_mock, 'new', False):
+            # Reload page and ensure secret is striked through
+            self.selenium_instance.get(self.get_url('/initial-setup'))
+
+            secure_upload_li = self.wait_for_element(By.ID, 'setup-step-secure-upload')
+            assert self.is_striked_through(secure_upload_li) == False
+            secure_publish_li = self.wait_for_element(By.ID, 'setup-step-secure-publish')
+            assert self.is_striked_through(secure_publish_li) == False
+            secure_auto_create_namespace_li = self.wait_for_element(By.ID, 'setup-step-secure-auto-create-namespace')
+            assert self.is_striked_through(secure_auto_create_namespace_li) == False
+            secure_auto_create_module_provider_li = self.wait_for_element(By.ID, 'setup-step-secure-auto-create-module-provider')
+            assert self.is_striked_through(secure_auto_create_module_provider_li) == True
+            self.check_progress_bar(85)
 
     def _test_ssl_step(self):
         """Test SSL step."""
@@ -373,8 +415,11 @@ class TestInitialSetup(SeleniumTest):
             self._test_secure_instance_step()
 
             # STEP 7 - HTTPS
-            with self.update_multiple_mocks((self._config_upload_api_keys_mock, 'new', ['some-api-upload-key']), \
-                    (self._config_publish_api_keys_mock, 'new', ['some-api-publish-key'])):
+            with self.update_multiple_mocks(
+                    (self._config_upload_api_keys_mock, 'new', ['some-api-upload-key']), \
+                    (self._config_publish_api_keys_mock, 'new', ['some-api-publish-key']),
+                    (self._config_auto_create_namespace_mock, 'new', False),
+                    (self._config_auto_create_module_provider_mock, 'new', False),):
                 self._test_ssl_step()
 
                 # Step 7 - Success

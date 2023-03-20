@@ -179,54 +179,80 @@ class BaseSsoAuthMethodTests:
             obj = self.CLS()
             assert obj.check_namespace_access(permission_type_to_check, namespace_to_check) is expected_result
 
-    @pytest.mark.parametrize('publish_api_key_config,has_namespace_access,expected_result', [
-        # With access to namespace
-        (None, True, True),
-        ([], True, True),
-        (['key1'], True, True),
-        (['key1', 'key2'], True, True),
-        # Without access to namespace
-        (None, False, True),
-        ([], False, True),
-        (['key1'], False, False),
-        (['key1', 'key2'], False, False),
+    @pytest.mark.parametrize('publish_api_key_config,has_namespace_access,rbac_enabled,expected_result', [
+        # Without RBAC enabled
+        ## With access to namespace
+        (None, True, False, True),
+        ([], True, False, True),
+        (['key1'], True, False, True),
+        (['key1', 'key2'], True, False, True),
+        ## Without access to namespace
+        (None, False, False, True),
+        ([], False, False, True),
+        (['key1'], False, False, False),
+        (['key1', 'key2'], False, False, False),
+        # With RBAC enabled
+        ## With access to namespace
+        (None, True, True, True),
+        ([], True, True, True),
+        (['key1'], True, True, True),
+        (['key1', 'key2'], True, True, True),
+        ## Without access to namespace
+        (None, False, True, False),
+        ([], False, True, False),
+        (['key1'], False, True, False),
+        (['key1', 'key2'], False, True, False),
     ])
-    def test_can_publish_module_version(self, publish_api_key_config, has_namespace_access, expected_result):
+    def test_can_publish_module_version(self, publish_api_key_config, has_namespace_access, rbac_enabled, expected_result):
         """Test can_publish_module_version method"""
         mock_check_namespace_access = mock.MagicMock(return_value=has_namespace_access)
         with mock.patch(f'terrareg.auth.{self.CLS.__name__}.check_namespace_access', mock_check_namespace_access), \
-                mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', publish_api_key_config):
+                mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', publish_api_key_config), \
+                mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', rbac_enabled):
             obj = self.CLS()
             assert obj.can_publish_module_version(namespace='testnamespace') is expected_result
 
-        if publish_api_key_config:
+        if publish_api_key_config or rbac_enabled:
             mock_check_namespace_access.assert_called_once_with(
                 namespace='testnamespace',
                 permission_type=UserGroupNamespacePermissionType.MODIFY)
         else:
             mock_check_namespace_access.assert_not_called()
 
-    @pytest.mark.parametrize('upload_api_key_config,has_namespace_access,expected_result', [
-        # With access to namespace
-        (None, True, True),
-        ([], True, True),
-        (['key1'], True, True),
-        (['key1', 'key2'], True, True),
-        # Without access to namespace
-        (None, False, True),
-        ([], False, True),
-        (['key1'], False, False),
-        (['key1', 'key2'], False, False),
+    @pytest.mark.parametrize('upload_api_key_config,has_namespace_access,rbac_enabled,expected_result', [
+        # Without RBAC enabled
+        ## With access to namespace
+        (None, True, False, True),
+        ([], True, False, True),
+        (['key1'], True, False, True),
+        (['key1', 'key2'], True, False, True),
+        ## Without access to namespace
+        (None, False, False, True),
+        ([], False, False, True),
+        (['key1'], False, False, False),
+        (['key1', 'key2'], False, False, False),
+        # With RBAC enabled
+        ## With access to namespace
+        (None, True, True, True),
+        ([], True, True, True),
+        (['key1'], True, True, True),
+        (['key1', 'key2'], True, True, True),
+        ## Without access to namespace
+        (None, False, True, False),
+        ([], False, True, False),
+        (['key1'], False, True, False),
+        (['key1', 'key2'], False, True, False),
     ])
-    def test_can_upload_module_version(self, upload_api_key_config, has_namespace_access, expected_result):
+    def test_can_upload_module_version(self, upload_api_key_config, has_namespace_access, rbac_enabled, expected_result):
         """Test can_upload_module_version method"""
         mock_check_namespace_access = mock.MagicMock(return_value=has_namespace_access)
         with mock.patch(f'terrareg.auth.{self.CLS.__name__}.check_namespace_access', mock_check_namespace_access), \
-                mock.patch('terrareg.config.Config.UPLOAD_API_KEYS', upload_api_key_config):
+                mock.patch('terrareg.config.Config.UPLOAD_API_KEYS', upload_api_key_config), \
+                mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', rbac_enabled):
             obj = self.CLS()
             assert obj.can_upload_module_version(namespace='testnamespace') is expected_result
 
-        if upload_api_key_config:
+        if upload_api_key_config or rbac_enabled:
             mock_check_namespace_access.assert_called_once_with(
                 namespace='testnamespace',
                 permission_type=UserGroupNamespacePermissionType.MODIFY)

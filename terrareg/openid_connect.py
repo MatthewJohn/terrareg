@@ -8,22 +8,21 @@ import requests
 import oauthlib.oauth2
 
 import terrareg.config
+from terrareg.utils import get_public_url_details
 
 
 class OpenidConnect:
 
     _METADATA_CONFIG = None
 
-    _IDP_JWKS = None
-    _IDP_JWKS_REFRESH_DATE = None
-    # Retain IdP keys cache for 12 hours
-    _IDP_JWKS_REFRESH_INTERVAL = datetime.timedelta(hours=12)
+    _JWKS_CLIENT = None
 
     @classmethod
     def is_enabled(cls):
         """Whether OpenID connect authentication is enabled"""
         config = terrareg.config.Config()
-        return bool(config.OPENID_CONNECT_CLIENT_ID and config.OPENID_CONNECT_CLIENT_SECRET and config.OPENID_CONNECT_ISSUER and config.DOMAIN_NAME)
+        _, domain, _ = get_public_url_details()
+        return bool(config.OPENID_CONNECT_CLIENT_ID and config.OPENID_CONNECT_CLIENT_SECRET and config.OPENID_CONNECT_ISSUER and domain)
 
     def get_client():
         """Return oauth2 web application client"""
@@ -32,32 +31,20 @@ class OpenidConnect:
     @staticmethod
     def get_redirect_url():
         """Obtain redirect URL for Terrareg instance"""
-        config = terrareg.config.Config()
-        return f'https://{config.DOMAIN_NAME}/openid/callback'
+        _, domain, _ = get_public_url_details()
+        return f'https://{domain}/openid/callback'
 
     @classmethod
-    def get_idp_jwks(cls):
-        """Obtain JWKs from IdP"""
-        if (not cls._IDP_JWKS or
-                cls._IDP_JWKS_REFRESH_DATE is None or
-                cls._IDP_JWKS_REFRESH_DATE < datetime.datetime.now()):
-            # Obtain keys from IdP
-            metadata = cls.obtain_issuer_metadata()
-            if metadata is None:
-                return None
+    def get_jwks_client(cls):
+        """Obtain instance of jwks_client"""
+        if not cls._JWKS_CLIENT:
+            jwks_uri = cls.obtain_issuer_metadata().get('jwks_uri', None)
+            if jwks_uri is None:
+                raise Exception("No jwks_uri found")
 
-            key_url = metadata.get('jwks_uri', None)
-            if not key_url:
-                return None
+            cls._JWKS_CLIENT = jwt.PyJWKClient(jwks_uri, cache_keys=True)
 
-            jwks_content = requests.get(key_url).json()
-            public_keys = {
-                key['kid']: jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(jwks_content['keys'][0]))
-                for key in jwks_content.get('keys', [])
-            }
-            cls._IDP_JWKS = public_keys
-            cls._IDP_JWKS_REFRESH_DATE = datetime.datetime.now() + cls._IDP_JWKS_REFRESH_INTERVAL
-        return cls._IDP_JWKS
+        return cls._JWKS_CLIENT
 
     @classmethod
     def obtain_issuer_metadata(cls):
@@ -130,13 +117,12 @@ class OpenidConnect:
     @classmethod
     def validate_session_token(cls, session_id_token):
         """Validate session token, ensuring it is valid"""
-        idp_keys = cls.get_idp_jwks()
-
         header = jwt.get_unverified_header(jwt=session_id_token)
+        key = cls.get_jwks_client().get_signing_key(header["kid"])
 
         jwt.decode(
             session_id_token,
-            key=idp_keys[header['kid']],
+            key=key.key,
             algorithms=[header['alg']],
             audience=terrareg.config.Config().OPENID_CONNECT_CLIENT_ID
         )

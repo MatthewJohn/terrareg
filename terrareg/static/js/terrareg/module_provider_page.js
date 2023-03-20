@@ -1720,7 +1720,7 @@ function onSubmoduleSelectChange(event) {
  *
  * @param moduleDetails Terrareg module details
  */
-async function populateTerraformUsageExample(moduleDetails, terraformVersionConstraint, additionalPath = undefined) {
+async function populateTerraformUsageExample(moduleDetails, submoduleDetails) {
     let config = await getConfig();
 
     // Check if module has been published - if not, do not
@@ -1730,8 +1730,8 @@ async function populateTerraformUsageExample(moduleDetails, terraformVersionCons
     }
 
     // Populate supported Terraform versions
-    if (moduleDetails.terraform_version_constraint) {
-        $('#supported-terraform-versions-data').text(terraformVersionConstraint);
+    if (submoduleDetails.terraform_version_constraint) {
+        $('#supported-terraform-versions-data').text(submoduleDetails.terraform_version_constraint);
         $('#supported-terraform-versions').removeClass('default-hidden');
     }
 
@@ -1739,19 +1739,8 @@ async function populateTerraformUsageExample(moduleDetails, terraformVersionCons
     $("#usage-example-analytics-token").text(config.EXAMPLE_ANALYTICS_TOKEN);
     $("#usage-example-analytics-token-phrase").text(config.ANALYTICS_TOKEN_PHRASE);
 
-    let terraform = `module "${moduleDetails.name}" {
-  source  = "${window.location.hostname}/${config.EXAMPLE_ANALYTICS_TOKEN}__${moduleDetails.module_provider_id}${additionalPath ? "//" + additionalPath : ""}"
-`;
-    for (let commentLine of moduleDetails.terraform_example_version_comment) {
-        terraform += `  # ${commentLine}\n`;
-    }
-    terraform += `  version = "${moduleDetails.terraform_example_version_string}"
-
-  # Provide variables here
-}`;
-
     // Add example Terraform call to source section
-    $("#usage-example-terraform").text(terraform);
+    $("#usage-example-terraform").text(submoduleDetails.usage_example);
 
     // Show container
     $('#usage-example-container').removeClass('default-hidden');
@@ -2172,7 +2161,7 @@ async function setupRootModulePage(data) {
         setupModuleVersionDeletionSetting(moduleDetails);
         populateSubmoduleSelect(moduleDetails);
         populateExampleSelect(moduleDetails);
-        populateTerraformUsageExample(moduleDetails, moduleDetails.terraform_version_constraint);
+        populateTerraformUsageExample(moduleDetails, moduleDetails);
         populateDownloadSummary(moduleDetails);
         setSourceUrl(moduleDetails.display_source_url);
         populateCustomLinks(moduleDetails);
@@ -2203,7 +2192,7 @@ async function setupSubmodulePage(data) {
     setOwner(moduleDetails);
     populateCurrentSubmodule(`Submodule: ${submodulePath}`)
     populateVersionText(moduleDetails);
-    populateTerraformUsageExample(moduleDetails, submoduleDetails.terraform_version_constraint, submodulePath);
+    populateTerraformUsageExample(moduleDetails, submoduleDetails);
     enableBackToParentLink(moduleDetails);
     showSecurityWarnings(submoduleDetails);
     setSourceUrl(submoduleDetails.display_source_url);

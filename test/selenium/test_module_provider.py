@@ -1464,7 +1464,7 @@ class TestModuleProvider(SeleniumTest):
         assert [file.text for file in file_list] == expected_file_list
 
         # Ensure contents of main.tf is shown in data
-        expected_main_tf_content = f'# Call root module\nmodule "{example_root_module_call_name}" {{\n  source  = "localhost:{self.SERVER.port}/moduledetails/fullypopulated/testprovider"\n  {expected_version_comment}version = "{expected_version_string}"\n}}'
+        expected_main_tf_content = f'# Call root module\nmodule "{example_root_module_call_name}" {{\n  source  = "localhost:{self.SERVER.port}/my-tf-application__moduledetails/fullypopulated/testprovider"\n  {expected_version_comment}version = "{expected_version_string}"\n}}'
         assert file_tab_content.find_element(By.ID, 'example-file-content').text == expected_main_tf_content
 
     def test_example_file_contents(self):
@@ -1493,7 +1493,7 @@ class TestModuleProvider(SeleniumTest):
         assert [file.text for file in file_list] == ['main.tf', 'data.tf', 'variables.tf']
 
         # Ensure contents of main.tf is shown in data
-        expected_main_tf_content = f'# Call root module\nmodule "root" {{\n  source  = "localhost:{self.SERVER.port}/moduledetails/fullypopulated/testprovider"\n  version = ">= 1.5.0, < 2.0.0, unittest"\n}}'
+        expected_main_tf_content = f'# Call root module\nmodule "root" {{\n  source  = "localhost:{self.SERVER.port}/my-tf-application__moduledetails/fullypopulated/testprovider"\n  version = ">= 1.5.0, < 2.0.0, unittest"\n}}'
         assert file_tab_content.find_element(By.ID, 'example-file-content').text == expected_main_tf_content
 
         # Select main.tf file and check content

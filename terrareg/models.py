@@ -30,7 +30,7 @@ from terrareg.errors import (
     NoModuleDownloadMethodConfiguredError,
     ProviderNameNotPermittedError
 )
-from terrareg.utils import convert_markdown_to_html, safe_join_paths, sanitise_html_content
+from terrareg.utils import convert_markdown_to_html, get_public_url_details, safe_join_paths, sanitise_html_content
 from terrareg.validators import GitUrlValidator
 from terrareg.constants import EXTRACTION_VERSION
 
@@ -1492,6 +1492,11 @@ class ModuleProvider(object):
         return self._name
 
     @property
+    def module(self):
+        """Return module object of provider"""
+        return self._module
+
+    @property
     def id(self):
         """Return ID in form of namespace/name/provider/version"""
         return '{namespace}/{name}/{provider}'.format(
@@ -2168,6 +2173,70 @@ class TerraformSpecsObject(object):
 
         return failures
 
+    def get_usage_example(self, request_domain):
+        """Base method to create usage example terraform"""
+        source_url, version = self.get_terraform_url_and_version_strings(request_domain=request_domain, module_path=self.path)
+        terraform = f"""
+module "{self.module_version.module_provider.module.name}" {{
+{self.get_source_version_terraform(source_url, version)}
+
+  # Provide variables here\n}}
+""".strip()
+        return terraform
+
+    def get_source_version_terraform(self, source, version, leading_indentation="  ", trailing_indentation=None):
+        """Return terraform"""
+        calculated_extra_source_indentation = "  " if version else " "
+        if trailing_indentation and len(trailing_indentation) >= len(calculated_extra_source_indentation):
+            actual_trailing_indentation = trailing_indentation
+        else:
+            actual_trailing_indentation = calculated_extra_source_indentation
+
+        terraform = f'{leading_indentation}source{actual_trailing_indentation}= "{source}"'
+        if version:
+            version_comments = self.module_version.get_terraform_example_version_comment()
+            for version_comment in version_comments:
+                terraform += f'\n{leading_indentation}# {version_comment}'
+            terraform += f'\n{leading_indentation}version{actual_trailing_indentation[1:]}= "{version}"'
+        return terraform
+
+    def get_terraform_url_and_version_strings(self, request_domain, module_path):
+        """Return terraform source URL and version values for given requested protoco, domain, port and module path"""
+        protocol, domain, port = get_public_url_details(fallback_domain=request_domain)
+
+        isHttps = protocol.lower() == "https"
+
+        # Set default port if port is None or empty string, or port matches the default port for the protocol
+        isDefaultPort = not port or (str(port) == "443" and isHttps) or (str(port) == "80" and not isHttps)
+
+        # Add protocl for http
+        source_url = '' if isHttps else 'http://'
+        # Add domain name
+        source_url += domain
+        # Add port is non-default
+        source_url += '' if isDefaultPort else f':{port}'
+        # Add /modules URL path if over http
+        source_url += '' if isHttps else '/modules'
+        source_url += '/'
+        # Add example analytics token
+        source_url += f'{terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN}__' if terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN else ''
+        # Add module provider ID
+        source_url += self.module_version.module_provider.id
+        # Add exact module version, if using http
+        source_url += '' if isHttps else f'/{self.module_version.version}'
+        # Remove any leading slashes from module_path
+        module_path = re.sub(r'^\/+', '', module_path)
+        # Add sub-module path, if it exists
+        source_url += f'//{module_path}' if module_path else ''
+
+        # Use module version example terraform version string, if HTTPS otherwise provide a None version string, as
+        # the version is incorporated into the URL and http downloads don't support 'version' attribute
+        version_string = self.module_version.get_terraform_example_version_string() if isHttps else None
+
+        # Return source URL and version
+        return source_url, version_string
+
+
     def get_module_specs(self):
         """Return module specs"""
         if self._module_specs is None:
@@ -2281,26 +2350,22 @@ class TerraformSpecsObject(object):
             # leave the path blank
             if module_path == '/':
                 module_path = ''
-            else:
-                # Otherwise, prepend with additional leading slash,
-                # for the Terraform annotation for a sub-directory within
-                # the module
-                module_path = '/{module_path}'.format(module_path=module_path)
-
-            trailing_space_count = len(match.group(2))
-            # If only 1 leading space before source '=' character,
-            # increment by 1 to align to 'version'
-            if trailing_space_count < 2:
-                trailing_space_count = 2
 
             leading_space = match.group(1)
-            trailing_space = (' ' * trailing_space_count)
-            version_trailing_space = (' ' * (trailing_space_count - 1))
-            version_string = self.module_version.get_terraform_example_version_string()
+            trailing_space = match.group(2)
 
-            return (f'\n{leading_space}source{trailing_space}= "{server_hostname}/{self.module_version.module_provider.id}{module_path}"\n' +
-                    ''.join([f'{leading_space}# {comment}\n' for comment in self.module_version.get_terraform_example_version_comment()]) +
-                    f'{leading_space}version{version_trailing_space}= "{version_string}"\n')
+            source_url, version_string = self.get_terraform_url_and_version_strings(request_domain=server_hostname, module_path=module_path)
+
+            return (
+                '\n' +
+                self.get_source_version_terraform(
+                    source_url,
+                    version_string,
+                    leading_indentation=leading_space,
+                    trailing_indentation=trailing_space
+                ) +
+                '\n'
+            )
 
         return re.sub(
             r'\n([ \t]*)source(\s+)=\s+"(\..*)"[ \t]*\n',
@@ -2826,7 +2891,7 @@ class ModuleVersion(TerraformSpecsObject):
         })
         return api_details
 
-    def get_terrareg_api_details(self):
+    def get_terrareg_api_details(self, request_domain):
         """Return dict of version details with additional attributes used by terrareg UI."""
         api_details = self._module_provider.get_terrareg_api_details()
 
@@ -2860,7 +2925,8 @@ class ModuleVersion(TerraformSpecsObject):
             "custom_links": self.custom_links,
             "graph_url": f"/modules/{self.id}/graph",
             "terraform_version_constraint": self.get_terraform_version_constraints(),
-            "module_extraction_up_to_date": self.module_extraction_up_to_date
+            "module_extraction_up_to_date": self.module_extraction_up_to_date,
+            "usage_example": self.get_usage_example(request_domain)
         })
         return api_details
 
@@ -3205,7 +3271,7 @@ class BaseSubmodule(TerraformSpecsObject):
             submodule_path=self.path
         )
 
-    def get_terrareg_api_details(self):
+    def get_terrareg_api_details(self, request_domain):
         """Return dict of submodule details with additional attributes used by terrareg UI."""
         api_details = self.get_api_module_specs()
         source_browse_url = self.get_source_browse_url()
@@ -3215,7 +3281,8 @@ class BaseSubmodule(TerraformSpecsObject):
             "display_source_url": source_browse_url if source_browse_url else self._module_version.get_source_base_url(),
             "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
             "security_results": tfsec_failures,
-            "graph_url": f"/modules/{self.module_version.id}/graph/{self.TYPE}/{self.path}"
+            "graph_url": f"/modules/{self.module_version.id}/graph/{self.TYPE}/{self.path}",
+            "usage_example": self.get_usage_example(request_domain)
         })
         # Only update terraform version constraint if one is defined in the example,
         # otherwise default to root module's constraint
@@ -3257,8 +3324,8 @@ class Example(BaseSubmodule):
         # Call super method to delete self
         super(Example, self).delete()
 
-    def get_terrareg_api_details(self):
-        api_details = super(Example, self).get_terrareg_api_details()
+    def get_terrareg_api_details(self, *args, **kwargs):
+        api_details = super(Example, self).get_terrareg_api_details(*args, **kwargs)
         yearly_cost = self.module_details.infracost.get('totalMonthlyCost', None)
         if yearly_cost:
             yearly_cost = "{:.2f}".format(round((float(yearly_cost) * 12), 2))

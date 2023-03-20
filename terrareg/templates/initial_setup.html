@@ -203,6 +203,9 @@ curl -X POST \
                     <ul>
                         <li id="setup-step-secure-upload"><code>UPLOAD_API_KEYS</code> or <code>ALLOW_MODULE_HOSTING</code> - Either setup API keys for liming access to the module version upload endpoint or disable uploading modules entirely, enforcing the use of indexing from a Git repository</li>
                         <li id="setup-step-secure-publish"><code>PUBLISH_API_KEYS</code> - Setup API keys for limiting access to the module version publishing endpoint</li>
+                        <li id="setup-step-secure-auto-create-namespace"><code>AUTO_CREATE_NAMESPACE</code> - Disable auto-creation of namespaces when uploading a module, enforcing creation of namespaces by authenticated users</li>
+                        <li id="setup-step-secure-auto-create-module-provider"><code>AUTO_CREATE_MODULE_PROVIDER</code> - Disable auto-creation of module providers when uploading a module, enforcing creation of modules/module providers by authenticated users</li>
+                        
                     </ul>
                 </div>
             </div>
