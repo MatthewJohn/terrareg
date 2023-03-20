@@ -9,8 +9,9 @@ from markdown.htmlparser import HTMLExtractor
 # Avoid overlap with markdown method
 import markdown.extensions as markdown_extensions
 
-def _convert_id(id):
-    return f"terrareg-markdown-anchor-{id}"
+def _convert_id(file_name, id):
+    file_name = file_name.replace('.', '').replace('/', '_')
+    return f"terrareg-anchor-{file_name}-{id}"
 
 
 class CustomMarkdown(Markdown):
@@ -34,16 +35,14 @@ class LinkAnchorReplacement(Treeprocessor):
         for link in root.findall('.//a'):
             link_match = link_re.match(link.attrib.get('href', ''))
             if link_match:
-                # @TODO Add name of file_name to anchor to help make it unique
-                link.attrib['href'] = f"#{_convert_id(link_match.group(1))}"
+                link.attrib['href'] = f"#{_convert_id(self.md.terrareg_file_name, link_match.group(1))}"
 
         # Add ID to head h1, h2, etc.
         for tag_name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
             for tag in root.findall(f'.//{tag_name}'):
                 # Generate anchor from text and convert to ID
                 if tag.text:
-                    # @TODO Add name of file_name to anchor to help make it unique
-                    tag.attrib['id'] = _convert_id(tag.text.lower().replace(' ', '-'))
+                    tag.attrib['id'] = _convert_id(self.md.terrareg_file_name, tag.text.lower().replace(' ', '-'))
 
 
 class HTMLExtractorWithAttribs(HTMLExtractor):
@@ -60,8 +59,7 @@ class HTMLExtractorWithAttribs(HTMLExtractor):
         converted_attribute = False
         for itx, attr in enumerate(attrs):
             if attr[0] == 'name':
-                # @TODO Add name of file_name to anchor to help make it unique
-                attrs[itx] = (attr[0], _convert_id(attr[1]))
+                attrs[itx] = (attr[0], _convert_id(self.md.terrareg_file_name, attr[1]))
                 converted_attribute = True
 
         if converted_attribute:
