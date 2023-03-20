@@ -25,6 +25,9 @@ class TabFactory {
         // Check if tab is defined in page URL anchor and if it's
         // a valid tab
         let windowHashValue = $(location).attr('hash').replace('#', '');
+        if (! windowHashValue) {
+            return;
+        }
         if (windowHashValue && this._tabsLookup[windowHashValue] !== undefined) {
             let tab = this._tabsLookup[windowHashValue];
 
