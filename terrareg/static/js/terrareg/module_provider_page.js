@@ -25,9 +25,6 @@ class TabFactory {
         // Check if tab is defined in page URL anchor and if it's
         // a valid tab
         let windowHashValue = $(location).attr('hash').replace('#', '');
-        if (! windowHashValue) {
-            return;
-        }
         if (windowHashValue && this._tabsLookup[windowHashValue] !== undefined) {
             let tab = this._tabsLookup[windowHashValue];
 
@@ -41,18 +38,20 @@ class TabFactory {
             }
         }
 
-        // Check for any elements that have a child element that have ID/name of the anchor
-        for (const tab of this._tabs) {
-            let elements = $.find(`#module-tab-${tab.name} #${windowHashValue}, #module-tab-${tab.name} [name="${windowHashValue}"]`);
-            if (elements.length) {
-                let element = elements[0];
+        if (windowHashValue.indexOf('terrareg-anchor-') === 0) {
+            // Check for any elements that have a child element that have ID/name of the anchor
+            for (const tab of this._tabs) {
+                let elements = $.find(`#module-tab-${tab.name} #${windowHashValue}, #module-tab-${tab.name} [name="${windowHashValue}"]`);
+                if (elements.length) {
+                    let element = elements[0];
 
-                // Select tab
-                selectModuleTab(tab.name, false);
+                    // Select tab
+                    selectModuleTab(tab.name, false);
 
-                // Scroll to element
-                element.scrollIntoView();
-                return;
+                    // Scroll to element
+                    element.scrollIntoView();
+                    return;
+                }
             }
         }
 
