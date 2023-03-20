@@ -9,8 +9,12 @@ from markdown.htmlparser import HTMLExtractor
 # Avoid overlap with markdown method
 import markdown.extensions as markdown_extensions
 
+NON_ALPHANUMERIC_REPLACEMENT_RE = re.compile(r"[^a-zA-Z0-9\-]")
+HYPHEN_REPLACEMENT_RE = re.compile(r"[\s\-_]+")
+
 def _convert_id(file_name, id):
-    file_name = file_name.replace('.', '').replace('/', '_')
+    file_name = NON_ALPHANUMERIC_REPLACEMENT_RE.sub("", HYPHEN_REPLACEMENT_RE.sub("-", file_name))
+    id = NON_ALPHANUMERIC_REPLACEMENT_RE.sub("", HYPHEN_REPLACEMENT_RE.sub("-", id))
     return f"terrareg-anchor-{file_name}-{id}"
 
 
