@@ -30,16 +30,41 @@ class TestModuleVersionFile(TerraregIntegrationTest):
 
 ## Heading 2
 
+### Heading 3
+
+#### Heading 4
+
+##### Heading 5
+
+###### Heading 6
+
  * Some list
  * Another list item
 """,
             """
-<h1>Heading 1</h1>
-<h2>Heading 2</h2>
+<h1 id="terrareg-anchor-testmd-heading-1">Heading 1</h1>
+<h2 id="terrareg-anchor-testmd-heading-2">Heading 2</h2>
+<h3 id="terrareg-anchor-testmd-heading-3">Heading 3</h3>
+<h4 id="terrareg-anchor-testmd-heading-4">Heading 4</h4>
+<h5 id="terrareg-anchor-testmd-heading-5">Heading 5</h5>
+<h6 id="terrareg-anchor-testmd-heading-6">Heading 6</h6>
 <ul>
 <li>Some list</li>
 <li>Another list item</li>
 </ul> 
+""".strip()
+        ),
+
+        (
+            'randomcharacters.md',
+            """
+# heading with !"£$%^&*()_+}{][~@:#';?></.,]}
+
+Should only show alphanumeric in ID
+""",
+            """
+<h1 id="terrareg-anchor-randomcharactersmd-heading-with-">heading with !"£$%^&amp;*()_+}{][~@:#';?&gt;&lt;/.,]}</h1>
+<p>Should only show alphanumeric in ID</p>
 """.strip()
         ),
 
