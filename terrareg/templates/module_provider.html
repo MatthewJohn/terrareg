@@ -6,7 +6,11 @@
 <script src="/static/js/terrareg/module_provider_page.js"></script>
 <link rel="stylesheet" href="/static/css/module_provider_page.css" />
 
+<link href="/static/css/prism/prism-hcl-1.29.0.css" rel="stylesheet" />
+<script src="/static/js/prism/prism-hcl-1.29.0.js"></script>
+
 <script>
+    window.Prism = window.Prism || {};
     $(document).ready(function () {
         renderPage();
     });
@@ -182,7 +186,7 @@
                     </ol>
                 </div>
 
-                <pre id="usage-example-terraform"></pre>
+                <pre><code id="usage-example-terraform" class="language-hcl"></code></pre>
             </div>
         </div>
     </div>
@@ -251,7 +255,7 @@
                 </div>
 
                 <div class="column is-four-fifths">
-                    <pre><code id="example-file-content" class="language-hcl" data-lang="html"></code></pre>
+                    <pre><code id="example-file-content" class="language-hcl" data-lang="hcl"></code></pre>
                 </div>
             </div>
         </div>
