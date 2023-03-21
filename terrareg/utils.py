@@ -105,7 +105,19 @@ def sanitise_html_content(text):
                 # Custom allowed tags
                 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'th', 'tr', 'td'
             }),
-            attributes={'a': ['href', 'title', 'name'], 'acronym': ['title'], 'abbr': ['title']}
+            attributes={
+                # Original upstream configuration
+                'a': [
+                    'href',
+                    'title',
+                    'name'  # Custom allowed attribute for anchors
+                ],
+                'acronym': ['title'],
+                'abbr': ['title'],
+                # Custom allowed attributes
+                'h1': ['id'], 'h2': ['id'], 'h3': ['id'],
+                'h4': ['id'], 'h5': ['id'], 'h6': ['id']
+            }
         )
         if text else
         text
