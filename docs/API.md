@@ -25,9 +25,7 @@ Provide usage anayltics for Prometheus scraper
 
 ### GET
 
-
-        Return Prometheus metrics for global statistics and module provider statistics
-        
+Return Prometheus metrics for global statistics and module provider statistics
 
 
 ## ApiModuleList
@@ -268,11 +266,9 @@ Provide interface to obtain statistics about global module usage.
 
 ### GET
 
-
-        Return stats on total module providers,
+Return stats on total module providers,
         total unique analytics tokens per module
         (with and without auth token).
-        
 
 
 ## ApiTerraregModuleProviderAnalyticsTokenVersions
