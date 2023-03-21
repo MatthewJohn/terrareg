@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.61.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.61.0...v2.61.1) (2023-03-21)
+
+
+### Bug Fixes
+
+* Update initial setup to display commands to use API key when uploading/publishing module, if the API keys are set ([454e036](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/454e036c1c217ec02bcb0aa2b6005dce8327c73d)), closes [#351](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/351)
+* Update upload_module script to support environment variables for setting upload/publish API keys ([8861214](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8861214f3fe03f01af5b67af161831ff12a6709e)), closes [#351](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/351)
+
 # [2.61.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.60.2...v2.61.0) (2023-03-17)
 
 
