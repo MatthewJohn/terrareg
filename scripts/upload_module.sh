@@ -20,7 +20,7 @@ fi
 echo Uploading module
 curl -k -X POST \
     "${base_url}/v1/terrareg/modules/${namespace}/${name}/${provider}/${version}/upload" \
-    -F file="@${file}"
+    -F file="@${file}" -H "X-Terrareg-ApiKey: $UPLOAD_API_KEY"
 
 echo Upload complete
 
@@ -30,7 +30,7 @@ read publish
 
 if [ "$publish" == "Y" ]
 then
-  curl -k -XPOST \
+  curl -k -XPOST -H "X-Terrareg-ApiKey: $PUBLISH_API_KEY" \
     "${base_url}/v1/terrareg/modules/${namespace}/${name}/${provider}/${version}/publish"
 fi
 
