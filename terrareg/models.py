@@ -2228,7 +2228,7 @@ module "{self.module_version.module_provider.module.name}" {{
             readme_md = self.replace_source_in_file(
                 readme_md, server_hostname)
             readme_html = convert_markdown_to_html(file_name='README.md', markdown_html=readme_md)
-            return sanitise_html_content(readme_html)
+            return sanitise_html_content(readme_html, allow_markdown_html=True)
         return None
 
     @property
@@ -3299,9 +3299,7 @@ class FileObject:
             content = f"<pre>{content}</pre>"
 
             # Sanitise content
-            content = sanitise_html_content(
-                content
-            )
+            content = sanitise_html_content(content)
 
             # Remove encoded 'pre' tags -
             # "&lt;pre&gt;" at start and "&lt;/pre&gt;" after
@@ -3495,7 +3493,7 @@ class ModuleVersionFile(FileObject):
             content = super(ModuleVersionFile, self).get_content(sanitise=False)
             content = convert_markdown_to_html(file_name=self.file_name, markdown_html=content)
             # return content
-            content = sanitise_html_content(content)
+            content = sanitise_html_content(content, allow_markdown_html=True)
         else:
             content = super(ModuleVersionFile, self).get_content()
             content = '<pre>' + content + '</pre>'

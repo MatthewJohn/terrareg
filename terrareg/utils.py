@@ -94,31 +94,33 @@ def check_subdirectory_within_base_dir(base_dir, sub_dir, is_dir=False, is_file=
     return os.path.abspath(real_sub_dir)
 
 
-def sanitise_html_content(text):
+def sanitise_html_content(text, allow_markdown_html=False):
     """Sanitise HTML content to be returned via API to be displayed in UI"""
+    kwargs = {}
+    if allow_markdown_html:
+        kwargs['tags'] = frozenset({
+            # Original upstream configuration
+            'a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'em', 'i', 'li', 'ol', 'strong', 'ul',
+            # Custom allowed tags
+            'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'th', 'tr', 'td', 'pre'
+        })
+        kwargs['attributes'] = {
+            # Original upstream configuration
+            'a': [
+                'href',
+                'title',
+                'name',  # Custom allowed attribute for anchors
+                'id',  # Custom allowed attribute for anchors
+            ],
+            'acronym': ['title'],
+            'abbr': ['title'],
+            # Custom allowed attributes
+            'h1': ['id'], 'h2': ['id'], 'h3': ['id'],
+            'h4': ['id'], 'h5': ['id'], 'h6': ['id']
+        }
     return (
         bleach.clean(
-            text,
-            tags=frozenset({
-                # Original upstream configuration
-                'a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'em', 'i', 'li', 'ol', 'strong', 'ul',
-                # Custom allowed tags
-                'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'th', 'tr', 'td', 'pre'
-            }),
-            attributes={
-                # Original upstream configuration
-                'a': [
-                    'href',
-                    'title',
-                    'name',  # Custom allowed attribute for anchors
-                    'id',  # Custom allowed attribute for anchors
-                ],
-                'acronym': ['title'],
-                'abbr': ['title'],
-                # Custom allowed attributes
-                'h1': ['id'], 'h2': ['id'], 'h3': ['id'],
-                'h4': ['id'], 'h5': ['id'], 'h6': ['id']
-            }
+            text, **kwargs
         )
         if text else
         text
