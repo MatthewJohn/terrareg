@@ -110,7 +110,8 @@ def sanitise_html_content(text):
                 'a': [
                     'href',
                     'title',
-                    'name'  # Custom allowed attribute for anchors
+                    'name',  # Custom allowed attribute for anchors
+                    'id',  # Custom allowed attribute for anchors
                 ],
                 'acronym': ['title'],
                 'abbr': ['title'],
