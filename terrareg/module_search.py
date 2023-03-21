@@ -302,7 +302,8 @@ class ModuleSearch(object):
         ).where(
             db.module_version.c.published == True,
             db.module_version.c.beta == False,
-            db.module_version.c.internal == False
+            db.module_version.c.internal == False,
+            db.module_version.c.extraction_complete == True
         ).order_by(db.module_version.c.published_at.desc(), 
         ).limit(1)
 

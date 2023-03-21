@@ -457,6 +457,8 @@ class Database():
             self.module_provider, self.module_version.c.module_provider_id==self.module_provider.c.id
         ).join(
             self.namespace, self.module_provider.c.namespace_id==self.namespace.c.id
+        ).where(
+            self.module_version.c.extraction_complete == True
         )
 
     def select_module_provider_joined_latest_module_version(self, *select_args):
@@ -467,6 +469,8 @@ class Database():
             self.module_version, self.module_provider.c.latest_version_id==self.module_version.c.id
         ).join(
             self.namespace, self.module_provider.c.namespace_id==self.namespace.c.id
+        ).where(
+            self.module_version.c.extraction_complete == True
         )
 
     @classmethod
