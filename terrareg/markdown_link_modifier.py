@@ -17,6 +17,19 @@ def _convert_id(file_name, id):
     id = NON_ALPHANUMERIC_REPLACEMENT_RE.sub("", HYPHEN_REPLACEMENT_RE.sub("-", id))
     return f"terrareg-anchor-{file_name}-{id}"
 
+def _get_anchor_from_href(file_name, href):
+    """Get anchor tag from href"""
+    # Escape filename for use in regex
+    escaped_file_name = re.escape(file_name)
+    # Extract anchor from link
+    link_re = re.compile(rf"^(?:(?:\.\/)?{escaped_file_name})?#(.*)$")
+    match = link_re.match(href)
+    # If an anchor matched, convert the ID to terrareg anchor and return with anchor #
+    if match:
+        return '#' + _convert_id(file_name=file_name, id=match.group(1))
+    # Otherwise, if no match was found,
+    # return original ref
+    return href
 
 class CustomMarkdown(Markdown):
     """Override Markdown class to accept file_name argument"""
@@ -32,14 +45,12 @@ class LinkAnchorReplacement(Treeprocessor):
 
     def run(self, root):
         """Replace IDs of anchorable elements and replace anchor links with correct ID"""
-        escaped_file_name = re.escape(self.md.terrareg_file_name)
-        link_re = re.compile(rf"^(?:(?:\.\/)?{escaped_file_name})?#(.*)$")
+
 
         # Iterate over links, replacing href with Terrareg links
         for link in root.findall('.//a'):
-            link_match = link_re.match(link.attrib.get('href', ''))
-            if link_match:
-                link.attrib['href'] = f"#{_convert_id(self.md.terrareg_file_name, link_match.group(1))}"
+            if href := link.attrib.get('href', None):
+                link.attrib['href'] = _get_anchor_from_href(file_name=self.md.terrareg_file_name, href=href)
 
         # Add ID to head h1, h2, etc.
         for tag_name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
@@ -64,6 +75,9 @@ class HTMLExtractorWithAttribs(HTMLExtractor):
         for itx, attr in enumerate(attrs):
             if attr[0] == 'name' or attr[0] == 'id':
                 attrs[itx] = (attr[0], _convert_id(self.md.terrareg_file_name, attr[1]))
+                converted_attribute = True
+            if attr[0] == 'href':
+                attrs[itx] = (attr[0], _get_anchor_from_href(file_name=self.md.terrareg_file_name, href=attr[1]))
                 converted_attribute = True
 
         if converted_attribute:

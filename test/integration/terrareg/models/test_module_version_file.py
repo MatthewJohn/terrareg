@@ -136,8 +136,8 @@ Should only show alphanumeric in ID
             """
 <p><a href="https://www.github.com">Github</a>
 <a href="#terrareg-anchor-embeddedhtmlmd-someanchor">Just Anchor</a>
-<a href="embeddedhtml.md#terrareg-anchor-embeddedhtmlmd-someanchor">MD File</a>
-<a href="./embeddedhtml.md#terrareg-anchor-embeddedhtmlmd-someanchor">MD File trailing leading slash</a>
+<a href="#terrareg-anchor-embeddedhtmlmd-someanchor">MD File</a>
+<a href="#terrareg-anchor-embeddedhtmlmd-someanchor">MD File trailing leading slash</a>
 <a href="readme.md#anotheranchor">Different MD file</a>
 <a href="./readme.md#anotheranchor">Different MD file leading slash</a></p>
 <p><a id="terrareg-anchor-embeddedhtmlmd-test-id">With ID</a>
