@@ -40,6 +40,11 @@ class TestModuleVersionFile(TerraregIntegrationTest):
 
  * Some list
  * Another list item
+
+| Table       | Heading |
+| ----------- | ------- |
+| Row2b       | Row1    |
+| Row2a       | Row2b   |
 """,
             """
 <h1 id="terrareg-anchor-testmd-heading-1">Heading 1</h1>
@@ -51,21 +56,40 @@ class TestModuleVersionFile(TerraregIntegrationTest):
 <ul>
 <li>Some list</li>
 <li>Another list item</li>
-</ul> 
+</ul>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Heading</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Row2b</td>
+<td>Row1</td>
+</tr>
+<tr>
+<td>Row2a</td>
+<td>Row2b</td>
+</tr>
+</tbody>
+</table>
+
 """.strip()
         ),
 
         (
             'randomcharacters.md',
             """
-# Heading With 123 !"£$%^&*()_+}{][~@:#';?></.,]}
+# Heading With 123 !"£$%^&*()_+}{][~@:#';?></.,
 
 # Pre-existing_hypens-and_underscores
 
 Should only show alphanumeric in ID
 """,
             """
-<h1 id="terrareg-anchor-randomcharactersmd-heading-with-123-_">Heading With 123 !"£$%^&amp;*()_+}{][~@:#';?&gt;&lt;/.,]}</h1>
+<h1 id="terrareg-anchor-randomcharactersmd-heading-with-123-_">Heading With 123 !"£$%^&amp;*()_+}{][~@:#';?&gt;&lt;/.,</h1>
 <h1 id="terrareg-anchor-randomcharactersmd-pre-existing_hypens-and_underscores">Pre-existing_hypens-and_underscores</h1>
 <p>Should only show alphanumeric in ID</p>
 """.strip()
