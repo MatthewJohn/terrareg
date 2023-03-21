@@ -34,7 +34,7 @@ Provide usage anayltics for Prometheus scraper
 
 `/v1/modules, /v1/modules/`
 
-None
+
 
 
 ### GET
@@ -46,7 +46,7 @@ Return list of modules.
 
 `/v1/modules/search, /v1/modules/search/`
 
-None
+
 
 
 ### GET
@@ -70,7 +70,7 @@ Return list of modules in namespace
 
 `/v1/modules/<string:namespace>/<string:name>, /v1/modules/<string:namespace>/<string:name>/`
 
-None
+
 
 
 ### GET
@@ -82,7 +82,7 @@ Return latest version for each module provider.
 
 `/v1/modules/<string:namespace>/<string:name>/<string:provider>, /v1/modules/<string:namespace>/<string:name>/<string:provider>/`
 
-None
+
 
 
 ### GET
@@ -94,7 +94,7 @@ Return list of version.
 
 `/v1/modules/<string:namespace>/<string:name>/<string:provider>/versions, /v1/modules/<string:namespace>/<string:name>/<string:provider>/versions/`
 
-None
+
 
 
 ### GET
@@ -106,7 +106,7 @@ Return list of version.
 
 `/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>, /v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/`
 
-None
+
 
 
 ### GET
@@ -488,7 +488,7 @@ Return variable template.
 
 `/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/upload`
 
-None
+
 
 
 ### POST

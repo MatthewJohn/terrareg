@@ -89,7 +89,7 @@ def mock_route(route_class, *urls):
 
 `{', '.join(urls)}`
 
-{route_class.__doc__}
+{route_class.__doc__ or ""}
 
 """
 
@@ -107,7 +107,7 @@ def mock_route(route_class, *urls):
             if getattr(route_class, internal_method) == getattr(ErrorCatchingResource, internal_method):
                 continue
 
-        api_docs += f'\n### {method}\n\n{getattr(route_class, internal_method).__doc__}'
+        api_docs += f'\n### {method}\n\n{getattr(route_class, internal_method).__doc__ or ""}'
 
 
 server._app.route = unittest.mock.MagicMock()
