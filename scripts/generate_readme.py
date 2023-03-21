@@ -82,12 +82,13 @@ api_docs = """
 
 def mock_route(route_class, *urls):
     global api_docs
+    newline = "\n"
     api_docs += f"""
 
 
 ## {route_class.__name__}
 
-`{', '.join(urls)}`
+{newline.join([f'`{url}`' for url in urls])}
 
 {route_class.__doc__ or ""}
 
