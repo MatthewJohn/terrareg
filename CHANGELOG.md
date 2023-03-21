@@ -1,5 +1,13 @@
 # Changelog
 
+# [2.62.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.61.1...v2.62.0) (2023-03-21)
+
+
+### Features
+
+* Add example syntax highlighting ([c63ef25](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c63ef252f5d93196dbead899befe4525327ba5c8)), closes [#304](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/304)
+* Handle syntax highlighting of READMEs ([f49455d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f49455dc4378198ffb2eb7f51469a2545e201f95)), closes [#304](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/304)
+
 ## [2.61.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.61.0...v2.61.1) (2023-03-21)
 
 
