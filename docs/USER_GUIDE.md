@@ -17,6 +17,7 @@
 * [Create modules in the registry](#create-modules-in-the-registry)
 * [Module Usage Analytics](#module-usage-analytics)
 * [Customising Terrareg UI](#customising-terrareg-ui)
+* [API endpoints](./API.md)
 
 
 # Deployment
