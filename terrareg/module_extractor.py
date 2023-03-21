@@ -128,7 +128,7 @@ class ModuleExtractor:
                 )
             except subprocess.CalledProcessError as exc:
                 print("An error occured whilst running tfswitch:", str(exc))
-                raise TerraformVersionSwitchError("An error occurred whilst initialising Terraform version")
+                raise TerraformVersionSwitchError(f"An error occurred whilst initialising Terraform version: {exc}")
 
             yield
         finally:
@@ -304,7 +304,7 @@ credentials "{domain_name}" {{
             tfsec=tfsec,
             terraform_graph=terraform_graph
         )
-        
+
         # Update attributes of module_version in database
         self._module_version.update_attributes(
             module_details_id=module_details.pk,
@@ -514,7 +514,7 @@ credentials "{domain_name}" {{
                     # Otherwise, break from iterations
                     break
                 extracted_description = new_description
-         
+
             return extracted_description if extracted_description else None
 
         return None
