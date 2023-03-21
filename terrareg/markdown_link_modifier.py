@@ -62,7 +62,7 @@ class HTMLExtractorWithAttribs(HTMLExtractor):
         # Replace name attribute values with converted ID
         converted_attribute = False
         for itx, attr in enumerate(attrs):
-            if attr[0] == 'name':
+            if attr[0] == 'name' or attr[0] == 'id':
                 attrs[itx] = (attr[0], _convert_id(self.md.terrareg_file_name, attr[1]))
                 converted_attribute = True
 
