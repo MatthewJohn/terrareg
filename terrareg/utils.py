@@ -99,6 +99,12 @@ def sanitise_html_content(text):
     return (
         bleach.clean(
             text,
+            tags=frozenset({
+                # Original upstream configuration
+                'a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'em', 'i', 'li', 'ol', 'strong', 'ul',
+                # Custom allowed tags
+                'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'
+            }),
             attributes={'a': ['href', 'title', 'name'], 'acronym': ['title'], 'abbr': ['title']}
         )
         if text else
