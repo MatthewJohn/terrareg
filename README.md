@@ -92,6 +92,9 @@ For a full list of environment variables, please see [Deployment Guide](./docs/U
 
 See the [User Guide](./docs/USER_GUIDE.md) for configuring and using Terrareg features.
 
+## API Documentation
+
+See the [API Docs](./docs/API.md) for a list of all API endpoint.
 
 ## Changelog
 
