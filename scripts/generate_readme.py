@@ -117,17 +117,3 @@ server._register_routes()
 
 with open('docs/API.md', 'w') as readme:
     readme.write(api_docs)
-
-# initial attempt
-# api_docs_config = ""
-# for rule in server._app.url_map.iter_rules():
-#     if rule.endpoint == 'static':
-#         continue
-#     print(rule)
-#     print(rule.methods)
-#     print(rule.endpoint)
-#     print(getattr(server._app.view_functions[rule.endpoint], "GET", None))
-#     api_docs_config += f"""
-# ## {rule.methods}
-# """
-
