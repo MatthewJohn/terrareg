@@ -31,6 +31,7 @@ Return Prometheus metrics for global statistics and module provider statistics
 ## ApiModuleList
 
 `/v1/modules`
+
 `/v1/modules/`
 
 
@@ -44,6 +45,7 @@ Return list of modules.
 ## ApiModuleSearch
 
 `/v1/modules/search`
+
 `/v1/modules/search/`
 
 
@@ -57,6 +59,7 @@ Search for modules, given query string, namespace or provider.
 ## ApiNamespaceModules
 
 `/v1/modules/<string:namespace>`
+
 `/v1/modules/<string:namespace>/`
 
 Interface to obtain list of modules in namespace.
@@ -70,6 +73,7 @@ Return list of modules in namespace
 ## ApiModuleDetails
 
 `/v1/modules/<string:namespace>/<string:name>`
+
 `/v1/modules/<string:namespace>/<string:name>/`
 
 
@@ -83,6 +87,7 @@ Return latest version for each module provider.
 ## ApiModuleProviderDetails
 
 `/v1/modules/<string:namespace>/<string:name>/<string:provider>`
+
 `/v1/modules/<string:namespace>/<string:name>/<string:provider>/`
 
 
@@ -96,6 +101,7 @@ Return list of version.
 ## ApiModuleVersions
 
 `/v1/modules/<string:namespace>/<string:name>/<string:provider>/versions`
+
 `/v1/modules/<string:namespace>/<string:name>/<string:provider>/versions/`
 
 
@@ -109,6 +115,7 @@ Return list of version.
 ## ApiModuleVersionDetails
 
 `/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>`
+
 `/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/`
 
 
@@ -122,6 +129,7 @@ Return list of version.
 ## ApiModuleVersionDownload
 
 `/v1/modules/<string:namespace>/<string:name>/<string:provider>/download`
+
 `/v1/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/download`
 
 Provide download endpoint.
@@ -147,7 +155,9 @@ Return list of download counts for module provider.
 ## ApiTerraregGraphData
 
 `/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data`
+
 `/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data/submodule/<path:submodule_path>`
+
 `/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data/example/<path:example_path>`
 
 Interface to obtain module verison graph data.

@@ -82,7 +82,7 @@ api_docs = """
 
 def mock_route(route_class, *urls):
     global api_docs
-    newline = "\n"
+    newline = "\n\n"
     api_docs += f"""
 
 
