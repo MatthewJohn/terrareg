@@ -1,11 +1,13 @@
 
 from unittest import mock
 import pytest
-from terrareg.filters import NamespaceTrustFilter
 
+from terrareg.database import Database
+from terrareg.filters import NamespaceTrustFilter
 from terrareg.models import Module, ModuleProvider, Namespace
 from terrareg.module_search import ModuleSearch
 from test.integration.terrareg import TerraregIntegrationTest
+
 
 class TestSearchModuleProviders(TerraregIntegrationTest):
 
@@ -407,3 +409,27 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
 
         # Ensure that no results are returned
         assert result.count == 0
+
+
+class TestNonExtractionComplete(TerraregIntegrationTest):
+    """Perform tests with extraction complete set to False"""
+
+    @classmethod
+    def setup_class(cls):
+        """Setup class method"""
+        super(TestNonExtractionComplete, cls).setup_class()
+
+        # Set extraction_complete to False on all module versions
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.module_version.update().values(extraction_complete=False))
+
+    def test_search_non_extraction_complete(self):
+        """Test search with modules that have extraction complete set to False"""
+
+        result = ModuleSearch.search_module_providers(
+            query='contributedmodule-oneversion',
+            offset=0,
+            limit=10
+        )
+        assert len(result.module_providers) == 0

@@ -204,9 +204,10 @@ class BaseTest:
                                 **data
                             )
                             with Database.get_engine().connect() as conn:
-                                conn.execute(insert)
+                                res = conn.execute(insert)
+                                module_version_id = res.lastrowid
 
-                            module_version = ModuleVersion(module_provider=module_provider, version=version_number)
+                            module_version = ModuleVersion(module_provider=module_provider, version=version_number, pk=module_version_id)
 
                             values_to_update = {
                                 attr: version_data[attr]

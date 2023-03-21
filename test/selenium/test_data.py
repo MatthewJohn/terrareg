@@ -2673,6 +2673,18 @@ EOF
             }
         }}
     },
+    'mostrecentextractionincomplete': {
+        'modulename': {'providername': {
+            'id': 83,
+            'versions': {
+                # Test with module version somehow getting published True, with extraction complete as False
+                '1.2.1': {'published': True, 'extraction_complete': False},
+
+                '1.2.3': {'published': False, 'extraction_complete': False},
+                '1.5.3-beta': {'published': True, 'beta': True, 'extraction_complete': False}
+            }
+        }}
+    },
     'testmodulecreation': {},
     'emptynamespace': {}
 }
