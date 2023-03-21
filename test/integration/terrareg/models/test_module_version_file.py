@@ -149,7 +149,7 @@ Should only show alphanumeric in ID
         (
             'injection.md',
             '<script>console.log("Hi");</script>',
-            '<p>&lt;script&gt;console.log("Hi");&lt;/script&gt;</p>'
+            '&lt;script&gt;console.log("Hi");&lt;/script&gt;'
         )
     ])
     def test_module_version_file_content(self, file_name, file_content, expected_output):
