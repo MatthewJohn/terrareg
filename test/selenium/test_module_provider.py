@@ -2072,8 +2072,8 @@ various &lt; characters that could be escaped.</pre>
         changelog_content = self.wait_for_element(By.ID, 'module-tab-custom-Changelog')
         # Check changelog has been converted from markdown to HTML
         assert changelog_content.get_attribute('innerHTML') == """
-<h1 class="subtitle is-3">Changelog</h1>
-<h2 class="subtitle is-4">1.0.0</h2>
+<h1 id="terrareg-anchor-CHANGELOGmd-changelog" class="subtitle is-3">Changelog</h1>
+<h2 id="terrareg-anchor-CHANGELOGmd-100" class="subtitle is-4">1.0.0</h2>
 <ul>
 <li>This is an initial release</li>
 </ul>
