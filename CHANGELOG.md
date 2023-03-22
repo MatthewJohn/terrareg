@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.62.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.62.0...v2.62.1) (2023-03-22)
+
+
+### Bug Fixes
+
+* Fix tfswitch when using Dockerfile ([7fcda64](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7fcda64e3f345f47481059e5080a818406725c6f)), closes [#356](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/356)
+* Show command output when command errors with debug mode enables ([82d7197](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/82d7197cb69e2c470157e2e07e4cd7121de48284)), closes [#356](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/356)
+* Update module extraction methods to return exception details when DEBUG is enabled ([3c2dbdb](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3c2dbdb58235e6d70b604734e6981a7be9763608)), closes [#356](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/356)
+
 # [2.62.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.61.1...v2.62.0) (2023-03-21)
 
 
