@@ -176,6 +176,11 @@ disable_checkpoint = true
 
 """
 
+            # Create .terraform.d/plugin-cache directory tree,
+            # allowing directory to already exist.
+            plugin_cache_directory = os.path.join(os.path.expanduser('~'), '.terraform.d', 'plugin-cache')
+            os.makedirs(plugin_cache_directory, exist_ok=True)
+
             _, domain_name, _ = get_public_url_details()
 
             if domain_name:
