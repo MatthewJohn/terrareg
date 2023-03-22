@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.62.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.62.1...v2.62.2) (2023-03-22)
+
+
+### Bug Fixes
+
+* Add catching of errors due to invalid placeholder in repo base URL. ([0119b36](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0119b369406fa4e85650664e4aa748463ecb0dbb)), closes [#360](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/360)
+* Add handling of invalid placeholder in repo browse URL template. ([e4d9cd1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e4d9cd17e0f2e6dddc53a801f6e246ad66452360)), closes [#360](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/360)
+* Add validation of port in git clone URL, ensuring that if it exists, it's a valid port. ([dbcf808](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/dbcf808da5a296cfc787589950240e64909e6e2f)), closes [#360](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/360)
+* Catch errors caused by invalid template placeholders in git clone URL. ([d522b23](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/d522b239e2b078504ef4a6a0a814d28adde6ac6b)), closes [#360](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/360)
+* Update examples of SSH git clone URLs to use forward slash delimeter after domain, rathern than colon ([74c055d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/74c055de7ea7fae6a922bab9edaddca95de05daf)), closes [#360](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/360)
+
 ## [2.62.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.62.0...v2.62.1) (2023-03-22)
 
 
