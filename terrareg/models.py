@@ -1764,26 +1764,26 @@ class ModuleProvider(object):
                 # KeyError thrown when template value
                 # contains a unknown template
                 raise RepositoryUrlContainsInvalidTemplateError(
-                    'Repository clone URL contains invalid template value. '
+                    'URL contains invalid template value. '
                     'Only the following template values are allowed: {namespace}, {module}, {provider}'
                 )
 
             url = urllib.parse.urlparse(converted_template)
             if not url.scheme:
                 raise RepositoryUrlDoesNotContainValidSchemeError(
-                    'Repository clone URL does not contain a scheme (e.g. ssh://)'
+                    'URL does not contain a scheme (e.g. ssh://)'
                 )
             if url.scheme not in ['http', 'https', 'ssh']:
                 raise RepositoryUrlContainsInvalidSchemeError(
-                    'Repository clone URL contains an unknown scheme (e.g. https/ssh/http)'
+                    'URL contains an unknown scheme (e.g. https/ssh/http)'
                 )
             if not url.hostname:
                 raise RepositoryUrlDoesNotContainHostError(
-                    'Repository clone URL does not contain a host/domain'
+                    'URL does not contain a host/domain'
                 )
             if not url.path:
                 raise RepositoryUrlDoesNotContainPathError(
-                    'Repository clone URL does not contain a path'
+                    'URL does not contain a path'
                 )
             try:
                 int(url.port)
@@ -1791,7 +1791,7 @@ class ModuleProvider(object):
                 # Value error is thrown when port contains a value, but is
                 # not convertable to an int
                 raise RepositoryUrlContainsInvalidPortError(
-                    'Repository clone URL contains a invalid port. '
+                    'URL contains a invalid port. '
                     'Only use a colon to for specifying a port, otherwise a forward slash should be used.'
                 )
             except TypeError:
@@ -1832,29 +1832,26 @@ class ModuleProvider(object):
                 # KeyError thrown when template value
                 # contains a unknown template
                 raise RepositoryUrlContainsInvalidTemplateError(
-                    'Repository browse URL contains invalid template value. '
+                    'URL contains invalid template value. '
                     'Only the following template values are allowed: {namespace}, {module}, {provider}, {tag}, {path}'
                 )
-            except RepositoryUrlParseError as exc:
-                # Reraise exception from GitUrlValidator to invalid prefix denoting which field is invalid
-                raise RepositoryUrlParseError(f"Repository browse URL invalid: {str(exc)}")
 
             url = urllib.parse.urlparse(converted_template)
             if not url.scheme:
                 raise RepositoryUrlDoesNotContainValidSchemeError(
-                    'Repository browse URL does not contain a scheme (e.g. https://)'
+                    'URL does not contain a scheme (e.g. https://)'
                 )
             if url.scheme not in ['http', 'https']:
                 raise RepositoryUrlContainsInvalidSchemeError(
-                    'Repository browse URL contains an unknown scheme (e.g. https/http)'
+                    'URL contains an unknown scheme (e.g. https/http)'
                 )
             if not url.hostname:
                 raise RepositoryUrlDoesNotContainHostError(
-                    'Repository browse URL does not contain a host/domain'
+                    'URL does not contain a host/domain'
                 )
             if not url.path:
                 raise RepositoryUrlDoesNotContainPathError(
-                    'Repository browse URL does not contain a path'
+                    'URL does not contain a path'
                 )
             try:
                 int(url.port)
@@ -1862,7 +1859,7 @@ class ModuleProvider(object):
                 # Value error is thrown when port contains a value, but is
                 # not convertable to an int
                 raise RepositoryUrlContainsInvalidPortError(
-                    'Repository browse URL contains a invalid port. '
+                    'URL contains a invalid port. '
                     'Only use a colon to for specifying a port, otherwise a forward slash should be used.'
                 )
             except TypeError:
@@ -1896,26 +1893,26 @@ class ModuleProvider(object):
                 # KeyError thrown when template value
                 # contains a unknown template
                 raise RepositoryUrlContainsInvalidTemplateError(
-                    'Repository base URL contains invalid template value. '
+                    'URL contains invalid template value. '
                     'Only the following template values are allowed: {namespace}, {module}, {provider}'
                 )
 
             url = urllib.parse.urlparse(converted_template)
             if not url.scheme:
                 raise RepositoryUrlDoesNotContainValidSchemeError(
-                    'Repository base URL does not contain a scheme (e.g. https://)'
+                    'URL does not contain a scheme (e.g. https://)'
                 )
             if url.scheme not in ['http', 'https']:
                 raise RepositoryUrlContainsInvalidSchemeError(
-                    'Repository base URL contains an unknown scheme (e.g. https/http)'
+                    'URL contains an unknown scheme (e.g. https/http)'
                 )
             if not url.hostname:
                 raise RepositoryUrlDoesNotContainHostError(
-                    'Repository base URL does not contain a host/domain'
+                    'URL does not contain a host/domain'
                 )
             if not url.path:
                 raise RepositoryUrlDoesNotContainPathError(
-                    'Repository base URL does not contain a path'
+                    'URL does not contain a path'
                 )
             try:
                 int(url.port)
@@ -1923,7 +1920,7 @@ class ModuleProvider(object):
                 # Value error is thrown when port contains a value, but is
                 # not convertable to an int
                 raise RepositoryUrlContainsInvalidPortError(
-                    'Repository base URL contains a invalid port. '
+                    'URL contains a invalid port. '
                     'Only use a colon to for specifying a port, otherwise a forward slash should be used.'
                 )
             except TypeError:
