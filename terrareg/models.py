@@ -20,7 +20,7 @@ import terrareg.audit_action
 from terrareg.errors import (
     DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
     InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
-    InvalidGitTagFormatError, InvalidNamespaceNameError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError,
+    InvalidGitTagFormatError, InvalidNamespaceNameError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError, RepositoryUrlContainsInvalidTemplateError,
     RepositoryUrlDoesNotContainValidSchemeError,
     RepositoryUrlContainsInvalidSchemeError,
     RepositoryUrlDoesNotContainHostError,
@@ -1755,10 +1755,18 @@ class ModuleProvider(object):
     def update_repo_clone_url_template(self, repo_clone_url_template):
         """Update repository URL for module provider."""
         if repo_clone_url_template:
-            converted_template = repo_clone_url_template.format(
-                namespace=self._module._namespace.name,
-                module=self._module.name,
-                provider=self.name)
+            try:
+                converted_template = repo_clone_url_template.format(
+                    namespace=self._module._namespace.name,
+                    module=self._module.name,
+                    provider=self.name)
+            except KeyError:
+                # KeyError thrown when template value
+                # contains a unknown template
+                raise RepositoryUrlContainsInvalidTemplateError(
+                    'Repository clone URL contains invalid template value. '
+                    'Only the following template values are allowed: {namespace}, {module}, {provider}'
+                )
 
             url = urllib.parse.urlparse(converted_template)
             if not url.scheme:

@@ -120,6 +120,12 @@ class RepositoryUrlContainsInvalidPortError(RepositoryUrlParseError):
     pass
 
 
+class RepositoryUrlContainsInvalidTemplateError(RepositoryUrlParseError):
+    """Repository URL contains invalid template."""
+
+    pass
+
+
 class InvalidGitProviderConfigError(TerraregError):
     """Invalid git provider config has been passed."""
 
