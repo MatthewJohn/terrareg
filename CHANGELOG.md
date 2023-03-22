@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.62.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.62.2...v2.62.3) (2023-03-22)
+
+
+### Bug Fixes
+
+* Fix error when performing terraform init, which tries to use non-existent .terraform.d/plugin-cache directory. ([19213ee](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/19213ee4c23758316a83f0dc4657dd96d32d5d6f)), closes [#364](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/364)
+
 ## [2.62.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.62.1...v2.62.2) (2023-03-22)
 
 
