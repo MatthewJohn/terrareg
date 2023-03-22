@@ -20,11 +20,11 @@ import terrareg.audit_action
 from terrareg.errors import (
     DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
     InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
-    InvalidGitTagFormatError, InvalidNamespaceNameError, ReindexingExistingModuleVersionsIsProhibitedError,
+    InvalidGitTagFormatError, InvalidNamespaceNameError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError,
     RepositoryUrlDoesNotContainValidSchemeError,
     RepositoryUrlContainsInvalidSchemeError,
     RepositoryUrlDoesNotContainHostError,
-    RepositoryDoesNotContainPathError,
+    RepositoryUrlDoesNotContainPathError,
     InvalidGitProviderConfigError,
     ModuleProviderCustomGitRepositoryUrlNotAllowedError,
     NoModuleDownloadMethodConfiguredError,
@@ -1763,20 +1763,32 @@ class ModuleProvider(object):
             url = urllib.parse.urlparse(converted_template)
             if not url.scheme:
                 raise RepositoryUrlDoesNotContainValidSchemeError(
-                    'Repository URL does not contain a scheme (e.g. ssh://)'
+                    'Repository clone URL does not contain a scheme (e.g. ssh://)'
                 )
             if url.scheme not in ['http', 'https', 'ssh']:
                 raise RepositoryUrlContainsInvalidSchemeError(
-                    'Repository URL contains an unknown scheme (e.g. https/ssh/http)'
+                    'Repository clone URL contains an unknown scheme (e.g. https/ssh/http)'
                 )
             if not url.hostname:
                 raise RepositoryUrlDoesNotContainHostError(
-                    'Repository URL does not contain a host/domain'
+                    'Repository clone URL does not contain a host/domain'
                 )
             if not url.path:
-                raise RepositoryDoesNotContainPathError(
-                    'Repository URL does not contain a path'
+                raise RepositoryUrlDoesNotContainPathError(
+                    'Repository clone URL does not contain a path'
                 )
+            try:
+                int(url.port)
+            except ValueError:
+                # Value error is thrown when port contains a value, but is
+                # not convertable to an int
+                raise RepositoryUrlContainsInvalidPortError(
+                    'Repository clone URL contains a invalid port. '
+                    'Only use a colon to for specifying a port, otherwise a forward slash should be used.'
+                )
+            except TypeError:
+                # TypeError is thrown when port is None when trying to convert to an int
+                pass
 
             repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe=r'\{\}/:@%?=')
 
@@ -1822,7 +1834,7 @@ class ModuleProvider(object):
                     'Repository URL does not contain a host/domain'
                 )
             if not url.path:
-                raise RepositoryDoesNotContainPathError(
+                raise RepositoryUrlDoesNotContainPathError(
                     'Repository URL does not contain a path'
                 )
 
@@ -1863,7 +1875,7 @@ class ModuleProvider(object):
                     'Repository URL does not contain a host/domain'
                 )
             if not url.path:
-                raise RepositoryDoesNotContainPathError(
+                raise RepositoryUrlDoesNotContainPathError(
                     'Repository URL does not contain a path'
                 )
 

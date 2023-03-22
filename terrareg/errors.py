@@ -108,8 +108,14 @@ class RepositoryUrlDoesNotContainHostError(RepositoryUrlParseError):
     pass
 
 
-class RepositoryDoesNotContainPathError(RepositoryUrlParseError):
+class RepositoryUrlDoesNotContainPathError(RepositoryUrlParseError):
     """Repository URL does not contain path."""
+
+    pass
+
+
+class RepositoryUrlContainsInvalidPortError(RepositoryUrlParseError):
+    """Repository URL contains a invalid port."""
 
     pass
 
