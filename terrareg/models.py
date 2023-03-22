@@ -1816,35 +1816,55 @@ class ModuleProvider(object):
         """Update browse URL template for module provider."""
         if repo_browse_url_template:
 
-            GitUrlValidator(repo_browse_url_template).validate(
-                requires_path_placeholder=True,
-                requires_tag_placeholder=True
-            )
+            try:
+                GitUrlValidator(repo_browse_url_template).validate(
+                    requires_path_placeholder=True,
+                    requires_tag_placeholder=True
+                )
 
-            converted_template = repo_browse_url_template.format(
-                namespace=self._module._namespace.name,
-                module=self._module.name,
-                provider=self.name,
-                tag='',
-                path='')
+                converted_template = repo_browse_url_template.format(
+                    namespace=self._module._namespace.name,
+                    module=self._module.name,
+                    provider=self.name,
+                    tag='',
+                    path='')
+            except KeyError:
+                # KeyError thrown when template value
+                # contains a unknown template
+                raise RepositoryUrlContainsInvalidTemplateError(
+                    'Repository browse URL contains invalid template value. '
+                    'Only the following template values are allowed: {namespace}, {module}, {provider}, {tag}, {path}'
+                )
 
             url = urllib.parse.urlparse(converted_template)
             if not url.scheme:
                 raise RepositoryUrlDoesNotContainValidSchemeError(
-                    'Repository URL does not contain a scheme (e.g. https://)'
+                    'Repository browse URL does not contain a scheme (e.g. https://)'
                 )
             if url.scheme not in ['http', 'https']:
                 raise RepositoryUrlContainsInvalidSchemeError(
-                    'Repository URL contains an unknown scheme (e.g. https/http)'
+                    'Repository browse URL contains an unknown scheme (e.g. https/http)'
                 )
             if not url.hostname:
                 raise RepositoryUrlDoesNotContainHostError(
-                    'Repository URL does not contain a host/domain'
+                    'Repository browse URL does not contain a host/domain'
                 )
             if not url.path:
                 raise RepositoryUrlDoesNotContainPathError(
-                    'Repository URL does not contain a path'
+                    'Repository browse URL does not contain a path'
                 )
+            try:
+                int(url.port)
+            except ValueError:
+                # Value error is thrown when port contains a value, but is
+                # not convertable to an int
+                raise RepositoryUrlContainsInvalidPortError(
+                    'Repository browse URL contains a invalid port. '
+                    'Only use a colon to for specifying a port, otherwise a forward slash should be used.'
+                )
+            except TypeError:
+                # TypeError is thrown when port is None when trying to convert to an int
+                pass
 
             repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe=r'\{\}/:@%?=')
 
@@ -1872,20 +1892,32 @@ class ModuleProvider(object):
             url = urllib.parse.urlparse(converted_template)
             if not url.scheme:
                 raise RepositoryUrlDoesNotContainValidSchemeError(
-                    'Repository URL does not contain a scheme (e.g. https://)'
+                    'Repository base URL does not contain a scheme (e.g. https://)'
                 )
             if url.scheme not in ['http', 'https']:
                 raise RepositoryUrlContainsInvalidSchemeError(
-                    'Repository URL contains an unknown scheme (e.g. https/http)'
+                    'Repository base URL contains an unknown scheme (e.g. https/http)'
                 )
             if not url.hostname:
                 raise RepositoryUrlDoesNotContainHostError(
-                    'Repository URL does not contain a host/domain'
+                    'Repository base URL does not contain a host/domain'
                 )
             if not url.path:
                 raise RepositoryUrlDoesNotContainPathError(
-                    'Repository URL does not contain a path'
+                    'Repository base URL does not contain a path'
                 )
+            try:
+                int(url.port)
+            except ValueError:
+                # Value error is thrown when port contains a value, but is
+                # not convertable to an int
+                raise RepositoryUrlContainsInvalidPortError(
+                    'Repository base URL contains a invalid port. '
+                    'Only use a colon to for specifying a port, otherwise a forward slash should be used.'
+                )
+            except TypeError:
+                # TypeError is thrown when port is None when trying to convert to an int
+                pass
 
             repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe=r'\{\}/:@%?=')
 
