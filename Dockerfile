@@ -45,6 +45,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
+RUN mkdir bin
+
 COPY LICENSE .
 COPY alembic.ini .
 COPY terrareg.py .
