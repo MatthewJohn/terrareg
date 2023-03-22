@@ -101,7 +101,7 @@ class ModuleExtractor:
         except subprocess.CalledProcessError as exc:
             raise UnableToProcessTerraformError(
                 'An error occurred whilst processing the terraform code.' +
-                (f": {str(exc)}" if Config().DEBUG else "")
+                (f": {str(exc)}: {exc.output.decode('ascii')}" if Config().DEBUG else "")
             )
 
         return json.loads(terradocs_output)
@@ -133,7 +133,7 @@ class ModuleExtractor:
                 print("An error occured whilst running tfswitch:", str(exc))
                 raise TerraformVersionSwitchError(
                     "An error occurred whilst initialising Terraform version" +
-                    (f": {str(exc)}" if Config().DEBUG else "")
+                    (f": {str(exc)}: {exc.output.decode('ascii')}" if Config().DEBUG else "")
                 )
 
             yield
@@ -152,7 +152,7 @@ class ModuleExtractor:
         except subprocess.CalledProcessError as exc:
             raise UnableToProcessTerraformError(
                 'An error occurred whilst performing security scan of code.' +
-                (f": {str(exc)}" if Config().DEBUG else "")
+                (f": {str(exc)}: {exc.output.decode('ascii')}" if Config().DEBUG else "")
             )
 
         tfsec_results = json.loads(raw_output)
@@ -208,7 +208,7 @@ credentials "{domain_name}" {{
             print("Failed to generate Terraform graph data:", str(exc))
             raise UnableToProcessTerraformError(
                 "Failed to generate Terraform graph data" +
-                (f": {str(exc)}" if Config().DEBUG else "")
+                (f": {str(exc)}: {exc.output.decode('ascii')}" if Config().DEBUG else "")
             )
 
         terraform_graph_data = terraform_graph_data.decode("utf-8")
@@ -398,7 +398,7 @@ credentials "{domain_name}" {{
             except subprocess.CalledProcessError as exc:
                 raise UnableToProcessTerraformError(
                     'An error occurred whilst performing cost analysis of code.' +
-                    (f": {str(exc)}" if Config().DEBUG else "")
+                    (f": {str(exc)}: {exc.output.decode('ascii')}" if Config().DEBUG else "")
                 )
 
             with open(output_file.name, 'r') as output_file_fh:
@@ -663,6 +663,8 @@ class GitModuleExtractor(ModuleExtractor):
             for line in exc.output.decode('ascii').split('\n'):
                 if line.startswith('fatal:'):
                     error = 'Error occurred during git clone: {}'.format(line)
+            if Config().DEBUG:
+                error += f'\n{str(exc)}\n{exc.output.decode("ascii")}'
             raise GitCloneError(error)
 
     def process_upload(self):
