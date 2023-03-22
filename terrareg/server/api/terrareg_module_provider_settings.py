@@ -111,7 +111,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             try:
                 module_provider.update_repo_base_url_template(repo_base_url_template=repo_base_url_template)
             except terrareg.errors.RepositoryUrlParseError as exc:
-                return {'message': 'Repo base URL: {}'.format(str(exc))}, 400
+                return {'message': 'Repository base URL: {}'.format(str(exc))}, 400
 
         # Ensure repository URL is parsable
         repo_clone_url_template = args.repo_clone_url_template
@@ -125,7 +125,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             try:
                 module_provider.update_repo_clone_url_template(repo_clone_url_template=repo_clone_url_template)
             except terrareg.errors.RepositoryUrlParseError as exc:
-                return {'message': 'Repo clone URL: {}'.format(str(exc))}, 400
+                return {'message': 'Repository clone URL: {}'.format(str(exc))}, 400
 
         # Ensure repository URL is parsable
         repo_browse_url_template = args.repo_browse_url_template
@@ -137,7 +137,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             try:
                 module_provider.update_repo_browse_url_template(repo_browse_url_template=repo_browse_url_template)
             except terrareg.errors.RepositoryUrlParseError as exc:
-                return {'message': 'Repo browse URL: {}'.format(str(exc))}, 400
+                return {'message': 'Repository browse URL: {}'.format(str(exc))}, 400
 
         git_tag_format = args.git_tag_format
         if git_tag_format is not None:

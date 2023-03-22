@@ -62,6 +62,9 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(True)[0]), \
                 unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_browse_url_template') as mock_update_repo_browse_url_template, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_base_url_template') as mock_update_repo_base_url_template, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_git_path') as mock_update_git_path, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
 
             with unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event'):
@@ -81,6 +84,9 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
             mock_check_csrf.assert_called_once_with('unittestcsrf')
             mock_update_repo_clone_url_template.assert_not_called()
             mock_update_git_tag_format.assert_not_called()
+            mock_update_repo_browse_url_template.assert_not_called()
+            mock_update_repo_base_url_template.assert_not_called()
+            mock_update_git_path.assert_not_called()
 
             m = terrareg.models.Module(namespace=ns, name='newtestmodule')
             p = terrareg.models.ModuleProvider(module=m, name='newprovider')
@@ -88,12 +94,15 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
 
     @setup_test_data()
     def test_create_module_provider_with_repo_and_tag(self, app_context, test_request_context, mock_models, client):
-        """Test update of repository URL with invalid protocol."""
+        """Test update of repository URL with git repo URLs, tag format and git path."""
         mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
                 unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_browse_url_template') as mock_update_repo_browse_url_template, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_base_url_template') as mock_update_repo_base_url_template, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_git_path') as mock_update_git_path, \
                 unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
 
             with unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event'):
@@ -103,7 +112,10 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
                 '/v1/terrareg/modules/newnamespace/newm/newp/create',
                 json={
                     'repo_clone_url_template': 'https://unittest.com/module.git',
+                    'repo_base_url_template': 'https://baseurl.com/module.git',
+                    'repo_browse_url_template': 'https://browseurl.com/',
                     'git_tag_format': 'unitv{version}test',
+                    'git_path': '/acustompath',
                     'csrf_token': 'unittestcsrf'
                 }
             )
@@ -115,6 +127,48 @@ class TestApiTerraregModuleProviderCreate(TerraregUnitTest):
             mock_auth_method.check_namespace_access.assert_called_once_with(UserGroupNamespacePermissionType.FULL, namespace='newnamespace')
             mock_update_repo_clone_url_template.assert_called_once_with(repo_clone_url_template='https://unittest.com/module.git')
             mock_update_git_tag_format.assert_called_once_with(git_tag_format='unitv{version}test')
+            mock_update_repo_browse_url_template.assert_called_once_with(repo_browse_url_template='https://browseurl.com/')
+            mock_update_repo_base_url_template.assert_called_once_with(repo_base_url_template='https://baseurl.com/module.git')
+            mock_update_git_path.assert_called_once_with(git_path='/acustompath')
+
+    @setup_test_data()
+    def test_create_module_provider_with_empty_repo_and_tag(self, app_context, test_request_context, mock_models, client):
+        """Test update of repository URL with empty URL and git tag format."""
+        mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_clone_url_template') as mock_update_repo_clone_url_template, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_browse_url_template') as mock_update_repo_browse_url_template, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_repo_base_url_template') as mock_update_repo_base_url_template, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_git_path') as mock_update_git_path, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_git_tag_format') as mock_update_git_tag_format:
+
+            with unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event'):
+                terrareg.models.Namespace.create('newnamespace', None)
+
+            res = client.post(
+                '/v1/terrareg/modules/newnamespace/newm/newp/create',
+                json={
+                    'repo_clone_url_template': '',
+                    'repo_base_url_template': '',
+                    'repo_browse_url_template': '',
+                    'git_tag_format': '',
+                    'git_path': '',
+                    'csrf_token': 'unittestcsrf'
+                }
+            )
+            assert res.json == {'id': 'newnamespace/newm/newp'}
+            assert res.status_code == 200
+
+            # Ensure required checks are called
+            mock_check_csrf.assert_called_once_with('unittestcsrf')
+            mock_auth_method.check_namespace_access.assert_called_once_with(UserGroupNamespacePermissionType.FULL, namespace='newnamespace')
+            mock_update_repo_clone_url_template.assert_called_once_with(repo_clone_url_template=None)
+            mock_update_repo_browse_url_template.assert_called_once_with(repo_browse_url_template=None)
+            mock_update_repo_base_url_template.assert_called_once_with(repo_base_url_template=None)
+            mock_update_git_tag_format.assert_called_once_with(git_tag_format='')
+            mock_update_git_path.assert_called_once_with(git_path='')
 
     @setup_test_data()
     def test_create_module_provider_with_non_existent_namespace(self, app_context, test_request_context, mock_models, client):
