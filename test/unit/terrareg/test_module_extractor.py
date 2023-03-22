@@ -285,6 +285,7 @@ class TestGitModuleExtractor(TerraregUnitTest):
         # os.unlink(temp_file)
 
         with unittest.mock.patch("terrareg.module_extractor.ModuleExtractor.terraform_rc_file", temp_file), \
+                unittest.mock.patch("os.makedirs") as mock_makedirs, \
                 unittest.mock.patch("terrareg.config.Config.MANAGE_TERRAFORM_RC_FILE", manage_terraform_rc_file), \
                 unittest.mock.patch("terrareg.config.Config.PUBLIC_URL", public_url):
 
@@ -293,6 +294,9 @@ class TestGitModuleExtractor(TerraregUnitTest):
 
             if should_create_file:
                 assert os.path.isfile(temp_file)
+
+                mock_makedirs.assert_called_once_with(f"{os.path.expanduser('~')}/.terraform.d/plugin-cache", exist_ok=True)
+
                 with open(temp_file, "r") as temp_file_fh:
                     if should_contain_credentials_block:
                         assert "".join(temp_file_fh.readlines()) == f"""
