@@ -28,7 +28,7 @@ from terrareg.errors import (
     InvalidGitProviderConfigError,
     ModuleProviderCustomGitRepositoryUrlNotAllowedError,
     NoModuleDownloadMethodConfiguredError,
-    ProviderNameNotPermittedError
+    ProviderNameNotPermittedError, RepositoryUrlParseError
 )
 from terrareg.utils import convert_markdown_to_html, get_public_url_details, safe_join_paths, sanitise_html_content
 from terrareg.validators import GitUrlValidator
@@ -1835,6 +1835,9 @@ class ModuleProvider(object):
                     'Repository browse URL contains invalid template value. '
                     'Only the following template values are allowed: {namespace}, {module}, {provider}, {tag}, {path}'
                 )
+            except RepositoryUrlParseError as exc:
+                # Reraise exception from GitUrlValidator to invalid prefix denoting which field is invalid
+                raise RepositoryUrlParseError(f"Repository browse URL invalid: {str(exc)}")
 
             url = urllib.parse.urlparse(converted_template)
             if not url.scheme:
@@ -1884,10 +1887,18 @@ class ModuleProvider(object):
         """Update browse URL template for module provider."""
         if repo_base_url_template:
 
-            converted_template = repo_base_url_template.format(
-                namespace=self._module._namespace.name,
-                module=self._module.name,
-                provider=self.name)
+            try:
+                converted_template = repo_base_url_template.format(
+                    namespace=self._module._namespace.name,
+                    module=self._module.name,
+                    provider=self.name)
+            except KeyError:
+                # KeyError thrown when template value
+                # contains a unknown template
+                raise RepositoryUrlContainsInvalidTemplateError(
+                    'Repository base URL contains invalid template value. '
+                    'Only the following template values are allowed: {namespace}, {module}, {provider}'
+                )
 
             url = urllib.parse.urlparse(converted_template)
             if not url.scheme:
