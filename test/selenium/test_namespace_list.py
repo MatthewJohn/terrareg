@@ -31,6 +31,7 @@ class TestNamespaceList(SeleniumTest):
             ['moduleextraction', 'moduleextraction'], ['modulesearch', 'modulesearch'],
             ['modulesearch-contributed', 'modulesearch-contributed'],
             ['modulesearch-trusted', 'modulesearch-trusted'], ['mostrecent', 'mostrecent'],
+            ['mostrecentextractionincomplete', 'mostrecentextractionincomplete'],
             ['mostrecentunpublished', 'mostrecentunpublished'], ['onlybeta', 'onlybeta'],
             ['onlyunpublished', 'onlyunpublished'], ['real_providers', 'real_providers'],
             ['relevancysearch', 'relevancysearch'], ['repo_url_tests', 'repo_url_tests'],
