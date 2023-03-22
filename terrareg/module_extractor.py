@@ -99,7 +99,10 @@ class ModuleExtractor:
         try:
             terradocs_output = subprocess.check_output(['terraform-docs', 'json', module_path])
         except subprocess.CalledProcessError as exc:
-            raise UnableToProcessTerraformError('An error occurred whilst processing the terraform code.')
+            raise UnableToProcessTerraformError(
+                'An error occurred whilst processing the terraform code.' +
+                (f": {str(exc)}: {exc.output.decode('ascii')}" if Config().DEBUG else "")
+            )
 
         return json.loads(terradocs_output)
 
@@ -128,7 +131,10 @@ class ModuleExtractor:
                 )
             except subprocess.CalledProcessError as exc:
                 print("An error occured whilst running tfswitch:", str(exc))
-                raise TerraformVersionSwitchError("An error occurred whilst initialising Terraform version")
+                raise TerraformVersionSwitchError(
+                    "An error occurred whilst initialising Terraform version" +
+                    (f": {str(exc)}: {exc.output.decode('ascii')}" if Config().DEBUG else "")
+                )
 
             yield
         finally:
@@ -144,7 +150,10 @@ class ModuleExtractor:
                 module_path
             ])
         except subprocess.CalledProcessError as exc:
-            raise UnableToProcessTerraformError('An error occurred whilst performing security scan of code.')
+            raise UnableToProcessTerraformError(
+                'An error occurred whilst performing security scan of code.' +
+                (f": {str(exc)}: {exc.output.decode('ascii')}" if Config().DEBUG else "")
+            )
 
         tfsec_results = json.loads(raw_output)
 
@@ -197,7 +206,10 @@ credentials "{domain_name}" {{
             )
         except subprocess.CalledProcessError as exc:
             print("Failed to generate Terraform graph data:", str(exc))
-            raise UnableToProcessTerraformError("Failed to generate Terraform graph data")
+            raise UnableToProcessTerraformError(
+                "Failed to generate Terraform graph data" +
+                (f": {str(exc)}: {exc.output.decode('ascii')}" if Config().DEBUG else "")
+            )
 
         terraform_graph_data = terraform_graph_data.decode("utf-8")
 
@@ -227,9 +239,10 @@ credentials "{domain_name}" {{
             with open(path, 'r') as terrareg_fh:
                 try:
                     terrareg_metadata = json.loads(''.join(terrareg_fh.readlines()))
-                except:
+                except Exception as exc:
                     raise InvalidTerraregMetadataFileError(
-                        'An error occured whilst processing the terrareg metadata file.'
+                        'An error occured whilst processing the terrareg metadata file.' +
+                        (f": {str(exc)}" if Config().DEBUG else "")
                     )
 
             # Remove the meta-data file, so it is not added to the archive
@@ -304,7 +317,7 @@ credentials "{domain_name}" {{
             tfsec=tfsec,
             terraform_graph=terraform_graph
         )
-        
+
         # Update attributes of module_version in database
         self._module_version.update_attributes(
             module_details_id=module_details.pk,
@@ -383,7 +396,10 @@ credentials "{domain_name}" {{
                     env=infracost_env
                 )
             except subprocess.CalledProcessError as exc:
-                raise UnableToProcessTerraformError('An error occurred whilst performing cost analysis of code.')
+                raise UnableToProcessTerraformError(
+                    'An error occurred whilst performing cost analysis of code.' +
+                    (f": {str(exc)}: {exc.output.decode('ascii')}" if Config().DEBUG else "")
+                )
 
             with open(output_file.name, 'r') as output_file_fh:
                 infracost_result = json.load(output_file_fh)
@@ -514,7 +530,7 @@ credentials "{domain_name}" {{
                     # Otherwise, break from iterations
                     break
                 extracted_description = new_description
-         
+
             return extracted_description if extracted_description else None
 
         return None
@@ -647,6 +663,8 @@ class GitModuleExtractor(ModuleExtractor):
             for line in exc.output.decode('ascii').split('\n'):
                 if line.startswith('fatal:'):
                     error = 'Error occurred during git clone: {}'.format(line)
+            if Config().DEBUG:
+                error += f'\n{str(exc)}\n{exc.output.decode("ascii")}'
             raise GitCloneError(error)
 
     def process_upload(self):
