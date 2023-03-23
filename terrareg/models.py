@@ -2283,11 +2283,12 @@ module "{self.module_version.module_provider.module.name}" {{
 
     def get_readme_html(self, server_hostname):
         """Replace examples in README and convert readme markdown to HTML"""
-        readme_md = self.get_readme_content()
+        readme_md = self.get_readme_content(sanitise=False)
         if readme_md:
             readme_md = self.replace_source_in_file(
                 readme_md, server_hostname)
-            return convert_markdown_to_html(readme_md)
+            readme_html = convert_markdown_to_html(file_name='README.md', markdown_html=readme_md)
+            return sanitise_html_content(readme_html, allow_markdown_html=True)
         return None
 
     @property
@@ -2298,11 +2299,14 @@ module "{self.module_version.module_provider.module.name}" {{
         else:
             return None
 
-    def get_readme_content(self):
+    def get_readme_content(self, sanitise=True):
         """Get readme contents"""
         module_details = self.module_details
         if module_details:
-            return sanitise_html_content(Database.decode_blob(module_details.readme_content))
+            content = Database.decode_blob(module_details.readme_content)
+            if sanitise:
+                content = sanitise_html_content(content)
+            return content
         return None
 
     def get_terraform_inputs(self):
@@ -3346,19 +3350,16 @@ class FileObject:
         """Get ID from DB row"""
         return self._get_db_row()['id']
 
-    @property
-    def content(self):
+    def get_content(self, sanitise=True):
         """Return content of example file."""
         content = Database.decode_blob(self._get_db_row()["content"])
-        if content:
+        if content and sanitise:
             # Add pre tags before/after to allow for broken tags
             # inside content, e.g. for heredocs
             content = f"<pre>{content}</pre>"
 
             # Sanitise content
-            content = sanitise_html_content(
-                content
-            )
+            content = sanitise_html_content(content)
 
             # Remove encoded 'pre' tags -
             # "&lt;pre&gt;" at start and "&lt;/pre&gt;" after
@@ -3489,7 +3490,7 @@ class ExampleFile(FileObject):
         """Return content with source replaced"""
         # Replace source lines that use relative paths
         return self._example.replace_source_in_file(
-            content=self.content,
+            content=super(ExampleFile, self).get_content(),
             server_hostname=server_hostname)
 
 
@@ -3545,10 +3546,15 @@ class ModuleVersionFile(FileObject):
 
     def get_content(self):
         """Return content to be displayed in UI"""
-        content = self.content
         # Convert markdown files to HTML
         if self.path.lower().endswith('.md'):
-            content = convert_markdown_to_html(content)
+            # Perform sanitisation of markdown after
+            # conversion to HTML
+            content = super(ModuleVersionFile, self).get_content(sanitise=False)
+            content = convert_markdown_to_html(file_name=self.file_name, markdown_html=content)
+            # return content
+            content = sanitise_html_content(content, allow_markdown_html=True)
         else:
+            content = super(ModuleVersionFile, self).get_content()
             content = '<pre>' + content + '</pre>'
         return content

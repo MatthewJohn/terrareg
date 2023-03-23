@@ -11,11 +11,15 @@ class TabFactory {
         this._tabsLookup[tab.name] = tab;
         this._tabs.push(tab);
     }
-    renderTabs() {
-        this._tabs.forEach((tab) => {
+    async renderTabs() {
+        for (const tab of this._tabs) {
             tab.render();
-        });
+        }
+        for (const tab of this._tabs) {
+            await tab._renderPromise;
+        }
     }
+
     async setDefaultTab() {
 
         // Check if tab is defined in page URL anchor and if it's
@@ -31,6 +35,23 @@ class TabFactory {
                 // Load tab and return
                 selectModuleTab(tab.name, false);
                 return;
+            }
+        }
+
+        if (windowHashValue.indexOf('terrareg-anchor-') === 0) {
+            // Check for any elements that have a child element that have ID/name of the anchor
+            for (const tab of this._tabs) {
+                let elements = $.find(`#module-tab-${tab.name} #${windowHashValue}, #module-tab-${tab.name} [name="${windowHashValue}"]`);
+                if (elements.length) {
+                    let element = elements[0];
+
+                    // Select tab
+                    selectModuleTab(tab.name, false);
+
+                    // Scroll to element
+                    element.scrollIntoView();
+                    return;
+                }
             }
         }
 
@@ -2154,7 +2175,7 @@ async function setupRootModulePage(data) {
         populateCustomLinks(moduleDetails);
     }
 
-    tabFactory.renderTabs();
+    await tabFactory.renderTabs();
     tabFactory.setDefaultTab();
 }
 
@@ -2192,7 +2213,7 @@ async function setupSubmodulePage(data) {
     tabFactory.registerTab(new ProvidersTab(submoduleDetails));
     tabFactory.registerTab(new ResourcesTab(submoduleDetails, submoduleDetails.graph_url));
     tabFactory.registerTab(new SecurityIssuesTab(submoduleDetails));
-    tabFactory.renderTabs();
+    await tabFactory.renderTabs();
     tabFactory.setDefaultTab();
 }
 
@@ -2228,7 +2249,7 @@ async function setupExamplePage(data) {
     tabFactory.registerTab(new ProvidersTab(submoduleDetails));
     tabFactory.registerTab(new ResourcesTab(submoduleDetails, submoduleDetails.graph_url));
     tabFactory.registerTab(new SecurityIssuesTab(submoduleDetails));
-    tabFactory.renderTabs();
+    await tabFactory.renderTabs();
     tabFactory.setDefaultTab();
 }
 
