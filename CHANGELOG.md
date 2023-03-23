@@ -1,5 +1,18 @@
 # Changelog
 
+# [2.63.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.62.3...v2.63.0) (2023-03-23)
+
+
+### Bug Fixes
+
+* Perform HTML sanitisation after conversion of markdown to HTML ([1132e24](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1132e242562d9666171dc9c260c6ad68182bcc6b)), closes [#300](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/300)
+
+
+### Features
+
+* Add support for links to heading anchors in README/markdown tabs ([d2d6ea4](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/d2d6ea48ca3ad1b38c7a2dbb1252bd1e69c2fc86)), closes [#300](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/300)
+* Automatically select tab containing anchor link in module provider page ([014dc9b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/014dc9ba340bb1561116fe60e2c5430ad8b0d70f)), closes [#300](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/300)
+
 ## [2.62.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.62.2...v2.62.3) (2023-03-22)
 
 
