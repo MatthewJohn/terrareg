@@ -26,7 +26,7 @@ It performs the following:
 """,
             "unittest-analytics-token",
             """
-<h1>Test terraform module</h1>
+<h1 id="terrareg-anchor-READMEmd-test-terraform-module">Test terraform module</h1>
 <p>This is a terraform module to create a README example.</p>
 <p>It performs the following:</p>
 <ul>
@@ -53,7 +53,7 @@ module "test-usage" {
 """,
             "unittest-analytics-token",
             """
-<h1>Test external module</h1>
+<h1 id="terrareg-anchor-READMEmd-test-external-module">Test external module</h1>
 <pre><code>module &quot;test-usage&quot; {
   source  = &quot;an-external-module/test&quot;
   version = &quot;1.0.0&quot;
@@ -80,7 +80,7 @@ module "test-usage" {
             """,
             "unittest-analytics-token",
 """
-<h1>Test external module</h1>
+<h1 id="terrareg-anchor-READMEmd-test-external-module">Test external module</h1>
 <pre><code>module &quot;test-usage&quot; {
   source  = &quot;example.com/unittest-analytics-token__moduledetails/readme-tests/provider//examples/testreadmeexample&quot;
   version = &quot;&gt;= 1.0.0, &lt; 2.0.0&quot;
@@ -108,7 +108,7 @@ module "test-usage" {
             """,
             None,
 """
-<h1>Test external module</h1>
+<h1 id="terrareg-anchor-READMEmd-test-external-module">Test external module</h1>
 <pre><code>module &quot;test-usage&quot; {
   source  = &quot;example.com/moduledetails/readme-tests/provider//examples/testreadmeexample&quot;
   version = &quot;&gt;= 1.0.0, &lt; 2.0.0&quot;
@@ -136,7 +136,7 @@ module "test-usage" {
 """,
             "unittest-analytics-token",
             """
-<h1>Test external module</h1>
+<h1 id="terrareg-anchor-READMEmd-test-external-module">Test external module</h1>
 <pre><code>module &quot;test-usage&quot; {
   source  = &quot;example.com/unittest-analytics-token__moduledetails/readme-tests/provider&quot;
   version = &quot;&gt;= 1.0.0, &lt; 2.0.0&quot;
@@ -164,7 +164,7 @@ module "test-usage" {
 """,
             "unittest-analytics-token",
             """
-<h1>Test external module</h1>
+<h1 id="terrareg-anchor-READMEmd-test-external-module">Test external module</h1>
 <pre><code>module &quot;test-usage&quot; {
   source  = &quot;example.com/unittest-analytics-token__moduledetails/readme-tests/provider//modules/testsubmodule&quot;
   version = &quot;&gt;= 1.0.0, &lt; 2.0.0&quot;
@@ -192,7 +192,7 @@ module "test-usage" {
 """,
             "unittest-analytics-token",
             """
-<h1>Test external module</h1>
+<h1 id="terrareg-anchor-READMEmd-test-external-module">Test external module</h1>
 <pre><code>module &quot;test-usage&quot; {
   source  = &quot;example.com/unittest-analytics-token__moduledetails/readme-tests/provider//examples/testreadmeexample/testexamplesubmodule&quot;
   version = &quot;&gt;= 1.0.0, &lt; 2.0.0&quot;
@@ -230,7 +230,7 @@ module "test-external-call" {
 """,
             "unittest-analytics-token",
             """
-<h1>Test external module</h1>
+<h1 id="terrareg-anchor-READMEmd-test-external-module">Test external module</h1>
 <pre><code>module &quot;test-usage1&quot; {
   source  = &quot;example.com/unittest-analytics-token__moduledetails/readme-tests/provider//examples/testreadmeexample&quot;
   version = &quot;&gt;= 1.0.0, &lt; 2.0.0&quot;
@@ -274,7 +274,7 @@ module "test-usage3" {
 """,
             "unittest-analytics-token",
             """
-<h1>Test external module</h1>
+<h1 id="terrareg-anchor-READMEmd-test-external-module">Test external module</h1>
 <pre><code>module &quot;test-usage1&quot; {
   source        = &quot;example.com/unittest-analytics-token__moduledetails/readme-tests/provider//examples/testreadmeexample&quot;
   version       = &quot;&gt;= 1.0.0, &lt; 2.0.0&quot;
