@@ -102,7 +102,7 @@ def sanitise_html_content(text, allow_markdown_html=False):
             # Original upstream configuration
             'a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'em', 'i', 'li', 'ol', 'strong', 'ul',
             # Custom allowed tags
-            'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'th', 'tr', 'td', 'pre'
+            'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'th', 'tr', 'td', 'pre', 'img'
         })
         kwargs['attributes'] = {
             # Original upstream configuration
@@ -116,7 +116,8 @@ def sanitise_html_content(text, allow_markdown_html=False):
             'abbr': ['title'],
             # Custom allowed attributes
             'h1': ['id'], 'h2': ['id'], 'h3': ['id'],
-            'h4': ['id'], 'h5': ['id'], 'h6': ['id']
+            'h4': ['id'], 'h5': ['id'], 'h6': ['id'],
+            'img': ['src']
         }
     return (
         bleach.clean(

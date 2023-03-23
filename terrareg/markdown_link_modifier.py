@@ -46,7 +46,6 @@ class LinkAnchorReplacement(Treeprocessor):
     def run(self, root):
         """Replace IDs of anchorable elements and replace anchor links with correct ID"""
 
-
         # Iterate over links, replacing href with Terrareg links
         for link in root.findall('.//a'):
             if href := link.attrib.get('href', None):
@@ -58,6 +57,25 @@ class LinkAnchorReplacement(Treeprocessor):
                 # Generate anchor from text and convert to ID
                 if tag.text:
                     tag.attrib['id'] = _convert_id(self.md.terrareg_file_name, tag.text.lower().replace(' ', '-'))
+
+
+class ImageSourceCheck(Treeprocessor):
+    """Check image source URLs to ensure that they are from external resources"""
+
+    def run(self, root):
+        """Remove img src tags that do use relative paths for images"""
+        for link in root.findall('.//img'):
+            if src := link.attrib.get('src', ''):
+                # Delete src attribute, if it does not
+                # start with http:// or https://.
+                # Relative URLs wthin a repository will not work
+                # and will be displayed as broken images, which
+                # does not look nice.
+                # Removing the 'src' attribute will show white space,
+                # rather than a broken image icon
+                if (not src.startswith('http://')) and (not src.startswith('https://')):
+                    print(f'Removing source: {link.attrib["src"]}')
+                    del link.attrib['src']
 
 
 class HTMLExtractorWithAttribs(HTMLExtractor):
@@ -112,6 +130,7 @@ class TerraregMarkdownExtension(markdown_extensions.Extension):
         # Replace raw HTML preprocessor
         md.preprocessors.register(HtmlBlockPreprocessorWithAttribs(md), 'html_block', 20)
         md.treeprocessors.register(LinkAnchorReplacement(md), 'linkanchorreplacement', 1)
+        md.treeprocessors.register(ImageSourceCheck(md), 'imagesourcecheck', 19)
 
 
 def makeExtension(**kwargs):

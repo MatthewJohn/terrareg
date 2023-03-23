@@ -145,6 +145,29 @@ Should only show alphanumeric in ID
 """.strip()
         ),
 
+        # Test image source replacement for relative image paths
+        (
+            "testimages.md",
+            """
+![Actual image](relativeimage.png)
+
+![Relative Path](./relativeimage.png)
+
+![Absolute Path](/img/absolutepath.png)
+
+![external http](http://example.com/myimage.png)
+
+![external https](https://example.com/myimage.png)
+""",
+            """
+<p><img></p>
+<p><img></p>
+<p><img></p>
+<p><img src="http://example.com/myimage.png"></p>
+<p><img src="https://example.com/myimage.png"></p>
+""".strip()
+        ),
+
         # With HTML injection
         (
             'injection.md',
