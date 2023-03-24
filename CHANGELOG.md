@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.64.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.63.0...v2.64.0) (2023-03-24)
+
+
+### Features
+
+* Add support for external images in README and custom markdown tabs. ([4ed384f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4ed384f40a96b512e138ba7e50986a3506f2b9ff)), closes [#370](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/370)
+
 # [2.63.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.62.3...v2.63.0) (2023-03-23)
 
 
