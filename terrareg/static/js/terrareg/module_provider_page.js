@@ -2058,7 +2058,7 @@ function showSecurityWarnings(moduleDetails) {
         showSecurityLabel = true;
         outerTagClass = 'is-info';
         let label = $('#result-card-label-security-issues-low-count');
-        label.text(criticalCount + ' Medium/Low');
+        label.text(lowCount + ' Medium/Low');
         label.removeClass('default-hidden');
     }
     if (highCount) {
