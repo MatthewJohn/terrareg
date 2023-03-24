@@ -287,10 +287,10 @@ class TestModuleProvider(SeleniumTest):
         ('/modules/moduledetails/infracost/testprovider/1.0.0/example/examples/no-infracost-data', None),
     ])
     def test_example_with_cost_analysis(self, url, cost):
-        """Test module with security issues."""
+        """Test module with cost analysis."""
         self.selenium_instance.get(self.get_url(url))
 
-        # Ensure security issues are displayed
+        # Ensure yearly cost is displayed
         cost_text = self.wait_for_element(By.ID, 'yearly-cost', ensure_displayed=False)
         if cost is None:
             self.assert_equals(lambda: cost_text.is_displayed(), False)
