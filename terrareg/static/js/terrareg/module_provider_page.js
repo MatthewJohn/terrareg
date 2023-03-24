@@ -354,7 +354,9 @@ class SecurityIssuesTab extends ModuleDetailsTab {
             if (this._moduleDetails.security_results) {
                 let tfsecTab = $("#module-tab-security-issues");
                 let tfsecTabTbody = tfsecTab.find("tbody");
-                this._moduleDetails.security_results.forEach((tfsec) => {
+                this._moduleDetails.security_results.sort((a, b) => {
+                    return a.location.filename > b.location.filename
+                }).forEach((tfsec) => {
                     let tfsecRow = $("<tr></tr>");
 
                     let blankTd = $('<td class="is-vcentered"></td>');
