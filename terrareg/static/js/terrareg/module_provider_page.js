@@ -389,7 +389,9 @@ class SecurityIssuesTab extends ModuleDetailsTab {
             if (this._moduleDetails.security_results) {
                 let tfsecTab = $("#module-tab-security-issues");
                 let tfsecTabTbody = tfsecTab.find("tbody");
-                this._moduleDetails.security_results.forEach((tfsec) => {
+                this._moduleDetails.security_results.sort((a, b) => {
+                    return a.location.filename > b.location.filename
+                }).forEach((tfsec) => {
                     let tfsecRow = $("<tr></tr>");
 
                     let blankTd = $('<td class="is-vcentered"></td>');
@@ -2053,14 +2055,65 @@ function updateModuleProviderSettings(moduleDetails) {
     return false;
 }
 
+function capitaliseWord(string) {
+    return string[0].toUpperCase() + string.slice(1).toLowerCase();
+  }
+
 function showSecurityWarnings(moduleDetails) {
-    let securityIssuesContainer = $('#security-issues')
-    if (moduleDetails.security_failures) {
-        securityIssuesContainer.removeClass('default-hidden');
-        $('#security-issues-text').text(`${moduleDetails.security_failures} Security issues`);
-    } else {
-        securityIssuesContainer.addClass('default-hidden');
+    if (! moduleDetails.security_results) {
+        return;
     }
+    let criticalCount = 0;
+    let highCount = 0;
+    let lowCount = 0;
+
+    // Check severity of each issue and
+    // add to severity count
+    for (let securityIssue of moduleDetails.security_results) {
+        if (securityIssue.severity == 'LOW' || securityIssue.severity == 'MEDIUM') {
+            lowCount += 1;
+        } else if (securityIssue.severity == 'HIGH') {
+            highCount += 1;
+        } else if (securityIssue.severity == 'CRITICAL') {
+            criticalCount += 1;
+        }
+    }
+    let outerTagClass = '';
+    let showSecurityLabel = false;
+
+    // Add counts to each severity tag and show tag.
+    // Check each severity in reverse order,
+    // to set priority of the outer tag class.
+    if (lowCount) {
+        showSecurityLabel = true;
+        outerTagClass = 'is-info';
+        let label = $('#result-card-label-security-issues-low-count');
+        label.text(lowCount + ' Medium/Low');
+        label.removeClass('default-hidden');
+    }
+    if (highCount) {
+        showSecurityLabel = true;
+        outerTagClass = 'is-warning';
+        let label = $('#result-card-label-security-issues-high-count');
+        label.text(highCount + ' High');
+        label.removeClass('default-hidden');
+    }
+    if (criticalCount) {
+        showSecurityLabel = true;
+        outerTagClass = 'is-danger';
+        let label = $('#result-card-label-security-issues-critical-count');
+        label.text(criticalCount + ' Critical');
+        label.removeClass('default-hidden');
+    }
+    if (!showSecurityLabel) {
+        // If no security issues found, return early,
+        // not showing security label
+        showSecurityLabel = false;
+        return;
+    }
+
+    $('#security-issues').removeClass('default-hidden');
+    $('#result-card-label-security-issues-icon').addClass(outerTagClass);
 }
 
 function showCostAnalysis(moduleDetails) {
