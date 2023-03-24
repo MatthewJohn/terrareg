@@ -2116,17 +2116,21 @@ various &lt; characters that could be escaped.</pre>
         # Check rows for security issues
         expected_rows = [
             ['', 'Severity', '', 'Description', '', '', '', '', '', '', '', '', ''],
-            ['main.tf'],
-            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
+            ['ignored.tf'],
+            ['', 'CRITICAL', '', 'Critical code has an issue', '', '', '', '', '', '', '', '', ''],
             ['different.tf'],
             ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
             ['main.tf'],
             ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
-            ['', 'LOW', '', 'Secrets Manager should use customer managed keys', '', '', '', '', '', '', '', '', '']
+            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
+            ['', 'LOW', '', 'Secrets Manager should use customer managed keys', '', '', '', '', '', '', '', '', ''],
+            ['ignored.tf'],
+            ['', 'MEDIUM', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
         ]
         for row in tab_content.find_elements(By.TAG_NAME, "tr"):
             column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
             assert column_data == expected_rows.pop(0)
+        assert len(expected_rows) == 0
 
         # Select third row (first issue) and expand
         tab_content.find_elements(By.TAG_NAME, "tr")[2].find_elements(By.TAG_NAME, "td")[0].click()
@@ -2134,31 +2138,35 @@ various &lt; characters that could be escaped.</pre>
         # Ensure row is expanded, showing additional information
         expected_rows = [
             ['', 'Severity', '', 'Description', '', '', '', '', '', '', '', '', ''],
-            ['main.tf'],
-            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
-            [
-                'File main.tf\n'
-                'ID DDG-ANC-001\n'
+            ['ignored.tf'],
+            ['', 'CRITICAL', '', 'Critical code has an issue', '', '', '', '', '', '', '', '', ''],
+            [(
+                'File ignored.tf\n'
+                'ID DDG-ANC-007\n'
                 'Provider bad\n'
                 'Service code\n'
                 'Resource some_data_resource.this\n'
                 'Starting Line 6\n'
                 'Ending Line 1\n'
-                'Impact Entire project is compromised\n'
-                'Resolution Do not use bad code\n'
+                'Impact This is critical\n'
+                'Resolution Fix critical issue\n'
                 'Resources\n'
                 '- https://example.com/issuehere\n'
                 '- https://example.com/docshere'
-            ],
+            )],
             ['different.tf'],
             ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
             ['main.tf'],
             ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
-            ['', 'LOW', '', 'Secrets Manager should use customer managed keys', '', '', '', '', '', '', '', '', '']
+            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
+            ['', 'LOW', '', 'Secrets Manager should use customer managed keys', '', '', '', '', '', '', '', '', ''],
+            ['ignored.tf'],
+            ['', 'MEDIUM', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
         ]
         for row in tab_content.find_elements(By.TAG_NAME, "tr"):
             column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
             assert column_data == expected_rows.pop(0)
+        assert len(expected_rows) == 0
 
         # Go to 1.1.0 version, with no security issues
         Select(self.selenium_instance.find_element(By.ID, 'version-select')).select_by_visible_text('1.1.0')
@@ -2191,14 +2199,17 @@ various &lt; characters that could be escaped.</pre>
         # All data contains invalid data.
         expected_rows = [
             ['', 'Severity', '', 'Description', '', '', '', '', '', '', '', '', ''],
-            ['No group'],
-            ['', 'undefined', '', '', '', '', '', '', '', '', '', '', ''],
-            ['', 'undefined', '', '', '', '', '', '', '', '', '', '', ''],
-            ['', 'undefined', '', '', '', '', '', '', '', '', '', '', ''],
+            ['second.tf'],
+            ['', 'HIGH', '', 'This type of second issue is High', '', '', '', '', '', '', '', '', ''],
+            ['first.tf'],
+            ['', 'LOW', '', 'This type of first issue is Low', '', '', '', '', '', '', '', '', ''],
+            ['third.tf'],
+            ['', 'MEDIUM', '', 'This type of third issue is Medium', '', '', '', '', '', '', '', '', ''],
         ]
         for row in tab_content.find_elements(By.TAG_NAME, "tr"):
             column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
             assert column_data == expected_rows.pop(0)
+        assert len(expected_rows) == 0
 
         # Go back to parent
         self.selenium_instance.find_element(By.ID, 'submodule-back-to-parent').click()
@@ -2230,12 +2241,13 @@ various &lt; characters that could be escaped.</pre>
         # Check rows for security issues
         expected_rows = [
             ['', 'Severity', '', 'Description', '', '', '', '', '', '', '', '', ''],
-            ['No group'],
-            ['', 'undefined', '', '', '', '', '', '', '', '', '', '', '']
+            ['first.tf'],
+            ['', 'MEDIUM', '', 'This type of first issue is Medium', '', '', '', '', '', '', '', '', ''],
         ]
         for row in tab_content.find_elements(By.TAG_NAME, "tr"):
             column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
             assert column_data == expected_rows.pop(0)
+        assert len(expected_rows) == 0
 
     def _compare_canvas(self, compare_filename):
         """Compare current canvas data for graph to expected image"""
