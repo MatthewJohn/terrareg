@@ -2503,6 +2503,52 @@ digraph {
                                 'severity': 'HIGH',
                                 'status': 2,
                                 'warning': False
+                            },
+                            {
+                                'description': 'Some medium issue 6.',
+                                'impact': 'This is quite important',
+                                'links': [
+                                    'https://example.com/issuehere',
+                                    'https://example.com/docshere'
+                                ],
+                                'location': {
+                                    'end_line': 1,
+                                    'filename': 'ignored.tf',
+                                    'start_line': 6
+                                },
+                                'long_id': 'dodgy-bad-is-important',
+                                'resolution': 'Do not use bad code',
+                                'resource': 'some_data_resource.this',
+                                'rule_description': 'Dodgy code should be removed',
+                                'rule_id': 'DDG-ANC-006',
+                                'rule_provider': 'bad',
+                                'rule_service': 'code',
+                                'severity': 'MEDIUM',
+                                'status': 0,
+                                'warning': False
+                            },
+                            {
+                                'description': 'Some critical issue 7.',
+                                'impact': 'This is critical',
+                                'links': [
+                                    'https://example.com/issuehere',
+                                    'https://example.com/docshere'
+                                ],
+                                'location': {
+                                    'end_line': 1,
+                                    'filename': 'ignored.tf',
+                                    'start_line': 6
+                                },
+                                'long_id': 'dodgy-bad-is-critical',
+                                'resolution': 'Fix critical issue',
+                                'resource': 'some_data_resource.this',
+                                'rule_description': 'Critical code has an issue',
+                                'rule_id': 'DDG-ANC-007',
+                                'rule_provider': 'bad',
+                                'rule_service': 'code',
+                                'severity': 'CRITICAL',
+                                'status': 0,
+                                'warning': False
                             }
                         ]
                     })
