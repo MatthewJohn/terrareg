@@ -36,3 +36,18 @@ table.dataTable .select {
 .input,.select select,.textarea{
     color: black;
 }
+
+/* Remove right padding to join first result count span
+   with the icon
+*/
+#result-card-label-security-issues-icon {
+    padding-right: 3px !important;
+}
+/* First visible security issue result tag */
+.result-card-label-security-issue-result-tag:not(.default-hidden) {
+    padding-left: 3px !important;
+}
+/* All subsequent security issues result tags */
+.result-card-label-security-issue-result-tag:not(.default-hidden) ~ .result-card-label-security-issue-result-tag:not(.default-hidden) {
+    padding-left: .75em !important;
+}
