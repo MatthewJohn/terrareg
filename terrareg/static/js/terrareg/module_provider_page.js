@@ -1776,6 +1776,12 @@ async function populateTerraformUsageExample(moduleDetails, submoduleDetails) {
         return;
     }
 
+    // If analytics is disabled, hide the instruction to replace
+    // the analytics token
+    if (config.DISABLE_ANALYTICS) {
+        $('#usage-example-analytics-token-instruction').addClass('default-hidden');
+    }
+
     // Populate supported Terraform versions
     if (submoduleDetails.terraform_version_constraint) {
         $('#supported-terraform-versions-data').text(submoduleDetails.terraform_version_constraint);
