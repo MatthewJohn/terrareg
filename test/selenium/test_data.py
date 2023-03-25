@@ -2340,7 +2340,28 @@ digraph {
                         'modules/withanotherissue': {
                             'tfsec': json.dumps({
                                 'results': [
-                                    {'status': 0}
+                                    {
+                                        'description': 'First security issue.',
+                                        'impact': 'First security issue is Medium',
+                                        'links': [
+                                            'https://example.com/first-issue/'
+                                        ],
+                                        'location': {
+                                            'end_line': 2,
+                                            'filename': 'first.tf',
+                                            'start_line': 1
+                                        },
+                                        'long_id': 'first-security-medium-issue',
+                                        'resolution': 'Remove first security issue',
+                                        'resource': 'aws_s3.first',
+                                        'rule_description': 'This type of first issue is Medium',
+                                        'rule_id': 'AVD-TRG-001',
+                                        'rule_provider': 'aws',
+                                        'rule_service': 's3',
+                                        'severity': 'MEDIUM',
+                                        'status': 0,
+                                        'warning': False
+                                    },
                                 ]
                             })
                         }
@@ -2352,9 +2373,73 @@ digraph {
                         'examples/withsecissue': {
                             'tfsec': json.dumps({
                                 'results': [
-                                    {'status': 0},
-                                    {'status': 0},
-                                    {'status': 0}
+                                    {
+                                        'description': 'First security issue.',
+                                        'impact': 'First security issue is Low',
+                                        'links': [
+                                            'https://example.com/first-issue/'
+                                        ],
+                                        'location': {
+                                            'end_line': 2,
+                                            'filename': 'first.tf',
+                                            'start_line': 1
+                                        },
+                                        'long_id': 'first-security-low-issue',
+                                        'resolution': 'Remove first security issue',
+                                        'resource': 'aws_s3.first',
+                                        'rule_description': 'This type of first issue is Low',
+                                        'rule_id': 'AVD-TRG-001',
+                                        'rule_provider': 'aws',
+                                        'rule_service': 's3',
+                                        'severity': 'LOW',
+                                        'status': 0,
+                                        'warning': False
+                                    },
+                                    {
+                                        'description': 'Second security issue.',
+                                        'impact': 'Second security issue is high',
+                                        'links': [
+                                            'https://example.com/second-issue/'
+                                        ],
+                                        'location': {
+                                            'end_line': 8,
+                                            'filename': 'second.tf',
+                                            'start_line': 5
+                                        },
+                                        'long_id': 'second-security-high-issue',
+                                        'resolution': 'Remove second security issue',
+                                        'resource': 'aws_s3.second',
+                                        'rule_description': 'This type of second issue is High',
+                                        'rule_id': 'AVD-TRG-002',
+                                        'rule_provider': 'aws',
+                                        'rule_service': 's3',
+                                        'severity': 'HIGH',
+                                        'status': 0,
+                                        'warning': False
+                                    },
+                                    {
+                                        'description': 'Third security issue.',
+                                        'impact': 'Third security issue is medium',
+                                        'links': [
+                                            'https://example.com/third-issue/',
+                                            'https://example.com/third-issue/link2',
+                                        ],
+                                        'location': {
+                                            'end_line': 4,
+                                            'filename': 'third.tf',
+                                            'start_line': 2
+                                        },
+                                        'long_id': 'third-security-medium-issue',
+                                        'resolution': 'Remove third security issue',
+                                        'resource': 'aws_s3.third',
+                                        'rule_description': 'This type of third issue is Medium',
+                                        'rule_id': 'AVD-TRG-003',
+                                        'rule_provider': 'aws',
+                                        'rule_service': 's3',
+                                        'severity': 'MEDIUM',
+                                        'status': 0,
+                                        'warning': False
+                                    }
                                 ]
                             })
                         }
@@ -2502,6 +2587,52 @@ digraph {
                                 'rule_service': 'code',
                                 'severity': 'HIGH',
                                 'status': 2,
+                                'warning': False
+                            },
+                            {
+                                'description': 'Some medium issue 6.',
+                                'impact': 'This is quite important',
+                                'links': [
+                                    'https://example.com/issuehere',
+                                    'https://example.com/docshere'
+                                ],
+                                'location': {
+                                    'end_line': 1,
+                                    'filename': 'ignored.tf',
+                                    'start_line': 6
+                                },
+                                'long_id': 'dodgy-bad-is-important',
+                                'resolution': 'Do not use bad code',
+                                'resource': 'some_data_resource.this',
+                                'rule_description': 'Dodgy code should be removed',
+                                'rule_id': 'DDG-ANC-006',
+                                'rule_provider': 'bad',
+                                'rule_service': 'code',
+                                'severity': 'MEDIUM',
+                                'status': 0,
+                                'warning': False
+                            },
+                            {
+                                'description': 'Some critical issue 7.',
+                                'impact': 'This is critical',
+                                'links': [
+                                    'https://example.com/issuehere',
+                                    'https://example.com/docshere'
+                                ],
+                                'location': {
+                                    'end_line': 1,
+                                    'filename': 'ignored.tf',
+                                    'start_line': 6
+                                },
+                                'long_id': 'dodgy-bad-is-critical',
+                                'resolution': 'Fix critical issue',
+                                'resource': 'some_data_resource.this',
+                                'rule_description': 'Critical code has an issue',
+                                'rule_id': 'DDG-ANC-007',
+                                'rule_provider': 'bad',
+                                'rule_service': 'code',
+                                'severity': 'CRITICAL',
+                                'status': 0,
                                 'warning': False
                             }
                         ]

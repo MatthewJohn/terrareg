@@ -216,54 +216,69 @@ class TestModuleProvider(SeleniumTest):
             if attribute_to_remove:
                 module_version.update_attributes(**{attribute_to_remove: original_value})
 
-    def test_module_with_security_issues(self):
+    @pytest.mark.parametrize('url,expected_label_displayed,expected_critical,expected_high,expected_medium_low', [
+        ('/modules/moduledetails/withsecurityissues/testprovider', False, 0, 0, 0),
+        ('/modules/moduledetails/withsecurityissues/testprovider/1.2.0/submodule/modules/withanotherissue', True, 0, 0, 1),
+        ('/modules/moduledetails/withsecurityissues/testprovider/1.1.0/example/examples/withsecissue', True, 0, 1, 2),
+        ('/modules/moduledetails/withsecurityissues/testprovider/1.0.0', True, 1, 3, 2),
+    ])
+    def test_module_with_security_issues(self, url, expected_label_displayed, expected_critical, expected_high, expected_medium_low):
         """Test module with security issues."""
-        self.selenium_instance.get(self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.0.0'))
+        self.selenium_instance.get(self.get_url(url))
 
-        # Ensure security issues are displayed
-        security_issues = self.wait_for_element(By.ID, 'security-issues')
-        assert security_issues.is_displayed() == True
-        assert security_issues.text == '4 Security issues'
-
-        # Go to 1.1.0 version, with no security issues
-        Select(self.selenium_instance.find_element(By.ID, 'version-select')).select_by_visible_text('1.1.0')
-
-        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.1.0'))
-
-        # Wait for inputs tab, to indicate page has loaded
+        # Wait for inputs tab label
         self.wait_for_element(By.ID, 'module-tab-link-inputs')
 
-        # Ensure no security issues are displayed
-        assert self.selenium_instance.find_element(By.ID, 'security-issues').is_displayed() == False
+        # Ensure security issues is disaplyed as expected
+        security_issues = self.wait_for_element(By.ID, 'security-issues', ensure_displayed=False)
+        assert security_issues.is_displayed() == expected_label_displayed
 
-        # Go to example
-        Select(self.selenium_instance.find_element(By.ID, 'example-select')).select_by_visible_text('examples/withsecissue')
-        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.1.0/example/examples/withsecissue'))
+        # If the label should not be displayed, return early
+        if not expected_label_displayed:
+            return
 
-        # Ensure 3 security issues are shown
-        security_issues = self.wait_for_element(By.ID, 'security-issues')
-        assert security_issues.is_displayed() == True
-        assert security_issues.text == '3 Security issues'
+        # Check label text
+        expected_text = 'Security Issues'
+        if expected_critical:
+            expected_text += f'\n{expected_critical} Critical'
+        if expected_high:
+            expected_text += f'\n{expected_high} High'
+        if expected_medium_low:
+            expected_text += f'\n{expected_medium_low} Medium/Low'
+        assert security_issues.text == expected_text
 
-        # Go back to parent
-        self.selenium_instance.find_element(By.ID, 'submodule-back-to-parent').click()
-        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.1.0'))
+        # Check each of the count labels
+        expected_base_color = None
+        for label_id, label_name, color, expected_count in [
+                ('result-card-label-security-issues-critical-count', 'Critical', 'danger', expected_critical),
+                ('result-card-label-security-issues-high-count', 'High', 'warning', expected_high),
+                ('result-card-label-security-issues-low-count', 'Medium/Low', 'info', expected_medium_low)
+                ]:
+            label = security_issues.find_element(By.ID, label_id)
+            if expected_count:
+                assert label.is_displayed() == True
+                assert label.text == f'{expected_count} {label_name}'
+                # Check only color associated to label is the expected one
+                assert [
+                    class_name
+                    for class_name in label.get_attribute('class').split(' ')
+                    if class_name.startswith('is-') and class_name != 'is-light'
+                ] == [f'is-{color}']
+                # Set expected parent color to this label color,
+                # if not already set
+                if expected_base_color is None:
+                    expected_base_color = color
 
-        # Go to 1.2.0 version, with no security issues
-        Select(self.selenium_instance.find_element(By.ID, 'version-select')).select_by_visible_text('1.2.0 (latest)')
-        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.2.0'))
+            else:
+                assert label.is_displayed() == False
 
-        # Ensure no security issues are displayed
-        assert self.selenium_instance.find_element(By.ID, 'security-issues').is_displayed() == False
-
-        # Go to submodule
-        Select(self.selenium_instance.find_element(By.ID, 'submodule-select')).select_by_visible_text('modules/withanotherissue')
-        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.2.0/submodule/modules/withanotherissue'))
-
-        # Ensure 1 security issue is shown
-        security_issues = self.wait_for_element(By.ID, 'security-issues')
-        assert security_issues.is_displayed() == True
-        assert security_issues.text == '1 Security issues'
+        # Ensure base color of security tag is correct
+        icon_label = security_issues.find_element(By.ID, 'result-card-label-security-issues-icon')
+        assert [
+            class_name
+            for class_name in icon_label.get_attribute('class').split(' ')
+            if class_name.startswith('is-') and class_name != 'is-light'
+        ] == [f'is-{expected_base_color}']
 
     @pytest.mark.parametrize('url,cost', [
         ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example', '2373.60'),
@@ -272,10 +287,10 @@ class TestModuleProvider(SeleniumTest):
         ('/modules/moduledetails/infracost/testprovider/1.0.0/example/examples/no-infracost-data', None),
     ])
     def test_example_with_cost_analysis(self, url, cost):
-        """Test module with security issues."""
+        """Test module with cost analysis."""
         self.selenium_instance.get(self.get_url(url))
 
-        # Ensure security issues are displayed
+        # Ensure yearly cost is displayed
         cost_text = self.wait_for_element(By.ID, 'yearly-cost', ensure_displayed=False)
         if cost is None:
             self.assert_equals(lambda: cost_text.is_displayed(), False)
@@ -2101,17 +2116,21 @@ various &lt; characters that could be escaped.</pre>
         # Check rows for security issues
         expected_rows = [
             ['', 'Severity', '', 'Description', '', '', '', '', '', '', '', '', ''],
-            ['main.tf'],
-            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
+            ['ignored.tf'],
+            ['', 'CRITICAL', '', 'Critical code has an issue', '', '', '', '', '', '', '', '', ''],
             ['different.tf'],
             ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
             ['main.tf'],
             ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
-            ['', 'LOW', '', 'Secrets Manager should use customer managed keys', '', '', '', '', '', '', '', '', '']
+            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
+            ['', 'LOW', '', 'Secrets Manager should use customer managed keys', '', '', '', '', '', '', '', '', ''],
+            ['ignored.tf'],
+            ['', 'MEDIUM', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
         ]
         for row in tab_content.find_elements(By.TAG_NAME, "tr"):
             column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
             assert column_data == expected_rows.pop(0)
+        assert len(expected_rows) == 0
 
         # Select third row (first issue) and expand
         tab_content.find_elements(By.TAG_NAME, "tr")[2].find_elements(By.TAG_NAME, "td")[0].click()
@@ -2119,31 +2138,35 @@ various &lt; characters that could be escaped.</pre>
         # Ensure row is expanded, showing additional information
         expected_rows = [
             ['', 'Severity', '', 'Description', '', '', '', '', '', '', '', '', ''],
-            ['main.tf'],
-            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
-            [
-                'File main.tf\n'
-                'ID DDG-ANC-001\n'
+            ['ignored.tf'],
+            ['', 'CRITICAL', '', 'Critical code has an issue', '', '', '', '', '', '', '', '', ''],
+            [(
+                'File ignored.tf\n'
+                'ID DDG-ANC-007\n'
                 'Provider bad\n'
                 'Service code\n'
                 'Resource some_data_resource.this\n'
                 'Starting Line 6\n'
                 'Ending Line 1\n'
-                'Impact Entire project is compromised\n'
-                'Resolution Do not use bad code\n'
+                'Impact This is critical\n'
+                'Resolution Fix critical issue\n'
                 'Resources\n'
                 '- https://example.com/issuehere\n'
                 '- https://example.com/docshere'
-            ],
+            )],
             ['different.tf'],
             ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
             ['main.tf'],
             ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
-            ['', 'LOW', '', 'Secrets Manager should use customer managed keys', '', '', '', '', '', '', '', '', '']
+            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
+            ['', 'LOW', '', 'Secrets Manager should use customer managed keys', '', '', '', '', '', '', '', '', ''],
+            ['ignored.tf'],
+            ['', 'MEDIUM', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
         ]
         for row in tab_content.find_elements(By.TAG_NAME, "tr"):
             column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
             assert column_data == expected_rows.pop(0)
+        assert len(expected_rows) == 0
 
         # Go to 1.1.0 version, with no security issues
         Select(self.selenium_instance.find_element(By.ID, 'version-select')).select_by_visible_text('1.1.0')
@@ -2176,14 +2199,17 @@ various &lt; characters that could be escaped.</pre>
         # All data contains invalid data.
         expected_rows = [
             ['', 'Severity', '', 'Description', '', '', '', '', '', '', '', '', ''],
-            ['No group'],
-            ['', 'undefined', '', '', '', '', '', '', '', '', '', '', ''],
-            ['', 'undefined', '', '', '', '', '', '', '', '', '', '', ''],
-            ['', 'undefined', '', '', '', '', '', '', '', '', '', '', ''],
+            ['second.tf'],
+            ['', 'HIGH', '', 'This type of second issue is High', '', '', '', '', '', '', '', '', ''],
+            ['first.tf'],
+            ['', 'LOW', '', 'This type of first issue is Low', '', '', '', '', '', '', '', '', ''],
+            ['third.tf'],
+            ['', 'MEDIUM', '', 'This type of third issue is Medium', '', '', '', '', '', '', '', '', ''],
         ]
         for row in tab_content.find_elements(By.TAG_NAME, "tr"):
             column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
             assert column_data == expected_rows.pop(0)
+        assert len(expected_rows) == 0
 
         # Go back to parent
         self.selenium_instance.find_element(By.ID, 'submodule-back-to-parent').click()
@@ -2215,12 +2241,13 @@ various &lt; characters that could be escaped.</pre>
         # Check rows for security issues
         expected_rows = [
             ['', 'Severity', '', 'Description', '', '', '', '', '', '', '', '', ''],
-            ['No group'],
-            ['', 'undefined', '', '', '', '', '', '', '', '', '', '', '']
+            ['first.tf'],
+            ['', 'MEDIUM', '', 'This type of first issue is Medium', '', '', '', '', '', '', '', '', ''],
         ]
         for row in tab_content.find_elements(By.TAG_NAME, "tr"):
             column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
             assert column_data == expected_rows.pop(0)
+        assert len(expected_rows) == 0
 
     def _compare_canvas(self, compare_filename):
         """Compare current canvas data for graph to expected image"""
