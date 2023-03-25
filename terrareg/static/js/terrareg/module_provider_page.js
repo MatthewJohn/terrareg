@@ -1184,6 +1184,10 @@ class UsageBuilderAnalyticstokenRow extends BaseUsageBuilderRow {
         this._inputDiv = undefined;
     }
     getInputRow() {
+        if (this.terraregConfig.DISABLE_ANALYTICS) {
+            return null;
+        }
+
         // Setup analytics input row
         let analyticsTokenInputRow = $('<tr></tr>');
 
@@ -1213,10 +1217,13 @@ class UsageBuilderAnalyticstokenRow extends BaseUsageBuilderRow {
     }
 
     getValue() {
-        if (this._inputDiv) {
-            return this._inputDiv.val();
+        if (this.terraregConfig.DISABLE_ANALYTICS) {
+            return "";
         }
-        return "";
+        if (this._inputDiv) {
+            return `${this._inputDiv.val()}__`;
+        }
+        return "__";
     }
 }
 
@@ -1248,7 +1255,10 @@ class UsageBuilderTab extends ModuleDetailsTab {
             let usageBuilderRowFactory = new UsageBuilderRowFactory(config);
 
             this._analyticsInput = usageBuilderRowFactory.getAnalyticsRow();
-            usageBuilderTable.append(this._analyticsInput.getInputRow());
+            let analyticsRow = this._analyticsInput.getInputRow();
+            if (analyticsRow !== null) {
+                usageBuilderTable.append(this._analyticsInput.getInputRow());
+            }
 
             // Build input table
             inputVariables.forEach((inputVariable) => {
@@ -1343,7 +1353,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
             additionalContent += content.additionalContent;
         }
         $('#usageBuilderOutput').html(`${additionalContent}module "${moduleDetails.name}" {
-  source  = "${window.location.hostname}/${analytics_token}__${moduleDetails.module_provider_id}"
+  source  = "${window.location.hostname}/${analytics_token}${moduleDetails.module_provider_id}"
   version = "${moduleDetails.terraform_example_version_string}"
 ${outputTf}
 }`);
