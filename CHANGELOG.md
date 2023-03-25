@@ -1,5 +1,18 @@
 # Changelog
 
+# [2.65.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.64.0...v2.65.0) (2023-03-25)
+
+
+### Bug Fixes
+
+* Add initial sorting of security issues by filename. This is usually the default outcome of the tfsec output, but test data did not include it. ([6eaf023](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6eaf0232e117e02a8a95f1690020e7edc8258a20)), closes [#371](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/371)
+
+
+### Features
+
+* Show highest severity security issue in security issue badge. ([232b1a9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/232b1a9b29b4b0e15fcf0e602a7e6d6b4178c90e)), closes [#320](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/320)
+* Update security issues label to show breakdown of severities ([e3392e0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e3392e0acb7324566f005b9378be1d6a4fcc34f0)), closes [#320](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/320)
+
 # [2.64.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.63.0...v2.64.0) (2023-03-24)
 
 
