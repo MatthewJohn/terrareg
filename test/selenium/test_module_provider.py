@@ -1489,7 +1489,12 @@ module "test_example_call" {
         assert [file.text for file in file_list] == expected_file_list
 
         # Ensure contents of main.tf is shown in data
-        expected_main_tf_content = f'# Call root module\nmodule "{example_root_module_call_name}" {{\n  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"\n  {expected_version_comment}version = "{expected_version_string}"\n}}'
+        expected_main_tf_content = f"""
+# Call root module
+module "{example_root_module_call_name}" {{
+  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"
+  {expected_version_comment}version = "{expected_version_string}"
+}}""".strip()
         assert file_tab_content.find_element(By.ID, 'example-file-content').text == expected_main_tf_content
 
     def test_example_file_contents(self):
@@ -1518,7 +1523,13 @@ module "test_example_call" {
         assert [file.text for file in file_list] == ['main.tf', 'data.tf', 'variables.tf']
 
         # Ensure contents of main.tf is shown in data
-        expected_main_tf_content = f'# Call root module\nmodule "root" {{\n  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"\n  version = ">= 1.5.0, < 2.0.0, unittest"\n}}'
+        expected_main_tf_content = f"""
+# Call root module
+module "root" {{
+  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"
+  version = ">= 1.5.0, < 2.0.0, unittest"
+}}
+""".strip()
         assert file_tab_content.find_element(By.ID, 'example-file-content').text == expected_main_tf_content
 
         # Select main.tf file and check content
@@ -1531,7 +1542,11 @@ module "test_example_call" {
 
         # Select variables.tf and check content
         file_list[2].click()
-        assert file_tab_content.find_element(By.ID, 'example-file-content').text == 'variable "test" {\n  description = "test variable"\n  type = string\n}'
+        assert file_tab_content.find_element(By.ID, 'example-file-content').text == """
+variable "test" {
+  description = "test variable"
+  type = string
+}""".strip()
 
     def test_example_file_content_heredoc(self):
         """Test example file with heredoc content"""
