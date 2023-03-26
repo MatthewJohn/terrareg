@@ -203,6 +203,14 @@ class AnalyticsTab extends ModuleDetailsTab {
     }
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
+
+            // Check if analytics are disabled
+            let config = await getConfig();
+            if (config.DISABLE_ANALYTICS) {
+                resolve(false);
+                return;
+            }
+
             $.get(`/v1/terrareg/analytics/${this._moduleDetails.module_provider_id}/token_versions`, (data, status) => {
                 Object.keys(data).forEach((token) => {
                     $("#analyticsVersionByTokenTable").append(`
