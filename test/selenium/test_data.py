@@ -583,7 +583,20 @@ integration_test_data = {
                     'beta': False,
                     'internal': False,
                     'published_at': datetime(2022, 1, 5, 22, 53, 12),
-                    'readme_content': '# This is an exaple README!',
+                    'readme_content': """
+# This is an exaple README!
+
+Following this example module call:
+
+```
+module "test_example_call" {
+  source = "../../"
+
+  name = "example-name"
+}
+```
+""",
+                    # Set to non-latest extraction version
                     'extraction_version': 0,
                     'variable_template': json.dumps([
                         {
