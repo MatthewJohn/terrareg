@@ -17,7 +17,6 @@ class TestApiModuleVersionDownload(TerraregUnitTest):
     """Test ApiModuleVersionDownload resource."""
 
     @pytest.mark.parametrize('auth_token_prefix', [
-
         # No auth token
         '',
 
@@ -26,7 +25,8 @@ class TestApiModuleVersionDownload(TerraregUnitTest):
     ])
     @pytest.mark.parametrize('version', ['1.0.0', None])
     @setup_test_data()
-    def test_existing_module_version_with_invalid_auth_token(self, auth_token_prefix, version, client, mock_models):
+    def test_existing_module_version_with_invalid_analytics_token(self, auth_token_prefix, version, client, mock_models, mock_record_module_version_download):
+        """Test module version download with invalid analytics token"""
         with unittest.mock.patch('terrareg.config.Config.EXAMPLE_ANALYTICS_TOKEN', 'unittest-example-token'):
             res = client.get(f"/v1/modules/{auth_token_prefix}testnamespace/testmodulename/testprovider/{f'{version}/' if version else ''}download")
         assert res.status_code == 401
@@ -36,6 +36,40 @@ Please update module source to include analytics token.
 
 For example:
   source = "localhost/unittest-example-token__testnamespace/testmodulename/testprovider\""""
+
+        AnalyticsEngine.record_module_version_download.assert_not_called()
+
+    @pytest.mark.parametrize('auth_token_prefix', [
+        # No auth token
+        '',
+
+        # With example auth token
+        'unittest-example-token__'
+    ])
+    @pytest.mark.parametrize('version,expected_version', [('1.0.0', '1.0.0'), (None, '2.4.1')])
+    @setup_test_data()
+    def test_existing_module_version_with_invalid_analytics_token_with_analytics_disabled(
+            self, auth_token_prefix, version, expected_version, client, mock_models, mock_record_module_version_download):
+        """Test module version download endpoint with invalid analytics token and analytics disabled"""
+        with unittest.mock.patch('terrareg.config.Config.EXAMPLE_ANALYTICS_TOKEN', 'unittest-example-token'), \
+                unittest.mock.patch('terrareg.config.Config.DISABLE_ANALYTICS', True):
+
+            res = client.get(
+                f"/v1/modules/{auth_token_prefix}testnamespace/testmodulename/testprovider/{f'{version}/' if version else ''}download",
+                headers={'X-Terraform-Version': 'TestTerraformVersion',
+                         'User-Agent': 'TestUserAgent'}
+            )
+
+        assert res.status_code == 204
+        assert res.headers['X-Terraform-Get'] == f'/v1/terrareg/modules/testnamespace/testmodulename/testprovider/{expected_version}/source.zip'
+
+        AnalyticsEngine.record_module_version_download.assert_called_once_with(
+            module_version=unittest.mock.ANY,
+            analytics_token=None,
+            terraform_version='TestTerraformVersion',
+            user_agent='TestUserAgent',
+            auth_token=None
+        )
 
     @pytest.mark.parametrize('version', [
         # Test with version
