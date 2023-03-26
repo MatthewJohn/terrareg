@@ -189,7 +189,8 @@ class TestConfig:
         'ENABLE_ACCESS_CONTROLS',
         'SAML2_DEBUG',
         'OPENID_CONNECT_DEBUG',
-        "MANAGE_TERRAFORM_RC_FILE"
+        "MANAGE_TERRAFORM_RC_FILE",
+        'DISABLE_ANALYTICS'
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
         """Test boolean configs to ensure they are overriden with environment variables."""
