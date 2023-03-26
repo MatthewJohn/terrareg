@@ -16,12 +16,26 @@ from . import mock_record_module_version_download
 class TestApiModuleVersionDownload(TerraregUnitTest):
     """Test ApiModuleVersionDownload resource."""
 
+    @pytest.mark.parametrize('auth_token_prefix', [
+
+        # No auth token
+        '',
+
+        # With example auth token
+        'unittest-example-token__'
+    ])
     @pytest.mark.parametrize('version', ['1.0.0', None])
     @setup_test_data()
-    def test_existing_module_version_without_alaytics_token(self, version, client, mock_models):
-        res = client.get(f"/v1/modules/testnamespace/testmodulename/testprovider/{f'{version}/' if version else ''}download")
+    def test_existing_module_version_with_invalid_auth_token(self, auth_token_prefix, version, client, mock_models):
+        with unittest.mock.patch('terrareg.config.Config.EXAMPLE_ANALYTICS_TOKEN', 'unittest-example-token'):
+            res = client.get(f"/v1/modules/{auth_token_prefix}testnamespace/testmodulename/testprovider/{f'{version}/' if version else ''}download")
         assert res.status_code == 401
-        assert res.data == b'\nAn analytics token must be provided.\nPlease update module source to include analytics token.\n\nFor example:\n  source = "localhost/my-tf-application__testnamespace/testmodulename/testprovider"'
+        assert res.data == b"""
+An analytics token must be provided.
+Please update module source to include analytics token.
+
+For example:
+  source = "localhost/unittest-example-token__testnamespace/testmodulename/testprovider\""""
 
     @pytest.mark.parametrize('version', [
         # Test with version
