@@ -793,7 +793,16 @@ class TestModuleProvider(SeleniumTest):
 
     @pytest.mark.parametrize('url,expected_readme_content', [
         # Root module
-        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0', 'This is an exaple README!'),
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0', """
+This is an exaple README!
+Following this example module call:
+module "test_example_call" {
+  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"
+  version = ">= 1.5.0, < 2.0.0, unittest"
+
+  name = "example-name"
+}
+""".strip()),
         # Module example
         ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example', 'Example 1 README'),
         # Submodule
