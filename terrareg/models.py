@@ -2250,7 +2250,11 @@ module "{self.module_version.module_provider.module.name}" {{
         source_url += '' if isHttps else '/modules'
         source_url += '/'
         # Add example analytics token
-        source_url += f'{terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN}__' if terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN else ''
+        source_url += (
+            (terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN + '__')
+            if terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN and (not terrareg.config.Config().DISABLE_ANALYTICS)
+            else ''
+        )
         # Add module provider ID
         source_url += self.module_version.module_provider.id
         # Add exact module version, if using http

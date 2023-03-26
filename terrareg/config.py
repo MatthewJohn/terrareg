@@ -136,6 +136,17 @@ class Config:
         return self.convert_boolean(os.environ.get('ALLOW_UNIDENTIFIED_DOWNLOADS', 'False'))
 
     @property
+    def DISABLE_ANALYTICS(self):
+        """
+        Disable module download anaytics.
+
+        This stops analytics tokens being displayed in the UI.
+
+        This also sets `ALLOW_UNIDENTIFIED_DOWNLOADS` to True
+        """
+        return self.convert_boolean(os.environ.get('DISABLE_ANALYTICS', 'False'))
+
+    @property
     def DEBUG(self):
         """Whether flask and sqlalchemy is setup in debug mode."""
         return self.convert_boolean(os.environ.get('DEBUG', 'False'))
