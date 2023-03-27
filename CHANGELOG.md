@@ -1,5 +1,21 @@
 # Changelog
 
+# [2.66.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.65.0...v2.66.0) (2023-03-27)
+
+
+### Bug Fixes
+
+* Fix bug where hostname in example replacement contains port of request. ([5690487](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5690487ec1b1d9f6186965e7975f2ed42fd1db41)), closes [#372](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/372) [#347](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/347) [#348](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/348)
+
+
+### Features
+
+* Add config to disable analytics tokens entirely ([968cccb](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/968cccba562ad4bd6c0132baea525c580d348d2d)), closes [#372](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/372)
+* Disable analytics tab in module provider page when analytics are disabled ([3da61e7](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3da61e77429f0ac31ea28b1a388b1de37c679e81)), closes [#372](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/372)
+* Disable analytics token in usage builder when analaytics is disabled globally ([b7a437d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b7a437d4c629a0f06e8aebcef69a5653c80592fd)), closes [#372](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/372)
+* Update example usage and Terraform replaced in README/example files to no longer show analytics token is DISABLE_ANALYTICS is set ([9d09253](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9d09253f6d97158ed9e27219e7c5e9428fb837d9)), closes [#372](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/372)
+* Update module version download to ignore analytics tokens if DISABLE_ANALYTICS is set ([fa7e4ee](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fa7e4ee37765482b3ab3b2401c8302e5579d4604)), closes [#372](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/372)
+
 # [2.65.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.64.0...v2.65.0) (2023-03-25)
 
 
