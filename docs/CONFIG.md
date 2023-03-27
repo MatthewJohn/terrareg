@@ -250,6 +250,19 @@ If enabled, module versions with externally hosted artifacts cannot be re-analys
 Default: `False`
 
 
+### DISABLE_ANALYTICS
+
+
+Disable module download anaytics.
+
+This stops analytics tokens being displayed in the UI.
+
+This also sets `ALLOW_UNIDENTIFIED_DOWNLOADS` to True
+
+
+Default: `False`
+
+
 ### DISABLE_TERRAREG_EXCLUSIVE_LABELS
 
 
@@ -353,6 +366,7 @@ or 'https://gitlab.corporate.com/{namespace}/{module}')
 or 'https://github.com/{namespace}/{module}-{provider}.git')
 Note: Do not include '{version}' placeholder in the URL -
 the git tag will be automatically provided.
+If using SSH, the domain must be seperated by the path using a forward slash. Use a colon to specify a port (e.g. `ssh://gitlab.corp.com:7999/namespace/name.git`)
 
 - browse_url - Formatted URL for user-viewable source code
 (e.g. 'https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}'
@@ -361,7 +375,7 @@ Must include placeholdes:
 - {path} (for source file/folder path)
 - {tag} or {tag_uri_encoded} for the git tag
 
-An example for public repositories might be:
+An example for public repositories, using SSH for cloning, might be:
 ```
 [{"name": "Github", "base_url": "https://github.com/{namespace}/{module}", "clone_url": "ssh://git@github.com/{namespace}/{module}.git", "browse_url": "https://github.com/{namespace}/{module}/tree/{tag}/{path}"},
 {"name": "Bitbucket", "base_url": "https://bitbucket.org/{namespace}/{module}", "clone_url": "ssh://git@bitbucket.org/{namespace}/{module}-{provider}.git", "browse_url": "https://bitbucket.org/{namespace}/{module}-{provider}/src/{tag}/{path}"},

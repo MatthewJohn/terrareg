@@ -1,4 +1,6 @@
 
+import urllib.parse
+
 from flask import request
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
@@ -16,4 +18,4 @@ class ApiTerraregSubmoduleReadmeHtml(ErrorCatchingResource):
 
         submodule_obj = terrareg.models.Submodule.get(module_version=module_version, module_path=submodule)
 
-        return submodule_obj.get_readme_html(server_hostname=request.host)
+        return submodule_obj.get_readme_html(server_hostname=urllib.parse.urlparse(request.base_url).hostname)

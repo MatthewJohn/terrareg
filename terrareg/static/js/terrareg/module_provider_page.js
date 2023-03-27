@@ -203,6 +203,14 @@ class AnalyticsTab extends ModuleDetailsTab {
     }
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
+
+            // Check if analytics are disabled
+            let config = await getConfig();
+            if (config.DISABLE_ANALYTICS) {
+                resolve(false);
+                return;
+            }
+
             $.get(`/v1/terrareg/analytics/${this._moduleDetails.module_provider_id}/token_versions`, (data, status) => {
                 Object.keys(data).forEach((token) => {
                     $("#analyticsVersionByTokenTable").append(`
@@ -1184,6 +1192,10 @@ class UsageBuilderAnalyticstokenRow extends BaseUsageBuilderRow {
         this._inputDiv = undefined;
     }
     getInputRow() {
+        if (this.terraregConfig.DISABLE_ANALYTICS) {
+            return null;
+        }
+
         // Setup analytics input row
         let analyticsTokenInputRow = $('<tr></tr>');
 
@@ -1213,10 +1225,13 @@ class UsageBuilderAnalyticstokenRow extends BaseUsageBuilderRow {
     }
 
     getValue() {
-        if (this._inputDiv) {
-            return this._inputDiv.val();
+        if (this.terraregConfig.DISABLE_ANALYTICS) {
+            return "";
         }
-        return "";
+        if (this._inputDiv) {
+            return `${this._inputDiv.val()}__`;
+        }
+        return "__";
     }
 }
 
@@ -1248,7 +1263,10 @@ class UsageBuilderTab extends ModuleDetailsTab {
             let usageBuilderRowFactory = new UsageBuilderRowFactory(config);
 
             this._analyticsInput = usageBuilderRowFactory.getAnalyticsRow();
-            usageBuilderTable.append(this._analyticsInput.getInputRow());
+            let analyticsRow = this._analyticsInput.getInputRow();
+            if (analyticsRow !== null) {
+                usageBuilderTable.append(this._analyticsInput.getInputRow());
+            }
 
             // Build input table
             inputVariables.forEach((inputVariable) => {
@@ -1343,7 +1361,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
             additionalContent += content.additionalContent;
         }
         $('#usageBuilderOutput').html(`${additionalContent}module "${moduleDetails.name}" {
-  source  = "${window.location.hostname}/${analytics_token}__${moduleDetails.module_provider_id}"
+  source  = "${window.location.hostname}/${analytics_token}${moduleDetails.module_provider_id}"
   version = "${moduleDetails.terraform_example_version_string}"
 ${outputTf}
 }`);
@@ -1764,6 +1782,12 @@ async function populateTerraformUsageExample(moduleDetails, submoduleDetails) {
     // show usage example
     if (! moduleDetails.published) {
         return;
+    }
+
+    // If analytics is disabled, hide the instruction to replace
+    // the analytics token
+    if (config.DISABLE_ANALYTICS) {
+        $('#usage-example-analytics-token-instruction').addClass('default-hidden');
     }
 
     // Populate supported Terraform versions

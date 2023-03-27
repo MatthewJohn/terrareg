@@ -38,6 +38,7 @@ class TestModuleProvider(SeleniumTest):
         cls._config_enable_access_controls = mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', False)
         cls._config_module_links = mock.patch('terrareg.config.Config.MODULE_LINKS', '[]')
         cls._config_terraform_example_version_template = mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major_plus_one}.0.0, unittest')
+        cls._config_disable_analytics = mock.patch('terrareg.config.Config.DISABLE_ANALYTICS', False)
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
@@ -49,6 +50,7 @@ class TestModuleProvider(SeleniumTest):
         cls.register_patch(cls._config_enable_access_controls)
         cls.register_patch(cls._config_module_links)
         cls.register_patch(cls._config_terraform_example_version_template)
+        cls.register_patch(cls._config_disable_analytics)
 
         super(TestModuleProvider, cls).setup_class()
 
@@ -791,7 +793,16 @@ class TestModuleProvider(SeleniumTest):
 
     @pytest.mark.parametrize('url,expected_readme_content', [
         # Root module
-        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0', 'This is an exaple README!'),
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0', """
+This is an exaple README!
+Following this example module call:
+module "test_example_call" {
+  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"
+  version = ">= 1.5.0, < 2.0.0, unittest"
+
+  name = "example-name"
+}
+""".strip()),
         # Module example
         ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example', 'Example 1 README'),
         # Submodule
@@ -1478,7 +1489,12 @@ class TestModuleProvider(SeleniumTest):
         assert [file.text for file in file_list] == expected_file_list
 
         # Ensure contents of main.tf is shown in data
-        expected_main_tf_content = f'# Call root module\nmodule "{example_root_module_call_name}" {{\n  source  = "localhost:{self.SERVER.port}/my-tf-application__moduledetails/fullypopulated/testprovider"\n  {expected_version_comment}version = "{expected_version_string}"\n}}'
+        expected_main_tf_content = f"""
+# Call root module
+module "{example_root_module_call_name}" {{
+  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"
+  {expected_version_comment}version = "{expected_version_string}"
+}}""".strip()
         assert file_tab_content.find_element(By.ID, 'example-file-content').text == expected_main_tf_content
 
     def test_example_file_contents(self):
@@ -1507,7 +1523,13 @@ class TestModuleProvider(SeleniumTest):
         assert [file.text for file in file_list] == ['main.tf', 'data.tf', 'variables.tf']
 
         # Ensure contents of main.tf is shown in data
-        expected_main_tf_content = f'# Call root module\nmodule "root" {{\n  source  = "localhost:{self.SERVER.port}/my-tf-application__moduledetails/fullypopulated/testprovider"\n  version = ">= 1.5.0, < 2.0.0, unittest"\n}}'
+        expected_main_tf_content = f"""
+# Call root module
+module "root" {{
+  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"
+  version = ">= 1.5.0, < 2.0.0, unittest"
+}}
+""".strip()
         assert file_tab_content.find_element(By.ID, 'example-file-content').text == expected_main_tf_content
 
         # Select main.tf file and check content
@@ -1520,7 +1542,11 @@ class TestModuleProvider(SeleniumTest):
 
         # Select variables.tf and check content
         file_list[2].click()
-        assert file_tab_content.find_element(By.ID, 'example-file-content').text == 'variable "test" {\n  description = "test variable"\n  type = string\n}'
+        assert file_tab_content.find_element(By.ID, 'example-file-content').text == """
+variable "test" {
+  description = "test variable"
+  type = string
+}""".strip()
 
     def test_example_file_content_heredoc(self):
         """Test example file with heredoc content"""
@@ -2460,3 +2486,61 @@ Consider re-indexing this module version to enable all features.
         # Ensure image exists
         res = requests.get(self.get_url(ProviderLogo(provider).source))
         assert res.status_code == 200
+
+    def test_analytics_disabled(self):
+        """Test module provider page with anayltics disabled."""
+        with self.update_mock(self._config_disable_analytics, 'new', True):
+            self.selenium_instance.get(self.get_url("/modules/moduledetails/fullypopulated/testprovider/1.5.0"))
+
+            # Wait for README tab link
+            self.wait_for_element(By.ID, "module-tab-link-readme")
+
+            # Test example in README does not contain analytics token
+            assert self.selenium_instance.find_element(By.ID, "module-tab-readme").text == """
+This is an exaple README!
+Following this example module call:
+module "test_example_call" {
+  source  = "localhost/moduledetails/fullypopulated/testprovider"
+  version = ">= 1.5.0, < 2.0.0, unittest"
+
+  name = "example-name"
+}
+""".strip()
+
+            # Ensure usage example does not contain analytics token
+            usage_example = self.wait_for_element(By.ID, "usage-example-container")
+            usage_instructions = usage_example.find_element(By.CLASS_NAME, "content")
+            assert usage_instructions.text == """
+Supported Terraform versions: >= 1.0, < 2.0.0
+To use this module:
+Add the following example to your Terraform,
+Add the required inputs - use the 'Usage Builder' tab for help and 'Inputs' tab for a full list.
+""".strip()
+
+            assert usage_example.find_element(By.ID, "usage-example-terraform").text == """
+module "fullypopulated" {
+  source  = "localhost/moduledetails/fullypopulated/testprovider"
+  version = ">= 1.5.0, < 2.0.0, unittest"
+
+  # Provide variables here
+}
+""".strip()
+
+            # Ensure analytics tab is not shown
+            analytics_tab_link = self.selenium_instance.find_element(By.ID, "module-tab-link-analytics")
+            assert analytics_tab_link.is_displayed() == False
+
+            # Check example file content
+            self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example'))
+            # Go to example file content
+            self.wait_for_element(By.ID, "module-tab-link-example-files").click()
+            self.assert_equals(
+                lambda: self.selenium_instance.find_element(By.ID, "example-file-content").text,
+                """
+# Call root module
+module "root" {
+  source  = "localhost/moduledetails/fullypopulated/testprovider"
+  version = ">= 1.5.0, < 2.0.0, unittest"
+}
+""".strip()
+            )
