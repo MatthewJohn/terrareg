@@ -77,10 +77,12 @@ class OpenidConnect:
 
         state = cls.generate_state()
 
+        config = terrareg.config.Config()
+
         return cls.get_client().prepare_request_uri(
             auth_url,
             redirect_uri=cls.get_redirect_url(),
-            scope=['openid', 'profile'],
+            scope=config.OPENID_CONNECT_SCOPES,
             state=state
         ), state
 
