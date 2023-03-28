@@ -30,11 +30,18 @@ function userPreferencesModalShow() {
 }
 
 function userPreferencesModalSave() {
+    let newTheme = $('#user-preferences-theme').val();
+    let themeHasChanged = newTheme !== getUserPreferences().theme;
+
     localStorage.setItem('show-beta-versions', $('#user-preferences-show-beta').is(':checked'));
     localStorage.setItem('show-unpublished-versions', $('#user-preferences-show-unpublished').is(':checked'));
     localStorage.setItem('theme', $('#user-preferences-theme').val());
-    $.cookie("theme", $('#user-preferences-theme').val(), {path: "/"});
+    $.cookie("theme", newTheme, {path: "/"});
     userPreferencesModalClose();
+
+    if (themeHasChanged) {
+        location.reload();
+    }
 }
 
 function userPreferencesModalClose() {
