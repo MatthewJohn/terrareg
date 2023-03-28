@@ -584,7 +584,7 @@ integration_test_data = {
                     'internal': False,
                     'published_at': datetime(2022, 1, 5, 22, 53, 12),
                     'readme_content': """
-# This is an exaple README!
+# This is an example README!
 
 Following this example module call:
 
@@ -593,6 +593,17 @@ module "test_example_call" {
   source = "../../"
 
   name = "example-name"
+}
+```
+
+This should work with all versions > 5.2.0 and <= 6.0.0
+
+```
+module "text_ternal_call" {
+  source  = "a-public/module"
+  version = "> 5.2.0, <= 6.0.0"
+
+  another = "example-external"
 }
 ```
 """,
