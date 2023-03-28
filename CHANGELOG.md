@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.66.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.66.0...v2.66.1) (2023-03-28)
+
+
+### Bug Fixes
+
+* Reload current page when any user preferences are changed ([e911aa8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e911aa878897526d06dde4c8ad0de96f77d08d7b)), closes [#376](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/376)
+* Reload current page when preferences are saved after the theme is changed ([de5510a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/de5510aa1c61c59124eef6cd62ec9c5d54683530)), closes [#376](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/376)
+* Update cookie set when selecting theme to specify a path, rather than the default, which is the user's current path ([6392aad](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6392aad7bff5fe537c5b0df3027f138d8062f564)), closes [#375](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/375)
+
 # [2.66.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.65.0...v2.66.0) (2023-03-27)
 
 
