@@ -593,6 +593,20 @@ Text for sign in button for OpenID Connect authentication
 Default: `Login using OpenID Connect`
 
 
+### OPENID_CONNECT_SCOPES
+
+
+Comma-seperated list of scopes to be included in OpenID authentication request.
+
+The OpenID profile should provide a 'groups' attribute, containing a list of groups
+that the user is a member of.
+
+A common configuration may require a 'groups' scope to be added to the list of scopes.
+
+
+Default: `['openid', 'profile']`
+
+
 ### PUBLIC_URL
 
 
