@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.66.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.66.1...v2.66.2) (2023-04-03)
+
+
+### Bug Fixes
+
+* Allow overriding of OpenID connect requested scopes. ([d8a1a9c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/d8a1a9c16fef5a62bbd28bc8b2279a48809ac8a9)), closes [#365](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/365)
+
 ## [2.66.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.66.0...v2.66.1) (2023-03-28)
 
 
