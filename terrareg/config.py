@@ -627,6 +627,23 @@ class Config:
         return os.environ.get('OPENID_CONNECT_ISSUER', None)
 
     @property
+    def OPENID_CONNECT_SCOPES(self):
+        """
+        Comma-seperated list of scopes to be included in OpenID authentication request.
+
+        The OpenID profile should provide a 'groups' attribute, containing a list of groups
+        that the user is a member of.
+
+        A common configuration may require a 'groups' scope to be added to the list of scopes.
+        """
+        return [
+            scope
+            for scope in os.environ.get("OPENID_CONNECT_SCOPES", "openid,profile").split(",")
+            if scope
+        ]
+
+
+    @property
     def OPENID_CONNECT_DEBUG(self):
         """
         Enable debug of OpenID connect via stdout.
