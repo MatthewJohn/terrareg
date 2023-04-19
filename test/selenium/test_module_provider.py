@@ -17,9 +17,14 @@ from PIL import Image
 import imagehash
 
 from terrareg.database import Database
+from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from test import mock_create_audit_event
 from test.selenium import SeleniumTest
-from terrareg.models import GitProvider, ModuleVersion, Namespace, Module, ModuleProvider, ProviderLogo
+from terrareg.models import (
+    GitProvider, ModuleVersion, Namespace, Module,
+    ModuleProvider, ProviderLogo,
+    UserGroup, UserGroupNamespacePermission
+)
 
 
 class TestModuleProvider(SeleniumTest):
@@ -1813,6 +1818,58 @@ EOF
         error = self.wait_for_element(By.ID, 'settings-status-error')
         assert error.text == ('You must be logged in to perform this action.\n'
                               'If you were previously logged in, please re-authentication and try again.')
+
+    @pytest.mark.parametrize('site_admin, group_permission, should_have_access', [
+        # Without site admin access or group permission
+        (False, None, False),
+        # With site admin access
+        (True, None, True),
+        # With group modify
+        (False, UserGroupNamespacePermissionType.MODIFY, True),
+        # With group full
+        (False, UserGroupNamespacePermissionType.FULL, True),
+    ])
+    def test_settings_tab_display_with_group_access(self, site_admin, group_permission, should_have_access):
+        """Test whether settings tab is available with various permission types for SSO users."""
+        # Enable access controls
+        with self.update_mock(self._config_enable_access_controls, 'new', True):
+
+            # Create test user group for authentication
+            self.selenium_instance.delete_all_cookies()
+
+            with self._patch_audit_event_creation():
+                user_group = UserGroup.create(name='selenium-test-user-group', site_admin=site_admin)
+
+            namespace = Namespace.get(name='moduledetails')
+
+            try:
+                # Add group permission, if it exists
+                user_group_permission = None
+                if group_permission:
+                    with self._patch_audit_event_creation():
+                        user_group_permission = UserGroupNamespacePermission.create(
+                            user_group=user_group,
+                            namespace=namespace,
+                            permission_type=group_permission
+                        )
+
+                with self.log_in_with_openid_connect(user_groups=[user_group.name]):
+                    # Access module provider page
+                    self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+                    # Wait for README tab
+                    self.wait_for_element(By.ID, 'module-tab-link-readme')
+
+                    # Check if settings tab is available
+                    settings_tab_link = self.selenium_instance.find_element(By.ID, 'module-tab-link-settings')
+                    assert settings_tab_link.is_displayed() is should_have_access
+            finally:
+                with self._patch_audit_event_creation():
+                    if user_group_permission:
+                        user_group_permission.delete()
+
+                    # Clear up test user group
+                    user_group.delete()
 
     def test_deleting_module_version_after_logging_out(self):
         """Test accessing settings tab, logging out and attempting to delete module version."""
