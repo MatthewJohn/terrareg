@@ -145,6 +145,9 @@ class VersionConstraint:
                 if version_match_sem != target_version:
                     return VersionCompatibilityType.INCOMPATIBLE
 
+                has_upper_bounds = True
+                has_lower_bounds = True
+
             elif constraint_part.startswith('!='):
                 version_match_sem, _, _ = cls.version_string_to_sem_version(constraint_part[2:])
                 if not version_match_sem:
