@@ -105,6 +105,45 @@ async function createSearchResultCard(parent_id, module) {
 
     let link = `/modules/${module.namespace}/${module.name}/${module.provider}`;
 
+    let version_compatibility_content = '';
+
+    if (module.version_compatibility) {
+        let version_compatibility_text = '';
+        let version_compatibility_color = '';
+        let version_compatibility_icon = '';
+        if (module.version_compatibility == 'compatible') {
+            version_compatibility_text = 'Compatible';
+            version_compatibility_color = 'success';
+            version_compatibility_icon = 'check-square';
+
+        } else if (module.version_compatibility == 'incompatible') {
+            version_compatibility_text = 'Incompatible';
+            version_compatibility_color = 'danger';
+            version_compatibility_icon = 'ban';
+
+        } else if (module.version_compatibility == "no_constraint") {
+            version_compatibility_text = 'No version constraint defined';
+            version_compatibility_color = 'warning';
+            version_compatibility_icon = 'exclamation-triangle';
+
+        } else if (module.version_compatibility == "implicit_compatible") {
+            version_compatibility_text = 'Implicitly compatible';
+            version_compatibility_color = 'primary';
+            version_compatibility_icon = 'check-square';
+
+        }
+        if (version_compatibility_text) {
+            version_compatibility_content = `
+                <br />
+                <p class="card-footer-item card-terraform-version-compatibility">
+                    <span class="icon has-text-${version_compatibility_color}">
+                        <i class="fas fa-${version_compatibility_icon}"></i>
+                    </span>
+                    <span>${version_compatibility_text}</span>
+                </p>`;
+        }
+    }
+
     // Add module to search results
     let result_card = $(
         `
@@ -133,6 +172,7 @@ async function createSearchResultCard(parent_id, module) {
                     <p class="card-footer-item card-source-link">${module.source ? "Source: " + module.source : "No source provided"}</p>
                     <br />
                     <p class="card-footer-item card-last-updated">${module.published_at ? ('Last updated: ' + display_published) : ''}</p>
+                    ${version_compatibility_content}
                 </footer>
             </a>
         </div>
