@@ -27,7 +27,7 @@ class VersionConstraint:
     # - group 1 - major version
     # - group 2 - minor version (optional)
     # - group 3 - patch version (optional)
-    RE_VERSION_MATCH_PART = re.compile('\s*([0-9]+)(?:\.([0-9]+)(?:\.([0-9]+))?)?')
+    RE_VERSION_MATCH_PART = re.compile('^\s*([0-9]+)(?:\.([0-9]+)(?:\.([0-9]+))?)?\s*$')
 
     @classmethod
     def version_string_to_sem_version(cls, version_string):
