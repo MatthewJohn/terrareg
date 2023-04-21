@@ -160,6 +160,10 @@ class VersionConstraint:
                 if version_match_sem == target_version:
                     return VersionCompatibilityType.INCOMPATIBLE
 
+            # If an unkown comparison is found, return error
+            else:
+                return VersionCompatibilityType.ERROR
+
         # If either upper or lower bound was not found,
         # return implicitly compatible, otherwise,
         # return compatible
