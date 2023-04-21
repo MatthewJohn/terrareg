@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.66.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.66.2...v2.66.3) (2023-04-21)
+
+
+### Bug Fixes
+
+* Hide 'Settings' tab from module provider page when user does not have write permission to the namespace ([5c9936b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5c9936b58198fa3b512670e7c07cd4d43c071899)), closes [#369](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/369)
+
 ## [2.66.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.66.1...v2.66.2) (2023-04-03)
 
 
