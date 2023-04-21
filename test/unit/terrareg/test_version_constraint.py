@@ -127,6 +127,9 @@ class TestVersionConstraint(TerraregUnitTest):
         # Test with spacing
         (' >= 2.0.0 , <= 3.0.0 ', '3.0.1', terrareg.version_constraint.VersionCompatibilityType.INCOMPATIBLE),
         (' >= 2.0.0 , <= 3.0.0 ', '2.0.0', terrareg.version_constraint.VersionCompatibilityType.COMPATIBLE),
+
+        (',, >= 2.0.0 ,, <= 3.0.0 , ', '3.0.1', terrareg.version_constraint.VersionCompatibilityType.INCOMPATIBLE),
+        (',, >= 2.0.0 ,, <= 3.0.0 , ', '2.0.0', terrareg.version_constraint.VersionCompatibilityType.COMPATIBLE),
     ])
     def test_is_compatible(self, constraint, target_version, expected_result):
         """Test constraint compatiblity"""
