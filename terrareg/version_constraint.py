@@ -36,14 +36,20 @@ class VersionConstraint:
         if version_match is None:
             return None, False, False
 
-        return (
-            semantic_version.Version(
+        try:
+            sem_version = semantic_version.Version(
                 "{major}.{minor}.{patch}".format(
                     major=version_match.group(1),
                     minor=version_match.group(2) if version_match.group(2) is not None else '0',
                     patch=version_match.group(3) if version_match.group(3) is not None else '0'
                 )
-            ),
+            )
+        # Catch value error caused by invalid version string
+        except ValueError:
+            return None, False, False
+
+        return (
+            sem_version,
             version_match.group(2) is not None,
             version_match.group(3) is not None
         )
@@ -51,7 +57,11 @@ class VersionConstraint:
     @classmethod
     def is_compatible(cls, constraint, target_version):
         """Determine if a version constraint is compatible with a target version"""
-        target_version_sem = semantic_version.Version(target_version)
+        try:
+            target_version_sem = semantic_version.Version(target_version)
+        except ValueError:
+            # Catch value error due to invalid target version string
+            return VersionCompatibilityType.ERROR
 
         has_lower_bounds = False
         has_upper_bounds = False
