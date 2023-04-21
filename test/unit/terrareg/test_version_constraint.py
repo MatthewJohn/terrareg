@@ -38,7 +38,7 @@ class TestVersionConstraint(TerraregUnitTest):
 
 
     @pytest.mark.parametrize('constraint, target_version, expected_result', [
-        ('=1.2.3', '1.2.3', terrareg.version_constraint.VersionCompatibilityType.IMPLICIT_COMPATIBLE),
+        ('=1.2.3', '1.2.3', terrareg.version_constraint.VersionCompatibilityType.COMPATIBLE),
         ('=1.2.3', '2.2.3', terrareg.version_constraint.VersionCompatibilityType.INCOMPATIBLE),
         ('=1.2.3', '1.3.3', terrareg.version_constraint.VersionCompatibilityType.INCOMPATIBLE),
         ('=1.2.3', '1.2.4', terrareg.version_constraint.VersionCompatibilityType.INCOMPATIBLE),
