@@ -146,7 +146,7 @@ class VersionConstraint:
                 if not version_match_sem:
                     return VersionCompatibilityType.ERROR
 
-                if version_match_sem != target_version:
+                if version_match_sem != target_version_sem:
                     return VersionCompatibilityType.INCOMPATIBLE
 
                 has_upper_bounds = True
@@ -157,7 +157,7 @@ class VersionConstraint:
                 if not version_match_sem:
                     return VersionCompatibilityType.ERROR
 
-                if version_match_sem == target_version:
+                if version_match_sem == target_version_sem:
                     return VersionCompatibilityType.INCOMPATIBLE
 
             # If an unkown comparison is found, return error
