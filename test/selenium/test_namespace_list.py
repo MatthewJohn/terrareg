@@ -37,6 +37,7 @@ class TestNamespaceList(SeleniumTest):
             ['searchbynamespace', 'searchbynamespace'], ['testmodulecreation', 'testmodulecreation'],
             ['testnamespace', 'testnamespace'], ['trustednamespace', 'trustednamespace'],
             ['unpublished-beta-version-module-providers', 'unpublished-beta-version-module-providers'],
+            ['version-constraint-test', 'version-constraint-test'],
             # Namespace with a display name
             ['A Display Name', 'withdisplayname']
         ]
