@@ -88,6 +88,10 @@
             query_string += `&namespace=${namespace}`;
         });
 
+        if ($('#search-terraform-version').val()) {
+            query_string += `&target_terraform_version=${$('#search-terraform-version').val()}`;
+        }
+
         // Perform AJAX query to obtain results
         $.get(`/v1/modules/search?` +
                 `q=${encodeURIComponent(searchQuery)}&` +
@@ -250,6 +254,21 @@
             <p class="panel-heading">
               Namespaces
             </p>
+        </nav>
+
+        <nav id="terraform-version-filters" class="panel">
+            <p class="panel-heading">
+              Additional
+            </p>
+            <span class="panel-block">
+                <span class="label" style="white-space: nowrap;">Terraform Version:</span>
+                <span class="control">
+                    <input style="margin-left: 10px; width: 80px" id="search-terraform-version" class="input" type="text" size=8 />
+                </span>
+            </span>
+            <span class="panel-block">
+                <button class="button" onclick="performSearch();">Update</button>
+            </span>
         </nav>
     </div>
     <div class="column is-three-fifths">
