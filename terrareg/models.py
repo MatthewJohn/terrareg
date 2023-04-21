@@ -30,6 +30,7 @@ from terrareg.errors import (
     NoModuleDownloadMethodConfiguredError,
     ProviderNameNotPermittedError, RepositoryUrlParseError
 )
+import terrareg.version_constraint
 from terrareg.utils import convert_markdown_to_html, get_public_url_details, safe_join_paths, sanitise_html_content
 from terrareg.validators import GitUrlValidator
 from terrareg.constants import EXTRACTION_VERSION
@@ -2883,7 +2884,7 @@ class ModuleVersion(TerraformSpecsObject):
                 self._module_provider.calculate_latest_version().version == self.version):
             self._module_provider.update_attributes(latest_version_id=self.pk)
 
-    def get_api_outline(self):
+    def get_api_outline(self, target_terraform_version=None):
         """Return dict of basic version details for API response."""
         row = self._get_db_row()
         api_outline = self._module_provider.get_api_outline()
@@ -2897,6 +2898,12 @@ class ModuleVersion(TerraformSpecsObject):
             "downloads": self.get_total_downloads(),
             "internal": self._get_db_row()['internal']
         })
+
+        if target_terraform_version is not None:
+            api_outline['version_compatibility'] = terrareg.version_constraint.VersionConstraint.is_compatible(
+                constraint=self.get_terraform_version_constraints(),
+                target_version=target_terraform_version
+            )
         return api_outline
 
     def get_total_downloads(self):

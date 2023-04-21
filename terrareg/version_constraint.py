@@ -55,7 +55,6 @@ class VersionConstraint:
 
         has_lower_bounds = False
         has_upper_bounds = False
-        re_partial_version_match = re.compile('\s*([0-9]+\.[0-9]+(?:\.[0-9]+)?)')
 
         if not constraint:
             return VersionCompatibilityType.NO_CONSTRAINT
