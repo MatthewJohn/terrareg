@@ -650,9 +650,20 @@ class SettingsTab extends ModuleDetailsTab {
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
 
-            let loggedIn = await isLoggedIn();
-            // Return immediately if user is not logged in
-            if (!loggedIn) {
+            let userPermissions = await isLoggedIn();
+
+            // Return immediately if user does not have permission
+            // to modify settings
+            if (
+                // If user is not logged in
+                !userPermissions ||
+                // Or user is not super user and does not have
+                // full or write access to the namespace
+                (
+                    (!userPermissions.site_admin) &&
+                    ["FULL", "MODIFY"].indexOf(userPermissions.namespace_permissions[this._moduleDetails.namespace]) === -1
+                )
+            ) {
                 resolve(false);
                 return;
             }
