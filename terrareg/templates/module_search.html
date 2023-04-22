@@ -189,12 +189,27 @@
         }
     }
 
+    function loadSearchUserPreferences() {
+        let userPreferences = getUserPreferences();
+        $('#search-terraform-version').val(userPreferences['terraform-compatibility-version']);
+    }
+
+    function updateTerraformCompatibility() {
+        // Store new terraform compatibility in user preferences
+        userPreferencesUpdateTerraformCompatibilityVersion($('#search-terraform-version').val());
+
+        // Perform search, using current offset
+        performSearch();
+    }
+
     navbar_search_modules = performSearch;
 
     $(document).ready(function () {
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
         const searchQuery = urlParams.get('q');
+
+        loadSearchUserPreferences();
 
         if (searchQuery) {
             $('#navBarSearchInput').val(searchQuery);
@@ -269,7 +284,7 @@
                 </p>
             </span>
             <span class="panel-block">
-                <button id="search-options-update-button" class="button" onclick="performSearch();">Update</button>
+                <button id="search-options-update-button" class="button" onclick="updateTerraformCompatibility();">Update</button>
             </span>
         </nav>
     </div>
