@@ -1,5 +1,7 @@
 
+from unittest import mock
 from terrareg.module_search import ModuleSearch, ModuleSearchResults
+import terrareg.version_constraint
 from terrareg.filters import NamespaceTrustFilter
 from test.unit.terrareg import (
     setup_test_data, TerraregUnitTest, mock_models
@@ -235,3 +237,44 @@ class TestApiModuleSearch(TerraregUnitTest):
                 mock_module_provider.get_latest_version().get_api_outline(),
             ]
         }
+
+    @setup_test_data()
+    def test_with_terrraform_version_constraint(self, client, mocked_search_module_providers, mock_models):
+        """Test search with terraform constraint parameter"""
+
+        namespace = terrareg.models.Namespace(name='testnamespace')
+        module = terrareg.models.Module(namespace=namespace, name='mock-module')
+        mock_module_provider = terrareg.models.ModuleProvider(module=module, name='testprovider')
+        mock_module_provider.MOCK_LATEST_VERSION_NUMBER = '1.2.3'
+        mock_namespace_2 = terrareg.models.Namespace(name='secondtestnamespace')
+        mock_module_2 = terrareg.models.Module(namespace=mock_namespace_2, name='mockmodule2')
+        mock_module_provider_2 = terrareg.models.ModuleProvider(module=mock_module_2, name='secondprovider')
+        mock_module_provider_2.MOCK_LATEST_VERSION_NUMBER = '3.0.0'
+
+        def return_results(*args, **kwargs):
+            return ModuleSearchResults(
+                offset=0,
+                limit=2,
+                count=2,
+                module_providers=[mock_module_provider_2, mock_module_provider]
+            )
+        mocked_search_module_providers.side_effect = return_results
+
+        # Mock is_compatible to return one of the preset return values
+        def mock_is_compatible(constraint, target_version):
+            return mock_is_compatible.return_values.pop(0)
+
+        mock_is_compatible.return_values = [
+            terrareg.version_constraint.VersionCompatibilityType.COMPATIBLE,
+            terrareg.version_constraint.VersionCompatibilityType.IMPLICIT_COMPATIBLE,
+        ]
+
+        with mock.patch('terrareg.version_constraint.VersionConstraint.is_compatible', mock_is_compatible):
+            res = client.get('/v1/modules/search?q=test&target_terraform_version=3.5.1')
+
+        assert res.status_code == 200
+        result_compatibility_tags = [module['version_compatibility'] for module in res.json['modules']]
+        assert result_compatibility_tags == [
+            "compatible",
+            "implicit_compatible"
+        ]
