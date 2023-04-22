@@ -211,10 +211,8 @@ credentials "{domain_name}" {{
             )
         except subprocess.CalledProcessError as exc:
             print("Failed to generate Terraform graph data:", str(exc))
-            raise UnableToProcessTerraformError(
-                "Failed to generate Terraform graph data" +
-                (f": {str(exc)}: {exc.output.decode('ascii')}" if Config().DEBUG else "")
-            )
+            print(exc.output.decode('utf-8'))
+            return None
 
         terraform_graph_data = terraform_graph_data.decode("utf-8")
 
