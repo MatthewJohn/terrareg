@@ -2624,4 +2624,4 @@ module "root" {
         # Check text for compatibility
         assert self.selenium_instance.find_element(By.ID, "supported-terraform-compatible").text == f"Terraform {terraform_version} compatibility:\n{expected_compatibility_result}"
         # Check color of label
-        assert self.selenium_instance.find_element(By.ID, "supported-terraform-compatible-tag").get_attribute("class") == f"tag is-light is-{expected_color}"
+        assert self.selenium_instance.find_element(By.ID, "supported-terraform-compatible-tag").get_attribute("class") == f"tag is-medium is-light is-{expected_color}"
