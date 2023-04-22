@@ -351,6 +351,39 @@ class OutputsTab extends ModuleDetailsTab {
     }
 }
 
+class ModulesTab extends ModuleDetailsTab {
+    get name() {
+        return 'modules';
+    }
+    async render() {
+        this._renderPromise = new Promise(async (resolve) => {
+            let modulesTab = $("#module-tab-modules");
+            let modulesTabTbody = modulesTab.find("tbody");
+            this._moduleDetails.modules.forEach((submodule) => {
+                let moduleRow = $("<tr></tr>");
+
+                let nameTd = $("<td></td>");
+                nameTd.text(submodule.name);
+                moduleRow.append(nameTd);
+
+                let sourceTd = $("<td></td>");
+                sourceTd.text(submodule.source);
+                moduleRow.append(sourceTd);
+
+                let versionTd = $("<td></td>");
+                versionTd.text(submodule.version);
+                moduleRow.append(versionTd);
+
+                modulesTabTbody.append(moduleRow);
+            });
+
+            // Show tab link
+            $('#module-tab-link-modules').removeClass('default-hidden');
+            resolve(true);
+        });
+    }
+}
+
 class ProvidersTab extends ModuleDetailsTab {
     get name() {
         return 'providers';
@@ -2246,6 +2279,7 @@ async function setupRootModulePage(data) {
 
         tabFactory.registerTab(new OutputsTab(moduleDetails.root));
         tabFactory.registerTab(new ProvidersTab(moduleDetails.root));
+        tabFactory.registerTab(new ModulesTab(moduleDetails.root));
         tabFactory.registerTab(new ResourcesTab(moduleDetails.root, moduleDetails.graph_url));
         tabFactory.registerTab(new SecurityIssuesTab(moduleDetails));
         tabFactory.registerTab(new AnalyticsTab(moduleDetails));

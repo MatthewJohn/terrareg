@@ -2332,6 +2332,10 @@ module "{self.module_version.module_provider.module.name}" {{
         # be empty, but do have an undocumented 'provider_dependencies'
         return []
 
+    def get_terraform_modules(self):
+        """Obtain module calls."""
+        return self.get_module_specs().get('modules', [])
+
     def get_terraform_provider_dependencies(self):
         """Obtain module dependencies."""
         providers = []
@@ -2933,6 +2937,10 @@ class ModuleVersion(TerraformSpecsObject):
             for file in tab_config[1]:
                 if file in tab_files:
                     tab_file_mapping[tab_config[0]] = file
+
+        # Update the root API specs to include "modules", as this is not part of the official
+        # API spec
+        api_details["root"]["modules"] = self.get_terraform_modules()
 
         source_browse_url = self.get_source_browse_url()
         tfsec_failures = self.get_tfsec_failures()
