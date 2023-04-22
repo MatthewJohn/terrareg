@@ -2061,11 +2061,10 @@ EOF
             options = select.options
             return [option.text for option in options]
 
-
-        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
-
         # Clear local storage
         self.delete_cookies_and_local_storage()
+
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
     
         # Wait for version select
         assert get_select_names('version-select') == ['1.5.0 (latest)', '1.2.0']
