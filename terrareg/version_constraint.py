@@ -1,10 +1,11 @@
 
+from enum import Enum
 import re
 
 import semantic_version
 
 
-class VersionCompatibilityType:
+class VersionCompatibilityType(Enum):
     """Version compatibility status types"""
 
     # There is no contraint on the module version,

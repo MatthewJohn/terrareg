@@ -2903,7 +2903,7 @@ class ModuleVersion(TerraformSpecsObject):
             api_outline['version_compatibility'] = terrareg.version_constraint.VersionConstraint.is_compatible(
                 constraint=self.get_terraform_version_constraints(),
                 target_version=target_terraform_version
-            )
+            ).value
         return api_outline
 
     def get_total_downloads(self):
