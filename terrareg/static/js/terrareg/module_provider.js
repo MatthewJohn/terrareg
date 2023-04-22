@@ -77,6 +77,46 @@ async function addProviderLogoTos(provider) {
     }
 }
 
+class TerraformCompatibilityResult {
+    constructor(text, color, icon) {
+        this.text = text;
+        this.color = color;
+        this.icon = icon;
+    }
+}
+
+function getTerraformCompatibilityResultObject(compatibilityResult) {
+    if (compatibilityResult == 'compatible') {
+        return new TerraformCompatibilityResult(
+            'Compatible',
+            'success',
+            'check-square'
+        );
+
+    } else if (compatibilityResult == 'incompatible') {
+        return new TerraformCompatibilityResult(
+            'Incompatible',
+            'danger',
+            'ban'
+        );
+
+    } else if (compatibilityResult == "no_constraint") {
+        return new TerraformCompatibilityResult(
+            'No version constraint defined',
+            'warning',
+            'exclamation-triangle'
+        );
+
+    } else if (compatibilityResult == "implicit_compatible") {
+        return new TerraformCompatibilityResult(
+            'Implicitly compatible',
+            'primary',
+            'check-square'
+        );
+    }
+    return undefined;
+}
+
 async function createSearchResultCard(parent_id, module) {
 
     let provider_logos = await getProviderLogos();
@@ -108,38 +148,15 @@ async function createSearchResultCard(parent_id, module) {
     let version_compatibility_content = '';
 
     if (module.version_compatibility) {
-        let version_compatibility_text = '';
-        let version_compatibility_color = '';
-        let version_compatibility_icon = '';
-        if (module.version_compatibility == 'compatible') {
-            version_compatibility_text = 'Compatible';
-            version_compatibility_color = 'success';
-            version_compatibility_icon = 'check-square';
-
-        } else if (module.version_compatibility == 'incompatible') {
-            version_compatibility_text = 'Incompatible';
-            version_compatibility_color = 'danger';
-            version_compatibility_icon = 'ban';
-
-        } else if (module.version_compatibility == "no_constraint") {
-            version_compatibility_text = 'No version constraint defined';
-            version_compatibility_color = 'warning';
-            version_compatibility_icon = 'exclamation-triangle';
-
-        } else if (module.version_compatibility == "implicit_compatible") {
-            version_compatibility_text = 'Implicitly compatible';
-            version_compatibility_color = 'primary';
-            version_compatibility_icon = 'check-square';
-
-        }
-        if (version_compatibility_text) {
+        let compatibility_result = getTerraformCompatibilityResultObject(module.version_compatibility);
+        if (compatibility_result) {
             version_compatibility_content = `
                 <br />
                 <p class="card-footer-item card-terraform-version-compatibility">
-                    <span class="icon has-text-${version_compatibility_color}">
-                        <i class="fas fa-${version_compatibility_icon}"></i>
+                    <span class="icon has-text-${compatibility_result.color}">
+                        <i class="fas fa-${compatibility_result.icon}"></i>
                     </span>
-                    <span>${version_compatibility_text}</span>
+                    <span>${compatibility_result.text}</span>
                 </p>`;
         }
     }
