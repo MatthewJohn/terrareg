@@ -255,6 +255,9 @@ class TestModuleSearch(SeleniumTest):
     ])
     def test_terraform_version_compatibility(self, input_terraform_version, expected_compatibility_text):
         """Test terraform compatiblity input and display"""
+        # Delete cookies/local storage to remove pre-set terraform version
+        self.selenium_instance.delete_all_cookies()
+
         with self.update_mock(self._config_trusted_namespaces_mock, 'new', ['version-constraint-test']):
             # Search for modules
             self.selenium_instance.get(self.get_url('/modules/search?q=version-constraint-test'))
@@ -284,3 +287,28 @@ class TestModuleSearch(SeleniumTest):
                 for result_card in result_cards
             ]
             assert actual_result_card_compatibility_text == expected_compatibility_text
+
+    def test_terraform_version_compatibility_retains_state(self):
+        """Test terraform compatiblity input is retained between page loads"""
+        self.selenium_instance.delete_all_cookies()
+
+        # Search for modules
+        self.selenium_instance.get(self.get_url('/modules/search?q='))
+
+        # Inspect and enter Terraform version into target Terraform input and update
+        terraform_input = self.selenium_instance.find_element(By.ID, 'search-terraform-version')
+        assert terraform_input.get_attribute("value") == ""
+        terraform_input.send_keys("5.2.6-unittest")
+
+        # Click update
+        self.selenium_instance.find_element(By.ID, 'search-options-update-button').click()
+
+        # Reload page
+        self.selenium_instance.get(self.get_url('/modules/search?q='))
+        # Check terraform version is still present
+        assert self.selenium_instance.find_element(By.ID, 'search-terraform-version').get_attribute("value") == "5.2.6-unittest"
+
+        # Open user preferences and check terraform version
+        self.selenium_instance.find_element(By.ID, 'navbar-user-preferences-link').click()
+        # Check user input for terraform versino constraint
+        assert self.selenium_instance.find_element(By.ID, 'user-preferences-terraform-compatibility-version').get_attribute("value") == "5.2.6-unittest"
