@@ -258,13 +258,15 @@
 
         <nav id="terraform-version-filters" class="panel">
             <p class="panel-heading">
-              Additional
+              Terraform Compatibility
             </p>
             <span class="panel-block">
-                <span class="label" style="white-space: nowrap;">Terraform Version:</span>
-                <span class="control">
-                    <input style="margin-left: 10px; width: 80px" id="search-terraform-version" class="input" type="text" size=8 />
-                </span>
+                <p class="control has-icons-left">
+                    <input class="input" type="text" id="search-terraform-version" placeholder="Terrafrom Version">
+                    <span class="icon is-left">
+                        <i class="fas fa-filter" aria-hidden="true"></i>
+                    </span>
+                </p>
             </span>
             <span class="panel-block">
                 <button id="search-options-update-button" class="button" onclick="performSearch();">Update</button>
