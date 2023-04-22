@@ -2912,10 +2912,10 @@ class ModuleVersion(TerraformSpecsObject):
             module_version=self
         )
 
-    def get_api_details(self):
+    def get_api_details(self, target_terraform_version=None):
         """Return dict of version details for API response."""#
         api_details = self._module_provider.get_api_details()
-        api_details.update(self.get_api_outline())
+        api_details.update(self.get_api_outline(target_terraform_version=target_terraform_version))
         api_details.update({
             "root": self.get_api_module_specs(),
             "submodules": [sm.get_api_module_specs() for sm in self.get_submodules()],
@@ -2923,15 +2923,17 @@ class ModuleVersion(TerraformSpecsObject):
         })
         return api_details
 
-    def get_terrareg_api_details(self, request_domain):
+    def get_terrareg_api_details(self, request_domain, target_terraform_version=None):
         """Return dict of version details with additional attributes used by terrareg UI."""
+        # Obtain module provider terrareg api details
         api_details = self._module_provider.get_terrareg_api_details()
 
         # Capture versions from module provider API output, as this limits
         # some versions, which are normally displayed in the Terraform APIs
         versions = api_details['versions']
 
-        api_details.update(self.get_api_details())
+        # Update with API details from the module version
+        api_details.update(self.get_api_details(target_terraform_version=target_terraform_version))
 
         tab_files = [module_version_file.path for module_version_file in self.module_version_files]
         additional_module_tabs = json.loads(terrareg.config.Config().ADDITIONAL_MODULE_TABS)
