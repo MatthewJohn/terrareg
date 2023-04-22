@@ -259,13 +259,12 @@ class TestGitModuleExtractor(TerraregUnitTest):
         module_extractor = GitModuleExtractor(module_version=None)
 
         def raise_error(*args, **kwargs):
-            raise subprocess.CalledProcessError(cmd="the command", returncode=2)
+            raise subprocess.CalledProcessError(cmd="the command", returncode=2, output=b"")
 
         with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output',
                                  unittest.mock.MagicMock(side_effect=raise_error)) as mock_check_output:
 
-            with pytest.raises(terrareg.errors.UnableToProcessTerraformError) as exc:
-                module_extractor._get_graph_data(module_path='/tmp/mock-patch/to/module')
+            assert module_extractor._get_graph_data(module_path='/tmp/mock-patch/to/module') is None
 
             mock_check_output.assert_called_once_with(
                 [os.getcwd() + '/bin/terraform', 'graph'],
