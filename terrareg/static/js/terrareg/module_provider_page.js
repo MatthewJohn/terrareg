@@ -1814,9 +1814,10 @@ async function populateTerraformUsageExample(moduleDetails, submoduleDetails) {
         let versionCompatibilityResult = getTerraformCompatibilityResultObject(submoduleDetails.version_compatibility);
         if (versionCompatibilityResult) {
             // If a valid result object was generated, update text in div and display
-            $('#supported-terraform-compatible').text(
-                `Compatibility with Terraform version ${userPreferences["terraform-compatibility-version"]}: ${versionCompatibilityResult.text}`
-            );
+            $('#supported-terraform-compatible-tag').text(`
+                Terraform ${userPreferences["terraform-compatibility-version"]} compatibility: ${versionCompatibilityResult.text}
+            `);
+            $('#supported-terraform-compatible-tag').addClass(`is-${versionCompatibilityResult.color}`);
             $('#supported-terraform-compatible').removeClass('default-hidden');
         }
     }
