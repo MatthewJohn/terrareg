@@ -2327,10 +2327,23 @@ module "{self.module_version.module_provider.module.name}" {{
 
     def get_terraform_dependencies(self):
         """Obtain module dependencies."""
-        #return self.get_module_specs()['requirements']
-        # @TODO Verify what this should be - Terraform example is empty and real-world examples appears to
-        # be empty, but do have an undocumented 'provider_dependencies'
-        return []
+        depedencies = []
+        for submodule in self.get_module_specs().get('modules', []):
+            # Ignore any modules that reference local directories
+            if submodule.get('source').startswith('./') or submodule.get('source').startswith('../'):
+                continue
+
+            depedencies.append({
+                "name": submodule.get("name"),
+                "source": submodule.get("source"),
+                "version": submodule.get("version")
+            })
+
+        return depedencies
+
+    def get_terraform_modules(self):
+        """Obtain module calls."""
+        return self.get_module_specs().get('modules', [])
 
     def get_terraform_provider_dependencies(self):
         """Obtain module dependencies."""
@@ -2352,7 +2365,7 @@ module "{self.module_version.module_provider.module.name}" {{
                 'name': sanitise_html_content(name),
                 'namespace': sanitise_html_content(namespace),
                 'source': '',  # This data is not available
-                'version': sanitise_html_content(provider['version']) if provider['version'] else ''
+                'version': provider['version']
             })
         return providers
 
@@ -2934,6 +2947,10 @@ class ModuleVersion(TerraformSpecsObject):
                 if file in tab_files:
                     tab_file_mapping[tab_config[0]] = file
 
+        # Update the root API specs to include "modules", as this is not part of the official
+        # API spec
+        api_details["root"]["modules"] = self.get_terraform_modules()
+
         source_browse_url = self.get_source_browse_url()
         tfsec_failures = self.get_tfsec_failures()
         api_details.update({
@@ -3270,6 +3287,7 @@ class BaseSubmodule(TerraformSpecsObject):
         tfsec_failures = self.get_tfsec_failures()
         terraform_version_constraint = self.get_terraform_version_constraints()
         api_details.update({
+            "modules": self.get_terraform_modules(),
             "display_source_url": source_browse_url if source_browse_url else self._module_version.get_source_base_url(),
             "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
             "security_results": tfsec_failures,

@@ -212,7 +212,27 @@ test_data_full = {
                                     'required': False
                                 }
                             ],
-                            'modules': [],
+                            'modules': [
+                                # Module from local path
+                                {
+                                    "name": "local-path-module",
+                                    "source": "./modules/local-module",
+                                    "version": None,
+                                    "description": "A local module"
+                                },
+                                {
+                                    "name": "hashicorp-registry-module",
+                                    "source": "matthewjohn/test-module/null",
+                                    "version": "1.5.0",
+                                    "description": "A module from hashicorp"
+                                },
+                                {
+                                    "name": "local-registry-module",
+                                    "source": "my-registry.example.com/matthewjohn/test-module/null",
+                                    "version": "2.1.3",
+                                    "description": "A module from local registry"
+                                }
+                            ],
                             'outputs': [
                                 {
                                     'name': 'generated_name',

@@ -30,7 +30,7 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'root': {
                 'path': '', 'readme': 'Mock module README file',
                 'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],
-                'provider_dependencies': [], 'resources': []
+                'provider_dependencies': [], 'resources': [], 'modules': []
             },
             'submodules': [], 'providers': ['testprovider'], 'versions': ['1.0.0'],
             'display_source_url': None,
@@ -155,7 +155,7 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
                 'root': {
                     'path': '', 'readme': 'Mock module README file',
                     'empty': False, 'inputs': [], 'outputs': [], 'dependencies': [],
-                    'provider_dependencies': [], 'resources': []
+                    'provider_dependencies': [], 'resources': [], 'modules': []
                 },
                 'submodules': [], 'providers': ['testprovider'], 'versions': ['1.0.0'],
                 'display_source_url': None,
