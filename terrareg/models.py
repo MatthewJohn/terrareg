@@ -2356,7 +2356,7 @@ module "{self.module_version.module_provider.module.name}" {{
                 'name': sanitise_html_content(name),
                 'namespace': sanitise_html_content(namespace),
                 'source': '',  # This data is not available
-                'version': sanitise_html_content(provider['version']) if provider['version'] else ''
+                'version': provider['version']
             })
         return providers
 
