@@ -2333,6 +2333,7 @@ async function setupSubmodulePage(data) {
     tabFactory.registerTab(new InputsTab(submoduleDetails));
     tabFactory.registerTab(new OutputsTab(submoduleDetails));
     tabFactory.registerTab(new ProvidersTab(submoduleDetails));
+    tabFactory.registerTab(new ModulesTab(submoduleDetails));
     tabFactory.registerTab(new ResourcesTab(submoduleDetails, submoduleDetails.graph_url));
     tabFactory.registerTab(new SecurityIssuesTab(submoduleDetails));
     await tabFactory.renderTabs();
@@ -2369,6 +2370,7 @@ async function setupExamplePage(data) {
     tabFactory.registerTab(new InputsTab(submoduleDetails));
     tabFactory.registerTab(new OutputsTab(submoduleDetails));
     tabFactory.registerTab(new ProvidersTab(submoduleDetails));
+    tabFactory.registerTab(new ModulesTab(submoduleDetails));
     tabFactory.registerTab(new ResourcesTab(submoduleDetails, submoduleDetails.graph_url));
     tabFactory.registerTab(new SecurityIssuesTab(submoduleDetails));
     await tabFactory.renderTabs();
