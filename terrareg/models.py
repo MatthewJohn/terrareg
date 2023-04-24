@@ -3278,6 +3278,7 @@ class BaseSubmodule(TerraformSpecsObject):
         tfsec_failures = self.get_tfsec_failures()
         terraform_version_constraint = self.get_terraform_version_constraints()
         api_details.update({
+            "modules": self.get_terraform_modules(),
             "display_source_url": source_browse_url if source_browse_url else self._module_version.get_source_base_url(),
             "security_failures": len(tfsec_failures) if tfsec_failures is not None else 0,
             "security_results": tfsec_failures,
