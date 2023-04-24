@@ -11,11 +11,15 @@ class TabFactory {
         this._tabsLookup[tab.name] = tab;
         this._tabs.push(tab);
     }
-    renderTabs() {
-        this._tabs.forEach((tab) => {
+    async renderTabs() {
+        for (const tab of this._tabs) {
             tab.render();
-        });
+        }
+        for (const tab of this._tabs) {
+            await tab._renderPromise;
+        }
     }
+
     async setDefaultTab() {
 
         // Check if tab is defined in page URL anchor and if it's
@@ -31,6 +35,23 @@ class TabFactory {
                 // Load tab and return
                 selectModuleTab(tab.name, false);
                 return;
+            }
+        }
+
+        if (windowHashValue.indexOf('terrareg-anchor-') === 0) {
+            // Check for any elements that have a child element that have ID/name of the anchor
+            for (const tab of this._tabs) {
+                let elements = $.find(`#module-tab-${tab.name} #${windowHashValue}, #module-tab-${tab.name} [name="${windowHashValue}"]`);
+                if (elements.length) {
+                    let element = elements[0];
+
+                    // Select tab
+                    selectModuleTab(tab.name, false);
+
+                    // Scroll to element
+                    element.scrollIntoView();
+                    return;
+                }
             }
         }
 
@@ -100,6 +121,20 @@ class ReadmeTab extends BaseTab {
                 readmeContentDiv.find("h3").addClass("subtitle").addClass("is-5");
                 readmeContentDiv.find("h4").addClass("subtitle").addClass("is-6");
 
+                for (let codeDiv of readmeContentDiv.find("code")) {
+                    // If code is within pre block, perform syntax highlighting.
+                    if (codeDiv.parentElement.nodeName.toLowerCase() == "pre") {
+                        window.Prism.highlightElement(codeDiv);
+                    } else {
+                        // Otherwise, removall all "language" classes
+                        for (let className of codeDiv.className.split(/\s+/)) {
+                            if (className.indexOf('language-') !== -1) {
+                                $(codeDiv).removeClass(className)
+                            }
+                        }
+                    }
+                }
+
                 // Show README tab button
                 $("#module-tab-link-readme").removeClass('default-hidden');
 
@@ -168,6 +203,14 @@ class AnalyticsTab extends ModuleDetailsTab {
     }
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
+
+            // Check if analytics are disabled
+            let config = await getConfig();
+            if (config.DISABLE_ANALYTICS) {
+                resolve(false);
+                return;
+            }
+
             $.get(`/v1/terrareg/analytics/${this._moduleDetails.module_provider_id}/token_versions`, (data, status) => {
                 Object.keys(data).forEach((token) => {
                     $("#analyticsVersionByTokenTable").append(`
@@ -354,7 +397,9 @@ class SecurityIssuesTab extends ModuleDetailsTab {
             if (this._moduleDetails.security_results) {
                 let tfsecTab = $("#module-tab-security-issues");
                 let tfsecTabTbody = tfsecTab.find("tbody");
-                this._moduleDetails.security_results.forEach((tfsec) => {
+                this._moduleDetails.security_results.sort((a, b) => {
+                    return a.location.filename > b.location.filename
+                }).forEach((tfsec) => {
                     let tfsecRow = $("<tr></tr>");
 
                     let blankTd = $('<td class="is-vcentered"></td>');
@@ -605,9 +650,20 @@ class SettingsTab extends ModuleDetailsTab {
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
 
-            let loggedIn = await isLoggedIn();
-            // Return immediately if user is not logged in
-            if (!loggedIn) {
+            let userPermissions = await isLoggedIn();
+
+            // Return immediately if user does not have permission
+            // to modify settings
+            if (
+                // If user is not logged in
+                !userPermissions ||
+                // Or user is not super user and does not have
+                // full or write access to the namespace
+                (
+                    (!userPermissions.site_admin) &&
+                    ["FULL", "MODIFY"].indexOf(userPermissions.namespace_permissions[this._moduleDetails.namespace]) === -1
+                )
+            ) {
                 resolve(false);
                 return;
             }
@@ -1147,6 +1203,10 @@ class UsageBuilderAnalyticstokenRow extends BaseUsageBuilderRow {
         this._inputDiv = undefined;
     }
     getInputRow() {
+        if (this.terraregConfig.DISABLE_ANALYTICS) {
+            return null;
+        }
+
         // Setup analytics input row
         let analyticsTokenInputRow = $('<tr></tr>');
 
@@ -1176,10 +1236,13 @@ class UsageBuilderAnalyticstokenRow extends BaseUsageBuilderRow {
     }
 
     getValue() {
-        if (this._inputDiv) {
-            return this._inputDiv.val();
+        if (this.terraregConfig.DISABLE_ANALYTICS) {
+            return "";
         }
-        return "";
+        if (this._inputDiv) {
+            return `${this._inputDiv.val()}__`;
+        }
+        return "__";
     }
 }
 
@@ -1211,7 +1274,10 @@ class UsageBuilderTab extends ModuleDetailsTab {
             let usageBuilderRowFactory = new UsageBuilderRowFactory(config);
 
             this._analyticsInput = usageBuilderRowFactory.getAnalyticsRow();
-            usageBuilderTable.append(this._analyticsInput.getInputRow());
+            let analyticsRow = this._analyticsInput.getInputRow();
+            if (analyticsRow !== null) {
+                usageBuilderTable.append(this._analyticsInput.getInputRow());
+            }
 
             // Build input table
             inputVariables.forEach((inputVariable) => {
@@ -1306,7 +1372,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
             additionalContent += content.additionalContent;
         }
         $('#usageBuilderOutput').html(`${additionalContent}module "${moduleDetails.name}" {
-  source  = "${window.location.hostname}/${analytics_token}__${moduleDetails.module_provider_id}"
+  source  = "${window.location.hostname}/${analytics_token}${moduleDetails.module_provider_id}"
   version = "${moduleDetails.terraform_example_version_string}"
 ${outputTf}
 }`);
@@ -1729,6 +1795,12 @@ async function populateTerraformUsageExample(moduleDetails, submoduleDetails) {
         return;
     }
 
+    // If analytics is disabled, hide the instruction to replace
+    // the analytics token
+    if (config.DISABLE_ANALYTICS) {
+        $('#usage-example-analytics-token-instruction').addClass('default-hidden');
+    }
+
     // Populate supported Terraform versions
     if (submoduleDetails.terraform_version_constraint) {
         $('#supported-terraform-versions-data').text(submoduleDetails.terraform_version_constraint);
@@ -1741,6 +1813,9 @@ async function populateTerraformUsageExample(moduleDetails, submoduleDetails) {
 
     // Add example Terraform call to source section
     $("#usage-example-terraform").text(submoduleDetails.usage_example);
+
+    // Perform syntax highlighting
+    window.Prism.highlightElement(document.getElementById("usage-example-terraform"));
 
     // Show container
     $('#usage-example-container').removeClass('default-hidden');
@@ -1820,6 +1895,7 @@ function selectExampleFile(eventTarget) {
         url: `/v1/terrareg/modules/${moduleId}/examples/file/${filePath}`,
         success: function (data) {
             $("#example-file-content").html(data);
+            window.Prism.highlightElement(document.getElementById("example-file-content"));
         },
     });
 }
@@ -2045,14 +2121,65 @@ function updateModuleProviderSettings(moduleDetails) {
     return false;
 }
 
+function capitaliseWord(string) {
+    return string[0].toUpperCase() + string.slice(1).toLowerCase();
+  }
+
 function showSecurityWarnings(moduleDetails) {
-    let securityIssuesContainer = $('#security-issues')
-    if (moduleDetails.security_failures) {
-        securityIssuesContainer.removeClass('default-hidden');
-        $('#security-issues-text').text(`${moduleDetails.security_failures} Security issues`);
-    } else {
-        securityIssuesContainer.addClass('default-hidden');
+    if (! moduleDetails.security_results) {
+        return;
     }
+    let criticalCount = 0;
+    let highCount = 0;
+    let lowCount = 0;
+
+    // Check severity of each issue and
+    // add to severity count
+    for (let securityIssue of moduleDetails.security_results) {
+        if (securityIssue.severity == 'LOW' || securityIssue.severity == 'MEDIUM') {
+            lowCount += 1;
+        } else if (securityIssue.severity == 'HIGH') {
+            highCount += 1;
+        } else if (securityIssue.severity == 'CRITICAL') {
+            criticalCount += 1;
+        }
+    }
+    let outerTagClass = '';
+    let showSecurityLabel = false;
+
+    // Add counts to each severity tag and show tag.
+    // Check each severity in reverse order,
+    // to set priority of the outer tag class.
+    if (lowCount) {
+        showSecurityLabel = true;
+        outerTagClass = 'is-info';
+        let label = $('#result-card-label-security-issues-low-count');
+        label.text(lowCount + ' Medium/Low');
+        label.removeClass('default-hidden');
+    }
+    if (highCount) {
+        showSecurityLabel = true;
+        outerTagClass = 'is-warning';
+        let label = $('#result-card-label-security-issues-high-count');
+        label.text(highCount + ' High');
+        label.removeClass('default-hidden');
+    }
+    if (criticalCount) {
+        showSecurityLabel = true;
+        outerTagClass = 'is-danger';
+        let label = $('#result-card-label-security-issues-critical-count');
+        label.text(criticalCount + ' Critical');
+        label.removeClass('default-hidden');
+    }
+    if (!showSecurityLabel) {
+        // If no security issues found, return early,
+        // not showing security label
+        showSecurityLabel = false;
+        return;
+    }
+
+    $('#security-issues').removeClass('default-hidden');
+    $('#result-card-label-security-issues-icon').addClass(outerTagClass);
 }
 
 function showCostAnalysis(moduleDetails) {
@@ -2167,7 +2294,7 @@ async function setupRootModulePage(data) {
         populateCustomLinks(moduleDetails);
     }
 
-    tabFactory.renderTabs();
+    await tabFactory.renderTabs();
     tabFactory.setDefaultTab();
 }
 
@@ -2205,7 +2332,7 @@ async function setupSubmodulePage(data) {
     tabFactory.registerTab(new ProvidersTab(submoduleDetails));
     tabFactory.registerTab(new ResourcesTab(submoduleDetails, submoduleDetails.graph_url));
     tabFactory.registerTab(new SecurityIssuesTab(submoduleDetails));
-    tabFactory.renderTabs();
+    await tabFactory.renderTabs();
     tabFactory.setDefaultTab();
 }
 
@@ -2241,7 +2368,7 @@ async function setupExamplePage(data) {
     tabFactory.registerTab(new ProvidersTab(submoduleDetails));
     tabFactory.registerTab(new ResourcesTab(submoduleDetails, submoduleDetails.graph_url));
     tabFactory.registerTab(new SecurityIssuesTab(submoduleDetails));
-    tabFactory.renderTabs();
+    await tabFactory.renderTabs();
     tabFactory.setDefaultTab();
 }
 

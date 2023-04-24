@@ -47,7 +47,7 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
 
         # otherwise, if module download should be rejected due to
         # non-existent analytics token
-        elif not analytics_token and not terrareg.config.Config().ALLOW_UNIDENTIFIED_DOWNLOADS:
+        elif not analytics_token and not (terrareg.config.Config().ALLOW_UNIDENTIFIED_DOWNLOADS or terrareg.config.Config().DISABLE_ANALYTICS):
             return make_response(
                 ("\nAn {analytics_token_phrase} must be provided.\n"
                  "Please update module source to include {analytics_token_phrase}.\n"

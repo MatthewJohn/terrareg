@@ -17,6 +17,7 @@
 * [Create modules in the registry](#create-modules-in-the-registry)
 * [Module Usage Analytics](#module-usage-analytics)
 * [Customising Terrareg UI](#customising-terrareg-ui)
+* [API endpoints](./API.md)
 
 
 # Deployment
@@ -143,6 +144,8 @@ Authentication is required to perform tasks such as: creating namespaces, creati
 
 By default, indexing and publishing modules does *not* require authentication. To disable unauthorised indexing/publishing of modules, set up dedicated API keys for these functions, see [UPLOAD_API_KEYS](./CONFIG.MD#upload_api_keys) and [PUBLISH_API_KEYS](./CONFIG.MD#Ppublish_api_keys).
 
+API keys can be specified in requests to API endpoing with an 'X-Terrareg-ApiKey' header.
+
 Enabling [access controls](#access-controls) will disable unauthenticated indexing/publishing of modules, requiring authentication via SSO or Admin password or, once set, the upload/publish API keys.
 
 ### Auto creation of namespaces/modules
@@ -152,6 +155,17 @@ By default, the module upload endpoint will create a namespace/module if it does
 For a secure installation, it is recommended to disable this, forcing all namespaces/modules to be created by authenticated users.
 
 The disable this functionality, set [AUTO_CREATE_NAMESPACE](./CONFIG.md#auto_create_namespace) and [AUTO_CREATE_MODULE_PROVIDER](./CONFIG.md#auto_create_module_provider)
+
+## API authentication
+
+Each protected API endpoint (generally all API endpoints that are non read-only actions) require API key authentication, with the exception of module upload/publish endpoints (see [Security module creationg/indexing](#securing-module-creationindexing)).
+
+To authenticate to an API endpoint, you must either:
+ * Pass the approrpriate API key for the endpoint (specifically for module upload/publishing), in a `X-Terrareg-ApiKey` header;
+ * Pass the admin authentication token to the endpoint in a `X-Terrareg-ApiKey` header;
+ * Authenticate via the authentication API endpoint and authenticate using session (not a programatic approach).
+
+There will be future work to allow API key authentication for all endpoints in future: https://gitlab.dockstudios.co.uk/pub/terrareg/-/issues/353
 
 ## Access controls
 

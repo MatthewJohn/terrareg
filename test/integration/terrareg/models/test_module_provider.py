@@ -314,3 +314,185 @@ class TestModuleProvider(TerraregIntegrationTest):
             assert module_provider.get_git_provider() != original_git_provider
         else:
             assert module_provider.get_git_provider() == original_git_provider
+
+    @pytest.mark.parametrize('url', [
+        None,
+        '',
+        'https://github.com/example/blah.git',
+        'http://github.com/example/blah.git',
+        'ssh://github.com/example/blah.git',
+        'ssh://github.com:7999/example/blah.git',
+        'ssh://github.com:7999/{namespace}/{provider}-{module}.git',
+    ])
+    def test_update_repo_clone_url_template(self, url):
+        """Ensure update_repo_clone_url_template successfully updates path"""
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+        module_provider.update_attributes(repo_clone_url_template=None)
+
+        module_provider.update_repo_clone_url_template(url)
+
+        # Create new module provider object
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+        assert module_provider._get_db_row()['repo_clone_url_template'] == url
+
+    @pytest.mark.parametrize('url, expected_exception, expected_message', [
+        ('://github.com/example/blah.git',
+         terrareg.errors.RepositoryUrlDoesNotContainValidSchemeError,
+         'URL does not contain a scheme (e.g. ssh://)'),
+        ('ftp://github.com/example/blah.git',
+         terrareg.errors.RepositoryUrlContainsInvalidSchemeError,
+         'URL contains an unknown scheme (e.g. https/ssh/http)'),
+        ('ssh://github.com:example/blah.git',
+         terrareg.errors.RepositoryUrlContainsInvalidPortError,
+         'URL contains a invalid port. Only use a colon to for specifying a port, otherwise a forward slash should be used.'),
+        ('ssh://github.com',
+         terrareg.errors.RepositoryUrlDoesNotContainPathError,
+         'URL does not contain a path'),
+        ('ssh:///example/blah.git',
+         terrareg.errors.RepositoryUrlDoesNotContainHostError,
+         'URL does not contain a host/domain'),
+        ('ssh://{invalidvalue}/example',
+         terrareg.errors.RepositoryUrlContainsInvalidTemplateError,
+         'URL contains invalid template value. Only the following template values are allowed: {namespace}, {module}, {provider}'),
+        ('ssh://{tag}/example',
+         terrareg.errors.RepositoryUrlContainsInvalidTemplateError,
+         'URL contains invalid template value. Only the following template values are allowed: {namespace}, {module}, {provider}'),
+        ('ssh://{path}/example',
+         terrareg.errors.RepositoryUrlContainsInvalidTemplateError,
+         'URL contains invalid template value. Only the following template values are allowed: {namespace}, {module}, {provider}'),
+    ])
+    def test_update_repo_clone_url_template_invalid_url(self, url, expected_exception, expected_message):
+        """Ensure update_repo_clone_url_template with invalid URLs"""
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+        module_provider.update_attributes(repo_clone_url_template='old-value')
+
+        with pytest.raises(expected_exception) as exc:
+            module_provider.update_repo_clone_url_template(url)
+        assert str(exc.value) == expected_message
+
+        # Create new module provider object
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+
+        # Ensure clone URL hasn't been modified
+        assert module_provider._get_db_row()['repo_clone_url_template'] == 'old-value'
+
+    @pytest.mark.parametrize('url', [
+        None,
+        '',
+        'https://github.com/example/blah/{tag}/{path}',
+        'http://github.com/example/blah/{tag}/{path}',
+        'https://github.com:7999/{namespace}/{provider}-{module}/{tag}/{path}',
+    ])
+    def test_update_repo_browse_url_template(self, url):
+        """Ensure update_repo_browse_url_template successfully updates path"""
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+        module_provider.update_attributes(repo_browse_url_template=None)
+
+        module_provider.update_repo_browse_url_template(url)
+
+        # Create new module provider object
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+        assert module_provider._get_db_row()['repo_browse_url_template'] == url
+
+    @pytest.mark.parametrize('url, expected_exception, expected_message', [
+        ('://github.com/example/blah/{tag}/{path}',
+         terrareg.errors.RepositoryUrlDoesNotContainValidSchemeError,
+         'URL does not contain a scheme (e.g. https://)'),
+        ('ftp://github.com/example/blah/{tag}/{path}',
+         terrareg.errors.RepositoryUrlContainsInvalidSchemeError,
+         'URL contains an unknown scheme (e.g. https/http)'),
+        ('https://github.com:example/blah/{tag}/{path}',
+         terrareg.errors.RepositoryUrlContainsInvalidPortError,
+         'URL contains a invalid port. Only use a colon to for specifying a port, otherwise a forward slash should be used.'),
+        ('https://github.com-{tag}-{path}',
+         terrareg.errors.RepositoryUrlDoesNotContainPathError,
+         'URL does not contain a path'),
+        ('https:///example/blah/{tag}/{path}',
+         terrareg.errors.RepositoryUrlDoesNotContainHostError,
+         'URL does not contain a host/domain'),
+        ('https://example.com/example/blah',
+         terrareg.errors.RepositoryUrlParseError,
+         'tag or tag_uri_encoded placeholder not present in URL'),
+        ('https://example.com/example/blah/{tag}',
+         terrareg.errors.RepositoryUrlParseError,
+         'Path placeholder not present in URL'),
+        ('https://example.com/example/blah/{tag_uri_encoded}',
+         terrareg.errors.RepositoryUrlParseError,
+         'Path placeholder not present in URL'),
+        ('https://{invalidvalue}/{tag}/{path}/example',
+         terrareg.errors.RepositoryUrlContainsInvalidTemplateError,
+         'URL contains invalid template value. Only the following template values are allowed: {namespace}, {module}, {provider}, {tag}, {path}'),
+    ])
+    def test_update_repo_browse_url_invalid_url(self, url, expected_exception, expected_message):
+        """Ensure update_repo_browse_url with invalid URLs"""
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+        module_provider.update_attributes(repo_browse_url_template='old-value')
+
+        with pytest.raises(expected_exception) as exc:
+            module_provider.update_repo_browse_url_template(url)
+        assert str(exc.value) == expected_message
+
+        # Create new module provider object
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+
+        # Ensure browse URL hasn't been modified
+        assert module_provider._get_db_row()['repo_browse_url_template'] == 'old-value'
+
+    @pytest.mark.parametrize('url', [
+        None,
+        '',
+        'https://github.com/example/blah',
+        'http://github.com/example/blah',
+        'https://github.com:7999/{namespace}/{provider}-{module}',
+    ])
+    def test_update_repo_base_url_template(self, url):
+        """Ensure update_repo_base_url_template successfully updates path"""
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+        module_provider.update_attributes(repo_base_url_template=None)
+
+        module_provider.update_repo_base_url_template(url)
+
+        # Create new module provider object
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+        assert module_provider._get_db_row()['repo_base_url_template'] == url
+
+    @pytest.mark.parametrize('url, expected_exception, expected_message', [
+        ('://github.com/example/blah',
+         terrareg.errors.RepositoryUrlDoesNotContainValidSchemeError,
+         'URL does not contain a scheme (e.g. https://)'),
+        ('ftp://github.com/example/blah',
+         terrareg.errors.RepositoryUrlContainsInvalidSchemeError,
+         'URL contains an unknown scheme (e.g. https/http)'),
+        ('https://github.com:example/blah',
+         terrareg.errors.RepositoryUrlContainsInvalidPortError,
+         'URL contains a invalid port. Only use a colon to for specifying a port, otherwise a forward slash should be used.'),
+        ('https://github.com',
+         terrareg.errors.RepositoryUrlDoesNotContainPathError,
+         'URL does not contain a path'),
+        ('https:///example/blah',
+         terrareg.errors.RepositoryUrlDoesNotContainHostError,
+         'URL does not contain a host/domain'),
+        ('https://{invalidvalue}/example',
+         terrareg.errors.RepositoryUrlContainsInvalidTemplateError,
+         'URL contains invalid template value. Only the following template values are allowed: {namespace}, {module}, {provider}'),
+        ('https://{path}/example',
+         terrareg.errors.RepositoryUrlContainsInvalidTemplateError,
+         'URL contains invalid template value. Only the following template values are allowed: {namespace}, {module}, {provider}'),
+        ('https://{tag}/example',
+         terrareg.errors.RepositoryUrlContainsInvalidTemplateError,
+         'URL contains invalid template value. Only the following template values are allowed: {namespace}, {module}, {provider}'),
+    ])
+    def test_update_repo_base_url_invalid_url(self, url, expected_exception, expected_message):
+        """Ensure update_repo_base_url with invalid URLs"""
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+        module_provider.update_attributes(repo_base_url_template='old-value')
+
+        with pytest.raises(expected_exception) as exc:
+            module_provider.update_repo_base_url_template(url)
+        assert str(exc.value) == expected_message
+
+        # Create new module provider object
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+
+        # Ensure base URL hasn't been modified
+        assert module_provider._get_db_row()['repo_base_url_template'] == 'old-value'

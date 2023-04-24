@@ -4,7 +4,7 @@ import glob
 import urllib.parse
 
 import bleach
-import markdown
+from terrareg.markdown_link_modifier import markdown
 
 from terrareg.errors import TerraregError
 import terrareg.config
@@ -94,16 +94,50 @@ def check_subdirectory_within_base_dir(base_dir, sub_dir, is_dir=False, is_file=
     return os.path.abspath(real_sub_dir)
 
 
-def sanitise_html_content(text):
+def sanitise_html_content(text, allow_markdown_html=False):
     """Sanitise HTML content to be returned via API to be displayed in UI"""
-    return bleach.clean(text) if text else text
+    kwargs = {}
+    if allow_markdown_html:
+        kwargs['tags'] = frozenset({
+            # Original upstream configuration
+            'a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'em', 'i', 'li', 'ol', 'strong', 'ul',
+            # Custom allowed tags
+            'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'th', 'tr', 'td', 'pre', 'img'
+        })
+        kwargs['attributes'] = {
+            # Original upstream configuration
+            'a': [
+                'href',
+                'title',
+                'name',  # Custom allowed attribute for anchors
+                'id',  # Custom allowed attribute for anchors
+            ],
+            'acronym': ['title'],
+            'abbr': ['title'],
+            # Custom allowed attributes
+            'h1': ['id'], 'h2': ['id'], 'h3': ['id'],
+            'h4': ['id'], 'h5': ['id'], 'h6': ['id'],
+            'img': ['src']
+        }
+    return (
+        bleach.clean(
+            text, **kwargs
+        )
+        if text else
+        text
+    )
 
 
-def convert_markdown_to_html(markdown_html):
+def convert_markdown_to_html(file_name, markdown_html):
     """Convert markdown to HTML"""
-    return markdown.markdown(
+    return markdown(
         markdown_html,
-        extensions=['fenced_code', 'tables', 'mdx_truly_sane_lists']
+        file_name=file_name,
+        extensions=[
+            'fenced_code',
+            'tables',
+            'mdx_truly_sane_lists',
+            'terrareg.markdown_link_modifier']
     )
 
 def get_public_url_details(fallback_domain=None):

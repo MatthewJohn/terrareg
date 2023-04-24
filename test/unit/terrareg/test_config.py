@@ -132,7 +132,8 @@ class TestConfig:
         ('TRUSTED_NAMESPACES'),
         ('UPLOAD_API_KEYS'),
         ('VERIFIED_MODULE_NAMESPACES'),
-        ('IGNORE_ANALYTICS_TOKEN_AUTH_KEYS')
+        ('IGNORE_ANALYTICS_TOKEN_AUTH_KEYS'),
+        ('OPENID_CONNECT_SCOPES')
     ])
     def test_list_configs(self, config_name, test_value, expected_value):
         """Test list configs to ensure they are overriden with environment variables."""
@@ -189,7 +190,8 @@ class TestConfig:
         'ENABLE_ACCESS_CONTROLS',
         'SAML2_DEBUG',
         'OPENID_CONNECT_DEBUG',
-        "MANAGE_TERRAFORM_RC_FILE"
+        "MANAGE_TERRAFORM_RC_FILE",
+        'DISABLE_ANALYTICS'
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
         """Test boolean configs to ensure they are overriden with environment variables."""

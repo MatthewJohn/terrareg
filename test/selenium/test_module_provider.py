@@ -17,9 +17,14 @@ from PIL import Image
 import imagehash
 
 from terrareg.database import Database
+from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from test import mock_create_audit_event
 from test.selenium import SeleniumTest
-from terrareg.models import GitProvider, ModuleVersion, Namespace, Module, ModuleProvider, ProviderLogo
+from terrareg.models import (
+    GitProvider, ModuleVersion, Namespace, Module,
+    ModuleProvider, ProviderLogo,
+    UserGroup, UserGroupNamespacePermission
+)
 from terrareg.module_version_create import module_version_create
 
 
@@ -39,6 +44,7 @@ class TestModuleProvider(SeleniumTest):
         cls._config_enable_access_controls = mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', False)
         cls._config_module_links = mock.patch('terrareg.config.Config.MODULE_LINKS', '[]')
         cls._config_terraform_example_version_template = mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major_plus_one}.0.0, unittest')
+        cls._config_disable_analytics = mock.patch('terrareg.config.Config.DISABLE_ANALYTICS', False)
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
@@ -50,6 +56,7 @@ class TestModuleProvider(SeleniumTest):
         cls.register_patch(cls._config_enable_access_controls)
         cls.register_patch(cls._config_module_links)
         cls.register_patch(cls._config_terraform_example_version_template)
+        cls.register_patch(cls._config_disable_analytics)
 
         super(TestModuleProvider, cls).setup_class()
 
@@ -217,54 +224,69 @@ class TestModuleProvider(SeleniumTest):
             if attribute_to_remove:
                 module_version.update_attributes(**{attribute_to_remove: original_value})
 
-    def test_module_with_security_issues(self):
+    @pytest.mark.parametrize('url,expected_label_displayed,expected_critical,expected_high,expected_medium_low', [
+        ('/modules/moduledetails/withsecurityissues/testprovider', False, 0, 0, 0),
+        ('/modules/moduledetails/withsecurityissues/testprovider/1.2.0/submodule/modules/withanotherissue', True, 0, 0, 1),
+        ('/modules/moduledetails/withsecurityissues/testprovider/1.1.0/example/examples/withsecissue', True, 0, 1, 2),
+        ('/modules/moduledetails/withsecurityissues/testprovider/1.0.0', True, 1, 3, 2),
+    ])
+    def test_module_with_security_issues(self, url, expected_label_displayed, expected_critical, expected_high, expected_medium_low):
         """Test module with security issues."""
-        self.selenium_instance.get(self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.0.0'))
+        self.selenium_instance.get(self.get_url(url))
 
-        # Ensure security issues are displayed
-        security_issues = self.wait_for_element(By.ID, 'security-issues')
-        assert security_issues.is_displayed() == True
-        assert security_issues.text == '4 Security issues'
-
-        # Go to 1.1.0 version, with no security issues
-        Select(self.selenium_instance.find_element(By.ID, 'version-select')).select_by_visible_text('1.1.0')
-
-        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.1.0'))
-
-        # Wait for inputs tab, to indicate page has loaded
+        # Wait for inputs tab label
         self.wait_for_element(By.ID, 'module-tab-link-inputs')
 
-        # Ensure no security issues are displayed
-        assert self.selenium_instance.find_element(By.ID, 'security-issues').is_displayed() == False
+        # Ensure security issues is disaplyed as expected
+        security_issues = self.wait_for_element(By.ID, 'security-issues', ensure_displayed=False)
+        assert security_issues.is_displayed() == expected_label_displayed
 
-        # Go to example
-        Select(self.selenium_instance.find_element(By.ID, 'example-select')).select_by_visible_text('examples/withsecissue')
-        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.1.0/example/examples/withsecissue'))
+        # If the label should not be displayed, return early
+        if not expected_label_displayed:
+            return
 
-        # Ensure 3 security issues are shown
-        security_issues = self.wait_for_element(By.ID, 'security-issues')
-        assert security_issues.is_displayed() == True
-        assert security_issues.text == '3 Security issues'
+        # Check label text
+        expected_text = 'Security Issues'
+        if expected_critical:
+            expected_text += f'\n{expected_critical} Critical'
+        if expected_high:
+            expected_text += f'\n{expected_high} High'
+        if expected_medium_low:
+            expected_text += f'\n{expected_medium_low} Medium/Low'
+        assert security_issues.text == expected_text
 
-        # Go back to parent
-        self.selenium_instance.find_element(By.ID, 'submodule-back-to-parent').click()
-        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.1.0'))
+        # Check each of the count labels
+        expected_base_color = None
+        for label_id, label_name, color, expected_count in [
+                ('result-card-label-security-issues-critical-count', 'Critical', 'danger', expected_critical),
+                ('result-card-label-security-issues-high-count', 'High', 'warning', expected_high),
+                ('result-card-label-security-issues-low-count', 'Medium/Low', 'info', expected_medium_low)
+                ]:
+            label = security_issues.find_element(By.ID, label_id)
+            if expected_count:
+                assert label.is_displayed() == True
+                assert label.text == f'{expected_count} {label_name}'
+                # Check only color associated to label is the expected one
+                assert [
+                    class_name
+                    for class_name in label.get_attribute('class').split(' ')
+                    if class_name.startswith('is-') and class_name != 'is-light'
+                ] == [f'is-{color}']
+                # Set expected parent color to this label color,
+                # if not already set
+                if expected_base_color is None:
+                    expected_base_color = color
 
-        # Go to 1.2.0 version, with no security issues
-        Select(self.selenium_instance.find_element(By.ID, 'version-select')).select_by_visible_text('1.2.0 (latest)')
-        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.2.0'))
+            else:
+                assert label.is_displayed() == False
 
-        # Ensure no security issues are displayed
-        assert self.selenium_instance.find_element(By.ID, 'security-issues').is_displayed() == False
-
-        # Go to submodule
-        Select(self.selenium_instance.find_element(By.ID, 'submodule-select')).select_by_visible_text('modules/withanotherissue')
-        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/withsecurityissues/testprovider/1.2.0/submodule/modules/withanotherissue'))
-
-        # Ensure 1 security issue is shown
-        security_issues = self.wait_for_element(By.ID, 'security-issues')
-        assert security_issues.is_displayed() == True
-        assert security_issues.text == '1 Security issues'
+        # Ensure base color of security tag is correct
+        icon_label = security_issues.find_element(By.ID, 'result-card-label-security-issues-icon')
+        assert [
+            class_name
+            for class_name in icon_label.get_attribute('class').split(' ')
+            if class_name.startswith('is-') and class_name != 'is-light'
+        ] == [f'is-{expected_base_color}']
 
     @pytest.mark.parametrize('url,cost', [
         ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example', '2373.60'),
@@ -273,10 +295,10 @@ class TestModuleProvider(SeleniumTest):
         ('/modules/moduledetails/infracost/testprovider/1.0.0/example/examples/no-infracost-data', None),
     ])
     def test_example_with_cost_analysis(self, url, cost):
-        """Test module with security issues."""
+        """Test module with cost analysis."""
         self.selenium_instance.get(self.get_url(url))
 
-        # Ensure security issues are displayed
+        # Ensure yearly cost is displayed
         cost_text = self.wait_for_element(By.ID, 'yearly-cost', ensure_displayed=False)
         if cost is None:
             self.assert_equals(lambda: cost_text.is_displayed(), False)
@@ -777,7 +799,23 @@ class TestModuleProvider(SeleniumTest):
 
     @pytest.mark.parametrize('url,expected_readme_content', [
         # Root module
-        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0', 'This is an exaple README!'),
+        ('/modules/moduledetails/fullypopulated/testprovider/1.5.0', """
+This is an example README!
+Following this example module call:
+module "test_example_call" {
+  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"
+  version = ">= 1.5.0, < 2.0.0, unittest"
+
+  name = "example-name"
+}
+This should work with all versions > 5.2.0 and <= 6.0.0
+module "text_ternal_call" {
+  source  = "a-public/module"
+  version = "> 5.2.0, <= 6.0.0"
+
+  another = "example-external"
+}
+""".strip()),
         # Module example
         ('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example', 'Example 1 README'),
         # Submodule
@@ -1464,7 +1502,12 @@ class TestModuleProvider(SeleniumTest):
         assert [file.text for file in file_list] == expected_file_list
 
         # Ensure contents of main.tf is shown in data
-        expected_main_tf_content = f'# Call root module\nmodule "{example_root_module_call_name}" {{\n  source  = "localhost:{self.SERVER.port}/my-tf-application__moduledetails/fullypopulated/testprovider"\n  {expected_version_comment}version = "{expected_version_string}"\n}}'
+        expected_main_tf_content = f"""
+# Call root module
+module "{example_root_module_call_name}" {{
+  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"
+  {expected_version_comment}version = "{expected_version_string}"
+}}""".strip()
         assert file_tab_content.find_element(By.ID, 'example-file-content').text == expected_main_tf_content
 
     def test_example_file_contents(self):
@@ -1493,7 +1536,13 @@ class TestModuleProvider(SeleniumTest):
         assert [file.text for file in file_list] == ['main.tf', 'data.tf', 'variables.tf']
 
         # Ensure contents of main.tf is shown in data
-        expected_main_tf_content = f'# Call root module\nmodule "root" {{\n  source  = "localhost:{self.SERVER.port}/my-tf-application__moduledetails/fullypopulated/testprovider"\n  version = ">= 1.5.0, < 2.0.0, unittest"\n}}'
+        expected_main_tf_content = f"""
+# Call root module
+module "root" {{
+  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"
+  version = ">= 1.5.0, < 2.0.0, unittest"
+}}
+""".strip()
         assert file_tab_content.find_element(By.ID, 'example-file-content').text == expected_main_tf_content
 
         # Select main.tf file and check content
@@ -1506,7 +1555,11 @@ class TestModuleProvider(SeleniumTest):
 
         # Select variables.tf and check content
         file_list[2].click()
-        assert file_tab_content.find_element(By.ID, 'example-file-content').text == 'variable "test" {\n  description = "test variable"\n  type = string\n}'
+        assert file_tab_content.find_element(By.ID, 'example-file-content').text == """
+variable "test" {
+  description = "test variable"
+  type = string
+}""".strip()
 
     def test_example_file_content_heredoc(self):
         """Test example file with heredoc content"""
@@ -1767,6 +1820,58 @@ EOF
         error = self.wait_for_element(By.ID, 'settings-status-error')
         assert error.text == ('You must be logged in to perform this action.\n'
                               'If you were previously logged in, please re-authentication and try again.')
+
+    @pytest.mark.parametrize('site_admin, group_permission, should_have_access', [
+        # Without site admin access or group permission
+        (False, None, False),
+        # With site admin access
+        (True, None, True),
+        # With group modify
+        (False, UserGroupNamespacePermissionType.MODIFY, True),
+        # With group full
+        (False, UserGroupNamespacePermissionType.FULL, True),
+    ])
+    def test_settings_tab_display_with_group_access(self, site_admin, group_permission, should_have_access):
+        """Test whether settings tab is available with various permission types for SSO users."""
+        # Enable access controls
+        with self.update_mock(self._config_enable_access_controls, 'new', True):
+
+            # Create test user group for authentication
+            self.selenium_instance.delete_all_cookies()
+
+            with self._patch_audit_event_creation():
+                user_group = UserGroup.create(name='selenium-test-user-group', site_admin=site_admin)
+
+            namespace = Namespace.get(name='moduledetails')
+
+            try:
+                # Add group permission, if it exists
+                user_group_permission = None
+                if group_permission:
+                    with self._patch_audit_event_creation():
+                        user_group_permission = UserGroupNamespacePermission.create(
+                            user_group=user_group,
+                            namespace=namespace,
+                            permission_type=group_permission
+                        )
+
+                with self.log_in_with_openid_connect(user_groups=[user_group.name]):
+                    # Access module provider page
+                    self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+                    # Wait for README tab
+                    self.wait_for_element(By.ID, 'module-tab-link-readme')
+
+                    # Check if settings tab is available
+                    settings_tab_link = self.selenium_instance.find_element(By.ID, 'module-tab-link-settings')
+                    assert settings_tab_link.is_displayed() is should_have_access
+            finally:
+                with self._patch_audit_event_creation():
+                    if user_group_permission:
+                        user_group_permission.delete()
+
+                    # Clear up test user group
+                    user_group.delete()
 
     def test_deleting_module_version_after_logging_out(self):
         """Test accessing settings tab, logging out and attempting to delete module version."""
@@ -2074,8 +2179,8 @@ various &lt; characters that could be escaped.</pre>
         changelog_content = self.wait_for_element(By.ID, 'module-tab-custom-Changelog')
         # Check changelog has been converted from markdown to HTML
         assert changelog_content.get_attribute('innerHTML') == """
-<h1 class="subtitle is-3">Changelog</h1>
-<h2 class="subtitle is-4">1.0.0</h2>
+<h1 id="terrareg-anchor-CHANGELOGmd-changelog" class="subtitle is-3">Changelog</h1>
+<h2 id="terrareg-anchor-CHANGELOGmd-100" class="subtitle is-4">1.0.0</h2>
 <ul>
 <li>This is an initial release</li>
 </ul>
@@ -2103,17 +2208,21 @@ various &lt; characters that could be escaped.</pre>
         # Check rows for security issues
         expected_rows = [
             ['', 'Severity', '', 'Description', '', '', '', '', '', '', '', '', ''],
-            ['main.tf'],
-            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
+            ['ignored.tf'],
+            ['', 'CRITICAL', '', 'Critical code has an issue', '', '', '', '', '', '', '', '', ''],
             ['different.tf'],
             ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
             ['main.tf'],
             ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
-            ['', 'LOW', '', 'Secrets Manager should use customer managed keys', '', '', '', '', '', '', '', '', '']
+            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
+            ['', 'LOW', '', 'Secrets Manager should use customer managed keys', '', '', '', '', '', '', '', '', ''],
+            ['ignored.tf'],
+            ['', 'MEDIUM', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
         ]
         for row in tab_content.find_elements(By.TAG_NAME, "tr"):
             column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
             assert column_data == expected_rows.pop(0)
+        assert len(expected_rows) == 0
 
         # Select third row (first issue) and expand
         tab_content.find_elements(By.TAG_NAME, "tr")[2].find_elements(By.TAG_NAME, "td")[0].click()
@@ -2121,31 +2230,35 @@ various &lt; characters that could be escaped.</pre>
         # Ensure row is expanded, showing additional information
         expected_rows = [
             ['', 'Severity', '', 'Description', '', '', '', '', '', '', '', '', ''],
-            ['main.tf'],
-            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
-            [
-                'File main.tf\n'
-                'ID DDG-ANC-001\n'
+            ['ignored.tf'],
+            ['', 'CRITICAL', '', 'Critical code has an issue', '', '', '', '', '', '', '', '', ''],
+            [(
+                'File ignored.tf\n'
+                'ID DDG-ANC-007\n'
                 'Provider bad\n'
                 'Service code\n'
                 'Resource some_data_resource.this\n'
                 'Starting Line 6\n'
                 'Ending Line 1\n'
-                'Impact Entire project is compromised\n'
-                'Resolution Do not use bad code\n'
+                'Impact This is critical\n'
+                'Resolution Fix critical issue\n'
                 'Resources\n'
                 '- https://example.com/issuehere\n'
                 '- https://example.com/docshere'
-            ],
+            )],
             ['different.tf'],
             ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
             ['main.tf'],
             ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
-            ['', 'LOW', '', 'Secrets Manager should use customer managed keys', '', '', '', '', '', '', '', '', '']
+            ['', 'HIGH', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
+            ['', 'LOW', '', 'Secrets Manager should use customer managed keys', '', '', '', '', '', '', '', '', ''],
+            ['ignored.tf'],
+            ['', 'MEDIUM', '', 'Dodgy code should be removed', '', '', '', '', '', '', '', '', ''],
         ]
         for row in tab_content.find_elements(By.TAG_NAME, "tr"):
             column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
             assert column_data == expected_rows.pop(0)
+        assert len(expected_rows) == 0
 
         # Go to 1.1.0 version, with no security issues
         Select(self.selenium_instance.find_element(By.ID, 'version-select')).select_by_visible_text('1.1.0')
@@ -2178,14 +2291,17 @@ various &lt; characters that could be escaped.</pre>
         # All data contains invalid data.
         expected_rows = [
             ['', 'Severity', '', 'Description', '', '', '', '', '', '', '', '', ''],
-            ['No group'],
-            ['', 'undefined', '', '', '', '', '', '', '', '', '', '', ''],
-            ['', 'undefined', '', '', '', '', '', '', '', '', '', '', ''],
-            ['', 'undefined', '', '', '', '', '', '', '', '', '', '', ''],
+            ['second.tf'],
+            ['', 'HIGH', '', 'This type of second issue is High', '', '', '', '', '', '', '', '', ''],
+            ['first.tf'],
+            ['', 'LOW', '', 'This type of first issue is Low', '', '', '', '', '', '', '', '', ''],
+            ['third.tf'],
+            ['', 'MEDIUM', '', 'This type of third issue is Medium', '', '', '', '', '', '', '', '', ''],
         ]
         for row in tab_content.find_elements(By.TAG_NAME, "tr"):
             column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
             assert column_data == expected_rows.pop(0)
+        assert len(expected_rows) == 0
 
         # Go back to parent
         self.selenium_instance.find_element(By.ID, 'submodule-back-to-parent').click()
@@ -2217,12 +2333,13 @@ various &lt; characters that could be escaped.</pre>
         # Check rows for security issues
         expected_rows = [
             ['', 'Severity', '', 'Description', '', '', '', '', '', '', '', '', ''],
-            ['No group'],
-            ['', 'undefined', '', '', '', '', '', '', '', '', '', '', '']
+            ['first.tf'],
+            ['', 'MEDIUM', '', 'This type of first issue is Medium', '', '', '', '', '', '', '', '', ''],
         ]
         for row in tab_content.find_elements(By.TAG_NAME, "tr"):
             column_data = [td.text for td in row.find_elements(By.TAG_NAME, "th") + row.find_elements(By.TAG_NAME, "td")]
             assert column_data == expected_rows.pop(0)
+        assert len(expected_rows) == 0
 
     def _compare_canvas(self, compare_filename):
         """Compare current canvas data for graph to expected image"""
@@ -2435,3 +2552,68 @@ Consider re-indexing this module version to enable all features.
         # Ensure image exists
         res = requests.get(self.get_url(ProviderLogo(provider).source))
         assert res.status_code == 200
+
+    def test_analytics_disabled(self):
+        """Test module provider page with anayltics disabled."""
+        with self.update_mock(self._config_disable_analytics, 'new', True):
+            self.selenium_instance.get(self.get_url("/modules/moduledetails/fullypopulated/testprovider/1.5.0"))
+
+            # Wait for README tab link
+            self.wait_for_element(By.ID, "module-tab-link-readme")
+
+            # Test example in README does not contain analytics token
+            assert self.selenium_instance.find_element(By.ID, "module-tab-readme").text == """
+This is an example README!
+Following this example module call:
+module "test_example_call" {
+  source  = "localhost/moduledetails/fullypopulated/testprovider"
+  version = ">= 1.5.0, < 2.0.0, unittest"
+
+  name = "example-name"
+}
+This should work with all versions > 5.2.0 and <= 6.0.0
+module "text_ternal_call" {
+  source  = "a-public/module"
+  version = "> 5.2.0, <= 6.0.0"
+
+  another = "example-external"
+}
+""".strip()
+
+            # Ensure usage example does not contain analytics token
+            usage_example = self.wait_for_element(By.ID, "usage-example-container")
+            usage_instructions = usage_example.find_element(By.CLASS_NAME, "content")
+            assert usage_instructions.text == """
+Supported Terraform versions: >= 1.0, < 2.0.0
+To use this module:
+Add the following example to your Terraform,
+Add the required inputs - use the 'Usage Builder' tab for help and 'Inputs' tab for a full list.
+""".strip()
+
+            assert usage_example.find_element(By.ID, "usage-example-terraform").text == """
+module "fullypopulated" {
+  source  = "localhost/moduledetails/fullypopulated/testprovider"
+  version = ">= 1.5.0, < 2.0.0, unittest"
+
+  # Provide variables here
+}
+""".strip()
+
+            # Ensure analytics tab is not shown
+            analytics_tab_link = self.selenium_instance.find_element(By.ID, "module-tab-link-analytics")
+            assert analytics_tab_link.is_displayed() == False
+
+            # Check example file content
+            self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example'))
+            # Go to example file content
+            self.wait_for_element(By.ID, "module-tab-link-example-files").click()
+            self.assert_equals(
+                lambda: self.selenium_instance.find_element(By.ID, "example-file-content").text,
+                """
+# Call root module
+module "root" {
+  source  = "localhost/moduledetails/fullypopulated/testprovider"
+  version = ">= 1.5.0, < 2.0.0, unittest"
+}
+""".strip()
+            )

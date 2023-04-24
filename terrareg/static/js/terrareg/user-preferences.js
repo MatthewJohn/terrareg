@@ -33,8 +33,10 @@ function userPreferencesModalSave() {
     localStorage.setItem('show-beta-versions', $('#user-preferences-show-beta').is(':checked'));
     localStorage.setItem('show-unpublished-versions', $('#user-preferences-show-unpublished').is(':checked'));
     localStorage.setItem('theme', $('#user-preferences-theme').val());
-    $.cookie("theme", $('#user-preferences-theme').val());
+    $.cookie("theme", $('#user-preferences-theme').val(), {path: "/"});
     userPreferencesModalClose();
+
+    location.reload();
 }
 
 function userPreferencesModalClose() {

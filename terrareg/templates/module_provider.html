@@ -6,7 +6,11 @@
 <script src="/static/js/terrareg/module_provider_page.js"></script>
 <link rel="stylesheet" href="/static/css/module_provider_page.css" />
 
+<link href="/static/css/prism/prism-hcl-1.29.0.css" rel="stylesheet" />
+<script src="/static/js/prism/prism-hcl-1.29.0.js"></script>
+
 <script>
+    window.Prism = window.Prism || {};
     $(document).ready(function () {
         renderPage();
     });
@@ -48,14 +52,19 @@
             </section>
             <p id="version-text" class="subtitle default-hidden"></p>
             <div id="module-labels">
-                <span id="security-issues" class="tag is-danger is-light result-card-label result-card-label-security-issues default-hidden">
-                    <span class="panel-icon">
-                        <i class="fa fa-bug" aria-hidden="true"></i>
+                <span id="security-issues" class="tags has-addons result-card-label result-card-label-security-issues default-hidden">
+                    <span id="result-card-label-security-issues-icon" class="tag result-card-label-security-issue-tag is-light">
+                        <span class="panel-icon">
+                            <i class="fa fa-bug" aria-hidden="true"></i>
+                        </span>
+                        Security Issues
                     </span>
-                    <p id="security-issues-text">${module.security_failures} Security issues</p>
+                    <span id="result-card-label-security-issues-critical-count" alt="Critical severity security issues" class="tag result-card-label-security-issue-tag result-card-label-security-issue-result-tag is-light is-danger default-hidden"></span>
+                    <span id="result-card-label-security-issues-high-count" alt="High severity security issues" class="tag result-card-label-security-issue-tag result-card-label-security-issue-result-tag is-light is-warning default-hidden"></span>
+                    <span id="result-card-label-security-issues-low-count" alt="Medium/Low severity security issues" class="tag result-card-label-security-issue-tag result-card-label-security-issue-result-tag is-light is-info default-hidden"></span>
                 </span>
 
-                <span id="yearly-cost-label" class="tag is-warning is-light result-card-label result-card-label-security-issues default-hidden">
+                <span id="yearly-cost-label" class="tag is-warning is-light result-card-label result-card-label-cost default-hidden">
                     <p id="label-text"></p>
                 </span>
             </div>
@@ -177,12 +186,12 @@
                     To use this module:
                     <ol>
                         <li>Add the following example to your Terraform,</li>
-                        <li>Ensure the "<span id="usage-example-analytics-token"></span>" placeholder must be replaced with your '<span id="usage-example-analytics-token-phrase"></span>',</li>
+                        <li id="usage-example-analytics-token-instruction">Ensure the "<span id="usage-example-analytics-token"></span>" placeholder must be replaced with your '<span id="usage-example-analytics-token-phrase"></span>',</li>
                         <li>Add the required inputs - use the <span id="example-link-usage-builder" class="module-tab-link default-hidden">'<a onclick="selectModuleTab('usage-builder')">Usage Builder</a>' tab for help and </span>'Inputs' tab for a full list.</li>
                     </ol>
                 </div>
 
-                <pre id="usage-example-terraform"></pre>
+                <pre><code id="usage-example-terraform" class="language-hcl"></code></pre>
             </div>
         </div>
     </div>
@@ -251,7 +260,7 @@
                 </div>
 
                 <div class="column is-four-fifths">
-                    <pre><code id="example-file-content" class="language-hcl" data-lang="html"></code></pre>
+                    <pre><code id="example-file-content" class="language-hcl" data-lang="hcl"></code></pre>
                 </div>
             </div>
         </div>

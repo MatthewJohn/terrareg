@@ -4,12 +4,15 @@ from enum import EnumMeta
 import re
 import sys
 import os
+import unittest.mock
 
 import jinja2
 
 sys.path.append('.')
 
 from terrareg.config import Config
+from terrareg.server.error_catching_resource import ErrorCatchingResource
+from terrareg.server import Server
 
 
 valid_config_re = re.compile(r'^[A-Z]')
@@ -68,3 +71,49 @@ readme_out = template.render(CONFIG_CONTENTS=config_contents)
 
 with open('docs/CONFIG.md', 'w') as readme:
     readme.write(readme_out)
+
+
+server = Server()
+
+api_docs = """
+# API Docs
+
+"""
+
+def mock_route(route_class, *urls):
+    global api_docs
+    newline = "\n\n"
+    api_docs += f"""
+
+
+## {route_class.__name__}
+
+{newline.join([f'`{url}`' for url in urls])}
+
+{(route_class.__doc__ or "").strip()}
+
+"""
+
+    for method in ['GET', 'POST', 'DELETE']:
+        internal_method = method.lower()
+
+        # Check if method exists
+        if not hasattr(route_class, internal_method):
+            continue
+
+        # If class is a subclass of ErrorCatchingResource,
+        # skip method if it does not override the ErrorCatchingResource base method
+        if route_class in ErrorCatchingResource.__subclasses__():
+            internal_method = f'_{method.lower()}'
+            if getattr(route_class, internal_method) == getattr(ErrorCatchingResource, internal_method):
+                continue
+
+        api_docs += f'\n### {method}\n\n{(getattr(route_class, internal_method).__doc__ or "").strip()}'
+
+
+server._app.route = unittest.mock.MagicMock()
+server._api.add_resource = unittest.mock.MagicMock(side_effect=mock_route)
+server._register_routes()
+
+with open('docs/API.md', 'w') as readme:
+    readme.write(api_docs)

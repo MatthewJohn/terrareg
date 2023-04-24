@@ -20,15 +20,15 @@ import terrareg.audit_action
 from terrareg.errors import (
     DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
     InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
-    InvalidGitTagFormatError, InvalidNamespaceNameError, ReindexingExistingModuleVersionsIsProhibitedError,
+    InvalidGitTagFormatError, InvalidNamespaceNameError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError, RepositoryUrlContainsInvalidTemplateError,
     RepositoryUrlDoesNotContainValidSchemeError,
     RepositoryUrlContainsInvalidSchemeError,
     RepositoryUrlDoesNotContainHostError,
-    RepositoryDoesNotContainPathError,
+    RepositoryUrlDoesNotContainPathError,
     InvalidGitProviderConfigError,
     ModuleProviderCustomGitRepositoryUrlNotAllowedError,
     NoModuleDownloadMethodConfiguredError,
-    ProviderNameNotPermittedError
+    ProviderNameNotPermittedError, RepositoryUrlParseError
 )
 from terrareg.utils import convert_markdown_to_html, get_public_url_details, safe_join_paths, sanitise_html_content
 from terrareg.validators import GitUrlValidator
@@ -1782,28 +1782,48 @@ class ModuleProvider(object):
     def update_repo_clone_url_template(self, repo_clone_url_template):
         """Update repository URL for module provider."""
         if repo_clone_url_template:
-            converted_template = repo_clone_url_template.format(
-                namespace=self._module._namespace.name,
-                module=self._module.name,
-                provider=self.name)
+            try:
+                converted_template = repo_clone_url_template.format(
+                    namespace=self._module._namespace.name,
+                    module=self._module.name,
+                    provider=self.name)
+            except KeyError:
+                # KeyError thrown when template value
+                # contains a unknown template
+                raise RepositoryUrlContainsInvalidTemplateError(
+                    'URL contains invalid template value. '
+                    'Only the following template values are allowed: {namespace}, {module}, {provider}'
+                )
 
             url = urllib.parse.urlparse(converted_template)
             if not url.scheme:
                 raise RepositoryUrlDoesNotContainValidSchemeError(
-                    'Repository URL does not contain a scheme (e.g. ssh://)'
+                    'URL does not contain a scheme (e.g. ssh://)'
                 )
             if url.scheme not in ['http', 'https', 'ssh']:
                 raise RepositoryUrlContainsInvalidSchemeError(
-                    'Repository URL contains an unknown scheme (e.g. https/ssh/http)'
+                    'URL contains an unknown scheme (e.g. https/ssh/http)'
                 )
             if not url.hostname:
                 raise RepositoryUrlDoesNotContainHostError(
-                    'Repository URL does not contain a host/domain'
+                    'URL does not contain a host/domain'
                 )
             if not url.path:
-                raise RepositoryDoesNotContainPathError(
-                    'Repository URL does not contain a path'
+                raise RepositoryUrlDoesNotContainPathError(
+                    'URL does not contain a path'
                 )
+            try:
+                int(url.port)
+            except ValueError:
+                # Value error is thrown when port contains a value, but is
+                # not convertable to an int
+                raise RepositoryUrlContainsInvalidPortError(
+                    'URL contains a invalid port. '
+                    'Only use a colon to for specifying a port, otherwise a forward slash should be used.'
+                )
+            except TypeError:
+                # TypeError is thrown when port is None when trying to convert to an int
+                pass
 
             repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe=r'\{\}/:@%?=')
 
@@ -1823,35 +1843,55 @@ class ModuleProvider(object):
         """Update browse URL template for module provider."""
         if repo_browse_url_template:
 
-            GitUrlValidator(repo_browse_url_template).validate(
-                requires_path_placeholder=True,
-                requires_tag_placeholder=True
-            )
+            try:
+                GitUrlValidator(repo_browse_url_template).validate(
+                    requires_path_placeholder=True,
+                    requires_tag_placeholder=True
+                )
 
-            converted_template = repo_browse_url_template.format(
-                namespace=self._module._namespace.name,
-                module=self._module.name,
-                provider=self.name,
-                tag='',
-                path='')
+                converted_template = repo_browse_url_template.format(
+                    namespace=self._module._namespace.name,
+                    module=self._module.name,
+                    provider=self.name,
+                    tag='',
+                    path='')
+            except KeyError:
+                # KeyError thrown when template value
+                # contains a unknown template
+                raise RepositoryUrlContainsInvalidTemplateError(
+                    'URL contains invalid template value. '
+                    'Only the following template values are allowed: {namespace}, {module}, {provider}, {tag}, {path}'
+                )
 
             url = urllib.parse.urlparse(converted_template)
             if not url.scheme:
                 raise RepositoryUrlDoesNotContainValidSchemeError(
-                    'Repository URL does not contain a scheme (e.g. https://)'
+                    'URL does not contain a scheme (e.g. https://)'
                 )
             if url.scheme not in ['http', 'https']:
                 raise RepositoryUrlContainsInvalidSchemeError(
-                    'Repository URL contains an unknown scheme (e.g. https/http)'
+                    'URL contains an unknown scheme (e.g. https/http)'
                 )
             if not url.hostname:
                 raise RepositoryUrlDoesNotContainHostError(
-                    'Repository URL does not contain a host/domain'
+                    'URL does not contain a host/domain'
                 )
             if not url.path:
-                raise RepositoryDoesNotContainPathError(
-                    'Repository URL does not contain a path'
+                raise RepositoryUrlDoesNotContainPathError(
+                    'URL does not contain a path'
                 )
+            try:
+                int(url.port)
+            except ValueError:
+                # Value error is thrown when port contains a value, but is
+                # not convertable to an int
+                raise RepositoryUrlContainsInvalidPortError(
+                    'URL contains a invalid port. '
+                    'Only use a colon to for specifying a port, otherwise a forward slash should be used.'
+                )
+            except TypeError:
+                # TypeError is thrown when port is None when trying to convert to an int
+                pass
 
             repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe=r'\{\}/:@%?=')
 
@@ -1871,28 +1911,48 @@ class ModuleProvider(object):
         """Update browse URL template for module provider."""
         if repo_base_url_template:
 
-            converted_template = repo_base_url_template.format(
-                namespace=self._module._namespace.name,
-                module=self._module.name,
-                provider=self.name)
+            try:
+                converted_template = repo_base_url_template.format(
+                    namespace=self._module._namespace.name,
+                    module=self._module.name,
+                    provider=self.name)
+            except KeyError:
+                # KeyError thrown when template value
+                # contains a unknown template
+                raise RepositoryUrlContainsInvalidTemplateError(
+                    'URL contains invalid template value. '
+                    'Only the following template values are allowed: {namespace}, {module}, {provider}'
+                )
 
             url = urllib.parse.urlparse(converted_template)
             if not url.scheme:
                 raise RepositoryUrlDoesNotContainValidSchemeError(
-                    'Repository URL does not contain a scheme (e.g. https://)'
+                    'URL does not contain a scheme (e.g. https://)'
                 )
             if url.scheme not in ['http', 'https']:
                 raise RepositoryUrlContainsInvalidSchemeError(
-                    'Repository URL contains an unknown scheme (e.g. https/http)'
+                    'URL contains an unknown scheme (e.g. https/http)'
                 )
             if not url.hostname:
                 raise RepositoryUrlDoesNotContainHostError(
-                    'Repository URL does not contain a host/domain'
+                    'URL does not contain a host/domain'
                 )
             if not url.path:
-                raise RepositoryDoesNotContainPathError(
-                    'Repository URL does not contain a path'
+                raise RepositoryUrlDoesNotContainPathError(
+                    'URL does not contain a path'
                 )
+            try:
+                int(url.port)
+            except ValueError:
+                # Value error is thrown when port contains a value, but is
+                # not convertable to an int
+                raise RepositoryUrlContainsInvalidPortError(
+                    'URL contains a invalid port. '
+                    'Only use a colon to for specifying a port, otherwise a forward slash should be used.'
+                )
+            except TypeError:
+                # TypeError is thrown when port is None when trying to convert to an int
+                pass
 
             repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe=r'\{\}/:@%?=')
 
@@ -2219,7 +2279,11 @@ module "{self.module_version.module_provider.module.name}" {{
         source_url += '' if isHttps else '/modules'
         source_url += '/'
         # Add example analytics token
-        source_url += f'{terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN}__' if terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN else ''
+        source_url += (
+            (terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN + '__')
+            if terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN and (not terrareg.config.Config().DISABLE_ANALYTICS)
+            else ''
+        )
         # Add module provider ID
         source_url += self.module_version.module_provider.id
         # Add exact module version, if using http
@@ -2252,11 +2316,12 @@ module "{self.module_version.module_provider.module.name}" {{
 
     def get_readme_html(self, server_hostname):
         """Replace examples in README and convert readme markdown to HTML"""
-        readme_md = self.get_readme_content()
+        readme_md = self.get_readme_content(sanitise=False)
         if readme_md:
             readme_md = self.replace_source_in_file(
                 readme_md, server_hostname)
-            return convert_markdown_to_html(readme_md)
+            readme_html = convert_markdown_to_html(file_name='README.md', markdown_html=readme_md)
+            return sanitise_html_content(readme_html, allow_markdown_html=True)
         return None
 
     @property
@@ -2267,11 +2332,14 @@ module "{self.module_version.module_provider.module.name}" {{
         else:
             return None
 
-    def get_readme_content(self):
+    def get_readme_content(self, sanitise=True):
         """Get readme contents"""
         module_details = self.module_details
         if module_details:
-            return sanitise_html_content(Database.decode_blob(module_details.readme_content))
+            content = Database.decode_blob(module_details.readme_content)
+            if sanitise:
+                content = sanitise_html_content(content)
+            return content
         return None
 
     def get_terraform_inputs(self):
@@ -3362,19 +3430,16 @@ class FileObject:
         """Get ID from DB row"""
         return self._get_db_row()['id']
 
-    @property
-    def content(self):
+    def get_content(self, sanitise=True):
         """Return content of example file."""
         content = Database.decode_blob(self._get_db_row()["content"])
-        if content:
+        if content and sanitise:
             # Add pre tags before/after to allow for broken tags
             # inside content, e.g. for heredocs
             content = f"<pre>{content}</pre>"
 
             # Sanitise content
-            content = sanitise_html_content(
-                content
-            )
+            content = sanitise_html_content(content)
 
             # Remove encoded 'pre' tags -
             # "&lt;pre&gt;" at start and "&lt;/pre&gt;" after
@@ -3505,7 +3570,7 @@ class ExampleFile(FileObject):
         """Return content with source replaced"""
         # Replace source lines that use relative paths
         return self._example.replace_source_in_file(
-            content=self.content,
+            content=super(ExampleFile, self).get_content(),
             server_hostname=server_hostname)
 
 
@@ -3561,11 +3626,16 @@ class ModuleVersionFile(FileObject):
 
     def get_content(self):
         """Return content to be displayed in UI"""
-        content = self.content
         # Convert markdown files to HTML
         if self.path.lower().endswith('.md'):
-            content = convert_markdown_to_html(content)
+            # Perform sanitisation of markdown after
+            # conversion to HTML
+            content = super(ModuleVersionFile, self).get_content(sanitise=False)
+            content = convert_markdown_to_html(file_name=self.file_name, markdown_html=content)
+            # return content
+            content = sanitise_html_content(content, allow_markdown_html=True)
         else:
+            content = super(ModuleVersionFile, self).get_content()
             content = '<pre>' + content + '</pre>'
         return content
 

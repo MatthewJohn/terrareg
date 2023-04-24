@@ -49,7 +49,7 @@ class TestCreateModuleProvider(SeleniumTest):
             ('Provider', 'e.g. aws, null...', ''),
             ('Git Repository Provider', None, 'Custom'),
             ('Custom Repository base URL', 'https://github.com/my-team/my-module-provider', ''),
-            ('Custom Repository Clone URL', 'ssh://git@github.com:my-team/my-module-provider.git', ''),
+            ('Custom Repository Clone URL', 'ssh://git@github.com/my-team/my-module-provider.git', ''),
             ('Custom Repository source browse URL', 'https://github.com/my-team/my-module-provider/tree/{tag}/{path}', ''),
             ('Git tag format', 'v{version}', 'v{version}'),
             ('Git path', '/', '')

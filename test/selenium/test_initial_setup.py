@@ -189,7 +189,7 @@ class TestInitialSetup(SeleniumTest):
         index_module_verison_link = index_git_card_content.find_element(By.TAG_NAME, 'a')
         assert index_module_verison_link.get_attribute('href') == self.get_url('/modules/unittestnamespace/setupmodulename/setupprovider#integrations')
 
-    def _test_index_version_upload_step(self, module_provider):
+    def _test_index_version_upload_step(self, module_provider, upload_api_key_enabled, publish_api_key_enabled):
         """Test step for uploading a module version."""
         module_provider.update_attributes(repo_clone_url_template=None)
 
@@ -209,21 +209,27 @@ class TestInitialSetup(SeleniumTest):
         for index_upload_li in index_upload_card_content.find_elements(By.TAG_NAME, 'li'):
             assert index_upload_li.text == expected_upload_instructions.pop(0)
 
+        upload_api_key_argument = '-H "X-Terrareg-ApiKey: <Insert your UPLOAD_API_KEY>" ' if upload_api_key_enabled else ""
+        publish_api_key_argument = '-H "X-Terrareg-ApiKey: <Insert your PUBLISH_API_KEY>" ' if publish_api_key_enabled else ""
+
         # Check example command for uploading/publishing version
         upload_command = index_upload_card_content.find_element(By.ID, 'setup-step-upload-module-version-example-command')
-        assert upload_command.text == (
-            '# Zip module\n'
-            'cd path/to/module\n'
-            'zip -r ../module.zip *\n\n'
-            'version=1.0.0\n\n'
-            '# Upload module version\n'
-            'curl -X POST \\\n'
-            f'    "{self.get_url("/v1/terrareg/modules/unittestnamespace/setupmodulename/setupprovider/${version}/upload")}" \\\n'
-            '    -F file=@../module.zip\n\n'
-            '# Publish module version\n'
-            'curl -X POST \\\n'
-            f'    "{self.get_url("/v1/terrareg/modules/unittestnamespace/setupmodulename/setupprovider/${version}/publish")}"'
-        )
+        assert upload_command.text == f"""
+# Zip module
+cd path/to/module
+zip -r ../module.zip *
+
+version=1.0.0
+
+# Upload module version
+curl -X POST {upload_api_key_argument}\\
+    "{self.get_url("/v1/terrareg/modules/unittestnamespace/setupmodulename/setupprovider/${version}/upload")}" \\
+    -F file=@../module.zip
+
+# Publish module version
+curl -X POST {publish_api_key_argument}\\
+    "{self.get_url("/v1/terrareg/modules/unittestnamespace/setupmodulename/setupprovider/${version}/publish")}"
+""".strip()
 
     def _test_publish_module_version_upload_step(self, module_provider):
         """Test index module version upload with unpublished version."""
@@ -393,7 +399,16 @@ class TestInitialSetup(SeleniumTest):
             self._test_index_version_git_step(module_provider)
 
             # Step 5b. - Index module version from source
-            self._test_index_version_upload_step(module_provider)
+            ## Test with various combinations of API keys enabled
+            for upload_api_keys in [[], ['a-key']]:
+                for publish_api_keys in [[], ['a-key']]:
+                    with self.update_multiple_mocks(
+                            (self._config_upload_api_keys_mock, 'new', upload_api_keys), \
+                            (self._config_publish_api_keys_mock, 'new', publish_api_keys)):
+                        self._test_index_version_upload_step(
+                            module_provider,
+                            upload_api_key_enabled=bool(upload_api_keys),
+                            publish_api_key_enabled=bool(publish_api_keys))
 
             with mock_create_audit_event:
                 # Create module version to move to next step

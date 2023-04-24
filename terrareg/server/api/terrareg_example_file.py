@@ -1,4 +1,6 @@
 
+import urllib.parse
+
 from flask import request
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
@@ -19,4 +21,4 @@ class ApiTerraregExampleFile(ErrorCatchingResource):
         if example_file_obj is None:
             return {'message': 'Example file object does not exist.'}
 
-        return example_file_obj.get_content(server_hostname=request.host)
+        return example_file_obj.get_content(server_hostname=urllib.parse.urlparse(request.base_url).hostname)

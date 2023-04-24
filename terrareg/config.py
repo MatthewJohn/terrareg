@@ -136,6 +136,17 @@ class Config:
         return self.convert_boolean(os.environ.get('ALLOW_UNIDENTIFIED_DOWNLOADS', 'False'))
 
     @property
+    def DISABLE_ANALYTICS(self):
+        """
+        Disable module download anaytics.
+
+        This stops analytics tokens being displayed in the UI.
+
+        This also sets `ALLOW_UNIDENTIFIED_DOWNLOADS` to True
+        """
+        return self.convert_boolean(os.environ.get('DISABLE_ANALYTICS', 'False'))
+
+    @property
     def DEBUG(self):
         """Whether flask and sqlalchemy is setup in debug mode."""
         return self.convert_boolean(os.environ.get('DEBUG', 'False'))
@@ -421,6 +432,7 @@ class Config:
                         or 'https://github.com/{namespace}/{module}-{provider}.git')
                     Note: Do not include '{version}' placeholder in the URL -
                     the git tag will be automatically provided.
+                    If using SSH, the domain must be seperated by the path using a forward slash. Use a colon to specify a port (e.g. `ssh://gitlab.corp.com:7999/namespace/name.git`)
 
         - browse_url - Formatted URL for user-viewable source code
                         (e.g. 'https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}'
@@ -429,11 +441,11 @@ class Config:
                          - {path} (for source file/folder path)
                          - {tag} or {tag_uri_encoded} for the git tag
 
-        An example for public repositories might be:
+        An example for public repositories, using SSH for cloning, might be:
         ```
-        [{"name": "Github", "base_url": "https://github.com/{namespace}/{module}", "clone_url": "ssh://git@github.com:{namespace}/{module}.git", "browse_url": "https://github.com/{namespace}/{module}/tree/{tag}/{path}"},
-        {"name": "Bitbucket", "base_url": "https://bitbucket.org/{namespace}/{module}", "clone_url": "ssh://git@bitbucket.org:{namespace}/{module}-{provider}.git", "browse_url": "https://bitbucket.org/{namespace}/{module}-{provider}/src/{tag}/{path}"},
-        {"name": "Gitlab", "base_url": "https://gitlab.com/{namespace}/{module}", "clone_url": "ssh://git@gitlab.com:{namespace}/{module}-{provider}.git", "browse_url": "https://gitlab.com/{namespace}/{module}-{provider}/-/tree/{tag}/{path}"}]
+        [{"name": "Github", "base_url": "https://github.com/{namespace}/{module}", "clone_url": "ssh://git@github.com/{namespace}/{module}.git", "browse_url": "https://github.com/{namespace}/{module}/tree/{tag}/{path}"},
+        {"name": "Bitbucket", "base_url": "https://bitbucket.org/{namespace}/{module}", "clone_url": "ssh://git@bitbucket.org/{namespace}/{module}-{provider}.git", "browse_url": "https://bitbucket.org/{namespace}/{module}-{provider}/src/{tag}/{path}"},
+        {"name": "Gitlab", "base_url": "https://gitlab.com/{namespace}/{module}", "clone_url": "ssh://git@gitlab.com/{namespace}/{module}-{provider}.git", "browse_url": "https://gitlab.com/{namespace}/{module}-{provider}/-/tree/{tag}/{path}"}]
         ```
         """
         return os.environ.get('GIT_PROVIDER_CONFIG', '[]')
@@ -613,6 +625,23 @@ class Config:
         A well-known URL will be expected at `${OPENID_CONNECT_ISSUER}/.well-known/openid-configuration`
         """
         return os.environ.get('OPENID_CONNECT_ISSUER', None)
+
+    @property
+    def OPENID_CONNECT_SCOPES(self):
+        """
+        Comma-seperated list of scopes to be included in OpenID authentication request.
+
+        The OpenID profile should provide a 'groups' attribute, containing a list of groups
+        that the user is a member of.
+
+        A common configuration may require a 'groups' scope to be added to the list of scopes.
+        """
+        return [
+            scope
+            for scope in os.environ.get("OPENID_CONNECT_SCOPES", "openid,profile").split(",")
+            if scope
+        ]
+
 
     @property
     def OPENID_CONNECT_DEBUG(self):
