@@ -2327,10 +2327,19 @@ module "{self.module_version.module_provider.module.name}" {{
 
     def get_terraform_dependencies(self):
         """Obtain module dependencies."""
-        #return self.get_module_specs()['requirements']
-        # @TODO Verify what this should be - Terraform example is empty and real-world examples appears to
-        # be empty, but do have an undocumented 'provider_dependencies'
-        return []
+        depedencies = []
+        for submodule in self.get_module_specs().get('modules', []):
+            # Ignore any modules that reference local directories
+            if submodule.get('source').startswith('./') or submodule.get('source').startswith('../'):
+                continue
+
+            depedencies.append({
+                "name": submodule.get("name"),
+                "source": submodule.get("source"),
+                "version": submodule.get("version")
+            })
+
+        return depedencies
 
     def get_terraform_modules(self):
         """Obtain module calls."""

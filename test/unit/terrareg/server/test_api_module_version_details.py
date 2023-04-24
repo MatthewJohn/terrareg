@@ -43,7 +43,18 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
                     {'name': 'generated_name', 'description': 'Name with randomness'},
                     {'name': 'no_desc_output', 'description': None}
                 ],
-                'dependencies': [],
+                'dependencies': [
+                    {
+                        'name': 'hashicorp-registry-module',
+                        'source': 'matthewjohn/test-module/null',
+                        'version': '1.5.0'
+                    },
+                    {
+                        'name': 'local-registry-module',
+                        'source': 'my-registry.example.com/matthewjohn/test-module/null',
+                        'version': '2.1.3'
+                    }
+                ],
                 'provider_dependencies': [
                     {'name': 'random', 'namespace': 'hashicorp', 'source': '', 'version': '>= 5.2.1, < 6.0.0'},
                     {'name': 'unsafe', 'namespace': 'someothercompany', 'source': '', 'version': '2.0.0'}
