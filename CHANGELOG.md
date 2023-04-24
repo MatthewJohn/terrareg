@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.66.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.66.3...v2.66.4) (2023-04-24)
+
+
+### Bug Fixes
+
+* Stop terraform graph failures from causing module extraction to fail ([0db5c8e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0db5c8ea4e77fe97de0348fb02919e19d99a003c)), closes [#380](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/380)
+
 ## [2.66.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.66.2...v2.66.3) (2023-04-21)
 
 
