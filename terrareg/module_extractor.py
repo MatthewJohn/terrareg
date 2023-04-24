@@ -603,13 +603,6 @@ credentials "{domain_name}" {{
             terraform_graph=terraform_graph
         )
 
-        # Generate the archive, unless the module has a git clone URL and
-        # the config for deleting externally hosted artifacts is enabled.
-        if not (self._module_version.get_git_clone_url() and
-                Config().DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
-            self._update_progress_message("Generating archive")
-            self._generate_archive()
-
         self._update_progress_message("Root module: Extracting additional tab information")
         self._extract_additional_tab_files()
 
@@ -619,6 +612,13 @@ credentials "{domain_name}" {{
         self._scan_submodules(
             submodule_class=Example,
             subdirectory=Config().EXAMPLES_DIRECTORY)
+
+        # Generate the archive, unless the module has a git clone URL and
+        # the config for deleting externally hosted artifacts is enabled.
+        if not (self._module_version.get_git_clone_url() and
+                Config().DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
+            self._update_progress_message("Generating archive")
+            self._generate_archive()
 
         self._update_progress_message(f"Complete", status=ModuleExtractionStatusType.COMPLETE)
 
