@@ -50,6 +50,10 @@ class ApiModuleSearch(ErrorCatchingResource):
             'include_count', type=inputs.boolean, location='args', default=False,
             help='Whether to include total result count. This is not part of the Terraform API spec.'
         )
+        parser.add_argument(
+            'target_terraform_version', type=str, location='args', default=None,
+            help='Provide terraform version to show compatibility with search results. This is not part of the Terraform API spec.'
+        )
 
         args = parser.parse_args()
 
@@ -78,7 +82,9 @@ class ApiModuleSearch(ErrorCatchingResource):
         res = {
             "meta": search_results.meta,
             "modules": [
-                module_provider.get_latest_version().get_api_outline()
+                module_provider.get_latest_version().get_api_outline(
+                    target_terraform_version=args.target_terraform_version
+                )
                 for module_provider in search_results.module_providers
                 if module_provider.get_latest_version()
             ]

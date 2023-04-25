@@ -88,6 +88,10 @@
             query_string += `&namespace=${namespace}`;
         });
 
+        if ($('#search-terraform-version').val()) {
+            query_string += `&target_terraform_version=${$('#search-terraform-version').val()}`;
+        }
+
         // Perform AJAX query to obtain results
         $.get(`/v1/modules/search?` +
                 `q=${encodeURIComponent(searchQuery)}&` +
@@ -185,12 +189,27 @@
         }
     }
 
+    function loadSearchUserPreferences() {
+        let userPreferences = getUserPreferences();
+        $('#search-terraform-version').val(userPreferences['terraform-compatibility-version']);
+    }
+
+    function updateTerraformCompatibility() {
+        // Store new terraform compatibility in user preferences
+        userPreferencesUpdateTerraformCompatibilityVersion($('#search-terraform-version').val());
+
+        // Perform search, using current offset
+        performSearch(currentSearchMeta?.current_offset);
+    }
+
     navbar_search_modules = performSearch;
 
     $(document).ready(function () {
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
         const searchQuery = urlParams.get('q');
+
+        loadSearchUserPreferences();
 
         if (searchQuery) {
             $('#navBarSearchInput').val(searchQuery);
@@ -250,6 +269,23 @@
             <p class="panel-heading">
               Namespaces
             </p>
+        </nav>
+
+        <nav id="terraform-version-filters" class="panel">
+            <p class="panel-heading">
+              Terraform Compatibility
+            </p>
+            <span class="panel-block">
+                <p class="control has-icons-left">
+                    <input class="input" type="text" id="search-terraform-version" placeholder="Terraform Version">
+                    <span class="icon is-left">
+                        <i class="fas fa-filter" aria-hidden="true"></i>
+                    </span>
+                </p>
+            </span>
+            <span class="panel-block">
+                <button id="search-options-update-button" class="button" onclick="updateTerraformCompatibility();">Update</button>
+            </span>
         </nav>
     </div>
     <div class="column is-three-fifths">

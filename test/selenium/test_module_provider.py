@@ -2061,37 +2061,15 @@ EOF
             options = select.options
             return [option.text for option in options]
 
-
-        def open_modal():
-            # Ensure user preferences modal is not visible
-            preferences_modal = self.selenium_instance.find_element(By.ID, 'user-preferences-modal')
-            assert preferences_modal.is_displayed() == False
-
-            # Open user preferences
-            button = self.selenium_instance.find_element(By.ID, 'navbar-user-preferences-link')
-            assert button.text == 'Preferences'
-            button.click()
-            assert preferences_modal.is_displayed() == True     
-            return preferences_modal
-
-
-        def save_modal():
-            # Click save
-            preferences_modal.find_element(By.XPATH, "//button[contains(text(), 'Save')]").click()
-
-            # Ensure modal is no longer displayed
-            assert self.selenium_instance.find_element(By.ID, 'user-preferences-modal').is_displayed() == False
-
+        # Clear local storage
+        self.delete_cookies_and_local_storage()
 
         self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
-
-        # Clear local storage
-        self.selenium_instance.execute_script("window.localStorage.clear();")
     
         # Wait for version select
         assert get_select_names('version-select') == ['1.5.0 (latest)', '1.2.0']
 
-        preferences_modal = open_modal()
+        preferences_modal = self.open_user_preferences_modal()
 
         # Ensure checkboxes are unchecked
         beta_checkbox = preferences_modal.find_element(By.XPATH, "//label[contains(text(),\"Show 'beta' versions\")]//input")
@@ -2108,14 +2086,14 @@ EOF
 
 
         # Click save
-        save_modal()
+        self.save_user_preferences_modal()
 
         # Reload page and ensure beta versions are displayed
         self.selenium_instance.refresh()
         assert get_select_names('version-select') == expected_versions
 
         # Reset options and ensure versions go back to original
-        preferences_modal = open_modal()
+        preferences_modal = self.open_user_preferences_modal()
 
         # Ensure checkboxes are the same checked state
         beta_checkbox = preferences_modal.find_element(By.XPATH, "//label[contains(text(),\"Show 'beta' versions\")]//input")
@@ -2130,7 +2108,7 @@ EOF
             unpublished_checkbox.click()
         
         # Save changes again
-        save_modal()
+        self.save_user_preferences_modal()
 
         # Reload and check versions go back to no longer including any additional versions
         self.selenium_instance.refresh()
@@ -2615,3 +2593,34 @@ module "root" {
 }
 """.strip()
             )
+
+
+    @pytest.mark.parametrize('terraform_version, expected_compatibility_result, expected_color', [
+        ('1.5.2', 'Compatible', 'success'),
+        ('0.11.31', 'Incompatible', 'danger'),
+    ])
+    def test_terraform_compatibility_result(self, terraform_version, expected_compatibility_result, expected_color):
+        """Test terraform version compatibility result text"""
+        self.delete_cookies_and_local_storage()
+
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/fullypopulated/testprovider/1.5.0"))
+
+        # Wait for terraform constraint in usage example
+        self.wait_for_element(By.ID, "supported-terraform-versions")
+
+        # Ensure the compatibility text is not displayed
+        assert self.selenium_instance.find_element(By.ID, "supported-terraform-compatible").is_displayed() == False
+
+        # Update user preferences to set Terraform version
+        preferences_modal = self.open_user_preferences_modal()
+        terraform_constraint_input = preferences_modal.find_element(By.XPATH, "//label[contains(text(),\"Terraform Version for compatibility checks\")]//input")
+        terraform_constraint_input.send_keys(terraform_version)
+        self.save_user_preferences_modal()
+
+        # Page will reload, check that the version constraint is shown
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, "supported-terraform-compatible").is_displayed(), True)
+
+        # Check text for compatibility
+        assert self.selenium_instance.find_element(By.ID, "supported-terraform-compatible").text == f"Terraform {terraform_version} compatibility:\n{expected_compatibility_result}"
+        # Check color of label
+        assert self.selenium_instance.find_element(By.ID, "supported-terraform-compatible-tag").get_attribute("class") == f"tag is-medium is-light is-{expected_color}"

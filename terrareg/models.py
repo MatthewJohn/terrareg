@@ -30,6 +30,7 @@ from terrareg.errors import (
     NoModuleDownloadMethodConfiguredError,
     ProviderNameNotPermittedError, RepositoryUrlParseError
 )
+import terrareg.version_constraint
 from terrareg.utils import convert_markdown_to_html, get_public_url_details, safe_join_paths, sanitise_html_content
 from terrareg.validators import GitUrlValidator
 from terrareg.constants import EXTRACTION_VERSION
@@ -2896,7 +2897,7 @@ class ModuleVersion(TerraformSpecsObject):
                 self._module_provider.calculate_latest_version().version == self.version):
             self._module_provider.update_attributes(latest_version_id=self.pk)
 
-    def get_api_outline(self):
+    def get_api_outline(self, target_terraform_version=None):
         """Return dict of basic version details for API response."""
         row = self._get_db_row()
         api_outline = self._module_provider.get_api_outline()
@@ -2910,6 +2911,12 @@ class ModuleVersion(TerraformSpecsObject):
             "downloads": self.get_total_downloads(),
             "internal": self._get_db_row()['internal']
         })
+
+        if target_terraform_version is not None:
+            api_outline['version_compatibility'] = terrareg.version_constraint.VersionConstraint.is_compatible(
+                constraint=self.get_terraform_version_constraints(),
+                target_version=target_terraform_version
+            ).value
         return api_outline
 
     def get_total_downloads(self):
@@ -2918,10 +2925,10 @@ class ModuleVersion(TerraformSpecsObject):
             module_version=self
         )
 
-    def get_api_details(self):
+    def get_api_details(self, target_terraform_version=None):
         """Return dict of version details for API response."""#
         api_details = self._module_provider.get_api_details()
-        api_details.update(self.get_api_outline())
+        api_details.update(self.get_api_outline(target_terraform_version=target_terraform_version))
         api_details.update({
             "root": self.get_api_module_specs(),
             "submodules": [sm.get_api_module_specs() for sm in self.get_submodules()],
@@ -2929,15 +2936,17 @@ class ModuleVersion(TerraformSpecsObject):
         })
         return api_details
 
-    def get_terrareg_api_details(self, request_domain):
+    def get_terrareg_api_details(self, request_domain, target_terraform_version=None):
         """Return dict of version details with additional attributes used by terrareg UI."""
+        # Obtain module provider terrareg api details
         api_details = self._module_provider.get_terrareg_api_details()
 
         # Capture versions from module provider API output, as this limits
         # some versions, which are normally displayed in the Terraform APIs
         versions = api_details['versions']
 
-        api_details.update(self.get_api_details())
+        # Update with API details from the module version
+        api_details.update(self.get_api_details(target_terraform_version=target_terraform_version))
 
         tab_files = [module_version_file.path for module_version_file in self.module_version_files]
         additional_module_tabs = json.loads(terrareg.config.Config().ADDITIONAL_MODULE_TABS)

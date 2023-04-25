@@ -9,6 +9,7 @@ from test.unit.terrareg import (
 )
 from test import client
 import terrareg.models
+import terrareg.version_constraint
 
 
 class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
@@ -321,3 +322,17 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
 
         assert res.json == test_module_provider.get_latest_version().get_terrareg_api_details(request_domain="localhost")
         assert res.status_code == 200
+
+    @setup_test_data()
+    def test_terraform_version_compatibility(self, client, mock_models):
+        """Test example version comment is passed to API correctly"""
+        with mock.patch("terrareg.version_constraint.VersionConstraint.is_compatible",
+                        mock.MagicMock(return_value=terrareg.version_constraint.VersionCompatibilityType.COMPATIBLE)) as mock_is_compatible, \
+                mock.patch("terrareg.models.ModuleVersion.get_terraform_version_constraints", mock.MagicMock(return_value="> 5.1.7, <= 9.2.2")):
+
+            res = client.get('/v1/terrareg/modules/testnamespace/testmodulename/testprovider?target_terraform_version=4.2.1')
+
+            assert res.json["version_compatibility"] == "compatible"
+
+            mock_is_compatible.assert_called_once_with(constraint='> 5.1.7, <= 9.2.2', target_version='4.2.1')
+

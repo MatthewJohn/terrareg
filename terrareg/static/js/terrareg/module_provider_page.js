@@ -1821,6 +1821,7 @@ function onSubmoduleSelectChange(event) {
  */
 async function populateTerraformUsageExample(moduleDetails, submoduleDetails) {
     let config = await getConfig();
+    let userPreferences = getUserPreferences();
 
     // Check if module has been published - if not, do not
     // show usage example
@@ -1838,6 +1839,19 @@ async function populateTerraformUsageExample(moduleDetails, submoduleDetails) {
     if (submoduleDetails.terraform_version_constraint) {
         $('#supported-terraform-versions-data').text(submoduleDetails.terraform_version_constraint);
         $('#supported-terraform-versions').removeClass('default-hidden');
+    }
+
+    // If version compatibility is in the result
+    if (submoduleDetails.version_compatibility !== undefined) {
+        // Convert to result object
+        let versionCompatibilityResult = getTerraformCompatibilityResultObject(submoduleDetails.version_compatibility);
+        if (versionCompatibilityResult) {
+            // If a valid result object was generated, update text in div and display
+            $('#supported-terraform-compatible-target-version').text(userPreferences["terraform-compatibility-version"]);
+            $('#supported-terraform-compatible-tag').text(versionCompatibilityResult.text);
+            $('#supported-terraform-compatible-tag').addClass(`is-${versionCompatibilityResult.color}`);
+            $('#supported-terraform-compatible').removeClass('default-hidden');
+        }
     }
 
     // Update labels for example analytics token and phrase

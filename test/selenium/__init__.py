@@ -211,6 +211,35 @@ class SeleniumTest(BaseTest):
                     print('Failed to find element')
                     raise
 
+    def delete_cookies_and_local_storage(self):
+        """Delete cookies and local storage from selenium browser"""
+        # Local homepage to allow removal of storage
+        self.selenium_instance.get(self.get_url('/'))
+        self.selenium_instance.delete_all_cookies()
+        self.selenium_instance.execute_script("window.localStorage.clear();")
+
+    def open_user_preferences_modal(self):
+        """Open the user preferences modal"""
+        # Ensure user preferences modal is not visible
+        preferences_modal = self.selenium_instance.find_element(By.ID, 'user-preferences-modal')
+        assert preferences_modal.is_displayed() == False
+
+        # Open user preferences
+        button = self.selenium_instance.find_element(By.ID, 'navbar-user-preferences-link')
+        assert button.text == 'Preferences'
+        button.click()
+        assert preferences_modal.is_displayed() == True
+        return preferences_modal
+
+    def save_user_preferences_modal(self):
+        """Save the user preferences modal"""
+        # Click save
+        preferences_modal = self.selenium_instance.find_element(By.ID, 'user-preferences-modal')
+        preferences_modal.find_element(By.XPATH, "//button[contains(text(), 'Save')]").click()
+
+        # Ensure modal is no longer displayed
+        assert self.selenium_instance.find_element(By.ID, 'user-preferences-modal').is_displayed() == False
+
     def perform_admin_authentication(self, password):
         """Go to admin page and authenticate as admin"""
         self.selenium_instance.get(self.get_url('/login'))
