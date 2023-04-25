@@ -351,6 +351,39 @@ class OutputsTab extends ModuleDetailsTab {
     }
 }
 
+class ModulesTab extends ModuleDetailsTab {
+    get name() {
+        return 'modules';
+    }
+    async render() {
+        this._renderPromise = new Promise(async (resolve) => {
+            let modulesTab = $("#module-tab-modules");
+            let modulesTabTbody = modulesTab.find("tbody");
+            this._moduleDetails.modules.forEach((submodule) => {
+                let moduleRow = $("<tr></tr>");
+
+                let nameTd = $("<td></td>");
+                nameTd.text(submodule.name);
+                moduleRow.append(nameTd);
+
+                let sourceTd = $("<td></td>");
+                sourceTd.text(submodule.source);
+                moduleRow.append(sourceTd);
+
+                let versionTd = $("<td></td>");
+                versionTd.text(submodule.version);
+                moduleRow.append(versionTd);
+
+                modulesTabTbody.append(moduleRow);
+            });
+
+            // Show tab link
+            $('#module-tab-link-modules').removeClass('default-hidden');
+            resolve(true);
+        });
+    }
+}
+
 class ProvidersTab extends ModuleDetailsTab {
     get name() {
         return 'providers';
@@ -375,7 +408,7 @@ class ProvidersTab extends ModuleDetailsTab {
                 providerRow.append(sourceTd);
 
                 let versionTd = $("<td></td>");
-                versionTd.append(provider.version);
+                versionTd.text(provider.version);
                 providerRow.append(versionTd);
 
                 providerTabTbody.append(providerRow);
@@ -2246,6 +2279,7 @@ async function setupRootModulePage(data) {
 
         tabFactory.registerTab(new OutputsTab(moduleDetails.root));
         tabFactory.registerTab(new ProvidersTab(moduleDetails.root));
+        tabFactory.registerTab(new ModulesTab(moduleDetails.root));
         tabFactory.registerTab(new ResourcesTab(moduleDetails.root, moduleDetails.graph_url));
         tabFactory.registerTab(new SecurityIssuesTab(moduleDetails));
         tabFactory.registerTab(new AnalyticsTab(moduleDetails));
@@ -2299,6 +2333,7 @@ async function setupSubmodulePage(data) {
     tabFactory.registerTab(new InputsTab(submoduleDetails));
     tabFactory.registerTab(new OutputsTab(submoduleDetails));
     tabFactory.registerTab(new ProvidersTab(submoduleDetails));
+    tabFactory.registerTab(new ModulesTab(submoduleDetails));
     tabFactory.registerTab(new ResourcesTab(submoduleDetails, submoduleDetails.graph_url));
     tabFactory.registerTab(new SecurityIssuesTab(submoduleDetails));
     await tabFactory.renderTabs();
@@ -2335,6 +2370,7 @@ async function setupExamplePage(data) {
     tabFactory.registerTab(new InputsTab(submoduleDetails));
     tabFactory.registerTab(new OutputsTab(submoduleDetails));
     tabFactory.registerTab(new ProvidersTab(submoduleDetails));
+    tabFactory.registerTab(new ModulesTab(submoduleDetails));
     tabFactory.registerTab(new ResourcesTab(submoduleDetails, submoduleDetails.graph_url));
     tabFactory.registerTab(new SecurityIssuesTab(submoduleDetails));
     await tabFactory.renderTabs();
