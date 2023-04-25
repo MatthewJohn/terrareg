@@ -1,5 +1,19 @@
 # Changelog
 
+# [2.67.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.66.4...v2.67.0) (2023-04-25)
+
+
+### Bug Fixes
+
+* Populate "dependencies" attribute in API response, with a list of external module dependencies ([05553e8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/05553e8583f6a823abce542381d1994f232f296f)), closes [#386](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/386)
+* Remove html sanitisation of provider version to remove HTML entities from API response. ([1832b04](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1832b04c6ad8b65b439ca6879e19f698d881fb8b)), closes [#385](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/385)
+
+
+### Features
+
+* Add tab to module provider page detailing modules called by current module ([f727a48](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f727a486d6a5a2f08306a6acf23d178a24ec734e)), closes [#139](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/139)
+* Display module calls in submodule/example pages ([17f1649](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/17f1649a4ab4341fada40c1e73f6c3fb4d497f68)), closes [#139](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/139)
+
 ## [2.66.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.66.3...v2.66.4) (2023-04-24)
 
 
