@@ -25,6 +25,7 @@ from terrareg.models import (
     ModuleProvider, ProviderLogo,
     UserGroup, UserGroupNamespacePermission
 )
+from terrareg.module_version_create import module_version_create
 
 
 class TestModuleProvider(SeleniumTest):
@@ -1585,7 +1586,8 @@ EOF
         with mock_create_audit_event:
             # Create test module version
             module_version = ModuleVersion(module_provider=module_provider, version='2.5.5')
-            module_version.prepare_module()
+            with module_version_create(module_version):
+                pass
             module_version.publish()
             module_version_pk = module_version.pk
 

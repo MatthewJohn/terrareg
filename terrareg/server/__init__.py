@@ -12,6 +12,7 @@ import terrareg.database
 import terrareg.models
 import terrareg.errors
 import terrareg.auth
+from terrareg.server.api.terrareg_module_version_extraction_status import ApiTerraregModuleVersionExtractionStatus
 from .base_handler import BaseHandler
 from terrareg.server.api import *
 
@@ -382,6 +383,10 @@ class Server(BaseHandler):
         self._api.add_resource(
             ApiModuleVersionCreateGitHubHook,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/hooks/github'
+        )
+        self._api.add_resource(
+            ApiTerraregModuleVersionExtractionStatus,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/extraction_status/<string:request_id>'
         )
         self._api.add_resource(
             ApiTerraregModuleVersionVariableTemplate,

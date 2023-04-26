@@ -196,16 +196,18 @@ class BaseTest:
                                 'published_at': datetime.now(),
                                 'internal': False,
                                 'module_details_id': module_details.pk,
-                                'extraction_version': version_data.get('extraction_version', EXTRACTION_VERSION)
+                                'extraction_version': version_data.get('extraction_version', EXTRACTION_VERSION),
+                                'extraction_complete': version_data.get('extraction_complete', True)
                             }
 
                             insert = Database.get().module_version.insert().values(
                                 **data
                             )
                             with Database.get_engine().connect() as conn:
-                                conn.execute(insert)
+                                res = conn.execute(insert)
+                                module_version_id = res.lastrowid
 
-                            module_version = ModuleVersion(module_provider=module_provider, version=version_number)
+                            module_version = ModuleVersion(module_provider=module_provider, version=version_number, pk=module_version_id)
 
                             values_to_update = {
                                 attr: version_data[attr]

@@ -44,6 +44,7 @@ TEST_MODULE_DATA = {}
 TEST_GIT_PROVIDER_DATA = {}
 TEST_MODULE_DETAILS = {}
 TEST_MODULE_DETAILS_ITX = 0
+TEST_MODULE_VERSION_ITX = 0
 USER_GROUP_CONFIG = {}
 
 def setup_test_data(test_data=None, user_group_data=None):
@@ -53,6 +54,7 @@ def setup_test_data(test_data=None, user_group_data=None):
         def wrapper(*args, **kwargs):
             global TEST_MODULE_DETAILS
             global TEST_MODULE_DETAILS_ITX
+            global TEST_MODULE_VERSION_ITX
             global TEST_MODULE_DATA
             global USER_GROUP_CONFIG
             TEST_MODULE_DATA = dict(test_data if test_data else test_data_full)
@@ -67,8 +69,14 @@ def setup_test_data(test_data=None, user_group_data=None):
             for namespace in TEST_MODULE_DATA:
                 for module in TEST_MODULE_DATA[namespace].get('modules', {}):
                     for provider in TEST_MODULE_DATA[namespace]['modules'][module]:
+                        versions = []
                         for version in TEST_MODULE_DATA[namespace]['modules'][module][provider].get('versions', {}):
                             version_config = TEST_MODULE_DATA[namespace]['modules'][module][provider]['versions'][version]
+                            version_config['id'] = TEST_MODULE_VERSION_ITX
+                            TEST_MODULE_VERSION_ITX += 1
+                            version_config['version'] = version
+                            version_config['extraction_complete'] = version_config.get('extraction_complete', True)
+
                             TEST_MODULE_DETAILS[str(TEST_MODULE_DETAILS_ITX)] = {
                                 'readme_content': Database.encode_blob(version_config.get('readme_content', default_readme)),
                                 'terraform_docs': Database.encode_blob(version_config.get('terraform_docs', default_terraform_docs)),
@@ -89,6 +97,11 @@ def setup_test_data(test_data=None, user_group_data=None):
                                     config['module_details_id'] = TEST_MODULE_DETAILS_ITX
 
                                     TEST_MODULE_DETAILS_ITX += 1
+
+                            versions.append(version_config)
+                            # Rewrite versions from dictionary to list
+                            TEST_MODULE_DATA[namespace]['modules'][module][provider]['version_data'] = versions
+
 
             global TEST_GIT_PROVIDER_DATA
             TEST_GIT_PROVIDER_DATA = dict(test_git_providers)
@@ -145,12 +158,17 @@ def get_module_provider_mock_data(module_provider):
 def get_module_version_mock_data(module_version):
     """Return unit test data structure for namespace."""
     module_provider_data = get_module_provider_mock_data(module_version._module_provider)
-    return (
-        module_provider_data['versions'][module_version._version]
-        if ('versions' in module_provider_data and
-            module_version._version in module_provider_data['versions']) else
-        None
-    )
+    if module_version._pk:
+        module_versions = filter(lambda x: x['id'] == module_version._pk, module_provider_data.get('version_data', []))
+    else:
+        module_versions = filter(lambda x: x['version'] == module_version._version, module_provider_data.get('version_data', []))
+
+    module_versions = [mv for mv in module_versions]
+
+    if module_versions:
+        return module_versions[0]
+    else:
+        return None
 
 def mock_module(request):
     """Mock Module class"""
@@ -207,21 +225,20 @@ def mock_module_version(request):
 
     def _create_db_row(self):
         """Mock create DB row"""
-
+        global TEST_MODULE_VERSION_ITX
         module_provider_data = get_module_provider_mock_data(self._module_provider)
-        previous_published = False
-        if 'versions' not in module_provider_data:
-            module_provider_data['versions'] = {}
-        if self._version in module_provider_data['versions']:
-            previous_published = module_provider_data['versions'][self._version].get('published', False)
-            del module_provider_data['versions'][self._version]
-        module_provider_data['versions'][self._version] = {
+        if 'version_data' not in module_provider_data:
+            module_provider_data['version_data'] = []
+
+        module_provider_data['version_data'].append({
+            'id': TEST_MODULE_VERSION_ITX,
+            'extraction_complete': False,
+            'version': self._version,
             'beta': False,
             'internal': False,
-            'published': False
-        }
-        
-        return previous_published
+            'published': False,
+        })
+        TEST_MODULE_VERSION_ITX += 1
     mock_method(request, 'terrareg.models.ModuleVersion._create_db_row', _create_db_row)
 
     def _get_db_row(self):
@@ -232,7 +249,8 @@ def mock_module_version(request):
         return {
             'id': unittest_data.get('id'),
             'module_provider_id': get_module_provider_mock_data(self._module_provider),
-            'version': self._version,
+            'version': unittest_data.get('version'),
+            'extraction_complete': unittest_data.get('extraction_complete'),
             'owner': unittest_data.get('owner', 'Mock Owner'),
             'description': unittest_data.get('description', 'Mock description'),
             'repo_base_url_template': unittest_data.get('repo_base_url_template', None),
@@ -251,6 +269,21 @@ def mock_module_version(request):
             'extraction_version': unittest_data.get('extraction_version', EXTRACTION_VERSION)
         }
     mock_method(request, 'terrareg.models.ModuleVersion._get_db_row', _get_db_row)
+
+    def finalise_module(self):
+        module_provider_data = get_module_provider_mock_data(self._module_provider)
+        should_publish = False
+        for version in module_provider_data.get('version_data', []):
+
+            if version.get('id') != self.pk:
+                should_publish = should_publish or version.get('published', False)
+            module_provider_data['version_data'].remove(version)
+        get_module_version_mock_data(self)['extraction_complete'] = True
+
+        if should_publish:
+            self.publish()
+
+    mock_method(request, 'terrareg.models.ModuleVersion.finalise_module', finalise_module)
 
 
 def mock_module_version_file(request):

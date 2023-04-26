@@ -88,6 +88,7 @@ class TestCreateModuleProvider(SeleniumTest):
             'modulesearch-contributed',
             'modulesearch-trusted',
             'mostrecent',
+            'mostrecentextractionincomplete',
             'mostrecentunpublished',
             'onlybeta',
             'onlyunpublished',

@@ -1948,44 +1948,75 @@ function indexModuleVersion(moduleDetails) {
     inProgressMessage.html('Indexing module version in progress...');
     inProgressMessage.removeClass('default-hidden');
 
-    $.post(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/import`)
-        .done(() => {
-            // Show success message for importing module
-            successMessage.html("Successfully indexed version");
-            successMessage.removeClass('default-hidden');
-            errorMessage.addClass('default-hidden');
+    let requestId = crypto.randomUUID();;
+    let shouldCheckUpdates = true;
 
-            // If publish checkbox is checked, perform request to publish
-            if ($("#indexModuleVersionPublish").is(":checked")) {
-                inProgressMessage.html('Publishing module version in progress...');
-                $.post(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/publish`)
-                    .done(() => {
-                        // If successful, update success message
-                        successMessage.html("Successfully indexed and published version.");
+    function checkUpdates() {
+        if (shouldCheckUpdates) {
+            $.post(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/extraction_status/${requestId}`).done((data) => {
+                if (shouldCheckUpdates) {
+                    inProgressMessage.html(data.message);
+                    setTimeout(checkUpdates, 1000);
+                }
+            }).fail(() => {
+                if (shouldCheckUpdates) {
+                    setTimeout(checkUpdates, 1000);
+                }
+            });
+        }
+    }
 
-                        // Hide in-progress
-                        inProgressMessage.addClass('default-hidden');
-                    })
-                    .fail((res) => {
-                        // Hide in-progress
-                        inProgressMessage.addClass('default-hidden');
+    checkUpdates();
 
-                        // Display any errors
-                        errorMessage.html(failedResponseToErrorString(res));
-                        errorMessage.removeClass('default-hidden');
-                    });
-            } else {
-                // If publishing is not enabled, hide in-progress message
-                inProgressMessage.addClass('default-hidden');
-            }
-        })
-        .fail((res) => {
-            // Render and show error
-            errorMessage.html(failedResponseToErrorString(res));
-            errorMessage.removeClass('default-hidden');
-            // Hide in-progress
+    $.ajax({
+        url: `/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/import`,
+        method: 'post',
+        data: JSON.stringify({
+            request_id: requestId
+        }),
+        contentType: 'application/json'
+    }).done(() => {
+        shouldCheckUpdates = false;
+
+        // Show success message for importing module
+        successMessage.html("Successfully indexed version");
+        successMessage.removeClass('default-hidden');
+        errorMessage.addClass('default-hidden');
+
+        // If publish checkbox is checked, perform request to publish
+        if ($("#indexModuleVersionPublish").is(":checked")) {
+            inProgressMessage.html('Publishing module version in progress...');
+            $.post(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/publish`)
+                .done(() => {
+                    // If successful, update success message
+                    successMessage.html("Successfully indexed and published version.");
+
+                    // Hide in-progress
+                    inProgressMessage.addClass('default-hidden');
+                })
+                .fail((res) => {
+                    // Hide in-progress
+                    inProgressMessage.addClass('default-hidden');
+
+                    // Display any errors
+                    errorMessage.html(failedResponseToErrorString(res));
+                    errorMessage.removeClass('default-hidden');
+                });
+        } else {
+            // If publishing is not enabled, hide in-progress message
             inProgressMessage.addClass('default-hidden');
-        });
+        }
+    })
+    .fail((res) => {
+        shouldCheckUpdates = false;
+
+        // Render and show error
+        errorMessage.html(failedResponseToErrorString(res));
+        errorMessage.removeClass('default-hidden');
+        // Hide in-progress
+        inProgressMessage.addClass('default-hidden');
+        clearInterval(intervalId);
+    });
 }
 
 /*

@@ -1,9 +1,12 @@
 
+from flask import request
+
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.auth_wrapper
 import terrareg.models
 import terrareg.database
 import terrareg.module_extractor
+import terrareg.module_version_create
 
 
 class ApiModuleVersionCreate(ErrorCatchingResource):
@@ -13,25 +16,28 @@ class ApiModuleVersionCreate(ErrorCatchingResource):
 
     def _post(self, namespace, name, provider, version):
         """Handle creation of module version."""
-        with terrareg.database.Database.start_transaction():
-            _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
-            if error:
-                return error[0], 400
+        _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+        if error:
+            return error[0], 400
 
-            # Ensure that the module provider has a repository url configured.
-            if not module_provider.get_git_clone_url():
-                return {'message': 'Module provider is not configured with a repository'}, 400
+        request_id = None
+        # If a request that contains data that can be loaded
+        # by json, extract request_id
+        try:
+            request_id = request.json.get('request_id')
+        except:
+            pass
 
-            module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version=version)
+        # Ensure that the module provider has a repository url configured.
+        if not module_provider.get_git_clone_url():
+            return {'message': 'Module provider is not configured with a repository'}, 400
 
-            previous_version_published = module_version.prepare_module()
-            with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
+        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version=version)
+
+        with terrareg.module_version_create.module_version_create(module_version):
+            with terrareg.module_extractor.GitModuleExtractor(module_version=module_version, request_id=request_id) as me:
                 me.process_upload()
 
-            if previous_version_published:
-                module_version.publish()
-
-            return {
-                'status': 'Success'
-            }
-
+        return {
+            'status': 'Success'
+        }

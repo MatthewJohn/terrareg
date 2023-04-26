@@ -31,7 +31,8 @@ from terrareg.errors import (
     UnableToGetGlobalTerraformLockError,
     TerraformVersionSwitchError
 )
-from terrareg.utils import PathDoesNotExistError, get_public_url_details, safe_iglob, safe_join_paths
+from terrareg.module_extraction_status_type import ModuleExtractionStatusType
+from terrareg.utils import PathDoesNotExistError, safe_iglob, safe_join_paths, get_public_url_details
 from terrareg.config import Config
 from terrareg.constants import EXTRACTION_VERSION
 
@@ -42,11 +43,13 @@ class ModuleExtractor:
     TERRAREG_METADATA_FILES = ['terrareg.json', '.terrareg.json']
     TERRAFORM_LOCK = threading.Lock()
 
-    def __init__(self, module_version: ModuleVersion):
+    def __init__(self, module_version: ModuleVersion, request_id: str=None):
         """Create temporary directories and store member variables."""
         self._module_version = module_version
+        self._request_id = request_id
         self._extract_directory = tempfile.TemporaryDirectory()  # noqa: R1732
         self._upload_directory = tempfile.TemporaryDirectory()  # noqa: R1732
+        self._extraction_status_id = self._generate_module_extraction_status_row()
 
     @property
     def terraform_binary(self):
@@ -139,6 +142,39 @@ class ModuleExtractor:
             yield
         finally:
             ModuleExtractor.TERRAFORM_LOCK.release()
+
+    def _generate_module_extraction_status_row(self):
+        """Generate module extraction status row in database"""
+        db = Database.get()
+        if self._request_id:
+            insert_statement = db.module_extraction_status.insert().values(
+                module_version_id=self._module_version.pk,
+                timestamp=datetime.datetime.now(),
+                last_update=datetime.datetime.now(),
+                status=ModuleExtractionStatusType.IN_PROGRESS,
+                request_id=self._request_id,
+                message="Initialising"
+            )
+            with db.get_connection() as conn:
+                res = conn.execute(insert_statement)
+                return res.lastrowid
+        # If a request Id has not been provided, do not setup logging
+        return None
+
+    def _update_progress_message(self, message, status=ModuleExtractionStatusType.IN_PROGRESS):
+        """Update module extraction status row"""
+        if self._extraction_status_id:
+            db = Database.get()
+
+            insert_statement = db.module_extraction_status.update().where(
+                db.module_extraction_status.c.id==self._extraction_status_id
+            ).values(
+                last_update=datetime.datetime.now(),
+                status=status,
+                message=message
+            )
+            with db.get_connection() as conn:
+                conn.execute(insert_statement)
 
     def _run_tfsec(self, module_path):
         """Run tfsec and return output."""
@@ -341,13 +377,20 @@ credentials "{domain_name}" {{
 
     def _process_submodule(self, submodule: BaseSubmodule):
         """Process submodule."""
+        message_prefix = f"{submodule.__class__.__name__}: {submodule.path}: "
         submodule_dir = safe_join_paths(self.module_directory, submodule.path)
 
+        self._update_progress_message(f"{message_prefix}Extracting module information")
         tf_docs = self._run_terraform_docs(submodule_dir)
+
+        self._update_progress_message(f"{message_prefix}Running security scan")
         tfsec = self._run_tfsec(submodule_dir)
+
+        self._update_progress_message(f"{message_prefix}Parsing README")
         readme_content = self._get_readme_content(submodule_dir)
 
         terraform_graph = None
+        self._update_progress_message(f"{message_prefix}Generating graph data")
         with self._switch_terraform_versions(submodule_dir):
             if self._run_tf_init(submodule_dir):
                 terraform_graph = self._get_graph_data(submodule_dir)
@@ -355,12 +398,14 @@ credentials "{domain_name}" {{
         infracost = None
         # Run infracost on examples, if API key is set
         if isinstance(submodule, Example) and Config().INFRACOST_API_KEY:
+            self._update_progress_message(f"{message_prefix}Performing cost analysis")
             try:
                 infracost = self._run_infracost(example=submodule)
             except UnableToProcessTerraformError as exc:
                 print('An error occured whilst running infracost against example')
 
         # Create module details row
+        self._update_progress_message(f"{message_prefix}Inserting into database")
         module_details = self._create_module_details(
             terraform_docs=tf_docs,
             readme_content=readme_content,
@@ -374,6 +419,7 @@ credentials "{domain_name}" {{
         )
 
         if isinstance(submodule, Example):
+            self._update_progress_message(f"{message_prefix}Extracting example files")
             self._extract_example_files(example=submodule)
 
     def _run_infracost(self, example: Example):
@@ -433,6 +479,7 @@ credentials "{domain_name}" {{
 
     def _scan_submodules(self, subdirectory: str, submodule_class: Type[BaseSubmodule]):
         """Scan for submodules and extract details."""
+        self._update_progress_message(f"Root module: Scanning {submodule_class.__name__}s")
         try:
             submodule_base_directory = safe_join_paths(self.module_directory, subdirectory, is_dir=True)
         except PathDoesNotExistError:
@@ -541,24 +588,31 @@ credentials "{domain_name}" {{
     def process_upload(self):
         """Handle data extraction from module source."""
         # Run terraform-docs on module content and obtain README
+        self._update_progress_message("Root module: Extracting module information")
         terraform_docs = self._run_terraform_docs(self.module_directory)
+        self._update_progress_message("Root module: Running security scan")
         tfsec = self._run_tfsec(self.module_directory)
+        self._update_progress_message("Root module: Parsing README")
         readme_content = self._get_readme_content(self.module_directory)
 
         terraform_graph = None
+        self._update_progress_message("Root module: Generating graph data")
         with self._switch_terraform_versions(self.module_directory):
             if self._run_tf_init(self.module_directory):
                 terraform_graph = self._get_graph_data(self.module_directory)
 
         # Check for any terrareg metadata files
+        self._update_progress_message("Root module: Parsing terrareg metadata file")
         terrareg_metadata = self._get_terrareg_metadata(self.module_directory)
 
         # Check if description is available in metadata
+        self._update_progress_message("Root module: Generating description")
         description = terrareg_metadata.get('description', None)
         if not description:
             # Otherwise, attempt to extract description from README
             description = self._extract_description(readme_content)
 
+        self._update_progress_message("Root module: Inserting into database")
         self._insert_database(
             description=description,
             readme_content=readme_content,
@@ -568,12 +622,7 @@ credentials "{domain_name}" {{
             terraform_graph=terraform_graph
         )
 
-        # Generate the archive, unless the module has a git clone URL and
-        # the config for deleting externally hosted artifacts is enabled.
-        if not (self._module_version.get_git_clone_url() and
-                Config().DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
-            self._generate_archive()
-
+        self._update_progress_message("Root module: Extracting additional tab information")
         self._extract_additional_tab_files()
 
         self._scan_submodules(
@@ -582,6 +631,15 @@ credentials "{domain_name}" {{
         self._scan_submodules(
             submodule_class=Example,
             subdirectory=Config().EXAMPLES_DIRECTORY)
+
+        # Generate the archive, unless the module has a git clone URL and
+        # the config for deleting externally hosted artifacts is enabled.
+        if not (self._module_version.get_git_clone_url() and
+                Config().DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
+            self._update_progress_message("Generating archive")
+            self._generate_archive()
+
+        self._update_progress_message(f"Complete", status=ModuleExtractionStatusType.COMPLETE)
 
 
 class ApiUploadModuleExtractor(ModuleExtractor):
@@ -662,6 +720,10 @@ class GitModuleExtractor(ModuleExtractor):
                 timeout=Config().GIT_CLONE_TIMEOUT
             )
         except subprocess.CalledProcessError as exc:
+            self._update_progress_message(
+                "Failed to clone repository",
+                status=ModuleExtractionStatusType.FAILED
+            )
             error = 'Unknown error occurred during git clone'
             for line in exc.output.decode('utf-8').split('\n'):
                 if line.startswith('fatal:'):
@@ -672,6 +734,7 @@ class GitModuleExtractor(ModuleExtractor):
 
     def process_upload(self):
         """Extract archive and perform data extraction from module source."""
+        self._update_progress_message("Cloning repository")
         self._clone_repository()
 
         super(GitModuleExtractor, self).process_upload()

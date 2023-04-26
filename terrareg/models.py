@@ -569,9 +569,7 @@ class Namespace(object):
             # If set to create and auto module-provider creation
             # is enabled in config, create the module provider
             if create and terrareg.config.Config().AUTO_CREATE_NAMESPACE:
-                cls.create(name=name, display_name=None)
-
-                return obj
+                return cls.create(name=name, display_name=None)
 
             # If not creating, return None
             return None
@@ -652,6 +650,9 @@ class Namespace(object):
 
         obj = cls(name=name)
 
+        # Indicate that object was created
+        obj.created = True
+
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.NAMESPACE_CREATE,
             object_type=obj.__class__.__name__,
@@ -713,7 +714,8 @@ class Namespace(object):
 
             modules_query = modules_query.where(
                 db.module_version.c.published == True,
-                db.module_version.c.beta == False
+                db.module_version.c.beta == False,
+                db.module_version.c.extraction_complete == True
             )
 
             modules_query = modules_query.subquery()
@@ -808,6 +810,7 @@ class Namespace(object):
     def __init__(self, name: str):
         """Validate name and store member variables"""
         self._name = name
+        self.created = False
         self._cache_db_row = None
 
     def _get_db_row(self):
@@ -823,6 +826,28 @@ class Namespace(object):
                 self._cache_db_row = res.fetchone()
 
         return self._cache_db_row
+
+    def delete(self):
+        """Delete namespace"""
+        assert self.pk is not None
+
+        # Delete all module providers
+        for module in self.get_all_modules():
+            for provider in module.get_providers():
+                provider.delete()
+
+        # Delete namespace from database
+        db = Database.get()
+
+        with db.get_connection() as conn:
+            # Delete module details from module_details table
+            delete_statement = db.namespace.delete().where(
+                db.namespace.c.id == self.pk
+            )
+            conn.execute(delete_statement)
+
+        # Clear cached DB row
+        self._cache_db_row = None
 
     def get_view_url(self):
         """Return view URL"""
@@ -1390,6 +1415,8 @@ class ModuleProvider(object):
         ).join(
             db.namespace,
             db.module_provider.c.namespace_id==db.namespace.c.id
+        ).where(
+            db.module_version.c.extraction_complete==True
         )
         if only_published:
             counts = counts.where(
@@ -1425,6 +1452,7 @@ class ModuleProvider(object):
             conn.execute(module_provider_insert)
 
         obj = cls(module=module, name=name)
+        obj.created = True
 
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_CREATE,
@@ -1446,9 +1474,7 @@ class ModuleProvider(object):
             # If set to create and auto module-provider creation
             # is enabled in config, create the module provider
             if create and terrareg.config.Config().AUTO_CREATE_MODULE_PROVIDER:
-                cls.create(module=module, name=name)
-
-                return obj
+                return cls.create(module=module, name=name)
 
             # If not creating, return None
             return None
@@ -1586,6 +1612,7 @@ class ModuleProvider(object):
         self._module = module
         self._name = name
         self._cache_db_row = None
+        self.created = False
 
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
@@ -1974,7 +2001,8 @@ class ModuleProvider(object):
         ).where(
             db.module_provider.c.id == self.pk,
             db.module_version.c.published == True,
-            db.module_version.c.beta == False
+            db.module_version.c.beta == False,
+            db.module_version.c.extraction_complete == True
         )
         with db.get_connection() as conn:
             res = conn.execute(select)
@@ -2008,7 +2036,8 @@ class ModuleProvider(object):
         select = db.select_module_version_joined_module_provider(
             db.module_version.c.version
         ).where(
-            db.module_provider.c.id == self.pk
+            db.module_provider.c.id == self.pk,
+            db.module_version.c.extraction_complete == True
         )
         # Remove unpublished versions, it not including them
         if not include_unpublished:
@@ -2435,6 +2464,8 @@ class ModuleVersion(TerraformSpecsObject):
         db = Database.get()
         counts = db.select_module_version_joined_module_provider(
             db.module_version.c.version
+        ).where(
+            db.module_version.c.extraction_complete == True
         ).group_by(
             db.namespace.c.namespace,
             db.module_provider.c.module,
@@ -2666,12 +2697,13 @@ class ModuleVersion(TerraformSpecsObject):
         """Return whether the version is the latest version for the module provider"""
         return self._module_provider.get_latest_version() == self
 
-    def __init__(self, module_provider: ModuleProvider, version: str):
+    def __init__(self, module_provider: ModuleProvider, version: str, pk: int=None):
         """Setup member variables."""
         self._extracted_beta_flag = self._validate_version(version)
         self._module_provider = module_provider
         self._version = version
         self._cache_db_row = None
+        self._pk = pk
         super(ModuleVersion, self).__init__()
 
     def __eq__(self, __o):
@@ -2690,6 +2722,17 @@ class ModuleVersion(TerraformSpecsObject):
                 db.module_provider.c.id == self._module_provider.pk,
                 db.module_version.c.version == self.version
             )
+            # If a specific primary key has been specified,
+            # select based on this
+            if self._pk:
+                select = select.where(
+                    db.module_version.c.id == self._pk
+                )
+            # Otherwise, obtain based on whether extraction is complete
+            else:
+                select = select.where(
+                    db.module_version.c.extraction_complete == True
+                )
             with db.get_connection() as conn:
                 res = conn.execute(select)
                 self._cache_db_row = res.fetchone()
@@ -2979,7 +3022,7 @@ class ModuleVersion(TerraformSpecsObject):
         Returns boolean whethe previous DB row (if exists) was published.
         """
         self.create_data_directory()
-        previous_version_published = self._create_db_row()
+        self._create_db_row()
 
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.MODULE_VERSION_INDEX,
@@ -2988,13 +3031,56 @@ class ModuleVersion(TerraformSpecsObject):
             old_value=None,
             new_value=None
         )
-        return previous_version_published
+
+    def finalise_module(self):
+        """Finalise module, after import. Delete old versions and activate the new version."""
+        previous_version_published = False
+        # Get previous instances of module
+        db = Database.get()
+        with db.start_transaction():
+            with db.get_connection() as conn:
+                res = conn.execute(sqlalchemy.select(
+                    db.module_version
+                ).where(
+                    db.module_version.c.module_provider_id==self.module_provider.pk,
+                    db.module_version.c.version==self.version,
+                    db.module_version.c.id!=self.pk
+                )).fetchall()
+                res = [r for r in res]
+
+            if res:
+                for row in res:
+                    old_module_version = ModuleVersion.get(
+                        module_provider=self.module_provider,
+                        version=self.version,
+                        pk=row['id']
+                    )
+
+                    # If configured to auto re-publish module versions, use
+                    # the current published state of previous module version
+                    # to determine if publishing should happen
+                    if terrareg.config.Config().MODULE_VERSION_REINDEX_MODE is terrareg.config.ModuleVersionReindexMode.AUTO_PUBLISH:
+                        previous_version_published = previous_version_published or (row['extraction_complete'] and old_module_version.published)
+
+                    # Delete previous module version
+                    old_module_version.delete(delete_related_analytics=False)
+
+                    # Migrate analytics from old module version ID to new module version
+                    terrareg.analytics.AnalyticsEngine.migrate_analytics_to_new_module_version(
+                        old_version_version_pk=row['id'],
+                        new_module_version=self)
+
+            self.update_attributes(extraction_complete=True)
+
+            # Publish new module version, if previous module version
+            # was found to be.
+            if previous_version_published:
+                self.publish()
 
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
         return statement.where(
-            db.module_version.c.module_provider_id == self._module_provider.pk,
-            db.module_version.c.version == self.version
+            db.module_version.c.id==self.pk
         )
 
     def update_attributes(self, **kwargs):
@@ -3065,21 +3151,12 @@ class ModuleVersion(TerraformSpecsObject):
         db = Database.get()
 
         # Delete pre-existing version, if it exists
-        old_module_version_pk = None
         previous_version_published = False
         if self._get_db_row():
             # Determine if re-indexing of modules is allowed
             if terrareg.config.Config().MODULE_VERSION_REINDEX_MODE is terrareg.config.ModuleVersionReindexMode.PROHIBIT:
                 raise ReindexingExistingModuleVersionsIsProhibitedError(
                     "The module version already exists and re-indexing modules is disabled")
-
-            # If configured to auto re-publish module versions, return
-            # the current published state of previous module version
-            if terrareg.config.Config().MODULE_VERSION_REINDEX_MODE is terrareg.config.ModuleVersionReindexMode.AUTO_PUBLISH:
-                previous_version_published = self.published
-
-            old_module_version_pk = self.pk
-            self.delete(delete_related_analytics=False)
 
         with db.get_connection() as conn:
             # Insert new module into table
@@ -3088,15 +3165,14 @@ class ModuleVersion(TerraformSpecsObject):
                 version=self.version,
                 published=False,
                 beta=self._extracted_beta_flag,
-                internal=False
+                internal=False,
+                extraction_complete=False
             )
-            conn.execute(insert_statement)
+            insert_res = conn.execute(insert_statement)
 
-        # Migrate analytics from old module version ID to new module version
-        if old_module_version_pk is not None:
-            terrareg.analytics.AnalyticsEngine.migrate_analytics_to_new_module_version(
-                old_version_version_pk=old_module_version_pk,
-                new_module_version=self)
+            # Set current module pk directly from ID and clear cache
+            self._pk = insert_res.lastrowid
+            self._cache_db_row = None
 
         return previous_version_published
 
@@ -3580,3 +3656,42 @@ class ModuleVersionFile(FileObject):
             content = super(ModuleVersionFile, self).get_content()
             content = '<pre>' + content + '</pre>'
         return content
+
+
+class ModuleVersionExtractionStatus:
+
+    @classmethod
+    def get_by_request_id(cls, module_provider, request_id):
+        """Get by request id"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(
+                sqlalchemy.select(
+                    db.module_extraction_status
+                ).join(
+                    db.module_version,
+                    db.module_extraction_status.c.module_version_id==db.module_version.c.id
+                ).join(
+                    db.module_provider,
+                    db.module_version.c.module_provider_id==db.module_provider.c.id
+                ).where(
+                    db.module_extraction_status.c.request_id==request_id,
+                    db.module_provider.c.id==module_provider.pk
+                )).fetchone()
+            if not res:
+                return None
+            return cls(res)
+
+    def __init__(self, row):
+        """Store member variables"""
+        self._row = row
+
+    @property
+    def json(self):
+        """Return JSON value for status"""
+        return {
+            # 'timestamp': self._row['timestamp'],
+            # 'last_update': self._row['last_update'],
+            'status': self._row['status'].value,
+            'message': self._row['message']
+        }

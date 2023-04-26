@@ -9,6 +9,8 @@ from test import mock_create_audit_event
 
 from test.selenium import SeleniumTest
 from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
+from terrareg.module_version_create import module_version_create
+
 
 class TestInitialSetup(SeleniumTest):
     """Test initial setup page."""
@@ -411,7 +413,8 @@ curl -X POST {publish_api_key_argument}\\
             with mock_create_audit_event:
                 # Create module version to move to next step
                 module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
-                module_version.prepare_module()
+                with module_version_create(module_version):
+                    pass
 
             # Check upload module version steps with unpublished version
             self._test_publish_module_version_upload_step(module_provider)

@@ -8,6 +8,7 @@ import terrareg.models
 import terrareg.database
 import terrareg.errors
 import terrareg.module_extractor
+import terrareg.module_version_create
 
 
 class ApiModuleVersionUpload(ErrorCatchingResource):
@@ -29,13 +30,12 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
         if not terrareg.config.Config().ALLOW_MODULE_HOSTING:
             return {'message': 'Module upload is disabled.'}, 400
 
-        with terrareg.database.Database.start_transaction():
+        # Get module provider and, optionally create, if it doesn't exist
+        namespace_obj, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider, create=True)
+        if error:
+            return error
 
-            # Get module provider and, optionally create, if it doesn't exist
-            _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider, create=True)
-            if error:
-                return error
-
+        try:
             module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version=version)
 
             if len(request.files) != 1:
@@ -51,13 +51,21 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
             if not file or not self.allowed_file(file.filename):
                 raise terrareg.errors.UploadError('Error occurred - unknown file extension')
 
-            previous_version_published = module_version.prepare_module()
-            with terrareg.module_extractor.ApiUploadModuleExtractor(upload_file=file, module_version=module_version) as me:
-                me.process_upload()
+            with terrareg.module_version_create.module_version_create(module_version):
+                with terrareg.module_extractor.ApiUploadModuleExtractor(upload_file=file, module_version=module_version) as me:
+                    me.process_upload()
+        except:
+            # Remove module provider/namespace, if created in this request
+            print("GOT HERE")
+            if module_provider.created:
+                print("DELETRING MODULE PROVIDER")
+                module_provider.delete()
 
-            if previous_version_published:
-                module_version.publish()
+            if namespace_obj.created:
+                namespace_obj.delete()
 
-            return {
-                'status': 'Success'
-            }
+            raise
+
+        return {
+            'status': 'Success'
+        }
