@@ -1,5 +1,15 @@
 # Changelog
 
+# [2.68.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.67.0...v2.68.0) (2023-05-09)
+
+
+### Features
+
+* Add target_terraform_version arguments to terrareg module provider/module version details API endpoints, which add version compatibility to the response ([975bbdc](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/975bbdce8a03a358f1546303893de2f1282e9fff)), closes [#295](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/295)
+* Add Terraform constraint version to user preferences and update module search version constraint to get/set the user preference value ([b6a9c62](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b6a9c62658b1137c1e099cf9ad91ca31d5d7eb9c)), closes [#295](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/295)
+* Display Terraform compatibility result on module provider page ([368545d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/368545d2d1b48d6726a769d7a2c0856e098e7fb2)), closes [#295](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/295)
+* Show module compatibility with selected Terraform version in module search ([67c2f84](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/67c2f843c305b7432573d7f5560017cc20cc4c23)), closes [#295](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/295)
+
 # [2.67.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.66.4...v2.67.0) (2023-04-25)
 
 
