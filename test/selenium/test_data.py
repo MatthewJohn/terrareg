@@ -494,6 +494,113 @@ integration_test_data = {
     'withdisplayname': {
         'display_name': 'A Display Name'
     },
+    'version-constraint-test': {
+        'higher-and-lower': {'testprovider': {
+            'id': 83,
+            'versions': {
+                '1.2.0': {
+                    'published': True,
+                    'terraform_docs': json.dumps({
+                        'header': '',
+                        'footer': '',
+                        'inputs': [],
+                        'modules': [],
+                        'outputs': [],
+                        'providers': [],
+                        'requirements': [
+                            {
+                                "name": "terraform",
+                                "version": ">= 2.1.1, < 2.5.4"
+                            }
+                        ]
+                    })
+                },
+            },
+        }},
+        'rightmost': {'testprovider': {
+            'id': 84,
+            'versions': {
+                '1.2.0': {
+                    'published': True,
+                    'terraform_docs': json.dumps({
+                        'header': '',
+                        'footer': '',
+                        'inputs': [],
+                        'modules': [],
+                        'outputs': [],
+                        'providers': [],
+                        'requirements': [
+                            {
+                                "name": "terraform",
+                                "version": "~> 2.5.5"
+                            }
+                        ]
+                    })
+                },
+            },
+        }},
+        'lower-only': {'testprovider': {
+            'id': 85,
+            'versions': {
+                '1.2.0': {
+                    'published': True,
+                    'terraform_docs': json.dumps({
+                        'header': '',
+                        'footer': '',
+                        'inputs': [],
+                        'modules': [],
+                        'outputs': [],
+                        'providers': [],
+                        'requirements': [
+                            {
+                                "name": "terraform",
+                                "version": ">= 2.0.0"
+                            }
+                        ]
+                    })
+                },
+            },
+        }},
+        'no-constraint': {'testprovider': {
+            'id': 86,
+            'versions': {
+                '1.2.0': {
+                    'published': True,
+                    'terraform_docs': json.dumps({
+                        'header': '',
+                        'footer': '',
+                        'inputs': [],
+                        'modules': [],
+                        'outputs': [],
+                        'providers': [],
+                        'requirements': []
+                    })
+                },
+            },
+        }},
+        'constraint-error': {'testprovider': {
+            'id': 87,
+            'versions': {
+                '1.2.0': {
+                    'published': True,
+                    'terraform_docs': json.dumps({
+                        'header': '',
+                        'footer': '',
+                        'inputs': [],
+                        'modules': [],
+                        'outputs': [],
+                        'providers': [],
+                        'requirements': [
+                            {
+                                "name": "terraform",
+                                "version": "BLAH"
+                            }
+                        ]
+                    })
+                },
+            },
+        }},
+    },
     'moduledetails': {
         'fullypopulated': {'testprovider': {
             'id': 56,

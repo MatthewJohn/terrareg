@@ -99,6 +99,7 @@ class TestCreateModuleProvider(SeleniumTest):
             'testnamespace',
             'trustednamespace',
             'unpublished-beta-version-module-providers',
+            'version-constraint-test',
             # Test displaying a module with a display name
             'A Display Name'
         ]

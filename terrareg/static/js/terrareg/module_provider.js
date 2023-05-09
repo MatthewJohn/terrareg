@@ -77,6 +77,46 @@ async function addProviderLogoTos(provider) {
     }
 }
 
+class TerraformCompatibilityResult {
+    constructor(text, color, icon) {
+        this.text = text;
+        this.color = color;
+        this.icon = icon;
+    }
+}
+
+function getTerraformCompatibilityResultObject(compatibilityResult) {
+    if (compatibilityResult == 'compatible') {
+        return new TerraformCompatibilityResult(
+            'Compatible',
+            'success',
+            'check-square'
+        );
+
+    } else if (compatibilityResult == 'incompatible') {
+        return new TerraformCompatibilityResult(
+            'Incompatible',
+            'danger',
+            'ban'
+        );
+
+    } else if (compatibilityResult == "no_constraint") {
+        return new TerraformCompatibilityResult(
+            'No version constraint defined',
+            'warning',
+            'exclamation-triangle'
+        );
+
+    } else if (compatibilityResult == "implicit_compatible") {
+        return new TerraformCompatibilityResult(
+            'Implicitly compatible',
+            'primary',
+            'check-square'
+        );
+    }
+    return undefined;
+}
+
 async function createSearchResultCard(parent_id, module) {
 
     let provider_logos = await getProviderLogos();
@@ -104,6 +144,22 @@ async function createSearchResultCard(parent_id, module) {
     let card_id = module.id.replace(/\//g, '.');
 
     let link = `/modules/${module.namespace}/${module.name}/${module.provider}`;
+
+    let version_compatibility_content = '';
+
+    if (module.version_compatibility) {
+        let compatibility_result = getTerraformCompatibilityResultObject(module.version_compatibility);
+        if (compatibility_result) {
+            version_compatibility_content = `
+                <br />
+                <p class="card-footer-item card-terraform-version-compatibility">
+                    <span class="icon has-text-${compatibility_result.color}">
+                        <i class="fas fa-${compatibility_result.icon}"></i>
+                    </span>
+                    <span>${compatibility_result.text}</span>
+                </p>`;
+        }
+    }
 
     // Add module to search results
     let result_card = $(
@@ -133,6 +189,7 @@ async function createSearchResultCard(parent_id, module) {
                     <p class="card-footer-item card-source-link">${module.source ? "Source: " + module.source : "No source provided"}</p>
                     <br />
                     <p class="card-footer-item card-last-updated">${module.published_at ? ('Last updated: ' + display_published) : ''}</p>
+                    ${version_compatibility_content}
                 </footer>
             </a>
         </div>
@@ -150,10 +207,17 @@ async function getModuleDetails(module_id) {
     // Create promise if it hasn't already been defined
     if (terraregModuleDetailsPromiseSingleton[module_id] === undefined) {
         terraregModuleDetailsPromiseSingleton[module_id] = new Promise((resolve, reject) => {
+            let userPreferences = getUserPreferences();
+            let terraformVersionConstraintQueryString = (
+                userPreferences['terraform-compatibility-version'] ?
+                `?target_terraform_version=${userPreferences['terraform-compatibility-version']}` :
+                ''
+            );
+
             // Perform request to obtain module details
             $.ajax({
                 type: "GET",
-                url: `/v1/terrareg/modules/${module_id}`,
+                url: `/v1/terrareg/modules/${module_id}${terraformVersionConstraintQueryString}`,
                 success: function (data) {
                     resolve(data);
                 },
