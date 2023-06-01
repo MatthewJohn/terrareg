@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.68.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.68.0...v2.68.1) (2023-06-01)
+
+
+### Bug Fixes
+
+* Disable backend when initialising terraform ([8198b3c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8198b3c58b86312839648d6a4dc191fdfa2c04b1)), closes [#395](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/395)
+
 # [2.68.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.67.0...v2.68.0) (2023-05-09)
 
 
