@@ -197,7 +197,7 @@ credentials "{domain_name}" {{
         self._create_terraform_rc_file()
 
         try:
-            subprocess.check_call([self.terraform_binary, "init"], cwd=module_path)
+            subprocess.check_call([self.terraform_binary, "init", "-backend=false"], cwd=module_path)
         except subprocess.CalledProcessError:
             return False
         return True
