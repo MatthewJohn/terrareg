@@ -195,7 +195,7 @@ credentials "{domain_name}" {{
 
     def _override_tf_backend(self, module_path):
         """Attempt to find any files that set terraform backend and create override"""
-        backend_regex = re.compile(r"^\s*terraform\s+\{[\s\n.]+backend\s+\"[\w]+\"\s+\{", re.MULTILINE)
+        backend_regex = re.compile(r"^\s*terraform\s*\{[\s\n.]+(.|\n)*backend\s+\"[\w]+\"\s+\{", re.MULTILINE)
         backend_filename = None
 
         # Check all .tf files and check content for matching backend
