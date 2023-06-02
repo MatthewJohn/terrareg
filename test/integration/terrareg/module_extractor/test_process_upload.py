@@ -970,7 +970,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
-        module_version = ModuleVersion(module_provider=module_provider, version='12.0.0')
+        module_version = ModuleVersion(module_provider=module_provider, version='20.0.0')
         module_version.prepare_module()
 
         with test_upload as zip_file:
@@ -1070,6 +1070,52 @@ digraph {
 """.strip()
 
 
+    def test_graph_data_with_s3_backend(self):
+        """Test extraction with s3 backend in terraform, ensuring it is overriden with local state"""
+        test_upload = UploadTestModule()
+
+        namespace = Namespace.get(name='testprocessupload', create=True)
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='18.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf in root
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as fh:
+                    fh.write("""
+terraform {
+  backend "s3" {
+    bucket  = "does-not-exist"
+    key     = "path/to/my/key"
+    region  = "us-east-1"
+    profile = "thisdoesnotexistforterrareg"
+  }
+}
+
+resource "aws_s3_bucket" "test_bucket" {
+  name = "bucketname"
+}
+""")
+
+            UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+
+        # Ensure infracost output contains monthly cost
+        assert module_version.module_details.terraform_graph.strip() == """
+digraph {
+	compound = "true"
+	newrank = "true"
+	subgraph "root" {
+		"[root] aws_s3_bucket.test_bucket (expand)" [label = "aws_s3_bucket.test_bucket", shape = "box"]
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]" [label = "provider[\\"registry.terraform.io/hashicorp/aws\\"]", shape = "diamond"]
+		"[root] aws_s3_bucket.test_bucket (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] aws_s3_bucket.test_bucket (expand)"
+		"[root] root" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)"
+	}
+}
+""".strip()
+
     @pytest.mark.skipif(terrareg.config.Config().INFRACOST_API_KEY == None, reason="Requires valid infracost API key")
     def test_uploading_module_with_infracost(self):
         """Test uploading a module with real infracost API key."""
@@ -1104,7 +1150,7 @@ resource "aws_s3_bucket" "test" {
         namespace = Namespace.get(name='testprocessupload', create=True)
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='aws', create=True)
-        module_version = ModuleVersion(module_provider=module_provider, version='12.0.0')
+        module_version = ModuleVersion(module_provider=module_provider, version='19.0.0')
         module_version.prepare_module()
 
         check_output = subprocess.check_output
