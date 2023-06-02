@@ -355,6 +355,13 @@ terraform {{
         """Process submodule."""
         submodule_dir = safe_join_paths(self.module_directory, submodule.path)
 
+        # Extract example files before performing
+        # any other analysis, as the analysis may modify
+        # files in the repository, which should not
+        # be present in the stored files in the database
+        if isinstance(submodule, Example):
+            self._extract_example_files(example=submodule)
+
         tf_docs = self._run_terraform_docs(submodule_dir)
         tfsec = self._run_tfsec(submodule_dir)
         readme_content = self._get_readme_content(submodule_dir)
@@ -384,9 +391,6 @@ terraform {{
         submodule.update_attributes(
             module_details_id=module_details.pk
         )
-
-        if isinstance(submodule, Example):
-            self._extract_example_files(example=submodule)
 
     def _run_infracost(self, example: Example):
         """Run infracost to obtain cost of examples."""
