@@ -161,7 +161,7 @@ class TestGitModuleExtractor(TerraregUnitTest):
             assert module_extractor._run_tf_init(module_path='/tmp/mock-patch/to/module') is True
 
             check_output_mock.assert_called_once_with(
-                [os.path.join(os.getcwd(), 'bin', 'terraform'), 'init', '-backend=false'],
+                [os.path.join(os.getcwd(), 'bin', 'terraform'), 'init'],
                 cwd='/tmp/mock-patch/to/module'
             )
             mock_create_terraform_rc_file.assert_called_once_with()
@@ -180,7 +180,7 @@ class TestGitModuleExtractor(TerraregUnitTest):
             assert module_extractor._run_tf_init(module_path='/tmp/mock-patch/to/module') is False
 
             mock_check_call.assert_called_once_with(
-                [os.path.join(os.getcwd(), 'bin', 'terraform'), 'init', '-backend=false'],
+                [os.path.join(os.getcwd(), 'bin', 'terraform'), 'init'],
                 cwd='/tmp/mock-patch/to/module'
             )
             mock_create_terraform_rc_file.assert_called_once_with()

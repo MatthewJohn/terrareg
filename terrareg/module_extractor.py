@@ -193,23 +193,40 @@ credentials "{domain_name}" {{
             with open(self.terraform_rc_file, "w") as terraform_rc_fh:
                 terraform_rc_fh.write(terraform_rc_file_content)
 
+    def _override_tf_backend(self, module_path):
+        """Attempt to find any files that set terraform backend and create override"""
+        backend_regex = re.compile(r"^\s*terraform\s+\{[\s\n.]+backend\s+\"[\w]+\"\s+\{", re.MULTILINE)
+        backend_filename = None
+
+        # Check all .tf files and check content for matching backend
+        for scan_file in glob.glob(os.path.join(module_path, "*.tf")):
+            with open(scan_file, "r") as scan_file_fh:
+                if backend_regex.match(scan_file_fh.read()):
+                    # If the file contained a matching backend block,
+                    # set the backend filename and stop iterating over files
+                    backend_filename = scan_file
+                    break
+
+        # If a backend file was found
+        if backend_filename:
+            override_filename = re.sub(r"\.tf$", "_override.tf", backend_filename)
+            state_file = ".local-state"
+            with open(os.path.join(module_path, override_filename), "w") as backend_tf_fh:
+                backend_tf_fh.write(f"""
+    terraform {{
+    backend "local" {{
+        path = "./{state_file}"
+    }}
+    }}
+    """)
+
     def _run_tf_init(self, module_path):
         """Perform terraform init"""
         self._create_terraform_rc_file()
-
-        tempory_backend_file = f"{str(uuid.uuid4())}.tf"
-        state_file = ".local-state"
-        with open(os.path.join(module_path, tempory_backend_file), "w") as backend_tf_fh:
-            backend_tf_fh.write(f"""
-terraform {{
-  backend "local" {{
-    path = "./{state_file}"
-  }}
-}}
-""")
+        self._override_tf_backend(module_path=module_path)
 
         try:
-            subprocess.check_call([self.terraform_binary, "init", f"-backend-config={tempory_backend_file}"], cwd=module_path)
+            subprocess.check_call([self.terraform_binary, "init"], cwd=module_path)
         except subprocess.CalledProcessError:
             return False
         return True
