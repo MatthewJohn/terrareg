@@ -1,5 +1,6 @@
 
 import os
+import shutil
 import subprocess
 import tempfile
 from unittest.main import MODULE_EXAMPLES
@@ -184,6 +185,109 @@ class TestGitModuleExtractor(TerraregUnitTest):
                 cwd='/tmp/mock-patch/to/module'
             )
             mock_create_terraform_rc_file.assert_called_once_with()
+
+    @pytest.mark.parametrize('file_contents,expected_backend_file', [
+        (
+            {
+                "state.tf": """
+terraform {
+  backend "s3" {
+    bucket  = "does-not-exist"
+    key     = "path/to/my/key"
+    region  = "us-east-1"
+    profile = "thisdoesnotexistforterrareg"
+  }
+}
+"""
+            },
+            "state_override.tf"
+        ),
+        (
+            {
+                # Files named B, S, V, so that the backend is stored in
+                # a file that will not be found first by glob
+                "bucket.tf": """
+resource "aws_s3_bucket" "test_bucket" {
+  name = var.name
+}
+""",
+                # More complex terraform block, with comment and required providers
+                "state.tf": """
+terraform {
+  # Multiple terraform backend configurations
+  required_providers {
+    aws = {
+      version = ">= 2.7.0"
+      source = "hashicorp/aws"
+    }
+  }
+
+  backend "s3" {
+    bucket  = "does-not-exist"
+    key     = "path/to/my/key"
+    region  = "us-east-1"
+    profile = "thisdoesnotexistforterrareg"
+  }
+}
+""",
+                "variables.tf": """
+variable "name" {
+  description = "Bucket name"
+  type        = string
+}
+"""
+            },
+            "state_override.tf"
+        ),
+        # Without backend config
+        (
+            {
+                # Files named B, S, V, so that the backend is stored in
+                # a file that will not be found first by glob
+                "bucket.tf": """
+resource "aws_s3_bucket" "test_bucket" {
+  name = var.name
+}
+""",
+                "variables.tf": """
+variable "name" {
+  description = "Bucket name"
+  type        = string
+}
+"""
+            },
+            None
+        )
+    ])
+    def test_override_tf_backend(self, file_contents, expected_backend_file):
+        """Test _override_tf_backend method with backend in terraform files"""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            for file_name in file_contents:
+                with open(os.path.join(temp_dir, file_name), "w") as fh:
+                    fh.write(file_contents[file_name])
+
+            module_extractor = GitModuleExtractor(module_version=None)
+            backend_file = module_extractor._override_tf_backend(module_path=temp_dir)
+
+            if not expected_backend_file:
+                assert backend_file is None
+
+            else:
+                assert backend_file == f"{temp_dir}/{expected_backend_file}"
+
+                with open(backend_file, "r") as backend_fh:
+                    assert backend_fh.read().strip() == """
+terraform {
+  backend "local" {
+    path = "./.local-state"
+  }
+}
+""".strip()
+        finally:
+            if temp_dir:
+                shutil.rmtree(temp_dir)
+
 
     def test_switch_terraform_versions(self):
         """Test switching terraform versions."""

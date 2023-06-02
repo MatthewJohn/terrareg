@@ -207,18 +207,20 @@ credentials "{domain_name}" {{
                     backend_filename = scan_file
                     break
 
-        # If a backend file was found
-        if backend_filename:
-            override_filename = re.sub(r"\.tf$", "_override.tf", backend_filename)
-            state_file = ".local-state"
-            with open(os.path.join(module_path, override_filename), "w") as backend_tf_fh:
-                backend_tf_fh.write(f"""
+        if not backend_filename:
+            return None
+
+        override_filename = re.sub(r"\.tf$", "_override.tf", backend_filename)
+        state_file = ".local-state"
+        with open(os.path.join(module_path, override_filename), "w") as backend_tf_fh:
+            backend_tf_fh.write(f"""
 terraform {{
   backend "local" {{
     path = "./{state_file}"
   }}
 }}
     """)
+        return override_filename
 
     def _run_tf_init(self, module_path):
         """Perform terraform init"""
