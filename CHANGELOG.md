@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.68.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.68.1...v2.68.2) (2023-06-02)
+
+
+### Bug Fixes
+
+* Attempt to find find terraform files with backend configuration and create override file during extraction. ([be76ec8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/be76ec8b074ee52cb00124077a599fd70a8ff984)), closes [#395](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/395)
+
 ## [2.68.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.68.0...v2.68.1) (2023-06-01)
 
 
