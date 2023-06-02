@@ -17,7 +17,15 @@ class TestModule(TerraregIntegrationTest):
         'endwithunscore_',
         'a:colon',
         'or;semicolon',
-        'who?knows'
+        'who?knows',
+        '-a',
+        'a-',
+        'a_',
+        '_a',
+        '__',
+        '--',
+        '_',
+        '-',
     ])
     def test_invalid_module_names(self, module_name):
         """Test invalid module names"""
@@ -34,7 +42,14 @@ class TestModule(TerraregIntegrationTest):
         'with_underscore',
         'withAcapital',
         'StartwithCaptital',
-        'endwithcapitaL'
+        'endwithcapitaL',
+        # Two letters
+        'tl',
+        # Two numbers
+        '11',
+        # Two characters with dash/unserscore
+        'a-z',
+        'a_z',
     ])
     def test_valid_module_names(self, module_name):
         """Test valid module names"""
