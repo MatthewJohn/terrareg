@@ -774,7 +774,7 @@ class Namespace(object):
     def _validate_name(name):
         """Validate name of namespace"""
         if (name is None or
-                not re.match(r'^[0-9a-zA-Z][0-9a-zA-Z-_]+[0-9A-Za-z]$', name) or
+                not re.match(r'^[0-9a-zA-Z][0-9a-zA-Z-_]*[0-9A-Za-z]$', name) or
                 '__' in name):
             raise InvalidNamespaceNameError(
                 'Namespace name is invalid - '
@@ -790,7 +790,7 @@ class Namespace(object):
         if not display_name:
             return
 
-        if not re.match(r'^[A-Za-z0-9][0-9A-Za-z\s\-_]+[A-Za-z0-9]$', display_name):
+        if not re.match(r'^[A-Za-z0-9][0-9A-Za-z\s\-_]*[A-Za-z0-9]$', display_name):
             raise InvalidNamespaceDisplayNameError('Namespace display name is invalid')
 
     @property
@@ -877,7 +877,7 @@ class Module(object):
     @staticmethod
     def _validate_name(name):
         """Validate name of module"""
-        if not re.match(r'^[0-9a-zA-Z][0-9a-zA-Z-_]+[0-9A-Za-z]$', name):
+        if not re.match(r'^[0-9a-zA-Z][0-9a-zA-Z-_]*[0-9A-Za-z]$', name):
             raise InvalidModuleNameError('Module name is invalid')
 
     @property

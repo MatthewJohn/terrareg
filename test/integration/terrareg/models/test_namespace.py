@@ -20,7 +20,15 @@ class TestNamespace(TerraregIntegrationTest):
         'a:colon',
         'or;semicolon',
         'who?knows',
-        'contains__doubleunderscore'
+        'contains__doubleunderscore',
+        '-a',
+        'a-',
+        'a_',
+        '_a',
+        '__',
+        '--',
+        '_',
+        '-',
     ])
     def test_invalid_namespace_names(self, namespace_name):
         """Test invalid namespace names"""
@@ -36,7 +44,14 @@ class TestNamespace(TerraregIntegrationTest):
         'with_underscore',
         'withAcapital',
         'StartwithCaptital',
-        'endwithcapitaL'
+        'endwithcapitaL',
+        # Two letters
+        'tl',
+        # Two numbers
+        '11',
+        # Two characters with dash/unserscore
+        'a-z',
+        'a_z',
     ])
     def test_valid_namespace_names(self, namespace_name):
         """Test valid namespace names"""
