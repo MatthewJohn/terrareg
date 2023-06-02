@@ -213,6 +213,7 @@ resource "aws_s3_bucket" "test_bucket" {
 """,
                 # More complex terraform block, with comment and required providers
                 "state.tf": """
+# With content before the terraform block
 terraform {
   # Multiple terraform backend configurations
   required_providers {
