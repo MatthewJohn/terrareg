@@ -1109,13 +1109,9 @@ digraph {
 	subgraph "root" {
 		"[root] aws_s3_bucket.test_bucket (expand)" [label = "aws_s3_bucket.test_bucket", shape = "box"]
 		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]" [label = "provider[\\"registry.terraform.io/hashicorp/aws\\"]", shape = "diamond"]
-		"[root] var.name" [label = "var.name", shape = "note"]
 		"[root] aws_s3_bucket.test_bucket (expand)" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"]"
-		"[root] aws_s3_object.test_obj_root_module (expand)" -> "[root] aws_s3_bucket.test_bucket (expand)"
-		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] aws_s3_object.test_obj_root_module (expand)"
-		"[root] root" -> "[root] output.name (expand)"
+		"[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)" -> "[root] aws_s3_bucket.test_bucket (expand)"
 		"[root] root" -> "[root] provider[\\"registry.terraform.io/hashicorp/aws\\"] (close)"
-		"[root] root" -> "[root] var.name"
 	}
 }
 """.strip()
