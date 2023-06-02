@@ -213,11 +213,11 @@ credentials "{domain_name}" {{
             state_file = ".local-state"
             with open(os.path.join(module_path, override_filename), "w") as backend_tf_fh:
                 backend_tf_fh.write(f"""
-    terraform {{
-    backend "local" {{
-        path = "./{state_file}"
-    }}
-    }}
+terraform {{
+  backend "local" {{
+    path = "./{state_file}"
+  }}
+}}
     """)
 
     def _run_tf_init(self, module_path):
