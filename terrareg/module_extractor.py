@@ -5,6 +5,7 @@ import os
 import threading
 from typing import Type
 import tempfile
+import uuid
 import zipfile
 import tarfile
 import subprocess
@@ -196,8 +197,19 @@ credentials "{domain_name}" {{
         """Perform terraform init"""
         self._create_terraform_rc_file()
 
+        tempory_backend_file = f"{str(uuid.uuid4())}.tf"
+        state_file = ".local-state"
+        with open(os.path.join(module_path, tempory_backend_file), "w") as backend_tf_fh:
+            backend_tf_fh.write(f"""
+terraform {{
+  backend "local" {{
+    path = "./{state_file}"
+  }}
+}}
+""")
+
         try:
-            subprocess.check_call([self.terraform_binary, "init", "-backend=false"], cwd=module_path)
+            subprocess.check_call([self.terraform_binary, "init", f"-backend-config={tempory_backend_file}"], cwd=module_path)
         except subprocess.CalledProcessError:
             return False
         return True
