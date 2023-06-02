@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.68.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.68.2...v2.68.3) (2023-06-02)
+
+
+### Bug Fixes
+
+* Fix handling of terraform provider block with content before the block in the file. ([40b258c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/40b258c93fb3d89ef38845ca263fede1518d0a2e)), closes [#395](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/395)
+
 ## [2.68.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.68.1...v2.68.2) (2023-06-02)
 
 
