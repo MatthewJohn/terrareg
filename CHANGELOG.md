@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.69.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.68.3...v2.69.0) (2023-06-05)
+
+
+### Features
+
+* Add support for two character namespace/module names. ([3a32e73](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3a32e736e9d63bfa80835200d41901a436f50fd7)), closes [#397](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/397)
+
 ## [2.68.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.68.2...v2.68.3) (2023-06-02)
 
 
