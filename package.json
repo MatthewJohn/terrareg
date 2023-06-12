@@ -1,0 +1,11 @@
+{
+  "devDependencies": {
+    "bulma": "^0.9.4",
+    "node-sass": "^8.0.0"
+  },
+  "scripts": {
+    "css-build": "node-sass --omit-source-map-url sass/cherry-dark.scss terrareg/static/css/bulma/cherry-dark/bulmaswatch.min.css --output-style compressed",
+    "css-watch": "npm run css-build -- --watch",
+    "start": "npm run css-watch"
+  }
+}

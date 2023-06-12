@@ -1,0 +1,284 @@
+@charset "utf-8";
+@import "../node_modules/bulma/bulma.sass";
+
+// Import a Google Font
+@import url('https://fonts.googleapis.com/css?family=Nunito:500,800');
+
+// Set your brand colors
+$theme-accent: rgb(192, 48, 48);
+$primary: $theme-accent;
+$primary-background: #333;
+$grey-dark: #222;
+$grey-light: #eee;
+$primary: $theme-accent;
+$link: #ff7069;
+$link-hover: $white;
+$strong-color: #fff;
+
+// Top Level Settings
+$body-background-color: $primary-background;
+$body-color: $grey-light;
+$title-color: $grey-light;
+$subtitle-color: $grey-light;
+$footer-background-color: $grey-dark;
+
+// Typography
+$family-sans-serif: "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+
+//Modal / Card Settings
+$box-color: $grey-light;
+$box-background-color: lighten($grey-dark, 25%);
+
+//Navbar Settings
+$navbar-background-color: #222;
+$navbar-item-color: #AAA;
+$navbar-item-hover-color: $theme-accent;
+$navbar-dropdown-arrow: $theme-accent;
+$navbar-dropdown-background-color: darken($navbar-item-color, 90%);
+$navbar-dropdown-item-hover-color: $theme-accent;
+
+// Buttons
+$button-colors: ('primary': ($theme-accent, $grey-light), 'info': ($theme-accent, $grey-light), 'link': ($theme-accent, $grey-light));
+$button-text-hover-color: #fff;
+
+$button-color: $white;
+$button-hover-color: $white;
+$button-background-color: $theme-accent;
+$button-disabled-background-color: #bfa1a0;
+$control-border-width: 2px;
+
+// Tags
+$tag-color: white;
+$tag-background-color: $theme-accent;
+$tag-colors: ('warning': (#FFD700, #000, #FFD700, #000), 'link': ($blue, $white, lighten($blue, 25%), $black));
+
+
+// Tab Header
+$tabs-border-bottom-color: $white;
+
+$tabs-link-color: $grey-light;
+$tabs-link-hover-color: $theme-accent;
+$tabs-link-hover-border-bottom-color: $theme-accent;
+
+$tabs-link-active-color: $theme-accent;
+$tabs-link-active-border-bottom-color: $theme-accent;
+
+// Breadcrumb
+$breadcrumb-item-color: darken($theme-accent, 0.5);
+$breadcrumb-item-active-color: $white;
+$breadcrumb-item-hover-color: $grey-light;
+
+// Forms
+$label-color: $grey-light;
+$input-border-color: transparent;
+$input-shadow: none;
+
+//Notifications
+$notification-background-color: $grey-dark;
+
+// Content
+$content-table-head-cell-color: $white;
+
+
+// Tables
+$table-color: $black;
+$table-background-color: lighten($grey-dark, 50%);
+$table-head-cell-color: white;
+$table-head-background-color: $grey-dark;
+
+//Pagination
+$pagination-disabled-color: #fff;
+
+//Panels
+$panel-heading-color: white;
+$panel-heading-background-color: darken($theme-accent,5%);
+$panel-block-hover-background-color: lighten($grey-dark, 10%);
+
+// Cards
+$card-color: $white;
+$card-header-color: $grey-light;
+$card-header-background-color: $grey-dark;
+$card-content-background-color: lighten($grey-dark, 30%);
+$card-footer-border-top: 0px;
+$card-footer-background-color: $grey-dark;
+
+$card-link-color: white;
+$card-link-hover-color: darken(white, 0.25);
+
+// Content
+$content-heading-color: $white;
+
+
+// Import only what you need from Bulma
+@import "../node_modules/bulma/sass/utilities/_all.sass";
+@import "../node_modules/bulma/sass/helpers/_all.sass";
+@import "../node_modules/bulma/sass/base/_all.sass";
+@import "../node_modules/bulma/sass/components/breadcrumb.sass";
+@import "../node_modules/bulma/sass/components/card.sass";
+@import "../node_modules/bulma/sass/components/modal.sass";
+@import "../node_modules/bulma/sass/components/navbar.sass";
+@import "../node_modules/bulma/sass/components/panel.sass";
+@import "../node_modules/bulma/sass/components/pagination.sass";
+@import "../node_modules/bulma/sass/components/tabs.sass";
+@import "../node_modules/bulma/sass/elements/box.sass";
+@import "../node_modules/bulma/sass/elements/button.sass";
+@import "../node_modules/bulma/sass/elements/container.sass";
+@import "../node_modules/bulma/sass/elements/content.sass";
+@import "../node_modules/bulma/sass/elements/notification.sass";
+@import "../node_modules/bulma/sass/elements/table.sass";
+@import "../node_modules/bulma/sass/elements/tag.sass";
+@import "../node_modules/bulma/sass/elements/title.sass";
+@import "../node_modules/bulma/sass/form/_all.sass";
+@import "../node_modules/bulma/sass/layout/_all.sass";
+
+////////////////////////////////////////////////////////////////////////////////
+// Overrides for things that are unique to Terrareg and not in the framework
+////////////////////////////////////////////////////////////////////////////////
+p.card-header-title > a > img {
+  background-color: $grey-light;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+div.modal-content {
+  background-color: $grey-dark !important;
+}
+
+.tabs {
+  font-weight: bold;
+}
+
+#module-provider-header-content {
+  background-color: lighten($grey-dark, 20%) !important;
+  border-radius: 5px;
+}
+
+table.module-provider-tab-content-table tbody tr:nth-child(even) {
+  background-color: darken($grey-light, 3%);
+}
+
+div#usage-example-container.box h5.title {
+  color: #fff;
+}
+
+////////////////////////////////////////////////////////////////////////
+// Overrides for things that don't have an option in the CSS framework
+////////////////////////////////////////////////////////////////////////
+
+// Link force overrides
+a {
+  color: $grey-light !important;
+  font-weight: bolder !important;
+}
+
+a:not(.button):not(.pagination-link):not(.panel-block):hover {
+  filter: brightness(0.85);
+  text-decoration: underline;
+}
+
+.button:hover {
+  background-color: darken($theme-accent, 15%) !important;
+}
+
+table > tbody > tr > td > a {
+  color: #000 !important;
+}
+
+table > tbody > tr > td > a:hover {
+  mix-blend-mode: normal !important;
+  color: $theme-accent;
+}
+
+// Content wrappers
+pre {
+  border-radius: 5px;
+  background-color: lighten($grey-dark, 50%);
+  color: #000 !important;
+}
+
+.card-content:first-child {
+  border-radius: 0px;
+}
+
+code {
+  background-color: lighten($grey-dark, 75%);
+  border-radius: 3px;
+}
+
+//Forms
+::placeholder {
+  /* Chrome, Firefox, Opera, Safari 10.1+ */
+  color: #777 !important;
+  opacity: 1;
+  /* Firefox */
+}
+
+:-ms-input-placeholder {
+  /* Internet Explorer 10-11 */
+  color: #777 !important;
+}
+
+::-ms-input-placeholder {
+  /* Microsoft Edge */
+  color: #777 !important;
+}
+
+input[type=checkbox] {
+  accent-color: #c00;
+}
+
+.checkbox:hover,
+.radio:hover {
+  color: #fff;
+}
+
+input[type=radio], input[type=range], progress {
+  accent-color: $theme-accent;
+}
+
+input, textarea {
+  background-color: lighten($grey-dark, 75%) !important;
+}
+
+input:focus {
+  border-color: $theme-accent !important;
+}
+
+//DataTables
+table.dataTable {
+  background: $grey-dark;
+  padding: 5px;
+}
+
+table.dataTable > thead > tr > th {
+  color: $grey-light;
+}
+
+table.dataTable > thead > tr > th.sorting {
+  padding-top: 5px;
+  background-color: $theme-accent;
+}
+
+table.dataTable > tbody > tr:nth-child(even) {
+  background-color: $grey-dark;
+  color: #fff;
+}
+
+table.dataTable > tbody > tr:nth-child(odd) {
+  background-color: lighten($grey-dark, 15%);
+  color: #fff;
+}
+
+table.dataTable > thead > tr > th.sorting_asc::before {
+  font-weight: bold;
+}
+
+table.dataTable > thead > tr > th.sorting_desc::after {
+  font-weight: bold;
+}
+
+// Pagination
+.pagination-link, .pagination-link:hover {
+  color: #fff !important;
+  background-color: $theme-accent !important;
+}

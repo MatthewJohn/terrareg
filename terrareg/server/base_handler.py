@@ -16,7 +16,7 @@ class BaseHandler:
         """Return CSS path for theme based on theme cookie"""
         theme = request.cookies.get("theme", "default")
         theme_url = '/static/css/bulma/'
-        if theme in ["lux", "pulse"]:
+        if theme in ["lux", "pulse", "cherry-dark"]:
             theme_url += f'{theme}/bulmaswatch.min.css'
         else:
             theme_url += 'bulma-0.9.3.min.css'
