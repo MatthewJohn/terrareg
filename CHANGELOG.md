@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.70.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.69.0...v2.70.0) (2023-06-14)
+
+
+### Features
+
+* Add Cherry Dark Mode Theme ([31a5b88](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/31a5b88f385dcdccfc37d72f557d7a5a6926ade9))
+
 # [2.69.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.68.3...v2.69.0) (2023-06-05)
 
 
