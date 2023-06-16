@@ -102,7 +102,7 @@ def sanitise_html_content(text, allow_markdown_html=False):
             # Original upstream configuration
             'a', 'abbr', 'acronym', 'b', 'blockquote', 'code', 'em', 'i', 'li', 'ol', 'strong', 'ul',
             # Custom allowed tags
-            'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'th', 'tr', 'td', 'pre', 'img'
+            'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'th', 'tr', 'td', 'pre', 'img', 'br'
         })
         kwargs['attributes'] = {
             # Original upstream configuration

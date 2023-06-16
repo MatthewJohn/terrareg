@@ -98,9 +98,21 @@ class HTMLExtractorWithAttribs(HTMLExtractor):
                 attrs[itx] = (attr[0], _get_anchor_from_href(file_name=self.md.terrareg_file_name, href=attr[1]))
                 converted_attribute = True
 
+        # If any of the attributes have been modified,
+        # update the starttag_text attribute, so that
+        # the modified version of the start tag is returned
+        # by get_starttag_text.
+        # Otherwise, set to None, to call super method
+        # to retain the original functionality (which is
+        # likely the be the same code as below).
         if converted_attribute:
             attribute_string = " ".join([f'{attr[0]}="{attr[1]}"' for attr in attrs])
             self.__starttag_text = f"<{tag} {attribute_string}>"
+        else:
+            # The instance of this class is shared between elements,
+            # if it is not reset, we will continue returning the custom
+            # __starttag_text, as set above, for all subsequent elements.
+            self.__starttag_text = None
 
         return super(HTMLExtractorWithAttribs, self).handle_starttag(tag, attrs)
 
