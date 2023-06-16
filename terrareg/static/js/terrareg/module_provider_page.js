@@ -302,6 +302,9 @@ class InputsTab extends ModuleDetailsTab {
 
                 let descriptionTd = $("<td></td>");
                 descriptionTd.text(input.description);
+
+                // Replace new line characters in description with line breaks
+                descriptionTd.html(descriptionTd.html().replace(/\n/g, '<br />'));
                 inputRow.append(descriptionTd);
 
                 let typeTd = $("<td></td>");
@@ -339,6 +342,8 @@ class OutputsTab extends ModuleDetailsTab {
 
                 let descriptionTd = $("<td></td>");
                 descriptionTd.text(output.description);
+                // Replace new line characters in description with line breaks
+                descriptionTd.html(descriptionTd.html().replace(/\n/g, '<br />'));
                 outputRow.append(descriptionTd);
 
                 outputTabTbody.append(outputRow);
