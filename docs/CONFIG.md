@@ -337,6 +337,22 @@ Terraform projects.
 Default: `my-tf-application`
 
 
+### EXAMPLE_FILE_EXTENSIONS
+
+
+Comma-separated list of file extensions to be extracted/shown in example file lists.
+
+Example: `tf,sh,json`
+
+Supported languages for syntax highlighting:
+* HCL
+
+NOTE: For new file types to be shown module versions must be re-indexed
+
+
+Default: `['tf']`
+
+
 ### GIT_CLONE_TIMEOUT
 
 

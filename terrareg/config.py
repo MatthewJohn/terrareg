@@ -642,7 +642,6 @@ class Config:
             if scope
         ]
 
-
     @property
     def OPENID_CONNECT_DEBUG(self):
         """
@@ -764,6 +763,24 @@ class Config:
         Must be a number between 0.0 and 1.0
         """
         return float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "1.0"))
+
+    @property
+    def EXAMPLE_FILE_EXTENSIONS(self):
+        """
+        Comma-separated list of file extensions to be extracted/shown in example file lists.
+
+        Example: `tf,sh,json`
+
+        Supported languages for syntax highlighting:
+         * HCL
+
+        NOTE: For new file types to be shown module versions must be re-indexed
+        """
+        return [
+            extension
+            for extension in os.environ.get("EXAMPLE_FILE_EXTENSIONS", "tf").split(",")
+            if extension
+        ]
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""
