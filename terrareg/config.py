@@ -773,6 +773,13 @@ class Config:
 
         Supported languages for syntax highlighting:
          * HCL
+         * Javascript/JSON
+         * Bash
+         * Batch
+         * PL/SQL
+         * PowerShell
+         * Python
+         * Dockerfile/docker-compose
 
         NOTE: For new file types to be shown module versions must be re-indexed
         """
