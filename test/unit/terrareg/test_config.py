@@ -133,7 +133,8 @@ class TestConfig:
         ('UPLOAD_API_KEYS'),
         ('VERIFIED_MODULE_NAMESPACES'),
         ('IGNORE_ANALYTICS_TOKEN_AUTH_KEYS'),
-        ('OPENID_CONNECT_SCOPES')
+        ('OPENID_CONNECT_SCOPES'),
+        ('EXAMPLE_FILE_EXTENSIONS'),
     ])
     def test_list_configs(self, config_name, test_value, expected_value):
         """Test list configs to ensure they are overriden with environment variables."""

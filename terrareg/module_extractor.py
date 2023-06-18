@@ -449,22 +449,23 @@ terraform {{
     def _extract_example_files(self, example: Example):
         """Extract all terraform files in example and insert into DB"""
         example_base_dir = safe_join_paths(self.module_directory, example.path)
-        for tf_file_path in safe_iglob(base_dir=example_base_dir,
-                                       pattern='*.tf',
-                                       recursive=False,
-                                       is_file=True):
-            # Remove extraction directory from file path
-            tf_file = re.sub('^{}/'.format(self.module_directory), '', tf_file_path)
+        for extension in Config().EXAMPLE_FILE_EXTENSIONS:
+            for tf_file_path in safe_iglob(base_dir=example_base_dir,
+                                        pattern=f'*.{extension}',
+                                        recursive=False,
+                                        is_file=True):
+                # Remove extraction directory from file path
+                tf_file = re.sub('^{}/'.format(self.module_directory), '', tf_file_path)
 
-            # Obtain contents of file
-            with open(tf_file_path, 'r') as file_fd:
-                content = ''.join(file_fd.readlines())
+                # Obtain contents of file
+                with open(tf_file_path, 'r') as file_fd:
+                    content = ''.join(file_fd.readlines())
 
-            # Create example file and update content attribute
-            example_file = ExampleFile.create(example=example, path=tf_file)
-            example_file.update_attributes(
-                content=content
-            )
+                # Create example file and update content attribute
+                example_file = ExampleFile.create(example=example, path=tf_file)
+                example_file.update_attributes(
+                    content=content
+                )
 
     def _scan_submodules(self, subdirectory: str, submodule_class: Type[BaseSubmodule]):
         """Scan for submodules and extract details."""
