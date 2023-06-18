@@ -732,7 +732,7 @@ module "text_ternal_call" {
                             {
                                 'name': 'name_of_application',
                                 'type': 'string',
-                                'description': 'Enter the application name',
+                                'description': 'Enter the application name\nThis should be a real name\n\nDouble line break',
                                 'default': None,
                                 'required': True
                             },
@@ -762,7 +762,7 @@ module "text_ternal_call" {
                         'outputs': [
                             {
                                 'name': 'generated_name',
-                                'description': 'Name with randomness'
+                                'description': 'Name with randomness\nThis random will not change.\n\nDouble line break'
                             },
                             {
                                 'name': 'no_desc_output',

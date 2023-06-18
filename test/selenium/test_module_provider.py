@@ -884,7 +884,7 @@ module "text_ternal_call" {
         (
             '/modules/moduledetails/fullypopulated/testprovider/1.5.0',
             [
-                ['name_of_application', 'Enter the application name', 'string', 'Required'],
+                ['name_of_application', 'Enter the application name\nThis should be a real name\n\nDouble line break', 'string', 'Required'],
                 ['string_with_default_value', 'Override the default string', 'string', '"this is the default"'],
                 ['example_boolean_input', 'Override the truthful boolean', 'bool', 'true'],
                 ['example_list_input', 'Override the stringy list', 'list', '["value 1","value 2"]']
@@ -942,7 +942,7 @@ module "text_ternal_call" {
         (
             '/modules/moduledetails/fullypopulated/testprovider/1.5.0',
             [
-                ['generated_name', 'Name with randomness'],
+                ['generated_name', 'Name with randomness\nThis random will not change.\n\nDouble line break'],
                 ['no_desc_output', '']
             ]
         ),
