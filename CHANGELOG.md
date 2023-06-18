@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.70.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.70.0...v2.70.1) (2023-06-18)
+
+
+### Bug Fixes
+
+* Allow line break (br) elements in sanitised HTML ([0d21e9b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0d21e9b58e603bee554d8e223394b15fb2a23a1a)), closes [#402](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/402)
+* Fix erronious links in converted README markdown. ([21e1925](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/21e1925c7ce7033596b118c946fa151953fcb6ef)), closes [#402](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/402)
+* Update descriptions in input/output tables in module provider page to respect line breaks in descriptions. ([0cf0b86](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0cf0b86a57e964c89c61e8b54d7e90bd2c8ed418)), closes [#402](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/402)
+
 # [2.70.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.69.0...v2.70.0) (2023-06-14)
 
 
