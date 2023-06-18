@@ -785,7 +785,7 @@ class Config:
         """
         return [
             extension
-            for extension in os.environ.get("EXAMPLE_FILE_EXTENSIONS", "tf").split(",")
+            for extension in os.environ.get("EXAMPLE_FILE_EXTENSIONS", "tf,tfvars,sh,json").split(",")
             if extension
         ]
 

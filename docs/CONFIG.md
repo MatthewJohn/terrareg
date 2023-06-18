@@ -357,7 +357,7 @@ Supported languages for syntax highlighting:
 NOTE: For new file types to be shown module versions must be re-indexed
 
 
-Default: `['tf']`
+Default: `['tf', 'tfvars', 'sh', 'json']`
 
 
 ### GIT_CLONE_TIMEOUT
