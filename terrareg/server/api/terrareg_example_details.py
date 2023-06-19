@@ -17,6 +17,8 @@ class ApiTerraregExampleDetails(ErrorCatchingResource):
             return error
 
         example_obj = terrareg.models.Example.get(module_version=module_version, module_path=example)
+        if example_obj is None:
+            return self._get_404_response()
 
         return example_obj.get_terrareg_api_details(
             request_domain=urllib.parse.urlparse(request.base_url).hostname)
