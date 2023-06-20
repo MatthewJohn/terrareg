@@ -1,5 +1,14 @@
 # Changelog
 
+# [2.71.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.70.1...v2.71.0) (2023-06-20)
+
+
+### Features
+
+* Add configuration to add additional file extensions that are extracted from examples to display in UI ([cf142af](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/cf142af07022c21744a357742027aba2a97bf87e)), closes [#303](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/303)
+* Include additional syntax highlighting for javascript (json), bash, batch, pl/sql, powershell, python and Dockerfile ([c722c41](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c722c414288f9093db52ce113b0fec77ebda33c9)), closes [#303](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/303)
+* Update default config to extract .sh, .tfvars and .json files in module examples ([151f8e3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/151f8e3b68fe38308afbc373c1f7d048958bd7c1)), closes [#303](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/303)
+
 ## [2.70.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.70.0...v2.70.1) (2023-06-18)
 
 
