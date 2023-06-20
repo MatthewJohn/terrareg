@@ -14,6 +14,9 @@ class ApiTerraregExampleFileList(ErrorCatchingResource):
 
         example_obj = terrareg.models.Example(module_version=module_version, module_path=example)
 
+        if example_obj is None:
+            return self._get_404_response()
+
         return [
             {
                 'filename': example_file.file_name,

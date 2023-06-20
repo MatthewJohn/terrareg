@@ -2332,6 +2332,11 @@ async function setupSubmodulePage(data) {
     let submodulePath = data.undefined;
     let submoduleDetails = await getSubmoduleDetails(moduleDetails.id, submodulePath);
 
+    if (submoduleDetails === null) {
+        populateCurrentSubmodule("This submodule does not exist");
+        return;
+    }
+
     createBreadcrumbs(data, submodulePath);
 
     setPageTitle(`${moduleDetails.module_provider_id}/${submoduleDetails.path}`);
@@ -2370,6 +2375,11 @@ async function setupExamplePage(data) {
 
     let examplePath = data.undefined;
     let submoduleDetails = await getExampleDetails(moduleDetails.id, examplePath);
+
+    if (submoduleDetails === null) {
+        populateCurrentSubmodule("This example does not exist");
+        return;
+    }
 
     createBreadcrumbs(data, examplePath);
 

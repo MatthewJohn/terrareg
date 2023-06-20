@@ -18,4 +18,7 @@ class ApiTerraregSubmoduleReadmeHtml(ErrorCatchingResource):
 
         submodule_obj = terrareg.models.Submodule.get(module_version=module_version, module_path=submodule)
 
+        if not submodule_obj:
+            return self._get_404_response()
+
         return submodule_obj.get_readme_html(server_hostname=urllib.parse.urlparse(request.base_url).hostname)

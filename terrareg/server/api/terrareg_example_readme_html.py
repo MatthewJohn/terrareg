@@ -18,4 +18,7 @@ class ApiTerraregExampleReadmeHtml(ErrorCatchingResource):
 
         example_obj = terrareg.models.Example.get(module_version=module_version, module_path=example)
 
+        if not example_obj:
+            return self._get_404_response()
+
         return example_obj.get_readme_html(server_hostname=urllib.parse.urlparse(request.base_url).hostname)
