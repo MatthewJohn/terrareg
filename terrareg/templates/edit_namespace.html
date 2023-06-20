@@ -21,7 +21,7 @@
             window.location.href = res.view_href;
         }).fail((res) => {
             $('#edit-error').html(failedResponseToErrorString(res));
-            $('#edit-error').css('display', 'block');
+            $('#edit-error').removeClass('default-hidden');
             $(window).scrollTop($('#edit-error').offset().top);
         });
     }
