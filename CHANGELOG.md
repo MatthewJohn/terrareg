@@ -1,5 +1,58 @@
 # Changelog
 
+# [2.71.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.70.1...v2.71.0) (2023-06-20)
+
+
+### Features
+
+* Add configuration to add additional file extensions that are extracted from examples to display in UI ([cf142af](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/cf142af07022c21744a357742027aba2a97bf87e)), closes [#303](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/303)
+* Include additional syntax highlighting for javascript (json), bash, batch, pl/sql, powershell, python and Dockerfile ([c722c41](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c722c414288f9093db52ce113b0fec77ebda33c9)), closes [#303](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/303)
+* Update default config to extract .sh, .tfvars and .json files in module examples ([151f8e3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/151f8e3b68fe38308afbc373c1f7d048958bd7c1)), closes [#303](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/303)
+
+## [2.70.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.70.0...v2.70.1) (2023-06-18)
+
+
+### Bug Fixes
+
+* Allow line break (br) elements in sanitised HTML ([0d21e9b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0d21e9b58e603bee554d8e223394b15fb2a23a1a)), closes [#402](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/402)
+* Fix erronious links in converted README markdown. ([21e1925](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/21e1925c7ce7033596b118c946fa151953fcb6ef)), closes [#402](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/402)
+* Update descriptions in input/output tables in module provider page to respect line breaks in descriptions. ([0cf0b86](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0cf0b86a57e964c89c61e8b54d7e90bd2c8ed418)), closes [#402](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/402)
+
+# [2.70.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.69.0...v2.70.0) (2023-06-14)
+
+
+### Features
+
+* Add Cherry Dark Mode Theme ([31a5b88](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/31a5b88f385dcdccfc37d72f557d7a5a6926ade9))
+
+# [2.69.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.68.3...v2.69.0) (2023-06-05)
+
+
+### Features
+
+* Add support for two character namespace/module names. ([3a32e73](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3a32e736e9d63bfa80835200d41901a436f50fd7)), closes [#397](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/397)
+
+## [2.68.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.68.2...v2.68.3) (2023-06-02)
+
+
+### Bug Fixes
+
+* Fix handling of terraform provider block with content before the block in the file. ([40b258c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/40b258c93fb3d89ef38845ca263fede1518d0a2e)), closes [#395](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/395)
+
+## [2.68.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.68.1...v2.68.2) (2023-06-02)
+
+
+### Bug Fixes
+
+* Attempt to find find terraform files with backend configuration and create override file during extraction. ([be76ec8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/be76ec8b074ee52cb00124077a599fd70a8ff984)), closes [#395](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/395)
+
+## [2.68.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.68.0...v2.68.1) (2023-06-01)
+
+
+### Bug Fixes
+
+* Disable backend when initialising terraform ([8198b3c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8198b3c58b86312839648d6a4dc191fdfa2c04b1)), closes [#395](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/395)
+
 # [2.68.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.67.0...v2.68.0) (2023-05-09)
 
 

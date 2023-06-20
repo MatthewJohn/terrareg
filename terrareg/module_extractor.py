@@ -5,6 +5,7 @@ import os
 import threading
 from typing import Type
 import tempfile
+import uuid
 import zipfile
 import tarfile
 import subprocess
@@ -192,9 +193,39 @@ credentials "{domain_name}" {{
             with open(self.terraform_rc_file, "w") as terraform_rc_fh:
                 terraform_rc_fh.write(terraform_rc_file_content)
 
+    def _override_tf_backend(self, module_path):
+        """Attempt to find any files that set terraform backend and create override"""
+        backend_regex = re.compile(r"^^(\n|.)*terraform\s*\{[\s\n.]+(.|\n)*backend\s+\"[\w]+\"\s+\{", re.MULTILINE)
+        backend_filename = None
+
+        # Check all .tf files and check content for matching backend
+        for scan_file in glob.glob(os.path.join(module_path, "*.tf")):
+            with open(scan_file, "r") as scan_file_fh:
+                if backend_regex.match(scan_file_fh.read()):
+                    # If the file contained a matching backend block,
+                    # set the backend filename and stop iterating over files
+                    backend_filename = scan_file
+                    break
+
+        if not backend_filename:
+            return None
+
+        override_filename = re.sub(r"\.tf$", "_override.tf", backend_filename)
+        state_file = ".local-state"
+        with open(os.path.join(module_path, override_filename), "w") as backend_tf_fh:
+            backend_tf_fh.write(f"""
+terraform {{
+  backend "local" {{
+    path = "./{state_file}"
+  }}
+}}
+    """)
+        return override_filename
+
     def _run_tf_init(self, module_path):
         """Perform terraform init"""
         self._create_terraform_rc_file()
+        self._override_tf_backend(module_path=module_path)
 
         try:
             subprocess.check_call([self.terraform_binary, "init"], cwd=module_path)
@@ -343,6 +374,13 @@ credentials "{domain_name}" {{
         """Process submodule."""
         submodule_dir = safe_join_paths(self.module_directory, submodule.path)
 
+        # Extract example files before performing
+        # any other analysis, as the analysis may modify
+        # files in the repository, which should not
+        # be present in the stored files in the database
+        if isinstance(submodule, Example):
+            self._extract_example_files(example=submodule)
+
         tf_docs = self._run_terraform_docs(submodule_dir)
         tfsec = self._run_tfsec(submodule_dir)
         readme_content = self._get_readme_content(submodule_dir)
@@ -372,9 +410,6 @@ credentials "{domain_name}" {{
         submodule.update_attributes(
             module_details_id=module_details.pk
         )
-
-        if isinstance(submodule, Example):
-            self._extract_example_files(example=submodule)
 
     def _run_infracost(self, example: Example):
         """Run infracost to obtain cost of examples."""
@@ -414,22 +449,23 @@ credentials "{domain_name}" {{
     def _extract_example_files(self, example: Example):
         """Extract all terraform files in example and insert into DB"""
         example_base_dir = safe_join_paths(self.module_directory, example.path)
-        for tf_file_path in safe_iglob(base_dir=example_base_dir,
-                                       pattern='*.tf',
-                                       recursive=False,
-                                       is_file=True):
-            # Remove extraction directory from file path
-            tf_file = re.sub('^{}/'.format(self.module_directory), '', tf_file_path)
+        for extension in Config().EXAMPLE_FILE_EXTENSIONS:
+            for tf_file_path in safe_iglob(base_dir=example_base_dir,
+                                        pattern=f'*.{extension}',
+                                        recursive=False,
+                                        is_file=True):
+                # Remove extraction directory from file path
+                tf_file = re.sub('^{}/'.format(self.module_directory), '', tf_file_path)
 
-            # Obtain contents of file
-            with open(tf_file_path, 'r') as file_fd:
-                content = ''.join(file_fd.readlines())
+                # Obtain contents of file
+                with open(tf_file_path, 'r') as file_fd:
+                    content = ''.join(file_fd.readlines())
 
-            # Create example file and update content attribute
-            example_file = ExampleFile.create(example=example, path=tf_file)
-            example_file.update_attributes(
-                content=content
-            )
+                # Create example file and update content attribute
+                example_file = ExampleFile.create(example=example, path=tf_file)
+                example_file.update_attributes(
+                    content=content
+                )
 
     def _scan_submodules(self, subdirectory: str, submodule_class: Type[BaseSubmodule]):
         """Scan for submodules and extract details."""

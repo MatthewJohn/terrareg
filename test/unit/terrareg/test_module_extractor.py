@@ -1,5 +1,6 @@
 
 import os
+import shutil
 import subprocess
 import tempfile
 from unittest.main import MODULE_EXAMPLES
@@ -185,6 +186,110 @@ class TestGitModuleExtractor(TerraregUnitTest):
             )
             mock_create_terraform_rc_file.assert_called_once_with()
 
+    @pytest.mark.parametrize('file_contents,expected_backend_file', [
+        (
+            {
+                "state.tf": """
+terraform {
+  backend "s3" {
+    bucket  = "does-not-exist"
+    key     = "path/to/my/key"
+    region  = "us-east-1"
+    profile = "thisdoesnotexistforterrareg"
+  }
+}
+"""
+            },
+            "state_override.tf"
+        ),
+        (
+            {
+                # Files named B, S, V, so that the backend is stored in
+                # a file that will not be found first by glob
+                "bucket.tf": """
+resource "aws_s3_bucket" "test_bucket" {
+  name = var.name
+}
+""",
+                # More complex terraform block, with comment and required providers
+                "state.tf": """
+# With content before the terraform block
+terraform {
+  # Multiple terraform backend configurations
+  required_providers {
+    aws = {
+      version = ">= 2.7.0"
+      source = "hashicorp/aws"
+    }
+  }
+
+  backend "s3" {
+    bucket  = "does-not-exist"
+    key     = "path/to/my/key"
+    region  = "us-east-1"
+    profile = "thisdoesnotexistforterrareg"
+  }
+}
+""",
+                "variables.tf": """
+variable "name" {
+  description = "Bucket name"
+  type        = string
+}
+"""
+            },
+            "state_override.tf"
+        ),
+        # Without backend config
+        (
+            {
+                # Files named B, S, V, so that the backend is stored in
+                # a file that will not be found first by glob
+                "bucket.tf": """
+resource "aws_s3_bucket" "test_bucket" {
+  name = var.name
+}
+""",
+                "variables.tf": """
+variable "name" {
+  description = "Bucket name"
+  type        = string
+}
+"""
+            },
+            None
+        )
+    ])
+    def test_override_tf_backend(self, file_contents, expected_backend_file):
+        """Test _override_tf_backend method with backend in terraform files"""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            for file_name in file_contents:
+                with open(os.path.join(temp_dir, file_name), "w") as fh:
+                    fh.write(file_contents[file_name])
+
+            module_extractor = GitModuleExtractor(module_version=None)
+            backend_file = module_extractor._override_tf_backend(module_path=temp_dir)
+
+            if not expected_backend_file:
+                assert backend_file is None
+
+            else:
+                assert backend_file == f"{temp_dir}/{expected_backend_file}"
+
+                with open(backend_file, "r") as backend_fh:
+                    assert backend_fh.read().strip() == """
+terraform {
+  backend "local" {
+    path = "./.local-state"
+  }
+}
+""".strip()
+        finally:
+            if temp_dir:
+                shutil.rmtree(temp_dir)
+
+
     def test_switch_terraform_versions(self):
         """Test switching terraform versions."""
         module_extractor = GitModuleExtractor(module_version=None)
@@ -319,3 +424,120 @@ disable_checkpoint = true
 
             else:
                 assert not os.path.isfile(temp_file)
+
+
+    def test_extract_example_files(self):
+        """Test _extract_example_files method"""
+
+        test_module_dir = '/tmp/extraction_test'
+
+        tested_file_extensions = []
+        opened_files = []
+
+        pattern_responses = {
+            '*.tf': [
+                'subdirectory/main.tf',
+                'subdirectory/output.tf'
+            ],
+            '*.ext2': {},
+            '*.ext3': [
+                'subdirectory/blah.ext3'
+            ]
+        }
+        file_contents = {
+            'subdirectory/main.tf': 'test_content_main.tf',
+            'subdirectory/output.tf': 'output file content',
+            'subdirectory/blah.ext3': 'some ext3 content'
+        }
+
+        def mock_safe_iglob_effect(base_dir, pattern, recursive, is_file):
+            """Create mock iglob method to return list of files that match pattern
+            and mark the pattern as having been tested.
+            """
+            # Ensure base directory and other attributes are correct
+            assert base_dir == '/tmp/extraction_test/subdirectory'
+            assert recursive is False
+            assert is_file is True
+            # Ensure an expected pattern was provided
+            tested_file_extensions.append(pattern)
+            assert pattern in pattern_responses
+
+            # Return list of matching files
+            return [
+                f'{test_module_dir}/{filename}'
+                for filename in pattern_responses[pattern]
+            ]
+
+        mock_safe_iglob = unittest.mock.MagicMock(side_effect=mock_safe_iglob_effect)
+
+        def mock_open_file_effect(path, mode):
+            """Create mock side effect for open(), returning mock context manager.
+            The mock context manager with return a mock FH with mocked readlines() method
+            """
+            assert mode == 'r'
+            opened_files.append(path)
+            mock_open_context = unittest.mock.MagicMock()
+            mock_fh = unittest.mock.MagicMock()
+            mock_open_context.__enter__ = unittest.mock.MagicMock(return_value=mock_fh)
+            mock_fh.readlines = unittest.mock.MagicMock(
+                # Return file contents, removing the base directory from the path provided to open()
+                side_effect=lambda: file_contents[path.replace(f'{test_module_dir}/', '')]
+            )
+            return mock_open_context
+
+        mock_open_file = unittest.mock.MagicMock(side_effect=mock_open_file_effect)
+
+        mock_example = unittest.mock.MagicMock()
+        mock_example.path = './subdirectory'
+
+        created_example_files = {}
+
+        def mock_create_example_file(example, path):
+            """Mock ExampleFile.create to return mock instance of ExampleFile"""
+            assert example is mock_example
+            mock_example_file = unittest.mock.MagicMock()
+            created_example_files[path] = mock_example_file
+            return mock_example_file
+
+        # Create mock for ExampleFile and mock .create
+        mock_example_file = unittest.mock.MagicMock()
+        mock_example_file.create = unittest.mock.MagicMock(side_effect=mock_create_example_file)
+
+        # Create module version object with mocked git path,
+        # to allow mock.patch to read the previous property value
+        # during the mocking of GitModuleExtractor.module_directory
+        mock_module_version = unittest.mock.MagicMock()
+        mock_module_version.git_path = ''
+
+        with unittest.mock.patch('terrareg.module_extractor.Config.EXAMPLE_FILE_EXTENSIONS', ["tf", "ext2", "ext3"]), \
+                unittest.mock.patch('terrareg.module_extractor.open', mock_open_file), \
+                unittest.mock.patch('terrareg.module_extractor.safe_iglob', mock_safe_iglob), \
+                unittest.mock.patch('terrareg.module_extractor.GitModuleExtractor.module_directory', '/tmp/extraction_test'), \
+                unittest.mock.patch('terrareg.module_extractor.ExampleFile', mock_example_file):
+
+            module_extractor = GitModuleExtractor(module_version=mock_module_version)
+
+            module_extractor._extract_example_files(example=mock_example)
+
+        # Ensure each of the extensions was globbed for
+        assert tested_file_extensions == ['*.tf',  '*.ext2', '*.ext3']
+
+        # Ensure open() was called against each example file
+        assert opened_files == [
+            '/tmp/extraction_test/subdirectory/main.tf',
+            '/tmp/extraction_test/subdirectory/output.tf',
+            '/tmp/extraction_test/subdirectory/blah.ext3'
+        ]
+
+        # Ensure each returned file had an example created for
+        assert list(created_example_files.keys()) == [
+            'subdirectory/main.tf',
+            'subdirectory/output.tf',
+            'subdirectory/blah.ext3'
+        ]
+
+        # Ensure each example file was updated with correct content of file
+        for example_path, mock_example_file_instance in created_example_files.items():
+            mock_example_file_instance.update_attributes.assert_called_once_with(
+                content=file_contents[example_path]
+            )
