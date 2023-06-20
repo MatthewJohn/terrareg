@@ -49,8 +49,38 @@
             $('#nextButton').hide();
         });
     }
+
+    async function showEditbutton(namespace) {
+        let permissions = await isLoggedIn();
+        // If user is logged in and either site admin or has
+        // full permissions on namespace, show edit button
+        if (permissions &&
+            (permissions.site_admin ||
+             permissions.namespace_permissions[namespace] == "FULL")
+        ) {
+            $('#edit-namespace').removeClass('default-hidden');
+            $('#edit-namespace-link').attr('href', `/edit-namespace/${namespace}`);
+        }
+    }
+
+    function renderPage() {
+        const router = new Navigo("/");
+
+        const baseRoute = "/modules/:namespace";
+
+        // Handle namespace route
+        router.on(baseRoute, function ({ data }) {
+            let namespace = data.namespace;
+            showEditbutton(namespace);
+        });
+
+        router.resolve();
+    }
+
     $(document).ready(function() {
         getResults(0);
+
+        renderPage();
     });
 </script>
 {% endblock %}
@@ -63,6 +93,12 @@
         <li class="is-active"><a href="/modules/{{ namespace }}">{{ namespace }}</a></li>
     </ul>
 </nav>
+
+<div id="edit-namespace" class="columns default-hidden">
+    <div class="column is-offset-four-fifths is-one-fifth">
+        <a id="edit-namespace-link" class="button is-warning">Edit Namespace</a>
+    </div>
+</div>
 
 <div class="columns">
     <div id="namespace-does-not-exist" class="column is-three-fifths is-offset-one-fifth default-hidden">
