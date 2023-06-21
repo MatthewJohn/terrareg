@@ -55,7 +55,7 @@ def setup_test_data(test_data=None, user_group_data=None):
             global TEST_MODULE_DETAILS_ITX
             global TEST_MODULE_DATA
             global USER_GROUP_CONFIG
-            TEST_MODULE_DATA = dict(test_data if test_data else test_data_full)
+            TEST_MODULE_DATA = deepcopy(test_data if test_data else test_data_full)
             TEST_MODULE_DETAILS = {}
             USER_GROUP_CONFIG = deepcopy(user_group_data if user_group_data else test_user_group_data_full)
 
