@@ -894,8 +894,9 @@ class Namespace(object):
         # Validate name
         self._validate_display_name(new_display_name)
 
-        if self.get_by_display_name(new_display_name):
-            raise DuplicateNamespaceDisplayNameError("A namespace already has this display name")
+        if duplicate_namespace := self.get_by_display_name(new_display_name):
+            if duplicate_namespace.pk != self.pk:
+                raise DuplicateNamespaceDisplayNameError("A namespace already has this display name")
 
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_DISPLAY_NAME,
