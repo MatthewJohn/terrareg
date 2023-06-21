@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.71.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.71.0...v2.71.1) (2023-06-21)
+
+
+### Bug Fixes
+
+* Add handling of non-existent example/submodule in example/submodule details/README API endpoints and Example file list API endpoint ([62ea089](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/62ea08929f39d2bc20571e282a1777fcb55be855)), closes [#387](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/387)
+* **ui:** Handle non-existent submodule/example in module provider page and showing a warning ([238ffa8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/238ffa8704f49f84b19cd7a8af073dcdcb598140)), closes [#387](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/387)
+
 # [2.71.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.70.1...v2.71.0) (2023-06-20)
 
 
