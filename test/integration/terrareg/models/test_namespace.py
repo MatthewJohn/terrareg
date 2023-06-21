@@ -1,11 +1,14 @@
 
 from unittest import mock
 import pytest
-from terrareg.database import Database
 
+from terrareg.audit import AuditEvent
+from terrareg.database import Database
+import terrareg.audit_action
 from terrareg.models import Namespace
 import terrareg.errors
 from test.integration.terrareg import TerraregIntegrationTest
+
 
 class TestNamespace(TerraregIntegrationTest):
 
@@ -171,3 +174,126 @@ class TestNamespace(TerraregIntegrationTest):
                 conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-duplicate"))
                 conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-duplicate2"))
 
+    def test_change_display_name(self):
+        """Test updating display name of namespace"""
+        try:
+            ns = Namespace.create(name="test-change-display-name", display_name="Old display name")
+
+            # Update display name
+            ns.update_display_name("New Display Name")
+
+            check_ns = Namespace.get(name="test-change-display-name")
+            assert check_ns.display_name == "New Display Name"
+
+            # Check audit event
+            audit_events, _, _ = AuditEvent.get_events(limit=1, descending=True, order_by="timestamp")
+            audit_event = audit_events[0]
+            assert audit_event['action'] == terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_DISPLAY_NAME
+            assert audit_event['object_type'] == "Namespace"
+            assert audit_event['object_id'] == "test-change-display-name"
+            assert audit_event['old_value'] == "Old display name"
+            assert audit_event['new_value'] == "New Display Name"
+
+        finally:
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-change-display-name"))
+
+    def test_change_display_name_duplicate(self):
+        """Test updating display name of namespace"""
+        try:
+            ns = Namespace.create(name="test-change-display-name", display_name="Old display name")
+            Namespace.create(name="test-change-display-name-duplicate", display_name="Duplicate display name")
+
+            # Remove all audit events
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.audit_history.delete())
+
+            with pytest.raises(terrareg.errors.DuplicateNamespaceDisplayNameError):
+                # Update display name
+                ns.update_display_name("Duplicate display name")
+
+            check_ns = Namespace.get(name="test-change-display-name")
+            assert check_ns.display_name == "Old display name"
+
+            # Check audit event
+            audit_events, _, _ = AuditEvent.get_events(limit=1, descending=True, order_by="timestamp")
+            assert len(audit_events) == 0
+
+        finally:
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-change-display-name"))
+                conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-change-display-name-duplicate"))
+
+    @pytest.mark.parametrize('old_value, new_value', [
+        # Test same value
+        ('Old display name', 'Old display name'),
+        # Test various empty values
+        (None, None),
+        (None, ''),
+        ('', None),
+        ('', ''),
+    ])
+    def test_change_display_name_without_change(self, old_value, new_value):
+        """Test updating display name of namespace with same name"""
+        try:
+            ns = Namespace.create(name="test-change-display-name", display_name=old_value)
+
+            # Remove all audit events
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.audit_history.delete())
+
+            # Update display name
+            ns.update_display_name(new_value)
+
+            check_ns = Namespace.get(name="test-change-display-name")
+            # Check old value is still used (None is returned instead of empty strings)
+            assert check_ns.display_name == (old_value or None)
+
+            # Check audit event
+            audit_events, _, _ = AuditEvent.get_events(limit=1, descending=True, order_by="timestamp")
+            assert len(audit_events) == 0
+
+        finally:
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-change-display-name"))
+
+    def test_change_display_name_capitalisation_change(self):
+        """
+        Test updating display name of namespace with same name with different capitalisation.
+
+        This will invoke the display name change functionality (as the name is different),
+        but will clash with itself when checking for duplicates.
+        """
+        try:
+            ns = Namespace.create(name="test-change-display-name", display_name="Old display name")
+
+            # Remove all audit events
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.audit_history.delete())
+
+            # Update display name
+            ns.update_display_name("Old Display NAME")
+
+            check_ns = Namespace.get(name="test-change-display-name")
+            assert check_ns.display_name == "Old Display NAME"
+
+            # Check audit event
+            # Check audit event
+            audit_events, _, _ = AuditEvent.get_events(limit=1, descending=True, order_by="timestamp")
+            audit_event = audit_events[0]
+            assert audit_event['action'] == terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_DISPLAY_NAME
+            assert audit_event['object_type'] == "Namespace"
+            assert audit_event['object_id'] == "test-change-display-name"
+            assert audit_event['old_value'] == "Old display name"
+            assert audit_event['new_value'] == "Old Display NAME"
+
+        finally:
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-change-display-name"))
