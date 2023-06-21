@@ -1,6 +1,6 @@
 
 from unittest import mock
-from terrareg.module_search import ModuleSearch, ModuleSearchResults
+
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 import terrareg.audit_action
 
