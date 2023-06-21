@@ -4,6 +4,7 @@ from flask import request
 import terrareg.auth_wrapper
 import terrareg.user_group_namespace_permission_type
 from terrareg.server.error_catching_resource import ErrorCatchingResource
+import terrareg.csrf
 import terrareg.models
 
 
