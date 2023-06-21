@@ -201,7 +201,7 @@ class TestNamespace(TerraregIntegrationTest):
                 conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-update-display-name"))
 
     def test_update_display_name_duplicate(self):
-        """Test updating display name of namespace"""
+        """Test updating display name of namespace with name that is a duplicate of another namespace"""
         try:
             ns = Namespace.create(name="test-update-display-name", display_name="Old display name")
             Namespace.create(name="test-update-display-name-duplicate", display_name="Duplicate display name")
@@ -284,7 +284,6 @@ class TestNamespace(TerraregIntegrationTest):
             check_ns = Namespace.get(name="test-update-display-name")
             assert check_ns.display_name == "Old Display NAME"
 
-            # Check audit event
             # Check audit event
             audit_events, _, _ = AuditEvent.get_events(limit=1, descending=True, order_by="timestamp")
             audit_event = audit_events[0]
