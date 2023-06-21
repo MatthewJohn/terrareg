@@ -2,6 +2,7 @@
 from unittest import mock
 from terrareg.module_search import ModuleSearch, ModuleSearchResults
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
+import terrareg.audit_action
 
 from test import client
 from test.unit.terrareg import (
@@ -90,6 +91,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
 
         with mock.patch('terrareg.models.Namespace.update_name') as mock_update_name, \
                 mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
+                mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
 
             res = client.post('/v1/terrareg/namespaces/testnamespace', json={'display_name': 'New display Name'})
@@ -98,6 +100,11 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
             assert res.json == {'name': 'testnamespace', 'view_href': '/modules/testnamespace', 'display_name': 'New display Name'}
 
             mock_update_name.assert_not_called()
+            mock_create_audit_event.assert_called_once_with(
+                action=terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_DISPLAY_NAME,
+                object_type='Namespace', object_id='testnamespace',
+                old_value=None, new_value='New display Name'
+            )
 
     @setup_test_data()
     def test_update_name(self, client, mock_models):
@@ -106,6 +113,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
 
         with mock.patch('terrareg.models.Namespace.update_display_name') as mock_update_display_name, \
                 mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
+                mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
                 mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
 
             res = client.post('/v1/terrareg/namespaces/testnamespace', json={'name': 'newname'})
@@ -114,6 +122,11 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
             assert res.json == {'name': 'newname', 'view_href': '/modules/newname', 'display_name': None}
 
             mock_update_display_name.assert_not_called()
+            mock_create_audit_event.assert_called_once_with(
+                action=terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_NAME,
+                object_type='Namespace', object_id='testnamespace',
+                old_value='testnamespace', new_value='newname'
+            )
 
     @setup_test_data()
     def test_update_without_access(self, client, mock_models):
