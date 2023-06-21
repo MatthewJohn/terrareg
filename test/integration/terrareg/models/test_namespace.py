@@ -357,6 +357,11 @@ class TestNamespace(TerraregIntegrationTest):
             with db.get_connection() as conn:
                 conn.execute(db.audit_history.delete())
 
+            # Remove all namespace redirects
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.namespace_redirect.delete())
+
             with pytest.raises(terrareg.errors.NamespaceAlreadyExistsError):
                 # Update display name
                 ns.update_name("test-change-name-duplicate")
@@ -368,6 +373,10 @@ class TestNamespace(TerraregIntegrationTest):
             check_duplicate_ns = Namespace.get(name="test-change-name-duplicate")
             assert check_duplicate_ns is not None
             assert check_duplicate_ns.pk == duplicate_ns_pk
+
+            # Ensure no Namespace redirect was created
+            with db.get_connection() as conn:
+                assert len(conn.execute(db.namespace_redirect.select()).all()) == 0
 
             # Check audit event
             audit_events, _, _ = AuditEvent.get_events(limit=1, descending=True, order_by="timestamp")
@@ -390,6 +399,11 @@ class TestNamespace(TerraregIntegrationTest):
             with db.get_connection() as conn:
                 conn.execute(db.audit_history.delete())
 
+            # Remove all namespace redirects
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.namespace_redirect.delete())
+
             # Update display name
             ns.update_name("test-update-name")
 
@@ -400,6 +414,10 @@ class TestNamespace(TerraregIntegrationTest):
             # Check audit event
             audit_events, _, _ = AuditEvent.get_events(limit=1, descending=True, order_by="timestamp")
             assert len(audit_events) == 0
+
+            # Ensure no Namespace redirect was created
+            with db.get_connection() as conn:
+                assert len(conn.execute(db.namespace_redirect.select()).all()) == 0
 
         finally:
             db = Database.get()
