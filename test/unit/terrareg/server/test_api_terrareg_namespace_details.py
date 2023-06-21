@@ -1,6 +1,7 @@
 
 from unittest import mock
 from terrareg.module_search import ModuleSearch, ModuleSearchResults
+from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 
 from test import client
 from test.unit.terrareg import (
@@ -11,6 +12,14 @@ from test.unit.terrareg import (
 
 class TestApiTerraregNamespaceDetails(TerraregUnitTest):
     """Test ApiTerraregNamespaceDetails resource."""
+
+    def _get_mock_namespace_access(self):
+        """Return mock object for get_current_auth_method for namespace access"""
+        mock_auth_method = mock.MagicMock()
+        mock_auth_method.check_namespace_access = mock.MagicMock(return_value=True)
+        mock_auth_method.get_username.return_value = 'moduleversion-publish-username'
+        mock_get_current_auth_method = mock.MagicMock(return_value=mock_auth_method)
+        return mock_get_current_auth_method
 
     @setup_test_data()
     def test_with_non_existent_namespace(self, client, mock_models):
@@ -54,3 +63,73 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
 
             assert res.status_code == 200
             assert res.json == {'is_auto_verified': False, 'trusted': False, 'display_name': 'Unit test display Name'}
+
+    @setup_test_data()
+    def test_update_no_changes(self, client, mock_models):
+        """Test sending request to update attributes without any modifications and check CSRF token"""
+        mock_get_current_auth_method = self._get_mock_namespace_access()
+
+        with mock.patch('terrareg.models.Namespace.update_name') as mock_update_name, \
+                mock.patch('terrareg.models.Namespace.update_display_name') as mock_update_display_name, \
+                mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
+                mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+
+            res = client.post('/v1/terrareg/namespaces/testnamespace', json={'csrf_token': 'test'})
+
+            assert res.status_code == 200
+            assert res.json == {'name': 'testnamespace', 'view_href': '/modules/testnamespace', 'display_name': None}
+
+            mock_update_display_name.assert_not_called()
+            mock_update_name.assert_not_called()
+            mock_check_csrf.assert_called_once_with('test')
+
+    @setup_test_data()
+    def test_update_display_name(self, client, mock_models):
+        """Test sending request to update display_name attribute"""
+        mock_get_current_auth_method = self._get_mock_namespace_access()
+
+        with mock.patch('terrareg.models.Namespace.update_name') as mock_update_name, \
+                mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
+                mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+
+            res = client.post('/v1/terrareg/namespaces/testnamespace', json={'display_name': 'New display Name'})
+
+            assert res.status_code == 200
+            assert res.json == {'name': 'testnamespace', 'view_href': '/modules/testnamespace', 'display_name': 'New display Name'}
+
+            mock_update_name.assert_not_called()
+
+    @setup_test_data()
+    def test_update_name(self, client, mock_models):
+        """Test sending request to update attributes without any modifications"""
+        mock_get_current_auth_method = self._get_mock_namespace_access()
+
+        with mock.patch('terrareg.models.Namespace.update_display_name') as mock_update_display_name, \
+                mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
+                mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+
+            res = client.post('/v1/terrareg/namespaces/testnamespace', json={'name': 'newname'})
+
+            assert res.status_code == 200
+            assert res.json == {'name': 'newname', 'view_href': '/modules/newname', 'display_name': None}
+
+            mock_update_display_name.assert_not_called()
+
+    @setup_test_data()
+    def test_update_without_access(self, client, mock_models):
+        """Test sending request to update attributes without any modifications"""
+        mock_auth_method = mock.MagicMock()
+        mock_auth_method.check_namespace_access = mock.MagicMock(return_value=False)
+        mock_auth_method.get_username.return_value = 'moduleversion-publish-username'
+        mock_get_current_auth_method = mock.MagicMock(return_value=mock_auth_method)
+
+        with mock.patch('terrareg.models.Namespace.update_name') as mock_update_name, \
+                mock.patch('terrareg.models.Namespace.update_display_name') as mock_update_display_name, \
+                mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+
+            res = client.post('/v1/terrareg/namespaces/testnamespace', json={'name': 'unauthname', 'display_name': 'Unauthorised Display Name'})
+            assert res.status_code == 403
+
+            mock_auth_method.check_namespace_access.assert_called_once_with(UserGroupNamespacePermissionType.FULL, namespace='testnamespace')
+            mock_update_name.assert_not_called()
+            mock_update_display_name.assert_not_called()

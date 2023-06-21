@@ -362,7 +362,7 @@ def mock_namespace(request):
     mock_method(request, 'terrareg.models.Namespace.insert_into_database', insert_into_database)
 
     @classmethod
-    def get(cls, name, create=False):
+    def get(cls, name, create=False, include_redirect=True):
         global TEST_MODULE_DATA
         if name in TEST_MODULE_DATA:
             return cls(name)
@@ -373,7 +373,7 @@ def mock_namespace(request):
     mock_method(request, 'terrareg.models.Namespace.get', get)
 
     @classmethod
-    def get_by_case_insensitive_name(cls, name):
+    def get_by_case_insensitive_name(cls, name, include_redirect=True):
         global TEST_MODULE_DATA
         if name in TEST_MODULE_DATA:
             return cls(name)
@@ -390,6 +390,22 @@ def mock_namespace(request):
                 return cls(namespace_name)
         return None
     mock_method(request, 'terrareg.models.Namespace.get_by_display_name', get_by_display_name)
+
+    def update_attributes(self, **kwargs):
+        """Mock update_attributes method of Namespace"""
+        global TEST_MODULE_DATA
+        if 'namespace' in kwargs:
+            new_name = kwargs['namespace']
+            TEST_MODULE_DATA[new_name] = TEST_MODULE_DATA[self._name]
+            del TEST_MODULE_DATA[self._name]
+            del kwargs['namespace']
+            self._name = new_name
+
+        TEST_MODULE_DATA[self._name].update(**kwargs)
+
+        self._cache_db_row = None
+
+    mock_method(request, 'terrareg.models.Namespace.update_attributes', update_attributes)
 
     def _get_db_row(self):
         return {
