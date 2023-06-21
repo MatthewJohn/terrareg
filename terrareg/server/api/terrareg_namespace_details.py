@@ -37,9 +37,9 @@ class ApiTerraregNamespaceDetails(ErrorCatchingResource):
 
         terrareg.csrf.check_csrf_token(csrf_token)
 
-        if namespace_name != namespace.name:
+        if namespace_name is not None and namespace_name != namespace.name:
             namespace.update_name(namespace_name)
-        if display_name != namespace.display_name:
+        if display_name is not None and display_name != namespace.display_name:
             namespace.update_display_name(display_name)
 
         return {
