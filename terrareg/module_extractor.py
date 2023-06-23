@@ -313,6 +313,14 @@ terraform {{
 
     def _generate_archive(self):
         """Generate archive of extracted module"""
+        # Create data directory path.
+        # This should have been created during namespace, module, version creation,
+        # however, in situations where the users do not use/care about generated archives
+        # and DELETE_EXTERNALLY_HOSTED_ARTIFACTS has not been disabled and
+        # the data directory has not been mounted outside of ephemeral storage,
+        # the parent directories may have been lost
+        os.makedirs(self._module_version.base_directory, exist_ok=True)
+
         # Create tar.gz
         with tarfile.open(self._module_version.archive_path_tar_gz, "w:gz") as tar:
             tar.add(self.extract_directory, arcname='', recursive=True)
