@@ -1,12 +1,14 @@
 
-from distutils.command.upload import upload
 import shutil
 import subprocess
 import json
 import os
+import tarfile
 from tempfile import mkdtemp
+import tempfile
 
 from unittest import mock
+import zipfile
 import pytest
 
 import terrareg.config
@@ -1707,3 +1709,88 @@ resource "aws_s3_bucket" "test" {
             with pytest.raises(terrareg.utils.PathIsNotWithinBaseDirectoryError):
                 # Perform base module upload
                 me.process_upload()
+
+    def test_generate_archive(self):
+        """Test _generate_archive method during module extraction"""
+        test_upload = UploadTestModule()
+
+        namespace = Namespace.get(name='testprocessupload', create=True)
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='21.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE.strip())
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'second_file.tf'), 'w') as second_tf_fh:
+                    second_tf_fh.writelines("""
+                        # Test output file
+                    """.strip())
+                with open(os.path.join(upload_directory, '.hidden-file.tf'), 'w') as hidden_file_fh:
+                    hidden_file_fh.writelines("""
+                        # Hidden file
+                    """.strip())
+                os.mkdir(os.path.join(upload_directory, 'subdir'))
+                with open(os.path.join(upload_directory, 'subdir', 'nested-file.tf'), 'w') as nested_file_fh:
+                    nested_file_fh.writelines("""
+                        # Nested file
+                    """.strip())
+
+            temp_dir = tempfile.mkdtemp()
+            os.mkdir(os.path.join(temp_dir, 'modules'))
+            try:
+
+                with mock.patch('terrareg.config.Config.DELETE_EXTERNALLY_HOSTED_ARTIFACTS', False), \
+                        mock.patch('terrareg.config.Config.DATA_DIRECTORY', temp_dir):
+                    UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+
+                    # Ensure the module version tar archive path looks correct
+                    assert module_version.archive_path_tar_gz.startswith(temp_dir)
+                    assert module_version.archive_path_tar_gz.replace(f"{temp_dir}/", '') == 'modules/testprocessupload/test-module/aws/21.0.0/source.tar.gz'
+
+                    assert os.path.isfile(module_version.archive_path_tar_gz)
+
+                    # Inspect generated archive
+                    with tarfile.open(module_version.archive_path_tar_gz, "r:gz") as tar_fh:
+                        # Create map of all files paths against the file contents for verification
+                        tar_contents = {
+                            member.name: tar_fh.extractfile(member).read().decode('utf-8')
+                            for member in tar_fh.getmembers()
+                            if tar_fh.extractfile(member)
+                        }
+
+                        assert tar_contents == {
+                            '.hidden-file.tf': '# Hidden file',
+                            'main.tf': UploadTestModule.VALID_MAIN_TF_FILE.strip(),
+                            'second_file.tf': '# Test output file',
+                            'subdir/nested-file.tf': '# Nested file',
+                        }
+
+                    # Ensure zip file was created correctly
+                    assert module_version.archive_path_zip.startswith(temp_dir)
+                    assert module_version.archive_path_zip.replace(f"{temp_dir}/", '') == 'modules/testprocessupload/test-module/aws/21.0.0/source.zip'
+
+                    assert os.path.isfile(module_version.archive_path_zip)
+
+                    # Inspect generated archive
+                    with zipfile.ZipFile(module_version.archive_path_zip) as z:
+                        zip_contents = {
+                            fileobj.filename: z.open(fileobj.filename).read().decode('utf-8')
+                            for fileobj in z.infolist()
+                            if not fileobj.is_dir()
+                        }
+
+                        assert zip_contents == {
+                            '.hidden-file.tf': '# Hidden file',
+                            'main.tf': UploadTestModule.VALID_MAIN_TF_FILE.strip(),
+                            'second_file.tf': '# Test output file',
+                            'subdir/nested-file.tf': '# Nested file',
+                        }
+
+
+            finally:
+                shutil.rmtree(temp_dir)
