@@ -1,11 +1,8 @@
 
-from distutils.command.upload import upload
-from glob import glob
 import shutil
 import subprocess
 import json
 import os
-from tarfile import TarFile
 import tarfile
 from tempfile import mkdtemp
 import tempfile
