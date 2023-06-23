@@ -11,7 +11,6 @@ import tarfile
 import subprocess
 import json
 import datetime
-import shutil
 import re
 import glob
 import pathlib
@@ -318,10 +317,15 @@ terraform {{
         with tarfile.open(self._module_version.archive_path_tar_gz, "w:gz") as tar:
             tar.add(self.extract_directory, arcname='', recursive=True)
         # Create zip
-        shutil.make_archive(
-            re.sub(r'\.zip$', '', self._module_version.archive_path_zip),
-            'zip',
-            self.extract_directory)
+        # Use 'cwd' to ensure zip file is generated with directory structure
+        # from the root of the module.
+        # Use subprocess to execute zip, rather than shutil.make_archive,
+        # as make_archive is not thread-safe and changes the CWD of the main
+        # process
+        subprocess.call(
+            ['zip', '-r', self._module_version.archive_path_zip, '.'],
+            cwd=self.extract_directory
+        )
 
     def _create_module_details(self, readme_content, terraform_docs, tfsec, terraform_graph, infracost=None):
         """Create module details row."""
