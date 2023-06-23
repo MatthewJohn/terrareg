@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.71.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.71.1...v2.71.2) (2023-06-23)
+
+
+### Bug Fixes
+
+* Fix bug where CWD of main process is changing during module extraction. ([fcf6325](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fcf6325423d32a2e31107c25a0f4376f66a0c46c)), closes [#404](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/404)
+
 ## [2.71.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.71.0...v2.71.1) (2023-06-21)
 
 
