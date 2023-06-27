@@ -1628,6 +1628,10 @@ class ModuleProvider(object):
 
         db = Database.get()
 
+        # Remove directory for module provider
+        if os.path.isdir(self.base_directory):
+            os.rmdir(self.base_directory)
+
         with db.get_connection() as conn:
             # Delete module from module_version table
             delete_statement = db.module_provider.delete().where(
