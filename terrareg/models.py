@@ -3049,6 +3049,14 @@ class ModuleVersion(TerraformSpecsObject):
             new_value=None
         )
 
+        # Delete archives for module version and version directory
+        if os.path.isfile(self.archive_path_tar_gz):
+            os.unlink(self.archive_path_tar_gz)
+        if os.path.isfile(self.archive_path_zip):
+            os.unlink(self.archive_path_zip)
+        if os.path.isdir(self.base_directory):
+            os.rmdir(self.base_directory)
+
         with db.get_connection() as conn:
             # Delete module from module_version table
             delete_statement = db.module_version.delete().where(
