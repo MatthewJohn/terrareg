@@ -392,20 +392,24 @@ class TestModuleVersion(TerraregIntegrationTest):
             )
             assert analytics_res.fetchone() is None
 
-    @pytest.mark.parametrize('module_provider_directory_exists, module_version_directory_exists, zip_file_exists, tar_gz_file_exists', [
+    @pytest.mark.parametrize('module_provider_directory_exists, module_version_directory_exists, zip_file_exists, tar_gz_file_exists, non_managed_file_exists', [
         # Data directory does not exist for module provider
-        (False, False, False, False),
+        (False, False, False, False, False),
         # Data Directory for module version does not exist
-        (True, False, False, False),
+        (True, False, False, False, False),
         # Archive files do not exist
-        (True, True, False, False),
+        (True, True, False, False, False),
         # Check that archive files are removed and are not dependent on
         # either existing
-        (True, True, True, False),
-        (True, True, False, True),
-        (True, True, True, True),
+        (True, True, True, False, False),
+        (True, True, False, True, False),
+        (True, True, True, True, False),
+
+        # Handle case where non-terrareg managed file exists in the
+        # module version directory that shouldn't be removed
+        (True, True, True, True, True),
     ])
-    def test_delete_removes_data_files(self, module_provider_directory_exists, module_version_directory_exists, zip_file_exists, tar_gz_file_exists):
+    def test_delete_removes_data_files(self, module_provider_directory_exists, module_version_directory_exists, zip_file_exists, tar_gz_file_exists, non_managed_file_exists):
         """Ensure removal of module version removes any data files for the module version"""
         namespace = Namespace(name='testnamespace')
         module = Module(namespace=namespace, name='wrongversionorder')
@@ -445,6 +449,13 @@ class TestModuleVersion(TerraregIntegrationTest):
                     with open(test_module_provider_file, 'w'):
                         pass
 
+                # Create non-managed Terrareg file in module version
+                # directory
+                test_module_version_file = os.path.join(module_version.base_directory, 'test_file')
+                if non_managed_file_exists:
+                    with open(test_module_version_file, 'w'):
+                        pass
+
                 # Remove module version/provider directories to match
                 # test case
                 if not module_version_directory_exists:
@@ -462,7 +473,14 @@ class TestModuleVersion(TerraregIntegrationTest):
                 # Ensure files/directories were removed
                 assert os.path.exists(zip_file_path) is False
                 assert os.path.exists(tar_gz_file_path) is False
-                assert os.path.exists(module_version_directory) is False
+
+                # Ensure module version directory is removed, unless an un managed file
+                # existed in the module version directory
+                if non_managed_file_exists:
+                    assert os.path.isdir(module_version_directory) is True
+                    assert os.path.isfile(test_module_version_file)
+                else:
+                    assert os.path.exists(module_version_directory) is False
 
                 # Ensure module provider directory exists, if it
                 # existed in test case
