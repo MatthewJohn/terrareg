@@ -1630,7 +1630,16 @@ class ModuleProvider(object):
 
         # Remove directory for module provider
         if os.path.isdir(self.base_directory):
-            os.rmdir(self.base_directory)
+            try:
+                os.rmdir(self.base_directory)
+            except OSError as exc:
+                # Handle OSError which can be caused when
+                # files that are not managed by Terrareg
+                # exist in the module provider data directory.
+                # This is safer than forcefully deleting
+                # all data in the directory and should not happen
+                # during normal conditions
+                print(f'An error occured when attempting to remove module provider directory: {str(exc)}')
 
         with db.get_connection() as conn:
             # Delete module from module_version table

@@ -329,8 +329,9 @@ class TestModuleProvider(TerraregIntegrationTest):
                 # Remove module version
                 module_provider.delete()
 
-                # Ensure directory was removed
-                assert os.path.exists(module_provider_directory) is False
+                # Ensure directory was removed, if there are not pre-existing files
+                # in the module provider directory
+                assert os.path.exists(module_provider_directory) is module_provider_directory_non_empty
 
                 # Ensure module provider directory exists, if it
                 # existed in test case
