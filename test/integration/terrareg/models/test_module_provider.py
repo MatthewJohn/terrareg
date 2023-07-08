@@ -1,4 +1,7 @@
 
+import os
+import shutil
+import tempfile
 from unittest import mock
 import pytest
 from terrareg.database import Database
@@ -276,6 +279,70 @@ class TestModuleProvider(TerraregIntegrationTest):
             for mv_pk in module_version_pks:
                 res = conn.execute(db.module_version.select().where(db.module_version.c.id==mv_pk))
                 assert res.fetchone() is None
+
+    @pytest.mark.parametrize('module_directory_exists, module_provider_directory_exists, module_provider_directory_non_empty', [
+        # Data directory does not exist for module
+        (False, False, False),
+        # Data directory for module provider does not exist
+        (True, False, False),
+        # Directories exist
+        (True, True, False),
+        # Pre-existing files are present in module provider directory
+        (True, True, True),
+    ])
+    def test_delete_removes_data_files(self, module_directory_exists, module_provider_directory_exists, module_provider_directory_non_empty):
+        """Ensure removal of module provider removes any data files for the module provider"""
+        namespace = Namespace.get(name='testnamespace')
+        module = Module(namespace=namespace, name='to-delete')
+
+        # Create test module provider
+        module_provider = ModuleProvider.get(module=module, name='datadelete', create=True)
+
+        # Patch data directory to a temporary directory
+        data_directory = tempfile.mkdtemp()
+        try:
+            with mock.patch('terrareg.config.Config.DATA_DIRECTORY', data_directory):
+                # Create modules directory
+                os.mkdir(os.path.join(data_directory, 'modules'))
+
+                # Create module provider data directory tree
+                namespace.create_data_directory()
+                module.create_data_directory()
+                module_provider.create_data_directory()
+
+                # Create additional test file in module provider directory
+                # to ensure it is not accidently removed
+                test_module_provider_file = os.path.join(module_provider.base_directory, 'test_file')
+                if module_provider_directory_non_empty:
+                    with open(test_module_provider_file, 'w'):
+                        pass
+
+                # Remove module provider/module directories to match
+                # test case
+                if not module_provider_directory_exists:
+                    os.rmdir(module_provider.base_directory)
+                if not module_directory_exists:
+                    os.rmdir(module.base_directory)
+
+                module_provider_directory = module_provider.base_directory
+
+                # Remove module version
+                module_provider.delete()
+
+                # Ensure directory was removed, if there are not pre-existing files
+                # in the module provider directory
+                assert os.path.exists(module_provider_directory) is module_provider_directory_non_empty
+
+                # Ensure module provider directory exists, if it
+                # existed in test case
+                if module_directory_exists:
+                    assert os.path.isdir(module.base_directory)
+
+        finally:
+            shutil.rmtree(data_directory)
+            # Delete module provider if it still exists
+            if module_provider._get_db_row():
+                module_provider.delete()
 
     @pytest.mark.parametrize('original_git_provider_id, new_git_provider_id', [
         (None, None),
