@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.71.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.71.2...v2.71.3) (2023-07-08)
+
+
+### Bug Fixes
+
+* Delete module provider data directory on deletion on module provider ([b44b560](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b44b56075efe6847ca41090194aa01772eeb1451)), closes [#406](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/406)
+* Handle deletion of module version directory when there are pre-existing files in the module version directory that aren't managed by Terrareg ([4d7a0c8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4d7a0c8996711574db8687cf2ebe00707a38d0c1)), closes [#406](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/406)
+* Remove module version data files and directory when removing the module version ([257c6d7](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/257c6d7185ca58a9a13d7766e91eb3e29a716cb4)), closes [#406](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/406)
+
 ## [2.71.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.71.1...v2.71.2) (2023-06-23)
 
 
