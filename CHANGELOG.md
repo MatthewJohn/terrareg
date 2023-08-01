@@ -1,5 +1,17 @@
 # Changelog
 
+# [2.72.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.71.3...v2.72.0) (2023-08-01)
+
+
+### Bug Fixes
+
+* Only perfrom secondary ordering audit events by timestamp descending if the primary sort is not based on the timestamp ([d7f4a71](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/d7f4a717b9bb30595fcb69d026aa242c113ab747)), closes [#269](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/269)
+
+
+### Features
+
+* Allow renaming of namespace and changing of display name. ([ddfa200](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ddfa2004d6773989c60666cf46f53f926861b610)), closes [#269](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/269)
+
 ## [2.71.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.71.2...v2.71.3) (2023-07-08)
 
 
