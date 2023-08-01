@@ -202,6 +202,9 @@ class Server(BaseHandler):
             '/create-namespace',
         )(self._view_serve_create_namespace)
         self._app.route(
+            '/edit-namespace/<string:namespace>',
+        )(self._view_serve_edit_namespace)
+        self._app.route(
             '/create-module'
         )(self._view_serve_create_module)
         self._app.route(
@@ -570,6 +573,12 @@ class Server(BaseHandler):
         """Provide view to create namespace."""
         return self._render_template(
             'create_namespace.html'
+        )
+
+    def _view_serve_edit_namespace(self, namespace):
+        """Provide view for editing namespace"""
+        return self._render_template(
+            'edit_namespace.html'
         )
 
     def _view_serve_initial_setup(self):

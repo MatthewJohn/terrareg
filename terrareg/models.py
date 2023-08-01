@@ -557,15 +557,68 @@ class GitProvider:
         return self._row_cache
 
 
+class NamespaceRedirect(object):
+    """Redirect objects for providing redirects after a namespace name has changed"""
+
+    @classmethod
+    def create(cls, namespace, name):
+        """Create instance of object in database."""
+        # Create module provider
+        db = Database.get()
+        namespace_redirect_insert = db.namespace_redirect.insert().values(
+            namespace_id=namespace.pk,
+            name=name
+        )
+        with db.get_connection() as conn:
+            conn.execute(namespace_redirect_insert)
+
+    @classmethod
+    def get_namespace_by_name(cls, name, case_insensitive=False):
+        """Get namespace redirect by name"""
+        db = Database.get()
+        # Get namespace table namespace column,
+        # joined from namespace redirect table,
+        # using 
+        select = sqlalchemy.select(
+            db.namespace.c.namespace
+        ).select_from(
+            db.namespace_redirect
+        ).join(
+            db.namespace,
+            db.namespace_redirect.c.namespace_id==db.namespace.c.id
+        )
+
+        if case_insensitive:
+            select = select.where(
+                db.namespace_redirect.c.name == name
+            )
+        else:
+            select = select.where(
+                db.namespace_redirect.c.name.like(name)
+            )
+
+        with db.get_connection() as conn:
+            res = conn.execute(select)
+            row = res.fetchone()
+        if not row:
+            return None
+
+        return Namespace.get(name=row['namespace'])
+
+
 class Namespace(object):
 
     @classmethod
-    def get(cls, name, create=False):
+    def get(cls, name, create=False, include_redirect=True):
         """Create object and ensure the object exists."""
         obj = cls(name=name)
 
         # If there is no row, the module provider does not exist
         if obj._get_db_row() is None:
+
+            # Check for redirect
+            if include_redirect and (redirect_namespace := NamespaceRedirect.get_namespace_by_name(name=name, case_insensitive=False)):
+                return redirect_namespace
 
             # If set to create and auto module-provider creation
             # is enabled in config, create the module provider
@@ -604,7 +657,7 @@ class Namespace(object):
         return None
 
     @classmethod
-    def get_by_case_insensitive_name(cls, name):
+    def get_by_case_insensitive_name(cls, name, include_redirect=True):
         """Get namespace by case-insensitive name match."""
         db = Database.get()
 
@@ -622,6 +675,12 @@ class Namespace(object):
 
             if res:
                 return cls.get(res.namespace)
+
+        # Check for redirect
+        if include_redirect and (redirect_namespace := NamespaceRedirect.get_namespace_by_name(
+                name=name, case_insensitive=True)):
+            return redirect_namespace
+
         return None
 
     @classmethod
@@ -642,7 +701,7 @@ class Namespace(object):
         cls._validate_name(name)
         cls._validate_display_name(display_name)
 
-        if cls.get_by_case_insensitive_name(name):
+        if cls.get_by_case_insensitive_name(name, include_redirect=False):
             raise NamespaceAlreadyExistsError("A namespace already exists with this name")
 
         if cls.get_by_display_name(display_name):
@@ -824,6 +883,72 @@ class Namespace(object):
                 self._cache_db_row = res.fetchone()
 
         return self._cache_db_row
+
+    def update_display_name(self, new_display_name):
+        """Update display name"""
+        # If no change to display name, return early.
+        # Handle comparison of empty string vs null
+        if new_display_name == self.display_name or (not new_display_name and not self.display_name):
+            return
+
+        # Validate name
+        self._validate_display_name(new_display_name)
+
+        if duplicate_namespace := self.get_by_display_name(new_display_name):
+            if duplicate_namespace.pk != self.pk:
+                raise DuplicateNamespaceDisplayNameError("A namespace already has this display name")
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_DISPLAY_NAME,
+            object_type=self.__class__.__name__,
+            object_id=self.name,
+            old_value=self.display_name,
+            new_value=new_display_name
+        )
+
+        self.update_attributes(display_name=new_display_name)
+
+    def update_name(self, new_name):
+        """Update name"""
+        # If no change to name, return early
+        if new_name == self.name:
+            return
+
+        # Validate name
+        self._validate_name(new_name)
+
+        if duplicate_namespace := self.get_by_case_insensitive_name(new_name, include_redirect=False):
+            if duplicate_namespace.pk != self.pk:
+                raise NamespaceAlreadyExistsError("A namespace already exists with this name")
+
+        # Create namespace redirect for old name
+        NamespaceRedirect.create(namespace=self, name=self.name)
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_NAME,
+            object_type=self.__class__.__name__,
+            object_id=self.name,
+            old_value=self.name,
+            new_value=new_name
+        )
+
+        self.update_attributes(namespace=new_name)
+
+        # Update member variable for name to new name
+        self._name = new_name
+
+    def update_attributes(self, **kwargs):
+        """Update DB row."""
+        db = Database.get()
+        update = db.namespace.update(
+        ).where(
+            db.namespace.c.id==self.pk
+        ).values(**kwargs)
+        with db.get_connection() as conn:
+            conn.execute(update)
+
+        # Remove cached DB row
+        self._cache_db_row = None
 
     def get_view_url(self):
         """Return view URL"""
