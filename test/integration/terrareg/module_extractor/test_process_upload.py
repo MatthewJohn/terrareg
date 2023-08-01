@@ -1794,3 +1794,11 @@ resource "aws_s3_bucket" "test" {
 
             finally:
                 shutil.rmtree(temp_dir)
+
+    @pytest.mark.skip(reason="Git-based indexing has not been implemented in integration tests")
+    def test_generate_archive_disable(self):
+        """
+        Ensure _generate_archive is not run when module is using a git provider
+        and DELETE_EXTERNALLY_HOSTED_ARTIFACTS is provided
+        """
+        pass
