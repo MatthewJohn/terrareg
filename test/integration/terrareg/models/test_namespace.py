@@ -180,6 +180,11 @@ class TestNamespace(TerraregIntegrationTest):
         try:
             ns = Namespace.create(name="test-update-display-name", display_name="Old display name")
 
+            # Remove all audit events
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.audit_history.delete())
+
             # Update display name
             ns.update_display_name("New Display Name")
 
@@ -303,6 +308,11 @@ class TestNamespace(TerraregIntegrationTest):
         try:
             ns = Namespace.create(name="test-change-name")
             old_pk = ns.pk
+
+            # Remove all audit events
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.audit_history.delete())
 
             # Remove all namespace redirects
             db = Database.get()
