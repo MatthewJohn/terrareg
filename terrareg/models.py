@@ -1485,6 +1485,68 @@ class ProviderLogo:
         return self._details['link'] if self._details is not None else None
 
 
+class ModuleProviderRedirect(object):
+    """Redirect objects for providing redirects after a module provider name, provider or namespace is changed."""
+
+    @classmethod
+    def create(cls, module_provider, original_namespace, original_name, original_provider):
+        """Create instance of object in database."""
+        # Create module provider
+        db = Database.get()
+        module_provider_redirect_insert = db.module_provider_redirect.insert().values(
+            module_provider_id=module_provider.pk,
+            namespace_id=original_namespace.pk,
+            module=original_name,
+            provider=original_provider
+        )
+        with db.get_connection() as conn:
+            conn.execute(module_provider_redirect_insert)
+
+    @classmethod
+    def get_module_provider_by_original_details(cls, namespace, module, provider, case_insensitive=False):
+        """Get namespace redirect by name"""
+        db = Database.get()
+        # Obtain targetted module provider and it's namespace details
+        # using ID from module provider redirect table,
+        # filtering by original namespace ID, module and provider
+        select = sqlalchemy.select(
+            db.module_provider.c.module,
+            db.module_provider.c.provider,
+            db.namespace.c.namespace
+        ).select_from(
+            db.module_provider_redirect
+        ).join(
+            db.module_provider,
+            db.module_provider_redirect.c.module_provider_id==db.module_provider.c.id
+        ).join(
+            db.namespace,
+            db.module_provider.c.namespace_id==db.namespace.c.id
+        ).where(
+            db.module_provider_redirect.c.namespace_id==namespace.id
+        )
+
+        if case_insensitive:
+            select = select.where(
+                db.module_provider_redirect.c.module==module,
+                db.module_provider_redirect.c.provider==provider
+            )
+        else:
+            select = select.where(
+                db.module_provider_redirect.c.module.like(module),
+                db.module_provider_redirect.c.provider.like(provider),
+            )
+
+        with db.get_connection() as conn:
+            res = conn.execute(select)
+            row = res.fetchone()
+        if not row:
+            return None
+
+        target_namespace = Namespace.get(name=row['namespace'])
+        target_module = Module(namespace=target_namespace, name=row['module'])
+        return ModuleProvider(module=target_module, name=row['provider'])
+
+
 class ModuleProvider(object):
 
     @staticmethod
@@ -1562,7 +1624,7 @@ class ModuleProvider(object):
         return obj
 
     @classmethod
-    def get(cls, module, name, create=False):
+    def get(cls, module, name, create=False, include_redirect=True):
         """Create object and ensure the object exists."""
         obj = cls(module=module, name=name)
 
@@ -1576,7 +1638,17 @@ class ModuleProvider(object):
 
                 return obj
 
-            # If not creating, return None
+            elif include_redirect:
+                # If not creating, attempt to find redirected name
+                redirect_module_provider = ModuleProviderRedirect.get_module_provider_by_original_details(
+                    namespace=module.namespace,
+                    module=module.name,
+                    provider=name,
+                    case_insensitive=False
+                )
+                if redirect_module_provider:
+                    return redirect_module_provider
+
             return None
 
         # Otherwise, return object
