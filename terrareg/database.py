@@ -50,6 +50,7 @@ class Database():
         self._user_group = None
         self._user_group_namespace_permission = None
         self._git_provider = None
+        self._namespace_redirect = None
         self._namespace = None
         self._module_provider = None
         self._module_details = None
@@ -87,6 +88,13 @@ class Database():
         if self._git_provider is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._git_provider
+
+    @property
+    def namespace_redirect(self):
+        """Return namespace redirect table."""
+        if self._namespace_redirect is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._namespace_redirect
 
     @property
     def namespace(self):
@@ -245,6 +253,21 @@ class Database():
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
             sqlalchemy.Column('namespace', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
             sqlalchemy.Column('display_name', sqlalchemy.String(GENERAL_COLUMN_SIZE))
+        )
+
+        self._namespace_redirect = sqlalchemy.Table(
+            'namespace_redirect', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column(
+                'namespace_id',
+                sqlalchemy.ForeignKey(
+                    'namespace.id',
+                    name='fk_namespace_redirect_namespace_id_namespace_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            )
         )
 
         self._module_provider = sqlalchemy.Table(

@@ -42,11 +42,12 @@ class TerraregUnitTest(BaseTest):
 
 TEST_MODULE_DATA = {}
 TEST_GIT_PROVIDER_DATA = {}
+TEST_NAMESPACE_REDIRECTS = {}
 TEST_MODULE_DETAILS = {}
 TEST_MODULE_DETAILS_ITX = 0
 USER_GROUP_CONFIG = {}
 
-def setup_test_data(test_data=None, user_group_data=None):
+def setup_test_data(test_data=None, user_group_data=None, namespace_redirects=None):
     """Provide decorator to setup test data to be used for mocked objects."""
     def deco(func):
         @functools.wraps(func)
@@ -55,9 +56,11 @@ def setup_test_data(test_data=None, user_group_data=None):
             global TEST_MODULE_DETAILS_ITX
             global TEST_MODULE_DATA
             global USER_GROUP_CONFIG
-            TEST_MODULE_DATA = dict(test_data if test_data else test_data_full)
+            global TEST_NAMESPACE_REDIRECTS
+            TEST_MODULE_DATA = deepcopy(test_data if test_data else test_data_full)
             TEST_MODULE_DETAILS = {}
             USER_GROUP_CONFIG = deepcopy(user_group_data if user_group_data else test_user_group_data_full)
+            TEST_NAMESPACE_REDIRECTS = deepcopy(namespace_redirects if namespace_redirects else {})
 
             # Replace all ModuleDetails in test data with IDs and move contents to
             # TEST_MODULE_DETAILS
@@ -97,6 +100,7 @@ def setup_test_data(test_data=None, user_group_data=None):
             TEST_GIT_PROVIDER_DATA = {}
             TEST_MODULE_DETAILS = {}
             TEST_MODULE_DETAILS_ITX = 0
+            TEST_NAMESPACE_REDIRECTS = {}
             return res
         return wrapper
     return deco
@@ -347,6 +351,34 @@ def mock_module_provider(request):
         get_module_provider_mock_data(self).update(kwargs)
     mock_method(request, 'terrareg.models.ModuleProvider.update_attributes', update_attributes)
 
+def mock_namespace_redirect(request):
+    """Mock NamespaceRedirect class"""
+
+    @classmethod
+    def create(cls, namespace, name):
+        """Create instance of object in database."""
+        global TEST_NAMESPACE_REDIRECTS
+        global TEST_MODULE_DATA
+        if name in TEST_NAMESPACE_REDIRECTS:
+            raise Exception('Namespace redirect already exists')
+
+        TEST_NAMESPACE_REDIRECTS[name] = {
+            'namespace_id': namespace.pk
+        }
+    mock_method(request, 'terrareg.models.NamespaceRedirect.create', create)
+
+    @classmethod
+    def get_namespace_by_name(cls, name, case_insensitive=False):
+        if name not in TEST_NAMESPACE_REDIRECTS:
+            return None
+
+        namespace_id = TEST_NAMESPACE_REDIRECTS[name].get('namespace_id')
+        if not namespace_id:
+            raise Exception('Unittest error: namespace_id not associated with NamespaceRedirect')
+        for namespace_name in TEST_MODULE_DATA:
+            if TEST_MODULE_DATA[namespace_name]['id'] == namespace_id:
+                return terrareg.models.Namespace.get(name=namespace_name)
+        mock_method(request, 'terrareg.models.NamespaceRedirect.get_namespace_by_name', get_namespace_by_name)
 
 def mock_namespace(request):
 
@@ -362,7 +394,7 @@ def mock_namespace(request):
     mock_method(request, 'terrareg.models.Namespace.insert_into_database', insert_into_database)
 
     @classmethod
-    def get(cls, name, create=False):
+    def get(cls, name, create=False, include_redirect=True):
         global TEST_MODULE_DATA
         if name in TEST_MODULE_DATA:
             return cls(name)
@@ -373,7 +405,7 @@ def mock_namespace(request):
     mock_method(request, 'terrareg.models.Namespace.get', get)
 
     @classmethod
-    def get_by_case_insensitive_name(cls, name):
+    def get_by_case_insensitive_name(cls, name, include_redirect=True):
         global TEST_MODULE_DATA
         if name in TEST_MODULE_DATA:
             return cls(name)
@@ -390,6 +422,22 @@ def mock_namespace(request):
                 return cls(namespace_name)
         return None
     mock_method(request, 'terrareg.models.Namespace.get_by_display_name', get_by_display_name)
+
+    def update_attributes(self, **kwargs):
+        """Mock update_attributes method of Namespace"""
+        global TEST_MODULE_DATA
+        if 'namespace' in kwargs:
+            new_name = kwargs['namespace']
+            TEST_MODULE_DATA[new_name] = TEST_MODULE_DATA[self._name]
+            del TEST_MODULE_DATA[self._name]
+            del kwargs['namespace']
+            self._name = new_name
+
+        TEST_MODULE_DATA[self._name].update(**kwargs)
+
+        self._cache_db_row = None
+
+    mock_method(request, 'terrareg.models.Namespace.update_attributes', update_attributes)
 
     def _get_db_row(self):
         return {
@@ -591,6 +639,7 @@ def mock_user_group_namespace_permission(request):
 @pytest.fixture()
 def mock_models(request):
     mock_git_provider(request)
+    mock_namespace_redirect(request)
     mock_namespace(request)
     mock_module_provider(request)
     mock_module(request)
