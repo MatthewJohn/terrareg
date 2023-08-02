@@ -18,7 +18,7 @@ import terrareg.config
 import terrareg.audit
 import terrareg.audit_action
 from terrareg.errors import (
-    DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
+    DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
     InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError, RepositoryUrlContainsInvalidTemplateError,
     RepositoryUrlDoesNotContainValidSchemeError,
@@ -1734,6 +1734,45 @@ class ModuleProvider(object):
 
         # Otherwise, return the path
         return row_value
+
+    def update_name(self, namespace, module_name, provider_name):
+        """Update namespace, module name and/or provider of module"""
+
+        # Ensure a module does not exist with the new name/provider
+        duplicate_provider = ModuleProvider.get(module=Module(namespace=namespace, name=module_name), name=provider_name)
+        if duplicate_provider:
+            raise DuplicateModuleProviderError("A module/provider already exists with the same name in the namespace")
+
+        # Create audit events for the modifications
+        for action, old_value, new_value in [
+                [terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_NAMESPACE, self.module.namespace.name, namespace.name],
+                [terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_MODULE_NAME, self.module.name, module_name],
+                [terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_PROVIDER_NAME, self.name, provider_name]]:
+            if old_value != new_value:
+                terrareg.audit.AuditEvent.create_audit_event(
+                    action=action,
+                    object_type=self.__class__.__name__,
+                    object_id=self.id,
+                    old_value=old_value, new_value=new_value
+                )
+
+        # Create redirect to new name
+        ModuleProviderRedirect.create(
+            module_provider=self,
+            original_namespace=self.module.namespace,
+            original_name=self.module.name,
+            original_provider=self.name
+        )
+
+        self.update_attributes(
+            namespace_id=namespace.pk,
+            module=module_name,
+            provider=provider_name,
+        )
+        new_module = Module(namespace=namespace, name=module_name)
+        new_module_provider = ModuleProvider.get(module=new_module, name=provider_name)
+
+        return new_module_provider
 
     def get_version_from_tag_ref(self, tag_ref):
         """Match tag ref against version number and return actual version number."""

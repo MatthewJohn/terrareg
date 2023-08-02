@@ -72,6 +72,27 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             location='json'
         )
         parser.add_argument(
+            'namespace', type=str,
+            required=False,
+            default=None,
+            help='Name of new namespace to move module/module provider to a new namespace',
+            location='json'
+        )
+        parser.add_argument(
+            'module', type=str,
+            required=False,
+            default=None,
+            help='New name of module',
+            location='json'
+        )
+        parser.add_argument(
+            'provider', type=str,
+            required=False,
+            default=None,
+            help='New provider for module',
+            location='json'
+        )
+        parser.add_argument(
             'csrf_token', type=str,
             required=False,
             help='CSRF token',
@@ -83,7 +104,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
 
         terrareg.csrf.check_csrf_token(args.csrf_token)
 
-        _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+        namespace, module, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
         if error:
             return error
 
@@ -150,5 +171,24 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
 
         if args.verified is not None:
             module_provider.update_verified(verified=args.verified)
+
+        # If any of the module name/namespace changing arguments are provided,
+        # call method to update name
+        if args.namespace is not None or args.module is not None or args.provider is not None:
+            new_namespace = namespace
+            if args.namespace is not None:
+                new_namespace = terrareg.models.Namespace.get(name=args.namespace, create=False, include_redirect=False)
+
+                # Ensure new namespace exists and user has modify permissions
+                if new_namespace is None or terrareg.auth_wrapper.auth_wrapper('check_namespace_access',
+                        terrareg.user_group_namespace_permission_type.UserGroupNamespacePermissionType.MODIFY,
+                        request_kwarg_map={'namespace': 'namespace'}):
+                    return {'message': 'A namespace of the provided name either does not exist, or you do not have modify permissions to it'}, 400
+
+            module_provider.update_name(
+                namespace=new_namespace,
+                module_name=args.module if args.module is not None else module.name,
+                provider_name=args.provider if args.provider is not None else provider.name
+            )
 
         return {}
