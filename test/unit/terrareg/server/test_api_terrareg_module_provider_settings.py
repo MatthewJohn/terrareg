@@ -339,7 +339,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
 
 
     @pytest.mark.parametrize('attributes', [
-        {'module': 'mewname'},
+        {'module': 'newname'},
         {'provider': 'newprovider'},
         {'namespace': 'moduledetails'},
         {'namespace': 'moduledetails', 'provider': 'newprovider', 'module': 'newname'},
@@ -350,7 +350,7 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
             test_request_context, mock_models,
             client
         ):
-        """Test update of verified flag with invalid value."""
+        """Test setting new name, provider or namespace for module."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)[0]), \
                 unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
@@ -376,5 +376,64 @@ class TestApiTerraregModuleProviderSettings(TerraregUnitTest):
                 module_name=attributes.get("module", "testmodulename"),
                 provider_name=attributes.get("provider", "testprovider")
             )
+            mock_update_attributes.assert_not_called()
+            mock_create_audit_event.assert_not_called()
+
+    @pytest.mark.parametrize("new_namespace", [
+        # With only MODIFY access
+        "moduledetails",
+
+        # With no access
+        "secondtestnamespace",
+
+        # Non-existent
+        "doesnotexist"
+    ])
+    @setup_test_data()
+    def test_update_to_namespace_without_permission(
+            self, new_namespace, app_context,
+            test_request_context, mock_models,
+            client
+        ):
+        """Test attempting to update module provider namespace with insufficient access to destination namespace."""
+
+        def check_namespace_access(access_level, namespace):
+            """Mock check namespace access"""
+            # Allow access to source namespace
+            if namespace == "testnamespace":
+                return True
+            # This should never be called - asserting that changing to a new namespace requires
+            # full access to new namespace
+            if namespace == "moduledetails" and access_level is UserGroupNamespacePermissionType.MODIFY:
+                return True
+
+            return False
+
+        mock_auth_method = unittest.mock.MagicMock()
+        mock_auth_method.check_namespace_access = unittest.mock.MagicMock(side_effect=check_namespace_access)
+        mock_auth_method.get_username.return_value = 'mps-user'
+        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
+
+
+        with app_context, test_request_context, client, \
+                unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
+                unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event') as mock_create_audit_event, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_attributes') as mock_update_attributes, \
+                unittest.mock.patch('terrareg.models.ModuleProvider.update_name') as mock_update_name:
+
+            res = client.post(
+                '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/settings',
+                json={
+                    'csrf_token': 'unittestcsrf',
+                    'namespace': new_namespace
+                }
+            )
+            assert res.json == {'message': 'A namespace of the provided name either does not exist, or you do not have modify permissions to it'}
+            assert res.status_code == 400
+
+            # Ensure required checks are called
+            mock_check_csrf.assert_called_once_with('unittestcsrf')
+            mock_update_name.assert_not_called()
             mock_update_attributes.assert_not_called()
             mock_create_audit_event.assert_not_called()
