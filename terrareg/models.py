@@ -1527,7 +1527,7 @@ class ModuleProviderRedirect(object):
             db.namespace,
             db.module_provider.c.namespace_id==db.namespace.c.id
         ).where(
-            db.module_provider_redirect.c.namespace_id==namespace.id
+            db.module_provider_redirect.c.namespace_id==namespace.pk
         )
 
         if case_insensitive:
