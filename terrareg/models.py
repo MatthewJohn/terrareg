@@ -865,6 +865,12 @@ class Namespace(object):
         """Return display name for namespace"""
         return self._get_db_row()["display_name"]
 
+    def __eq__(self, __o):
+        """Check if two namespaces are the same"""
+        if isinstance(__o, self.__class__):
+            return self.pk == __o.pk
+        return super(Namespace, self).__eq__(__o)
+
     def __init__(self, name: str):
         """Validate name and store member variables"""
         self._name = name
