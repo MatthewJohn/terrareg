@@ -764,6 +764,26 @@ class SettingsTab extends ModuleDetailsTab {
             browseUrlTemplate.attr('placeholder', `https://github.com/${this._moduleDetails.namespace}/${this._moduleDetails.name}-${this._moduleDetails.provider}/tree/{tag}/{path}`);
             browseUrlTemplate.val(this._moduleDetails.repo_browse_url_template);
 
+            // Obtain list of namespaces to move to
+            isLoggedIn().then((auth) => {
+                $.get('/v1/terrareg/namespaces').then((data) => {
+                    data.forEach((namespace) => {
+                        if (auth.site_admin || auth.namespace_permissions[namespace.name] == 'FULL') {
+                            $('#settings-move-namespace').append($(`
+                                <option value="${namespace.name}"
+                                        ${namespace.name == this._moduleDetails.namespace ? "selected" : ""}>
+                                    ${namespace.display_name || namespace.name}
+                                </option>
+                            `));
+                        }
+                    });
+                });
+            });
+
+            // Populate name and provider form values
+            $('#settings-move-module').val(this._moduleDetails.name);
+            $('#settings-move-provider').val(this._moduleDetails.provider);
+
             // Bind module provider delete button
             let moduleProviderDeleteButton = $('#module-provider-delete-button');
             moduleProviderDeleteButton.bind('click', () => {
@@ -773,6 +793,12 @@ class SettingsTab extends ModuleDetailsTab {
             // Bind settings form submission with function
             $('#settings-form').submit(() => {
                 updateModuleProviderSettings(this._moduleDetails);
+                return false;
+            });
+
+            // Bind move form submission with function
+            $('#settings-move-form').submit(() => {
+                moveModuleProvider(this._moduleDetails);
                 return false;
             });
 
@@ -2136,6 +2162,51 @@ function updateModuleProviderSettings(moduleDetails) {
         }
         $('#settings-status-error').removeClass('default-hidden');
         $(window).scrollTop($('#settings-status-error').offset().top);
+    });
+
+    // Return false to present default action
+    return false;
+}
+
+/*
+ * Handle form submission for moving/renaming module provider
+ */
+function moveModuleProvider(moduleDetails) {
+    $('#settings-move-error').addClass('default-hidden');
+
+    // Check user has confirmed the move
+    if (!$('#settings-move-confirm').is(':checked')) {
+        $('#settings-move-error').html('The move action must be confirmed, by checking the confirm checkbox.');
+        $('#settings-move-error').removeClass('default-hidden');
+        $(window).scrollTop($('#settings-move-error').offset().top);
+        return;
+    }
+
+    let new_namespace = $('select[id=settings-move-namespace] option').filter(':selected').val();
+    let new_module = $('#settings-move-module').val();
+    let new_provider = $('#settings-move-provider').val();
+    $.post({
+        url: `/v1/terrareg/modules/${moduleDetails.module_provider_id}/settings`,
+        data: JSON.stringify({
+            namespace: new_namespace,
+            module: new_module,
+            provider: new_provider,
+            csrf_token: $('#settings-move-csrf-token').val()
+        }),
+        contentType: 'application/json'
+    }).done(() => {
+        // Redirect to new module provider
+        window.href = `/modules/${new_namespace}/${new_module}/${new_provider}`;
+    }).fail((res) => {
+        if (res.status == 401) {
+            $('#settings-move-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
+        } else if (res.responseJSON && res.responseJSON.message) {
+            $('#settings-move-error').html(res.responseJSON.message);
+        } else {
+            $('#settings-move-error').html('An unexpected error occurred');
+        }
+        $('#settings-move-error').removeClass('default-hidden');
+        $(window).scrollTop($('#settings-move-error').offset().top);
     });
 
     // Return false to present default action
