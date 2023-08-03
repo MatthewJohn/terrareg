@@ -7,6 +7,7 @@ import terrareg.user_group_namespace_permission_type
 import terrareg.csrf
 import terrareg.models
 import terrareg.errors
+import terrareg.auth
 
 
 class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
@@ -180,9 +181,9 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
                 new_namespace = terrareg.models.Namespace.get(name=args.namespace, create=False, include_redirect=False)
 
                 # Ensure new namespace exists and user has modify permissions
-                if new_namespace is None or terrareg.auth_wrapper.auth_wrapper('check_namespace_access',
-                        terrareg.user_group_namespace_permission_type.UserGroupNamespacePermissionType.MODIFY,
-                        request_kwarg_map={'namespace': 'namespace'}):
+                if new_namespace is None or not terrareg.auth.AuthFactory().get_current_auth_method().check_namespace_access(
+                        terrareg.user_group_namespace_permission_type.UserGroupNamespacePermissionType.FULL,
+                        new_namespace.name):
                     return {'message': 'A namespace of the provided name either does not exist, or you do not have modify permissions to it'}, 400
 
             module_provider.update_name(
