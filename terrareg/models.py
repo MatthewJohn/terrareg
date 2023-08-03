@@ -1015,6 +1015,11 @@ class Module(object):
         """Return base directory."""
         return safe_join_paths(self._namespace.base_directory, self._name)
 
+    @property
+    def namespace(self):
+        """Return namespace of module"""
+        return self._namespace
+
     def __init__(self, namespace: Namespace, name: str):
         """Validate name and store member variables."""
         self._validate_name(name)
