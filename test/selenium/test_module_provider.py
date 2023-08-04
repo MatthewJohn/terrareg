@@ -1761,6 +1761,15 @@ EOF
         # Ensure namespace in Terraform usage example is correct (namespace is not shown in many places!)
         self.assert_equals(lambda: "scratchnamespace/changeallnew/changeallnewprovider" in self.selenium_instance.find_element(By.ID, "usage-example-terraform").text, True)
 
+        # Attempt to naviage to old page with anchor and query string, ensuring page is redirected
+        # to new module provider name
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/testmove/changeall?test=value&test2=value2#readme"))
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/scratchnamespace/changeallnew/changeallnewprovider?test=value&test2=value2#readme"))
+
+        # Test redirect with version and example
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/testmove/changeall/1.0.0/example/examples/test?test=value&test2=value2#readme"))
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/scratchnamespace/changeallnew/changeallnewprovider/1.0.0/example/examples/test?test=value&test2=value2#readme"))
+
     def test_updating_module_name_to_duplicate(self):
         """Test updating module name to duplicate module name"""
         self.perform_admin_authentication(password="unittest-password")

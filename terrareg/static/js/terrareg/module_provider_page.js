@@ -1,4 +1,6 @@
 
+const router = new Navigo("/");
+
 class TabFactory {
     constructor() {
         this._tabs = [];
@@ -1447,29 +1449,47 @@ ${outputTf}
  * Setup router and call setup page depending on the page/module type
  */
 function renderPage() {
-    const router = new Navigo("/");
-
     const baseRoute = "/modules/:namespace/:module/:provider";
 
     // Base module provider route
-    router.on(baseRoute, function ({ data }) {
-        setupBasePage(data);
-        setupRootModulePage(data);
+    router.on({
+        [baseRoute]: {
+            as: "rootModuleProvider",
+            uses: function ({ data }) {
+                setupBasePage(data);
+                setupRootModulePage(data);
+            }
+        }
     });
     // Base module version route
-    router.on(baseRoute + "/:version", function ({ data }) {
-        setupBasePage(data);
-        setupRootModulePage(data);
+    router.on({
+        [`${baseRoute}/:version`]: {
+            as: "rootModuleVersion",
+            uses: function ({ data }) {
+                setupBasePage(data);
+                setupRootModulePage(data);
+            }
+        }
     });
     // Submodule route
-    router.on(baseRoute + "/:version/submodule/(.*)", ({ data }) => {
-        setupBasePage(data);
-        setupSubmodulePage(data);
+    router.on({
+        [`${baseRoute}/:version/submodule/(.*)`]:{
+            as: "submodulePage",
+            uses: ({ data }) => {
+                setupBasePage(data);
+                setupSubmodulePage(data);
+            }
+        }
     });
     // Example route
-    router.on(baseRoute + "/:version/example/(.*)", ({ data }) => {
-        setupBasePage(data);
-        setupExamplePage(data);
+    router.on({
+        [`${baseRoute}/:version/example/(.*)`]:{
+            as: "examplePage",
+            uses: ({ data }) => {
+                setupBasePage(data);
+                setupExamplePage(data);
+            }
+        }
     });
 
     router.resolve();
@@ -2302,6 +2322,54 @@ function setPageTitle(id) {
     document.title = `${id} - Terrareg`;
 }
 
+/*
+ * Get redirect URL if URL does not match actual
+ * module provider details, meaning it's
+ * obtained details for a redirected module
+ *
+ * @param data Route data
+ * @param moduleDetails Module details for module
+ *
+ * @returns null if no redirect or string of redirect URL
+ */
+function getRedirectUrl(data, moduleDetails) {
+    // Check for any redirects by comparing
+    // moduleDetails and URL attributes
+    if (data.namespace !== moduleDetails.namespace ||
+        data.module !== moduleDetails.name ||
+        data.provider !== moduleDetails.provider
+    ) {
+        // Generate redirect
+        let currentRoutes = router.lastResolved();
+        if (currentRoutes.length) {
+            let currentRoute = currentRoutes[0];
+            
+            // Generate new URL using current route data,
+            // correcting the namespace, module and provider
+            let newUrl = router.generate(
+                currentRoute.route.name,
+                {
+                    ...data,
+                    namespace: moduleDetails.namespace,
+                    provider: moduleDetails.provider,
+                    module: moduleDetails.name
+                }
+            );
+
+            // Copy query string
+            if (currentRoute.queryString)
+                newUrl += `?${currentRoute.queryString}`;
+
+            // Copy hash
+            if (currentRoute.hashString)
+                newUrl += `#${currentRoute.hashString}`;
+
+            // Return new redirect URL
+            return newUrl;
+        }
+    }
+    return null;
+}
 
 /*
  * Setup common elements of the page, shared between all types
@@ -2314,6 +2382,13 @@ async function setupBasePage(data) {
     let id = getCurrentObjectId(data);
 
     let moduleDetails = await getModuleDetails(id);
+
+    let redirectUrl = getRedirectUrl(data, moduleDetails);
+    if (redirectUrl) {
+        window.location.href = redirectUrl;
+        // Return early to stop rendering the page
+        return;
+    }
 
     // If current version is not available or there are no
     // versions, set warning and exit
