@@ -871,6 +871,10 @@ class Namespace(object):
             return self.pk == __o.pk
         return super(Namespace, self).__eq__(__o)
 
+    def __hash__(self):
+        """Return hashed method of pk"""
+        return hash(self.pk)
+
     def __init__(self, name: str):
         """Validate name and store member variables"""
         self._name = name
