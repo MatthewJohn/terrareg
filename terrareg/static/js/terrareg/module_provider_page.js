@@ -2196,7 +2196,7 @@ function moveModuleProvider(moduleDetails) {
         contentType: 'application/json'
     }).done(() => {
         // Redirect to new module provider
-        window.href = `/modules/${new_namespace}/${new_module}/${new_provider}`;
+        window.location.href = `/modules/${new_namespace}/${new_module}/${new_provider}`;
     }).fail((res) => {
         if (res.status == 401) {
             $('#settings-move-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
