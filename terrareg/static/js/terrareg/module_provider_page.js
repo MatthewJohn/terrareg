@@ -1473,7 +1473,7 @@ function renderPage() {
     });
     // Submodule route
     router.on({
-        [`${baseRoute}/:version/submodule/(.*)`]:{
+        [`${baseRoute}/:version/submodule/(?<submodulePath>.*)`]:{
             as: "submodulePage",
             uses: ({ data }) => {
                 setupBasePage(data);
@@ -1483,7 +1483,7 @@ function renderPage() {
     });
     // Example route
     router.on({
-        [`${baseRoute}/:version/example/(.*)`]:{
+        [`${baseRoute}/:version/example/(?<submodulePath>.*)`]:{
             as: "examplePage",
             uses: ({ data }) => {
                 setupBasePage(data);
@@ -2343,17 +2343,21 @@ function getRedirectUrl(data, moduleDetails) {
         let currentRoutes = router.lastResolved();
         if (currentRoutes.length) {
             let currentRoute = currentRoutes[0];
+
+            let redirectData = Object.assign({}, data);
+            redirectData.namespace = moduleDetails.namespace;
+            redirectData.provider = moduleDetails.provider;
+            redirectData.module = moduleDetails.name;
+            if (redirectData.undefined) {
+                redirectData.submodulePath = redirectData.undefined
+            }
             
             // Generate new URL using current route data,
             // correcting the namespace, module and provider
             let newUrl = router.generate(
                 currentRoute.route.name,
-                {
-                    ...data,
-                    namespace: moduleDetails.namespace,
-                    provider: moduleDetails.provider,
-                    module: moduleDetails.name
-                }
+                redirectData,
+                {includeRoot: true, replaceRegexGroups: true}
             );
 
             // Copy query string
