@@ -189,7 +189,7 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             module_provider.update_name(
                 namespace=new_namespace,
                 module_name=args.module if args.module is not None else module.name,
-                provider_name=args.provider if args.provider is not None else provider.name
+                provider_name=args.provider if args.provider is not None else module_provider.name
             )
 
         return {}
