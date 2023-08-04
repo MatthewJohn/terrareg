@@ -83,15 +83,24 @@ class TestModuleProvider(SeleniumTest):
         self.selenium_instance.get(self.get_url(url))
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'breadcrumb-ul').text, expected_breadcrumb)
 
-    def _get_settings_field_by_label(self, label):
+    def _get_settings_field_by_label(self, label, form="settings-form", type_="input"):
         """Return input element by label."""
-        form = self.wait_for_element(By.ID, 'settings-form')
-        return form.find_element(By.XPATH, ".//label[text()='{label}']/parent::*//input".format(label=label))
+        form = self.wait_for_element(By.ID, form)
+        return form.find_element(By.XPATH, ".//label[text()='{label}']/parent::*//{type_}".format(label=label, type_=type_))
 
     def _fill_out_settings_field_by_label(self, label, input):
         """Find input field by label and fill out input."""
         input_field = self._get_settings_field_by_label(label)
         input_field.send_keys(input)
+
+    def _confirm_move(self):
+        """Click confirm move checkbox"""
+        confirm = self._get_settings_field_by_label("Confirm", form="settings-move-form")
+        confirm.click()
+
+    def _click_save_move(self):
+        """Click save move button on settings tab."""
+        self.selenium_instance.find_element(By.ID, 'settings-move-submit').click()
 
     def _click_save_settings(self):
         """Click save button on settings tab."""
@@ -1658,6 +1667,144 @@ EOF
         self._click_save_settings()
         module_provider._cache_db_row = None
         assert module_provider.git_path == None
+
+    def test_updating_module_name(self):
+        """Test changing module name in module provider settings"""
+        self.perform_admin_authentication(password="unittest-password")
+
+        # Ensure user is redirected to module page
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/testmove/changename#settings"))
+
+        module_name_input = self._get_settings_field_by_label("Module Name", form="settings-move-form")
+        assert module_name_input.get_attribute("value") == "testmove"
+
+        # Enter new name, confirm and submit form
+        module_name_input.clear()
+        module_name_input.send_keys("testmovenew")
+        self._confirm_move()
+        self._click_save_move()
+
+        # Ensure browser has been redirect to new module
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/moduledetails/testmovenew/changename"))
+
+        # Ensure name of module on page matches new name
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, "module-title").text, "testmovenew")
+
+    def test_updating_module_provider(self):
+        """Test changing module provider in module provider settings"""
+        self.perform_admin_authentication(password="unittest-password")
+
+        # Ensure user is redirected to module page
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/testmove/changeprovider#settings"))
+
+        module_provider_input = self._get_settings_field_by_label("Provider", form="settings-move-form")
+        assert module_provider_input.get_attribute("value") == "changeprovider"
+
+        # Enter new name, confirm and submit form
+        module_provider_input.clear()
+        module_provider_input.send_keys("testnewprovider")
+        self._confirm_move()
+        self._click_save_move()
+
+        # Ensure browser has been redirect to new module
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/moduledetails/testmove/testnewprovider"))
+
+        # Ensure module provider on page matches new name
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, "module-provider").text, "Provider: testnewprovider")
+
+    def test_updating_namespace(self):
+        """Test changing namespace in module provider settings"""
+        self.perform_admin_authentication(password="unittest-password")
+
+        # Ensure user is redirected to module page
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/testmove/changenamespace#settings"))
+
+        module_namespace_input = Select(self._get_settings_field_by_label("Namespace", form="settings-move-form", type_="select"))
+        assert module_namespace_input.first_selected_option.text == "moduledetails"
+
+        # Update namespace, confirm and submit form
+        module_namespace_input.select_by_visible_text("scratchnamespace")
+        self._confirm_move()
+        self._click_save_move()
+
+        # Ensure browser has been redirect to new module
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/scratchnamespace/testmove/changenamespace"))
+
+        # Ensure namespace in Terraform usage example is correct (namespace is not shown in many places!)
+        self.assert_equals(lambda: "scratchnamespace/testmove/changenamespace" in self.selenium_instance.find_element(By.ID, "usage-example-terraform").text, True)
+
+    def test_updating_name_provider_and_namespace(self):
+        """Test updating module provider name, provider and namespace"""
+        self.perform_admin_authentication(password="unittest-password")
+
+        # Ensure user is redirected to module page
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/testmove/changeall#settings"))
+
+        # Enter new name
+        module_name_input = self._get_settings_field_by_label("Module Name", form="settings-move-form")
+        module_name_input.clear()
+        module_name_input.send_keys("changeallnew")
+
+        module_provider_input = self._get_settings_field_by_label("Provider", form="settings-move-form")
+        module_provider_input.clear()
+        module_provider_input.send_keys("changeallnewprovider")
+
+        module_namespace_input = Select(self._get_settings_field_by_label("Namespace", form="settings-move-form", type_="select"))
+        module_namespace_input.select_by_visible_text("scratchnamespace")
+
+        self._confirm_move()
+        self._click_save_move()
+
+        # Ensure browser has been redirect to new module
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/scratchnamespace/changeallnew/changeallnewprovider"))
+
+        # Ensure namespace in Terraform usage example is correct (namespace is not shown in many places!)
+        self.assert_equals(lambda: "scratchnamespace/changeallnew/changeallnewprovider" in self.selenium_instance.find_element(By.ID, "usage-example-terraform").text, True)
+
+    def test_updating_module_name_to_duplicate(self):
+        """Test updating module name to duplicate module name"""
+        self.perform_admin_authentication(password="unittest-password")
+
+        # Ensure user is redirected to module page
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/testmove/duplicatemovetest#settings"))
+
+        module_provider_input = self._get_settings_field_by_label("Provider", form="settings-move-form")
+
+        # Enter new name, confirm and submit form
+        module_provider_input.clear()
+        module_provider_input.send_keys("duplicatetest")
+        self._confirm_move()
+        self._click_save_move()
+
+        # Ensure error is visible and verify text
+        error = self.selenium_instance.find_element(By.ID, "settings-move-error")
+        assert error.is_displayed() == True
+        assert error.text == "A module/provider already exists with the same name in the namespace"
+
+        # Ensure URL has not been changed
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/moduledetails/testmove/duplicatemovetest#settings"))
+
+    def test_updating_module_without_confirmation(self):
+        """Test updating module name to new name without confirmation"""
+        self.perform_admin_authentication(password="unittest-password")
+
+        # Ensure user is redirected to module page
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/testmove/duplicatemovetest#settings"))
+
+        module_provider_input = self._get_settings_field_by_label("Provider", form="settings-move-form")
+
+        # Enter new name, confirm and submit form
+        module_provider_input.clear()
+        module_provider_input.send_keys("uniquename")
+        self._click_save_move()
+
+        # Ensure error is visible and verify text
+        error = self.selenium_instance.find_element(By.ID, "settings-move-error")
+        assert error.is_displayed() == True
+        assert error.text == "The move action must be confirmed, by checking the confirm checkbox."
+
+        # Ensure URL has not been changed
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/moduledetails/testmove/duplicatemovetest#settings"))
 
     def test_delete_module_provider(self, mock_create_audit_event):
         """Test the delete provider functionality in settings tab."""
