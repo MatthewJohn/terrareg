@@ -1,0 +1,33 @@
+
+version: 2.1
+
+orbs:
+  infra: meliuz/infra-orb@1.17
+  meliuz: meliuz/docker-orb@1.12
+
+jobs:
+  build-push:
+    executor: meliuz/default
+    steps:
+      - checkout
+      - setup_remote_docker
+      - infra/ecr_login
+
+      - run:
+          name: Build image
+          command: |
+            docker build \
+              --build-arg APPLICATION_NAME=${CIRCLE_PROJECT_REPONAME} \
+              --tag 746038518762.dkr.ecr.sa-east-1.amazonaws.com/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_SHA1} .
+
+            docker push 746038518762.dkr.ecr.sa-east-1.amazonaws.com/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_SHA1}
+                    
+workflows:
+  main:
+    jobs:
+      - build-push:
+          filters:
+            branches:
+              ignore: /.*?/
+            tags:
+              only: /^[0-9]+(\.[0-9]+){2}$/
