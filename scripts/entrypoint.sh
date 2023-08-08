@@ -25,16 +25,5 @@ then
     echo -e "${SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa
 fi
 
-if [ "${SERVER}" == "waitress" ]
-then
-    waitress-serve --port=${LISTEN_PORT:-5000} --call terrareg.server:Server.waitress
-
-elif [ "${SERVER}" == "builtin" ] || [ "$SERVER" == "" ]
-then
-    # Run main executable
-    python ./terrareg.py
-
-else
-    echo "Unrecognised server: ${SERVER}. Must be either builtin or waitress"
-    exit 1
-fi
+# Run main executable
+python ./terrareg.py

@@ -18,4 +18,9 @@ parser.add_argument('--ssl-cert-public-key', dest='ssl_pub_key',
 args = parser.parse_args()
 
 s = Server(ssl_public_key=args.ssl_pub_key, ssl_private_key=args.ssl_priv_key)
-s.run()
+
+if config.SERVER == terrareg.config.ServerType.WAITRESS:
+    s.run_waitress()
+else:
+    s.run()
+

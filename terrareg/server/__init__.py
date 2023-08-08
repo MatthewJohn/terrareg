@@ -88,13 +88,6 @@ def catch_name_exceptions(f):
 class Server(BaseHandler):
     """Manage web server and route requests"""
 
-    @classmethod
-    def waitress(cls):
-        """Generate instance of server object for waitress"""
-        obj = cls()
-        obj._app.secret_key = terrareg.config.Config().SECRET_KEY
-        return obj._app
-
     def __init__(self, ssl_public_key=None, ssl_private_key=None):
         """Create flask app and store member variables"""
 
@@ -515,6 +508,12 @@ class Server(BaseHandler):
         self._app.secret_key = terrareg.config.Config().SECRET_KEY
 
         self._app.run(**kwargs)
+
+    def run_waitress(self):
+        """Run waitress server"""
+        self._app.secret_key = terrareg.config.Config().SECRET_KEY
+
+        serve(self._app, host=self.host, port=self.port)
 
     def _namespace_404(self, namespace_name: str):
         """Return 404 page for non-existent namespace"""
