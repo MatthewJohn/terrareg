@@ -91,6 +91,23 @@ test-docker-image:
     # Curl the terrareg homepage and ensure the title is displayed
     - http_proxy= curl http://terrareg:5000 | grep 'Home - Terrareg'
 
+test-docker-image-waitress:
+  stage: test
+  # Use python:3.10, as it's already used
+  # by build and comes with curl
+  image: python:3.10
+  services:
+    - name: terrareg-image:v${CI_COMMIT_SHORT_SHA}
+      alias: terrareg
+  variables:
+    MIGRATE_DATABASE: "True"
+    SERVER: "waitress"
+  script:
+    # Wait for Terrareg container to come up
+    - sleep 30
+    # Curl the terrareg homepage and ensure the title is displayed
+    - http_proxy= curl http://terrareg:5000 | grep 'Home - Terrareg'
+
 build-wheel:
   stage: build
   extends: .before_script_python

@@ -786,6 +786,18 @@ Must be a number between 0.0 and 1.0
 Default: `1.0`
 
 
+### SERVER
+
+
+Set the server application used for running the application. Set the `SERVER` environment variable to one of the following options:
+
+* `builtin` - Use the default built-in flask web server. This is less performant and is no longer recommended for production use-cases.
+* `waitress` - Uses [waitress](https://docs.pylonsproject.org/projects/waitress/en/latest/index.html) for running the application. This does not support SSL offloading, meaning that it must be used behind a reverse proxy that performs SSL-offloading.
+
+
+Default: `builtin`
+
+
 ### SSL_CERT_PRIVATE_KEY
 
 

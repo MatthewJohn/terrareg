@@ -6,6 +6,7 @@ from flask import Flask, session, redirect, request
 from flask_restful import Api
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
+from waitress import serve
 
 import terrareg.config
 import terrareg.database
@@ -507,6 +508,12 @@ class Server(BaseHandler):
         self._app.secret_key = terrareg.config.Config().SECRET_KEY
 
         self._app.run(**kwargs)
+
+    def run_waitress(self):
+        """Run waitress server"""
+        self._app.secret_key = terrareg.config.Config().SECRET_KEY
+
+        serve(self._app, host=self.host, port=self.port)
 
     def _namespace_404(self, namespace_name: str):
         """Return 404 page for non-existent namespace"""
