@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.73.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.72.0...v2.73.0) (2023-08-08)
+
+
+### Features
+
+* Add support for using "waitress" server in docker containers. ([ca01c84](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ca01c84607123bb28b3186cb31153280037d896b)), closes [#408](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/408)
+
 # [2.72.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.71.3...v2.72.0) (2023-08-01)
 
 
