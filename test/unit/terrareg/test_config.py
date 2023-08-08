@@ -144,7 +144,8 @@ class TestConfig:
             assert getattr(terrareg.config.Config(), config_name) == expected_value
 
     @pytest.mark.parametrize('config_name,enum,expected_default', [
-        ('MODULE_VERSION_REINDEX_MODE', terrareg.config.ModuleVersionReindexMode, terrareg.config.ModuleVersionReindexMode.LEGACY)
+        ('MODULE_VERSION_REINDEX_MODE', terrareg.config.ModuleVersionReindexMode, terrareg.config.ModuleVersionReindexMode.LEGACY),
+        ('SERVER', terrareg.config.ServerType, terrareg.config.ServerType.BUILTIN),
     ])
     def test_enum_configs(self, config_name, enum, expected_default):
         """Test enum configs to ensure they are overriden with environment variables."""
