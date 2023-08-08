@@ -342,6 +342,9 @@ Interface to obtain custom terrareg namespace details.
 ### GET
 
 Return custom terrareg config for namespace.
+### POST
+
+Edit name/display name of a namespace
 
 
 ## ApiTerraregNamespaceModules

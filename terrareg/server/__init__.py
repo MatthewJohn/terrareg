@@ -6,6 +6,7 @@ from flask import Flask, session, redirect, request
 from flask_restful import Api
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
+from waitress import serve
 
 import terrareg.config
 import terrareg.database
@@ -86,6 +87,13 @@ def catch_name_exceptions(f):
 
 class Server(BaseHandler):
     """Manage web server and route requests"""
+
+    @classmethod
+    def waitress(cls):
+        """Generate instance of server object for waitress"""
+        obj = cls()
+        obj._app.secret_key = terrareg.config.Config().SECRET_KEY
+        return obj._app
 
     def __init__(self, ssl_public_key=None, ssl_private_key=None):
         """Create flask app and store member variables"""
