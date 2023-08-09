@@ -19,7 +19,7 @@ import terrareg.audit
 import terrareg.audit_action
 from terrareg.errors import (
     DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
-    InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
+    InvalidVersionError, NamespaceAlreadyExistsError, NamespaceNotEmptyError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError, RepositoryUrlContainsInvalidTemplateError,
     RepositoryUrlDoesNotContainValidSchemeError,
     RepositoryUrlContainsInvalidSchemeError,
@@ -982,6 +982,18 @@ class Namespace(object):
             Module(namespace=self, name=module)
             for module in modules
         ]
+
+    def delete(self):
+        """Delete namespace"""
+        # Check for any modules in the namespace
+        if self.get_all_modules():
+            raise NamespaceNotEmptyError("Namespace cannot be deleted as it contains modules")
+
+        # Delete namespace
+        db = Database.get()
+        delete = sqlalchemy.delete(db.namespace).where(db.namespace.c.id==self.pk)
+        with db.get_connection() as conn:
+            conn.execute(delete)
 
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
