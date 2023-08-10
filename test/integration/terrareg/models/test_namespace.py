@@ -1,13 +1,16 @@
 
 from unittest import mock
+
 import pytest
+import sqlalchemy
 
 from terrareg.audit import AuditEvent
 from terrareg.database import Database
 import terrareg.audit_action
-from terrareg.models import Namespace
+from terrareg.models import Module, ModuleProvider, Namespace, UserGroup, UserGroupNamespacePermission
 import terrareg.models
 import terrareg.errors
+from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from test.integration.terrareg import TerraregIntegrationTest
 
 
@@ -432,3 +435,97 @@ class TestNamespace(TerraregIntegrationTest):
             db = Database.get()
             with db.get_connection() as conn:
                 conn.execute(db.namespace.delete(db.namespace.c.namespace=="test-update-name"))
+
+    def test_delete(self):
+        """Test deleting namespace"""
+        try:
+            ns = Namespace.create(name="testdelete")
+
+            # Remove all audit events
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.audit_history.delete())
+
+            # Remove all namespace redirects
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.namespace_redirect.delete())
+
+            # Create namespace redirection from this namespace
+            ns.update_name("testtodelete")
+
+            # Create namespace permission
+            user_group = UserGroup.create(name="test", site_admin=False)
+            UserGroupNamespacePermission.create(user_group=user_group, namespace=ns, permission_type=UserGroupNamespacePermissionType.FULL)
+
+            # Create second namepsace with permissions and redirects that shouldn't be affected
+            control_ns = Namespace.create("test-control")
+            control_ns.update_name("test-control-new")
+            UserGroupNamespacePermission.create(user_group=user_group, namespace=control_ns, permission_type=UserGroupNamespacePermissionType.FULL)
+
+            # Delete namespace
+            ns.delete()
+
+            check_ns = Namespace.get(name="testtodelete")
+            assert check_ns is None
+
+            # Check audit event
+            # @TODO Implement audit event for namespace deletion
+            # audit_events, _, _ = AuditEvent.get_events(limit=1, descending=True, order_by="timestamp")
+            # assert len(audit_events) == 1
+            # assert audit_events[0]
+
+            # Ensure only control redirects exist
+            with db.get_connection() as conn:
+                assert conn.execute(sqlalchemy.select(db.namespace_redirect.c.name).select_from(db.namespace_redirect)).all() == [("test-control",)]
+
+            # Ensure only control namespace permissions exist
+            with db.get_connection() as conn:
+                assert conn.execute(sqlalchemy.select(db.user_group_namespace_permission.c.namespace_id).select_from(db.user_group_namespace_permission)).all() == [(control_ns.pk,)]
+
+        finally:
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.namespace_redirect.delete())
+                conn.execute(db.user_group_namespace_permission.delete())
+                conn.execute(db.namespace.delete(db.namespace.c.namespace.in_(["testdelete", "testtodelete", "test-control", "test-control-new"])))
+
+    def test_delete_with_modules(self):
+        """Test deleting namespace with modules present"""
+
+        ns = Namespace.create(name="testdelete")
+
+        module = ModuleProvider.create(Module(ns, "todelete"), "todelete")
+        module_provider_pk = module.pk
+        try:
+            # Remove all audit events
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.audit_history.delete())
+
+            # Remove all namespace redirects
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.namespace_redirect.delete())
+
+            # Create namespace redirection from this namespace
+            ns.update_name("testdelete")
+
+            # Delete namespace
+            with pytest.raises(terrareg.errors.NamespaceNotEmptyError):
+                ns.delete()
+
+            # Ensure namespace still exists
+            check_ns = Namespace.get(name="testdelete")
+            assert check_ns is not None
+
+            # Ensure no audit events were created
+            audit_events, _, _ = AuditEvent.get_events(limit=1, descending=True, order_by="timestamp")
+            assert len(audit_events) == 0
+
+        finally:
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.module_provider.delete(db.module_provider.c.id==module_provider_pk))
+                conn.execute(db.namespace.delete(db.namespace.c.namespace=="testdelete"))
+
