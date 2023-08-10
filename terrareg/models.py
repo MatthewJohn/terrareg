@@ -262,6 +262,35 @@ class UserGroupNamespacePermission:
             ]
 
     @classmethod
+    def get_permissions_by_namespace(cls, namespace):
+        """Return permissions by namespace"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            query = sqlalchemy.select(
+                db.user_group.c.name.label('user_group_name'),
+                db.namespace.c.namespace.label('namespace_name')
+            ).select_from(
+                db.user_group_namespace_permission
+            ).join(
+                db.user_group,
+                db.user_group_namespace_permission.c.user_group_id==db.user_group.c.id
+            ).join(
+                db.namespace,
+                db.user_group_namespace_permission.c.namespace_id==db.namespace.c.id
+            ).where(
+                db.namespace.c.id==namespace.pk
+            )
+            res = conn.execute(query)
+
+            return [
+                cls(
+                    user_group=UserGroup(name=r['user_group_name']),
+                    namespace=Namespace(name=r['namespace_name'])
+                )
+                for r in res.fetchall()
+            ]
+
+    @classmethod
     def get_permissions_by_user_group_and_namespace(cls, user_group, namespace):
         """Return permission by user group and namespace"""
         permissions = cls.get_permissions_by_user_groups_and_namespace([user_group], namespace)
@@ -571,6 +600,18 @@ class NamespaceRedirect(object):
         )
         with db.get_connection() as conn:
             conn.execute(namespace_redirect_insert)
+
+    @classmethod
+    def delete_by_namespace(cls, namespace):
+        """Delete all redirects for a given namespace"""
+        db = Database.get()
+        delete = sqlalchemy.delete(
+            db.namespace_redirect
+        ).where(
+            db.namespace_redirect.c.namespace_id==namespace.pk
+        )
+        with db.get_connection() as conn:
+            conn.execute(delete)
 
     @classmethod
     def get_namespace_by_name(cls, name, case_insensitive=False):
@@ -988,6 +1029,15 @@ class Namespace(object):
         # Check for any modules in the namespace
         if self.get_all_modules():
             raise NamespaceNotEmptyError("Namespace cannot be deleted as it contains modules")
+
+        # @TODO Implement audit event for namespace deletion
+
+        # Delete any permissions associated with the namespace
+        for permission in UserGroupNamespacePermission.get_permissions_by_namespace(namespace=self):
+            permission.delete()
+
+        # Delete any redirects
+        NamespaceRedirect.delete_by_namespace(self)
 
         # Delete namespace
         db = Database.get()
