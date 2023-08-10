@@ -416,14 +416,15 @@ class UserGroupNamespacePermission:
                 self._row_cache = res.fetchone()
         return self._row_cache
 
-    def delete(self):
+    def delete(self, create_audit_event=True):
         """Delete user group namespace permission."""
-        terrareg.audit.AuditEvent.create_audit_event(
-            action=terrareg.audit_action.AuditAction.USER_GROUP_NAMESPACE_PERMISSION_DELETE,
-            object_type=self.__class__.__name__,
-            object_id=self.id,
-            old_value=None, new_value=None
-        )
+        if create_audit_event:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.USER_GROUP_NAMESPACE_PERMISSION_DELETE,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=None, new_value=None
+            )
 
         self._delete_from_database()
 
@@ -1049,7 +1050,7 @@ class Namespace(object):
 
         # Delete any permissions associated with the namespace
         for permission in UserGroupNamespacePermission.get_permissions_by_namespace(namespace=self):
-            permission.delete()
+            permission.delete(create_audit_event=False)
 
         # Delete any redirects
         NamespaceRedirect.delete_by_namespace(self)

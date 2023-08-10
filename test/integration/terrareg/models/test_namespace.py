@@ -441,11 +441,6 @@ class TestNamespace(TerraregIntegrationTest):
         try:
             ns = Namespace.create(name="testdelete")
 
-            # Remove all audit events
-            db = Database.get()
-            with db.get_connection() as conn:
-                conn.execute(db.audit_history.delete())
-
             # Remove all namespace redirects
             db = Database.get()
             with db.get_connection() as conn:
@@ -463,6 +458,11 @@ class TestNamespace(TerraregIntegrationTest):
             control_ns.update_name("test-control-new")
             UserGroupNamespacePermission.create(user_group=user_group, namespace=control_ns, permission_type=UserGroupNamespacePermissionType.FULL)
 
+            # Remove all audit events
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.audit_history.delete())
+
             # Delete namespace
             ns.delete()
 
@@ -470,10 +470,13 @@ class TestNamespace(TerraregIntegrationTest):
             assert check_ns is None
 
             # Check audit event
-            # @TODO Implement audit event for namespace deletion
-            # audit_events, _, _ = AuditEvent.get_events(limit=1, descending=True, order_by="timestamp")
-            # assert len(audit_events) == 1
-            # assert audit_events[0]
+            audit_events, _, _ = AuditEvent.get_events(limit=5, descending=True, order_by="timestamp")
+            assert len(audit_events) == 1
+            assert audit_events[0][3] == terrareg.audit_action.AuditAction.NAMESPACE_DELETE
+            assert audit_events[0][4] == 'Namespace'
+            assert audit_events[0][5] == 'testtodelete'
+            assert audit_events[0][6] == None
+            assert audit_events[0][7] == None
 
             # Ensure only control redirects exist
             with db.get_connection() as conn:
