@@ -248,6 +248,35 @@ terraform {{
 
         return terraform_graph_data
 
+    def _get_terraform_modules(self, module_path):
+        """Obtain list of all modules from terraform metadata"""
+        modules_file_path = os.path.join(module_path, ".terraform", "modules", "modules.json")
+        if os.path.isfile(modules_file_path):
+            try:
+                with open(modules_file_path, "r") as modules_file_fh:
+                    res = json.load(modules_file_fh)
+                    return json.dumps(res)
+            except Exception as exc:
+                print(f"Failed to read terraform modules.json: {exc}")
+
+        return None
+
+    def _get_terraform_version(self, module_path):
+        """Run terraform -version and return output"""
+        try:
+            terraform_version_data = subprocess.check_output(
+                [self.terraform_binary, "-version", "-json"],
+                cwd=module_path
+            )
+        except subprocess.CalledProcessError as exc:
+            print("Failed to generate Terraform version data:", str(exc))
+            print(exc.output.decode('utf-8'))
+            return None
+
+        terraform_version_data = terraform_version_data.decode("utf-8")
+
+        return terraform_version_data
+
     @staticmethod
     def _get_readme_content(module_path):
         """Obtain README contents for given module."""
@@ -335,7 +364,7 @@ terraform {{
             cwd=self.extract_directory
         )
 
-    def _create_module_details(self, readme_content, terraform_docs, tfsec, terraform_graph, infracost=None):
+    def _create_module_details(self, readme_content, terraform_docs, tfsec, terraform_graph, terraform_modules, terraform_version, infracost=None):
         """Create module details row."""
         module_details = ModuleDetails.create()
         module_details.update_attributes(
@@ -343,7 +372,9 @@ terraform {{
             terraform_docs=json.dumps(terraform_docs),
             tfsec=json.dumps(tfsec),
             infracost=json.dumps(infracost) if infracost else None,
-            terraform_graph=terraform_graph
+            terraform_graph=terraform_graph,
+            terraform_version=terraform_version,
+            terraform_modules=terraform_modules
         )
         return module_details
 
@@ -354,14 +385,18 @@ terraform {{
         terraform_docs: dict,
         tfsec: dict,
         terrareg_metadata: dict,
-        terraform_graph: str) -> int:
+        terraform_graph: str,
+        terraform_version: str,
+        terraform_modules: str) -> None:
         """Insert module into DB, overwrite any pre-existing"""
         # Create module details row
         module_details = self._create_module_details(
             terraform_docs=terraform_docs,
             readme_content=readme_content,
             tfsec=tfsec,
-            terraform_graph=terraform_graph
+            terraform_graph=terraform_graph,
+            terraform_version=terraform_version,
+            terraform_modules=terraform_modules
         )
 
         # Update attributes of module_version in database
@@ -398,9 +433,13 @@ terraform {{
         readme_content = self._get_readme_content(submodule_dir)
 
         terraform_graph = None
+        terraform_modules = None
+        terraform_version = None
         with self._switch_terraform_versions(submodule_dir):
             if self._run_tf_init(submodule_dir):
                 terraform_graph = self._get_graph_data(submodule_dir)
+                terraform_modules = self._get_terraform_modules(self.module_directory)
+                terraform_version = self._get_terraform_version(self.module_directory)
 
         infracost = None
         # Run infracost on examples, if API key is set
@@ -416,7 +455,9 @@ terraform {{
             readme_content=readme_content,
             tfsec=tfsec,
             infracost=infracost,
-            terraform_graph=terraform_graph
+            terraform_graph=terraform_graph,
+            terraform_modules=terraform_modules,
+            terraform_version=terraform_version
         )
 
         submodule.update_attributes(
@@ -594,9 +635,13 @@ terraform {{
         readme_content = self._get_readme_content(self.module_directory)
 
         terraform_graph = None
+        terraform_modules = None
+        terraform_version = None
         with self._switch_terraform_versions(self.module_directory):
             if self._run_tf_init(self.module_directory):
                 terraform_graph = self._get_graph_data(self.module_directory)
+                terraform_modules = self._get_terraform_modules(self.module_directory)
+                terraform_version = self._get_terraform_version(self.module_directory)
 
         # Check for any terrareg metadata files
         terrareg_metadata = self._get_terrareg_metadata(self.module_directory)
@@ -613,7 +658,9 @@ terraform {{
             tfsec=tfsec,
             terraform_docs=terraform_docs,
             terrareg_metadata=terrareg_metadata,
-            terraform_graph=terraform_graph
+            terraform_graph=terraform_graph,
+            terraform_modules=terraform_modules,
+            terraform_version=terraform_version
         )
 
         # Generate the archive, unless the module has a git clone URL and
