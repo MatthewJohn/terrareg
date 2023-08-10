@@ -1040,7 +1040,12 @@ class Namespace(object):
         if self.get_all_modules():
             raise NamespaceNotEmptyError("Namespace cannot be deleted as it contains modules")
 
-        # @TODO Implement audit event for namespace deletion
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.NAMESPACE_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.name,
+            old_value=None, new_value=None
+        )
 
         # Delete any permissions associated with the namespace
         for permission in UserGroupNamespacePermission.get_permissions_by_namespace(namespace=self):
