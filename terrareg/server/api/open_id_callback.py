@@ -35,7 +35,7 @@ class ApiOpenIdCallback(ErrorCatchingResource):
             res = make_response(render_template(
                 'error.html',
                 error_title='Login error',
-                error_description='Invalid repsonse from SSO'
+                error_description='Invalid response from SSO'
             ))
             res.headers['Content-Type'] = 'text/html'
             return res

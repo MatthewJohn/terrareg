@@ -199,7 +199,7 @@ class TestLogin(SeleniumTest):
             # Ensure still on callback URL and error is displayed
             self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/openid/callback?code=abcdefg&state=unitteststate'))
             self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'error-title').text, 'Login error')
-            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'error-content').text, 'Invalid repsonse from SSO')
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'error-content').text, 'Invalid response from SSO')
 
     def test_ensure_saml_login_not_shown(self):
         """Ensure SAML login button is not shown when SAML login is not available"""
