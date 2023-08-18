@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.73.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.73.0...v2.73.1) (2023-08-18)
+
+
+### Bug Fixes
+
+* Fix typo in error response in login page when SSO response is invalid ([9463749](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/94637498ad7043a2bcae986a7131b27dc9fda471))
+
 # [2.73.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.72.0...v2.73.0) (2023-08-08)
 
 
