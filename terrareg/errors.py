@@ -226,3 +226,21 @@ class DuplicateModuleProviderError(TerraregError):
     """A module/provider already exists with the same name"""
 
     pass
+
+
+class NonExistentModuleProviderRedirectError(TerraregError):
+    """Module provider redirect does not exist"""
+
+    pass
+
+
+class NonExistentNamespaceRedirectError(TerraregError):
+    """Namespace redirect does not exist"""
+
+    pass
+
+
+class ModuleProviderRedirectInUseError(TerraregError):
+    """Module provider redirect is in use."""
+
+    pass

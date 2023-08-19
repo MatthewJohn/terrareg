@@ -248,6 +248,62 @@ class AnalyticsEngine:
 
         return stats
 
+    @staticmethod
+    def check_module_provider_redirect_usage(module_provider_redirect):
+        """Check for any analytics using a redirect's name"""
+        # Create list of source namespace names, with actual namespace name
+        # and any redirects
+        namespace_names = [
+            module_provider_redirect.namespace.name
+        ] + [
+            namespace_redirect.name
+            for namespace_redirect in terrareg.models.NamespaceRedirect.get_by_namespace(module_provider_redirect.namespace)
+        ]
+
+        # Obtain all tokens
+        db = Database.get()
+
+        # Get all analytics, join to module version and module provider to filter by module_provider_id of
+        # the module provider redirect.
+        # Filter by redirect module name, provieder name and any of the associated names of the source namespace,
+        # which will return the latest analytics row for each token.
+        id_subquery = sqlalchemy.select(
+            sqlalchemy.func.max(db.analytics.c.id).label('latest_id'),
+            db.analytics.c.module_name,
+            db.analytics.c.provider_name,
+            db.analytics.c.namespace_name,
+            db.analytics.c.timestamp,
+            db.analytics.c.analytics_token,
+        ).select_from(
+            db.analytics
+        ).join(
+            db.module_version,
+            db.module_version.c.id == db.analytics.c.parent_module_version
+        ).join(
+            db.module_provider,
+            db.module_version.c.module_provider_id == db.module_provider.c.id
+        ).where(
+            db.module_provider.c.id == module_provider_redirect.module_provider_id,
+        ).group_by(
+            db.analytics.c.analytics_token
+        ).subquery()
+
+        # Pass this query into as a sub-query to filter and filter by those using the redirect details
+        filter_query = sqlalchemy.select(
+            id_subquery.c.analytics_token,
+            id_subquery.c.timestamp
+        ).select_from(
+            id_subquery
+        ).where(
+            id_subquery.c.module_name==module_provider_redirect.module_name,
+            id_subquery.c.provider_name==module_provider_redirect.provider_name,
+            id_subquery.c.namespace_name.in_(namespace_names)
+        )
+
+        with db.get_connection() as conn:
+            res = conn.execute(filter_query).all()
+
+        return res
 
     @staticmethod
     def get_module_provider_token_versions(module_provider):

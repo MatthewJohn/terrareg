@@ -19,8 +19,8 @@ import terrareg.audit
 import terrareg.audit_action
 from terrareg.errors import (
     DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
-    InvalidVersionError, NamespaceAlreadyExistsError, NamespaceNotEmptyError, NoModuleVersionAvailableError,
-    InvalidGitTagFormatError, InvalidNamespaceNameError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError, RepositoryUrlContainsInvalidTemplateError,
+    InvalidVersionError, ModuleProviderRedirectInUseError, NamespaceAlreadyExistsError, NamespaceNotEmptyError, NoModuleVersionAvailableError,
+    InvalidGitTagFormatError, InvalidNamespaceNameError, NonExistentModuleProviderRedirectError, NonExistentNamespaceRedirectError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError, RepositoryUrlContainsInvalidTemplateError,
     RepositoryUrlDoesNotContainValidSchemeError,
     RepositoryUrlContainsInvalidSchemeError,
     RepositoryUrlDoesNotContainHostError,
@@ -615,6 +615,26 @@ class NamespaceRedirect(object):
             conn.execute(delete)
 
     @classmethod
+    def get_by_namespace(cls, namespace):
+        """Return list of Namespace redirect objects that have the given namespace as destination"""
+        db = Database.get()
+        select = sqlalchemy.select(
+            db.namespace_redirect.c.id
+        ).select_from(
+            db.namespace_redirect
+        ).where(
+            db.namespace_redirect.c.namespace_id==namespace.pk
+        )
+
+        with db.get_connection() as conn:
+            rows = conn.execute(select).all()
+
+        return [
+            cls(pk=row['id'])
+            for row in rows
+        ]
+
+    @classmethod
     def get_namespace_by_name(cls, name, case_insensitive=False):
         """Get namespace redirect by name"""
         db = Database.get()
@@ -646,6 +666,35 @@ class NamespaceRedirect(object):
             return None
 
         return Namespace.get(name=row['namespace'])
+
+    @property
+    def name(self):
+        """Return source name for redirect"""
+        return self._get_db_row()['name']
+
+    @property
+    def namespace_id(self):
+        """Return source namespace ID for redirect"""
+        return self._get_db_row()['namespace_id']
+
+    def __init__(self, pk):
+        """Store member variable"""
+        self._pk = pk
+        self._cache_db_row = self._get_db_row()
+
+    def _get_db_row(self):
+        """Return database row for module provider."""
+        db = Database.get()
+        select = db.namespace_redirect.select(
+        ).where(
+            db.namespace_redirect.c.id == self._pk
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(select)
+            data = res.fetchone()
+            if not data:
+                raise NonExistentNamespaceRedirectError("Namespace redirect does not exist with the given ID")
+            return data
 
 
 class Namespace(object):
@@ -690,6 +739,29 @@ class Namespace(object):
             # Use a like to use case-insentive
             # match for pre-existing namespaces
             db.namespace.c.display_name.like(display_name)
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(display_name_query).fetchone()
+            if res:
+                return cls.get(res.namespace)
+
+        return None
+
+    @classmethod
+    def get_by_pk(cls, pk):
+        """Get namespace by pk"""
+        if not pk:
+            return None
+
+        db = Database.get()
+        display_name_query = sqlalchemy.select(
+            db.namespace.c.namespace
+        ).select_from(
+            db.namespace
+        ).where(
+            # Use a like to use case-insentive
+            # match for pre-existing namespaces
+            db.namespace.c.id==pk
         )
         with db.get_connection() as conn:
             res = conn.execute(display_name_query).fetchone()
@@ -1656,6 +1728,86 @@ class ModuleProviderRedirect(object):
         target_module = Module(namespace=target_namespace, name=row['module'])
         return ModuleProvider(module=target_module, name=row['provider'])
 
+    @classmethod
+    def get_by_module_provider(cls, module_provider):
+        """Get all redirects that point to a given module provider"""
+        db = Database.get()
+        select = sqlalchemy.select(
+            db.module_provider_redirect.c.id
+        ).select_from(
+            db.module_provider_redirect
+        ).where(
+            db.module_provider_redirect.c.module_provider_id==module_provider.pk
+        )
+
+        with db.get_connection() as conn:
+            rows = conn.execute(select).all()
+
+        return [
+            cls(pk=row['id'])
+            for row in rows
+        ]
+
+    @property
+    def module_name(self):
+        """Return source module name for redirect"""
+        return self._get_db_row()['module']
+
+    @property
+    def provider_name(self):
+        """Return source provider name for redirect"""
+        return self._get_db_row()['provider']
+
+    @property
+    def namespace_id(self):
+        """Return source namespace ID for redirect"""
+        return self._get_db_row()['namespace_id']
+
+    @property
+    def namespace(self):
+        """Return source namespace ID for redirect"""
+        return Namespace.get_by_pk(self._get_db_row()['namespace_id'])
+
+    @property
+    def module_provider_id(self):
+        """Return destination module provider id for redirect"""
+        return self._get_db_row()['module_provider_id']
+
+    @property
+    def pk(self):
+        """Return pk of entity"""
+        return self._pk
+
+    def __init__(self, pk):
+        """Store member variable"""
+        self._pk = pk
+        self._cache_db_row = self._get_db_row()
+
+    def _get_db_row(self):
+        """Return database row for module provider."""
+        db = Database.get()
+        select = db.module_provider_redirect.select(
+        ).where(
+            db.module_provider_redirect.c.id == self._pk
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(select)
+            data = res.fetchone()
+            if not data:
+                raise NonExistentModuleProviderRedirectError("Module provider redirect does not exist with the given ID")
+            return data
+
+    def delete(self, force=False):
+        """Delete module provider redirect"""
+        # Check if module provider redirect is in use
+        if not force and terrareg.analytics.AnalyticsEngine.check_module_provider_redirect_usage(self):
+            raise ModuleProviderRedirectInUseError("Module provider redirect is in use, so cannot be deleted without force")
+        
+        # Delete from database
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.module_provider_redirect.delete(db.module_provider_redirect.c.id==self.pk))
+
 
 class ModuleProvider(object):
 
@@ -1971,6 +2123,10 @@ class ModuleProvider(object):
             object_id=self.id,
             old_value=None, new_value=None
         )
+
+        # Delete any redirects
+        for redirect in ModuleProviderRedirect.get_by_module_provider(self):
+            redirect.delete(force=True)
 
         db = Database.get()
 
