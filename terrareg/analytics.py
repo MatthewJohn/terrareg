@@ -86,6 +86,9 @@ class AnalyticsEngine:
 
     @staticmethod
     def record_module_version_download(
+        namespace_name: str,
+        module_name: str,
+        provider_name: str,
         module_version,
         analytics_token: str,
         terraform_version: str,
@@ -112,7 +115,10 @@ class AnalyticsEngine:
             terraform_version=terraform_version,
             analytics_token=analytics_token,
             auth_token=auth_token,
-            environment=environment
+            environment=environment,
+            namespace_name=namespace_name,
+            module_name=module_name,
+            provider_name=provider_name
         )
         with db.get_connection() as conn:
             conn.execute(insert_statement)

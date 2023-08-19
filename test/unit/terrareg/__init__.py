@@ -302,7 +302,7 @@ def mock_module_provider_redirect(request):
         if key_ in TEST_MODULE_PROVIDER_REDIRECTS:
             raise Exception('Namespace redirect already exists')
 
-        TEST_NAMESPACE_REDIRECTS[key_] = {
+        TEST_MODULE_PROVIDER_REDIRECTS[key_] = {
             'module_provider_id': module_provider.pk
         }
     mock_method(request, 'terrareg.models.ModuleProviderRedirect.create', create)
@@ -311,6 +311,7 @@ def mock_module_provider_redirect(request):
     def get_module_provider_by_original_details(cls, namespace, module, provider, case_insensitive=False):
         global TEST_MODULE_PROVIDER_REDIRECTS
         global TEST_MODULE_DATA
+
         key_ = (namespace.pk, module, provider)
         if key_ not in TEST_MODULE_PROVIDER_REDIRECTS:
             return None
@@ -409,7 +410,63 @@ def mock_module_provider(request):
 
     def update_attributes(self, **kwargs):
         """Update mock data attributes"""
+        global TEST_MODULE_DATA
+        new_name = None
+        print(kwargs)
+        if 'module' in kwargs:
+            new_name = kwargs['module']
+            del kwargs['module']
+        new_provider = None
+        if 'provider' in kwargs:
+            new_provider = kwargs['provider']
+            del kwargs['provider']
+
+        new_namespace_id = None
+        if 'namespace_id' in kwargs:
+            new_namespace_id = kwargs['namespace_id']
+            del kwargs['namespace_id']
+
+        # Update preview details
         get_module_provider_mock_data(self).update(kwargs)
+        provider_name = self._name
+
+        # Update provider, if changed
+        if new_provider and provider_name != new_provider:
+            provider_name = new_provider
+            print(TEST_MODULE_DATA[self._module._namespace._name]['modules'][self._module.name])
+            print(self._name)
+            TEST_MODULE_DATA[self._module._namespace._name]['modules'][self._module.name][new_provider] = TEST_MODULE_DATA[self._module._namespace._name]['modules'][self._module.name][self._name]
+            del TEST_MODULE_DATA[self._module._namespace._name]['modules'][self._module.name][self._name]
+
+        # Update module name, if changed
+        module_name = self._module._name
+        if new_name and module_name != new_name:
+            module_name = new_name
+            if new_name not in TEST_MODULE_DATA[self._module._namespace._name]['modules']:
+                TEST_MODULE_DATA[self._module._namespace._name]['modules'][new_name] = {}
+            TEST_MODULE_DATA[self._module._namespace._name]['modules'][new_name][provider_name] = TEST_MODULE_DATA[self._module._namespace._name]['modules'][self._module.name][provider_name]
+            del TEST_MODULE_DATA[self._module._namespace._name]['modules'][self._module.name][provider_name]
+            # Clean up old module, if empty
+            if not TEST_MODULE_DATA[self._module._namespace._name]['modules'][self._module.name]:
+                del TEST_MODULE_DATA[self._module._namespace._name]['modules'][self._module.name]
+
+        # Update namespace, if changed
+        if new_namespace_id and new_namespace_id != self._module._namespace.pk:
+            new_namespace_name = None
+            for namespace_name_itx in TEST_MODULE_DATA:
+                if TEST_MODULE_DATA[namespace_name_itx].get('id') == new_namespace_id:
+                    new_namespace_name = namespace_name_itx
+            if not new_namespace_name:
+                raise Exception('UNIT TEST: Could not find namespace by ID for module_provider update_attributes to change namespace_id')
+            if "modules" not in TEST_MODULE_DATA[new_namespace_name]:
+                TEST_MODULE_DATA[new_namespace_name]['modules'] = {}
+            if module_name not in TEST_MODULE_DATA[new_namespace_name]['modules']:
+                TEST_MODULE_DATA[new_namespace_name]['modules'][module_name] = {}
+            TEST_MODULE_DATA[new_namespace_name]['modules'][module_name][provider_name] = TEST_MODULE_DATA[self._module._namespace._name]['modules'][module_name][provider_name]
+            del TEST_MODULE_DATA[self._module._namespace._name]['modules'][module_name][provider_name]
+            if not TEST_MODULE_DATA[self._module._namespace._name]['modules'][module_name]:
+                del TEST_MODULE_DATA[self._module._namespace._name]['modules'][module_name]
+
     mock_method(request, 'terrareg.models.ModuleProvider.update_attributes', update_attributes)
 
 def mock_namespace_redirect(request):

@@ -432,7 +432,12 @@ class Database():
             sqlalchemy.Column('terraform_version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('analytics_token', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('auth_token', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('environment', sqlalchemy.String(GENERAL_COLUMN_SIZE))
+            sqlalchemy.Column('environment', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+
+            # Columns for providing redirect deletion protection
+            sqlalchemy.Column('namespace_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('module_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('provider_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
         )
 
         self._example_file = sqlalchemy.Table(
