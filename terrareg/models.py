@@ -1683,16 +1683,36 @@ class ModuleProvider(object):
         # Otherwise, return the path
         return row_value
 
-    def get_version_from_tag_ref(self, tag_ref):
-        """Match tag ref against version number and return actual version number."""
+    def _get_version_from_version_regex(self, regex, match_value):
+        """Return a semantic version from one of the tag version regexes"""
         # Handle empty/None tag_ref
-        if not tag_ref:
+        if not match_value:
             return None
 
-        res = self.tag_ref_regex.match(tag_ref)
+        res = regex.match(match_value)
         if res:
-            return res.group(1)
+            groups = res.groupdict()
+            # If the regex contains a group for the full version,
+            # return that as the version
+            if 'version' in groups:
+                return groups['version']
+
+            # Otherwise, obtain each of the major, minor, patch,
+            # defaulting each value to 0.
+            # At least one of these will be present, as they
+            # are required when setting the git tag format
+            return '{major}.{minor}.{path}'.format(
+                major=groups.get('major', 0),
+                minor=groups.get('minor', 0),
+                patch=groups.get('patch', 0)
+            )
+        # The git tag format didn't match against the tag,
+        # so return None
         return None
+
+    def get_version_from_tag_ref(self, tag_ref):
+        """Match tag ref against version number and return actual version number."""
+        return self._get_version_from_version_regex(self.tag_ref_regex, tag_ref)
 
     @property
     def tag_version_regex(self):
@@ -1701,14 +1721,7 @@ class ModuleProvider(object):
 
     def get_version_from_tag(self, tag):
         """Match tag against version number and return actual version number."""
-        # Handle empty/None tag_ref
-        if not tag:
-            return None
-
-        res = self.tag_version_regex.match(tag)
-        if res:
-            return res.group(1)
-        return None
+        return self._get_version_from_version_regex(self.tag_version_regex, tag)
 
     @property
     def base_directory(self):
