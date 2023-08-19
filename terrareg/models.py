@@ -2728,6 +2728,38 @@ module "{self.module_version.module_provider.module.name}" {{
                     if key not in pre_existing_modules:
                         recursive_modules[key] = module
 
+        def remove_superfluous_directory_changes_in_path(path):
+            """
+            Convert path, removing superfluous changes.
+            E.g. '.././test/../test2/./' -> '../test2'
+            """
+            dir_names_found = 0
+            keep_parts = []
+            for part in path.split('/'):
+                # Skip empty path parts
+                if not part:
+                    continue
+                elif part == '.':
+                    # If path part is current directly, skip it
+                    continue
+                elif part == '..':
+                    # If a parent directory is found...
+                    if dir_names_found:
+                        # If a directory is already being called,
+                        # remove previous directory from part of path to keep
+                        # and skip this one
+                        keep_parts.pop()
+                        dir_names_found -= 1
+                        continue
+                else:
+                    # Otherwise, if a real directory is found,
+                    # mark as having found a real directory
+                    dir_names_found += 1
+                # Add directory name (or parent directory move, if kept)
+                keep_parts.append(part)
+
+            return "/".join(keep_parts)
+
         def add_child_module(key, module_data, parent_data):
             source_path = module_data.get("Source")
             if parent_data:
@@ -2735,7 +2767,10 @@ module "{self.module_version.module_provider.module.name}" {{
                 parent_path = parent_data.get("source")
                 if parent_path.startswith("./") or parent_path.startswith("../"):
                     # Join paths together to generate child source path
-                    source_path = os.path.join(parent_path, source_path)
+                    source_path = remove_superfluous_directory_changes_in_path(
+                        os.path.join(parent_path, source_path))
+                    # Prepend with relative path
+                    source_path = './' + source_path
                 else:
                     # Otherwise, handle remote paths...
                     # Remove any query string params (e.g. github.com/example/test//submodule?ref=v1.1.1)
@@ -2750,12 +2785,9 @@ module "{self.module_version.module_provider.module.name}" {{
                     if not parent_sub_path.startswith("/"):
                         parent_sub_path = f"/{parent_sub_path}"
 
-                    # Join child path and parent path
-                    source_path = os.path.realpath(os.path.join(parent_sub_path, source_path))
-
-                    # Strip leading './'
-                    if source_path.startswith('/'):
-                        source_path = source_path[1:]
+                    # Join child path and parent path and remove superfluous directory changes
+                    source_path = remove_superfluous_directory_changes_in_path(
+                        os.path.join(parent_sub_path, source_path))
 
                     # Nest child path in full URL
                     source_path = f"{parent_path_split[0]}//{source_path}"
