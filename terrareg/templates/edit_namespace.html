@@ -55,6 +55,29 @@
     }
 
     /*
+    Bind delete namespace button with callback to create request
+    */
+    function bindDeleteButton(namespace) {
+        $('#deleteNamespaceButton').on('click', function(e) {
+            $.ajax({
+                method: 'DELETE',
+                url: `/v1/terrareg/namespaces/${namespace}`,
+                data: JSON.stringify({
+                    csrf_token: '{{ csrf_token }}'
+                }),
+                contentType: 'application/json'
+            }).done((res) => {
+                // Redirect to homepage
+                window.location.href = '/';
+            }).fail((res) => {
+                $('#delete-error').html(failedResponseToErrorString(res));
+                $('#delete-error').removeClass('default-hidden');
+                $(window).scrollTop($('#delete-error').offset().top);
+            });
+        });
+    }
+
+    /*
     Handle extraction of namespace from URL and process page rendering
     */
     function renderPage() {
@@ -67,6 +90,7 @@
             let namespace = data.namespace;
             bindFormSubmit(namespace);
             loadDefaultValues(namespace);
+            bindDeleteButton(namespace);
         });
 
         router.resolve();
@@ -111,10 +135,31 @@
                 </div>
                 <div class="field">
                     <div class="control">
-                    <button class="button is-link">Edit Namespace</button>
+                        <button class="button is-link">Edit Namespace</button>
                     </div>
                 </div>
             </form>
+        </div>
+
+        <div id="delete-error" class="notification is-danger default-hidden">
+        </div>
+
+        <div class="card">
+            <div class="card-content" style="background-color: #FFEDED">
+                <h2 class="subtitle is-h2">Delete</h2>
+
+                Warning:<br />
+                <!-- Override bulma list-style of none -->
+                <ul style="list-style: inside;">
+                    <li>The namespace cannot be deleted if there are any modules present - either delete or move the modules before proceeding</li>
+                    <li>Deleting this module will remove any redirects for modules that have been moved from this namespace,</li>
+                    <li>Any permissions associated with the namespace will be deleted,</li>
+                </ul>
+
+                <br />
+                <button class="button is-danger" id="deleteNamespaceButton">Delete Namespace</button>
+
+            </div>
         </div>
 
     </div>
