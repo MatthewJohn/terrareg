@@ -561,3 +561,45 @@ class TestModuleProvider(TerraregIntegrationTest):
 
         # Ensure base URL hasn't been modified
         assert module_provider._get_db_row()['repo_base_url_template'] == 'old-value'
+
+    @pytest.mark.parametrize('format', [
+        '{version}',
+        'v{version}',
+        '{major}',
+        '{minor}',
+        '{patch}',
+        '{major}.{minor}',
+        '{major}.{patch}',
+        '{minor}.{patch}',
+        'releases/v{minor}.{patch}-testing',
+        # Unsetting value
+        None,
+        ''
+    ])
+    def test_update_git_tag_format_valid(self, format):
+        """Test update_git_tag_format with valid values"""
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+        module_provider.update_git_tag_format(git_tag_format=format)
+
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+
+        # If format has been provided, assert that it's now set
+        if format:
+            assert module_provider.git_tag_format == format
+        else:
+            # Otherwise, check that the default value is returned
+            assert module_provider.git_tag_format == '{version}'
+
+    @pytest.mark.parametrize('format', [
+        # Invalid placeholder
+        '{notversion}',
+        # No placeholders
+        'v',
+        # Mixture of valid and invalid placeholders
+        '{test}.{version}'
+    ])
+    def test_update_git_tag_format_invalid(self, format):
+        """Test update_git_tag_format with valid values"""
+        module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+        with pytest.raises(terrareg.errors.InvalidGitTagFormatError):
+            module_provider.update_git_tag_format(git_tag_format=format)
