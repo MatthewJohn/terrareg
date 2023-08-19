@@ -182,7 +182,11 @@
                     <br />
                     Note that all versions used in the registry are full semantic versions, meaning that when indexing is performed through the UI or API,<br />
                     the full semantic version must be provided - the supplied git tag format will be used to translate the semantic version into<br />
-                    a git tag to processed.
+                    a git tag to processed.<br />
+                    Using formats without the <code>{version}</code> placeholder may result in overlapping module versions.<br />
+                    However, if it necessary it is strongly recommended to prefer <code>major</code>, <code>minor</code> over just <code>patch</code>.<br />
+                    If only <code>v{patch}</code> is used, whilst versions 0.0.1 and 0.0.2 would be different versions, 0.0.1, 0.1.1 and 1.0.1 would<br />
+                    all reference the same git tag. This would not be an issue whilst using the git hooks, but could lead to confusing module versions if manually indexed (in the UI or via API).
                 </div>
 
                 <div class="field">
