@@ -1862,10 +1862,16 @@ class ModuleProvider(object):
         if git_tag_format:
             # If tag format was provided, ensured it can be passed with 'format'
             try:
-                sanitised_git_tag_format.format(version='1.1.1')
-                assert '{version}' in sanitised_git_tag_format
+                sanitised_git_tag_format.format(version='1.1.1', major='1', minor='2', patch='3')
+                # Ensure either '{version}' placeholder is present, or at least one of
+                # '{major}', '{minor}' or '{patch}'
+                if ('{version}' not in sanitised_git_tag_format and
+                        '{major}' not in sanitised_git_tag_format and
+                        '{minor}' not in sanitised_git_tag_format and
+                        '{patch}' not in sanitised_git_tag_format):
+                    raise ValueError
             except (ValueError, AssertionError):
-                raise InvalidGitTagFormatError('Invalid git tag format. Must contain one placeholder: {version}.')
+                raise InvalidGitTagFormatError('Invalid git tag format. Must contain one placeholder: {version}, {major}, {minor}, {patch}.')
         else:
             # If not value was provided, default to None
             sanitised_git_tag_format = None
