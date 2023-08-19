@@ -114,14 +114,14 @@ def mock_route(route_class, *urls):
         method_docs = getattr(route_class, internal_method).__doc__ or ""
         method_docs = "\n".join([l.strip() for l in method_docs.split("\n")])
 
-        api_docs += f'\n### {method}\n\n{method_docs}'
+        api_docs += f'\n#### {method}\n\n{method_docs}'
 
         # Attempt to get arg parser
         if route_class in ErrorCatchingResource.__subclasses__():
             arg_parser_method = f"_{method.lower()}_arg_parser"
             if getattr(route_class, arg_parser_method) != getattr(ErrorCatchingResource, arg_parser_method):
                 api_docs += """
-#### Arguments
+##### Arguments
 
 | Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
 |----------|----------------------------------------------------|------|----------|---------|------|
