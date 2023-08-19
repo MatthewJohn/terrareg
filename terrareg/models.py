@@ -2704,7 +2704,6 @@ module "{self.module_version.module_provider.module.name}" {{
     def get_terraform_modules(self):
         """Obtain module calls."""
         root_modules = self.get_module_specs().get('modules', [])
-        print(root_modules)
 
         # Obtain terraform modules JSON content to populate recursive modules
         terraform_modules_data = {}
@@ -2720,7 +2719,6 @@ module "{self.module_version.module_provider.module.name}" {{
         recursive_modules = {}
         if isinstance(terraform_modules_data, dict) and 'Modules' in terraform_modules_data:
             for module in terraform_modules_data['Modules']:
-                print(module)
                 # If key exists and is not empty (root module)
                 if (key := module.get("Key")) and key != "":
                     if key not in pre_existing_modules:
