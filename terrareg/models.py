@@ -19,7 +19,7 @@ import terrareg.audit
 import terrareg.audit_action
 from terrareg.errors import (
     DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
-    InvalidVersionError, ModuleProviderRedirectInUseError, NamespaceAlreadyExistsError, NamespaceNotEmptyError, NoModuleVersionAvailableError,
+    InvalidVersionError, ModuleProviderRedirectForceDeletionNotAllowedError, ModuleProviderRedirectInUseError, NamespaceAlreadyExistsError, NamespaceNotEmptyError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError, NonExistentModuleProviderRedirectError, NonExistentNamespaceRedirectError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError, RepositoryUrlContainsInvalidTemplateError,
     RepositoryUrlDoesNotContainValidSchemeError,
     RepositoryUrlContainsInvalidSchemeError,
@@ -1799,6 +1799,9 @@ class ModuleProviderRedirect(object):
 
     def delete(self, force=False):
         """Delete module provider redirect"""
+        if force and not terrareg.config.Config().ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION:
+            raise ModuleProviderRedirectForceDeletionNotAllowedError("Force deletion of module provider redirects is not allowed")
+
         # Check if module provider redirect is in use
         if not force and terrareg.analytics.AnalyticsEngine.check_module_provider_redirect_usage(self):
             raise ModuleProviderRedirectInUseError("Module provider redirect is in use, so cannot be deleted without force")

@@ -244,3 +244,9 @@ class ModuleProviderRedirectInUseError(TerraregError):
     """Module provider redirect is in use."""
 
     pass
+
+
+class ModuleProviderRedirectForceDeletionNotAllowedError(TerraregError):
+    """Force deletion of module provider redirects is not allowed"""
+
+    pass

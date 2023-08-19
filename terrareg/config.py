@@ -163,6 +163,16 @@ class Config:
         return self.convert_boolean(os.environ.get('DISABLE_ANALYTICS', 'False'))
 
     @property
+    def ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION(self):
+        """
+        Whether to allow the force deletion of module provider redirects.
+
+        Force deletion is required if module calls are still using the redirect and analytics tokens indicate that
+        some have not used migrated to the new name.
+        """
+        return self.convert_boolean(os.environ.get("ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION", "False"))
+
+    @property
     def DEBUG(self):
         """Whether flask and sqlalchemy is setup in debug mode."""
         return self.convert_boolean(os.environ.get('DEBUG', 'False'))

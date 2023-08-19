@@ -380,6 +380,14 @@ class Server(BaseHandler):
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/integrations'
         )
         self._api.add_resource(
+            ApiTerraregModuleProviderRedirects,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/redirects'
+        )
+        self._api.add_resource(
+            ApiTerraregModuleProviderRedirectDelete,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/redirects/<string:module_provider_redirect_id>'
+        )
+        self._api.add_resource(
             ApiModuleVersionCreateBitBucketHook,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/hooks/bitbucket'
         )

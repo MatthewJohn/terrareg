@@ -75,6 +75,18 @@ Whether module versions can specify git repository in terrareg config.
 Default: `True`
 
 
+### ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION
+
+
+Whether to allow the force deletion of module provider redirects.
+
+Force deletion is required if module calls are still using the redirect and analytics tokens indicate that
+some have not used migrated to the new name.
+
+
+Default: `False`
+
+
 ### ALLOW_MODULE_HOSTING
 
 
