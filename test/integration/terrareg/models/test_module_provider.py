@@ -603,3 +603,67 @@ class TestModuleProvider(TerraregIntegrationTest):
         module_provider = ModuleProvider.get(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
         with pytest.raises(terrareg.errors.InvalidGitTagFormatError):
             module_provider.update_git_tag_format(git_tag_format=format)
+
+    @pytest.mark.parametrize('git_tag_format, tag, expected_version', [
+        # Test version placeholder
+        ## On it's own
+        ('{version}', '1.2.3', '1.2.3'),
+        # With prefix and suffix
+        ('v{version}a', 'v1.2.3a', '1.2.3'),
+        # Invalid match - missing part of version
+        ('{version}', '1.2', None),
+        ('{version}', '1.2.', None),
+        ('{version}', '.1.2', None),
+        ('{version}', 'a1.2.3', None),
+        ('{version}', '1.2.3a', None),
+
+        # Test major placeholder
+        ## On it's own
+        ('{major}', '1', '1.0.0'),
+        # With prefix and suffix
+        ('release/v{major}a', 'release/v5a', '5.0.0'),
+        # No match
+        ('{major}', 'abc', None),
+        ('{major}', '1.5.2', None),
+
+        # Test minor placeholder
+        ## On it's own
+        ('{minor}', '1', '0.1.0'),
+        # With prefix and suffix
+        ('release/v{minor}a', 'release/v5a', '0.5.0'),
+        # No match
+        ('{minor}', 'abc', None),
+        ('{minor}', '1.5.2', None),
+
+        # Test patch placeholder
+        ## On it's own
+        ('{patch}', '1', '0.0.1'),
+        # With prefix and suffix
+        ('release/v{patch}a', 'release/v5a', '0.0.5'),
+        # No match
+        ('{patch}', 'abc', None),
+        ('{patch}', '1.5.2', None),
+
+        # Test combination of major, minor and patch
+        ('release/v{major}.{minor}', 'release/v4.9', '4.9.0'),
+        ('release/v{major}.{patch}', 'release/v4.9', '4.0.9'),
+        ('release/v{minor}.{patch}', 'release/v4.9', '0.4.9'),
+        ('release/v{major}.{minor}-{patch}', 'release/v4.9-5', '4.9.5'),
+    ])
+    def test_get_version_from_tag(self, git_tag_format, tag, expected_version):
+        """Test get_version_from_tag and get_version_from_tag_ref"""
+        module_provider = ModuleProvider.create(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+        try:
+
+            module_provider.update_git_tag_format(git_tag_format)
+
+            # test get_version_from_tag
+            version = module_provider.get_version_from_tag(tag=tag)
+            assert version == expected_version
+
+            # Test get_version_from_tag_ref
+            tag_ref_version = module_provider.get_version_from_tag_ref(tag_ref=f'refs/tags/{tag}')
+            assert tag_ref_version == expected_version
+
+        finally:
+            module_provider.delete()
