@@ -1883,7 +1883,7 @@ class ModuleProvider(object):
                         '{minor}' not in sanitised_git_tag_format and
                         '{patch}' not in sanitised_git_tag_format):
                     raise ValueError
-            except (ValueError, AssertionError):
+            except (ValueError, KeyError):
                 raise InvalidGitTagFormatError('Invalid git tag format. Must contain one placeholder: {version}, {major}, {minor}, {patch}.')
         else:
             # If not value was provided, default to None
