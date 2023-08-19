@@ -1804,7 +1804,7 @@ class ModuleProviderRedirect(object):
 
         # Check if module provider redirect is in use
         if not force and terrareg.analytics.AnalyticsEngine.check_module_provider_redirect_usage(self):
-            raise ModuleProviderRedirectInUseError("Module provider redirect is in use, so cannot be deleted without force")
+            raise ModuleProviderRedirectInUseError("Module provider redirect is in use, so cannot be deleted without forceful deletion")
         
         # Delete from database
         db = Database.get()

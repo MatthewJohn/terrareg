@@ -786,6 +786,42 @@ class SettingsTab extends ModuleDetailsTab {
             $('#settings-move-module').val(this._moduleDetails.name);
             $('#settings-move-provider').val(this._moduleDetails.provider);
 
+            // Obtain list of redirects and update table
+            $.get(`/v1/terrareg/modules/${this._moduleDetails.module_provider_id}/redirects`).then((data) => {
+                if (data.length) {
+                    $('#settingsRedirectCard').removeClass('default-hidden');
+                }
+
+                let redirectTableBody = $('#settingsRedirectTable');
+
+                data.forEach((redirectRow) => {
+                    // Create tr for integration
+                    let redirectTr = $("<tr></tr>");
+
+                    // Create td for namespace
+                    let redirectNamespace = $(`<td>${redirectRow.namespace}</td>`);
+                    redirectTr.append(redirectNamespace);
+
+                    let redirectModule = $(`<td>${redirectRow.module}</td>`);
+                    redirectTr.append(redirectModule);
+
+                    let redirectProvider = $(`<td>${redirectRow.provider}</td>`);
+                    redirectTr.append(redirectProvider);
+
+                    let redirectActionTd = $(`<td></td>`);
+                    let redirectDeleteButton = $(`<button class="button is-danger">Delete</button>`);
+
+                    // Handle callback for deleting redirect
+                    redirectDeleteButton.on('click', () => {
+                        this.deleteRedirect(redirectRow.id);
+                    });
+                    redirectActionTd.append(redirectDeleteButton);
+                    redirectTr.append(redirectActionTd);
+
+                    redirectTableBody.append(redirectTr);
+                });
+            });
+
             // Bind module provider delete button
             let moduleProviderDeleteButton = $('#module-provider-delete-button');
             moduleProviderDeleteButton.bind('click', () => {
@@ -807,6 +843,41 @@ class SettingsTab extends ModuleDetailsTab {
             // Show settings tab
             $('#module-tab-link-settings').removeClass('default-hidden');
             resolve(true);
+        });
+    }
+
+    deleteRedirect(redirectId, additionalArgs={}) {
+        $.ajax({
+            url: `/v1/terrareg/modules/${this._moduleDetails.namespace}/${this._moduleDetails.name}/${this._moduleDetails.provider}/redirects/${redirectId}`,
+            method: 'delete',
+            data: JSON.stringify({
+                csrf_token: $('#settings-csrf-token').val(),
+                ...additionalArgs
+            }),
+            contentType: 'application/json'
+        }).done(() => {
+            // Refresh page
+            window.location.href = `/modules/${this._moduleDetails.id}#settings`;
+        }).fail((res) => {
+            let redirectError = $('#settings-redirect-error');
+            if (res.status == 401) {
+                redirectError.html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
+            } else if (res.responseJSON && res.responseJSON.message) {
+                redirectError.html(res.responseJSON.message);
+
+                // Check for errors containing force and allow to retry
+                if (res.responseJSON.message.indexOf('force') !== -1) {
+                    let forceRetryButton = $('<button class="button is-warning">Force Retry</button>');
+                    forceRetryButton.on('click', () => {
+                        this.deleteRedirect(redirectId, {force: true})
+                    });
+                    redirectError.append("<br />");
+                    redirectError.append(forceRetryButton);
+                }
+            } else {
+                redirectError.html('An unexpected error occurred');
+            }
+            redirectError.removeClass('default-hidden');
         });
     }
 }
