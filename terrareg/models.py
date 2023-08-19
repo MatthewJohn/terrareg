@@ -2701,9 +2701,13 @@ module "{self.module_version.module_provider.module.name}" {{
 
         return depedencies
 
-    def get_terraform_modules(self):
+    def get_terraform_modules(self, recursive=False):
         """Obtain module calls."""
         root_modules = self.get_module_specs().get('modules', [])
+
+        # For the official API, only root modules should be returned
+        if not recursive:
+            return root_modules
 
         # Obtain terraform modules JSON content to populate recursive modules
         terraform_modules_data = {}
@@ -3393,7 +3397,7 @@ class ModuleVersion(TerraformSpecsObject):
 
         # Update the root API specs to include "modules", as this is not part of the official
         # API spec
-        api_details["root"]["modules"] = self.get_terraform_modules()
+        api_details["root"]["modules"] = self.get_terraform_modules(recursive=True)
 
         source_browse_url = self.get_source_browse_url()
         tfsec_failures = self.get_tfsec_failures()
