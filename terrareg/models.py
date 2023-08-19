@@ -1701,7 +1701,7 @@ class ModuleProvider(object):
             # defaulting each value to 0.
             # At least one of these will be present, as they
             # are required when setting the git tag format
-            return '{major}.{minor}.{path}'.format(
+            return '{major}.{minor}.{patch}'.format(
                 major=groups.get('major', 0),
                 minor=groups.get('minor', 0),
                 patch=groups.get('patch', 0)
