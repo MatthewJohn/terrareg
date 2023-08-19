@@ -110,6 +110,20 @@ def mock_route(route_class, *urls):
 
         api_docs += f'\n### {method}\n\n{(getattr(route_class, internal_method).__doc__ or "").strip()}'
 
+        # Attempt to get arg parser
+        if route_class in ErrorCatchingResource.__subclasses__():
+            arg_parser_method = f"_{method.lower()}_arg_parser"
+            if getattr(route_class, arg_parser_method) != getattr(ErrorCatchingResource, arg_parser_method):
+                api_docs += """
+#### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+"""
+                arg_parser = getattr(route_class(), arg_parser_method)()
+                for arg in arg_parser.args:
+                    api_docs += f'| {arg.name} | {arg.location} | {arg.type.__name__ if arg.type else ""} | {arg.required} | `{arg.default}` | {arg.help if arg.help else ""} |\n'
+
 
 server._app.route = unittest.mock.MagicMock()
 server._api.add_resource = unittest.mock.MagicMock(side_effect=mock_route)

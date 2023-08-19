@@ -21,6 +21,10 @@ class ErrorCatchingResource(Resource, BaseHandler):
         """Placeholder for overridable get method."""
         return {'message': 'The method is not allowed for the requested URL.'}, 405
 
+    def _get_arg_parser(self):
+        """Return arg parser for GET requests"""
+        raise NotImplementedError
+
     def get(self, *args, **kwargs):
         """Run subclasses get in error handling fashion."""
         try:
@@ -35,6 +39,10 @@ class ErrorCatchingResource(Resource, BaseHandler):
         """Placeholder for overridable post method."""
         return {'message': 'The method is not allowed for the requested URL.'}, 405
 
+    def _post_arg_parser(self):
+        """Return arg parser for POST requests"""
+        raise NotImplementedError
+
     def post(self, *args, **kwargs):
         """Run subclasses post in error handling fashion."""
         try:
@@ -48,6 +56,10 @@ class ErrorCatchingResource(Resource, BaseHandler):
     def _delete(self, *args, **kwargs):
         """Placeholder for overridable delete method."""
         return {'message': 'The method is not allowed for the requested URL.'}, 405
+
+    def _delete_arg_parser(self):
+        """Return arg parser for DELETE requests"""
+        raise NotImplementedError
 
     def delete(self, *args, **kwargs):
         """Run subclasses delete in error handling fashion."""
