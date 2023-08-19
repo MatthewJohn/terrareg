@@ -8,6 +8,7 @@ class AuditAction(Enum):
     NAMESPACE_CREATE = "namespace_create"
     NAMESPACE_MODIFY_NAME = "namespace_modify_name"
     NAMESPACE_MODIFY_DISPLAY_NAME = "namespace_modify_display_name"
+    NAMESPACE_DELETE = "namespace_delete"
 
     MODULE_PROVIDER_CREATE = "module_provider_create"
     MODULE_PROVIDER_DELETE = "module_provider_delete"

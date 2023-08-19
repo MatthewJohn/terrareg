@@ -19,7 +19,7 @@ import terrareg.audit
 import terrareg.audit_action
 from terrareg.errors import (
     DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
-    InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
+    InvalidVersionError, NamespaceAlreadyExistsError, NamespaceNotEmptyError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError, RepositoryUrlContainsInvalidTemplateError,
     RepositoryUrlDoesNotContainValidSchemeError,
     RepositoryUrlContainsInvalidSchemeError,
@@ -262,6 +262,35 @@ class UserGroupNamespacePermission:
             ]
 
     @classmethod
+    def get_permissions_by_namespace(cls, namespace):
+        """Return permissions by namespace"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            query = sqlalchemy.select(
+                db.user_group.c.name.label('user_group_name'),
+                db.namespace.c.namespace.label('namespace_name')
+            ).select_from(
+                db.user_group_namespace_permission
+            ).join(
+                db.user_group,
+                db.user_group_namespace_permission.c.user_group_id==db.user_group.c.id
+            ).join(
+                db.namespace,
+                db.user_group_namespace_permission.c.namespace_id==db.namespace.c.id
+            ).where(
+                db.namespace.c.id==namespace.pk
+            )
+            res = conn.execute(query)
+
+            return [
+                cls(
+                    user_group=UserGroup(name=r['user_group_name']),
+                    namespace=Namespace(name=r['namespace_name'])
+                )
+                for r in res.fetchall()
+            ]
+
+    @classmethod
     def get_permissions_by_user_group_and_namespace(cls, user_group, namespace):
         """Return permission by user group and namespace"""
         permissions = cls.get_permissions_by_user_groups_and_namespace([user_group], namespace)
@@ -387,14 +416,15 @@ class UserGroupNamespacePermission:
                 self._row_cache = res.fetchone()
         return self._row_cache
 
-    def delete(self):
+    def delete(self, create_audit_event=True):
         """Delete user group namespace permission."""
-        terrareg.audit.AuditEvent.create_audit_event(
-            action=terrareg.audit_action.AuditAction.USER_GROUP_NAMESPACE_PERMISSION_DELETE,
-            object_type=self.__class__.__name__,
-            object_id=self.id,
-            old_value=None, new_value=None
-        )
+        if create_audit_event:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.USER_GROUP_NAMESPACE_PERMISSION_DELETE,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=None, new_value=None
+            )
 
         self._delete_from_database()
 
@@ -571,6 +601,18 @@ class NamespaceRedirect(object):
         )
         with db.get_connection() as conn:
             conn.execute(namespace_redirect_insert)
+
+    @classmethod
+    def delete_by_namespace(cls, namespace):
+        """Delete all redirects for a given namespace"""
+        db = Database.get()
+        delete = sqlalchemy.delete(
+            db.namespace_redirect
+        ).where(
+            db.namespace_redirect.c.namespace_id==namespace.pk
+        )
+        with db.get_connection() as conn:
+            conn.execute(delete)
 
     @classmethod
     def get_namespace_by_name(cls, name, case_insensitive=False):
@@ -992,6 +1034,32 @@ class Namespace(object):
             Module(namespace=self, name=module)
             for module in modules
         ]
+
+    def delete(self):
+        """Delete namespace"""
+        # Check for any modules in the namespace
+        if self.get_all_modules():
+            raise NamespaceNotEmptyError("Namespace cannot be deleted as it contains modules")
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.NAMESPACE_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.name,
+            old_value=None, new_value=None
+        )
+
+        # Delete any permissions associated with the namespace
+        for permission in UserGroupNamespacePermission.get_permissions_by_namespace(namespace=self):
+            permission.delete(create_audit_event=False)
+
+        # Delete any redirects
+        NamespaceRedirect.delete_by_namespace(self)
+
+        # Delete namespace
+        db = Database.get()
+        delete = sqlalchemy.delete(db.namespace).where(db.namespace.c.id==self.pk)
+        with db.get_connection() as conn:
+            conn.execute(delete)
 
     def create_data_directory(self):
         """Create data directory and data directories of parents."""

@@ -216,6 +216,12 @@ class DuplicateNamespaceDisplayNameError(TerraregError):
     pass
 
 
+class NamespaceNotEmptyError(TerraregError):
+    """Namespace cannot be deleted due to containing modules"""
+
+    pass
+
+
 class DuplicateModuleProviderError(TerraregError):
     """A module/provider already exists with the same name"""
 
