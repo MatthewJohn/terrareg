@@ -73,6 +73,11 @@ integration_test_data = {
             }
         }}
     },
+    # Namespace for use by any tests, that have dependencies
+    # on which modules are present
+    'scratchnamespace': {
+
+    },
     'moduleextraction': {
         'test-module': { 'testprovider': {
             'id': 7,
@@ -2462,6 +2467,44 @@ digraph {
                 }
             }}
         }},
+        'testmove': {
+            'changename': {
+                'id': 88,
+                'versions': {'1.0.0': {
+                    'published': True,
+                }}
+            },
+            'changeprovider': {
+                'id': 89,
+                'versions': {'1.0.0': {
+                    'published': True,
+                }}
+            },
+            'changenamespace': {
+                'id': 90,
+                'versions': {'1.0.0': {
+                    'published': True,
+                }}
+            },
+            'changeall': {
+                'id': 91,
+                'versions': {'1.0.0': {
+                    'published': True,
+                }}
+            },
+            'duplicatemovetest': {
+                'id': 92,
+                'versions': {'1.0.0': {
+                    'published': True,
+                }}
+            },
+            'duplicatetest': {
+                'id': 93,
+                'versions': {'1.0.0': {
+                    'published': True,
+                }}
+            },
+        },
         'withsecurityissues': {'testprovider': {
             'id': 62,
             'versions': {
