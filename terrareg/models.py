@@ -1870,9 +1870,9 @@ class ModuleProvider(object):
 
     def update_git_tag_format(self, git_tag_format):
         """Update git_tag_format."""
-        sanitised_git_tag_format = urllib.parse.quote(git_tag_format, safe=r'/{}')
-
         if git_tag_format:
+            sanitised_git_tag_format = urllib.parse.quote(git_tag_format, safe=r'/{}')
+
             # If tag format was provided, ensured it can be passed with 'format'
             try:
                 sanitised_git_tag_format.format(version='1.1.1', major='1', minor='2', patch='3')
