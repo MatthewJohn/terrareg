@@ -1,4 +1,5 @@
 
+from re import L
 from flask_restful import Resource
 
 from terrareg.server.base_handler import BaseHandler

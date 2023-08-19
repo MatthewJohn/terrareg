@@ -1618,6 +1618,11 @@ class ModuleProvider(object):
         return self._get_db_row()['verified']
 
     @property
+    def can_index_by_version(self):
+        """Whether the module version can be indexed by version"""
+        return '{version}' in self.git_tag_format
+
+    @property
     def git_tag_format(self):
         """Return git tag format"""
         if self._get_db_row()['git_tag_format']:

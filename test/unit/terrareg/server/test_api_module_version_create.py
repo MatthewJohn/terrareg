@@ -8,6 +8,7 @@ from test.unit.terrareg import (
     setup_test_data, TerraregUnitTest
 )
 from test import client
+import terrareg.models
 
 
 class TestApiModuleVersionCreate(TerraregUnitTest):
@@ -94,6 +95,43 @@ class TestApiModuleVersionCreate(TerraregUnitTest):
                 '/v1/terrareg/modules/testnamespace/moduledoesnotexist/testprovider/5.5.4/import')
             assert res.status_code == 400
             assert res.json == {'message': 'Module provider does not exist'}
+
+            mocked_prepare_module.assert_not_called()
+            mocked_process_upload.assert_not_called()
+
+    @pytest.mark.parametrize('git_tag_format', [
+        'v{major}',
+        'v{minor}',
+        'v{patch}',
+        '{major}.{minor}.{patch}',
+    ])
+    @setup_test_data()
+    def test_creation_when_using_non_semantic_git_tag_format(self, git_tag_format, client, mock_models):
+        """Attempt creation for a module provider that does not have a git tag format with {version} placeholder."""
+        with unittest.mock.patch(
+                    'terrareg.models.ModuleVersion.prepare_module') as mocked_prepare_module, \
+                unittest.mock.patch(
+                    'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload, \
+                        unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._get_mock_get_current_auth_method(True)):
+
+            test_module_provider = terrareg.models.ModuleProvider.get(
+                module=terrareg.models.Module(
+                    namespace=terrareg.models.Namespace.get(name='testnamespace'),
+                    name='modulewithrepourl'
+                ),
+                name='testprovider'
+            )
+            test_module_provider.update_attributes(git_tag_format=git_tag_format)
+
+            res = client.post(
+                '/v1/terrareg/modules/testnamespace/modulewithrepourl/testprovider/1.2.3/import',
+            )
+            assert res.status_code == 400
+            assert res.json == {
+                'status': 'Error',
+                'message': 'Module provider is not configured with a git tag format containing a {version} placeholder. '
+                           'Indexing must be performed using the git_tag argument'
+            }
 
             mocked_prepare_module.assert_not_called()
             mocked_process_upload.assert_not_called()

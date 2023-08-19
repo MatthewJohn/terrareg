@@ -25,7 +25,9 @@ Provide usage anayltics for Prometheus scraper
 
 ### GET
 
+
 Return Prometheus metrics for global statistics and module provider statistics
+
 
 
 ## ApiModuleList
@@ -276,9 +278,11 @@ Provide interface to obtain statistics about global module usage.
 
 ### GET
 
+
 Return stats on total module providers,
-        total unique analytics tokens per module
-        (with and without auth token).
+total unique analytics tokens per module
+(with and without auth token).
+
 
 
 ## ApiTerraregModuleProviderAnalyticsTokenVersions
@@ -519,12 +523,42 @@ Handle module version upload.
 
 `/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/import`
 
+
 Provide interface to create release for git-backed modules.
+
+**DEPRECATION NOTICE**
+
+This API maybe removed in future.
+This deprecation is still in discussion.
+
+Consider migrating to '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/import'
+
 
 
 ### POST
 
 Handle creation of module version.
+
+
+## ApiModuleVersionImport
+
+`/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/import`
+
+
+Provide interface to import/index version for git-backed modules.
+
+
+
+### POST
+
+Handle creation of module version.
+#### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| version | json | str | False | `None` | The semantic version number of the module to be imported. This can only be used if the git tag format of the module provider contains a {version} placeholder. Conflicts with git_tag |
+| git_tag | json | str | False | `None` | The git tag of the module to be imported. Conflicts with version. |
+
 
 
 ## ApiModuleVersionSourceDownload
