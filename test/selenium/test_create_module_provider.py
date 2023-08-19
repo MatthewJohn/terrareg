@@ -178,12 +178,16 @@ class TestCreateModuleProvider(SeleniumTest):
         # Leave default value
         (None, False, False, 'v{version}'),
         # Test empty value
-        ('', True, False, None),
+        ('', True, False, '{version}'),
 
         # Tag format without template placeholder
         ('testgittag', False, True, None),
 
-        ('unittestvalue{version}', False, False, 'unittestvalue{version}')
+        ('unittestvalue{version}', False, False, 'unittestvalue{version}'),
+        # Test with major/minor/patch
+        ('releases/v{major}', False, False, 'releases/v{major}'),
+        ('releases/v{minor}', False, False, 'releases/v{minor}'),
+        ('releases/v{patch}', False, False, 'releases/v{patch}'),
     ])
     def test_with_git_tag_format(self, git_tag_format, should_show_form_validation_error, should_error, expected_git_tag_format):
         """Test creating module provider with inputs populated."""
@@ -209,7 +213,7 @@ class TestCreateModuleProvider(SeleniumTest):
             # Check if error is returned
             elif should_error:
                 self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'create-error').is_displayed(), True)
-                self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'create-error').text, "Invalid git tag format. Must contain one placeholder: {version}.")
+                self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'create-error').text, "Invalid git tag format. Must contain one placeholder: {version}, {major}, {minor}, {patch}.")
                 self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/create-module'))
 
             # Otherwise, check that it was created correctly
