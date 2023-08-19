@@ -67,6 +67,8 @@ def setup_test_data(test_data=None, user_group_data=None, namespace_redirects=No
             default_readme = 'Mock module README file'
             default_terraform_docs = '{"inputs": [], "outputs": [], "providers": [], "resources": []}'
             default_tfsec = '{"results": null}'
+            default_terraform_modules = ''
+            default_terraform_version = '{"terraform_version": "1.4.6", "platform": "linux_amd64", "provider_selections": {"registry.terraform.io/hashicorp/random": "3.5.1"}, "terraform_outdated": false}'
             for namespace in TEST_MODULE_DATA:
                 for module in TEST_MODULE_DATA[namespace].get('modules', {}):
                     for provider in TEST_MODULE_DATA[namespace]['modules'][module]:
@@ -75,7 +77,9 @@ def setup_test_data(test_data=None, user_group_data=None, namespace_redirects=No
                             TEST_MODULE_DETAILS[str(TEST_MODULE_DETAILS_ITX)] = {
                                 'readme_content': Database.encode_blob(version_config.get('readme_content', default_readme)),
                                 'terraform_docs': Database.encode_blob(version_config.get('terraform_docs', default_terraform_docs)),
-                                'tfsec': Database.encode_blob(version_config.get('tfsec', default_tfsec))
+                                'tfsec': Database.encode_blob(version_config.get('tfsec', default_tfsec)),
+                                'terraform_modules': Database.encode_blob(version_config.get('terraform_modules', default_terraform_modules)),
+                                'terraform_version': Database.encode_blob(version_config.get('terraform_version', default_terraform_version)),
                             }
                             version_config['module_details_id'] = TEST_MODULE_DETAILS_ITX
 
@@ -87,7 +91,9 @@ def setup_test_data(test_data=None, user_group_data=None, namespace_redirects=No
                                     TEST_MODULE_DETAILS[str(TEST_MODULE_DETAILS_ITX)] = {
                                         'readme_content': Database.encode_blob(config.get('readme_content', default_readme)),
                                         'terraform_docs': Database.encode_blob(config.get('terraform_docs', default_terraform_docs)),
-                                        'tfsec': Database.encode_blob(config.get('tfsec', default_tfsec))
+                                        'tfsec': Database.encode_blob(config.get('tfsec', default_tfsec)),
+                                        'terraform_modules': Database.encode_blob(config.get('terraform_modules', default_terraform_modules)),
+                                        'terraform_version': Database.encode_blob(config.get('terraform_version', default_terraform_version)),
                                     }
                                     config['module_details_id'] = TEST_MODULE_DETAILS_ITX
 
@@ -172,7 +178,9 @@ def mock_module_details(request):
         global TEST_MODULE_DETAILS_ITX
         TEST_MODULE_DETAILS[str(TEST_MODULE_DETAILS_ITX)] = {
             'readme_content': None,
-            'terraform_docs': None
+            'terraform_docs': None,
+            'terraform_version': None,
+            'terraform_modules': None
         }
 
         module_details = terrareg.models.ModuleDetails(TEST_MODULE_DETAILS_ITX)

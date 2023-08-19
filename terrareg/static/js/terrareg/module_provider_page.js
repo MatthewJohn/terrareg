@@ -562,7 +562,7 @@ class ResourcesTab extends ModuleDetailsTab {
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
             // Populate link to resources graph
-            $('#resourceDependencyGraphLink').attr("href", this._graphUrl);
+            $('#resourceDependencyGraphLink').on("click", () => {window.location.href = this._graphUrl});
 
             let resourceTab = $("#module-tab-resources");
             let resourceTabTbody = resourceTab.find("tbody");

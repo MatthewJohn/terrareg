@@ -355,7 +355,9 @@ class Database():
             sqlalchemy.Column('terraform_docs', Database.medium_blob()),
             sqlalchemy.Column('tfsec', Database.medium_blob()),
             sqlalchemy.Column('infracost', Database.medium_blob()),
-            sqlalchemy.Column('terraform_graph', Database.medium_blob())
+            sqlalchemy.Column('terraform_graph', Database.medium_blob()),
+            sqlalchemy.Column('terraform_modules', Database.medium_blob()),
+            sqlalchemy.Column('terraform_version', Database.medium_blob())
         )
 
         self._module_version = sqlalchemy.Table(

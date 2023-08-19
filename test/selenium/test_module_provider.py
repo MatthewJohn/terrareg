@@ -2521,7 +2521,7 @@ various &lt; characters that could be escaped.</pre>
 
         # Ensure link to resource graph is displayed
         resource_graph_link = self.selenium_instance.find_element(By.ID, "resourceDependencyGraphLink")
-        assert resource_graph_link.text == "View a resource dependency graph"
+        assert resource_graph_link.text == "View resource dependency graph"
         resource_graph_link.click()
 
         self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url(expected_url))
