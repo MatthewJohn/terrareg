@@ -173,6 +173,20 @@ class Config:
         return self.convert_boolean(os.environ.get("ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION", "False"))
 
     @property
+    def REDIRECT_DELETION_LOOKBACK_DAYS(self):
+        """
+        Number of days' worth of analytics data to use to determine if a redirect is still in use.
+
+        For example, if set to 1, if a Terraform module was accessed via a redirect in the past 1 day, it will require
+        forceful deletion to delete (unless a more recent download of the module by the same analytics token no longer uses the redirect).
+
+        Value of `0` disables the lookback and redirects can always be removed without force
+
+        Value of `-1` will not limit the lookback period and all analytics will be used.
+        """
+        return int(os.environ.get('REDIRECT_DELETION_LOOKBACK_DAYS', "-1"))
+
+    @property
     def DEBUG(self):
         """Whether flask and sqlalchemy is setup in debug mode."""
         return self.convert_boolean(os.environ.get('DEBUG', 'False'))

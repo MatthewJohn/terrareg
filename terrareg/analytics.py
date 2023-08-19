@@ -300,6 +300,14 @@ class AnalyticsEngine:
             id_subquery.c.namespace_name.in_(namespace_names)
         )
 
+        # If lookback days has been configured, limit the query
+        # to timestamps more recent than the cutoff
+        lookback_days = Config().REDIRECT_DELETION_LOOKBACK_DAYS
+        if lookback_days >= 0:
+            filter_query = filter_query.where(
+                id_subquery.c.timestamp>=(datetime.datetime.now() - datetime.timedelta(days=lookback_days))
+            )
+
         with db.get_connection() as conn:
             res = conn.execute(filter_query).all()
 

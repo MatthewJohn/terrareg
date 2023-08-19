@@ -104,7 +104,8 @@ class TestConfig:
     @pytest.mark.parametrize('config_name', [
         'ADMIN_SESSION_EXPIRY_MINS',
         'LISTEN_PORT',
-        'GIT_CLONE_TIMEOUT'
+        'GIT_CLONE_TIMEOUT',
+        'REDIRECT_DELETION_LOOKBACK_DAYS',
     ])
     def test_integer_configs(self, config_name):
         """Test integer configs to ensure they are overriden with environment variables."""
