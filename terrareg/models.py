@@ -2718,7 +2718,7 @@ module "{self.module_version.module_provider.module.name}" {{
             for module in root_modules
         }
         recursive_modules = {}
-        if 'Modules' in terraform_modules_data:
+        if isinstance(terraform_modules_data, dict) and 'Modules' in terraform_modules_data:
             for module in terraform_modules_data['Modules']:
                 print(module)
                 # If key exists and is not empty (root module)
