@@ -174,6 +174,15 @@
                     This value will be converted to the expected git tag for a module version.<br />
                     The <code>{version}</code> template will be replaced by the actual module version.<br />
                     For example, using <code>v{version}</code> will translate to a git tag 'v1.1.1' for module version '1.1.1'
+                    <br />
+                    If the git tagging format in use does not contain a full semantic version, use placeholders <code>{major}</code>, <code>{minor}</code> and <code>{patch}</code><br />
+                    to indicate which values are present in the tag - any missing values will be assumed to be '0'.<br />
+                    For example a git tag format of <code>v{major}.{minor}</code> would interpret a tag <code>v1.2</code> as a module version <code>1.2.0</code>,<br />
+                    where as a git tag format <code>v{major}.{patch}</code> would generate a version <code>v1.0.2</code>.<br />
+                    <br />
+                    Note that all versions used in the registry are full semantic versions, meaning that when indexing is performed through the UI or API,<br />
+                    the full semantic version must be provided - the supplied git tag format will be used to translate the semantic version into<br />
+                    a git tag to processed.
                 </div>
 
                 <div class="field">
