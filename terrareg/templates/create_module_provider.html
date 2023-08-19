@@ -172,7 +172,7 @@
                         <input required placeholder="v{version}" class="input" type="text" id="create-module-git-tag-format" value="v{version}">
                     </div>
                     This value will be converted to the expected git tag for a module version.<br />
-                    The <code>{version}</code> template will be replaced by the actual module version.<br />
+                    The <code>{version}</code> placeholder will be used to generated the git tag when translating the module version to a git tag.<br />
                     For example, using <code>v{version}</code> will translate to a git tag 'v1.1.1' for module version '1.1.1'
                     <br />
                     If the git tagging format in use does not contain a full semantic version, use placeholders <code>{major}</code>, <code>{minor}</code> and <code>{patch}</code><br />
@@ -180,13 +180,7 @@
                     For example a git tag format of <code>v{major}.{minor}</code> would interpret a tag <code>v1.2</code> as a module version <code>1.2.0</code>,<br />
                     where as a git tag format <code>v{major}.{patch}</code> would generate a version <code>v1.0.2</code>.<br />
                     <br />
-                    Note that all versions used in the registry are full semantic versions, meaning that when indexing is performed through the UI or API,<br />
-                    the full semantic version must be provided - the supplied git tag format will be used to translate the semantic version into<br />
-                    a git tag to processed.<br />
-                    Using formats without the <code>{version}</code> placeholder may result in overlapping module versions.<br />
-                    However, if it necessary it is strongly recommended to prefer <code>major</code>, <code>minor</code> over just <code>patch</code>.<br />
-                    If only <code>v{patch}</code> is used, whilst versions 0.0.1 and 0.0.2 would be different versions, 0.0.1, 0.1.1 and 1.0.1 would<br />
-                    all reference the same git tag. This would not be an issue whilst using the git hooks, but could lead to confusing module versions if manually indexed (in the UI or via API).
+                    Note that if the <code>{version}</code> placeholder is not used, the module version import API must be provided with the <code>git_tag</code> argument and indexing with <code>version</code> argument is disabled.
                 </div>
 
                 <div class="field">
