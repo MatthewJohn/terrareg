@@ -18,7 +18,7 @@ import terrareg.config
 import terrareg.audit
 import terrareg.audit_action
 from terrareg.errors import (
-    DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
+    DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
     InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError, RepositoryUrlContainsInvalidTemplateError,
     RepositoryUrlDoesNotContainValidSchemeError,
@@ -865,6 +865,16 @@ class Namespace(object):
         """Return display name for namespace"""
         return self._get_db_row()["display_name"]
 
+    def __eq__(self, __o):
+        """Check if two namespaces are the same"""
+        if isinstance(__o, self.__class__):
+            return self.pk == __o.pk
+        return super(Namespace, self).__eq__(__o)
+
+    def __hash__(self):
+        """Return hashed method of pk"""
+        return hash(self.pk)
+
     def __init__(self, name: str):
         """Validate name and store member variables"""
         self._name = name
@@ -1014,6 +1024,11 @@ class Module(object):
     def base_directory(self):
         """Return base directory."""
         return safe_join_paths(self._namespace.base_directory, self._name)
+
+    @property
+    def namespace(self):
+        """Return namespace of module"""
+        return self._namespace
 
     def __init__(self, namespace: Namespace, name: str):
         """Validate name and store member variables."""
@@ -1485,6 +1500,68 @@ class ProviderLogo:
         return self._details['link'] if self._details is not None else None
 
 
+class ModuleProviderRedirect(object):
+    """Redirect objects for providing redirects after a module provider name, provider or namespace is changed."""
+
+    @classmethod
+    def create(cls, module_provider, original_namespace, original_name, original_provider):
+        """Create instance of object in database."""
+        # Create module provider
+        db = Database.get()
+        module_provider_redirect_insert = db.module_provider_redirect.insert().values(
+            module_provider_id=module_provider.pk,
+            namespace_id=original_namespace.pk,
+            module=original_name,
+            provider=original_provider
+        )
+        with db.get_connection() as conn:
+            conn.execute(module_provider_redirect_insert)
+
+    @classmethod
+    def get_module_provider_by_original_details(cls, namespace, module, provider, case_insensitive=False):
+        """Get namespace redirect by name"""
+        db = Database.get()
+        # Obtain targetted module provider and it's namespace details
+        # using ID from module provider redirect table,
+        # filtering by original namespace ID, module and provider
+        select = sqlalchemy.select(
+            db.module_provider.c.module,
+            db.module_provider.c.provider,
+            db.namespace.c.namespace
+        ).select_from(
+            db.module_provider_redirect
+        ).join(
+            db.module_provider,
+            db.module_provider_redirect.c.module_provider_id==db.module_provider.c.id
+        ).join(
+            db.namespace,
+            db.module_provider.c.namespace_id==db.namespace.c.id
+        ).where(
+            db.module_provider_redirect.c.namespace_id==namespace.pk
+        )
+
+        if case_insensitive:
+            select = select.where(
+                db.module_provider_redirect.c.module==module,
+                db.module_provider_redirect.c.provider==provider
+            )
+        else:
+            select = select.where(
+                db.module_provider_redirect.c.module.like(module),
+                db.module_provider_redirect.c.provider.like(provider),
+            )
+
+        with db.get_connection() as conn:
+            res = conn.execute(select)
+            row = res.fetchone()
+        if not row:
+            return None
+
+        target_namespace = Namespace.get(name=row['namespace'])
+        target_module = Module(namespace=target_namespace, name=row['module'])
+        return ModuleProvider(module=target_module, name=row['provider'])
+
+
 class ModuleProvider(object):
 
     @staticmethod
@@ -1562,7 +1639,7 @@ class ModuleProvider(object):
         return obj
 
     @classmethod
-    def get(cls, module, name, create=False):
+    def get(cls, module, name, create=False, include_redirect=True):
         """Create object and ensure the object exists."""
         obj = cls(module=module, name=name)
 
@@ -1576,7 +1653,17 @@ class ModuleProvider(object):
 
                 return obj
 
-            # If not creating, return None
+            elif include_redirect:
+                # If not creating, attempt to find redirected name
+                redirect_module_provider = ModuleProviderRedirect.get_module_provider_by_original_details(
+                    namespace=module.namespace,
+                    module=module.name,
+                    provider=name,
+                    case_insensitive=False
+                )
+                if redirect_module_provider:
+                    return redirect_module_provider
+
             return None
 
         # Otherwise, return object
@@ -1662,6 +1749,45 @@ class ModuleProvider(object):
 
         # Otherwise, return the path
         return row_value
+
+    def update_name(self, namespace, module_name, provider_name):
+        """Update namespace, module name and/or provider of module"""
+
+        # Ensure a module does not exist with the new name/provider
+        duplicate_provider = ModuleProvider.get(module=Module(namespace=namespace, name=module_name), name=provider_name)
+        if duplicate_provider:
+            raise DuplicateModuleProviderError("A module/provider already exists with the same name in the namespace")
+
+        # Create audit events for the modifications
+        for action, old_value, new_value in [
+                [terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_NAMESPACE, self.module.namespace.name, namespace.name],
+                [terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_MODULE_NAME, self.module.name, module_name],
+                [terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_PROVIDER_NAME, self.name, provider_name]]:
+            if old_value != new_value:
+                terrareg.audit.AuditEvent.create_audit_event(
+                    action=action,
+                    object_type=self.__class__.__name__,
+                    object_id=self.id,
+                    old_value=old_value, new_value=new_value
+                )
+
+        # Create redirect to new name
+        ModuleProviderRedirect.create(
+            module_provider=self,
+            original_namespace=self.module.namespace,
+            original_name=self.module.name,
+            original_provider=self.name
+        )
+
+        self.update_attributes(
+            namespace_id=namespace.pk,
+            module=module_name,
+            provider=provider_name,
+        )
+        new_module = Module(namespace=namespace, name=module_name)
+        new_module_provider = ModuleProvider.get(module=new_module, name=provider_name)
+
+        return new_module_provider
 
     def get_version_from_tag_ref(self, tag_ref):
         """Match tag ref against version number and return actual version number."""

@@ -1,4 +1,6 @@
 
+const router = new Navigo("/");
+
 class TabFactory {
     constructor() {
         this._tabs = [];
@@ -764,6 +766,26 @@ class SettingsTab extends ModuleDetailsTab {
             browseUrlTemplate.attr('placeholder', `https://github.com/${this._moduleDetails.namespace}/${this._moduleDetails.name}-${this._moduleDetails.provider}/tree/{tag}/{path}`);
             browseUrlTemplate.val(this._moduleDetails.repo_browse_url_template);
 
+            // Obtain list of namespaces to move to
+            isLoggedIn().then((auth) => {
+                $.get('/v1/terrareg/namespaces').then((data) => {
+                    data.forEach((namespace) => {
+                        if (auth.site_admin || auth.namespace_permissions[namespace.name] == 'FULL') {
+                            $('#settings-move-namespace').append($(`
+                                <option value="${namespace.name}"
+                                        ${namespace.name == this._moduleDetails.namespace ? "selected" : ""}>
+                                    ${namespace.display_name || namespace.name}
+                                </option>
+                            `));
+                        }
+                    });
+                });
+            });
+
+            // Populate name and provider form values
+            $('#settings-move-module').val(this._moduleDetails.name);
+            $('#settings-move-provider').val(this._moduleDetails.provider);
+
             // Bind module provider delete button
             let moduleProviderDeleteButton = $('#module-provider-delete-button');
             moduleProviderDeleteButton.bind('click', () => {
@@ -773,6 +795,12 @@ class SettingsTab extends ModuleDetailsTab {
             // Bind settings form submission with function
             $('#settings-form').submit(() => {
                 updateModuleProviderSettings(this._moduleDetails);
+                return false;
+            });
+
+            // Bind move form submission with function
+            $('#settings-move-form').submit(() => {
+                moveModuleProvider(this._moduleDetails);
                 return false;
             });
 
@@ -1421,29 +1449,47 @@ ${outputTf}
  * Setup router and call setup page depending on the page/module type
  */
 function renderPage() {
-    const router = new Navigo("/");
-
     const baseRoute = "/modules/:namespace/:module/:provider";
 
     // Base module provider route
-    router.on(baseRoute, function ({ data }) {
-        setupBasePage(data);
-        setupRootModulePage(data);
+    router.on({
+        [baseRoute]: {
+            as: "rootModuleProvider",
+            uses: function ({ data }) {
+                setupBasePage(data);
+                setupRootModulePage(data);
+            }
+        }
     });
     // Base module version route
-    router.on(baseRoute + "/:version", function ({ data }) {
-        setupBasePage(data);
-        setupRootModulePage(data);
+    router.on({
+        [`${baseRoute}/:version`]: {
+            as: "rootModuleVersion",
+            uses: function ({ data }) {
+                setupBasePage(data);
+                setupRootModulePage(data);
+            }
+        }
     });
     // Submodule route
-    router.on(baseRoute + "/:version/submodule/(.*)", ({ data }) => {
-        setupBasePage(data);
-        setupSubmodulePage(data);
+    router.on({
+        [`${baseRoute}/:version/submodule/(?<submodulePath>.*)`]:{
+            as: "submodulePage",
+            uses: ({ data }) => {
+                setupBasePage(data);
+                setupSubmodulePage(data);
+            }
+        }
     });
     // Example route
-    router.on(baseRoute + "/:version/example/(.*)", ({ data }) => {
-        setupBasePage(data);
-        setupExamplePage(data);
+    router.on({
+        [`${baseRoute}/:version/example/(?<submodulePath>.*)`]:{
+            as: "examplePage",
+            uses: ({ data }) => {
+                setupBasePage(data);
+                setupExamplePage(data);
+            }
+        }
     });
 
     router.resolve();
@@ -2142,6 +2188,51 @@ function updateModuleProviderSettings(moduleDetails) {
     return false;
 }
 
+/*
+ * Handle form submission for moving/renaming module provider
+ */
+function moveModuleProvider(moduleDetails) {
+    $('#settings-move-error').addClass('default-hidden');
+
+    // Check user has confirmed the move
+    if (!$('#settings-move-confirm').is(':checked')) {
+        $('#settings-move-error').html('The move action must be confirmed, by checking the confirm checkbox.');
+        $('#settings-move-error').removeClass('default-hidden');
+        $(window).scrollTop($('#settings-move-error').offset().top);
+        return;
+    }
+
+    let new_namespace = $('select[id=settings-move-namespace] option').filter(':selected').val();
+    let new_module = $('#settings-move-module').val();
+    let new_provider = $('#settings-move-provider').val();
+    $.post({
+        url: `/v1/terrareg/modules/${moduleDetails.module_provider_id}/settings`,
+        data: JSON.stringify({
+            namespace: new_namespace,
+            module: new_module,
+            provider: new_provider,
+            csrf_token: $('#settings-move-csrf-token').val()
+        }),
+        contentType: 'application/json'
+    }).done(() => {
+        // Redirect to new module provider
+        window.location.href = `/modules/${new_namespace}/${new_module}/${new_provider}`;
+    }).fail((res) => {
+        if (res.status == 401) {
+            $('#settings-move-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
+        } else if (res.responseJSON && res.responseJSON.message) {
+            $('#settings-move-error').html(res.responseJSON.message);
+        } else {
+            $('#settings-move-error').html('An unexpected error occurred');
+        }
+        $('#settings-move-error').removeClass('default-hidden');
+        $(window).scrollTop($('#settings-move-error').offset().top);
+    });
+
+    // Return false to present default action
+    return false;
+}
+
 function capitaliseWord(string) {
     return string[0].toUpperCase() + string.slice(1).toLowerCase();
   }
@@ -2231,6 +2322,58 @@ function setPageTitle(id) {
     document.title = `${id} - Terrareg`;
 }
 
+/*
+ * Get redirect URL if URL does not match actual
+ * module provider details, meaning it's
+ * obtained details for a redirected module
+ *
+ * @param data Route data
+ * @param moduleDetails Module details for module
+ *
+ * @returns null if no redirect or string of redirect URL
+ */
+function getRedirectUrl(data, moduleDetails) {
+    // Check for any redirects by comparing
+    // moduleDetails and URL attributes
+    if (data.namespace !== moduleDetails.namespace ||
+        data.module !== moduleDetails.name ||
+        data.provider !== moduleDetails.provider
+    ) {
+        // Generate redirect
+        let currentRoutes = router.lastResolved();
+        if (currentRoutes.length) {
+            let currentRoute = currentRoutes[0];
+
+            let redirectData = Object.assign({}, data);
+            redirectData.namespace = moduleDetails.namespace;
+            redirectData.provider = moduleDetails.provider;
+            redirectData.module = moduleDetails.name;
+            if (redirectData.undefined) {
+                redirectData.submodulePath = redirectData.undefined
+            }
+            
+            // Generate new URL using current route data,
+            // correcting the namespace, module and provider
+            let newUrl = router.generate(
+                currentRoute.route.name,
+                redirectData,
+                {includeRoot: true, replaceRegexGroups: true}
+            );
+
+            // Copy query string
+            if (currentRoute.queryString)
+                newUrl += `?${currentRoute.queryString}`;
+
+            // Copy hash
+            if (currentRoute.hashString)
+                newUrl += `#${currentRoute.hashString}`;
+
+            // Return new redirect URL
+            return newUrl;
+        }
+    }
+    return null;
+}
 
 /*
  * Setup common elements of the page, shared between all types
@@ -2243,6 +2386,13 @@ async function setupBasePage(data) {
     let id = getCurrentObjectId(data);
 
     let moduleDetails = await getModuleDetails(id);
+
+    let redirectUrl = getRedirectUrl(data, moduleDetails);
+    if (redirectUrl) {
+        window.location.href = redirectUrl;
+        // Return early to stop rendering the page
+        return;
+    }
 
     // If current version is not available or there are no
     // versions, set warning and exit

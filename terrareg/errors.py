@@ -214,3 +214,9 @@ class DuplicateNamespaceDisplayNameError(TerraregError):
     """A namespace already exists with this display name"""
 
     pass
+
+
+class DuplicateModuleProviderError(TerraregError):
+    """A module/provider already exists with the same name"""
+
+    pass
