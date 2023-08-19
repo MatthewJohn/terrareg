@@ -620,7 +620,7 @@ class NamespaceRedirect(object):
         db = Database.get()
         # Get namespace table namespace column,
         # joined from namespace redirect table,
-        # using 
+        # using
         select = sqlalchemy.select(
             db.namespace.c.namespace
         ).select_from(
@@ -1412,6 +1412,32 @@ class ModuleDetails:
 
         return cytoscape_json
 
+    @property
+    def terraform_version(self):
+        """Return terraform version output"""
+        db_row = self._get_db_row()
+        if db_row and db_row["terraform_version"]:
+            data = Database.decode_blob(db_row["terraform_version"])
+            if data:
+                try:
+                    return json.loads(data)
+                except:
+                    pass
+        return None
+
+    @property
+    def terraform_modules(self):
+        """Return terraform modules output"""
+        db_row = self._get_db_row()
+        if db_row and db_row["terraform_modules"]:
+            data = Database.decode_blob(db_row["terraform_modules"])
+            if data:
+                try:
+                    return json.loads(data)
+                except:
+                    pass
+        return None
+
     def __init__(self, id: int):
         """Store member variables."""
         self._id = id
@@ -1441,7 +1467,8 @@ class ModuleDetails:
         """Update DB row."""
         # Check for any blob and encode the values
         for kwarg in kwargs:
-            if kwarg in ['readme_content', 'terraform_docs', 'tfsec', 'infracost', 'terraform_graph']:
+            if kwarg in ['readme_content', 'terraform_docs', 'tfsec', 'infracost',
+                         'terraform_graph', 'terraform_modules', 'terraform_version']:
                 kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
 
         db = Database.get()
@@ -2528,7 +2555,7 @@ class TerraformSpecsObject(object):
             return None
 
         for result in self._tfsec_results:
-            
+
             # Only return failed results
             if (TfsecResultStatus(
                         result.get('status', TfsecResultStatus.UNSPECIFIED.value)
@@ -2674,9 +2701,121 @@ module "{self.module_version.module_provider.module.name}" {{
 
         return depedencies
 
-    def get_terraform_modules(self):
+    def get_terraform_modules(self, recursive=False):
         """Obtain module calls."""
-        return self.get_module_specs().get('modules', [])
+        root_modules = self.get_module_specs().get('modules', [])
+
+        # For the official API, only root modules should be returned
+        if not recursive:
+            return root_modules
+
+        # Obtain terraform modules JSON content to populate recursive modules
+        terraform_modules_data = {}
+
+        module_details = self.module_details
+        if module_details:
+            terraform_modules_data = module_details.terraform_modules
+
+        pre_existing_modules = {
+            module.get("name"): module
+            for module in root_modules
+        }
+        recursive_modules = {}
+        if isinstance(terraform_modules_data, dict) and 'Modules' in terraform_modules_data:
+            for module in terraform_modules_data['Modules']:
+                # If key exists and is not empty (root module)
+                if (key := module.get("Key")) and key != "":
+                    if key not in pre_existing_modules:
+                        recursive_modules[key] = module
+
+        def remove_superfluous_directory_changes_in_path(path):
+            """
+            Convert path, removing superfluous changes.
+            E.g. '.././test/../test2/./' -> '../test2'
+            """
+            dir_names_found = 0
+            keep_parts = []
+            for part in path.split('/'):
+                # Skip empty path parts
+                if not part:
+                    continue
+                elif part == '.':
+                    # If path part is current directly, skip it
+                    continue
+                elif part == '..':
+                    # If a parent directory is found...
+                    if dir_names_found:
+                        # If a directory is already being called,
+                        # remove previous directory from part of path to keep
+                        # and skip this one
+                        keep_parts.pop()
+                        dir_names_found -= 1
+                        continue
+                else:
+                    # Otherwise, if a real directory is found,
+                    # mark as having found a real directory
+                    dir_names_found += 1
+                # Add directory name (or parent directory move, if kept)
+                keep_parts.append(part)
+
+            return "/".join(keep_parts)
+
+        def add_child_module(key, module_data, parent_data):
+            source_path = module_data.get("Source")
+            if parent_data:
+                # Handle parent paths that are local paths
+                parent_path = parent_data.get("source")
+                if parent_path.startswith("./") or parent_path.startswith("../"):
+                    # Join paths together to generate child source path
+                    source_path = remove_superfluous_directory_changes_in_path(
+                        os.path.join(parent_path, source_path))
+                    # Prepend with relative path
+                    source_path = './' + source_path
+                else:
+                    # Otherwise, handle remote paths...
+                    # Remove any query string params (e.g. github.com/example/test//submodule?ref=v1.1.1)
+                    parent_query_string_split = parent_path.split('?')
+
+                    # Split source and sub-directory (e.g. github.com/example/test//submodule/path)
+                    parent_path_split = parent_query_string_split[0].split("//")
+
+                    # Get the subpath, defaulting to root directory
+                    parent_sub_path = parent_path_split[1] if len(parent_path_split) == 2 else "./"
+                    # Add leading dot if not present
+                    if not parent_sub_path.startswith("/"):
+                        parent_sub_path = f"/{parent_sub_path}"
+
+                    # Join child path and parent path and remove superfluous directory changes
+                    source_path = remove_superfluous_directory_changes_in_path(
+                        os.path.join(parent_sub_path, source_path))
+
+                    # Nest child path in full URL
+                    source_path = f"{parent_path_split[0]}//{source_path}"
+                    # Add query string paramters, if present
+                    if len(parent_query_string_split) == 2:
+                        source_path = f"{source_path}?{parent_query_string_split[1]}"
+
+            pre_existing_modules[key] = {
+                'name': key,
+                'source': source_path,
+                'version': parent_data.get("version") if parent_data else None,
+                'description': parent_data.get("description") if parent_data else None
+            }
+
+        # Iterate through keys, sorted, so that parents are processed before
+        # child modules
+        for recursive_module_key in sorted(recursive_modules.keys()):
+            # if module is a child of another module, lookup parents source
+            if '.' in recursive_module_key:
+                parent_key = '.'.join(recursive_module_key.split('.')[:-1])
+
+                # Lookup parent in main module data
+                parent = pre_existing_modules[parent_key] if parent_key in pre_existing_modules else None
+                add_child_module(recursive_module_key, recursive_modules[recursive_module_key], parent)
+
+
+        # Return all values from module
+        return [v for v in pre_existing_modules.values()]
 
     def get_terraform_provider_dependencies(self):
         """Obtain module dependencies."""
@@ -2933,7 +3072,7 @@ class ModuleVersion(TerraformSpecsObject):
                     elif input_variable['type'].startswith('map('):
                         converted_type = 'text'
                         quote_value = False
-                    
+
                     variables.append({
                         'name': input_variable['name'],
                         'type': converted_type,
@@ -3290,7 +3429,7 @@ class ModuleVersion(TerraformSpecsObject):
 
         # Update the root API specs to include "modules", as this is not part of the official
         # API spec
-        api_details["root"]["modules"] = self.get_terraform_modules()
+        api_details["root"]["modules"] = self.get_terraform_modules(recursive=True)
 
         source_browse_url = self.get_source_browse_url()
         tfsec_failures = self.get_tfsec_failures()
