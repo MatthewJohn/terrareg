@@ -123,5 +123,6 @@ class AnalyticsIntegrationTest(TerraregIntegrationTest):
             for analytics_token, auth_token, terraform_version in download_data[module_key]:
                 print('recording: ', namespace, module, provider, version, analytics_token, auth_token, terraform_version)
                 AnalyticsEngine.record_module_version_download(
+                    namespace_name=namespace, module_name=module, provider_name=provider,
                     module_version=module_version, terraform_version=terraform_version,
                     analytics_token=analytics_token, user_agent=None, auth_token=auth_token)

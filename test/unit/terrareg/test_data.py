@@ -149,6 +149,7 @@ test_data_full = {
         'modules': {
             'fullypopulated': {'testprovider': {
                 'id': 26,
+                'latest_version': '1.5.0',
                 'repo_base_url_template': 'https://mp-base-url.com/{namespace}/{module}-{provider}',
                 'repo_browse_url_template': 'https://mp-browse-url.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix',
                 'repo_clone_url_template': 'ssh://mp-clone-url.com/{namespace}/{module}-{provider}',
@@ -179,6 +180,50 @@ test_data_full = {
                             }
 
                         ]),
+                        'terraform_modules': json.dumps({
+                            "Modules": [
+                                {"Key": "", "Source": "", "Dir": "."},
+                                # Local module call
+                                {
+                                    "Key": "local-path-module",
+                                    "Source": "./modules/local-module",
+                                    "Dir": "./modules/local-module"
+                                },
+                                # Child module call from local module
+                                {
+                                    "Key": "local-path-module.local-child-module",
+                                    "Source": "../second-local",
+                                    "Dir": "./modules/second-local"
+                                },
+                                # Hashicorp registry module call
+                                {
+                                    "Key": "hashicorp-registry-module",
+                                    "Source": "registry.terraform.io/matthewjohn/test-module/null",
+                                    "Version": "1.5.0",
+                                    "Dir": ".terraform/modules/hashicorp-registry-module"
+                                },
+                                # Child module of hashicorp registry call
+                                {
+                                    "Key": "hashicorp-registry-module.hashicorp-sub-module",
+                                    "Source": "./modules/hashi-submodule",
+                                    "Dir": "./modules/hashi-submodule"
+                                },
+                                # Alternative registry call
+                                {
+                                    "Key": "local-registry-module",
+                                    "Source": "my-registry.example.com/matthewjohn/test-module/null",
+                                    "Version": "2.1.3",
+                                    "Dir": ".terraform/modules/local-registry-module"
+                                },
+                                # Child module of alternative registry call
+                                {
+                                    "Key": "local-registry-module.alternative-sub-module",
+                                    "Source": "./modules/alternative-submodule",
+                                    "Dir": "./modules/alternative-submodule"
+                                },
+                            ]
+                        }),
+                        'terraform_version': '',
                         'terraform_docs': json.dumps({
                             'header': '',
                             'footer': '',

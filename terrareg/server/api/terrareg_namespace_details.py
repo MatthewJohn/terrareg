@@ -15,6 +15,9 @@ class ApiTerraregNamespaceDetails(ErrorCatchingResource):
         # Limit post methods to users with FULL namespace permissions
         "post": [terrareg.auth_wrapper.auth_wrapper('check_namespace_access',
             terrareg.user_group_namespace_permission_type.UserGroupNamespacePermissionType.FULL,
+            request_kwarg_map={'namespace': 'namespace'})],
+        "delete": [terrareg.auth_wrapper.auth_wrapper('check_namespace_access',
+            terrareg.user_group_namespace_permission_type.UserGroupNamespacePermissionType.FULL,
             request_kwarg_map={'namespace': 'namespace'})]
     }
 
@@ -47,3 +50,22 @@ class ApiTerraregNamespaceDetails(ErrorCatchingResource):
             "view_href": namespace.get_view_url(),
             "display_name": namespace.display_name
         }
+
+    def _delete(self, namespace):
+        """
+        Delete namespace
+
+        JSON body:
+         * csrf_token - CSRF token required for sessioned-based authentication
+        """
+        namespace = terrareg.models.Namespace.get(namespace)
+        if namespace is None:
+            return self._get_404_response()
+
+        csrf_token = request.json.get('csrf_token')
+
+        terrareg.csrf.check_csrf_token(csrf_token)
+
+        namespace.delete()
+
+        return {}, 200

@@ -321,7 +321,7 @@
         <!-- Resources tab -->
         <div id="module-tab-resources" class="module-tabs default-hidden">
 
-            <a id="resourceDependencyGraphLink" href="#">View a resource dependency graph</a>
+            <button class="button is-info is-small" id="resourceDependencyGraphLink">View resource dependency graph</button>
 
             <table class="table module-provider-tab-content-table">
                 <thead>
@@ -540,27 +540,112 @@
                     </div>
                 </form>
             </div>
-            <div id="module-version-delete-container" class="field is-vertical default-hidden">
-                <div class="control">
-                    <button id="module-version-delete-button" class="button is-link is-danger"></button>
-                </div>
-                <br />
-                <div id="confirm-delete-module-version-div" class="default-hidden">
-                    Type the version number of the current version to be deleted (e.g. 1.0.0) and click delete again:<br />
-                    <input autocomplete="off" id="confirm-delete-module-version" type="text" />
+            <div class="card">
+                <div class="card-content" style="background: #FFF9ED">
+                    <h2 class="subtitle is-h2">Rename/Move</h2>
+                    <div id="settings-move-error" class="notification is-danger default-hidden">
+                    </div>
+
+                    <form id="settings-move-form">
+                        <input type="hidden" id="settings-move-csrf-token" value="{{ csrf_token }}" />
+                        <div class="field">
+                            <label class="label">Namespace</label>
+                            <div class="control select">
+                                <select id="settings-move-namespace">
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Module Name</label>
+                            <div class="control">
+                                <input required id="settings-move-module" class="input" type="text" placeholder="my-module">
+                            </div>
+                        </div>
+        
+                        <div class="field">
+                            <label class="label">Provider</label>
+                            <div class="control">
+                                <input required id="settings-move-provider" class="input" type="text" placeholder="e.g. aws, null...">
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Confirm</label>
+                            <div class="control">
+                                <input class="checkbox" type="checkbox" value="true" id="settings-move-confirm" />
+                            </div>
+                            <span>
+                                Confirm that the module will be renamed/moved.<br />
+                                The module will initially still be accessible using the old URL,
+                                but any Terraform code using the module (and any saved links)
+                                should be updated as soon as possible.<br />
+                                The temporary redirect using the old URL will cease to work if a new module is created with a matching details (namespace, name and provider).
+                            </span>
+                        </div>
+
+                        <div class="field">
+                            <div class="control">
+                                <button id="settings-move-submit" class="button is-link">Update</button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
+            <br />
 
-            <div class="field is-vertical">
-                <script>
-                </script>
-                <div class="control">
-                    <button id="module-provider-delete-button" class="button is-link is-danger">Delete Module Provider</button>
+            <div id="settingsRedirectCard" class="card default-hidden">
+                <div class="card-content" style="background-color: #FFFFFF">
+
+                    <h2 class="subtitle is-h2">Redirects</h2>
+
+                    <table id="redirects-table" class="table module-provider-tab-content-table">
+                        <thead>
+                            <tr>
+                                <th>Namespace</th>
+                                <th>Module Name</th>
+                                <th>Module Provider</th>
+                                <th>Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody id="settingsRedirectTable">
+                        </tbody>
+                    </table>
+
+                    <div id="settings-redirect-error" class="notification is-danger default-hidden">
+                    </div>
                 </div>
-                <br />
-                <div id="confirm-delete-module-provider-div" class="default-hidden">
-                    Type the 'id' of the module provider (e.g. namespace/module/provider) and click delete again:<br />
-                    <input autocomplete="off" id="confirm-delete-module-provider" type="text" />
+            </div>
+            <br />
+
+            <div class="card">
+                <div class="card-content" style="background-color: #FFEDED">
+
+                    <h2 class="subtitle is-h2">Delete</h2>
+
+                    <div id="module-version-delete-container" class="field is-vertical default-hidden">
+                        <div class="control">
+                            <button id="module-version-delete-button" class="button is-link is-danger"></button>
+                        </div>
+                        <br />
+                        <div id="confirm-delete-module-version-div" class="default-hidden">
+                            Type the version number of the current version to be deleted (e.g. 1.0.0) and click delete again:<br />
+                            <input autocomplete="off" id="confirm-delete-module-version" type="text" />
+                        </div>
+                    </div>
+
+                    <div class="field is-vertical">
+                        <script>
+                        </script>
+                        <div class="control">
+                            <button id="module-provider-delete-button" class="button is-link is-danger">Delete Module Provider</button>
+                        </div>
+                        <br />
+                        <div id="confirm-delete-module-provider-div" class="default-hidden">
+                            Type the 'id' of the module provider (e.g. namespace/module/provider) and click delete again:<br />
+                            <input autocomplete="off" id="confirm-delete-module-provider" type="text" />
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
