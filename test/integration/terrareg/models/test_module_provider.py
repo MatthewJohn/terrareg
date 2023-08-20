@@ -767,7 +767,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         ("moduleextraction", "torename", "test"),
 
         # When changing all parameters
-        ("moduleextraction", "duplicate", "duplicate")
+        ("moduleextraction", "duplicate", "duplicate"),
     ])
     def test_create_override_redirect(self, new_namespace_name, new_module_name, new_provider_name):
         """Test creating module provider that clashes with redirect"""
@@ -783,19 +783,16 @@ class TestModuleProvider(TerraregIntegrationTest):
             # Update name of original module provider
             module_provider.update_name(namespace=Namespace.get(new_namespace_name), module_name=new_module_name, provider_name=new_provider_name)
 
-            # Create provider overriding original
-            duplicate_module_provider = ModuleProvider.create(module=Module(namespace=Namespace.get(original_namespace_name), name=original_module_name), name=original_provider_name)
-            duplicate_module_provider_pk = duplicate_module_provider.pk
-
-            assert duplicate_module_provider_pk != original_module_provider_pk
-
+            # Attempt to create provider overriding original
+            with pytest.raises(terrareg.errors.DuplicateModuleProviderError):
+                ModuleProvider.create(module=Module(namespace=Namespace.get(original_namespace_name), name=original_module_name), name=original_provider_name)
 
             # Obtain old module provider using new name
             test_old_module_provider = ModuleProvider.get(module=Module(namespace=Namespace.get(new_namespace_name), name=new_module_name), name=new_provider_name)
             assert test_old_module_provider.pk == original_module_provider_pk
 
             test_new_module_provider = ModuleProvider.get(module=Module(namespace=Namespace.get(original_namespace_name), name=original_module_name), name=original_provider_name)
-            assert test_new_module_provider.pk == duplicate_module_provider_pk
+            assert test_new_module_provider.pk == original_module_provider_pk
 
         finally:
             # Attempt to delete original

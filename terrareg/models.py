@@ -1870,6 +1870,17 @@ class ModuleProvider(object):
     @classmethod
     def create(cls, module, name):
         """Create instance of object in database."""
+        # Validate module provider name
+        cls._validate_name(name)
+
+        # Ensure that there is not already a module provider that exists
+        duplicate_provider = ModuleProvider.get(module=module, name=name, include_redirect=True)
+        if duplicate_provider:
+            # Check if duplicate is a redirect
+            if duplicate_provider.name != name or duplicate_provider.module.name != module.name or duplicate_provider.module.namespace.name != module.namespace.name:
+                raise DuplicateModuleProviderError("A module provider redirect exists with the same name in the namespace")
+            raise DuplicateModuleProviderError("A duplicate module provider exists with the same name in the namespace")
+
         # Create module provider
         db = Database.get()
         module_provider_insert = db.module_provider.insert().values(
@@ -2006,6 +2017,11 @@ class ModuleProvider(object):
 
     def update_name(self, namespace, module_name, provider_name):
         """Update namespace, module name and/or provider of module"""
+        # Validate provider name
+        Module._validate_name(module_name)
+
+        # Validate new name
+        self._validate_name(provider_name)
 
         # Ensure a module does not exist with the new name/provider
         duplicate_provider = ModuleProvider.get(module=Module(namespace=namespace, name=module_name), name=provider_name)
