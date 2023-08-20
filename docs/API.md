@@ -11,7 +11,7 @@
 Terraform .well-known discovery
 
 
-### GET
+#### GET
 
 Return wellknown JSON
 
@@ -23,9 +23,11 @@ Return wellknown JSON
 Provide usage anayltics for Prometheus scraper
 
 
-### GET
+#### GET
+
 
 Return Prometheus metrics for global statistics and module provider statistics
+
 
 
 ## ApiModuleList
@@ -37,7 +39,7 @@ Return Prometheus metrics for global statistics and module provider statistics
 
 
 
-### GET
+#### GET
 
 Return list of modules.
 
@@ -51,7 +53,7 @@ Return list of modules.
 
 
 
-### GET
+#### GET
 
 Search for modules, given query string, namespace or provider.
 
@@ -65,7 +67,7 @@ Search for modules, given query string, namespace or provider.
 Interface to obtain list of modules in namespace.
 
 
-### GET
+#### GET
 
 Return list of modules in namespace
 
@@ -79,7 +81,7 @@ Return list of modules in namespace
 
 
 
-### GET
+#### GET
 
 Return latest version for each module provider.
 
@@ -93,7 +95,7 @@ Return latest version for each module provider.
 
 
 
-### GET
+#### GET
 
 Return list of version.
 
@@ -107,7 +109,7 @@ Return list of version.
 
 
 
-### GET
+#### GET
 
 Return list of version.
 
@@ -121,7 +123,7 @@ Return list of version.
 
 
 
-### GET
+#### GET
 
 Return list of version.
 
@@ -135,7 +137,7 @@ Return list of version.
 Provide download endpoint.
 
 
-### GET
+#### GET
 
 Provide download header for location to download source.
 
@@ -147,7 +149,7 @@ Provide download header for location to download source.
 Provide download summary for module provider.
 
 
-### GET
+#### GET
 
 Return list of download counts for module provider.
 
@@ -163,7 +165,7 @@ Return list of download counts for module provider.
 Interface to obtain module verison graph data.
 
 
-### GET
+#### GET
 
 Return graph data for module version.
 
@@ -175,7 +177,7 @@ Return graph data for module version.
 Interface to initiate authentication via OpenID connect
 
 
-### GET
+#### GET
 
 Generate session for storing OpenID state token and redirect to openid login provider.
 
@@ -187,7 +189,7 @@ Generate session for storing OpenID state token and redirect to openid login pro
 Interface to handle callback from authorization flow from OpenID connect
 
 
-### GET
+#### GET
 
 Handle response from OpenID callback
 
@@ -199,10 +201,10 @@ Handle response from OpenID callback
 Interface to initiate authentication via OpenID connect
 
 
-### GET
+#### GET
 
 Setup authentication request to redirect user to SAML provider.
-### POST
+#### POST
 
 Handle POST request.
 
@@ -214,7 +216,7 @@ Handle POST request.
 Meta-data endpoint for SAML
 
 
-### GET
+#### GET
 
 Return SAML SP metadata.
 
@@ -226,7 +228,7 @@ Return SAML SP metadata.
 Endpoint to return config used by UI.
 
 
-### GET
+#### GET
 
 Return config.
 
@@ -238,7 +240,7 @@ Return config.
 Interface to obtain git provider configurations.
 
 
-### GET
+#### GET
 
 Return list of git providers
 
@@ -250,7 +252,7 @@ Return list of git providers
 Provide global download stats for homepage.
 
 
-### GET
+#### GET
 
 Return number of namespaces, modules, module versions and downloads
 
@@ -262,7 +264,7 @@ Return number of namespaces, modules, module versions and downloads
 Return data for most recently published module version.
 
 
-### GET
+#### GET
 
 Return number of namespaces, modules, module versions and downloads
 
@@ -274,11 +276,13 @@ Return number of namespaces, modules, module versions and downloads
 Provide interface to obtain statistics about global module usage.
 
 
-### GET
+#### GET
+
 
 Return stats on total module providers,
-        total unique analytics tokens per module
-        (with and without auth token).
+total unique analytics tokens per module
+(with and without auth token).
+
 
 
 ## ApiTerraregModuleProviderAnalyticsTokenVersions
@@ -288,7 +292,7 @@ Return stats on total module providers,
 Provide download summary for module provider.
 
 
-### GET
+#### GET
 
 Return list of download counts for module provider.
 
@@ -300,7 +304,7 @@ Return list of download counts for module provider.
 Return data for most downloaded module provider this week.
 
 
-### GET
+#### GET
 
 Return most downloaded module this week
 
@@ -312,7 +316,7 @@ Return most downloaded module this week
 Interface to provide data to the initial setup page.
 
 
-### GET
+#### GET
 
 Return information for steps for setting up Terrareg.
 
@@ -324,10 +328,10 @@ Return information for steps for setting up Terrareg.
 Provide interface to obtain namespaces.
 
 
-### GET
+#### GET
 
 Return list of namespaces.
-### POST
+#### POST
 
 Create namespace.
 
@@ -339,10 +343,10 @@ Create namespace.
 Interface to obtain custom terrareg namespace details.
 
 
-### GET
+#### GET
 
 Return custom terrareg config for namespace.
-### POST
+#### POST
 
 Edit name/display name of a namespace
 ### DELETE
@@ -360,7 +364,7 @@ Delete namespace
 Interface to obtain list of modules in namespace.
 
 
-### GET
+#### GET
 
 Return list of modules in namespace
 
@@ -372,7 +376,7 @@ Return list of modules in namespace
 Interface to obtain module provider details.
 
 
-### GET
+#### GET
 
 Return details about module version.
 
@@ -384,7 +388,7 @@ Return details about module version.
 Interface to obtain module verison details.
 
 
-### GET
+#### GET
 
 Return details about module version.
 
@@ -396,7 +400,7 @@ Return details about module version.
 Interface to obtain module provider versions
 
 
-### GET
+#### GET
 
 Return list of module versions for module provider
 
@@ -408,7 +412,7 @@ Return list of module versions for module provider
 Provide interface to create module provider.
 
 
-### POST
+#### POST
 
 Handle update to settings.
 
@@ -420,7 +424,7 @@ Handle update to settings.
 Provide interface to delete module provider.
 
 
-### DELETE
+#### DELETE
 
 Delete module provider.
 
@@ -432,7 +436,7 @@ Delete module provider.
 Provide interface to update module provider settings.
 
 
-### POST
+#### POST
 
 Handle update to settings.
 
@@ -444,7 +448,7 @@ Handle update to settings.
 Interface to provide list of integration URLs
 
 
-### GET
+#### GET
 
 Return list of integration URLs
 
@@ -480,7 +484,7 @@ Delete module provider.
 Provide interface for bitbucket hook to detect pushes of new tags.
 
 
-### POST
+#### POST
 
 Create new version based on bitbucket hooks.
 
@@ -492,7 +496,7 @@ Create new version based on bitbucket hooks.
 Provide interface for GitHub hook to detect new and changed releases.
 
 
-### POST
+#### POST
 
 Create, update or delete new version based on GitHub release hooks.
 
@@ -504,7 +508,7 @@ Create, update or delete new version based on GitHub release hooks.
 Provide variable template for module version.
 
 
-### GET
+#### GET
 
 Return variable template.
 
@@ -516,7 +520,7 @@ Return variable template.
 Interface to obtain content of module version file.
 
 
-### GET
+#### GET
 
 Return conent of module version file.
 
@@ -528,7 +532,7 @@ Return conent of module version file.
 Provide variable template for module version.
 
 
-### GET
+#### GET
 
 Return variable template.
 
@@ -540,7 +544,7 @@ Return variable template.
 
 
 
-### POST
+#### POST
 
 Handle module version upload.
 
@@ -549,12 +553,42 @@ Handle module version upload.
 
 `/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/import`
 
+
 Provide interface to create release for git-backed modules.
 
+**DEPRECATION NOTICE**
 
-### POST
+This API maybe removed in future.
+This deprecation is still in discussion.
+
+Consider migrating to '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/import'
+
+
+
+#### POST
 
 Handle creation of module version.
+
+
+## ApiModuleVersionImport
+
+`/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/import`
+
+
+Provide interface to import/index version for git-backed modules.
+
+
+
+#### POST
+
+Handle creation of module version.
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| version | json | str | False | `None` | The semantic version number of the module to be imported. This can only be used if the git tag format of the module provider contains a {version} placeholder. Conflicts with git_tag |
+| git_tag | json | str | False | `None` | The git tag of the module to be imported. Conflicts with version. |
+
 
 
 ## ApiModuleVersionSourceDownload
@@ -564,7 +598,7 @@ Handle creation of module version.
 Return source package of module version
 
 
-### GET
+#### GET
 
 Return static file.
 
@@ -576,7 +610,7 @@ Return static file.
 Provide interface to publish module version.
 
 
-### POST
+#### POST
 
 Publish module.
 
@@ -588,7 +622,7 @@ Publish module.
 Provide interface to delete module version.
 
 
-### DELETE
+#### DELETE
 
 Delete module version.
 
@@ -600,7 +634,7 @@ Delete module version.
 Interface to obtain list of submodules in module version.
 
 
-### GET
+#### GET
 
 Return list of submodules.
 
@@ -612,7 +646,7 @@ Return list of submodules.
 Interface to obtain submodule details.
 
 
-### GET
+#### GET
 
 Return details of submodule.
 
@@ -624,7 +658,7 @@ Return details of submodule.
 Interface to obtain submodule REAMDE in HTML format.
 
 
-### GET
+#### GET
 
 Return HTML formatted README of submodule.
 
@@ -636,7 +670,7 @@ Return HTML formatted README of submodule.
 Interface to obtain list of examples in module version.
 
 
-### GET
+#### GET
 
 Return list of examples.
 
@@ -648,7 +682,7 @@ Return list of examples.
 Interface to obtain example details.
 
 
-### GET
+#### GET
 
 Return details of example.
 
@@ -660,7 +694,7 @@ Return details of example.
 Interface to obtain example REAMDE in HTML format.
 
 
-### GET
+#### GET
 
 Return HTML formatted README of example.
 
@@ -672,7 +706,7 @@ Return HTML formatted README of example.
 Interface to obtain list of example files.
 
 
-### GET
+#### GET
 
 Return list of files available in example.
 
@@ -684,7 +718,7 @@ Return list of files available in example.
 Interface to obtain content of example file.
 
 
-### GET
+#### GET
 
 Return conent of example file in example module.
 
@@ -696,7 +730,7 @@ Return conent of example file in example module.
 Provide interface to obtain all provider logo details
 
 
-### GET
+#### GET
 
 Return all details about provider logos.
 
@@ -708,7 +742,7 @@ Return all details about provider logos.
 Return list of filters availabe for search.
 
 
-### GET
+#### GET
 
 Return list of available filters and filter counts for search query.
 
@@ -720,7 +754,7 @@ Return list of available filters and filter counts for search query.
 Interface to obtain audit history
 
 
-### GET
+#### GET
 
 Obtain audit history events
 
@@ -732,10 +766,10 @@ Obtain audit history events
 Interface to list and create user groups.
 
 
-### GET
+#### GET
 
 Obtain list of user groups.
-### POST
+#### POST
 
 Create user group
 
@@ -747,7 +781,7 @@ Create user group
 Interface to interact with single user group.
 
 
-### DELETE
+#### DELETE
 
 Delete user group.
 
@@ -759,10 +793,10 @@ Delete user group.
 Interface to create user groups namespace permissions.
 
 
-### POST
+#### POST
 
 Create user group namespace permission
-### DELETE
+#### DELETE
 
 Delete user group namespace permission
 
@@ -774,7 +808,7 @@ Delete user group namespace permission
 Interface to perform authentication as an admin and set appropriate cookie.
 
 
-### POST
+#### POST
 
 Handle POST requests to the authentication endpoint.
 
@@ -786,7 +820,7 @@ Handle POST requests to the authentication endpoint.
 Interface to teturn whether user is authenticated as an admin.
 
 
-### GET
+#### GET
 
 Return information about current user.
 
@@ -798,6 +832,6 @@ Return information about current user.
 Endpoint to return 200 when healthy.
 
 
-### GET
+#### GET
 
 Return static 200

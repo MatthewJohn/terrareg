@@ -6,6 +6,7 @@ from .module_search import ApiModuleSearch
 from .module_version_create_bitbucket_hook import ApiModuleVersionCreateBitBucketHook
 from .module_version_create_github_hook import ApiModuleVersionCreateGitHubHook
 from .module_version_create import ApiModuleVersionCreate
+from .module_version_import import ApiModuleVersionImport
 from .module_version_details import ApiModuleVersionDetails
 from .module_version_download import ApiModuleVersionDownload
 from .module_version_source_download import ApiModuleVersionSourceDownload

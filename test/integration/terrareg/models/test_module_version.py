@@ -1453,3 +1453,25 @@ module &quot;test-usage3&quot; {
             module_version = ModuleVersion.get(module_provider, '1.5.0')
 
             assert module_version.get_terraform_example_version_comment() == expected_value
+
+    @pytest.mark.parametrize('git_tag_format, version, expected_git_tag', [
+        ('{version}', '1.0.0', '1.0.0'),
+        ('releases/v{version}a', '1.0.0', 'releases/v1.0.0a'),
+        ('v{major}a', '2.3.4', 'v2a'),
+        ('v{minor}a', '2.3.4', 'v3a'),
+        ('v{patch}a', '2.3.4', 'v4a'),
+
+        ('{major}-{minor}-{patch}', '2.3.4', '2-3-4'),
+        ('{major}-{minor}-{patch}', '2.3.4-beta', '2-3-4'),
+    ])
+    def test_source_git_tag(self, git_tag_format, version, expected_git_tag):
+        """Test source_git_tag property"""
+        module_provider = ModuleProvider.create(Module(Namespace('testnamespace'), 'testsourcegittag'), 'testsourcegittag')
+        try:
+            module_provider.update_git_tag_format(git_tag_format=git_tag_format)
+
+            module_version = ModuleVersion(module_provider, version)
+            assert module_version.source_git_tag == expected_git_tag
+
+        finally:
+            module_provider.delete()
