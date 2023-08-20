@@ -654,7 +654,7 @@ class TestModuleProvider(TerraregIntegrationTest):
     ])
     def test_get_version_from_tag(self, git_tag_format, tag, expected_version):
         """Test get_version_from_tag and get_version_from_tag_ref"""
-        module_provider = ModuleProvider.create(Module(Namespace.get('testnamespace'), 'noversions'), 'testprovider')
+        module_provider = ModuleProvider.create(Module(Namespace.get('testnamespace'), 'noversions'), 'testproviderversionimport')
         try:
 
             module_provider.update_git_tag_format(git_tag_format)
