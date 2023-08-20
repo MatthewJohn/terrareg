@@ -87,13 +87,27 @@ class TestModuleProviderRedirect(TerraregIntegrationTest):
 
         return provider, namespace, version
 
+    def setup_method(self, method):
+        """Delete any analytics data"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.analytics.delete())
+        return super().setup_method(method)
+
+    def teardown_method(self, method):
+        """Delete any analytics data"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.analytics.delete())
+
+        return super().teardown_method(method)
+
     def test_delete_with_offending_analytics_migrated(self):
         """Test deleting a ModuleProviderRedirect with analytics that have all migrated to new name"""
         # Create namespace/module provider
         provider, namespace, version = self._setup_offending_analytics_token()
 
         try:
-
             # Add analytics for remaining 2 tokens to new name
             for token in ['oldnameaftermove', 'beforemove']:
                 terrareg.analytics.AnalyticsEngine.record_module_version_download(
