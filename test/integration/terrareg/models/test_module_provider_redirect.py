@@ -7,6 +7,8 @@ import pytest
 import sqlalchemy
 
 import terrareg.analytics
+from terrareg.audit import AuditEvent
+from terrareg.audit_action import AuditAction
 from terrareg.database import Database
 from terrareg.models import Example, ExampleFile, Module, ModuleDetails, ModuleProviderRedirect, Namespace, ModuleProvider, ModuleVersion
 import terrareg.errors
@@ -105,6 +107,9 @@ class TestModuleProviderRedirect(TerraregIntegrationTest):
                     auth_token=None,
                 )
 
+            # Delete any pre-existing audit events
+            self._delete_audit_events()
+
             redirects = ModuleProviderRedirect.get_by_module_provider(provider)
             assert len(redirects) == 1
             redirect = redirects[0]
@@ -114,6 +119,16 @@ class TestModuleProviderRedirect(TerraregIntegrationTest):
             # Ensure redirect was not deleted
             redirects = ModuleProviderRedirect.get_by_module_provider(provider)
             assert len(redirects) == 0
+
+            # Ensure audit event is created
+            audit_events, _, _ = AuditEvent.get_events()
+            assert len(audit_events) == 1
+            assert audit_events[0][3] == AuditAction.MODULE_PROVIDER_REDIRECT_DELETE
+            assert audit_events[0][4] == "ModuleProviderRedirect"
+            # Check redirect ID is correct
+            assert audit_events[0][5] == "testredirect/testredirectdelete/testprovider"
+            # Check ID of module provider is correct
+            assert audit_events[0][6] == str(provider.pk)
 
         finally:
             provider.delete()
@@ -130,6 +145,8 @@ class TestModuleProviderRedirect(TerraregIntegrationTest):
             redirect = redirects[0]
             redirect_pk = redirect._pk
 
+            self._delete_audit_events()
+
             with pytest.raises(terrareg.errors.ModuleProviderRedirectInUseError):
                 redirect.delete()
 
@@ -139,6 +156,10 @@ class TestModuleProviderRedirect(TerraregIntegrationTest):
             redirect = redirects[0]
 
             assert redirect._pk == redirect_pk
+
+            # Ensure no audit events were created
+            audit_events, _, _ = AuditEvent.get_events()
+            assert len(audit_events) == 0
         finally:
             provider.delete()
             namespace.delete()

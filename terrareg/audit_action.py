@@ -24,6 +24,8 @@ class AuditAction(Enum):
     MODULE_PROVIDER_UPDATE_MODULE_NAME = "module_provider_update_module_name"
     MODULE_PROVIDER_UPDATE_PROVIDER_NAME = "module_provider_update_provider_name"
 
+    MODULE_PROVIDER_REDIRECT_DELETE = "module_provider_redirect_delete"
+
     MODULE_VERSION_INDEX = "module_version_index"
     MODULE_VERSION_PUBLISH = "module_version_publish"
     MODULE_VERSION_DELETE = "module_version_delete"

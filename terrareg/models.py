@@ -1778,6 +1778,11 @@ class ModuleProviderRedirect(object):
         """Return pk of entity"""
         return self._pk
 
+    @property
+    def id(self):
+        """User-readable representation of redirect object"""
+        return f"{self.namespace.name}/{self.module_name}/{self.provider_name}"
+
     def __init__(self, pk):
         """Store member variable"""
         self._pk = pk
@@ -1797,7 +1802,7 @@ class ModuleProviderRedirect(object):
                 raise NonExistentModuleProviderRedirectError("Module provider redirect does not exist with the given ID")
             return data
 
-    def delete(self, force=False, internal_force=False):
+    def delete(self, force=False, internal_force=False, create_audit_event=True):
         """
         Delete module provider redirect.
         Force will override check for whether the module is in use, as supplied by the user.
@@ -1809,7 +1814,18 @@ class ModuleProviderRedirect(object):
         # Check if module provider redirect is in use
         if not (force or internal_force) and terrareg.analytics.AnalyticsEngine.check_module_provider_redirect_usage(self):
             raise ModuleProviderRedirectInUseError("Module provider redirect is in use, so cannot be deleted without forceful deletion")
-        
+
+        if create_audit_event:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_REDIRECT_DELETE,
+                object_type=self.__class__.__name__,
+                # ID of the actual module
+                object_id=self.id,
+                # ID of target module provider
+                old_value=self.module_provider_id,
+                new_value=None
+            )
+
         # Delete from database
         db = Database.get()
         with db.get_connection() as conn:
@@ -2149,7 +2165,7 @@ class ModuleProvider(object):
 
         # Delete any redirects
         for redirect in ModuleProviderRedirect.get_by_module_provider(self):
-            redirect.delete(internal_force=True)
+            redirect.delete(internal_force=True, create_audit_event=False)
 
         db = Database.get()
 
