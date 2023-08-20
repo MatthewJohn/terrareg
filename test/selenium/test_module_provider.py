@@ -25,6 +25,7 @@ from terrareg.models import (
     ModuleProvider, ProviderLogo,
     UserGroup, UserGroupNamespacePermission
 )
+import terrareg.analytics
 
 
 class TestModuleProvider(SeleniumTest):
@@ -44,6 +45,7 @@ class TestModuleProvider(SeleniumTest):
         cls._config_module_links = mock.patch('terrareg.config.Config.MODULE_LINKS', '[]')
         cls._config_terraform_example_version_template = mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major_plus_one}.0.0, unittest')
         cls._config_disable_analytics = mock.patch('terrareg.config.Config.DISABLE_ANALYTICS', False)
+        cls._config_allow_forceful_module_provider_redirect_deletion = mock.patch('terrareg.config.Config.ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION', True)
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
@@ -56,6 +58,7 @@ class TestModuleProvider(SeleniumTest):
         cls.register_patch(cls._config_module_links)
         cls.register_patch(cls._config_terraform_example_version_template)
         cls.register_patch(cls._config_disable_analytics)
+        cls.register_patch(cls._config_allow_forceful_module_provider_redirect_deletion)
 
         super(TestModuleProvider, cls).setup_class()
 
@@ -83,15 +86,24 @@ class TestModuleProvider(SeleniumTest):
         self.selenium_instance.get(self.get_url(url))
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'breadcrumb-ul').text, expected_breadcrumb)
 
-    def _get_settings_field_by_label(self, label):
+    def _get_settings_field_by_label(self, label, form="settings-form", type_="input"):
         """Return input element by label."""
-        form = self.wait_for_element(By.ID, 'settings-form')
-        return form.find_element(By.XPATH, ".//label[text()='{label}']/parent::*//input".format(label=label))
+        form = self.wait_for_element(By.ID, form)
+        return form.find_element(By.XPATH, ".//label[text()='{label}']/parent::*//{type_}".format(label=label, type_=type_))
 
     def _fill_out_settings_field_by_label(self, label, input):
         """Find input field by label and fill out input."""
         input_field = self._get_settings_field_by_label(label)
         input_field.send_keys(input)
+
+    def _confirm_move(self):
+        """Click confirm move checkbox"""
+        confirm = self._get_settings_field_by_label("Confirm", form="settings-move-form")
+        confirm.click()
+
+    def _click_save_move(self):
+        """Click save move button on settings tab."""
+        self.selenium_instance.find_element(By.ID, 'settings-move-submit').click()
 
     def _click_save_settings(self):
         """Click save button on settings tab."""
@@ -1659,6 +1671,153 @@ EOF
         module_provider._cache_db_row = None
         assert module_provider.git_path == None
 
+    def test_updating_module_name(self):
+        """Test changing module name in module provider settings"""
+        self.perform_admin_authentication(password="unittest-password")
+
+        # Ensure user is redirected to module page
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/testmove/changename#settings"))
+
+        module_name_input = self._get_settings_field_by_label("Module Name", form="settings-move-form")
+        assert module_name_input.get_attribute("value") == "testmove"
+
+        # Enter new name, confirm and submit form
+        module_name_input.clear()
+        module_name_input.send_keys("testmovenew")
+        self._confirm_move()
+        self._click_save_move()
+
+        # Ensure browser has been redirect to new module
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/moduledetails/testmovenew/changename"))
+
+        # Ensure name of module on page matches new name
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, "module-title").text, "testmovenew")
+
+    def test_updating_module_provider(self):
+        """Test changing module provider in module provider settings"""
+        self.perform_admin_authentication(password="unittest-password")
+
+        # Ensure user is redirected to module page
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/testmove/changeprovider#settings"))
+
+        module_provider_input = self._get_settings_field_by_label("Provider", form="settings-move-form")
+        assert module_provider_input.get_attribute("value") == "changeprovider"
+
+        # Enter new name, confirm and submit form
+        module_provider_input.clear()
+        module_provider_input.send_keys("testnewprovider")
+        self._confirm_move()
+        self._click_save_move()
+
+        # Ensure browser has been redirect to new module
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/moduledetails/testmove/testnewprovider"))
+
+        # Ensure module provider on page matches new name
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, "module-provider").text, "Provider: testnewprovider")
+
+    def test_updating_namespace(self):
+        """Test changing namespace in module provider settings"""
+        self.perform_admin_authentication(password="unittest-password")
+
+        # Ensure user is redirected to module page
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/testmove/changenamespace#settings"))
+
+        module_namespace_input = Select(self._get_settings_field_by_label("Namespace", form="settings-move-form", type_="select"))
+        assert module_namespace_input.first_selected_option.text == "moduledetails"
+
+        # Update namespace, confirm and submit form
+        module_namespace_input.select_by_visible_text("scratchnamespace")
+        self._confirm_move()
+        self._click_save_move()
+
+        # Ensure browser has been redirect to new module
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/scratchnamespace/testmove/changenamespace"))
+
+        # Ensure namespace in Terraform usage example is correct (namespace is not shown in many places!)
+        self.assert_equals(lambda: "scratchnamespace/testmove/changenamespace" in self.selenium_instance.find_element(By.ID, "usage-example-terraform").text, True)
+
+    def test_updating_name_provider_and_namespace(self):
+        """Test updating module provider name, provider and namespace"""
+        self.perform_admin_authentication(password="unittest-password")
+
+        # Ensure user is redirected to module page
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/testmove/changeall#settings"))
+
+        # Enter new name
+        module_name_input = self._get_settings_field_by_label("Module Name", form="settings-move-form")
+        module_name_input.clear()
+        module_name_input.send_keys("changeallnew")
+
+        module_provider_input = self._get_settings_field_by_label("Provider", form="settings-move-form")
+        module_provider_input.clear()
+        module_provider_input.send_keys("changeallnewprovider")
+
+        module_namespace_input = Select(self._get_settings_field_by_label("Namespace", form="settings-move-form", type_="select"))
+        module_namespace_input.select_by_visible_text("scratchnamespace")
+
+        self._confirm_move()
+        self._click_save_move()
+
+        # Ensure browser has been redirect to new module
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/scratchnamespace/changeallnew/changeallnewprovider"))
+
+        # Ensure namespace in Terraform usage example is correct (namespace is not shown in many places!)
+        self.assert_equals(lambda: "scratchnamespace/changeallnew/changeallnewprovider" in self.selenium_instance.find_element(By.ID, "usage-example-terraform").text, True)
+
+        # Attempt to naviage to old page with anchor and query string, ensuring page is redirected
+        # to new module provider name
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/testmove/changeall?test=value&test2=value2#readme"))
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/scratchnamespace/changeallnew/changeallnewprovider?test=value&test2=value2#readme"))
+
+        # Test redirect with version and example
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/testmove/changeall/1.0.0/example/examples/test?test=value&test2=value2#readme"))
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/scratchnamespace/changeallnew/changeallnewprovider/1.0.0/example/examples/test?test=value&test2=value2#readme"))
+
+    def test_updating_module_name_to_duplicate(self):
+        """Test updating module name to duplicate module name"""
+        self.perform_admin_authentication(password="unittest-password")
+
+        # Ensure user is redirected to module page
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/testmove/duplicatemovetest#settings"))
+
+        module_provider_input = self._get_settings_field_by_label("Provider", form="settings-move-form")
+
+        # Enter new name, confirm and submit form
+        module_provider_input.clear()
+        module_provider_input.send_keys("duplicatetest")
+        self._confirm_move()
+        self._click_save_move()
+
+        # Ensure error is visible and verify text
+        error = self.selenium_instance.find_element(By.ID, "settings-move-error")
+        assert error.is_displayed() == True
+        assert error.text == "A module/provider already exists with the same name in the namespace"
+
+        # Ensure URL has not been changed
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/moduledetails/testmove/duplicatemovetest#settings"))
+
+    def test_updating_module_without_confirmation(self):
+        """Test updating module name to new name without confirmation"""
+        self.perform_admin_authentication(password="unittest-password")
+
+        # Ensure user is redirected to module page
+        self.selenium_instance.get(self.get_url("/modules/moduledetails/testmove/duplicatemovetest#settings"))
+
+        module_provider_input = self._get_settings_field_by_label("Provider", form="settings-move-form")
+
+        # Enter new name, confirm and submit form
+        module_provider_input.clear()
+        module_provider_input.send_keys("uniquename")
+        self._click_save_move()
+
+        # Ensure error is visible and verify text
+        error = self.selenium_instance.find_element(By.ID, "settings-move-error")
+        assert error.is_displayed() == True
+        assert error.text == "The move action must be confirmed, by checking the confirm checkbox."
+
+        # Ensure URL has not been changed
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/modules/moduledetails/testmove/duplicatemovetest#settings"))
+
     def test_delete_module_provider(self, mock_create_audit_event):
         """Test the delete provider functionality in settings tab."""
 
@@ -2365,7 +2524,7 @@ various &lt; characters that could be escaped.</pre>
 
         # Ensure link to resource graph is displayed
         resource_graph_link = self.selenium_instance.find_element(By.ID, "resourceDependencyGraphLink")
-        assert resource_graph_link.text == "View a resource dependency graph"
+        assert resource_graph_link.text == "View resource dependency graph"
         resource_graph_link.click()
 
         self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url(expected_url))
@@ -2624,3 +2783,116 @@ module "root" {
         assert self.selenium_instance.find_element(By.ID, "supported-terraform-compatible").text == f"Terraform {terraform_version} compatibility:\n{expected_compatibility_result}"
         # Check color of label
         assert self.selenium_instance.find_element(By.ID, "supported-terraform-compatible-tag").get_attribute("class") == f"tag is-medium is-light is-{expected_color}"
+
+    def test_delete_module_provider_redirect(self, mock_create_audit_event):
+        """Test deletion of a module provider redirect"""
+        with mock_create_audit_event:
+            namespace = Namespace.get("moduledetails")
+            module_provider = ModuleProvider.create(module=Module(namespace, "testredirect"), name="testprovider")
+            module_provider = module_provider.update_name(namespace=namespace, module_name="secondredirect", provider_name="testprovider")
+            module_provider = module_provider.update_name(namespace=namespace, module_name="newredirectname", provider_name="testprovider")
+            version = ModuleVersion(module_provider, "1.0.0")
+            version.prepare_module()
+
+            # Add analytics
+            terrareg.analytics.AnalyticsEngine.record_module_version_download(
+                namespace_name="moduledetails",
+                module_name="testredirect",
+                provider_name="testprovider",
+                module_version=version,
+                analytics_token=None, terraform_version="1.0.0",
+                user_agent=None, auth_token=None
+            )
+
+        try:
+            self.delete_cookies_and_local_storage()
+            self.perform_admin_authentication(password='unittest-password')
+
+            self.selenium_instance.get(self.get_url("/modules/moduledetails/newredirectname/testprovider"))
+
+            # Click on settings tab
+            tab = self.wait_for_element(By.ID, 'module-tab-link-settings')
+            tab.click()
+
+            # Ensure redirect card is present
+            redirect_card = self.selenium_instance.find_element(By.ID, "settingsRedirectCard")
+            assert redirect_card.is_displayed() == True
+
+            # Check rows of table
+            table_body = redirect_card.find_element(By.ID, "settingsRedirectTable")
+            expected_rows = [
+                ["moduledetails", "testredirect", "testprovider", "Delete"],
+                ["moduledetails", "secondredirect", "testprovider", "Delete"]
+            ]
+            first_redirect_row = None
+            for row in table_body.find_elements(By.TAG_NAME, "tr"):
+                found_row = [td.text for td in row.find_elements(By.TAG_NAME, "td")]
+                assert found_row in expected_rows
+                expected_rows.remove(found_row)
+
+                if found_row[1] == "secondredirect":
+                    first_redirect_row = row
+
+            assert len(expected_rows) == 0
+
+            # Click delete button against analytics
+            delete_button = first_redirect_row.find_element(By.TAG_NAME, "button")
+            assert delete_button.text == "Delete"
+            delete_button.click()
+
+            # Wait for page reload
+            sleep(1)
+
+            # Wait for page to reload and ensure redirect card is present
+            redirect_card = self.wait_for_element(By.ID, "settingsRedirectCard")
+            assert redirect_card.is_displayed() == True
+
+            # Ensure original redirect has been removed
+            table_body = redirect_card.find_element(By.ID, "settingsRedirectTable")
+            expected_rows = [
+                ["moduledetails", "testredirect", "testprovider", "Delete"]
+            ]
+            found_rows = []
+            second_redirect_row = None
+            for row in table_body.find_elements(By.TAG_NAME, "tr"):
+                found_rows.append([td.text for td in row.find_elements(By.TAG_NAME, "td")])
+                if found_rows[0][1] == "testredirect":
+                    second_redirect_row = row
+
+            assert expected_rows == found_rows
+
+            # Ensure error is not shown
+            assert self.selenium_instance.find_element(By.ID, "settings-redirect-error").is_displayed() == False
+
+            # Attempt to remove second row
+            delete_button = second_redirect_row.find_element(By.TAG_NAME, "button")
+            assert delete_button.text == "Delete"
+            delete_button.click()
+
+            # Ensure error is shown
+            error = self.selenium_instance.find_element(By.ID, "settings-redirect-error")
+            assert error.is_displayed() == True
+            assert error.text == (
+                'Module provider redirect is in use, so cannot be deleted without forceful deletion\n'
+                'Force Retry'
+            )
+
+            # Find force retry button and click
+            force_retry_button = error.find_element(By.TAG_NAME, "button")
+            assert force_retry_button.text == "Force Retry"
+            force_retry_button.click()
+
+            # Wait for page reload
+            sleep(1)
+
+            # Wait for reload and settings tab
+            tab = self.wait_for_element(By.ID, 'module-tab-link-settings')
+
+            # Ensure redirects card is not shown
+            assert self.selenium_instance.find_element(By.ID, "settingsRedirectCard").is_displayed() == False
+
+        finally:
+            # Delete module provider
+            with mock_create_audit_event:
+                module_provider.delete()
+

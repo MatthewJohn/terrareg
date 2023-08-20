@@ -52,6 +52,7 @@ class Database():
         self._git_provider = None
         self._namespace_redirect = None
         self._namespace = None
+        self._module_provider_redirect = None
         self._module_provider = None
         self._module_details = None
         self._module_version = None
@@ -102,6 +103,13 @@ class Database():
         if self._namespace is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._namespace
+
+    @property
+    def module_provider_redirect(self):
+        """Return module provider redirect table."""
+        if self._module_provider_redirect is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._module_provider_redirect
 
     @property
     def module_provider(self):
@@ -270,6 +278,34 @@ class Database():
             )
         )
 
+        self._module_provider_redirect = sqlalchemy.Table(
+            'module_provider_redirect', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            # Original module name/provider
+            sqlalchemy.Column('module', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('provider', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            # Original namespace ID
+            sqlalchemy.Column(
+                'namespace_id',
+                sqlalchemy.ForeignKey(
+                    'namespace.id',
+                    name='fk_module_provider_redirect_namespace_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            ),
+            # Target module provider
+            sqlalchemy.Column(
+                'module_provider_id',
+                sqlalchemy.ForeignKey(
+                    'module_provider.id',
+                    name='fk_module_provider_redirect_module_provider_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            )
+        )
+
         self._module_provider = sqlalchemy.Table(
             'module_provider', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
@@ -319,7 +355,9 @@ class Database():
             sqlalchemy.Column('terraform_docs', Database.medium_blob()),
             sqlalchemy.Column('tfsec', Database.medium_blob()),
             sqlalchemy.Column('infracost', Database.medium_blob()),
-            sqlalchemy.Column('terraform_graph', Database.medium_blob())
+            sqlalchemy.Column('terraform_graph', Database.medium_blob()),
+            sqlalchemy.Column('terraform_modules', Database.medium_blob()),
+            sqlalchemy.Column('terraform_version', Database.medium_blob())
         )
 
         self._module_version = sqlalchemy.Table(
@@ -394,7 +432,12 @@ class Database():
             sqlalchemy.Column('terraform_version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('analytics_token', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('auth_token', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('environment', sqlalchemy.String(GENERAL_COLUMN_SIZE))
+            sqlalchemy.Column('environment', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+
+            # Columns for providing redirect deletion protection
+            sqlalchemy.Column('namespace_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('module_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('provider_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
         )
 
         self._example_file = sqlalchemy.Table(

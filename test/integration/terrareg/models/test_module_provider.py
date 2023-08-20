@@ -4,11 +4,13 @@ import shutil
 import tempfile
 from unittest import mock
 import pytest
+from terrareg.audit import AuditEvent
 from terrareg.database import Database
 
 from terrareg.models import GitProvider, Module, ModuleVersion, Namespace, ModuleProvider
 import terrareg.errors
 from test.integration.terrareg import TerraregIntegrationTest
+import terrareg.audit_action
 
 
 class TestModuleProvider(TerraregIntegrationTest):
@@ -667,3 +669,246 @@ class TestModuleProvider(TerraregIntegrationTest):
 
         finally:
             module_provider.delete()
+
+    @pytest.mark.parametrize("new_namespace_name", [
+        # Original namespace
+        "testnamespace",
+
+        # New namespace
+        "moduleextraction"
+    ])
+    @pytest.mark.parametrize("new_module_name", [
+        # Original module name
+        "torename",
+
+        # New module name
+        "newname"
+    ])
+    @pytest.mark.parametrize("new_provider_name", [
+        # Original provider name
+        "test",
+
+        # New provider name
+        "newprovider"
+    ])
+    def test_update_name(self, new_namespace_name, new_module_name, new_provider_name):
+        """Test update_name method in successful case"""
+        original_namespace_name = "testnamespace"
+        original_module_name = "torename"
+        original_provider_name = "test"
+
+        # Skip test where all attributes are the same
+        if new_namespace_name == original_namespace_name and \
+                new_module_name == original_module_name and \
+                new_provider_name == original_provider_name:
+            pytest.skip('Ignore test case with all unchanged params')
+
+        try:
+            # Create new module provider for test
+            namespace = Namespace.get(original_namespace_name)
+            module_provider = ModuleProvider.create(module=Module(namespace=namespace, name=original_module_name), name=original_provider_name)
+            original_module_pk = module_provider.pk
+
+            # Remove all audit events
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.audit_history.delete())
+
+            # Remove all module provider redirects
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.module_provider_redirect.delete())
+
+            # Update attributes
+            new_namespace = Namespace.get(name=new_namespace_name)
+            new_module_provider = module_provider.update_name(namespace=new_namespace, module_name=new_module_name, provider_name=new_provider_name)
+
+            # Ensure attributes of the new module provider are correct
+            assert isinstance(new_module_provider, ModuleProvider)
+            assert new_module_provider.name == new_provider_name
+            assert new_module_provider.module.name == new_module_name
+            assert new_module_provider.module.namespace.name == new_namespace_name
+
+            # Attempt to obtain via new name
+            test_provider_from_new_name = ModuleProvider.get(Module(Namespace(name=new_namespace_name), name=new_module_name), name=new_provider_name)
+            assert test_provider_from_new_name is not None
+            assert test_provider_from_new_name.pk == original_module_pk
+            assert test_provider_from_new_name.name == new_provider_name
+            assert test_provider_from_new_name.module.name == new_module_name
+            assert test_provider_from_new_name.module.namespace.name == new_namespace_name
+
+            # Attempt to obtain using redirect from old name
+            test_provider_from_new_name = ModuleProvider.get(Module(Namespace(name=original_namespace_name), name=original_module_name), name=original_provider_name)
+            assert test_provider_from_new_name is not None
+            assert test_provider_from_new_name.pk == original_module_pk
+            assert test_provider_from_new_name.name == new_provider_name
+            assert test_provider_from_new_name.module.name == new_module_name
+            assert test_provider_from_new_name.module.namespace.name == new_namespace_name
+
+            # Check audit event
+            unprocessed_audit_events, _, _ = AuditEvent.get_events(limit=5, descending=True, order_by="timestamp")
+            for audit_action, original_value, new_value in [
+                    [terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_NAMESPACE, original_namespace_name, new_namespace_name],
+                    [terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_MODULE_NAME, original_module_name, new_module_name],
+                    [terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_PROVIDER_NAME, original_provider_name, new_provider_name]]:
+                filtered_events = [e for e in filter(lambda x: x['action'] == audit_action, unprocessed_audit_events)]
+                if original_value != new_value:
+                    assert len(filtered_events) == 1
+                    audit_event = filtered_events[0]
+                    assert audit_event['action'] == audit_action
+                    assert audit_event['object_type'] == "ModuleProvider"
+                    assert audit_event['object_id'] == "testnamespace/torename/test"
+                    assert audit_event['old_value'] == original_value
+                    assert audit_event['new_value'] == new_value
+                    # Remove audit event from unprocessed events
+                    unprocessed_audit_events.remove(audit_event)
+                else:
+                    assert len(filtered_events) == 0
+
+            # Ensure all audit events have been processed
+            assert len(unprocessed_audit_events) == 0
+
+        finally:
+            # Attempt to delete original
+            namespace = Namespace.get(original_namespace_name)
+            module_provider = ModuleProvider.get(Module(namespace=namespace, name=original_module_name), name=original_provider_name)
+            if module_provider:
+                module_provider.delete()
+
+            # Attempt to deleted renamed
+            namespace = Namespace.get(new_namespace_name)
+            module_provider = ModuleProvider.get(Module(namespace=namespace, name=new_module_name), name=new_provider_name)
+            if module_provider:
+                module_provider.delete()
+
+    @pytest.mark.parametrize("duplicate_namespace_name, duplicate_module_name, duplicate_provider_name", [
+        # When provider is changed to duplicate
+        ("testnamespace", "torename", "duplicate"),
+
+        # When module name is changed to duplicate
+        ("testnamespace", "duplicate", "test"),
+
+        # When namespace is changed to duplicate
+        ("moduleextraction", "torename", "test"),
+
+        # When changing all parameters
+        ("moduleextraction", "duplicate", "duplicate")
+    ])
+    def test_update_name_duplicate(self, duplicate_namespace_name, duplicate_module_name, duplicate_provider_name):
+        """Test using update_name with duplicate resulting module provider"""
+        # Create new module provider for test
+        original_namespace_name = "testnamespace"
+        original_module_name = "torename"
+        original_provider_name = "test"
+
+        try:
+            module_provider = ModuleProvider.create(module=Module(namespace=Namespace.get(original_namespace_name), name=original_module_name), name=original_provider_name)
+            original_module_provider_pk = module_provider.pk
+
+            duplicate_module_provider = ModuleProvider.create(module=Module(namespace=Namespace.get(duplicate_namespace_name), name=duplicate_module_name), name=duplicate_provider_name)
+            duplicate_module_provider_pk = duplicate_module_provider.pk
+
+            # Remove all audit events
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.audit_history.delete())
+
+            # Remove all module provider redirects
+            db = Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.module_provider_redirect.delete())
+
+            # Update attributes
+            new_namespace = Namespace.get(name=duplicate_namespace_name)
+            with pytest.raises(terrareg.errors.DuplicateModuleProviderError):
+                module_provider.update_name(namespace=new_namespace, module_name=duplicate_module_name, provider_name=duplicate_provider_name)
+
+            # Ensure no audit events were created
+            audit_events, _, _ = AuditEvent.get_events(limit=5, descending=True, order_by="timestamp")
+            assert len(audit_events) == 0
+
+            # Ensure no redirects exist
+            db = Database.get()
+            with db.get_connection() as conn:
+                res = conn.execute(db.module_provider_redirect.select()).all()
+                assert len(res) == 0
+
+            # Check PK of olds modules
+            assert ModuleProvider.get(
+                module=Module(
+                    namespace=Namespace.get(original_namespace_name),
+                    name=original_module_name
+                ), name=original_provider_name
+            ).pk == original_module_provider_pk
+            assert ModuleProvider.get(
+                module=Module(
+                    namespace=Namespace.get(duplicate_namespace_name),
+                    name=duplicate_module_name
+                ),
+                name=duplicate_provider_name
+            ).pk == duplicate_module_provider_pk
+
+        finally:
+            # Attempt to delete original
+            namespace = Namespace.get(original_namespace_name)
+            module_provider = ModuleProvider.get(Module(namespace=namespace, name=original_module_name), name=original_provider_name)
+            if module_provider:
+                module_provider.delete()
+
+            # Attempt to delete duplicate
+            namespace = Namespace.get(duplicate_namespace_name)
+            module_provider = ModuleProvider.get(Module(namespace=namespace, name=duplicate_module_name), name=duplicate_provider_name)
+            if module_provider:
+                module_provider.delete()
+
+    @pytest.mark.parametrize("new_namespace_name, new_module_name, new_provider_name", [
+        # When provider is changed to duplicate
+        ("testnamespace", "torename", "duplicate"),
+
+        # When module name is changed to duplicate
+        ("testnamespace", "duplicate", "test"),
+
+        # When namespace is changed to duplicate
+        ("moduleextraction", "torename", "test"),
+
+        # When changing all parameters
+        ("moduleextraction", "duplicate", "duplicate"),
+    ])
+    def test_create_override_redirect(self, new_namespace_name, new_module_name, new_provider_name):
+        """Test creating module provider that clashes with redirect"""
+        # Create new module provider for test
+        original_namespace_name = "testnamespace"
+        original_module_name = "torename"
+        original_provider_name = "test"
+
+        try:
+            module_provider = ModuleProvider.create(module=Module(namespace=Namespace.get(original_namespace_name), name=original_module_name), name=original_provider_name)
+            original_module_provider_pk = module_provider.pk
+
+            # Update name of original module provider
+            module_provider.update_name(namespace=Namespace.get(new_namespace_name), module_name=new_module_name, provider_name=new_provider_name)
+
+            # Attempt to create provider overriding original
+            with pytest.raises(terrareg.errors.DuplicateModuleProviderError):
+                ModuleProvider.create(module=Module(namespace=Namespace.get(original_namespace_name), name=original_module_name), name=original_provider_name)
+
+            # Obtain old module provider using new name
+            test_old_module_provider = ModuleProvider.get(module=Module(namespace=Namespace.get(new_namespace_name), name=new_module_name), name=new_provider_name)
+            assert test_old_module_provider.pk == original_module_provider_pk
+
+            test_new_module_provider = ModuleProvider.get(module=Module(namespace=Namespace.get(original_namespace_name), name=original_module_name), name=original_provider_name)
+            assert test_new_module_provider.pk == original_module_provider_pk
+
+        finally:
+            # Attempt to delete original
+            namespace = Namespace.get(original_namespace_name)
+            module_provider = ModuleProvider.get(Module(namespace=namespace, name=original_module_name), name=original_provider_name)
+            if module_provider:
+                module_provider.delete()
+
+            # Attempt to delete override
+            namespace = Namespace.get(new_namespace_name)
+            module_provider = ModuleProvider.get(Module(namespace=namespace, name=original_module_name), name=original_provider_name)
+            if module_provider:
+                module_provider.delete()
+

@@ -1,5 +1,33 @@
 # Changelog
 
+# [2.74.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.73.1...v2.74.0) (2023-08-20)
+
+
+### Bug Fixes
+
+* Replace link for "show resources depdencies" with buton to make it more obvious ([827d646](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/827d646d5ae88d234041f7172a7f1fb9b36974a4)), closes [#411](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/411)
+
+
+### Features
+
+* Add ability to delete module provider redirects in module provider settings in UI ([9441429](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9441429c102de52600a4785bb5727423558813c8)), closes [#274](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/274)
+* Add ability to delete namespace from UI ([1fb72a4](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1fb72a4c55712ce1e43df502411bca86d9bd945c)), closes [#268](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/268)
+* Add API endpoint to list module provider redirects and endpoint to delete module provider redirect. ([5473a4e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5473a4eb0d34fb7dd0422c84e759bb10acc95b4f)), closes [#274](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/274)
+* Add arguments to module provider settings API to change module's name, provider and namespace. ([9215b22](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9215b225a785c6bf01536149df82c39c7d0873ed)), closes [#274](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/274)
+* Add configuration to determine how many days worth of module access to check whilst determining if redirect can be deleted ([7646546](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/76465460107bdbbb1f6c48f0a3c03d7ba8ce63b7)), closes [#274](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/274)
+* Add delete method to module provider redirect and functionality to check if redirect is still in use by analytics tokens ([a65f5a0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a65f5a08338f21facbcdfb719a9dc904d694d513)), closes [#274](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/274)
+* Add DELETE method to namespace details API to support deletion of namespace ([93bf63d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/93bf63d28d03ada336e9f2461db6167a6dad2e4c)), closes [#268](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/268)
+* Extract all Terraform provider versions and recursive module details during extraction. ([7af6fd0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7af6fd03dabad9075b8d441ece208f14f8d69a37)), closes [#237](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/237)
+* Record namespace name, module name and provider name used in module download URL in analytics to be able to determine redirect usage ([3e87227](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3e872274da88af8ba1c657bc20d945d5313199fc)), closes [#274](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/274)
+* **ui:** Add form in module provider settings tab to change namespace, module name and provider ([4d6275c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4d6275c38f176782e36224cd82af80e99459ebce)), closes [#274](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/274)
+
+## [2.73.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.73.0...v2.73.1) (2023-08-18)
+
+
+### Bug Fixes
+
+* Fix typo in error response in login page when SSO response is invalid ([9463749](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/94637498ad7043a2bcae986a7131b27dc9fda471))
+
 # [2.73.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.72.0...v2.73.0) (2023-08-08)
 
 

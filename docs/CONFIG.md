@@ -75,6 +75,18 @@ Whether module versions can specify git repository in terrareg config.
 Default: `True`
 
 
+### ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION
+
+
+Whether to allow the force deletion of module provider redirects.
+
+Force deletion is required if module calls are still using the redirect and analytics tokens indicate that
+some have not used migrated to the new name.
+
+
+Default: `False`
+
+
 ### ALLOW_MODULE_HOSTING
 
 
@@ -659,6 +671,22 @@ To disable authentication for publish endpoint, leave empty.
 
 
 Default: ``
+
+
+### REDIRECT_DELETION_LOOKBACK_DAYS
+
+
+Number of days' worth of analytics data to use to determine if a redirect is still in use.
+
+For example, if set to 1, if a Terraform module was accessed via a redirect in the past 1 day, it will require
+forceful deletion to delete (unless a more recent download of the module by the same analytics token no longer uses the redirect).
+
+Value of `0` disables the lookback and redirects can always be removed without force
+
+Value of `-1` will not limit the lookback period and all analytics will be used.
+
+
+Default: `-1`
 
 
 ### REQUIRED_MODULE_METADATA_ATTRIBUTES

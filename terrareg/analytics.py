@@ -19,6 +19,11 @@ class AnalyticsEngine:
     DEFAULT_ENVIRONMENT_NAME = 'Default'
 
     @classmethod
+    def get_datetime_now(cls):
+        """Return datetime now"""
+        return datetime.datetime.now()
+
+    @classmethod
     def are_tokens_enabled(cls):
         """Determine if tokens are enabled."""
         if AnalyticsEngine._ARE_TOKENS_ENABLED is None:
@@ -86,6 +91,9 @@ class AnalyticsEngine:
 
     @staticmethod
     def record_module_version_download(
+        namespace_name: str,
+        module_name: str,
+        provider_name: str,
         module_version,
         analytics_token: str,
         terraform_version: str,
@@ -108,11 +116,14 @@ class AnalyticsEngine:
         db = Database.get()
         insert_statement = db.analytics.insert().values(
             parent_module_version=module_version.pk,
-            timestamp=datetime.datetime.now(),
+            timestamp=AnalyticsEngine.get_datetime_now(),
             terraform_version=terraform_version,
             analytics_token=analytics_token,
             auth_token=auth_token,
-            environment=environment
+            environment=environment,
+            namespace_name=namespace_name,
+            module_name=module_name,
+            provider_name=provider_name
         )
         with db.get_connection() as conn:
             conn.execute(insert_statement)
@@ -231,7 +242,7 @@ class AnalyticsEngine:
 
             # If a checking a given time frame, limit by number of days
             if i[0]:
-                from_timestamp = datetime.datetime.now() - datetime.timedelta(days=i[0])
+                from_timestamp = AnalyticsEngine.get_datetime_now() - datetime.timedelta(days=i[0])
                 select = select.where(
                     db.analytics.c.timestamp >= from_timestamp
                 )
@@ -242,6 +253,69 @@ class AnalyticsEngine:
 
         return stats
 
+    @staticmethod
+    def check_module_provider_redirect_usage(module_provider_redirect):
+        """Check for any analytics using a redirect's name"""
+        # Create list of source namespace names, with actual namespace name
+        # and any redirects
+        namespace_names = [
+            module_provider_redirect.namespace.name
+        ] + [
+            namespace_redirect.name
+            for namespace_redirect in terrareg.models.NamespaceRedirect.get_by_namespace(module_provider_redirect.namespace)
+        ]
+
+        # Obtain all tokens
+        db = Database.get()
+
+        # Get all analytics, join to module version and module provider to filter by module_provider_id of
+        # the module provider redirect. Group by each analytics token, getting the latest (max ID) for each
+        id_subquery = sqlalchemy.select(
+            sqlalchemy.func.max(db.analytics.c.id).label('latest_id'),
+        ).select_from(
+            db.analytics
+        ).join(
+            db.module_version,
+            db.module_version.c.id == db.analytics.c.parent_module_version
+        ).join(
+            db.module_provider,
+            db.module_version.c.module_provider_id == db.module_provider.c.id
+        ).where(
+            db.module_provider.c.id == module_provider_redirect.module_provider_id,
+        ).group_by(
+            db.analytics.c.analytics_token
+        ).subquery()
+
+        # Pass this query into as a sub-query to filter those analytics that are
+        # using the redirect details
+        filter_query = sqlalchemy.select(
+            db.analytics.c.analytics_token,
+            db.analytics.c.timestamp,
+            db.analytics.c.provider_name,
+            db.analytics.c.namespace_name
+        ).select_from(
+            db.analytics
+        ).join(
+            id_subquery,
+            id_subquery.c.latest_id==db.analytics.c.id
+        ).where(
+            db.analytics.c.module_name==module_provider_redirect.module_name,
+            db.analytics.c.provider_name==module_provider_redirect.provider_name,
+            db.analytics.c.namespace_name.in_(namespace_names)
+        )
+
+        # If lookback days has been configured, limit the query
+        # to timestamps more recent than the cutoff
+        lookback_days = Config().REDIRECT_DELETION_LOOKBACK_DAYS
+        if lookback_days >= 0:
+            filter_query = filter_query.where(
+                db.analytics.c.timestamp>=(AnalyticsEngine.get_datetime_now() - datetime.timedelta(days=lookback_days))
+            )
+
+        with db.get_connection() as conn:
+            res = conn.execute(filter_query).all()
+
+        return res
 
     @staticmethod
     def get_module_provider_token_versions(module_provider):

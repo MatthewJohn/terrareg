@@ -60,26 +60,30 @@ class TestAuditEvent(TerraregIntegrationTest):
         assert audit_event.timestamp >= (datetime.now() - timedelta(minutes=1))
 
     @pytest.mark.parametrize('audit_action', [
+        (AuditAction.NAMESPACE_CREATE),
+        (AuditAction.NAMESPACE_MODIFY_NAME),
+        (AuditAction.NAMESPACE_MODIFY_DISPLAY_NAME),
         (AuditAction.MODULE_PROVIDER_CREATE),
         (AuditAction.MODULE_PROVIDER_DELETE),
-        (AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BASE_URL),
-        (AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BROWSE_URL),
-        (AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_CLONE_URL),
-        (AuditAction.MODULE_PROVIDER_UPDATE_GIT_PATH),
-        (AuditAction.MODULE_PROVIDER_UPDATE_GIT_PROVIDER),
         (AuditAction.MODULE_PROVIDER_UPDATE_GIT_TAG_FORMAT),
+        (AuditAction.MODULE_PROVIDER_UPDATE_GIT_PROVIDER),
+        (AuditAction.MODULE_PROVIDER_UPDATE_GIT_PATH),
+        (AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BASE_URL),
+        (AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_CLONE_URL),
+        (AuditAction.MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BROWSE_URL),
         (AuditAction.MODULE_PROVIDER_UPDATE_VERIFIED),
-        (AuditAction.MODULE_PROVIDER_DELETE),
+        (AuditAction.MODULE_PROVIDER_UPDATE_NAMESPACE),
+        (AuditAction.MODULE_PROVIDER_UPDATE_MODULE_NAME),
+        (AuditAction.MODULE_PROVIDER_UPDATE_PROVIDER_NAME),
         (AuditAction.MODULE_VERSION_INDEX),
         (AuditAction.MODULE_VERSION_PUBLISH),
         (AuditAction.MODULE_VERSION_DELETE),
-        (AuditAction.NAMESPACE_CREATE),
-        (AuditAction.USER_LOGIN),
         (AuditAction.USER_GROUP_CREATE),
         (AuditAction.USER_GROUP_DELETE),
         (AuditAction.USER_GROUP_NAMESPACE_PERMISSION_ADD),
+        (AuditAction.USER_GROUP_NAMESPACE_PERMISSION_MODIFY),
         (AuditAction.USER_GROUP_NAMESPACE_PERMISSION_DELETE),
-        (AuditAction.USER_GROUP_NAMESPACE_PERMISSION_MODIFY)
+        (AuditAction.USER_LOGIN)
     ])
     def test_create_audit_event_audit_action(self, audit_action):
         """Test create audit event, testing audit_action field"""

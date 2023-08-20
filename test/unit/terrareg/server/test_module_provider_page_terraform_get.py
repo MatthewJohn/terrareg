@@ -56,6 +56,9 @@ class TestModuleProviderPageTerraformDownload(TerraregUnitTest):
         assert res.status_code == 204
 
         AnalyticsEngine.record_module_version_download.assert_called_with(
+            namespace_name='testnamespace',
+            module_name='testmodulename',
+            provider_name='testprovider',
             module_version=unittest.mock.ANY,
             analytics_token='test_token-name',
             terraform_version='TestTerraformVersion',
@@ -112,6 +115,9 @@ class TestModuleProviderPageTerraformDownload(TerraregUnitTest):
         assert res.status_code == 204
 
         AnalyticsEngine.record_module_version_download.assert_called_with(
+            namespace_name=namespace,
+            module_name=module,
+            provider_name=provider,
             module_version=unittest.mock.ANY,
             analytics_token='test_token-name',
             terraform_version='TestTerraformVersion',
