@@ -274,11 +274,6 @@ class AnalyticsEngine:
         # which will return the latest analytics row for each token.
         id_subquery = sqlalchemy.select(
             sqlalchemy.func.max(db.analytics.c.id).label('latest_id'),
-            db.analytics.c.module_name,
-            db.analytics.c.provider_name,
-            db.analytics.c.namespace_name,
-            db.analytics.c.timestamp,
-            db.analytics.c.analytics_token,
         ).select_from(
             db.analytics
         ).join(
@@ -295,14 +290,19 @@ class AnalyticsEngine:
 
         # Pass this query into as a sub-query to filter and filter by those using the redirect details
         filter_query = sqlalchemy.select(
-            id_subquery.c.analytics_token,
-            id_subquery.c.timestamp
+            db.analytics.c.analytics_token,
+            db.analytics.c.timestamp,
+            db.analytics.c.provider_name,
+            db.analytics.c.namespace_name
         ).select_from(
-            id_subquery
+            db.analytics
+        ).join(
+            id_subquery,
+            id_subquery.c.latest_id==db.analytics.c.id
         ).where(
-            id_subquery.c.module_name==module_provider_redirect.module_name,
-            id_subquery.c.provider_name==module_provider_redirect.provider_name,
-            id_subquery.c.namespace_name.in_(namespace_names)
+            db.analytics.c.module_name==module_provider_redirect.module_name,
+            db.analytics.c.provider_name==module_provider_redirect.provider_name,
+            db.analytics.c.namespace_name.in_(namespace_names)
         )
 
         # If lookback days has been configured, limit the query
@@ -310,7 +310,7 @@ class AnalyticsEngine:
         lookback_days = Config().REDIRECT_DELETION_LOOKBACK_DAYS
         if lookback_days >= 0:
             filter_query = filter_query.where(
-                id_subquery.c.timestamp>=(AnalyticsEngine.get_datetime_now() - datetime.timedelta(days=lookback_days))
+                db.analytics.c.timestamp>=(AnalyticsEngine.get_datetime_now() - datetime.timedelta(days=lookback_days))
             )
 
         with db.get_connection() as conn:
