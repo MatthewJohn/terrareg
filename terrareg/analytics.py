@@ -19,6 +19,11 @@ class AnalyticsEngine:
     DEFAULT_ENVIRONMENT_NAME = 'Default'
 
     @classmethod
+    def get_datetime_now(cls):
+        """Return datetime now"""
+        return datetime.datetime.now()
+
+    @classmethod
     def are_tokens_enabled(cls):
         """Determine if tokens are enabled."""
         if AnalyticsEngine._ARE_TOKENS_ENABLED is None:
@@ -111,7 +116,7 @@ class AnalyticsEngine:
         db = Database.get()
         insert_statement = db.analytics.insert().values(
             parent_module_version=module_version.pk,
-            timestamp=datetime.datetime.now(),
+            timestamp=AnalyticsEngine.get_datetime_now(),
             terraform_version=terraform_version,
             analytics_token=analytics_token,
             auth_token=auth_token,
@@ -237,7 +242,7 @@ class AnalyticsEngine:
 
             # If a checking a given time frame, limit by number of days
             if i[0]:
-                from_timestamp = datetime.datetime.now() - datetime.timedelta(days=i[0])
+                from_timestamp = AnalyticsEngine.get_datetime_now() - datetime.timedelta(days=i[0])
                 select = select.where(
                     db.analytics.c.timestamp >= from_timestamp
                 )
@@ -305,7 +310,7 @@ class AnalyticsEngine:
         lookback_days = Config().REDIRECT_DELETION_LOOKBACK_DAYS
         if lookback_days >= 0:
             filter_query = filter_query.where(
-                id_subquery.c.timestamp>=(datetime.datetime.now() - datetime.timedelta(days=lookback_days))
+                id_subquery.c.timestamp>=(AnalyticsEngine.get_datetime_now() - datetime.timedelta(days=lookback_days))
             )
 
         with db.get_connection() as conn:
