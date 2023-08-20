@@ -1797,13 +1797,17 @@ class ModuleProviderRedirect(object):
                 raise NonExistentModuleProviderRedirectError("Module provider redirect does not exist with the given ID")
             return data
 
-    def delete(self, force=False):
-        """Delete module provider redirect"""
+    def delete(self, force=False, internal_force=False):
+        """
+        Delete module provider redirect.
+        Force will override check for whether the module is in use, as supplied by the user.
+        Internal force is used to override check, when deleting a module provider.
+        """
         if force and not terrareg.config.Config().ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION:
             raise ModuleProviderRedirectForceDeletionNotAllowedError("Force deletion of module provider redirects is not allowed")
 
         # Check if module provider redirect is in use
-        if not force and terrareg.analytics.AnalyticsEngine.check_module_provider_redirect_usage(self):
+        if not (force or internal_force) and terrareg.analytics.AnalyticsEngine.check_module_provider_redirect_usage(self):
             raise ModuleProviderRedirectInUseError("Module provider redirect is in use, so cannot be deleted without forceful deletion")
         
         # Delete from database
@@ -2129,7 +2133,7 @@ class ModuleProvider(object):
 
         # Delete any redirects
         for redirect in ModuleProviderRedirect.get_by_module_provider(self):
-            redirect.delete(force=True)
+            redirect.delete(internal_force=True)
 
         db = Database.get()
 

@@ -1,6 +1,7 @@
 
 from datetime import datetime
 import json
+from unittest import mock
 
 import pytest
 import sqlalchemy
@@ -142,22 +143,73 @@ class TestModuleProviderRedirect(TerraregIntegrationTest):
             provider.delete()
             namespace.delete()
 
+    def test_delete_with_force_with_offending_analytics_with_force_disabled(self):
+        """
+        Test deleting a ModuleProviderRedirect with analytics that are still
+        using the redirect using force, with forceful deletion disabled by config
+        """
+        with mock.patch("terrareg.config.Config.ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION", False):
+            # Create namespace/module provider
+            provider, namespace, _ = self._setup_offending_analytics_token()
+
+            try:
+                redirects = ModuleProviderRedirect.get_by_module_provider(provider)
+                assert len(redirects) == 1
+                redirect = redirects[0]
+
+                with pytest.raises(terrareg.errors.ModuleProviderRedirectForceDeletionNotAllowedError):
+                    redirect.delete(force=True)
+
+                # Ensure redirect has been removed
+                redirects = ModuleProviderRedirect.get_by_module_provider(provider)
+                assert len(redirects) == 1
+            finally:
+                provider.delete()
+                namespace.delete()
+
+    def test_delete_with_internal_force_with_offending_analytics(self):
+        """
+        Test deleting a ModuleProviderRedirect with analytics that are still
+        using the redirect using internal force, with configuration disallowing normal force
+        """
+
+        with mock.patch("terrareg.config.Config.ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION", False):
+            # Create namespace/module provider
+            provider, namespace, _ = self._setup_offending_analytics_token()
+
+            try:
+                redirects = ModuleProviderRedirect.get_by_module_provider(provider)
+                assert len(redirects) == 1
+                redirect = redirects[0]
+
+                redirect.delete(internal_force=True)
+
+                # Ensure redirect has been removed
+                redirects = ModuleProviderRedirect.get_by_module_provider(provider)
+                assert len(redirects) == 0
+            finally:
+                provider.delete()
+                namespace.delete()
+
+
     def test_delete_with_force_with_offending_analytics(self):
-        """Test deleting a ModuleProviderRedirect with analytics that are still using the redirect using force"""
+        """Test deleting a ModuleProviderRedirect with analytics that are still using the redirect using force, with configuration allowing forceful deletion"""
+        with mock.patch("terrareg.config.Config.ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION", True):
 
-        # Create namespace/module provider
-        provider, namespace, _ = self._setup_offending_analytics_token()
+            # Create namespace/module provider
+            provider, namespace, _ = self._setup_offending_analytics_token()
 
-        try:
-            redirects = ModuleProviderRedirect.get_by_module_provider(provider)
-            assert len(redirects) == 1
-            redirect = redirects[0]
+            try:
+                redirects = ModuleProviderRedirect.get_by_module_provider(provider)
+                assert len(redirects) == 1
+                redirect = redirects[0]
 
-            redirect.delete(force=True)
+                # Forceful deletion should be allowed
+                redirect.delete(force=True)
 
-            # Ensure redirect has been removed
-            redirects = ModuleProviderRedirect.get_by_module_provider(provider)
-            assert len(redirects) == 0
-        finally:
-            provider.delete()
-            namespace.delete()
+                # Ensure redirect has been removed
+                redirects = ModuleProviderRedirect.get_by_module_provider(provider)
+                assert len(redirects) == 0
+            finally:
+                provider.delete()
+                namespace.delete()
