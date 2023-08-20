@@ -1,5 +1,6 @@
 
 from unittest import mock
+from terrareg.errors import IncorrectCSRFTokenError
 
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 import terrareg.audit_action
@@ -108,7 +109,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
 
     @setup_test_data()
     def test_update_name(self, client, mock_models):
-        """Test sending request to update attributes without any modifications"""
+        """Test sending request to update attributes changing namespace name"""
         mock_get_current_auth_method = self._get_mock_namespace_access()
 
         with mock.patch('terrareg.models.Namespace.update_display_name') as mock_update_display_name, \
@@ -130,7 +131,7 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
 
     @setup_test_data()
     def test_update_without_access(self, client, mock_models):
-        """Test sending request to update attributes without any modifications"""
+        """Test sending request to update attributes with required namespace permissions"""
         mock_auth_method = mock.MagicMock()
         mock_auth_method.check_namespace_access = mock.MagicMock(return_value=False)
         mock_auth_method.get_username.return_value = 'moduleversion-publish-username'
@@ -146,3 +147,83 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
             mock_auth_method.check_namespace_access.assert_called_once_with(UserGroupNamespacePermissionType.FULL, namespace='testnamespace')
             mock_update_name.assert_not_called()
             mock_update_display_name.assert_not_called()
+
+    @setup_test_data()
+    def test_delete(self, client, mock_models):
+        """Test sending request to delete namespace"""
+        mock_auth_method = mock.MagicMock()
+        mock_auth_method.check_namespace_access = mock.MagicMock(return_value=True)
+        mock_auth_method.get_username.return_value = 'moduleversion-publish-username'
+        mock_get_current_auth_method = mock.MagicMock(return_value=mock_auth_method)
+
+        with mock.patch('terrareg.models.Namespace.delete') as mock_delete, \
+                mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
+                mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+
+            res = client.delete('/v1/terrareg/namespaces/testnamespace', json={})
+            assert res.json == {}
+            assert res.status_code == 200
+
+            mock_auth_method.check_namespace_access.assert_called_once_with(UserGroupNamespacePermissionType.FULL, namespace='testnamespace')
+            mock_delete.assert_called_once_with()
+
+    @setup_test_data()
+    def test_delete_non_existent(self, client, mock_models):
+        """Test sending request to delete non-existen namespace"""
+        mock_auth_method = mock.MagicMock()
+        mock_auth_method.check_namespace_access = mock.MagicMock(return_value=True)
+        mock_auth_method.get_username.return_value = 'moduleversion-publish-username'
+        mock_get_current_auth_method = mock.MagicMock(return_value=mock_auth_method)
+
+        with mock.patch('terrareg.models.Namespace.delete') as mock_delete, \
+                mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
+                mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+
+            res = client.delete('/v1/terrareg/namespaces/doesnotexist', json={})
+            assert res.status_code == 404
+            assert res.json == {'errors': ['Not Found']}
+
+            mock_auth_method.check_namespace_access.assert_called_once_with(UserGroupNamespacePermissionType.FULL, namespace='doesnotexist')
+            mock_delete.assert_not_called()
+
+    @setup_test_data()
+    def test_delete_invalid_csrf(self, client, mock_models):
+        """Test sending request to delete non-existen namespace"""
+        mock_auth_method = mock.MagicMock()
+        mock_auth_method.check_namespace_access = mock.MagicMock(return_value=True)
+        mock_auth_method.get_username.return_value = 'moduleversion-publish-username'
+        mock_get_current_auth_method = mock.MagicMock(return_value=mock_auth_method)
+
+        def check_csrf_token(token):
+            raise IncorrectCSRFTokenError("Invalid token")
+
+        with mock.patch('terrareg.models.Namespace.delete') as mock_delete, \
+                mock.patch('terrareg.csrf.check_csrf_token', side_effect=check_csrf_token) as mock_check_csrf, \
+                mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+
+            res = client.delete('/v1/terrareg/namespaces/testnamespace', json={'csrf_token': 'test-delete-csrf'})
+            assert res.status_code == 500
+            assert res.json == {'message': 'Invalid token', 'status': 'Error'}
+
+            mock_auth_method.check_namespace_access.assert_called_once_with(UserGroupNamespacePermissionType.FULL, namespace='testnamespace')
+            mock_check_csrf.assert_called_once_with('test-delete-csrf')
+            mock_delete.assert_not_called()
+
+    @setup_test_data()
+    def test_update_without_access(self, client, mock_models):
+        """Test request to delete namespace without access"""
+        mock_auth_method = mock.MagicMock()
+        mock_auth_method.check_namespace_access = mock.MagicMock(return_value=False)
+        mock_auth_method.get_username.return_value = 'moduleversion-publish-username'
+        mock_get_current_auth_method = mock.MagicMock(return_value=mock_auth_method)
+
+        with mock.patch('terrareg.models.Namespace.delete') as mock_delete, \
+                mock.patch('terrareg.csrf.check_csrf_token', return_value=True), \
+                mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+
+            res = client.post('/v1/terrareg/namespaces/testnamespace', json={})
+            assert res.status_code == 403
+
+            mock_auth_method.check_namespace_access.assert_called_once_with(UserGroupNamespacePermissionType.FULL, namespace='testnamespace')
+            mock_delete.assert_not_called()
+

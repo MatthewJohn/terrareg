@@ -34,8 +34,9 @@ class TestNamespaceList(SeleniumTest):
             ['mostrecentunpublished', 'mostrecentunpublished'], ['onlybeta', 'onlybeta'],
             ['onlyunpublished', 'onlyunpublished'], ['real_providers', 'real_providers'],
             ['relevancysearch', 'relevancysearch'], ['repo_url_tests', 'repo_url_tests'],
-            ['searchbynamespace', 'searchbynamespace'], ['testmodulecreation', 'testmodulecreation'],
-            ['testnamespace', 'testnamespace'], ['trustednamespace', 'trustednamespace'],
+            ['scratchnamespace', 'scratchnamespace'], ['searchbynamespace', 'searchbynamespace'],
+            ['testmodulecreation', 'testmodulecreation'], ['testnamespace', 'testnamespace'],
+            ['trustednamespace', 'trustednamespace'],
             ['unpublished-beta-version-module-providers', 'unpublished-beta-version-module-providers'],
             ['version-constraint-test', 'version-constraint-test'],
             # Namespace with a display name

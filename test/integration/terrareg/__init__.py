@@ -4,6 +4,7 @@ import unittest.mock
 from terrareg.auth import AdminApiKeyAuthMethod
 
 from test import BaseTest
+import terrareg.database
 from .test_data import integration_test_data, integration_git_providers
 
 
@@ -35,3 +36,9 @@ class TerraregIntegrationTest(BaseTest):
         cls._get_current_auth_method_mock.stop()
 
         super(TerraregIntegrationTest, cls).teardown_class()
+
+    def _delete_audit_events(self):
+        """Delete all audit events"""
+        db = terrareg.database.Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.audit_history.delete())

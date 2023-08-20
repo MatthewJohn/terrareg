@@ -343,6 +343,9 @@ class TestModuleVersion(TerraregIntegrationTest):
 
         # Create analytics
         AnalyticsEngine.record_module_version_download(
+            namespace_name='testnamespace',
+            module_name='wrongversionorder',
+            provider_name='testprovider',
             module_version=module_version,
             terraform_version='1.0.0',
             analytics_token='unittest',

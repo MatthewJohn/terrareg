@@ -94,6 +94,7 @@ class TestCreateModuleProvider(SeleniumTest):
             'real_providers',
             'relevancysearch',
             'repo_url_tests',
+            'scratchnamespace',
             'searchbynamespace',
             'testmodulecreation',
             'testnamespace',

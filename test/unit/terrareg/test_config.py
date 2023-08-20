@@ -104,7 +104,8 @@ class TestConfig:
     @pytest.mark.parametrize('config_name', [
         'ADMIN_SESSION_EXPIRY_MINS',
         'LISTEN_PORT',
-        'GIT_CLONE_TIMEOUT'
+        'GIT_CLONE_TIMEOUT',
+        'REDIRECT_DELETION_LOOKBACK_DAYS',
     ])
     def test_integer_configs(self, config_name):
         """Test integer configs to ensure they are overriden with environment variables."""
@@ -193,7 +194,8 @@ class TestConfig:
         'SAML2_DEBUG',
         'OPENID_CONNECT_DEBUG',
         "MANAGE_TERRAFORM_RC_FILE",
-        'DISABLE_ANALYTICS'
+        'DISABLE_ANALYTICS',
+        'ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION',
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
         """Test boolean configs to ensure they are overriden with environment variables."""
