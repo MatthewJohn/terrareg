@@ -857,7 +857,7 @@ class SettingsTab extends ModuleDetailsTab {
             contentType: 'application/json'
         }).done(() => {
             // Refresh page
-            window.location.href = `/modules/${this._moduleDetails.id}#settings`;
+            location.reload();
         }).fail((res) => {
             let redirectError = $('#settings-redirect-error');
             if (res.status == 401) {

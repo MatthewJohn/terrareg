@@ -25,6 +25,7 @@ from terrareg.models import (
     ModuleProvider, ProviderLogo,
     UserGroup, UserGroupNamespacePermission
 )
+import terrareg.analytics
 
 
 class TestModuleProvider(SeleniumTest):
@@ -44,6 +45,7 @@ class TestModuleProvider(SeleniumTest):
         cls._config_module_links = mock.patch('terrareg.config.Config.MODULE_LINKS', '[]')
         cls._config_terraform_example_version_template = mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major_plus_one}.0.0, unittest')
         cls._config_disable_analytics = mock.patch('terrareg.config.Config.DISABLE_ANALYTICS', False)
+        cls._config_allow_forceful_module_provider_redirect_deletion = mock.patch('terrareg.config.Config.ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION', True)
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
@@ -56,6 +58,7 @@ class TestModuleProvider(SeleniumTest):
         cls.register_patch(cls._config_module_links)
         cls.register_patch(cls._config_terraform_example_version_template)
         cls.register_patch(cls._config_disable_analytics)
+        cls.register_patch(cls._config_allow_forceful_module_provider_redirect_deletion)
 
         super(TestModuleProvider, cls).setup_class()
 
@@ -2780,3 +2783,116 @@ module "root" {
         assert self.selenium_instance.find_element(By.ID, "supported-terraform-compatible").text == f"Terraform {terraform_version} compatibility:\n{expected_compatibility_result}"
         # Check color of label
         assert self.selenium_instance.find_element(By.ID, "supported-terraform-compatible-tag").get_attribute("class") == f"tag is-medium is-light is-{expected_color}"
+
+    def test_delete_module_provider_redirect(self, mock_create_audit_event):
+        """Test deletion of a module provider redirect"""
+        with mock_create_audit_event:
+            namespace = Namespace.get("moduledetails")
+            module_provider = ModuleProvider.create(module=Module(namespace, "testredirect"), name="testprovider")
+            module_provider = module_provider.update_name(namespace=namespace, module_name="secondredirect", provider_name="testprovider")
+            module_provider = module_provider.update_name(namespace=namespace, module_name="newredirectname", provider_name="testprovider")
+            version = ModuleVersion(module_provider, "1.0.0")
+            version.prepare_module()
+
+            # Add analytics
+            terrareg.analytics.AnalyticsEngine.record_module_version_download(
+                namespace_name="moduledetails",
+                module_name="testredirect",
+                provider_name="testprovider",
+                module_version=version,
+                analytics_token=None, terraform_version="1.0.0",
+                user_agent=None, auth_token=None
+            )
+
+        try:
+            self.delete_cookies_and_local_storage()
+            self.perform_admin_authentication(password='unittest-password')
+
+            self.selenium_instance.get(self.get_url("/modules/moduledetails/newredirectname/testprovider"))
+
+            # Click on settings tab
+            tab = self.wait_for_element(By.ID, 'module-tab-link-settings')
+            tab.click()
+
+            # Ensure redirect card is present
+            redirect_card = self.selenium_instance.find_element(By.ID, "settingsRedirectCard")
+            assert redirect_card.is_displayed() == True
+
+            # Check rows of table
+            table_body = redirect_card.find_element(By.ID, "settingsRedirectTable")
+            expected_rows = [
+                ["moduledetails", "testredirect", "testprovider", "Delete"],
+                ["moduledetails", "secondredirect", "testprovider", "Delete"]
+            ]
+            first_redirect_row = None
+            for row in table_body.find_elements(By.TAG_NAME, "tr"):
+                found_row = [td.text for td in row.find_elements(By.TAG_NAME, "td")]
+                assert found_row in expected_rows
+                expected_rows.remove(found_row)
+
+                if found_row[1] == "secondredirect":
+                    first_redirect_row = row
+
+            assert len(expected_rows) == 0
+
+            # Click delete button against analytics
+            delete_button = first_redirect_row.find_element(By.TAG_NAME, "button")
+            assert delete_button.text == "Delete"
+            delete_button.click()
+
+            # Wait for page reload
+            sleep(1)
+
+            # Wait for page to reload and ensure redirect card is present
+            redirect_card = self.wait_for_element(By.ID, "settingsRedirectCard")
+            assert redirect_card.is_displayed() == True
+
+            # Ensure original redirect has been removed
+            table_body = redirect_card.find_element(By.ID, "settingsRedirectTable")
+            expected_rows = [
+                ["moduledetails", "testredirect", "testprovider", "Delete"]
+            ]
+            found_rows = []
+            second_redirect_row = None
+            for row in table_body.find_elements(By.TAG_NAME, "tr"):
+                found_rows.append([td.text for td in row.find_elements(By.TAG_NAME, "td")])
+                if found_rows[0][1] == "testredirect":
+                    second_redirect_row = row
+
+            assert expected_rows == found_rows
+
+            # Ensure error is not shown
+            assert self.selenium_instance.find_element(By.ID, "settings-redirect-error").is_displayed() == False
+
+            # Attempt to remove second row
+            delete_button = second_redirect_row.find_element(By.TAG_NAME, "button")
+            assert delete_button.text == "Delete"
+            delete_button.click()
+
+            # Ensure error is shown
+            error = self.selenium_instance.find_element(By.ID, "settings-redirect-error")
+            assert error.is_displayed() == True
+            assert error.text == (
+                'Module provider redirect is in use, so cannot be deleted without forceful deletion\n'
+                'Force Retry'
+            )
+
+            # Find force retry button and click
+            force_retry_button = error.find_element(By.TAG_NAME, "button")
+            assert force_retry_button.text == "Force Retry"
+            force_retry_button.click()
+
+            # Wait for page reload
+            sleep(1)
+
+            # Wait for reload and settings tab
+            tab = self.wait_for_element(By.ID, 'module-tab-link-settings')
+
+            # Ensure redirects card is not shown
+            assert self.selenium_instance.find_element(By.ID, "settingsRedirectCard").is_displayed() == False
+
+        finally:
+            # Delete module provider
+            with mock_create_audit_event:
+                module_provider.delete()
+
