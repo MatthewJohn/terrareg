@@ -269,9 +269,7 @@ class AnalyticsEngine:
         db = Database.get()
 
         # Get all analytics, join to module version and module provider to filter by module_provider_id of
-        # the module provider redirect.
-        # Filter by redirect module name, provieder name and any of the associated names of the source namespace,
-        # which will return the latest analytics row for each token.
+        # the module provider redirect. Group by each analytics token, getting the latest (max ID) for each
         id_subquery = sqlalchemy.select(
             sqlalchemy.func.max(db.analytics.c.id).label('latest_id'),
         ).select_from(
@@ -288,7 +286,8 @@ class AnalyticsEngine:
             db.analytics.c.analytics_token
         ).subquery()
 
-        # Pass this query into as a sub-query to filter and filter by those using the redirect details
+        # Pass this query into as a sub-query to filter those analytics that are
+        # using the redirect details
         filter_query = sqlalchemy.select(
             db.analytics.c.analytics_token,
             db.analytics.c.timestamp,
