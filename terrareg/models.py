@@ -6,12 +6,14 @@ from distutils.version import LooseVersion
 import json
 import re
 import secrets
-import sqlalchemy
 import urllib.parse
 
+import sqlalchemy
+import semantic_version
 import markdown
 import pygraphviz
 import networkx as nx
+
 import terrareg.analytics
 from terrareg.database import Database
 import terrareg.config
@@ -1984,6 +1986,11 @@ class ModuleProvider(object):
         return self._get_db_row()['verified']
 
     @property
+    def can_index_by_version(self):
+        """Whether the module version can be indexed by version"""
+        return '{version}' in self.git_tag_format
+
+    @property
     def git_tag_format(self):
         """Return git tag format"""
         if self._get_db_row()['git_tag_format']:
@@ -1995,21 +2002,39 @@ class ModuleProvider(object):
     def git_ref_format(self):
         return 'refs/tags/{}'.format(self.git_tag_format)
 
-    @property
-    def tag_ref_regex(self):
-        """Return regex match for git ref to match version"""
+    def get_tag_regex(self, source_format):
+        """Convert tag formatting string to regex, replacing placeholders"""
         # Hacky method to replace placeholder with temporary string,
         # escape regex characters and then replace temporary string
         # with regex for version
-        string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m153'
-        version_re = self.git_ref_format.format(version=string_does_not_exist)
+        version_string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m1531'
+        major_string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m1532'
+        minor_string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m1533'
+        patch_string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m1534'
+        build_string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m1535'
+        version_re = source_format.format(
+            version=version_string_does_not_exist,
+            major=major_string_does_not_exist,
+            minor=minor_string_does_not_exist,
+            patch=patch_string_does_not_exist,
+            build=build_string_does_not_exist
+        )
         version_re = re.escape(version_re)
         # Add EOL and SOL characters
         version_re = '^{version_re}$'.format(version_re=version_re)
         # Replace temporary string with regex for symatec version
-        version_re = version_re.replace(string_does_not_exist, r'(\d+\.\d+.\d+)')
+        version_re = version_re.replace(version_string_does_not_exist, r'(?P<version>\d+\.\d+.\d+)')
+        version_re = version_re.replace(major_string_does_not_exist, r'(?P<major>\d+)')
+        version_re = version_re.replace(minor_string_does_not_exist, r'(?P<minor>\d+)')
+        version_re = version_re.replace(patch_string_does_not_exist, r'(?P<patch>\d+)')
+        version_re = version_re.replace(build_string_does_not_exist, r'(?P<build>-[a-z0-9]+)')
         # Return copmiled regex
         return re.compile(version_re)
+
+    @property
+    def tag_ref_regex(self):
+        """Return regex match for git ref to match version"""
+        return self.get_tag_regex(self.git_ref_format)
 
     @property
     def git_path(self):
@@ -2075,43 +2100,45 @@ class ModuleProvider(object):
 
         return new_module_provider
 
-    def get_version_from_tag_ref(self, tag_ref):
-        """Match tag ref against version number and return actual version number."""
+    def _get_version_from_version_regex(self, regex, match_value):
+        """Return a semantic version from one of the tag version regexes"""
         # Handle empty/None tag_ref
-        if not tag_ref:
+        if not match_value:
             return None
 
-        res = self.tag_ref_regex.match(tag_ref)
+        res = regex.match(match_value)
         if res:
-            return res.group(1)
+            groups = res.groupdict()
+            # If the regex contains a group for the full version,
+            # return that as the version
+            if 'version' in groups:
+                return groups['version']
+
+            # Otherwise, obtain each of the major, minor, patch,
+            # defaulting each value to 0.
+            # At least one of these will be present, as they
+            # are required when setting the git tag format
+            return '{major}.{minor}.{patch}'.format(
+                major=groups.get('major', 0),
+                minor=groups.get('minor', 0),
+                patch=groups.get('patch', 0)
+            )
+        # The git tag format didn't match against the tag,
+        # so return None
         return None
+
+    def get_version_from_tag_ref(self, tag_ref):
+        """Match tag ref against version number and return actual version number."""
+        return self._get_version_from_version_regex(self.tag_ref_regex, tag_ref)
 
     @property
     def tag_version_regex(self):
         """Return regex match for git ref to match version"""
-        # Hacky method to replace placeholder with temporary string,
-        # escape regex characters and then replace temporary string
-        # with regex for version
-        string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m153'
-        version_re = self.git_tag_format.format(version=string_does_not_exist)
-        version_re = re.escape(version_re)
-        # Add EOL and SOL characters
-        version_re = '^{version_re}$'.format(version_re=version_re)
-        # Replace temporary string with regex for symatec version
-        version_re = version_re.replace(string_does_not_exist, r'(\d+\.\d+.\d+)')
-        # Return copmiled regex
-        return re.compile(version_re)
+        return self.get_tag_regex(self.git_tag_format)
 
     def get_version_from_tag(self, tag):
         """Match tag against version number and return actual version number."""
-        # Handle empty/None tag_ref
-        if not tag:
-            return None
-
-        res = self.tag_version_regex.match(tag)
-        if res:
-            return res.group(1)
-        return None
+        return self._get_version_from_version_regex(self.tag_version_regex, tag)
 
     @property
     def base_directory(self):
@@ -2264,15 +2291,21 @@ class ModuleProvider(object):
 
     def update_git_tag_format(self, git_tag_format):
         """Update git_tag_format."""
-        sanitised_git_tag_format = urllib.parse.quote(git_tag_format, safe=r'/{}')
-
         if git_tag_format:
+            sanitised_git_tag_format = urllib.parse.quote(git_tag_format, safe=r'/{}')
+
             # If tag format was provided, ensured it can be passed with 'format'
             try:
-                sanitised_git_tag_format.format(version='1.1.1')
-                assert '{version}' in sanitised_git_tag_format
-            except (ValueError, AssertionError):
-                raise InvalidGitTagFormatError('Invalid git tag format. Must contain one placeholder: {version}.')
+                sanitised_git_tag_format.format(version='1.1.1', major='1', minor='2', patch='3')
+                # Ensure either '{version}' placeholder is present, or at least one of
+                # '{major}', '{minor}' or '{patch}'
+                if ('{version}' not in sanitised_git_tag_format and
+                        '{major}' not in sanitised_git_tag_format and
+                        '{minor}' not in sanitised_git_tag_format and
+                        '{patch}' not in sanitised_git_tag_format):
+                    raise ValueError
+            except (ValueError, KeyError):
+                raise InvalidGitTagFormatError('Invalid git tag format. Must contain one placeholder: {version}, {major}, {minor}, {patch}.')
         else:
             # If not value was provided, default to None
             sanitised_git_tag_format = None
@@ -3160,12 +3193,26 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def source_git_tag(self):
         """Return git tag used for extraction clone"""
-        return self._module_provider.git_tag_format.format(version=self._version)
+        tag = semantic_version.Version(version_string=self._version)
+        return self._module_provider.git_tag_format.format(
+            version=self._version,
+            major=tag.major,
+            minor=tag.minor,
+            patch=tag.patch,
+            build=tag.build
+        )
 
     @property
     def git_tag_ref(self):
         """Return git tag ref for extraction."""
-        return self._module_provider.git_ref_format.format(version=self._version)
+        tag = semantic_version.Version(version_string=self._version)
+        return self._module_provider.git_ref_format.format(
+            version=self._version,
+            major=tag.major,
+            minor=tag.minor,
+            patch=tag.patch,
+            build=tag.build
+        )
 
     @property
     def base_directory(self):
