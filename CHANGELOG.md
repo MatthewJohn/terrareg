@@ -1,5 +1,20 @@
 # Changelog
 
+# [2.75.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.74.0...v2.75.0) (2023-08-21)
+
+
+### Bug Fixes
+
+* Avoid error when passing None value to updat_git_tag_format, which threw an exception in urllib quote method ([22a36aa](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/22a36aa98064ce1098e0c8e235f2f57a98f036ba)), closes [#412](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/412)
+* Handle KeyError exceptions thrown in update_git_tag_format when an unmatched placeholder is present ([873bf47](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/873bf479849c61da93a111fce9964bab0812bbae)), closes [#412](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/412)
+
+
+### Features
+
+* Add handling of git tags with non-semantic versioning in git hooks. ([c0f4f7e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c0f4f7e0d1d5a30e1d6287fc8176358887696cb7)), closes [#412](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/412)
+* Add new API endpoint for importing/indexing module versions by either version or git tag. ([89d734e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/89d734e3ff88ccb47c070748b3ff93d84e2fe6e3)), closes [#412](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/412) [#416](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/416)
+* Fix providing module provider git tag format with placeholders to allow tags that do not use a full semantic version. ([cff3da6](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/cff3da6a692a24673218747f3820f99cf97e490c)), closes [#412](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/412)
+
 # [2.74.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.73.1...v2.74.0) (2023-08-20)
 
 
