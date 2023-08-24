@@ -181,4 +181,7 @@ For full license, see [LICENSE](LICENSE)
 ## Special thanks
 
  * David Soff <david@soff.nl> for implementing Github hook support
+ * @0xken for impleenting a custom Cherry Dark theme
+ * @chriscunningham-trivago for fixing tfswitch bug in docker build
+ * @bmaximuml for fixing typos
 
