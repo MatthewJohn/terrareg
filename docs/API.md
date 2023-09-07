@@ -349,12 +349,14 @@ Return custom terrareg config for namespace.
 #### POST
 
 Edit name/display name of a namespace
-### DELETE
+#### DELETE
+
 
 Delete namespace
 
-        JSON body:
-         * csrf_token - CSRF token required for sessioned-based authentication
+JSON body:
+* csrf_token - CSRF token required for sessioned-based authentication
+
 
 
 ## ApiTerraregNamespaceModules
@@ -460,7 +462,7 @@ Return list of integration URLs
 Provide interface to delete module provider redirect.
 
 
-### GET
+#### GET
 
 Delete module provider.
 
@@ -472,7 +474,7 @@ Delete module provider.
 Provide interface to delete module provider redirect.
 
 
-### DELETE
+#### DELETE
 
 Delete module provider.
 

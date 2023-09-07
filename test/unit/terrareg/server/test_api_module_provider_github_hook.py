@@ -469,7 +469,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
                 data=json.dumps(request_json),
                 headers={
                     'Content-Type': 'application/json',
-                    'X-Hub-Signature': 'sha256={}'.format(valid_signature.hexdigest())
+                    'x-hub-signature-256': 'sha256={}'.format(valid_signature.hexdigest())
                 }
             )
 
@@ -478,3 +478,130 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
 
             mocked_prepare_module.assert_called_once()
             mocked_process_upload.assert_called_once()
+
+    @setup_test_data()
+    def test_hook_with_real_payload_and_valid_api_key_signature(self, client, mock_models):
+        """Test hook call with valid API key signature."""
+        with unittest.mock.patch(
+                    'terrareg.models.ModuleVersion.prepare_module', return_value=False) as mocked_prepare_module, \
+                unittest.mock.patch(
+                    'terrareg.module_extractor.GitModuleExtractor.process_upload') as mocked_process_upload, \
+                unittest.mock.patch('terrareg.config.Config.UPLOAD_API_KEYS', ['test-api-key1', 'test-api-key2']):
+
+            request_body = (
+                '{"action":"released","release":{"url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/releases/120339891",'
+                '"assets_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/releases/120339891/assets",'
+                '"upload_url":"https://uploads.github.com/repos/MatthewJohn/test-terrareg-hook/releases/120339891/assets{?name,label}",'
+                '"html_url":"https://github.com/MatthewJohn/test-terrareg-hook/releases/tag/v1.0.0","id":120339891,'
+                '"author":{"login":"MatthewJohn","id":1266262,"node_id":"MDQ6VXNlcjEyNjYyNjI=",'
+                '"avatar_url":"https://avatars.githubusercontent.com/u/1266262?v=4","gravatar_id":"",'
+                '"url":"https://api.github.com/users/MatthewJohn","html_url":"https://github.com/MatthewJohn",'
+                '"followers_url":"https://api.github.com/users/MatthewJohn/followers",'
+                '"following_url":"https://api.github.com/users/MatthewJohn/following{/other_user}",'
+                '"gists_url":"https://api.github.com/users/MatthewJohn/gists{/gist_id}",'
+                '"starred_url":"https://api.github.com/users/MatthewJohn/starred{/owner}{/repo}",'
+                '"subscriptions_url":"https://api.github.com/users/MatthewJohn/subscriptions",'
+                '"organizations_url":"https://api.github.com/users/MatthewJohn/orgs",'
+                '"repos_url":"https://api.github.com/users/MatthewJohn/repos",'
+                '"events_url":"https://api.github.com/users/MatthewJohn/events{/privacy}",'
+                '"received_events_url":"https://api.github.com/users/MatthewJohn/received_events",'
+                '"type":"User","site_admin":false},"node_id":"RE_kwDOKQvcu84HLD2z","tag_name":"v1.0.0",'
+                '"target_commitish":"main","name":"v1.0.0","draft":false,"prerelease":false,'
+                '"created_at":"2023-09-07T19:37:35Z","published_at":"2023-09-07T19:43:54Z",'
+                '"assets":[],"tarball_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/tarball/v1.0.0",'
+                '"zipball_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/zipball/v1.0.0","body":""},'
+                '"repository":{"id":688643259,"node_id":"R_kgDOKQvcuw","name":"test-terrareg-hook",'
+                '"full_name":"MatthewJohn/test-terrareg-hook","private":false,'
+                '"owner":{"login":"MatthewJohn","id":1266262,"node_id":"MDQ6VXNlcjEyNjYyNjI=",'
+                '"avatar_url":"https://avatars.githubusercontent.com/u/1266262?v=4","gravatar_id":"",'
+                '"url":"https://api.github.com/users/MatthewJohn","html_url":"https://github.com/MatthewJohn",'
+                '"followers_url":"https://api.github.com/users/MatthewJohn/followers",'
+                '"following_url":"https://api.github.com/users/MatthewJohn/following{/other_user}",'
+                '"gists_url":"https://api.github.com/users/MatthewJohn/gists{/gist_id}",'
+                '"starred_url":"https://api.github.com/users/MatthewJohn/starred{/owner}{/repo}",'
+                '"subscriptions_url":"https://api.github.com/users/MatthewJohn/subscriptions",'
+                '"organizations_url":"https://api.github.com/users/MatthewJohn/orgs",'
+                '"repos_url":"https://api.github.com/users/MatthewJohn/repos",'
+                '"events_url":"https://api.github.com/users/MatthewJohn/events{/privacy}",'
+                '"received_events_url":"https://api.github.com/users/MatthewJohn/received_events",'
+                '"type":"User","site_admin":false},"html_url":"https://github.com/MatthewJohn/test-terrareg-hook",'
+                '"description":null,"fork":false,"url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook",'
+                '"forks_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/forks",'
+                '"keys_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/keys{/key_id}",'
+                '"collaborators_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/collaborators{/collaborator}",'
+                '"teams_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/teams",'
+                '"hooks_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/hooks",'
+                '"issue_events_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/issues/events{/number}",'
+                '"events_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/events",'
+                '"assignees_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/assignees{/user}",'
+                '"branches_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/branches{/branch}",'
+                '"tags_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/tags",'
+                '"blobs_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/git/blobs{/sha}",'
+                '"git_tags_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/git/tags{/sha}",'
+                '"git_refs_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/git/refs{/sha}",'
+                '"trees_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/git/trees{/sha}",'
+                '"statuses_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/statuses/{sha}",'
+                '"languages_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/languages",'
+                '"stargazers_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/stargazers",'
+                '"contributors_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/contributors",'
+                '"subscribers_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/subscribers",'
+                '"subscription_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/subscription",'
+                '"commits_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/commits{/sha}",'
+                '"git_commits_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/git/commits{/sha}",'
+                '"comments_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/comments{/number}",'
+                '"issue_comment_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/issues/comments{/number}",'
+                '"contents_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/contents/{+path}",'
+                '"compare_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/compare/{base}...{head}",'
+                '"merges_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/merges",'
+                '"archive_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/{archive_format}{/ref}",'
+                '"downloads_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/downloads",'
+                '"issues_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/issues{/number}",'
+                '"pulls_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/pulls{/number}",'
+                '"milestones_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/milestones{/number}",'
+                '"notifications_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/notifications{?since,all,participating}",'
+                '"labels_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/labels{/name}",'
+                '"releases_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/releases{/id}",'
+                '"deployments_url":"https://api.github.com/repos/MatthewJohn/test-terrareg-hook/deployments",'
+                '"created_at":"2023-09-07T19:37:35Z",'
+                '"updated_at":"2023-09-07T19:37:36Z",'
+                '"pushed_at":"2023-09-07T19:43:54Z",'
+                '"git_url":"git://github.com/MatthewJohn/test-terrareg-hook.git",'
+                '"ssh_url":"git@github.com:MatthewJohn/test-terrareg-hook.git",'
+                '"clone_url":"https://github.com/MatthewJohn/test-terrareg-hook.git",'
+                '"svn_url":"https://github.com/MatthewJohn/test-terrareg-hook",'
+                '"homepage":null,"size":0,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"has_discussions":false,"forks_count":0,"mirror_url":null,"archived":false,"disabled":false,"open_issues_count":0,"license":null,"allow_forking":true,"is_template":false,"web_commit_signoff_required":false,"topics":[],"visibility":"public",'
+                '"forks":0,"open_issues":0,"watchers":0,"default_branch":"main"},"sender":{"login":"MatthewJohn",'
+                '"id":1266262,"node_id":"MDQ6VXNlcjEyNjYyNjI=",'
+                '"avatar_url":"https://avatars.githubusercontent.com/u/1266262?v=4",'
+                '"gravatar_id":"",'
+                '"url":"https://api.github.com/users/MatthewJohn",'
+                '"html_url":"https://github.com/MatthewJohn",'
+                '"followers_url":"https://api.github.com/users/MatthewJohn/followers",'
+                '"following_url":"https://api.github.com/users/MatthewJohn/following{/other_user}",'
+                '"gists_url":"https://api.github.com/users/MatthewJohn/gists{/gist_id}",'
+                '"starred_url":"https://api.github.com/users/MatthewJohn/starred{/owner}{/repo}",'
+                '"subscriptions_url":"https://api.github.com/users/MatthewJohn/subscriptions",'
+                '"organizations_url":"https://api.github.com/users/MatthewJohn/orgs",'
+                '"repos_url":"https://api.github.com/users/MatthewJohn/repos",'
+                '"events_url":"https://api.github.com/users/MatthewJohn/events{/privacy}",'
+                '"received_events_url":"https://api.github.com/users/MatthewJohn/received_events",'
+                '"type":"User",'
+                '"site_admin":false}}'
+            )
+
+            res = client.post(
+                '/v1/terrareg/modules/moduleextraction/githubexample/testprovider/hooks/github',
+                data=request_body,
+                headers={
+                    'Content-Type': 'application/json',
+                    "x-hub-signature": "sha1=68b65512af03e57467031a8f88ff81d14d3dd6e2",
+                    "x-hub-signature-256": "sha256=9d73318ab08866f74febbbc97971471d1078f75a857cad0f3ba0c537f3a86c04",
+                }
+            )
+
+            assert res.status_code == 200
+            assert res.json == {'status': 'Success', 'message': 'Imported provided tag', 'tag': 'v1.0.0'}
+
+            mocked_prepare_module.assert_called_once()
+            mocked_process_upload.assert_called_once()
+
