@@ -26,7 +26,7 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
             # Validate signature
             if terrareg.config.Config().UPLOAD_API_KEYS:
                 # Get signature from request
-                request_signature = request.headers.get('X-Hub-Signature', '')
+                request_signature = request.headers.get('X-Hub-Signature-256', '')
                 # Remove 'sha256=' from beginning of header
                 request_signature = re.sub(r'^sha256=', '', request_signature)
                 # Iterate through each of the keys and test
