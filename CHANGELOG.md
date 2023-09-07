@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.75.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.75.0...v2.75.1) (2023-09-07)
+
+
+### Bug Fixes
+
+* Fix github webhook when using API key for Github secreet to use correct header for SHA256 encoded header. ([68043de](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/68043de1e1745e4e810f5ba7ad08b424765ef940)), closes [#424](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/424)
+
 # [2.75.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.74.0...v2.75.0) (2023-08-21)
 
 
