@@ -3698,23 +3698,23 @@ class ModuleVersion(TerraformSpecsObject):
     @contextlib.contextmanager
     def module_create_extraction_wrapper(self):
         """Handle module creation with yield for extraction"""
-        previous_version_published = self.prepare_module()
+        should_publish = self.prepare_module()
 
         yield
 
         # If modle version is replacing a previously published module
         # or auto publish is enabled, publish the module
-        if previous_version_published or terrareg.config.Config().AUTO_PUBLISH_MODULE_VERSIONS:
+        if should_publish:
             self.publish()
 
     def prepare_module(self):
         """
         Handle file upload of module version.
 
-        Returns boolean whethe previous DB row (if exists) was published.
+        Returns boolean whether the module should be published after creation.
         """
         self.create_data_directory()
-        previous_version_published = self._create_db_row()
+        should_publish = self._create_db_row()
 
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.MODULE_VERSION_INDEX,
@@ -3723,7 +3723,7 @@ class ModuleVersion(TerraformSpecsObject):
             old_value=None,
             new_value=None
         )
-        return previous_version_published
+        return should_publish
 
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
@@ -3812,7 +3812,8 @@ class ModuleVersion(TerraformSpecsObject):
         """
         Insert into datadabase, removing any existing duplicate versions.
 
-        Returns boolean whethe previous DB row (if exists) was published.
+        Returns boolean whether the new version should be published
+        (depending on previous DB row (if exists) was published or if auto publish is enabled.
         """
         db = Database.get()
 
@@ -3850,7 +3851,7 @@ class ModuleVersion(TerraformSpecsObject):
                 old_version_version_pk=old_module_version_pk,
                 new_module_version=self)
 
-        return previous_version_published
+        return previous_version_published or terrareg.config.Config().AUTO_PUBLISH_MODULE_VERSIONS
 
     def get_submodules(self):
         """Return list of submodules."""

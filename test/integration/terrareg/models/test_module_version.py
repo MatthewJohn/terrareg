@@ -116,22 +116,27 @@ class TestModuleVersion(TerraregIntegrationTest):
                      'variable_template']:
             assert new_db_row[attr] == None
 
-    @pytest.mark.parametrize('module_version_reindex_mode,previous_publish_state,expected_return_value,should_raise_error', [
+    @pytest.mark.parametrize('module_version_reindex_mode,previous_publish_state,config_auto_publish,expected_return_value,should_raise_error', [
         # Legacy mode should allow the re-index and ignore pre-existing version for setting published
-        (ModuleVersionReindexMode.LEGACY, False, False, False),
+        (ModuleVersionReindexMode.LEGACY, False, False, False, False),
         ## With previous version published
-        (ModuleVersionReindexMode.LEGACY, True, False, False),
+        (ModuleVersionReindexMode.LEGACY, True, False, False, False),
+        # Legacy mode with auto publish config enabled
+        (ModuleVersionReindexMode.LEGACY, False, True, True, False),
 
         # Auto-publish mode should return the previously indexed module's published state
-        (ModuleVersionReindexMode.AUTO_PUBLISH, False, False, False),
-        (ModuleVersionReindexMode.AUTO_PUBLISH, True, True, False),
+        (ModuleVersionReindexMode.AUTO_PUBLISH, False, False, False, False),
+        (ModuleVersionReindexMode.AUTO_PUBLISH, True, False, True, False),
+        # The AUTO_PUBLISH config should ensure that modules are always published
+        (ModuleVersionReindexMode.AUTO_PUBLISH, False, True, True, False),
+        (ModuleVersionReindexMode.AUTO_PUBLISH, True, True, True, False),
 
         # Prohibit mode should raise an error
-        (ModuleVersionReindexMode.PROHIBIT, False, False, True)
+        (ModuleVersionReindexMode.PROHIBIT, False, False, False, True)
     ])
     def test_create_db_row_replace_existing(self, module_version_reindex_mode,
-                                            previous_publish_state, expected_return_value,
-                                            should_raise_error):
+                                            previous_publish_state, config_auto_publish,
+                                            expected_return_value, should_raise_error):
         """Test creating DB row with pre-existing module version"""
 
         db = Database.get()
@@ -206,7 +211,8 @@ class TestModuleVersion(TerraregIntegrationTest):
             assert pre_existing_row is not None
             assert pre_existing_row['id'] == 10001
 
-            with unittest.mock.patch('terrareg.config.Config.MODULE_VERSION_REINDEX_MODE', module_version_reindex_mode):
+            with unittest.mock.patch('terrareg.config.Config.MODULE_VERSION_REINDEX_MODE', module_version_reindex_mode), \
+                    unittest.mock.patch('terrareg.config.Config.AUTO_PUBLISH_MODULE_VERSIONS', config_auto_publish):
                 # If confiugred to raise an error, check that it is
                 if should_raise_error:
                     with pytest.raises(terrareg.errors.ReindexingExistingModuleVersionsIsProhibitedError):
