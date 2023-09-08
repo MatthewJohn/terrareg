@@ -85,12 +85,9 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
             else:
                 # Perform import from git
                 try:
-                    previous_version_published = module_version.prepare_module()
-                    with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
-                        me.process_upload()
-
-                    if previous_version_published:
-                        module_version.publish()
+                    with module_version.module_create_extraction_wrapper():
+                        with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
+                            me.process_upload()
 
                 except terrareg.errors.TerraregError as exc:
                     # Roll back creation of module version
