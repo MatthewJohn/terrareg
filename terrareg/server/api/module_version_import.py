@@ -78,12 +78,9 @@ class ApiModuleVersionImport(ErrorCatchingResource):
 
             module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version=version)
 
-            previous_version_published = module_version.prepare_module()
-            with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
-                me.process_upload()
-
-            if previous_version_published:
-                module_version.publish()
+            with module_version.module_create_extraction_wrapper():
+                with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
+                    me.process_upload()
 
             return {
                 'status': 'Success'

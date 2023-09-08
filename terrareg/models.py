@@ -1,4 +1,5 @@
 
+import contextlib
 import datetime
 from enum import Enum
 import os
@@ -3693,6 +3694,16 @@ class ModuleVersion(TerraformSpecsObject):
             "usage_example": self.get_usage_example(request_domain)
         })
         return api_details
+
+    @contextlib.contextmanager
+    def module_create_extraction_wrapper(self):
+        """Handle module creation with yield for extraction"""
+        previous_version_published = self.prepare_module()
+
+        yield
+
+        if previous_version_published:
+            self.publish()
 
     def prepare_module(self):
         """
