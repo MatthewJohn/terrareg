@@ -3702,7 +3702,9 @@ class ModuleVersion(TerraformSpecsObject):
 
         yield
 
-        if previous_version_published:
+        # If modle version is replacing a previously published module
+        # or auto publish is enabled, publish the module
+        if previous_version_published or terrareg.config.Config().AUTO_PUBLISH_MODULE_VERSIONS:
             self.publish()
 
     def prepare_module(self):
