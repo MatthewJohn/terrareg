@@ -3,6 +3,7 @@ from datetime import datetime
 import os
 import shutil
 import tempfile
+from unicodedata import name
 import unittest.mock
 import pytest
 import sqlalchemy
@@ -294,6 +295,69 @@ class TestModuleVersion(TerraregIntegrationTest):
                         db.namespace.c.id==9999
                     ))
 
+    @pytest.mark.parametrize('should_publish', [
+        True,
+        False
+    ])
+    def test_module_create_extraction_wrapper(self, should_publish):
+        """Test module_create_extraction_wrapper method"""
+        mock_prepare_module = unittest.mock.MagicMock(return_value=should_publish)
+        mock_publish = unittest.mock.MagicMock()
+
+        namespace = Namespace.get(name='test', create=True)
+        module = Module(namespace=namespace, name='test')
+        module_provider = ModuleProvider.get(module=module, name='test', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='5.8.0')
+
+        try:
+            with unittest.mock.patch('terrareg.models.ModuleVersion.prepare_module', mock_prepare_module), \
+                    unittest.mock.patch('terrareg.models.ModuleVersion.publish', mock_publish):
+
+                with module_version.module_create_extraction_wrapper():
+                    mock_prepare_module.assert_called_once_with()
+
+                if should_publish:
+                    mock_publish.assert_called_once_with()
+                else:
+                    mock_publish.assert_not_called()
+        finally:
+            if module_version._get_db_row():
+                module_version.delete()
+            module_provider.delete()
+            namespace.delete()
+
+    @pytest.mark.parametrize('should_publish', [
+        True,
+        False
+    ])
+    def test_module_create_extraction_wrapper_exception(self, should_publish):
+        """Test module_create_extraction_wrapper method"""
+        mock_prepare_module = unittest.mock.MagicMock(return_value=should_publish)
+        mock_publish = unittest.mock.MagicMock()
+
+        namespace = Namespace.get(name='test', create=True)
+        module = Module(namespace=namespace, name='test')
+        module_provider = ModuleProvider.get(module=module, name='test', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='5.8.0')
+
+        class TestException(Exception):
+            pass
+
+        try:
+            with unittest.mock.patch('terrareg.models.ModuleVersion.prepare_module', mock_prepare_module), \
+                    unittest.mock.patch('terrareg.models.ModuleVersion.publish', mock_publish):
+
+                with pytest.raises(TestException):
+                    with module_version.module_create_extraction_wrapper():
+                        mock_prepare_module.assert_called_once_with()
+                        raise TestException("Test Exception")
+
+                mock_publish.assert_not_called()
+        finally:
+            if module_version._get_db_row():
+                module_version.delete()
+            module_provider.delete()
+            namespace.delete()
 
     @pytest.mark.parametrize('template,version,published,expected_string', [
         ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '0.0.0', True, '>= 0.0.0'),
