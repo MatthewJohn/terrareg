@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.75.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.75.1...v2.75.2) (2023-09-09)
+
+
+### Bug Fixes
+
+* Fix module version publishing when creating a module version (either by hooks or create/upload API endpoints) when AUTO_PUBLISH_MODULE_VERSIONS is enabled. ([29a04db](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/29a04dbf9231da92591f63fd7ea90f39ac1c8b17)), closes [#425](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/425)
+
 ## [2.75.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.75.0...v2.75.1) (2023-09-07)
 
 
