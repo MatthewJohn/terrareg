@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.75.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.75.2...v2.75.3) (2023-09-09)
+
+
+### Bug Fixes
+
+* Fix typo (th -> the) ([fcbe2e8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fcbe2e897989e7106d39e1628977c5dd134a3d07))
+
 ## [2.75.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.75.1...v2.75.2) (2023-09-09)
 
 
