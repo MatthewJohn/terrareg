@@ -1740,6 +1740,11 @@ resource "aws_s3_bucket" "test" {
                         # Nested file
                     """.strip())
 
+                # Create .git directory with some files
+                os.mkdir(os.path.join(upload_directory, '.git'))
+                with open(os.path.join(upload_directory, '.git', 'example-git-file'), 'w') as git_file:
+                    git_file.writelines("# Test git file")
+
             temp_dir = tempfile.mkdtemp()
             os.mkdir(os.path.join(temp_dir, 'modules'))
             try:
