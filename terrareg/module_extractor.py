@@ -412,7 +412,7 @@ terraform {{
             repo_browse_url_template=terrareg_metadata.get('repo_browse_url', None),
             repo_base_url_template=terrareg_metadata.get('repo_base_url', None),
             variable_template=json.dumps(terrareg_metadata.get('variable_template', {})),
-            published=Config().AUTO_PUBLISH_MODULE_VERSIONS,
+            published=False,
             internal=terrareg_metadata.get('internal', False),
             extraction_version=EXTRACTION_VERSION
         )
