@@ -350,17 +350,26 @@ terraform {{
         # the parent directories may have been lost
         os.makedirs(self._module_version.base_directory, exist_ok=True)
 
+        def tar_filter(tarinfo):
+            """Filter files being added to tar archive"""
+            # Do not include .git directory in archive
+            if tarinfo.name == ".git":
+                return None
+            return tarinfo
+
         # Create tar.gz
         with tarfile.open(self._module_version.archive_path_tar_gz, "w:gz") as tar:
-            tar.add(self.extract_directory, arcname='', recursive=True)
+            tar.add(self.extract_directory, arcname='', recursive=True, filter=tar_filter)
+
         # Create zip
         # Use 'cwd' to ensure zip file is generated with directory structure
         # from the root of the module.
         # Use subprocess to execute zip, rather than shutil.make_archive,
         # as make_archive is not thread-safe and changes the CWD of the main
-        # process
+        # process.
+        # Exclude .git directory from archive
         subprocess.call(
-            ['zip', '-r', self._module_version.archive_path_zip, '.'],
+            ['zip', '-r', self._module_version.archive_path_zip, '--exclude=./.git/*', '.'],
             cwd=self.extract_directory
         )
 
@@ -629,6 +638,13 @@ terraform {{
 
     def process_upload(self):
         """Handle data extraction from module source."""
+        # Generate the archive, unless the module has a git clone URL and
+        # the config for deleting externally hosted artifacts is enabled.
+        # Always perform this first before making any modifications to the repo
+        if not (self._module_version.get_git_clone_url() and
+                Config().DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
+            self._generate_archive()
+
         # Run terraform-docs on module content and obtain README
         terraform_docs = self._run_terraform_docs(self.module_directory)
         tfsec = self._run_tfsec(self.module_directory)
@@ -662,12 +678,6 @@ terraform {{
             terraform_modules=terraform_modules,
             terraform_version=terraform_version
         )
-
-        # Generate the archive, unless the module has a git clone URL and
-        # the config for deleting externally hosted artifacts is enabled.
-        if not (self._module_version.get_git_clone_url() and
-                Config().DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
-            self._generate_archive()
 
         self._extract_additional_tab_files()
 
