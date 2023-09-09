@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.75.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.75.3...v2.75.4) (2023-09-09)
+
+
+### Bug Fixes
+
+* Ensure .git directory is not included in generated archives. ([314d524](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/314d524219497729bfe1b8af3c5cf77d7749bda0)), closes [#426](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/426)
+* Ensure module is archived before any analysis is performed to avoid generated .terraform directories being included in the archive ([6cb1009](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6cb10094dd9aa2698d7a679f5d0f52dabd9cd5c7)), closes [#426](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/426)
+
 ## [2.75.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.75.2...v2.75.3) (2023-09-09)
 
 
