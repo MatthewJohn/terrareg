@@ -350,17 +350,26 @@ terraform {{
         # the parent directories may have been lost
         os.makedirs(self._module_version.base_directory, exist_ok=True)
 
+        def tar_filter(tarinfo):
+            """Filter files being added to tar archive"""
+            # Do not include .git directory in archive
+            if tarinfo.name == ".git":
+                return None
+            return tarinfo
+
         # Create tar.gz
         with tarfile.open(self._module_version.archive_path_tar_gz, "w:gz") as tar:
-            tar.add(self.extract_directory, arcname='', recursive=True)
+            tar.add(self.extract_directory, arcname='', recursive=True, filter=tar_filter)
+
         # Create zip
         # Use 'cwd' to ensure zip file is generated with directory structure
         # from the root of the module.
         # Use subprocess to execute zip, rather than shutil.make_archive,
         # as make_archive is not thread-safe and changes the CWD of the main
-        # process
+        # process.
+        # Exclude .git directory from archive
         subprocess.call(
-            ['zip', '-r', self._module_version.archive_path_zip, '.'],
+            ['zip', '-r', self._module_version.archive_path_zip, '--exclude=./.git/*', '.'],
             cwd=self.extract_directory
         )
 
