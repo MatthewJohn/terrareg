@@ -79,9 +79,10 @@
             <p id="unpublished-warning" class="subtitle default-hidden">
                 <b>WARNING:</b> This version of the module is not published.<br />
                 It cannot be used in Terraform until it is published.
-                <div id="publish-button-container" class="default-hidden">
-                    <button class="button is-warning is-small" id="publish-button">Publish</button><br />
-                </div>
+                <span id="unpublished-publish-info" class="default-hidden">
+                    <br />
+                    See the 'settings' tab to publish the module.
+                </span>
             </p>
             <p id="beta-warning" class="subtitle default-hidden">
                 <b>WARNING:</b> This is a beta module version.<br />
@@ -459,12 +460,27 @@
 
         <!-- Module settings tab -->
         <div id="module-tab-settings" class="module-tabs default-hidden">
+            <div id="settings-module-version-card" class="card default-hidden">
+                <div class="card-content" style="background: #FFF9ED">
+                    <h2 class="subtitle is-h2">Module Version</h2>
+
+                    <div id="settings-publish-button-container" class="default-hidden">
+                        The module version is currently unpublished.<br />
+                        <button class="button is-warning is-small" id="settings-publish-button">Publish</button>
+                        <br />
+                    </div>
+
+                    <div id="settings-module-version-status-error" class="notification is-danger default-hidden">
+                    </div>
+                </div>
+            </div>
             <div class="field is-vertical">
                 <div id="settings-status-success" class="notification is-success default-hidden">
                     Settings Updated
                 </div>
                 <div id="settings-status-error" class="notification is-danger default-hidden">
                 </div>
+
                 <form id="settings-form">
                     <input type="hidden" id="settings-csrf-token" value="{{ csrf_token }}" />
                     <div class="field">

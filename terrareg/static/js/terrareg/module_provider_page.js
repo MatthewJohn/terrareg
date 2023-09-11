@@ -840,6 +840,37 @@ class SettingsTab extends ModuleDetailsTab {
                 return false;
             });
 
+            // If module is unpublished and user can publish the module, show these settings
+            if (!this._moduleDetails.published) {
+                if (!config.PUBLISH_API_KEYS_ENABLED || userPermissions && (
+                        userPermissions.site_admin ||
+                        Object.keys(userPermissions.namespace_permissions).indexOf(this._moduleDetails.namespace) !== -1
+                    )
+                ) {
+                    // Setup callback for publish button click
+                    $('#settings-publish-button').bind('click', () => {
+                        // Hide any errors
+                        let errorMessage = $('#settings-module-version-status-error');
+                        errorMessage.addClass('default-hidden');
+
+                        publishModule(this._moduleDetails, moduleDetails.version).then(() => {
+                            // Reload page
+                            location.reload();
+                        }).fail((res) => {
+                            // Display any errors
+                            errorMessage.html(failedResponseToErrorString(res));
+                            errorMessage.removeClass('default-hidden');
+                        });
+                    });
+                    // If user has permission to publish, show the publish button
+                    $('#settings-publish-button-container').removeClass('default-hidden');
+
+                    // Show module version section of settings, as this
+                    // is the only item in it
+                    $("#settings-module-version-card").removeClass('default-hidden');
+                }
+            }
+
             // Show settings tab
             $('#module-tab-link-settings').removeClass('default-hidden');
             resolve(true);
@@ -1727,8 +1758,8 @@ function populateVersionSelect(moduleDetails) {
                 }
             }
 
-            let config = await getConfig();
             let loggedIn = await isLoggedIn();
+            let config = await getConfig();
 
             if (!moduleDetails.published) {
                 // Add warning to page about unpublished version
@@ -1739,15 +1770,8 @@ function populateVersionSelect(moduleDetails) {
                         Object.keys(loggedIn.namespace_permissions).indexOf(this._moduleDetails.namespace) !== -1
                     )
                 ) {
-                    // Setup callback for publish button click
-                    $('#publish-button').bind('click', () => {
-                        publishModule(moduleDetails, moduleDetails.version).then(() => {
-                            // Reload page
-                            location.reload();
-                        });
-                    });
-                    // If user has permission to publish, show the publish button
-                    $('#publish-button-container').removeClass('default-hidden');
+                    // If user has permission to publish, show information about publishing
+                    $('#unpublished-publish-info').removeClass('default-hidden');
                 }
             }
 
