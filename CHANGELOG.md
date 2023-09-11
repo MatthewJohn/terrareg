@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.75.5](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.75.4...v2.75.5) (2023-09-11)
+
+
+### Bug Fixes
+
+* Correct grammar ([dd8a610](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/dd8a610ed56b8429dff4f0dcde1dbd2c4d22d71e))
+* improve grammar ([ee54f31](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ee54f31ab01c38c3ae051fa7ac83e852fd082aff))
+
 ## [2.75.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.75.3...v2.75.4) (2023-09-09)
 
 
