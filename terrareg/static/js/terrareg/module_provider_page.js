@@ -853,7 +853,7 @@ class SettingsTab extends ModuleDetailsTab {
                         let errorMessage = $('#settings-module-version-status-error');
                         errorMessage.addClass('default-hidden');
 
-                        publishModule(this._moduleDetails, moduleDetails.version).then(() => {
+                        publishModule(this._moduleDetails, this._moduleDetails.version).then(() => {
                             // Reload page
                             location.reload();
                         }).fail((res) => {
