@@ -38,7 +38,7 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
 
         # Determine if auth token is for internal initialisation of modules
         # during module extraction
-        if auth_token == terrareg.config.Config().INTERNAL_EXTRACTION_ANALYITCS_TOKEN:
+        if auth_token == terrareg.config.Config().INTERNAL_EXTRACTION_ANALYTICS_TOKEN:
             pass
 
         # Determine if auth token is one the auth tokens for ignore anlaytics token check
