@@ -129,7 +129,7 @@ Default: ``
 
 ### ANALYTICS_TOKEN_DESCRIPTION
 
-Describe to be provided to user about analytics token (e.g. `The name of your application`)
+Description to be provided to user about analytics token (e.g. `The name of your application`)
 
 Default: ``
 
@@ -930,9 +930,6 @@ Default: `Verified`
 
 ### VERIFIED_MODULE_NAMESPACES
 
-
-List of namespaces, who's modules will be automatically set to verified.
-
+List of namespaces whose modules will be automatically marked as verified.
 
 Default: ``
-
