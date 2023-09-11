@@ -21,7 +21,7 @@ class ServerType(Enum):
 class Config:
 
     @property
-    def INTERNAL_EXTRACTION_ANALYITCS_TOKEN(self):
+    def INTERNAL_EXTRACTION_ANALYTICS_TOKEN(self):
         """
         Analaytics token used by Terraform initialised by the registry.
 
@@ -30,7 +30,7 @@ class Config:
         The value should be changed if it might result in a conflict with a legitimate analytics token used in Terraform
         that calls modules from the registry.
         """
-        return os.environ.get('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', 'internal-terrareg-analytics-token')
+        return os.environ.get('INTERNAL_EXTRACTION_ANALYTICS_TOKEN', 'internal-terrareg-analytics-token')
 
     @property
     def IGNORE_ANALYTICS_TOKEN_AUTH_KEYS(self):

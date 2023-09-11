@@ -186,7 +186,7 @@ disable_checkpoint = true
             if domain_name:
                 terraform_rc_file_content += f"""
 credentials "{domain_name}" {{
-  token = "{config.INTERNAL_EXTRACTION_ANALYITCS_TOKEN}"
+  token = "{config.INTERNAL_EXTRACTION_ANALYTICS_TOKEN}"
 }}
 """
             with open(self.terraform_rc_file, "w") as terraform_rc_fh:
@@ -481,7 +481,7 @@ terraform {{
         infracost_env = dict(os.environ)
         _, domain_name, _ = get_public_url_details()
         if domain_name:
-            infracost_env['INFRACOST_TERRAFORM_CLOUD_TOKEN'] = Config().INTERNAL_EXTRACTION_ANALYITCS_TOKEN
+            infracost_env['INFRACOST_TERRAFORM_CLOUD_TOKEN'] = Config().INTERNAL_EXTRACTION_ANALYTICS_TOKEN
             infracost_env['INFRACOST_TERRAFORM_CLOUD_HOST'] = domain_name
 
         # Create temporary file safely and immediately close to
