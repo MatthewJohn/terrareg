@@ -29,8 +29,14 @@ class Config:
 
         The value should be changed if it might result in a conflict with a legitimate analytics token used in Terraform
         that calls modules from the registry.
+
+        This variable was previously called INTERNAL_EXTRACTION_ANALYITCS_TOKEN. Support for the previous name will be
+        dropped in a future release.
+        INTERNAL_EXTRACTION_ANALYITCS_TOKEN will be read if INTERNAL_EXTRACTION_ANALYTICS_TOKEN is unset.
         """
-        return os.environ.get('INTERNAL_EXTRACTION_ANALYTICS_TOKEN', 'internal-terrareg-analytics-token')
+        return os.environ.get('INTERNAL_EXTRACTION_ANALYTICS_TOKEN',
+            os.environ.get('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', 'internal-terrareg-analytics-token')
+        )
 
     @property
     def IGNORE_ANALYTICS_TOKEN_AUTH_KEYS(self):
