@@ -10,8 +10,6 @@ import terrareg.auth_wrapper
 class ApiTerraregConfig(ErrorCatchingResource):
     """Endpoint to return config used by UI."""
 
-    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
-
     def _get(self):
         """Return config."""
         config = terrareg.config.Config()

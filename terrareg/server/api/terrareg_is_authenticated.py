@@ -7,15 +7,14 @@ import terrareg.auth
 class ApiTerraregIsAuthenticated(ErrorCatchingResource):
     """Interface to teturn whether user is authenticated as an admin."""
 
-    method_decorators = [terrareg.auth_wrapper.auth_wrapper('is_authenticated')]
-
     def _get(self):
         """Return information about current user."""
         auth_method = terrareg.auth.AuthFactory().get_current_auth_method()
         return {
-            'authenticated': True,
-            'site_admin': auth_method.is_admin(),
-            'namespace_permissions': {
+            "read_access": auth_method.can_access_read_api(),
+            "authenticated": auth_method.is_authenticated(),
+            "site_admin": auth_method.is_admin(),
+            "namespace_permissions": {
                 namespace.name: permission.value
                 for namespace, permission in auth_method.get_all_namespace_permissions().items()
             }
