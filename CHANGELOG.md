@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.76.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.75.5...v2.76.0) (2023-09-12)
+
+
+### Features
+
+* Add button to publish an unpublished module from the module provider page ([64aa6d7](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/64aa6d765e5b8880383ee010e95a21d7cb47615c)), closes [#394](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/394)
+
 ## [2.75.5](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.75.4...v2.75.5) (2023-09-11)
 
 
