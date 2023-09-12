@@ -196,6 +196,7 @@ class TestConfig:
         "MANAGE_TERRAFORM_RC_FILE",
         'DISABLE_ANALYTICS',
         'ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION',
+        'ALLOW_UNAUTHENTICATED_ACCESS',
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
         """Test boolean configs to ensure they are overriden with environment variables."""

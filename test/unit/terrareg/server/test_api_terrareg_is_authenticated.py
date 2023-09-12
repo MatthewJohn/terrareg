@@ -1,6 +1,8 @@
 
 import unittest.mock
 
+import pytest
+
 from terrareg.auth import AdminApiKeyAuthMethod, NotAuthenticated, UserGroupNamespacePermissionType
 from test.unit.terrareg import (
     TerraregUnitTest, mock_models, setup_test_data
@@ -32,7 +34,7 @@ class TestApiTerraregIsAuthenticated(TerraregUnitTest):
         with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
             res = client.get('/v1/terrareg/auth/admin/is_authenticated')
             assert res.status_code == 200
-            assert res.json == {'authenticated': True, 'namespace_permissions': {}, 'site_admin': True}
+            assert res.json == {'authenticated': True, 'read_access': True, 'namespace_permissions': {}, 'site_admin': True}
 
     @setup_test_data(test_data, user_group_data=user_group_data)
     def test_authenticated_with_permissions(self, client, mock_models):
@@ -43,15 +45,27 @@ class TestApiTerraregIsAuthenticated(TerraregUnitTest):
         mock_auth_method.get_all_namespace_permissions.return_value = {
             terrareg.models.Namespace('testnamespace'): UserGroupNamespacePermissionType.FULL
         }
+        mock_auth_method.can_access_read_api.return_value = True
         mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
         with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
             res = client.get('/v1/terrareg/auth/admin/is_authenticated')
             assert res.status_code == 200
-            assert res.json == {'authenticated': True, 'namespace_permissions': {'testnamespace': 'FULL'}, 'site_admin': False}
+            assert res.json == {'authenticated': True, 'read_access': True, 'namespace_permissions': {'testnamespace': 'FULL'}, 'site_admin': False}
 
-    def test_unauthenticated(self, client, mock_models):
+    @pytest.mark.parametrize('allow_unauthenticated_access', [
+        True,
+        False
+    ])
+    def test_unauthenticated(self, client, mock_models, allow_unauthenticated_access):
         """Test endpoint when user is authenticated."""
         mock_get_current_auth_method = unittest.mock.MagicMock(return_value=NotAuthenticated())
-        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
+                unittest.mock.patch('terrareg.config.Config.ALLOW_UNAUTHENTICATED_ACCESS', allow_unauthenticated_access):
             res = client.get('/v1/terrareg/auth/admin/is_authenticated')
-            assert res.status_code == 401
+            assert res.status_code == 200
+            assert res.json == {
+                'authenticated': False,
+                'read_access': allow_unauthenticated_access,
+                'namespace_permissions': {},
+                'site_admin': False
+            }
