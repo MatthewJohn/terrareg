@@ -107,3 +107,9 @@ class TestUploadApiKeyAuthMethod(BaseAuthMethodTest):
         """Test get_username method"""
         obj = UploadApiKeyAuthMethod()
         assert obj.get_username() == 'Upload API Key'
+
+    def test_can_access_read_api(self):
+        """Test can_access_read_api method"""
+        obj = UploadApiKeyAuthMethod()
+        assert obj.can_access_read_api() == False
+

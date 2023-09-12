@@ -107,3 +107,8 @@ class TestPublishApiKeyAuthMethod(BaseAuthMethodTest):
         """Test get_username method"""
         obj = PublishApiKeyAuthMethod()
         assert obj.get_username() == 'Publish API Key'
+
+    def test_can_access_read_api(self):
+        """Test can_access_read_api method"""
+        obj = PublishApiKeyAuthMethod()
+        assert obj.can_access_read_api() == False

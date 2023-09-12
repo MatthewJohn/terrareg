@@ -44,3 +44,7 @@ class BaseAuthMethodTest(TerraregUnitTest):
     def test_get_username(self):
         """Test check_username method"""
         raise NotImplementedError
+
+    def test_can_access_read_api(self):
+        """Test can_access_read_api method"""
+        raise NotImplementedError

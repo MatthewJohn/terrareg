@@ -106,3 +106,8 @@ class TestAdminApiKeyAuthMethod(BaseAuthMethodTest):
         """Test get_username method"""
         obj = AdminApiKeyAuthMethod()
         assert obj.get_username() == 'Built-in admin'
+
+    def test_can_access_read_api(self):
+        """Test can_access_read_api method"""
+        obj = AdminApiKeyAuthMethod()
+        assert obj.can_access_read_api() == True
