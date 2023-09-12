@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.76.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.76.0...v2.76.1) (2023-09-12)
+
+
+### Bug Fixes
+
+* generate readme ([5c7afe4](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5c7afe499f0eae7d398681b45f14d0167440c31e))
+* Improve spelling & grammar ([b82c178](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b82c178ceef06e2c4ba61f032f5e07c7a84d1500))
+
 # [2.76.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.75.5...v2.76.0) (2023-09-12)
 
 
