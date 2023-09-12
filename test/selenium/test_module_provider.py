@@ -1258,6 +1258,49 @@ module "text_ternal_call" {
         self._api_version_create_mock.assert_called_once_with(namespace='moduledetails', name='fullypopulated', provider='testprovider', version='5.2.1')
         self._api_version_publish_mock.assert_called_once_with(namespace='moduledetails', name='fullypopulated', provider='testprovider', version='5.2.1')
 
+    def test_settings_module_version_already_published(self):
+        """Ensure settings tab does not contain publish button for already published module"""
+        self.perform_admin_authentication(password='unittest-password')
+
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+        # Wait for settings tab button to be visible
+        settings_tab_button = self.wait_for_element(By.ID, 'module-tab-link-settings')
+
+        # Click on settings tab
+        settings_tab_button.click()
+
+        # Ensure the settings tab content is visible
+        settings_tab_content = self.wait_for_element(By.ID, 'module-tab-settings', ensure_displayed=True)
+
+        assert settings_tab_content.find_element(By.ID, "settings-publish-button-container").is_displayed() == False
+
+    def test_settings_module_version_publish_action(self):
+        """Test settings tab for unpublished versino and user is able to publish a version"""
+        self.perform_admin_authentication(password='unittest-password')
+
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.6.0'))
+
+        # Wait for settings tab button to be visible
+        settings_tab_button = self.wait_for_element(By.ID, 'module-tab-link-settings')
+
+        # Click on settings tab
+        settings_tab_button.click()
+
+        # Ensure the settings tab content is visible
+        settings_tab_content = self.wait_for_element(By.ID, 'module-tab-settings', ensure_displayed=True)
+
+        # Ensure publish button exists and is not checked
+        assert settings_tab_content.find_element(By.ID, "settings-publish-button-container").is_displayed() == True
+
+        # Check publish button
+        publish_button = settings_tab_content.find_element(By.ID, "settings-publish-button")
+        assert publish_button.text == "Publish"
+        publish_button.click()
+
+        # Ensure version publish endpoint was called
+        self._api_version_publish_mock.assert_called_once_with(namespace='moduledetails', name='fullypopulated', provider='testprovider', version='1.6.0')
+
     @pytest.mark.parametrize('user_groups,expected_result', [
         ([], False),
         (['siteadmin'], True),
@@ -2086,35 +2129,61 @@ EOF
         assert error.text == ('You must be logged in to perform this action.\n'
                               'If you were previously logged in, please re-authentication and try again.')
 
+    @pytest.mark.parametrize('publish_api_keys, is_authenticated, should_show_settings_note', [
+        # When no API keys are set, the info should be shown
+        ([], False, True),
+        ([], True, True),
+
+        # With API keys, the note should be shown if the user is authenticated
+        (['apikey'], False, False),
+        (['apikey'], True, True),
+    ])
+    def test_unpublished_settings_note(self, publish_api_keys, is_authenticated, should_show_settings_note):
+        """Test whether information about using settings tab for publishing is displayed"""
+        self.delete_cookies_and_local_storage()
+
+        with self.update_mock(self._config_publish_api_keys_mock, 'new', publish_api_keys):
+            if is_authenticated:
+                self.perform_admin_authentication('unittest-password')
+
+            self.selenium_instance.get(self.get_url('/modules/unpublished-beta-version-module-providers/onlyunpublished/testprovider/1.0.0'))
+            assert self.wait_for_element(By.ID, 'unpublished-warning').text == (
+                'WARNING: This version of the module is not published.\n'
+                'It cannot be used in Terraform until it is published.' +
+                ("\nSee the 'settings' tab to publish the module." if should_show_settings_note else '')
+            )
+
+
     def test_unpublished_only_module_provider(self):
         """Test module provider page for a module provider that only has an unpublished version."""
+        with self.update_mock(self._config_publish_api_keys_mock, 'new', ['akey']):
+            self.delete_cookies_and_local_storage()
 
-        self.selenium_instance.get(self.get_url('/modules/unpublished-beta-version-module-providers/onlyunpublished/testprovider'))
+            self.selenium_instance.get(self.get_url('/modules/unpublished-beta-version-module-providers/onlyunpublished/testprovider'))
 
-        # Ensure warning about no available version
-        no_versions_div = self.wait_for_element(By.ID, 'no-version-available')
-        assert no_versions_div.text == 'There are no versions of this module'
-        assert no_versions_div.is_displayed() == True
+            # Ensure warning about no available version
+            no_versions_div = self.wait_for_element(By.ID, 'no-version-available')
+            assert no_versions_div.text == 'There are no versions of this module'
+            assert no_versions_div.is_displayed() == True
 
-        # Load version page
-        self.selenium_instance.get(self.get_url('/modules/unpublished-beta-version-module-providers/onlyunpublished/testprovider/1.0.0'))
+            # Load version page
+            self.selenium_instance.get(self.get_url('/modules/unpublished-beta-version-module-providers/onlyunpublished/testprovider/1.0.0'))
 
-        # Check description
-        assert self.wait_for_element(By.ID, 'module-description').text == 'Test description'
+            # Check description
+            assert self.wait_for_element(By.ID, 'module-description').text == 'Test description'
 
-        # Ensure warning exists for not published
-        assert self.wait_for_element(By.ID, 'unpublished-warning').text == (
-            'WARNING: This version of the module is not published.\n'
-            'It cannot be used in Terraform until it is published.'
-        )
+            # Ensure warning exists for not published
+            assert self.wait_for_element(By.ID, 'unpublished-warning').text == (
+                'WARNING: This version of the module is not published.\n'
+                'It cannot be used in Terraform until it is published.'
+            )
 
-        # Ensure no versions available is not displayed
-        no_versions_div = self.wait_for_element(By.ID, 'no-version-available', ensure_displayed=False)
-        assert no_versions_div.is_displayed() == False
+            # Ensure no versions available is not displayed
+            no_versions_div = self.wait_for_element(By.ID, 'no-version-available', ensure_displayed=False)
+            assert no_versions_div.is_displayed() == False
 
     def test_beta_only_module_provider(self):
         """Test module provider page for a module provider that only has a beta version."""
-
         self.selenium_instance.get(self.get_url('/modules/unpublished-beta-version-module-providers/onlybeta/testprovider'))
 
         # Ensure warning about no available version
