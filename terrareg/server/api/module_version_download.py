@@ -7,10 +7,13 @@ from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.models
 import terrareg.config
 import terrareg.analytics
+import terrareg.auth_wrapper
 
 
 class ApiModuleVersionDownload(ErrorCatchingResource):
     """Provide download endpoint."""
+
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 
     def _get(self, namespace, name, provider, version=None):
         """Provide download header for location to download source."""

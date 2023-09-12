@@ -637,6 +637,15 @@ class Config:
         return self.convert_boolean(os.environ.get('ENABLE_ACCESS_CONTROLS', 'False'))
 
     @property
+    def ALLOW_UNAUTHENTICATED_ACCESS(self):
+        """
+        Whether unauthenticated access to Terrareg is allowed.
+
+        If disabled, all users must authenticate to be able to access the interface and Terraform authentication is required
+        """
+        return self.convert_boolean(os.environ.get("ALLOW_UNAUTHENTICATED_ACCESS", "True"))
+
+    @property
     def OPENID_CONNECT_LOGIN_TEXT(self):
         """
         Text for sign in button for OpenID Connect authentication

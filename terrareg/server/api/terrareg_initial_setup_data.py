@@ -1,10 +1,13 @@
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.models
+import terrareg.auth_wrapper
 
 
 class ApiTerraregInitialSetupData(ErrorCatchingResource):
     """Interface to provide data to the initial setup page."""
+
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 
     def _get(self):
         """Return information for steps for setting up Terrareg."""

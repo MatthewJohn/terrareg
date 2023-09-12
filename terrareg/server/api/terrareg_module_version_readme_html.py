@@ -4,10 +4,13 @@ import urllib.parse
 from flask import request
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
+import terrareg.auth_wrapper
 
 
 class ApiTerraregModuleVersionReadmeHtml(ErrorCatchingResource):
     """Provide variable template for module version."""
+
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 
     def _get(self, namespace, name, provider, version):
         """Return variable template."""

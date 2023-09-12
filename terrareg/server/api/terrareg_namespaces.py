@@ -9,12 +9,14 @@ from terrareg.errors import (
 import terrareg.auth_wrapper
 import terrareg.models
 import terrareg.csrf
+import terrareg.auth_wrapper
 
 
 class ApiTerraregNamespaces(ErrorCatchingResource):
     """Provide interface to obtain namespaces."""
 
     method_decorators = {
+        "get": [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')],
         "post": [terrareg.auth_wrapper.auth_wrapper('is_admin')]
     }
 

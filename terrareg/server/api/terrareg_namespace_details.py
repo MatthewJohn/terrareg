@@ -6,12 +6,14 @@ import terrareg.user_group_namespace_permission_type
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.csrf
 import terrareg.models
+import terrareg.auth_wrapper
 
 
 class ApiTerraregNamespaceDetails(ErrorCatchingResource):
     """Interface to obtain custom terrareg namespace details."""
 
     method_decorators = {
+        "get": [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')],
         # Limit post methods to users with FULL namespace permissions
         "post": [terrareg.auth_wrapper.auth_wrapper('check_namespace_access',
             terrareg.user_group_namespace_permission_type.UserGroupNamespacePermissionType.FULL,

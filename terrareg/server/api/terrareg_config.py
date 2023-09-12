@@ -4,10 +4,13 @@ import terrareg.openid_connect
 import terrareg.saml
 import terrareg.auth
 from terrareg.server.error_catching_resource import ErrorCatchingResource
+import terrareg.auth_wrapper
 
 
 class ApiTerraregConfig(ErrorCatchingResource):
     """Endpoint to return config used by UI."""
+
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 
     def _get(self):
         """Return config."""

@@ -112,6 +112,10 @@ class BaseAuthMethod:
         """Get username of current user"""
         raise NotImplementedError
 
+    def can_access_read_api(self):
+        """Whether the user can access 'read' APIs"""
+        raise NotImplementedError
+
 
 class NotAuthenticated(BaseAuthMethod):
     """Base auth method for unauthenticated users"""
@@ -158,6 +162,12 @@ class NotAuthenticated(BaseAuthMethod):
         """Get username of current user"""
         return 'Unauthenticated User'
 
+    def can_access_read_api(self):
+        """Whether the user can access 'read' APIs"""
+        # Unauthenticated users can only access 'read' APIs
+        # if global anonymous access is allowed
+        return terrareg.config.Config().ALLOW_UNAUTHENTICATED_ACCESS
+
 
 class BaseAdminAuthMethod(BaseAuthMethod):
     """Base auth method admin authentication"""
@@ -191,6 +201,10 @@ class BaseAdminAuthMethod(BaseAuthMethod):
         """Get username of current user"""
         return 'Built-in admin'
 
+    def can_access_read_api(self):
+        """Whether the user can access 'read' APIs"""
+        return True
+
 
 class BaseApiKeyAuthMethod(BaseAuthMethod):
     """Base auth method for API key-based authentication"""
@@ -217,6 +231,11 @@ class BaseApiKeyAuthMethod(BaseAuthMethod):
             # Ensure the valid key is not empty:
             if actual_key and actual_key == valid_key:
                 return True
+        return False
+
+    def can_access_read_api(self):
+        """Whether the user can access 'read' APIs"""
+        # API keys can only access APIs that use different auth check methods
         return False
 
 
@@ -258,6 +277,11 @@ class BaseSessionAuthMethod(BaseAuthMethod):
 
         # Ensure session type is set to the current session and session is valid
         return cls.check_session_auth_type() and cls.check_session()
+
+    def can_access_read_api(self):
+        """Whether the user can access 'read' APIs"""
+        # Logged in SSO users can access any 'read' APIs
+        return True
 
 
 class UploadApiKeyAuthMethod(BaseApiKeyAuthMethod):

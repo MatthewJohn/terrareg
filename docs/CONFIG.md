@@ -97,6 +97,17 @@ If disabled, all modules must be configured with a git URL.
 Default: `True`
 
 
+### ALLOW_UNAUTHENTICATED_ACCESS
+
+
+Whether unauthenticated access to Terrareg is allowed.
+
+If disabled, all users must authenticate to be able to access the interface and Terraform authentication is required
+
+
+Default: `True`
+
+
 ### ALLOW_UNIDENTIFIED_DOWNLOADS
 
 

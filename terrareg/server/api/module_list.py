@@ -3,9 +3,13 @@ from flask_restful import reqparse, inputs
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.module_search
+import terrareg.auth_wrapper
 
 
 class ApiModuleList(ErrorCatchingResource):
+
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
+
     def _get(self):
         """Return list of modules."""
         parser = reqparse.RequestParser()
