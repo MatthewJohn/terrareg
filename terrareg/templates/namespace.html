@@ -54,9 +54,8 @@
         let permissions = await isLoggedIn();
         // If user is logged in and either site admin or has
         // full permissions on namespace, show edit button
-        if (permissions &&
-            (permissions.site_admin ||
-             permissions.namespace_permissions[namespace] == "FULL")
+        if (permissions.site_admin ||
+            permissions.namespace_permissions[namespace] == "FULL"
         ) {
             $('#edit-namespace').removeClass('default-hidden');
             $('#edit-namespace-link').attr('href', `/edit-namespace/${namespace}`);
