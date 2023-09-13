@@ -1,5 +1,12 @@
 # Changelog
 
+# [2.78.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.77.0...v2.78.0) (2023-09-13)
+
+
+### Features
+
+* Use CMD over ENTRYPOINT ([017815b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/017815b69a84f77e876a828c8ed232d78d92aba4))
+
 # [2.77.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.76.1...v2.77.0) (2023-09-13)
 
 
