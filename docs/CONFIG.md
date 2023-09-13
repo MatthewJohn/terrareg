@@ -477,7 +477,7 @@ Whether to skip TLS verification for self-hosted pricing endpoints
 Default: `False`
 
 
-### INTERNAL_EXTRACTION_ANALYITCS_TOKEN
+### INTERNAL_EXTRACTION_ANALYTICS_TOKEN
 
 
 Analytics token used by Terraform initialised by the registry.
