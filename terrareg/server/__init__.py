@@ -13,6 +13,7 @@ import terrareg.database
 import terrareg.models
 import terrareg.errors
 import terrareg.auth
+from terrareg.server.api.terrareg_module_providers import ApiTerraregModuleProviders
 from .base_handler import BaseHandler
 from terrareg.server.api import *
 
@@ -350,6 +351,10 @@ class Server(BaseHandler):
         self._api.add_resource(
             ApiTerraregNamespaceModules,
             '/v1/terrareg/modules/<string:namespace>'
+        )
+        self._api.add_resource(
+            ApiTerraregModuleProviders,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>'
         )
         self._api.add_resource(
             ApiTerraregModuleProviderDetails,
