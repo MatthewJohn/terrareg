@@ -57,4 +57,4 @@ ENV MANAGE_TERRAFORM_RC_FILE=True
 
 EXPOSE 5000
 
-ENTRYPOINT [ "bash", "scripts/entrypoint.sh" ]
+CMD [ "bash", "scripts/entrypoint.sh" ]
