@@ -1,5 +1,17 @@
 # Changelog
 
+# [2.77.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.76.1...v2.77.0) (2023-09-13)
+
+
+### Bug Fixes
+
+* Correct spelling of analytics ([c0410cd](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c0410cd1184f5bce6049ce41d1ee43da68285258))
+
+
+### Features
+
+* INTERNAL_EXTRACTION_ANALYTICS_TOKEN spelling ([3b12bbf](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3b12bbf534b9ac2a27fb9618d31095e667db4933))
+
 ## [2.76.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.76.0...v2.76.1) (2023-09-12)
 
 
