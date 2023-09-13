@@ -220,7 +220,7 @@ Default: `Contributed`
 URL for database.
 Defaults to local sqlite database.
 
-To setup SQLite datbase, use `sqlite:///<path to sqlite DB>`
+To setup SQLite database, use `sqlite:///<path to sqlite DB>`
 
 To setup MySQL, use `mysql+mysqlconnector://<user>:<password>@<host>[:<port>]/<database>`
 
@@ -265,7 +265,7 @@ Default: `False`
 ### DISABLE_ANALYTICS
 
 
-Disable module download anaytics.
+Disable module download analytics.
 
 This stops analytics tokens being displayed in the UI.
 
@@ -342,7 +342,7 @@ Example analytics token to provide in responses (e.g. my-tf-application, my-slac
 
 Note that, if this token is used in a module call, it will be ignored and treated as if
 an analytics token has not been provided.
-If analytics tokens are required, this stops users from accidently using the example placeholder in
+If analytics tokens are required, this stops users from accidentally using the example placeholder in
 Terraform projects.
 
 
@@ -406,7 +406,7 @@ If using SSH, the domain must be seperated by the path using a forward slash. Us
 - browse_url - Formatted URL for user-viewable source code
 (e.g. 'https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}'
 or 'https://bitbucket.org/{namespace}/{module}/src/{version}?at=refs%2Ftags%2F{tag_uri_encoded}').
-Must include placeholdes:
+Must include placeholders:
 - {path} (for source file/folder path)
 - {tag} or {tag_uri_encoded} for the git tag
 
@@ -425,7 +425,7 @@ Default: `[]`
 
 
 A list of a Terraform auth keys that can be used to authenticate to the registry
-to ignore check for valid analaytics token in module path.
+to ignore check for valid analytics token in module path.
 
 It is recommended that examples in modules do not include analytics tokens in calls to other modules
 hosted in the registry, to avoid having to add analytics tokens to test the examples during development
@@ -480,7 +480,7 @@ Default: `False`
 ### INTERNAL_EXTRACTION_ANALYITCS_TOKEN
 
 
-Analaytics token used by Terraform initialised by the registry.
+Analytics token used by Terraform initialised by the registry.
 
 This is used by the registry to call back to itself when analysing module examples.
 
@@ -582,7 +582,7 @@ Default: `legacy`
 ### OPENID_CONNECT_CLIENT_ID
 
 
-Client ID for OpenID Conect authentication
+Client ID for OpenID Connect authentication
 
 
 Default: ``
@@ -591,7 +591,7 @@ Default: ``
 ### OPENID_CONNECT_CLIENT_SECRET
 
 
-Client secret for OpenID Conect authentication
+Client secret for OpenID Connect authentication
 
 
 Default: ``
@@ -611,7 +611,7 @@ Default: `False`
 ### OPENID_CONNECT_ISSUER
 
 
-Base Issuer URL for OpenID Conect authentication.
+Base Issuer URL for OpenID Connect authentication.
 
 A well-known URL will be expected at `${OPENID_CONNECT_ISSUER}/.well-known/openid-configuration`
 
