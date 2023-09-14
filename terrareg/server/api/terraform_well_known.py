@@ -1,6 +1,8 @@
 
 from flask_restful import Resource
 
+from terrareg.constants import TERRAFORM_REDIRECT_URI_PORT_RANGE
+
 
 class ApiTerraformWellKnown(Resource):
     """Terraform .well-known discovery"""
@@ -14,6 +16,6 @@ class ApiTerraformWellKnown(Resource):
                 "grant_types": ["authz_code"],
                 "authz": "/terraform/oauth/authorization",
                 "token": "/terraform/oauth/token",
-                "ports": [10000, 10010],
+                "ports": TERRAFORM_REDIRECT_URI_PORT_RANGE,
             }
         }

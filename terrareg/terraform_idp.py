@@ -9,6 +9,7 @@ from pyop.subject_identifier import HashBasedSubjectIdentifierFactory
 from pyop.userinfo import Userinfo
 
 import terrareg.config
+from terrareg.constants import TERRAFORM_REDIRECT_URI_PORT_RANGE
 
 
 class TerraformIdpUserLookup:
@@ -114,6 +115,11 @@ class TerraformIdp:
                     "client_id_issued_at": int(time.time()),
                     "client_secret": uuid.uuid4().hex,
                     "client_secret_expires_at": 0,  # never expires
+                    # Match redirect URLs provided by terraform well-known endpoint
+                    "redirect_uris": [
+                        f"http://localhost:{port}/login"
+                        for port in range(TERRAFORM_REDIRECT_URI_PORT_RANGE[0], TERRAFORM_REDIRECT_URI_PORT_RANGE[1] + 1)
+                    ]
                 }
             },
             userinfo=userinfo_db
