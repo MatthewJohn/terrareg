@@ -85,6 +85,11 @@ class Config:
 
     @property
     def DATA_DIRECTORY(self):
+        """
+        Directory for storing module data.
+
+        This directory must be persistent (e.g. mounted to shared volume for distributed docker containers)
+        """
         return os.path.join(os.environ.get('DATA_DIRECTORY', os.getcwd()), 'data')
 
     @property
@@ -837,6 +842,33 @@ class Config:
             for extension in os.environ.get("EXAMPLE_FILE_EXTENSIONS", "tf,tfvars,sh,json").split(",")
             if extension
         ]
+
+    @property
+    def TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT(self):
+        """
+        Subject ID hash salt for Terraform OIDC identity provider.
+
+        This must be set to authenticate users via terrareg.
+        This is required if disabling ALLOW_UNAUTHENTICATED_ACCESS.
+
+        Must be set to a secure random string
+        """
+        return os.environ.get("TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT")
+
+    @property
+    def TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH(self):
+        """
+        Path of a signing key to be used for Terraform OIDC identity provider.
+
+        This must be set to authenticate users via Terraform.
+
+        The key can be generated used:
+        ```
+        ssh-keygen -t rsa -b 4096 -m PEM -f signing_key.pem
+        # Do not set a password
+        ```
+        """
+        return os.environ.get('TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH', os.path.join(os.getcwd(), "signing_key.pem"))
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""

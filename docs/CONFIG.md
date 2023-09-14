@@ -140,7 +140,7 @@ Default: ``
 
 ### ANALYTICS_TOKEN_DESCRIPTION
 
-Description to be provided to user about analytics token (e.g. `The name of your application`)
+Describe to be provided to user about analytics token (e.g. `The name of your application`)
 
 Default: ``
 
@@ -241,6 +241,10 @@ Default: `sqlite:///modules.db`
 
 ### DATA_DIRECTORY
 
+
+Directory for storing module data.
+
+This directory must be persistent (e.g. mounted to shared volume for distributed docker containers)
 
 
 Default: `./data`
@@ -898,6 +902,37 @@ For more information, see Terraform documentation: https://www.terraform.io/lang
 Default: `{major}.{minor}.{patch}`
 
 
+### TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH
+
+
+Path of a signing key to be used for Terraform OIDC identity provider.
+
+This must be set to authenticate users via Terraform.
+
+The key can be generated used:
+```
+ssh-keygen -t rsa -b 4096 -m PEM -f signing_key.pem
+# Do not set a password
+```
+
+
+Default: `./signing_key.pem`
+
+
+### TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT
+
+
+Subject ID hash salt for Terraform OIDC identity provider.
+
+This must be set to authenticate users via terrareg.
+This is required if disabling ALLOW_UNAUTHENTICATED_ACCESS.
+
+Must be set to a secure random string
+
+
+Default: ``
+
+
 ### THREADED
 
 Whether flask is configured to enable threading
@@ -941,6 +976,9 @@ Default: `Verified`
 
 ### VERIFIED_MODULE_NAMESPACES
 
-List of namespaces whose modules will be automatically marked as verified.
+
+List of namespaces, who's modules will be automatically set to verified.
+
 
 Default: ``
+
