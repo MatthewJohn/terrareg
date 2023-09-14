@@ -95,7 +95,7 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
 
                     return {
                         'status': 'Error',
-                        'message': 'Tag failed to import',
+                        'message': f'Tag failed to import: {str(exc)}',
                         'tag': tag_ref
                     }, 500
                 else:
