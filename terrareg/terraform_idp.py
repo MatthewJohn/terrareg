@@ -10,18 +10,24 @@ from pyop.userinfo import Userinfo
 
 import terrareg.config
 from terrareg.constants import TERRAFORM_REDIRECT_URI_PORT_RANGE
+import terrareg.auth
 
 
 class TerraformIdpUserLookup:
     """Implement pypo.userinfo.Userinfo to provide interface for looking up users"""
-    def __init__(self, db):
-        self._db = db
+
+    def __init__(self):
+        pass
 
     def __getitem__(self, item):
-        return self._db[item]
+        auth_method = terrareg.auth.AuthFactory().get_current_auth_method()
+        return {
+            "sub": auth_method.get_username()
+        }
 
     def __contains__(self, item):
-        return item in self._db
+        """Always lookup valid user"""
+        return True
 
     def get_claims_for(self, user_id, requested_claims, userinfo=None):
         """
@@ -101,7 +107,7 @@ class TerraformIdp:
             'claims_parameter_supported': True
         }
 
-        userinfo_db = Userinfo({})
+        userinfo_db = TerraformIdpUserLookup()
         signing_key = RSAKey(key=rsa_load(terrareg.config.Config().TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH), alg='RS256')
         self.provider = Provider(
             signing_key=signing_key,
