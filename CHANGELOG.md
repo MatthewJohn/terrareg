@@ -1,5 +1,19 @@
 # Changelog
 
+# [2.79.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.78.0...v2.79.0) (2023-09-14)
+
+
+### Bug Fixes
+
+* Correct grammar ([bf4e2cd](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/bf4e2cd3b2b9fc73986623027a766fc3b0db3299))
+* Correct test for import tag failure ([9defb65](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9defb659248eadabc6997d551349344be6226573)), closes [#429](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/429)
+* improve grammar ([4bf4834](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4bf48348d5f27933c470fd4e0964ec8c027b2084))
+
+
+### Features
+
+* Log error details on failed tag import ([36e0f08](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/36e0f088e9f4f6f8f9fa041301f284cc38059a16))
+
 # [2.78.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.77.0...v2.78.0) (2023-09-13)
 
 
