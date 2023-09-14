@@ -5,6 +5,7 @@ from enum import Enum
 import sqlalchemy
 from flask import g, request, session
 import flask
+import pyop.exceptions
 
 import terrareg.config
 from terrareg.database import Database
@@ -12,6 +13,7 @@ import terrareg.models
 import terrareg.models
 import terrareg.openid_connect
 import terrareg.saml
+from terrareg.terraform_idp import TerraformIdp
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 
 
@@ -46,6 +48,7 @@ class AuthFactory:
                     PublishApiKeyAuthMethod,
                     SamlAuthMethod,
                     OpenidConnectAuthMethod,
+                    TerraformOidcAuthMethod,
                     NotAuthenticated]:
             if not cls.is_enabled():
                 continue
@@ -520,4 +523,69 @@ class AdminSessionAuthMethod(BaseAdminAuthMethod, BaseSessionAuthMethod):
     def check_session(cls):
         """Check admin session"""
         # There are no additional attributes to check
+        return True
+
+
+class TerraformOidcAuthMethod(BaseAuthMethod):
+
+    def is_built_in_admin(self):
+        """Whether user is the built-in admin"""
+        return False
+
+    def is_admin(self):
+        """Whether user is an admin"""
+        return False
+
+    def is_authenticated(self):
+        """Whether user is authenticated"""
+        return True
+
+    @classmethod
+    def is_enabled(cls):
+        """Whether authentication method is enabled"""
+        return TerraformIdp.get().is_enabled
+
+    @property
+    def requires_csrf_tokens(self):
+        """Whether auth type requires CSRF tokens"""
+        return False
+
+    def can_publish_module_version(self, namespace):
+        """Whether user can publish module version within a namespace."""
+        return False
+
+    def can_upload_module_version(self, namespace):
+        """Whether user can upload/index module version within a namespace."""
+        return False
+
+    @classmethod
+    def check_auth_state(cls):
+        """Check whether user is logged in using this method and return instance of object"""
+        print(request.headers)
+        print(request.data)
+        if 'Authorization' in request.headers:
+            # Check header with OpenIDC
+            try:
+                res = TerraformIdp.get().provider.handle_userinfo_request(request.data, request.headers)
+                print(res)
+                return True
+            except pyop.exceptions.InvalidAccessToken:
+                return False
+
+        return False
+
+    def check_namespace_access(self, permission_type, namespace):
+        """Check level of access to namespace"""
+        return False
+
+    def get_all_namespace_permissions(self):
+        """Return all permissions by namespace"""
+        return {}
+
+    def get_username(self):
+        """Get username of current user"""
+        raise "Terraform CLI User"
+
+    def can_access_read_api(self):
+        """Whether the user can access 'read' APIs"""
         return True
