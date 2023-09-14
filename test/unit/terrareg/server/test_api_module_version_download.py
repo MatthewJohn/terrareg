@@ -460,3 +460,11 @@ For example:
             user_agent='TestUserAgent',
             auth_token=None
         )
+
+    def test_unauthenticated(self, client, mock_models):
+        """Test unauthenticated call to API"""
+        # @TODO Handle terraform auth
+        def call_endpoint():
+            return client.get('/v1/modules/moduledetails/fullypopulated/testprovider/1.5.0/source.zip')
+
+        self._test_unauthenticated_read_api_endpoint_test(call_endpoint)

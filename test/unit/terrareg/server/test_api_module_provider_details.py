@@ -187,3 +187,10 @@ class TestApiModuleProviderDetails(TerraregUnitTest):
 
         assert res.json == test_module_provider.get_latest_version().get_api_details()
         assert res.status_code == 200
+
+    def test_unauthenticated(self, client, mock_models):
+        """Test unauthenticated call to API"""
+        def call_endpoint():
+            return client.get('/v1/modules/testnamespace/testmodulename/testprovider')
+
+        self._test_unauthenticated_read_api_endpoint_test(call_endpoint)

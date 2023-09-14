@@ -129,3 +129,11 @@ class TestModuleProviderPageTerraformDownload(TerraregUnitTest):
             terrareg.models.ModuleVersion
         )
         assert AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'].id == test_module_version.id
+
+    def test_unauthenticated(self, client, mock_models):
+        """Test unauthenticated call to API"""
+        # @TODO Test authentication from Terraform
+        def call_endpoint():
+            return client.get('/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/1.5.0')
+
+        self._test_unauthenticated_read_api_endpoint_test(call_endpoint)
