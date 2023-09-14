@@ -75,19 +75,12 @@ class TerraformIdp:
         authentication_endpoint = f"{oauth_base_url}/authorization"
         jwks_uri = f"{oauth_base_url}/jwks"
         token_endpoint = f"{oauth_base_url}/token"
-        userinfo_endpoint = f"{oauth_base_url}/userinfo"
-        registration_endpoint = f"{oauth_base_url}/registration"
-        end_session_endpoint = f"{oauth_base_url}/logout"
-        print(issuer)
 
         configuration_information = {
             'issuer': issuer,
             'authorization_endpoint': authentication_endpoint,
             'jwks_uri': jwks_uri,
             'token_endpoint': token_endpoint,
-            'userinfo_endpoint': userinfo_endpoint,
-            # 'registration_endpoint': registration_endpoint,
-            'end_session_endpoint': end_session_endpoint,
             'scopes_supported': ['openid'],
             'response_types_supported': ['code', 'code id_token', 'code token', 'code id_token token'],
             'response_modes_supported': ['query', 'fragment'],
