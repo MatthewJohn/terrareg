@@ -91,7 +91,7 @@ class TerraformIdp:
             'userinfo_endpoint': userinfo_endpoint,
             # 'registration_endpoint': registration_endpoint,
             'end_session_endpoint': end_session_endpoint,
-            'scopes_supported': ['openid', 'profile'],
+            'scopes_supported': ['openid'],
             'response_types_supported': ['code', 'code id_token', 'code token', 'code id_token token'],
             'response_modes_supported': ['query', 'fragment'],
             'grant_types_supported': ['authorization_code', 'implicit'],

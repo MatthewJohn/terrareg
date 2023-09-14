@@ -22,8 +22,11 @@ terraform_oidc_provider_blueprint = Blueprint('terraform_oidc_provider', __name_
 def authorization_endpoints():
     # parse authentication request
     try:
+        args = dict(flask.request.args)
+        # terraform does not provide a 'scope', so forcefully set one
+        args['scope'] = "openid"
         auth_req = TerraformIdp.get().provider.parse_authentication_request(
-            urlencode(flask.request.args),
+            urlencode(args),
             flask.request.headers
         )
     except InvalidAuthenticationRequest as e:
