@@ -1,8 +1,8 @@
 import os
-from flask.app import Flask
-from flask.helpers import url_for
-from jwkest.jwk import RSAKey, rsa_load
+import time
+import uuid
 
+from jwkest.jwk import RSAKey, rsa_load
 from pyop.authz_state import AuthorizationState
 from pyop.provider import Provider
 from pyop.subject_identifier import HashBasedSubjectIdentifierFactory
@@ -106,6 +106,15 @@ class TerraformIdp:
             signing_key=signing_key,
             configuration_information=configuration_information,
             authz_state=AuthorizationState(HashBasedSubjectIdentifierFactory(terrareg.config.Config().TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT)),
-            clients={},
+            clients={
+                "terraform-cli": {
+                    "response_types": ["code"],
+                    # Match client ID from Terraform well-known endpoint
+                    "client_id": "terraform-cli",
+                    "client_id_issued_at": int(time.time()),
+                    "client_secret": uuid.uuid4().hex,
+                    "client_secret_expires_at": 0,  # never expires
+                }
+            },
             userinfo=userinfo_db
         )
