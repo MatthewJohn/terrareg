@@ -31,19 +31,9 @@ class TerraformIdpUserLookup:
 
     def get_claims_for(self, user_id, requested_claims, userinfo=None):
         """
-        Filter the userinfo based on which claims where requested.
-        :param user_id: user identifier
-        :param requested_claims: see <a href="http://openid.net/specs/openid-connect-core-1_0.html#ClaimsParameter">
-            "OpenID Connect Core 1.0", Section 5.5</a> for structure
-        :param userinfo: if user_info is specified the claims will be filtered from the user_info directly instead
-        first querying the storage against the user_id
-        :return: All requested claims available from the userinfo.
+        Terraform does not request any claims, so immediately return
         """
-
-        if not userinfo:
-            userinfo = self._db[user_id] if user_id else {}
-        claims = {claim: userinfo[claim] for claim in requested_claims if claim in userinfo}
-        return claims
+        return {}
 
 
 class TerraformIdp:
