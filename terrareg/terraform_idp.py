@@ -119,8 +119,7 @@ class TerraformIdp:
                     # Match client ID from Terraform well-known endpoint
                     "client_id": "terraform-cli",
                     "client_id_issued_at": int(time.time()),
-                    "client_secret": uuid.uuid4().hex,
-                    "client_secret_expires_at": 0,  # never expires
+                    "token_endpoint_auth_method": 'none',
                     # Match redirect URLs provided by terraform well-known endpoint
                     "redirect_uris": [
                         f"http://localhost:{port}/login"
