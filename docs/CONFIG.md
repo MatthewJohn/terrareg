@@ -930,9 +930,6 @@ Default: `Verified`
 
 ### VERIFIED_MODULE_NAMESPACES
 
-
-List of namespaces, who's modules will be automatically set to verified.
-
+List of namespaces whose modules will be automatically marked as verified.
 
 Default: ``
-

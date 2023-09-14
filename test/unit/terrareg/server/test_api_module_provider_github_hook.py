@@ -259,7 +259,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
             assert res.status_code == 500
             assert res.json == {
                 'status': 'Error',
-                'message': 'Tag failed to import',
+                'message': 'Tag failed to import: Unittest error',
                 'tag': 'v6.2.0'
             }
 
@@ -323,7 +323,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
             assert res.status_code == 500
             assert res.json == {
                 'status': 'Error',
-                'message': 'Tag failed to import',
+                'message': 'Tag failed to import: Unittest error',
                 'tag': 'v6.2.0'
             }
 
