@@ -3,6 +3,19 @@
 
 Please read the below before contributing any changes to the project.
 
+## Committing
+
+All commits should use angular-style commit messages: https://www.conventionalcommits.org/en/v1.0.0/.
+
+Generally, the only exception around not having a 'type: ' prefix is whilst fixing an issue caused by a previous commit in a branch (i.e. a bug that didn't reach the main branch without the fix).
+
+A Gitlab issue must be included at the bottom of the commit message `Issue #123`.
+
+This format is important for the CI to perform releases and update release notes accurately.
+
+If there isn't a gitlab issue for the task that you are working on, please feel free to ask for one (raise a Github issue and maintainer can rcreate an issue for you. Alternatively, request access to Gitlab, which should be granted)
+
+
 ## Upstream
 
 The main upstream of this project is https://gitlab.dockstudios.co.uk/pub/terrareg.
@@ -14,15 +27,3 @@ If you'd prefer, feel free to register an account to the main upstream - though 
 Any issues raised in any hosting platform, other than the 'main upstream' will be manually replicated to the 'main upstream'.
 
 As a result, issue references in commit messages will only align with those in the 'main upstream'.
-
-## Future license changes
-
-The project is currently licensed under the AGPL license (see LICENSE file in root of repository).
-
-If the requirement comes up, the maintainers withold the right to change the license of the project, and all code within it, to a more 'relaxed' license (e.g. GNU GPLv3, LGPL, MIT License, Apache License 2.0).
-
-Any code submitted to this project must adhere to the current license and any of the licenses suggested above.
-
-All contributers who submit changes must agree to submitting the work under the current license and that the license that the work is distributed under may change at any time (as suggested above) without any notification or consent (written or otherwise).
-
-This does not allow for the relicense of any constributed code to a more restrive license (unless those, as suggested above, are deemed more restrictive).
