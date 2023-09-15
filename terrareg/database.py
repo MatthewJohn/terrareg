@@ -47,6 +47,9 @@ class Database():
     def __init__(self):
         """Setup member variables."""
         self._session = None
+        self._terraform_idp_authorization_code = None
+        self._terraform_idp_access_token = None
+        self._terraform_idp_subject_identifier = None
         self._user_group = None
         self._user_group_namespace_permission = None
         self._git_provider = None
@@ -70,15 +73,36 @@ class Database():
         return self._session
 
     @property
+    def terraform_idp_authorization_code(self):
+        """Return terraform_idp_authorization_code table"""
+        if self._terraform_idp_authorization_code is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._terraform_idp_authorization_code
+
+    @property
+    def terraform_idp_access_token(self):
+        """Return terraform_idp_access_token table"""
+        if self._terraform_idp_access_token is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._terraform_idp_access_token
+
+    @property
+    def terraform_idp_subject_identifier(self):
+        """Return terraform_idp_subject_identifier table"""
+        if self._terraform_idp_subject_identifier is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._terraform_idp_subject_identifier
+
+    @property
     def user_group(self):
-        """Return namespace table."""
+        """Return user_group table."""
         if self._user_group is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._user_group
 
     @property
     def user_group_namespace_permission(self):
-        """Return namespace table."""
+        """Return user_group_namespace_permission table."""
         if self._user_group_namespace_permission is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._user_group_namespace_permission
@@ -92,7 +116,7 @@ class Database():
 
     @property
     def namespace_redirect(self):
-        """Return namespace redirect table."""
+        """Return namespace_redirect redirect table."""
         if self._namespace_redirect is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._namespace_redirect
@@ -212,6 +236,30 @@ class Database():
         self._session = sqlalchemy.Table(
             'session', meta,
             sqlalchemy.Column('id', sqlalchemy.String(128), primary_key=True),
+            sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
+        )
+
+        self._terraform_idp_authorization_code = sqlalchemy.Table(
+            'terraform_idp_authorization_code', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('key', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False, unique=True),
+            sqlalchemy.Column('data', Database.medium_blob()),
+            sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
+        )
+
+        self._terraform_idp_access_token = sqlalchemy.Table(
+            'terraform_idp_access_token', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('key', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False, unique=True),
+            sqlalchemy.Column('data', Database.medium_blob()),
+            sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
+        )
+
+        self._terraform_idp_subject_identifier = sqlalchemy.Table(
+            'terraform_idp_subject_identifier', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('key', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False, unique=True),
+            sqlalchemy.Column('data', Database.medium_blob()),
             sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
         )
 

@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+import json
 import os
 import time
 import uuid
@@ -7,10 +9,12 @@ from pyop.authz_state import AuthorizationState
 from pyop.provider import Provider
 from pyop.subject_identifier import HashBasedSubjectIdentifierFactory
 from pyop.userinfo import Userinfo
+import sqlalchemy
 
 import terrareg.config
 from terrareg.constants import TERRAFORM_REDIRECT_URI_PORT_RANGE
 import terrareg.auth
+from terrareg.database import Database
 
 
 class TerraformIdpUserLookup:
@@ -36,34 +40,122 @@ class TerraformIdpUserLookup:
         return {}
 
 
-class MockDB:
-    """Implement pypo.userinfo.Userinfo to provide interface for looking up users"""
+class BaseIdpDatabase:
 
-    def __init__(self, name):
-        self.name = name
-        self.db = {}
+    @property
+    def table(self):
+        """Return table for database"""
+        raise NotImplementedError
 
     def __getitem__(self, item):
-        print(f"{self.name}: {item}")
-        return self.db.get(item)
+        """Obbtain data from database where code matches the key"""
+        db = Database.get()
+        print(f"{self.__class__.__name__}: __getitem__ {item}")
+        with db.get_connection() as conn:
+            res = conn.execute(
+                sqlalchemy.select(
+                    self.table.c.data
+                ).select_from(
+                    self.table
+                ).where(
+                    self.table.c.key==item
+                )
+            )
+            item = res.first()
+            if item:
+                return json.loads(Database.decode_blob(item[0]))
+            raise KeyError
 
     def __setitem__(self, key, value):
-        print(f"{self.name}: Setting {key} to {value}")
-        self.db[key] = value
+        """Set code and data into database"""
+        print(f"{self.__class__.__name__}: Setting {key} to {value}")
+        db = Database.get()
+        with db.get_connection() as conn:
+            # Perform update, determine if any rows are affected and fallback
+            # to insert.
+            # Upsert operations appear to be database-specific and might
+            # be brittle across sqlite and mysql
+            blob_value = Database.encode_blob(json.dumps(value))
+            with conn.begin() as transaction:
+                res = conn.execute(
+                    sqlalchemy.update(
+                        self.table
+                    ).where(
+                        self.table.c.key==key
+                    ).values(
+                        data=blob_value
+                    )
+                )
+                if res.rowcount == 0:
+                    res = conn.execute(
+                        sqlalchemy.insert(
+                            self.table
+                        ).values(
+                            key=key,
+                            data=blob_value,
+                            expiry=(datetime.now() + timedelta(seconds=terrareg.config.Config().TERRAFORM_OIDC_IDP_SESSION_EXPIRY))
+                        )
+                    )
+                transaction.commit()
+
 
     def __contains__(self, item):
-        """Always lookup valid user"""
-        print(f"{self.name}: {item}")
-        return item in self.db
+        """Determine if code exists"""
+        print(f"{self.__class__.__name__}: __contains__: {item}")
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(
+                sqlalchemy.select(
+                    sqlalchemy.func.count(self.table.c.id)
+                ).select_from(
+                    self.table
+                ).where(
+                    self.table.c.key==item
+                )
+            )
+            return bool(res.scalar())
 
     def items(self):
-        return self.db.items()
+        """Return all code/data from database"""
+        print(f'{self.__class__.__name__} - called items')
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(
+                sqlalchemy.select(
+                    self.table.c.key,
+                    self.table.c.data
+                ).select_from(
+                    self.table
+                )
+            )
+            return [
+                [row[0], json.loads(Database.decode_blob(row[1]))]
+                for row in res.all()
+            ]
 
-    def get_claims_for(self, user_id, requested_claims, userinfo=None):
-        """
-        Terraform does not request any claims, so immediately return
-        """
-        return {}
+
+class AuthorizationCodeDatabase(BaseIdpDatabase):
+
+    @property
+    def table(self):
+        """Return table"""
+        return Database.get().terraform_idp_authorization_code
+
+
+class AccessTokenDatabase(BaseIdpDatabase):
+
+    @property
+    def table(self):
+        """Return table"""
+        return Database.get().terraform_idp_access_token
+
+
+class SubjectIdentifierDatabase(BaseIdpDatabase):
+
+    @property
+    def table(self):
+        """Return table"""
+        return Database.get().terraform_idp_subject_identifier
 
 
 class TerraformIdp:
@@ -127,9 +219,9 @@ class TerraformIdp:
             configuration_information=configuration_information,
             authz_state=AuthorizationState(
                 HashBasedSubjectIdentifierFactory(terrareg.config.Config().TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT),
-                authorization_code_db=MockDB("authorization_code_db"),
-                access_token_db=MockDB("access_token_db"),
-                subject_identifier_db=MockDB("subject_identifier_db")
+                authorization_code_db=AuthorizationCodeDatabase(),
+                access_token_db=AccessTokenDatabase(),
+                subject_identifier_db=SubjectIdentifierDatabase()
             ),
             clients={
                 "terraform-cli": {
