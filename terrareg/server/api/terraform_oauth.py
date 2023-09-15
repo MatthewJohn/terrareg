@@ -1,4 +1,4 @@
-from urllib.parse import urlencode, parse_qs
+from urllib.parse import urlencode, parse_qs, quote_plus
 
 import flask
 from flask import Blueprint, redirect, current_app, jsonify, session
@@ -51,7 +51,8 @@ def authorization_endpoints():
     
     # Otherwise, redirect user to login page
     else:
-        raise Exception("Need to redirect user")
+        url = flask.request.path + f'?{urlencode(dict(flask.request.args))}'
+        return redirect(f"/login?redirect={quote_plus(url)}", 302)
 
 
 @terraform_oidc_provider_blueprint.route('/jwks')
