@@ -96,6 +96,9 @@ class BaseIdpDatabase:
                             expiry=(datetime.now() + timedelta(seconds=terrareg.config.Config().TERRAFORM_OIDC_IDP_SESSION_EXPIRY))
                         )
                     )
+
+                # Delete any old sessions
+                conn.execute(sqlalchemy.delete(self.table).where(self.table.c.expiry < datetime.now()))
                 transaction.commit()
 
 
