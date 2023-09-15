@@ -119,6 +119,11 @@ class BaseAuthMethod:
         """Whether the user can access 'read' APIs"""
         raise NotImplementedError
 
+    def can_access_terraform_api(self):
+        """Whether the user can access APIs used by terraform"""
+        # Default to using 'read' API access
+        return self.can_access_read_api()
+
 
 class NotAuthenticated(BaseAuthMethod):
     """Base auth method for unauthenticated users"""
@@ -588,4 +593,8 @@ class TerraformOidcAuthMethod(BaseAuthMethod):
 
     def can_access_read_api(self):
         """Whether the user can access 'read' APIs"""
+        return False
+
+    def can_access_terraform_api(self):
+        """Terraform can only access those APIs used by Terraform"""
         return True

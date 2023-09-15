@@ -13,7 +13,7 @@ import terrareg.auth_wrapper
 class ApiModuleVersionDownload(ErrorCatchingResource):
     """Provide download endpoint."""
 
-    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_terraform_api')]
 
     def _get(self, namespace, name, provider, version=None):
         """Provide download header for location to download source."""

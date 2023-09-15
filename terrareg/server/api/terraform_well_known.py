@@ -13,7 +13,7 @@ class ApiTerraformWellKnown(Resource):
             "modules.v1": "/v1/modules/",
             "login.v1": {
                 "client": "terraform-cli",
-                "grant_types": ["authz_code"],
+                "grant_types": ["authz_code", "token"],
                 "authz": "/terraform/oauth/authorization",
                 "token": "/terraform/oauth/token",
                 "ports": TERRAFORM_REDIRECT_URI_PORT_RANGE,
