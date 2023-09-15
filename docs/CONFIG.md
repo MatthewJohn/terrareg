@@ -902,6 +902,17 @@ For more information, see Terraform documentation: https://www.terraform.io/lang
 Default: `{major}.{minor}.{patch}`
 
 
+### TERRAFORM_OIDC_IDP_SESSION_EXPIRY
+
+
+Terraform OIDC identity token expiry length (seconds).
+
+Defaults to 1 hour.
+
+
+Default: `86400`
+
+
 ### TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH
 
 

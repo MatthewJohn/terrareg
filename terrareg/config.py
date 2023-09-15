@@ -870,6 +870,15 @@ class Config:
         """
         return os.environ.get('TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH', os.path.join(os.getcwd(), "signing_key.pem"))
 
+    @property
+    def TERRAFORM_OIDC_IDP_SESSION_EXPIRY(self):
+        """
+        Terraform OIDC identity token expiry length (seconds).
+
+        Defaults to 1 hour.
+        """
+        return int(os.environ.get("TERRAFORM_OIDC_IDP_SESSION_EXPIRY", "86400"))
+
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""
         if string.lower() in ['true', 'yes', '1']:
