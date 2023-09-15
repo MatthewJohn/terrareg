@@ -877,7 +877,7 @@ class Config:
 
         Defaults to 1 hour.
         """
-        return int(os.environ.get("TERRAFORM_OIDC_IDP_SESSION_EXPIRY", "86400"))
+        return int(os.environ.get("TERRAFORM_OIDC_IDP_SESSION_EXPIRY", "3600"))
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""
