@@ -36,6 +36,36 @@ class TerraformIdpUserLookup:
         return {}
 
 
+class MockDB:
+    """Implement pypo.userinfo.Userinfo to provide interface for looking up users"""
+
+    def __init__(self, name):
+        self.name = name
+        self.db = {}
+
+    def __getitem__(self, item):
+        print(f"{self.name}: {item}")
+        return self.db.get(item)
+
+    def __setitem__(self, key, value):
+        print(f"{self.name}: Setting {key} to {value}")
+        self.db[key] = value
+
+    def __contains__(self, item):
+        """Always lookup valid user"""
+        print(f"{self.name}: {item}")
+        return item in self.db
+
+    def items(self):
+        return self.db.items()
+
+    def get_claims_for(self, user_id, requested_claims, userinfo=None):
+        """
+        Terraform does not request any claims, so immediately return
+        """
+        return {}
+
+
 class TerraformIdp:
     """Handle creating of IDP objects using pyop"""
 
@@ -95,7 +125,12 @@ class TerraformIdp:
         self.provider = Provider(
             signing_key=signing_key,
             configuration_information=configuration_information,
-            authz_state=AuthorizationState(HashBasedSubjectIdentifierFactory(terrareg.config.Config().TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT)),
+            authz_state=AuthorizationState(
+                HashBasedSubjectIdentifierFactory(terrareg.config.Config().TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT),
+                authorization_code_db=MockDB("authorization_code_db"),
+                access_token_db=MockDB("access_token_db"),
+                subject_identifier_db=MockDB("subject_identifier_db")
+            ),
             clients={
                 "terraform-cli": {
                     "response_types": ["code"],
