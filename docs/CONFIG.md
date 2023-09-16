@@ -910,7 +910,7 @@ Terraform OIDC identity token expiry length (seconds).
 Defaults to 1 hour.
 
 
-Default: `86400`
+Default: `3600`
 
 
 ### TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH
@@ -939,6 +939,32 @@ This must be set to authenticate users via terrareg.
 This is required if disabling ALLOW_UNAUTHENTICATED_ACCESS.
 
 Must be set to a secure random string
+
+
+Default: ``
+
+
+### TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS
+
+
+The amount of time a module download pre-signed URL should be valid for (in seconds).
+
+When Terraform downloads a module, it calls a download endpoint, which returns the pre-signed
+URL, which should be immediately used by Terraform, meaning that this should not need to be modified.
+
+If Terrareg runs across multiple containers, across multiple instances that can suffer from time drift,
+this value may need to be increased.
+
+
+Default: `10`
+
+
+### TERRAFORM_PRESIGNED_URL_SECRET
+
+
+Secret value for encrypting tokens used in presigned URLs to authenticate module source downloads.
+
+This is required when requiring authentication in Terrareg and modules do not use git.
 
 
 Default: ``

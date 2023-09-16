@@ -879,6 +879,29 @@ class Config:
         """
         return int(os.environ.get("TERRAFORM_OIDC_IDP_SESSION_EXPIRY", "3600"))
 
+    @property
+    def TERRAFORM_PRESIGNED_URL_SECRET(self):
+        """
+        Secret value for encrypting tokens used in presigned URLs to authenticate module source downloads.
+
+        This is required when requiring authentication in Terrareg and modules do not use git.
+        """
+        return os.environ.get("TERRAFORM_PRESIGNED_URL_SECRET")
+
+    @property
+    def TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS(self):
+        """
+        The amount of time a module download pre-signed URL should be valid for (in seconds).
+
+        When Terraform downloads a module, it calls a download endpoint, which returns the pre-signed
+        URL, which should be immediately used by Terraform, meaning that this should not need to be modified.
+
+        If Terrareg runs across multiple containers, across multiple instances that can suffer from time drift,
+        this value may need to be increased.
+        """
+        return int(os.environ.get("TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS", 10))
+
+
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""
         if string.lower() in ['true', 'yes', '1']:
