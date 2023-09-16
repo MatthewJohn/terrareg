@@ -4,27 +4,26 @@ import jwt
 
 import terrareg.config
 from terrareg.errors import InvalidPresignedUrlKeyError, PresignedUrlsNotConfiguredError
+from terrareg.utils import get_datetime_now
 
 
 class TerraformSourcePresignedUrl:
 
-    _SECRET = terrareg.config.Config().TERRAFORM_PRESIGNED_URL_SECRET
-    _EXPIRY = terrareg.config.Config().TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS
-
     @classmethod
     def is_enabled(cls):
         """Whether pre-signed URLs are available"""
-        return bool(cls._SECRET) and bool(cls._EXPIRY)
+        return bool(cls.get_secret())
 
     @classmethod
     def get_secret(cls):
         """Get secret for JWT signature encryption"""
-        return cls._SECRET
+        return terrareg.config.Config().TERRAFORM_PRESIGNED_URL_SECRET
 
     @classmethod
     def get_expiry(cls):
         """Get expiry"""
-        return (datetime.datetime.now() + datetime.timedelta(seconds=cls._EXPIRY)).isoformat()
+        expiry = terrareg.config.Config().TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS
+        return (get_datetime_now() + datetime.timedelta(seconds=expiry)).isoformat()
 
     @classmethod
     def get_algorithm(cls):
@@ -44,12 +43,11 @@ class TerraformSourcePresignedUrl:
             return False
         
         # If expiry is in the past, do not allow
-        if expiry_dt < datetime.datetime.now():
+        if expiry_dt < get_datetime_now():
             return False
 
         # If all checks have passed, return False
         return True
-
 
     @classmethod
     def generate_presigned_key(cls, url):
