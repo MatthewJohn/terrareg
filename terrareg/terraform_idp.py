@@ -42,6 +42,8 @@ class TerraformIdpUserLookup:
 
 class BaseIdpDatabase:
 
+    SHOULD_EXPIRE = False
+
     @property
     def table(self):
         """Return table for database"""
@@ -97,9 +99,11 @@ class BaseIdpDatabase:
                         )
                     )
 
-                # Delete any old sessions
-                conn.execute(sqlalchemy.delete(self.table).where(self.table.c.expiry < datetime.now()))
-                transaction.commit()
+
+                if self.SHOULD_EXPIRE:
+                    # Delete any old sessions
+                    conn.execute(sqlalchemy.delete(self.table).where(self.table.c.expiry < datetime.now()))
+                    transaction.commit()
 
 
     def __contains__(self, item):
@@ -139,6 +143,8 @@ class BaseIdpDatabase:
 
 class AuthorizationCodeDatabase(BaseIdpDatabase):
 
+    SHOULD_EXPIRE = True
+
     @property
     def table(self):
         """Return table"""
@@ -146,6 +152,8 @@ class AuthorizationCodeDatabase(BaseIdpDatabase):
 
 
 class AccessTokenDatabase(BaseIdpDatabase):
+
+    SHOULD_EXPIRE = True
 
     @property
     def table(self):
