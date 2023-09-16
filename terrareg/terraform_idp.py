@@ -201,54 +201,60 @@ class TerraformIdp:
 
     def __init__(self):
         """Check config and store member variables"""
-        config = terrareg.config.Config()
+        self._provider = None
 
-        issuer = config.PUBLIC_URL
-        oauth_base_url = f"{config.PUBLIC_URL}/terraform/oauth"
-        authentication_endpoint = f"{oauth_base_url}/authorization"
-        jwks_uri = f"{oauth_base_url}/jwks"
-        token_endpoint = f"{oauth_base_url}/token"
+    @property
+    def provider(self):
+        """Obtain singleton instance of provider"""
+        if self._provider is None:
+            config = terrareg.config.Config()
 
-        configuration_information = {
-            'issuer': issuer,
-            'authorization_endpoint': authentication_endpoint,
-            'jwks_uri': jwks_uri,
-            'token_endpoint': token_endpoint,
-            'scopes_supported': ['openid'],
-            'response_types_supported': ['code', 'code id_token', 'code token', 'code id_token token'],
-            'response_modes_supported': ['query', 'fragment'],
-            'grant_types_supported': ['authorization_code', 'implicit'],
-            'subject_types_supported': ['pairwise'],
-            'token_endpoint_auth_methods_supported': ['client_secret_basic'],
-            'claims_parameter_supported': True
-        }
+            issuer = config.PUBLIC_URL
+            oauth_base_url = f"{config.PUBLIC_URL}/terraform/oauth"
+            authentication_endpoint = f"{oauth_base_url}/authorization"
+            jwks_uri = f"{oauth_base_url}/jwks"
+            token_endpoint = f"{oauth_base_url}/token"
 
-        userinfo_db = TerraformIdpUserLookup()
-        signing_key = RSAKey(key=rsa_load(terrareg.config.Config().TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH), alg='RS256')
-        self.provider = Provider(
-            signing_key=signing_key,
-            configuration_information=configuration_information,
-            authz_state=AuthorizationState(
-                HashBasedSubjectIdentifierFactory(terrareg.config.Config().TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT),
-                authorization_code_db=AuthorizationCodeDatabase(),
-                access_token_db=AccessTokenDatabase(),
-                subject_identifier_db=SubjectIdentifierDatabase(),
-                authorization_code_lifetime=terrareg.config.Config().TERRAFORM_OIDC_IDP_SESSION_EXPIRY
-            ),
-            clients={
-                "terraform-cli": {
-                    "response_types": ["code"],
-                    # Match client ID from Terraform well-known endpoint
-                    "client_id": "terraform-cli",
-                    "client_id_issued_at": int(time.time()),
-                    "token_endpoint_auth_method": 'none',
-                    # Match redirect URLs provided by terraform well-known endpoint
-                    "redirect_uris": [
-                        f"http://localhost:{port}/login"
-                        for port in range(TERRAFORM_REDIRECT_URI_PORT_RANGE[0], TERRAFORM_REDIRECT_URI_PORT_RANGE[1] + 1)
-                    ]
-                }
-            },
-            userinfo=userinfo_db,
-            id_token_lifetime=terrareg.config.Config().TERRAFORM_OIDC_IDP_SESSION_EXPIRY
-        )
+            configuration_information = {
+                'issuer': issuer,
+                'authorization_endpoint': authentication_endpoint,
+                'jwks_uri': jwks_uri,
+                'token_endpoint': token_endpoint,
+                'scopes_supported': ['openid'],
+                'response_types_supported': ['code', 'code id_token', 'code token', 'code id_token token'],
+                'response_modes_supported': ['query', 'fragment'],
+                'grant_types_supported': ['authorization_code', 'implicit'],
+                'subject_types_supported': ['pairwise'],
+                'token_endpoint_auth_methods_supported': ['client_secret_basic'],
+                'claims_parameter_supported': True
+            }
+
+            userinfo_db = TerraformIdpUserLookup()
+            signing_key = RSAKey(key=rsa_load(terrareg.config.Config().TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH), alg='RS256')
+            self._provider = Provider(
+                signing_key=signing_key,
+                configuration_information=configuration_information,
+                authz_state=AuthorizationState(
+                    HashBasedSubjectIdentifierFactory(terrareg.config.Config().TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT),
+                    authorization_code_db=AuthorizationCodeDatabase(),
+                    access_token_db=AccessTokenDatabase(),
+                    subject_identifier_db=SubjectIdentifierDatabase(),
+                    authorization_code_lifetime=terrareg.config.Config().TERRAFORM_OIDC_IDP_SESSION_EXPIRY
+                ),
+                clients={
+                    "terraform-cli": {
+                        "response_types": ["code"],
+                        # Match client ID from Terraform well-known endpoint
+                        "client_id": "terraform-cli",
+                        "client_id_issued_at": int(time.time()),
+                        "token_endpoint_auth_method": 'none',
+                        # Match redirect URLs provided by terraform well-known endpoint
+                        "redirect_uris": [
+                            f"http://localhost:{port}/login"
+                            for port in range(TERRAFORM_REDIRECT_URI_PORT_RANGE[0], TERRAFORM_REDIRECT_URI_PORT_RANGE[1] + 1)
+                        ]
+                    }
+                },
+                userinfo=userinfo_db,
+                id_token_lifetime=terrareg.config.Config().TERRAFORM_OIDC_IDP_SESSION_EXPIRY
+            )
