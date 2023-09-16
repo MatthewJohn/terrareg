@@ -56,6 +56,7 @@ class TestTerraformSourcePresignedUrl:
             assert val["url"] == "/some-test/path"
 
     def test_validate_presigned_key(self):
+        """Test validate_presigned_key with valid token"""
         now = datetime.datetime(2023, 9, 15, 4, 32, 1, 123456)
 
         with unittest.mock.patch('terrareg.presigned_url.get_datetime_now', unittest.mock.MagicMock(return_value=now)), \
@@ -102,7 +103,6 @@ class TestTerraformSourcePresignedUrl:
                 key=payload_key,
                 algorithm="HS256"
             )
-            print({"expiry": payload_expiry, "url": payload_path})
 
             with pytest.raises(InvalidPresignedUrlKeyError):
                 TerraformSourcePresignedUrl.validate_presigned_key(url='/some-test/path', payload=val)
