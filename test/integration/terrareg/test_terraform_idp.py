@@ -1,9 +1,11 @@
 
 from datetime import datetime, timedelta
+import os
+from unittest import mock
 import pytest
 import sqlalchemy
 
-from terrareg.terraform_idp import AccessTokenDatabase, AuthorizationCodeDatabase, SubjectIdentifierDatabase
+from terrareg.terraform_idp import AccessTokenDatabase, AuthorizationCodeDatabase, SubjectIdentifierDatabase, TerraformIdp
 from terrareg.database import Database
 from test.integration.terrareg import TerraregIntegrationTest
 
@@ -424,3 +426,50 @@ class TestSubjectIdentifierDatabase(TerraregIntegrationTest):
         assert 'test-doesnot-exist' not in db
 
 
+class TestTerraformIdp(TerraregIntegrationTest):
+    """Test TerraformIdp class"""
+
+    @pytest.mark.parametrize('allow_unauthenticated_access_config, terraform_oidc_idp_subject_id_hash_salt_config, '
+                             'terraform_oidc_idp_signing_key_path_config, terraform_oidc_idp_signing_key_path_exists, '
+                             'public_url_config, expected_result', [
+        # Working example
+        (False, 'somesecret', '/tmp/keyfile-unittest', True, 'https://localhost', True),
+
+        # Public access enabled
+        (True, 'somesecret', '/tmp/keyfile-unittest', True, 'https://localhost', False),
+
+        # Without secret
+        (False, None, '/tmp/keyfile-unittest', True, 'https://localhost', False),
+
+        # File doesn't exist
+        (False, 'somsecret', '/tmp/keyfile-unittest', False, 'https://localhost', False),
+
+        # Public URL not configured
+        (False, 'somsecret', '/tmp/keyfile-unittest', True, None, False),
+    ])
+    def test_is_enabled(self, allow_unauthenticated_access_config,
+                        terraform_oidc_idp_subject_id_hash_salt_config,
+                        terraform_oidc_idp_signing_key_path_config,
+                        terraform_oidc_idp_signing_key_path_exists,
+                        public_url_config,
+                        expected_result):
+
+        # Create empty file, if sign key should exist
+        if terraform_oidc_idp_signing_key_path_exists:
+            with open(terraform_oidc_idp_signing_key_path_config, "w") as fh:
+                fh.write("")
+
+        try:
+            with mock.patch('terrareg.config.Config.ALLOW_UNAUTHENTICATED_ACCESS', allow_unauthenticated_access_config), \
+                    mock.patch('terrareg.config.Config.TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT',
+                            terraform_oidc_idp_subject_id_hash_salt_config), \
+                    mock.patch('terrareg.config.Config.TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH',
+                            terraform_oidc_idp_signing_key_path_config), \
+                    mock.patch('terrareg.config.Config.PUBLIC_URL', public_url_config):
+
+                assert TerraformIdp.get().is_enabled == expected_result
+
+        finally:
+            # Always clear up file
+            if terraform_oidc_idp_signing_key_path_exists:
+                os.remove(terraform_oidc_idp_signing_key_path_config)
