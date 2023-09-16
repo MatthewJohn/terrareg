@@ -254,12 +254,18 @@ For Terrareg to be able to authenticate users, several configurations must be pr
  * [TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT](./CONFIG.md#terraform_oidc_idp_subject_id_hash_salt)
  * [TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH](./CONFIG.md#terraform_oidc_idp_signing_key_path)
  * [PUBLIC_URL](./CONFIG.md#public_url)
+ * [TERRAFORM_PRESIGNED_URL_SECRET](./CONFIG.md#terraform_presigned_url_secret)
+
+Consider reviewing the default values for:
+ * [TERRAFORM_OIDC_IDP_SESSION_EXPIRY](./CONFIG.md#terraform_oidc_idp_session_expiry)
+ * [TERRAFORM_PRESIGNED_URL_EXPIRY](./CONFIG.md#terraform_presigned_url_expiry)
 
 Once these are configured, users can authenticate via terraform using:
 ```
 terraform login <registry-fqdn>
 # e.g. terraform login my-registry.example.com
 ```
+
 
 # Module best practices
 
