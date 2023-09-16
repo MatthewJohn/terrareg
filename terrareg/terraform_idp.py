@@ -186,6 +186,10 @@ class TerraformIdp:
         """Whether the provider is enabled"""
         config = terrareg.config.Config()
 
+        if config.ALLOW_UNAUTHENTICATED_ACCESS:
+            print("Disabling Terraform OIDC provider due to ALLOW_UNAUTHENTICATED_ACCESS is true")
+            return False
+
         if not config.TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT:
             print('Disabling Terraform OIDC provider due to missing TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT')
             return False
