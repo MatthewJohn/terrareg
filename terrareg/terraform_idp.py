@@ -262,3 +262,4 @@ class TerraformIdp:
                 userinfo=userinfo_db,
                 id_token_lifetime=terrareg.config.Config().TERRAFORM_OIDC_IDP_SESSION_EXPIRY
             )
+        return self._provider
