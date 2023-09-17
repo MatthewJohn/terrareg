@@ -477,7 +477,7 @@ class TestTerraformIdp(TerraregIntegrationTest):
             if terraform_oidc_idp_signing_key_path_exists:
                 os.remove(terraform_oidc_idp_signing_key_path_config)
 
-    def test_provider_authentication(self):
+    def test_provider_properties(self):
         """Check provider property"""
         # Signing RSA key
         signing_rsa_key = """
