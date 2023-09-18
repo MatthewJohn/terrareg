@@ -152,17 +152,23 @@ class NotAuthenticated(BaseAuthMethod):
 
     def can_publish_module_version(self, namespace):
         """Whether user can publish module version within a namespace."""
-        # If API key authentication is not configured for publishing modules and
-        # RBAC is not enabled, allow unauthenticated access
-        if (not terrareg.config.Config().ENABLE_ACCESS_CONTROLS) and (not PublishApiKeyAuthMethod.is_enabled()):
+        # If API key authentication is not configured for publishing modules,
+        # RBAC is not enabled and unauthenticated access is enabled,
+        # allow unauthenticated access
+        if ((not terrareg.config.Config().ENABLE_ACCESS_CONTROLS) and
+                (not PublishApiKeyAuthMethod.is_enabled()) and
+                terrareg.config.Config().ALLOW_UNAUTHENTICATED_ACCESS):
             return True
         return False
 
     def can_upload_module_version(self, namespace):
         """Whether user can upload/index module version within a namespace."""
-        # If API key authentication is not configured for uploading modules and
-        # RBAC is not enabled, allow unauthenticated access
-        if (not terrareg.config.Config().ENABLE_ACCESS_CONTROLS) and (not UploadApiKeyAuthMethod.is_enabled()):
+        # If API key authentication is not configured for uploading modules,
+        # RBAC is not enabled and unauthenticated access is enabled,
+        # allow unauthenticated access
+        if ((not terrareg.config.Config().ENABLE_ACCESS_CONTROLS) and
+                (not UploadApiKeyAuthMethod.is_enabled()) and
+                terrareg.config.Config().ALLOW_UNAUTHENTICATED_ACCESS):
             return True
         return False
 

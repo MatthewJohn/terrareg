@@ -35,27 +35,37 @@ class TestNotAuthenticated(BaseAuthMethodTest):
         obj = NotAuthenticated()
         assert obj.requires_csrf_tokens is False
 
-    @pytest.mark.parametrize('public_api_keys,expected_result', [
+    @pytest.mark.parametrize('allow_unauthenticated_access', [
+        True,
+        False
+    ])
+    @pytest.mark.parametrize('public_api_keys,expected_result_api_result', [
         (None, True),
         ([], True),
         (['publishapikey', False])
     ])
-    def test_can_publish_module_version(self, public_api_keys, expected_result):
+    def test_can_publish_module_version(self, public_api_keys, allow_unauthenticated_access, expected_result_api_result):
         """Test can_publish_module_version method"""
-        with mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', public_api_keys):
+        with mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', public_api_keys), \
+                mock.patch('terrareg.config.Config.ALLOW_UNAUTHENTICATED_ACCESS', allow_unauthenticated_access):
             obj = NotAuthenticated()
-            assert obj.can_publish_module_version(namespace='testnamespace') is expected_result
+            assert obj.can_publish_module_version(namespace='testnamespace') is (expected_result_api_result and allow_unauthenticated_access)
 
-    @pytest.mark.parametrize('upload_api_keys,expected_result', [
+    @pytest.mark.parametrize('allow_unauthenticated_access', [
+        True,
+        False
+    ])
+    @pytest.mark.parametrize('upload_api_keys,expected_result_api_result', [
         (None, True),
         ([], True),
         (['publishapikey', False])
     ])
-    def test_can_upload_module_version(self, upload_api_keys, expected_result):
+    def test_can_upload_module_version(self, upload_api_keys, allow_unauthenticated_access, expected_result_api_result):
         """Test can_upload_module_version method"""
-        with mock.patch('terrareg.config.Config.UPLOAD_API_KEYS', upload_api_keys):
+        with mock.patch('terrareg.config.Config.UPLOAD_API_KEYS', upload_api_keys), \
+                mock.patch('terrareg.config.Config.ALLOW_UNAUTHENTICATED_ACCESS', allow_unauthenticated_access):
             obj = NotAuthenticated()
-            assert obj.can_upload_module_version(namespace='testnamespace') is expected_result
+            assert obj.can_upload_module_version(namespace='testnamespace') is (expected_result_api_result and allow_unauthenticated_access)
 
     def test_check_auth_state(self):
         """Test check_auth_state method"""
