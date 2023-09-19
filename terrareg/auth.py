@@ -578,7 +578,7 @@ class TerraformOidcAuthMethod(BaseAuthMethod):
             try:
                 res = terrareg.terraform_idp.TerraformIdp.get().provider.handle_userinfo_request(request.data, request.headers)
                 return True
-            except pyop.exceptions.InvalidAccessToken:
+            except (pyop.exceptions.InvalidAccessToken, pyop.exceptions.BearerTokenError):
                 return False
 
         return False
