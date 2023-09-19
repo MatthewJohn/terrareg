@@ -16,6 +16,7 @@ from test import client
 
 @pytest.fixture
 def mock_terraform_signing_key(request):
+    """Create fake OIDC signing key"""
     # Signing RSA key
     signing_rsa_key = """
 -----BEGIN RSA PRIVATE KEY-----
@@ -38,7 +39,8 @@ yzEmVAlL/QfgkKm+0zsa8czkSwNjtBz9vOIffCxtZmlf
     with open(signing_key_path, "w") as signing_key_fh:
         signing_key_fh.write(signing_rsa_key)
 
-    yield
+    with mock.patch("terrareg.config.Config.TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH", signing_key_path):
+        yield
 
     os.unlink(signing_key_path)
 
