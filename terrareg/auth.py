@@ -593,7 +593,7 @@ class TerraformOidcAuthMethod(BaseAuthMethod):
 
     def get_username(self):
         """Get username of current user"""
-        raise "Terraform CLI User"
+        return "Terraform CLI User"
 
     def can_access_read_api(self):
         """Whether the user can access 'read' APIs"""
