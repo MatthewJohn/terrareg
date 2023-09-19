@@ -1,7 +1,10 @@
 
+import os
+from tempfile import mktemp
 from unittest import mock
 from urllib.parse import urlencode
 
+import pytest
 from pyop.exceptions import InvalidAuthenticationRequest, InvalidClientAuthentication, OAuthError
 from oic.oic.message import AuthorizationResponse, AccessTokenResponse
 from oic.oic.message import AuthorizationRequest
@@ -11,9 +14,39 @@ from test.unit.terrareg import TerraregUnitTest
 from test import client
 
 
-class TestTerraformOauth(TerraregUnitTest):
+@pytest.fixture
+def mock_terraform_signing_key(request):
+    # Signing RSA key
+    signing_rsa_key = """
+-----BEGIN RSA PRIVATE KEY-----
+MIICXQIBAAKBgQDg9lttk9fpB7+PxpjVfZZPUC0NT8VGzzaT2qJlbyafY7HNPyBr
+ixGc/EZbwx73FYhFnGW0IQd8xxTqlBZOFoAbI9Kx850J1J+gGn3IUbW3dm9aQq0d
+cwMuhrMj45Ixiwd14cyGb+ZFsmGpdqRAEM2nbeQEnA5eNre0/uVGNuR+CQIDAQAB
+AoGAdmk2NrdbLo2lh0hBqh4wwA6zqA4VCPCJCcpLMJkQ+1S+ggp4RiMtYjRn1GUg
+J25uDDYGUooQJt2jZNYN54xwYNwXobGaCSlmWSfGfiCF6SKlVICf+d8EEYa8GcAM
+rBDyTMghayn0oA03loSdAG5iqzF1ob/zQXgNCPJkc2C/IAECQQDwWRK2gt12edPh
+kYr8XD9Hakjs8EaNEB4xO8GKCmnLhjRZDvMj5usXGkSfPo24qutssyYpn/nP6YR0
+1/Q0mcNRAkEA75zI91DU82fMHhct2GgfEP2IvdaHHQ8zZnarC9Prn+6/6cNefhtN
+S0+tiZj0R0B3dkLGTTqcmYSQe/EEjY2xOQJBAJnR9+b0s/W6HH91nUTLaPg0rn1t
+fUmUci5CNyg4Z+MIfgItTjDA/d4oQpjD+QGh6dAEi70CFGga5Fm/SBxN+DECQBBV
+7A2QYTRG+0+B3QpH7vZFkrD+ky+T/bkalga0Z/f7WvIg86w9SEO+JuKenujMqFhT
+rRlOyaZdt0v73oeYBWECQQDc7n98Cx6G1Nt2/87o6UaYzW5N4SfWCPTaiS9/inpQ
+yzEmVAlL/QfgkKm+0zsa8czkSwNjtBz9vOIffCxtZmlf
+-----END RSA PRIVATE KEY-----
+""".strip()
+    signing_key_path = mktemp()
+    with open(signing_key_path, "w") as signing_key_fh:
+        signing_key_fh.write(signing_rsa_key)
 
-    def test_authorization_endpoint_unhandled_exception(self, client):
+    yield
+
+    os.unlink(signing_key_path)
+
+
+class TestTerraformOauth(TerraregUnitTest):
+    """Test TerraformOauth endpoints class"""
+
+    def test_authorization_endpoint_unhandled_exception(self, client, mock_terraform_signing_key):
         """Handle unknown error during parse_authentication_request"""
 
         mock_provider = mock.MagicMock()
@@ -28,7 +61,7 @@ class TestTerraformOauth(TerraregUnitTest):
         assert res.status_code == 400
         assert res.text == "Something went wrong: unittest error"
 
-    def test_authorization_endpoint_error(self, client):
+    def test_authorization_endpoint_error(self, client, mock_terraform_signing_key):
         """Handle oauth error during parse_authentication_request"""
 
         mock_provider = mock.MagicMock()
@@ -55,7 +88,7 @@ class TestTerraformOauth(TerraregUnitTest):
         assert res.status_code == 303
         assert res.headers['Location'] == "http://localhost:10004/login#error=unauthorized_client&error_message=unittest+error&state=2a01dd56-5b85-3248-b240-782085864837"
 
-    def test_authorization_endpoint_authenticated(self, client):
+    def test_authorization_endpoint_authenticated(self, client, mock_terraform_signing_key):
         """Test authorization endpoint whilst authenticated"""
 
         authorization_request = AuthorizationRequest().deserialize(urlencode({
@@ -122,7 +155,7 @@ class TestTerraformOauth(TerraregUnitTest):
         )
         mock_authorize.assert_called_once_with(authorization_request, "Unittest username")
 
-    def test_authorization_endpoint_unauthenticated(self, client):
+    def test_authorization_endpoint_unauthenticated(self, client, mock_terraform_signing_key):
         """Test authorization endpoint whilst not authenticated"""
 
         authorization_request = AuthorizationRequest().deserialize(urlencode({
@@ -190,7 +223,7 @@ class TestTerraformOauth(TerraregUnitTest):
         mock_authorize.assert_not_called()
 
 
-    def test_jwks_uri(self, client):
+    def test_jwks_uri(self, client, mock_terraform_signing_key):
         """Test calling JWKS endpoint"""
         with mock.patch('terrareg.terraform_idp.Provider.jwks', {'some': 'jwks'}):
 
@@ -198,7 +231,7 @@ class TestTerraformOauth(TerraregUnitTest):
 
         assert res.json == {'some': 'jwks'}
 
-    def test_token_endpoint(self, client):
+    def test_token_endpoint(self, client, mock_terraform_signing_key):
         """Handle valid request to token endpoint"""
 
         token = AccessTokenResponse().from_dict({
@@ -231,7 +264,7 @@ class TestTerraformOauth(TerraregUnitTest):
             mock.ANY
         )
 
-    def test_token_endpoint_invalid_client_auth(self, client):
+    def test_token_endpoint_invalid_client_auth(self, client, mock_terraform_signing_key):
         """Handle client auth error in token endpoint"""
 
         def raise_exception(*args, **kwargs):
@@ -255,7 +288,7 @@ class TestTerraformOauth(TerraregUnitTest):
             'error_description': 'Unittest Invalid client authentication',
         }
 
-    def test_token_endpoint_invalid_oauth(self, client):
+    def test_token_endpoint_invalid_oauth(self, client, mock_terraform_signing_key):
         """Handle OauthError in token endpoint"""
 
         def raise_exception(*args, **kwargs):
