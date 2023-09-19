@@ -461,10 +461,10 @@ For example:
             auth_token=None
         )
 
-    def test_unauthenticated(self, client, mock_models):
+    @setup_test_data()
+    def test_unauthenticated(self, client, mock_models, mock_record_module_version_download):
         """Test unauthenticated call to API"""
-        # @TODO Handle terraform auth
         def call_endpoint():
-            return client.get('/v1/modules/moduledetails/fullypopulated/testprovider/1.5.0/source.zip')
+            return client.get('/v1/modules/testnamespace/testmodulename/testprovider/1.0.0/download')
 
-        self._test_unauthenticated_read_api_endpoint_test(call_endpoint)
+        self._test_unauthenticated_terraform_api_endpoint_test(call_endpoint)
