@@ -13,7 +13,7 @@ import terrareg.models
 import terrareg.models
 import terrareg.openid_connect
 import terrareg.saml
-from terrareg.terraform_idp import TerraformIdp
+import terrareg.terraform_idp
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 
 
@@ -554,7 +554,7 @@ class TerraformOidcAuthMethod(BaseAuthMethod):
     @classmethod
     def is_enabled(cls):
         """Whether authentication method is enabled"""
-        return TerraformIdp.get().is_enabled
+        return terrareg.terraform_idp.TerraformIdp.get().is_enabled
 
     @property
     def requires_csrf_tokens(self):
@@ -573,12 +573,10 @@ class TerraformOidcAuthMethod(BaseAuthMethod):
     def check_auth_state(cls):
         """Check whether user is logged in using this method and return instance of object"""
         print(request.headers)
-        print(request.data)
         if 'Authorization' in request.headers:
             # Check header with OpenIDC
             try:
-                res = TerraformIdp.get().provider.handle_userinfo_request(request.data, request.headers)
-                print(res)
+                res = terrareg.terraform_idp.TerraformIdp.get().provider.handle_userinfo_request(request.data, request.headers)
                 return True
             except pyop.exceptions.InvalidAccessToken:
                 return False
