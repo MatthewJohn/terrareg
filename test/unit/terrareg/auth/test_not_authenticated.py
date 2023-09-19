@@ -95,3 +95,13 @@ class TestNotAuthenticated(BaseAuthMethodTest):
         with mock.patch('terrareg.config.Config.ALLOW_UNAUTHENTICATED_ACCESS', allow_unauthenticated_access):
             obj = NotAuthenticated()
             assert obj.can_access_read_api() == allow_unauthenticated_access
+
+    @pytest.mark.parametrize('allow_unauthenticated_access', [
+        True,
+        False
+    ])
+    def test_can_access_terraform_api(self, allow_unauthenticated_access):
+        """Test can_access_terraform_api method"""
+        with mock.patch('terrareg.config.Config.ALLOW_UNAUTHENTICATED_ACCESS', allow_unauthenticated_access):
+            obj = NotAuthenticated()
+            assert obj.can_access_terraform_api() == allow_unauthenticated_access

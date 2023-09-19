@@ -65,3 +65,8 @@ class BaseSessionAuthMethodTests(BaseAuthMethodTest):
         """Test can_access_read_api method"""
         obj = self.CLS()
         assert obj.can_access_read_api() == True
+
+    def test_can_access_terraform_api(self):
+        """Test can_access_terraform_api method"""
+        obj = self.CLS()
+        assert obj.can_access_terraform_api() == True

@@ -113,3 +113,7 @@ class TestUploadApiKeyAuthMethod(BaseAuthMethodTest):
         obj = UploadApiKeyAuthMethod()
         assert obj.can_access_read_api() == False
 
+    def test_can_access_terraform_api(self):
+        """Test can_access_terraform_api method"""
+        obj = UploadApiKeyAuthMethod()
+        assert obj.can_access_terraform_api() == False
