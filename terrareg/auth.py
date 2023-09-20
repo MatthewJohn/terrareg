@@ -572,7 +572,6 @@ class TerraformOidcAuthMethod(BaseAuthMethod):
     @classmethod
     def check_auth_state(cls):
         """Check whether user is logged in using this method and return instance of object"""
-        print(request.headers)
         if 'Authorization' in request.headers:
             # Check header with OpenIDC
             try:

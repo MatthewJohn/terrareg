@@ -13,7 +13,6 @@ class ApiModuleVersionSourceDownload(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version):
         """Return static file."""
-        # @TODO Handle pre-signed URLs for non-public access
         config = terrareg.config.Config()
         if not config.ALLOW_MODULE_HOSTING:
             return {'message': 'Module hosting is disbaled'}, 500
