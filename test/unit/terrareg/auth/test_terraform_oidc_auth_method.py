@@ -6,7 +6,8 @@ import pytest
 import pyop.exceptions
 from werkzeug.datastructures import Headers, EnvironHeaders
 
-from terrareg.auth import TerraformOidcAuthMethod, UserGroupNamespacePermissionType
+from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
+from terrareg.auth import TerraformOidcAuthMethod
 from test import BaseTest, test_request_context
 from test.unit.terrareg.auth.base_auth_method_test import BaseAuthMethodTest
 import terrareg.terraform_idp

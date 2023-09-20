@@ -4,7 +4,8 @@ import datetime
 from unittest import mock
 import pytest
 
-from terrareg.auth import AuthenticationType, SamlAuthMethod, UserGroupNamespacePermissionType
+from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
+from terrareg.auth import AuthenticationType, SamlAuthMethod
 from test import BaseTest
 from test.unit.terrareg import mock_models
 from test.unit.terrareg.auth.base_session_auth_method_tests import BaseSessionAuthMethodTests

@@ -40,7 +40,7 @@ class BaseSessionAuthMethodTests(BaseAuthMethodTest):
         self.SERVER._app.secret_key = secret_key
         with mock.patch('terrareg.config.Config.SECRET_KEY', secret_key), \
                 mock.patch('terrareg.models.Session.check_session', mock_check_session), \
-                mock.patch('terrareg.auth.BaseSessionAuthMethod.check_session_auth_type', mock_check_session_auth_type), \
+                mock.patch('terrareg.auth.base_session_auth_method.BaseSessionAuthMethod.check_session_auth_type', mock_check_session_auth_type), \
                 mock.patch(f'terrareg.auth.{self.CLS.__name__}.check_session', mock_cls_check_session), \
                 test_request_context:
 
