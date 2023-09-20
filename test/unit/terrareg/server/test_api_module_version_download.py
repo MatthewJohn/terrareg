@@ -201,7 +201,7 @@ For example:
         mock_record_module_version_download):
         """Test endpoint without analytics token and with an internal auth token"""
 
-        with unittest.mock.patch('terrareg.config.Config.INTERNAL_EXTRACTION_ANALYITCS_TOKEN', 'unittest-internal-api-key'):
+        with unittest.mock.patch('terrareg.config.Config.INTERNAL_EXTRACTION_ANALYTICS_TOKEN', 'unittest-internal-api-key'):
             res = client.get(
                 '/v1/modules/testnamespace/testmodulename/testprovider/2.4.1/download',
                 headers={'X-Terraform-Version': 'TestTerraformVersion',

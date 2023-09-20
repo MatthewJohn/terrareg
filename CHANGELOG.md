@@ -1,5 +1,53 @@
 # Changelog
 
+# [2.79.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.78.0...v2.79.0) (2023-09-14)
+
+
+### Bug Fixes
+
+* Correct grammar ([bf4e2cd](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/bf4e2cd3b2b9fc73986623027a766fc3b0db3299))
+* Correct test for import tag failure ([9defb65](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9defb659248eadabc6997d551349344be6226573)), closes [#429](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/429)
+* improve grammar ([4bf4834](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4bf48348d5f27933c470fd4e0964ec8c027b2084))
+
+
+### Features
+
+* Log error details on failed tag import ([36e0f08](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/36e0f088e9f4f6f8f9fa041301f284cc38059a16))
+
+# [2.78.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.77.0...v2.78.0) (2023-09-13)
+
+
+### Features
+
+* Use CMD over ENTRYPOINT ([017815b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/017815b69a84f77e876a828c8ed232d78d92aba4))
+
+# [2.77.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.76.1...v2.77.0) (2023-09-13)
+
+
+### Bug Fixes
+
+* Correct spelling of analytics ([c0410cd](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c0410cd1184f5bce6049ce41d1ee43da68285258))
+
+
+### Features
+
+* INTERNAL_EXTRACTION_ANALYTICS_TOKEN spelling ([3b12bbf](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3b12bbf534b9ac2a27fb9618d31095e667db4933))
+
+## [2.76.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.76.0...v2.76.1) (2023-09-12)
+
+
+### Bug Fixes
+
+* generate readme ([5c7afe4](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5c7afe499f0eae7d398681b45f14d0167440c31e))
+* Improve spelling & grammar ([b82c178](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b82c178ceef06e2c4ba61f032f5e07c7a84d1500))
+
+# [2.76.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.75.5...v2.76.0) (2023-09-12)
+
+
+### Features
+
+* Add button to publish an unpublished module from the module provider page ([64aa6d7](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/64aa6d765e5b8880383ee010e95a21d7cb47615c)), closes [#394](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/394)
+
 ## [2.75.5](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.75.4...v2.75.5) (2023-09-11)
 
 

@@ -840,6 +840,37 @@ class SettingsTab extends ModuleDetailsTab {
                 return false;
             });
 
+            // If module is unpublished and user can publish the module, show these settings
+            if (!this._moduleDetails.published) {
+                if (!config.PUBLISH_API_KEYS_ENABLED || userPermissions && (
+                        userPermissions.site_admin ||
+                        Object.keys(userPermissions.namespace_permissions).indexOf(this._moduleDetails.namespace) !== -1
+                    )
+                ) {
+                    // Setup callback for publish button click
+                    $('#settings-publish-button').bind('click', () => {
+                        // Hide any errors
+                        let errorMessage = $('#settings-module-version-status-error');
+                        errorMessage.addClass('default-hidden');
+
+                        publishModule(this._moduleDetails, this._moduleDetails.version).then(() => {
+                            // Reload page
+                            location.reload();
+                        }).fail((res) => {
+                            // Display any errors
+                            errorMessage.html(failedResponseToErrorString(res));
+                            errorMessage.removeClass('default-hidden');
+                        });
+                    });
+                    // If user has permission to publish, show the publish button
+                    $('#settings-publish-button-container').removeClass('default-hidden');
+
+                    // Show module version section of settings, as this
+                    // is the only item in it
+                    $("#settings-module-version-card").removeClass('default-hidden');
+                }
+            }
+
             // Show settings tab
             $('#module-tab-link-settings').removeClass('default-hidden');
             resolve(true);
@@ -1658,7 +1689,7 @@ function populateVersionSelect(moduleDetails) {
 
     $.get(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/versions` +
         `?include-beta=${userPreferences["show-beta-versions"]}&` +
-        `include-unpublished=${userPreferences["show-unpublished-versions"]}`).then((versions) => {
+        `include-unpublished=${userPreferences["show-unpublished-versions"]}`).then(async (versions) => {
             let foundLatest = false;
             for (let versionDetails of versions) {
                 let versionOption = $("<option></option>");
@@ -1726,9 +1757,22 @@ function populateVersionSelect(moduleDetails) {
                     $("#beta-warning").removeClass('default-hidden');
                 }
             }
+
+            let loggedIn = await isLoggedIn();
+            let config = await getConfig();
+
             if (!moduleDetails.published) {
                 // Add warning to page about unpublished version
                 $("#unpublished-warning").removeClass('default-hidden');
+
+                if (!config.PUBLISH_API_KEYS_ENABLED || loggedIn && (
+                        loggedIn.site_admin ||
+                        Object.keys(loggedIn.namespace_permissions).indexOf(this._moduleDetails.namespace) !== -1
+                    )
+                ) {
+                    // If user has permission to publish, show information about publishing
+                    $('#unpublished-publish-info').removeClass('default-hidden');
+                }
             }
 
             // Show version drop-down
@@ -2069,6 +2113,10 @@ function selectExampleFile(eventTarget) {
     });
 }
 
+function publishModule(moduleDetails, moduleVersionToIndex) {
+    return $.post(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/publish`);
+}
+
 /*
  * Index new module provider version
  */
@@ -2094,7 +2142,7 @@ function indexModuleVersion(moduleDetails) {
             // If publish checkbox is checked, perform request to publish
             if ($("#indexModuleVersionPublish").is(":checked")) {
                 inProgressMessage.html('Publishing module version in progress...');
-                $.post(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/publish`)
+                publishModule(moduleDetails, moduleVersionToIndex)
                     .done(() => {
                         // If successful, update success message
                         successMessage.html("Successfully indexed and published version.");

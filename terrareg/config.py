@@ -21,22 +21,28 @@ class ServerType(Enum):
 class Config:
 
     @property
-    def INTERNAL_EXTRACTION_ANALYITCS_TOKEN(self):
+    def INTERNAL_EXTRACTION_ANALYTICS_TOKEN(self):
         """
-        Analaytics token used by Terraform initialised by the registry.
+        Analytics token used by Terraform initialised by the registry.
 
         This is used by the registry to call back to itself when analysing module examples.
 
         The value should be changed if it might result in a conflict with a legitimate analytics token used in Terraform
         that calls modules from the registry.
+
+        This variable was previously called INTERNAL_EXTRACTION_ANALYITCS_TOKEN. Support for the previous name will be
+        dropped in a future release.
+        INTERNAL_EXTRACTION_ANALYITCS_TOKEN will be read if INTERNAL_EXTRACTION_ANALYTICS_TOKEN is unset.
         """
-        return os.environ.get('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', 'internal-terrareg-analytics-token')
+        return os.environ.get('INTERNAL_EXTRACTION_ANALYTICS_TOKEN',
+            os.environ.get('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', 'internal-terrareg-analytics-token')
+        )
 
     @property
     def IGNORE_ANALYTICS_TOKEN_AUTH_KEYS(self):
         """
         A list of a Terraform auth keys that can be used to authenticate to the registry
-        to ignore check for valid analaytics token in module path.
+        to ignore check for valid analytics token in module path.
 
         It is recommended that examples in modules do not include analytics tokens in calls to other modules
         hosted in the registry, to avoid having to add analytics tokens to test the examples during development
@@ -98,7 +104,7 @@ class Config:
         URL for database.
         Defaults to local sqlite database.
 
-        To setup SQLite datbase, use `sqlite:///<path to sqlite DB>`
+        To setup SQLite database, use `sqlite:///<path to sqlite DB>`
 
         To setup MySQL, use `mysql+mysqlconnector://<user>:<password>@<host>[:<port>]/<database>`
         """
@@ -159,7 +165,7 @@ class Config:
     @property
     def DISABLE_ANALYTICS(self):
         """
-        Disable module download anaytics.
+        Disable module download analytics.
 
         This stops analytics tokens being displayed in the UI.
 
@@ -208,7 +214,7 @@ class Config:
 
     @property
     def ANALYTICS_TOKEN_DESCRIPTION(self):
-        """Describe to be provided to user about analytics token (e.g. `The name of your application`)"""
+        """Description to be provided to user about analytics token (e.g. `The name of your application`)"""
         return os.environ.get('ANALYTICS_TOKEN_DESCRIPTION', '')
 
     @property
@@ -218,7 +224,7 @@ class Config:
 
         Note that, if this token is used in a module call, it will be ignored and treated as if
         an analytics token has not been provided.
-        If analytics tokens are required, this stops users from accidently using the example placeholder in
+        If analytics tokens are required, this stops users from accidentally using the example placeholder in
         Terraform projects.
         """
         return os.environ.get('EXAMPLE_ANALYTICS_TOKEN', 'my-tf-application')
@@ -482,7 +488,7 @@ class Config:
         - browse_url - Formatted URL for user-viewable source code
                         (e.g. 'https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}'
                         or 'https://bitbucket.org/{namespace}/{module}/src/{version}?at=refs%2Ftags%2F{tag_uri_encoded}').
-                        Must include placeholdes:
+                        Must include placeholders:
                          - {path} (for source file/folder path)
                          - {tag} or {tag_uri_encoded} for the git tag
 
@@ -660,21 +666,21 @@ class Config:
     @property
     def OPENID_CONNECT_CLIENT_ID(self):
         """
-        Client ID for OpenID Conect authentication
+        Client ID for OpenID Connect authentication
         """
         return os.environ.get('OPENID_CONNECT_CLIENT_ID', None)
 
     @property
     def OPENID_CONNECT_CLIENT_SECRET(self):
         """
-        Client secret for OpenID Conect authentication
+        Client secret for OpenID Connect authentication
         """
         return os.environ.get('OPENID_CONNECT_CLIENT_SECRET', None)
 
     @property
     def OPENID_CONNECT_ISSUER(self):
         """
-        Base Issuer URL for OpenID Conect authentication.
+        Base Issuer URL for OpenID Connect authentication.
 
         A well-known URL will be expected at `${OPENID_CONNECT_ISSUER}/.well-known/openid-configuration`
         """

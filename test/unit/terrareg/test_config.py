@@ -80,7 +80,7 @@ class TestConfig:
         ('SAML2_PRIVATE_KEY', None),
         ('SAML2_PUBLIC_KEY', None),
         ('SAML2_GROUP_ATTRIBUTE', None),
-        ('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', None),
+        ('INTERNAL_EXTRACTION_ANALYTICS_TOKEN', None),
         ('MODULE_LINKS', None),
         ('DEFAULT_TERRAFORM_VERSION', None),
         ('TERRAFORM_ARCHIVE_MIRROR', None),
