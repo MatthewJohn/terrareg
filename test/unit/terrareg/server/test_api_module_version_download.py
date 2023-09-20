@@ -147,12 +147,13 @@ For example:
         mock_record_module_version_download):
         """Test endpoint with analytics token and auth token"""
 
-        res = client.get(
-            f"/v1/modules/test_token-name__{namespace}/{module}/{provider}/{f'{version}/' if version else ''}download",
-            headers={'X-Terraform-Version': 'TestTerraformVersion',
-                     'User-Agent': 'TestUserAgent',
-                     'Authorization': 'Bearer test123-authorization-token'}
-        )
+        with unittest.mock.patch('terrareg.config.Config.ANALYTICS_AUTH_KEYS', ['test123-authorization-token:dev']):
+            res = client.get(
+                f"/v1/modules/test_token-name__{namespace}/{module}/{provider}/{f'{version}/' if version else ''}download",
+                headers={'X-Terraform-Version': 'TestTerraformVersion',
+                        'User-Agent': 'TestUserAgent',
+                        'Authorization': 'Bearer test123-authorization-token'}
+            )
 
         test_namespace = terrareg.models.Namespace(name=namespace)
         test_module = terrareg.models.Module(namespace=test_namespace, name=module)
@@ -443,8 +444,6 @@ For example:
                      'User-Agent': 'TestUserAgent',
                      'Authorization': 'This is invalid'}
         )
-
-
 
         # Ensure new namespace name is present in download URL
         assert res.headers['X-Terraform-Get'] == f'/v1/terrareg/modules/updatedmovednamespacename/newmodulename/newprovidername/2.4.1/source.zip'

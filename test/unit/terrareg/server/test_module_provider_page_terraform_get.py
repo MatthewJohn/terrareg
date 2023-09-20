@@ -99,12 +99,13 @@ class TestModuleProviderPageTerraformDownload(TerraregUnitTest):
         mock_record_module_version_download):
         """Test endpoint with analytics token and auth token"""
 
-        res = client.get(
-            f"/modules/test_token-name__{namespace}/{module}/{provider}{f'/{version}' if version else ''}?terraform-get=1",
-            headers={'X-Terraform-Version': 'TestTerraformVersion',
-                     'User-Agent': 'TestUserAgent',
-                     'Authorization': 'Bearer test123-authorization-token'}
-        )
+        with unittest.mock.patch('terrareg.config.Config.ANALYTICS_AUTH_KEYS', ['test123-authorization-token:dev']):
+            res = client.get(
+                f"/modules/test_token-name__{namespace}/{module}/{provider}{f'/{version}' if version else ''}?terraform-get=1",
+                headers={'X-Terraform-Version': 'TestTerraformVersion',
+                        'User-Agent': 'TestUserAgent',
+                        'Authorization': 'Bearer test123-authorization-token'}
+            )
 
         test_namespace = terrareg.models.Namespace(name=namespace)
         test_module = terrareg.models.Module(namespace=test_namespace, name=module)
