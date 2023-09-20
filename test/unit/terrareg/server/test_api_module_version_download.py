@@ -460,6 +460,28 @@ For example:
             auth_token=None
         )
 
+    @pytest.mark.parametrize('auth_token', [
+        'ignore-analytics-token',
+        'analytics-auth-token',
+        'internal-extraction-token'
+    ])
+    @setup_test_data()
+    def test_required_authentication(self, auth_token, client, mock_models, mock_record_module_version_download):
+        """Test that various forms of authentication work when unauthenticated access is disabled"""
+
+        with unittest.mock.patch('terrareg.config.Config.ANALYTICS_AUTH_KEYS', ['analytics-auth-token:dev']), \
+                unittest.mock.patch('terrareg.config.Config.IGNORE_ANALYTICS_TOKEN_AUTH_KEYS', ['ignore-analytics-token']), \
+                unittest.mock.patch('terrareg.config.Config.INTERNAL_EXTRACTION_ANALYITCS_TOKEN', 'internal-extraction-token'), \
+                unittest.mock.patch('terrareg.config.Config.ALLOW_UNAUTHENTICATED_ACCESS', False), \
+                unittest.mock.patch('terrareg.config.Config.TERRAFORM_PRESIGNED_URL_SECRET', 'test'):
+            res = client.get(
+                f"/v1/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1/download",
+                headers={'X-Terraform-Version': 'TestTerraformVersion',
+                        'User-Agent': 'TestUserAgent',
+                        'Authorization': f'Bearer {auth_token}'}
+            )
+        assert res.status_code == 204
+
     @setup_test_data()
     def test_unauthenticated(self, client, mock_models, mock_record_module_version_download):
         """Test unauthenticated call to API"""

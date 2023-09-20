@@ -76,4 +76,3 @@ class BaseTerraformStaticToken(BaseAuthMethod):
     def can_access_terraform_api(self):
         """Terraform can only access those APIs used by Terraform"""
         return True
-
