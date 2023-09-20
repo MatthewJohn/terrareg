@@ -70,3 +70,13 @@ class BaseSessionAuthMethodTests(BaseAuthMethodTest):
         """Test can_access_terraform_api method"""
         obj = self.CLS()
         assert obj.can_access_terraform_api() == True
+
+    def test_should_record_terraform_analytics(self):
+        """Test should_record_terraform_analytics method"""
+        obj = self.CLS()
+        assert obj.should_record_terraform_analytics() is True
+
+    def test_get_terraform_auth_token(self):
+        """Test get_terraform_auth_token method"""
+        obj = self.CLS()
+        assert obj.get_terraform_auth_token() is None

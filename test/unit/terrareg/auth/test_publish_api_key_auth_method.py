@@ -118,3 +118,13 @@ class TestPublishApiKeyAuthMethod(BaseAuthMethodTest):
         """Test can_access_terraform_api method"""
         obj = PublishApiKeyAuthMethod()
         assert obj.can_access_terraform_api() == False
+
+    def test_should_record_terraform_analytics(self):
+        """Test should_record_terraform_analytics method"""
+        obj = PublishApiKeyAuthMethod()
+        assert obj.should_record_terraform_analytics() is True
+
+    def test_get_terraform_auth_token(self):
+        """Test get_terraform_auth_token method"""
+        obj = PublishApiKeyAuthMethod()
+        assert obj.get_terraform_auth_token() is None

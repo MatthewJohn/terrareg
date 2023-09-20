@@ -8,6 +8,7 @@ import terrareg.models
 import terrareg.config
 import terrareg.analytics
 import terrareg.auth_wrapper
+import terrareg.auth
 
 
 class ApiModuleVersionDownload(ErrorCatchingResource):
@@ -34,18 +35,10 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
             if not module_version:
                 return self._get_404_response()
 
-        auth_token = None
-        auth_token_match = re.match(r'Bearer (.*)', request.headers.get('Authorization', ''))
-        if auth_token_match:
-            auth_token = auth_token_match.group(1)
+        auth_method = terrareg.auth.AuthFactory().get_current_auth_method()
 
-        # Determine if auth token is for internal initialisation of modules
-        # during module extraction
-        if auth_token == terrareg.config.Config().INTERNAL_EXTRACTION_ANALYITCS_TOKEN:
-            pass
-
-        # Determine if auth token is one the auth tokens for ignore anlaytics token check
-        elif auth_token in terrareg.config.Config().IGNORE_ANALYTICS_TOKEN_AUTH_KEYS:
+        # Determine if auth method ignores recording analytics
+        if not auth_method.should_record_terraform_analytics():
             pass
 
         # otherwise, if module download should be rejected due to
@@ -74,7 +67,7 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
                 analytics_token=analytics_token,
                 terraform_version=request.headers.get('X-Terraform-Version', None),
                 user_agent=request.headers.get('User-Agent', None),
-                auth_token=auth_token
+                auth_token=auth_method.get_terraform_auth_token()
             )
 
         resp = make_response('', 204)

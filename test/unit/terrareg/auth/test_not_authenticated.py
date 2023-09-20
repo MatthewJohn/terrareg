@@ -106,3 +106,13 @@ class TestNotAuthenticated(BaseAuthMethodTest):
         with mock.patch('terrareg.config.Config.ALLOW_UNAUTHENTICATED_ACCESS', allow_unauthenticated_access):
             obj = NotAuthenticated()
             assert obj.can_access_terraform_api() == allow_unauthenticated_access
+
+    def test_should_record_terraform_analytics(self):
+        """Test should_record_terraform_analytics method"""
+        obj = NotAuthenticated()
+        assert obj.should_record_terraform_analytics() is True
+
+    def test_get_terraform_auth_token(self):
+        """Test get_terraform_auth_token method"""
+        obj = NotAuthenticated()
+        assert obj.get_terraform_auth_token() is None

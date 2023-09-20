@@ -1,7 +1,14 @@
 
+import re
+from flask import request
 
-class BaseAuthMethod:
-    """Base auth method"""
+import terrareg.config
+from .base_auth_method import BaseAuthMethod
+
+class BaseTerraformStaticToken(BaseAuthMethod):
+    """Base class for handling static terraform authentication tokens"""
+
+    TOKEN_RE_MATCH = re.compile(r'Bearer (.*)')
 
     def is_built_in_admin(self):
         """Whether user is the built-in admin"""
@@ -18,12 +25,12 @@ class BaseAuthMethod:
     @classmethod
     def is_enabled(cls):
         """Whether authentication method is enabled"""
-        raise NotImplementedError
+        return bool(cls.get_valid_terraform_tokens())
 
     @property
     def requires_csrf_tokens(self):
         """Whether auth type requires CSRF tokens"""
-        raise NotImplementedError
+        return False
 
     def can_publish_module_version(self, namespace):
         """Whether user can publish module version within a namespace."""
@@ -34,42 +41,39 @@ class BaseAuthMethod:
         return False
 
     @classmethod
-    def get_current_instance(cls):
-        """Get instance of auth method, if user is authenticated"""
-        return cls() if cls.check_auth_state() else None
+    def get_valid_terraform_tokens(cls):
+        """Obtain list of valid tokens"""
+        raise NotImplementedError
+
+    @classmethod
+    def get_terraform_auth_token(cls):
+        """Get terraform auth token for current user"""
+        auth_token_match = cls.TOKEN_RE_MATCH.match(request.headers.get('Authorization', ''))
+        if auth_token_match and auth_token_match.group(1):
+            return auth_token_match.group(1)
+        return None
 
     @classmethod
     def check_auth_state(cls):
         """Check whether user is logged in using this method and return instance of object"""
-        raise NotImplementedError
+        if (auth_token := cls.get_terraform_auth_token()) and auth_token in cls.get_valid_terraform_tokens():
+            return True
+
+        return False
 
     def check_namespace_access(self, permission_type, namespace):
         """Check level of access to namespace"""
-        raise NotImplementedError
+        return False
 
     def get_all_namespace_permissions(self):
         """Return all permissions by namespace"""
         return {}
 
-    def get_username(self):
-        """Get username of current user"""
-        raise NotImplementedError
-
     def can_access_read_api(self):
         """Whether the user can access 'read' APIs"""
-        raise NotImplementedError
+        return False
 
     def can_access_terraform_api(self):
-        """Whether the user can access APIs used by terraform"""
-        # Default to using 'read' API access
-        return self.can_access_read_api()
-
-    def should_record_terraform_analytics(self):
-        """Whether Terraform downloads by the user should be recorded"""
-        # Default to True for all users
+        """Terraform can only access those APIs used by Terraform"""
         return True
 
-    def get_terraform_auth_token(self):
-        """Get terraform auth token from request"""
-        # Default to return None
-        return None
