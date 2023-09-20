@@ -13,6 +13,7 @@ class TerraformAnalyticsAuthKeyAuthMethod(BaseTerraformStaticToken):
         return [
             auth_key.split(':')[0]
             for auth_key in terrareg.config.Config().ANALYTICS_AUTH_KEYS
+            if auth_key.split(':')[0]
         ]
 
     def get_username(self):
