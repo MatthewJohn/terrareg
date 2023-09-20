@@ -8,7 +8,7 @@ from test.unit.terrareg import (
     TEST_MODULE_DATA, mock_models,
     setup_test_data, TerraregUnitTest
 )
-from terrareg.auth import UserGroupNamespacePermissionType
+from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from test import client, app_context, test_request_context
 
 test_data = {
@@ -57,7 +57,7 @@ class TestApiTerraregAuthUserGroups(TerraregUnitTest):
             test_request_context, mock_models,
             client
         ):
-        """Test update of repository URL."""
+        """Test getting user groups."""
         mock_get_current_auth_method, mock_auth_method = self._mock_get_current_auth_method(True)
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
@@ -94,8 +94,8 @@ class TestApiTerraregAuthUserGroups(TerraregUnitTest):
             mock_auth_method.is_admin.assert_called_once()
 
     @setup_test_data()
-    def test_create_module_provider_without_permission(self, app_context, test_request_context, mock_models, client):
-        """Test creation of module provider without permission."""
+    def test_get_module_provider_without_permission(self, app_context, test_request_context, mock_models, client):
+        """Test getting url groups without permission."""
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', self._mock_get_current_auth_method(False)[0]), \
                 unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf:

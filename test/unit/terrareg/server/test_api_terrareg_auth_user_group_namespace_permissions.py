@@ -11,7 +11,7 @@ from test.unit.terrareg import (
     mock_models,
     setup_test_data, TerraregUnitTest
 )
-from terrareg.auth import UserGroupNamespacePermissionType
+from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from test import client, app_context, test_request_context
 import terrareg.models
 

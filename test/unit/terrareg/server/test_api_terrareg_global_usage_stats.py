@@ -60,3 +60,10 @@ class TestApiTerraregGlobalUsageStats(TerraregUnitTest):
         
             mocked_get_total_count.assert_called_once_with()
             mocked_get_global_module_usage_counts.assert_called()
+
+    def test_unauthenticated(self, client, mock_models):
+        """Test unauthenticated call to API"""
+        def call_endpoint():
+            return client.get('/v1/terrareg/analytics/global/usage_stats')
+
+        self._test_unauthenticated_read_api_endpoint_test(call_endpoint)

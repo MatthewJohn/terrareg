@@ -40,7 +40,7 @@ class BaseSessionAuthMethodTests(BaseAuthMethodTest):
         self.SERVER._app.secret_key = secret_key
         with mock.patch('terrareg.config.Config.SECRET_KEY', secret_key), \
                 mock.patch('terrareg.models.Session.check_session', mock_check_session), \
-                mock.patch('terrareg.auth.BaseSessionAuthMethod.check_session_auth_type', mock_check_session_auth_type), \
+                mock.patch('terrareg.auth.base_session_auth_method.BaseSessionAuthMethod.check_session_auth_type', mock_check_session_auth_type), \
                 mock.patch(f'terrareg.auth.{self.CLS.__name__}.check_session', mock_cls_check_session), \
                 test_request_context:
 
@@ -60,3 +60,23 @@ class BaseSessionAuthMethodTests(BaseAuthMethodTest):
     def test_check_session_auth_type(self):
         """Test check_session_auth_type"""
         raise NotImplementedError
+
+    def test_can_access_read_api(self):
+        """Test can_access_read_api method"""
+        obj = self.CLS()
+        assert obj.can_access_read_api() == True
+
+    def test_can_access_terraform_api(self):
+        """Test can_access_terraform_api method"""
+        obj = self.CLS()
+        assert obj.can_access_terraform_api() == True
+
+    def test_should_record_terraform_analytics(self):
+        """Test should_record_terraform_analytics method"""
+        obj = self.CLS()
+        assert obj.should_record_terraform_analytics() is True
+
+    def test_get_terraform_auth_token(self):
+        """Test get_terraform_auth_token method"""
+        obj = self.CLS()
+        assert obj.get_terraform_auth_token() is None

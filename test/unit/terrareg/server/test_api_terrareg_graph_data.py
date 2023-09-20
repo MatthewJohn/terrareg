@@ -74,3 +74,10 @@ class TestApiTerraregGraphData(TerraregUnitTest):
 
         assert res.json == {"message": "Namespace does not exist"}
         assert res.status_code == 400
+
+    def test_unauthenticated(self, client, mock_models):
+        """Test unauthenticated call to API"""
+        def call_endpoint():
+            return client.get('/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/graph/data')
+
+        self._test_unauthenticated_read_api_endpoint_test(call_endpoint)

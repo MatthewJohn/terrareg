@@ -3,7 +3,8 @@
 from unittest import mock
 import pytest
 
-from terrareg.auth import AdminApiKeyAuthMethod, UserGroupNamespacePermissionType
+from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
+from terrareg.auth import AdminApiKeyAuthMethod
 from test.unit.terrareg.auth.base_auth_method_test import BaseAuthMethodTest
 from test import BaseTest
 
@@ -106,3 +107,23 @@ class TestAdminApiKeyAuthMethod(BaseAuthMethodTest):
         """Test get_username method"""
         obj = AdminApiKeyAuthMethod()
         assert obj.get_username() == 'Built-in admin'
+
+    def test_can_access_read_api(self):
+        """Test can_access_read_api method"""
+        obj = AdminApiKeyAuthMethod()
+        assert obj.can_access_read_api() == True
+
+    def test_can_access_terraform_api(self):
+        """Test can_access_terraform_api method"""
+        obj = AdminApiKeyAuthMethod()
+        assert obj.can_access_terraform_api() == True
+
+    def test_should_record_terraform_analytics(self):
+        """Test should_record_terraform_analytics method"""
+        obj = AdminApiKeyAuthMethod()
+        assert obj.should_record_terraform_analytics() is True
+
+    def test_get_terraform_auth_token(self):
+        """Test get_terraform_auth_token method"""
+        obj = AdminApiKeyAuthMethod()
+        assert obj.get_terraform_auth_token() is None

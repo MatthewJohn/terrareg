@@ -19,6 +19,8 @@ class TestAuthFactory(TerraregUnitTest):
 
         for mock_name in ['AdminApiKeyAuthMethod', 'AdminSessionAuthMethod', 'UploadApiKeyAuthMethod',
                           'PublishApiKeyAuthMethod', 'SamlAuthMethod', 'OpenidConnectAuthMethod',
+                          'TerraformOidcAuthMethod', 'TerraformAnalyticsAuthKeyAuthMethod',
+                          'TerraformIgnoreAnalyticsAuthMethod', 'TerraformInternalExtractionAuthMethod',
                           'NotAuthenticated']:
             auth_method_class_mocks[mock_name] = unittest.mock.MagicMock()
             auth_method_class_mocks[mock_name].is_enabled = unittest.mock.MagicMock(return_value=(mock_name in enabled_mocks))
@@ -59,6 +61,16 @@ class TestAuthFactory(TerraregUnitTest):
         (['OpenidConnectAuthMethod',
           'NotAuthenticated'],
           'OpenidConnectAuthMethod'),
+        (['TerraformOidcAuthMethod', 'TerraformAnalyticsAuthKeyAuthMethod',
+          'TerraformIgnoreAnalyticsAuthMethod', 'TerraformInternalExtractionAuthMethod',
+          'NotAuthenticated'], 'TerraformOidcAuthMethod'),
+        (['TerraformAnalyticsAuthKeyAuthMethod',
+          'TerraformIgnoreAnalyticsAuthMethod', 'TerraformInternalExtractionAuthMethod',
+          'NotAuthenticated'], 'TerraformAnalyticsAuthKeyAuthMethod'),
+        (['TerraformIgnoreAnalyticsAuthMethod', 'TerraformInternalExtractionAuthMethod',
+          'NotAuthenticated'], 'TerraformIgnoreAnalyticsAuthMethod'),
+        (['TerraformInternalExtractionAuthMethod',
+          'NotAuthenticated'], 'TerraformInternalExtractionAuthMethod'),
 
         # Check random selection to ensure there's no hidden trickery
         (['NotAuthenticated', 'SamlAuthMethod'], 'SamlAuthMethod')

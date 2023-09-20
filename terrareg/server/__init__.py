@@ -13,8 +13,10 @@ import terrareg.database
 import terrareg.models
 import terrareg.errors
 import terrareg.auth
+from terrareg.server.api.terrareg_module_providers import ApiTerraregModuleProviders
 from .base_handler import BaseHandler
 from terrareg.server.api import *
+import terrareg.server.api.terraform_oauth
 
 
 def catch_name_exceptions(f):
@@ -113,6 +115,8 @@ class Server(BaseHandler):
         self.port = terrareg.config.Config().LISTEN_PORT
         self.ssl_public_key = ssl_public_key
         self.ssl_private_key = ssl_private_key
+
+        self._app.register_blueprint(terrareg.server.api.terraform_oauth.terraform_oidc_provider_blueprint)
 
         if not os.path.isdir(terrareg.config.Config().DATA_DIRECTORY):
             os.mkdir(terrareg.config.Config().DATA_DIRECTORY)
@@ -350,6 +354,10 @@ class Server(BaseHandler):
         self._api.add_resource(
             ApiTerraregNamespaceModules,
             '/v1/terrareg/modules/<string:namespace>'
+        )
+        self._api.add_resource(
+            ApiTerraregModuleProviders,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>'
         )
         self._api.add_resource(
             ApiTerraregModuleProviderDetails,

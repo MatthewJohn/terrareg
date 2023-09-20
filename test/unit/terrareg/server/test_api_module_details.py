@@ -150,3 +150,9 @@ class TestApiModuleDetails(TerraregUnitTest):
         mocked_search_module_providers.assert_called_once_with(
             offset=0, limit=10, namespaces=['testnamespace'], modules=['lonelymodule'])
 
+    def test_unauthenticated(self, client, mock_models):
+        """Test unauthenticated call to API"""
+        def call_endpoint():
+            return client.get('/v1/modules/test_token-name__testnamespace/lonelymodule')
+
+        self._test_unauthenticated_read_api_endpoint_test(call_endpoint)

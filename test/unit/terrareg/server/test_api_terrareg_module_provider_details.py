@@ -336,3 +336,9 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
 
             mock_is_compatible.assert_called_once_with(constraint='> 5.1.7, <= 9.2.2', target_version='4.2.1')
 
+    def test_unauthenticated(self, client, mock_models):
+        """Test unauthenticated call to API"""
+        def call_endpoint():
+            return client.get('/v1/terrareg/modules/testnamespace/testmodulename/testprovider')
+
+        self._test_unauthenticated_read_api_endpoint_test(call_endpoint)

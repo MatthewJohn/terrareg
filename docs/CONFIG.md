@@ -97,6 +97,17 @@ If disabled, all modules must be configured with a git URL.
 Default: `True`
 
 
+### ALLOW_UNAUTHENTICATED_ACCESS
+
+
+Whether unauthenticated access to Terrareg is allowed.
+
+If disabled, all users must authenticate to be able to access the interface and Terraform authentication is required
+
+
+Default: `True`
+
+
 ### ALLOW_UNIDENTIFIED_DOWNLOADS
 
 
@@ -230,6 +241,10 @@ Default: `sqlite:///modules.db`
 
 ### DATA_DIRECTORY
 
+
+Directory for storing module data.
+
+This directory must be persistent (e.g. mounted to shared volume for distributed docker containers)
 
 
 Default: `./data`
@@ -486,6 +501,10 @@ This is used by the registry to call back to itself when analysing module exampl
 
 The value should be changed if it might result in a conflict with a legitimate analytics token used in Terraform
 that calls modules from the registry.
+
+This variable was previously called INTERNAL_EXTRACTION_ANALYITCS_TOKEN. Support for the previous name will be
+dropped in a future release.
+INTERNAL_EXTRACTION_ANALYITCS_TOKEN will be read if INTERNAL_EXTRACTION_ANALYTICS_TOKEN is unset.
 
 
 Default: `internal-terrareg-analytics-token`
@@ -887,6 +906,74 @@ For more information, see Terraform documentation: https://www.terraform.io/lang
 Default: `{major}.{minor}.{patch}`
 
 
+### TERRAFORM_OIDC_IDP_SESSION_EXPIRY
+
+
+Terraform OIDC identity token expiry length (seconds).
+
+Defaults to 1 hour.
+
+
+Default: `3600`
+
+
+### TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH
+
+
+Path of a signing key to be used for Terraform OIDC identity provider.
+
+This must be set to authenticate users via Terraform.
+
+The key can be generated used:
+```
+ssh-keygen -t rsa -b 4096 -m PEM -f signing_key.pem
+# Do not set a password
+```
+
+
+Default: `./signing_key.pem`
+
+
+### TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT
+
+
+Subject ID hash salt for Terraform OIDC identity provider.
+
+This must be set to authenticate users via terrareg.
+This is required if disabling ALLOW_UNAUTHENTICATED_ACCESS.
+
+Must be set to a secure random string
+
+
+Default: ``
+
+
+### TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS
+
+
+The amount of time a module download pre-signed URL should be valid for (in seconds).
+
+When Terraform downloads a module, it calls a download endpoint, which returns the pre-signed
+URL, which should be immediately used by Terraform, meaning that this should not need to be modified.
+
+If Terrareg runs across multiple containers, across multiple instances that can suffer from time drift,
+this value may need to be increased.
+
+
+Default: `10`
+
+
+### TERRAFORM_PRESIGNED_URL_SECRET
+
+
+Secret value for encrypting tokens used in presigned URLs to authenticate module source downloads.
+
+This is required when requiring authentication in Terrareg and modules do not use git.
+
+
+Default: ``
+
+
 ### THREADED
 
 Whether flask is configured to enable threading
@@ -930,6 +1017,9 @@ Default: `Verified`
 
 ### VERIFIED_MODULE_NAMESPACES
 
-List of namespaces whose modules will be automatically marked as verified.
+
+List of namespaces, who's modules will be automatically set to verified.
+
 
 Default: ``
+

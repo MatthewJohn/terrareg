@@ -29,3 +29,10 @@ class TestApiModuleProviderDownloadsSummary(TerraregUnitTest):
         res = client.get('/v1/modules/doesnotexist/testmodule/testprovider/downloads/summary')
         assert res.status_code == 404
         assert res.json == {'errors': ['Not Found']}
+
+    def test_unauthenticated(self, client, mock_models):
+        """Test unauthenticated call to API"""
+        def call_endpoint():
+            return client.get('/v1/modules/testnamespace/testmodule/testprovider/downloads/summary')
+
+        self._test_unauthenticated_read_api_endpoint_test(call_endpoint)

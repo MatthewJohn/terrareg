@@ -1,9 +1,12 @@
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.models
+import terrareg.auth_wrapper
 
 
 class ApiModuleVersions(ErrorCatchingResource):
+
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_terraform_api')]
 
     def _get(self, namespace, name, provider):
         """Return list of version."""

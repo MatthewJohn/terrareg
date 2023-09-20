@@ -1,9 +1,12 @@
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
+import terrareg.auth_wrapper
 
 
 class ApiTerraregModuleProviderIntegrations(ErrorCatchingResource):
     """Interface to provide list of integration URLs"""
+
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 
     def _get(self, namespace, name, provider):
         """Return list of integration URLs"""

@@ -5,10 +5,13 @@ from flask import request
 from flask_restful import reqparse
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
+import terrareg.auth_wrapper
 
 
 class ApiTerraregModuleProviderDetails(ErrorCatchingResource):
     """Interface to obtain module provider details."""
+
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 
     def _get(self, namespace, name, provider):
         """Return details about module version."""

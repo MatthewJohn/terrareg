@@ -37,6 +37,7 @@ import terrareg.version_constraint
 from terrareg.utils import convert_markdown_to_html, get_public_url_details, safe_join_paths, sanitise_html_content
 from terrareg.validators import GitUrlValidator
 from terrareg.constants import EXTRACTION_VERSION
+from terrareg.presigned_url import TerraformSourcePresignedUrl
 
 
 class Session:
@@ -3508,8 +3509,18 @@ class ModuleVersion(TerraformSpecsObject):
 
             return rendered_url
 
-        if terrareg.config.Config().ALLOW_MODULE_HOSTING:
-            return '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
+        config = terrareg.config.Config()
+
+        # If a git URL is not present, revert to using built-in module hosting
+        if config.ALLOW_MODULE_HOSTING:
+            url = '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
+
+            # If authentication is required, generate pre-signed URL
+            if not config.ALLOW_UNAUTHENTICATED_ACCESS:
+                presign_key = TerraformSourcePresignedUrl.generate_presigned_key(url=url)
+                url = f'{url}?presign={presign_key}'
+
+            return url
 
         raise NoModuleDownloadMethodConfiguredError(
             'Module is not configured with a git URL and direct downloads are disabled'

@@ -24,3 +24,10 @@ class TestApiTerraregGitProviders(TerraregUnitTest):
             {'id': 1, 'name': 'testgitprovider'},
             {'id': 2, 'name': 'second-git-provider'}
         ]
+
+    def test_unauthenticated(self, client, mock_models):
+        """Test unauthenticated call to API"""
+        def call_endpoint():
+            return client.get('/v1/terrareg/git_providers')
+
+        self._test_unauthenticated_read_api_endpoint_test(call_endpoint)

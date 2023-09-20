@@ -44,3 +44,19 @@ class BaseAuthMethodTest(TerraregUnitTest):
     def test_get_username(self):
         """Test check_username method"""
         raise NotImplementedError
+
+    def test_can_access_read_api(self):
+        """Test can_access_read_api method"""
+        raise NotImplementedError
+
+    def test_can_access_terraform_api(self):
+        """Test can_access_terraform_api method"""
+        raise NotImplementedError
+
+    def test_should_record_terraform_analytics(self):
+        """Test should_record_terraform_analytics method"""
+        raise NotImplementedError
+
+    def test_get_terraform_auth_token(self):
+        """Test get_terraform_auth_token method"""
+        raise NotImplementedError

@@ -371,6 +371,18 @@ Interface to obtain list of modules in namespace.
 Return list of modules in namespace
 
 
+## ApiTerraregModuleProviders
+
+`/v1/terrareg/modules/<string:namespace>/<string:name>`
+
+Interface to obtain list of providers for module.
+
+
+#### GET
+
+Return list of modules in namespace
+
+
 ## ApiTerraregModuleProviderDetails
 
 `/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>`
