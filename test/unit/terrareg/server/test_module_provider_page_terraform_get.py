@@ -142,7 +142,7 @@ class TestModuleProviderPageTerraformDownload(TerraregUnitTest):
 
         with unittest.mock.patch('terrareg.config.Config.ANALYTICS_AUTH_KEYS', ['analytics-auth-token:dev']), \
                 unittest.mock.patch('terrareg.config.Config.IGNORE_ANALYTICS_TOKEN_AUTH_KEYS', ['ignore-analytics-token']), \
-                unittest.mock.patch('terrareg.config.Config.INTERNAL_EXTRACTION_ANALYITCS_TOKEN', 'internal-extraction-token'), \
+                unittest.mock.patch('terrareg.config.Config.INTERNAL_EXTRACTION_ANALYTICS_TOKEN', 'internal-extraction-token'), \
                 unittest.mock.patch('terrareg.config.Config.ALLOW_UNAUTHENTICATED_ACCESS', False), \
                 unittest.mock.patch('terrareg.config.Config.TERRAFORM_PRESIGNED_URL_SECRET', 'test'):
             res = client.get(

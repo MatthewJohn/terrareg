@@ -10,7 +10,7 @@ class TerraformInternalExtractionAuthMethod(BaseTerraformStaticToken):
     def get_valid_terraform_tokens(cls):
         """Obtain list of valid tokens"""
         config = terrareg.config.Config()
-        return [config.INTERNAL_EXTRACTION_ANALYITCS_TOKEN] if config.INTERNAL_EXTRACTION_ANALYITCS_TOKEN else []
+        return [config.INTERNAL_EXTRACTION_ANALYTICS_TOKEN] if config.INTERNAL_EXTRACTION_ANALYTICS_TOKEN else []
 
     def get_username(self):
         """Return username"""

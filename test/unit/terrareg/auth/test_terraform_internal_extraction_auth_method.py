@@ -21,7 +21,7 @@ class TestTerraformInternalExtractionAuthMethod(BaseTerraformStaticTokenTests):
     def test_is_enabled(self, internal_extraction_token, expected_result):
         """Test get_username method"""
         obj = self.CLS()
-        with unittest.mock.patch('terrareg.config.Config.INTERNAL_EXTRACTION_ANALYITCS_TOKEN', internal_extraction_token):
+        with unittest.mock.patch('terrareg.config.Config.INTERNAL_EXTRACTION_ANALYTICS_TOKEN', internal_extraction_token):
             assert obj.is_enabled() is expected_result
 
     @pytest.mark.parametrize('internal_extraction_token, authorization_header, expected_result', [
@@ -48,7 +48,7 @@ class TestTerraformInternalExtractionAuthMethod(BaseTerraformStaticTokenTests):
         if authorization_header is not None:
             headers['Authorization'] = authorization_header
 
-        with unittest.mock.patch('terrareg.config.Config.INTERNAL_EXTRACTION_ANALYITCS_TOKEN', internal_extraction_token), \
+        with unittest.mock.patch('terrareg.config.Config.INTERNAL_EXTRACTION_ANALYTICS_TOKEN', internal_extraction_token), \
                 BaseTest.get().SERVER._app.test_request_context(headers=headers) as request_context:
             assert obj.check_auth_state() is expected_result
 
