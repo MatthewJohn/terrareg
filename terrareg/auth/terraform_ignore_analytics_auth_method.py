@@ -9,7 +9,11 @@ class TerraformIgnoreAnalyticsAuthMethod(BaseTerraformStaticToken):
     @classmethod
     def get_valid_terraform_tokens(cls):
         """Obtain list of valid tokens"""
-        return terrareg.config.Config().IGNORE_ANALYTICS_TOKEN_AUTH_KEYS
+        return [
+            token
+            for token in terrareg.config.Config().IGNORE_ANALYTICS_TOKEN_AUTH_KEYS
+            if token
+        ]
 
     def get_username(self):
         """Return username"""
