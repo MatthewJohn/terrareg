@@ -9,6 +9,7 @@ from terrareg.audit_action import AuditAction
 
 import terrareg.config
 from terrareg.errors import DatabaseMustBeIniistalisedError
+from terrareg.provider_tier import ProviderTier
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 
 
@@ -60,6 +61,8 @@ class Database():
         self._module_details = None
         self._module_version = None
         self._sub_module = None
+        self._provider_source = None
+        self._provider = None
         self._analytics = None
         self._example_file = None
         self._module_version_file = None
@@ -183,6 +186,20 @@ class Database():
         if self._module_version_file is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._module_version_file
+
+    @property
+    def provider_source(self):
+        """Return provider_source table."""
+        if self._provider_source is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._provider_source
+
+    @property
+    def provider(self):
+        """Return provider table."""
+        if self._provider is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._provider
 
     @property
     def audit_history(self):
@@ -519,6 +536,51 @@ class Database():
             ),
             sqlalchemy.Column('path', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
             sqlalchemy.Column('content', Database.medium_blob())
+        )
+
+        self._provider_source = sqlalchemy.Table(
+            'provider_source', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), unique=True),
+            sqlalchemy.Column('base_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
+            sqlalchemy.Column('source_url_template', sqlalchemy.String(URL_COLUMN_SIZE))
+        )
+
+        self._provider = sqlalchemy.Table(
+            'provider', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column(
+                'namespace_id',
+                sqlalchemy.ForeignKey(
+                    'provider_namespace_id.id',
+                    name='fk_provider_namespace_id_namespace_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            ),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('description', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('tier', sqlalchemy.Enum(ProviderTier)),
+            sqlalchemy.Column(
+                'provider_source_id',
+                sqlalchemy.ForeignKey(
+                    'git_provider.id',
+                    name='fk_provider_provider_source_id_provider_source_id',
+                    onupdate='CASCADE',
+                    ondelete='SET NULL'),
+                nullable=True
+            ),
+            # sqlalchemy.Column(
+            #     'latest_version_id',
+            #     sqlalchemy.ForeignKey(
+            #         'module_version.id',
+            #         name='fk_module_provider_latest_version_id_module_version_id',
+            #         onupdate='CASCADE',
+            #         ondelete='SET NULL',
+            #         use_alter=True
+            #     ),
+            #     nullable=True
+            # )
         )
 
         self._audit_history = sqlalchemy.Table(
