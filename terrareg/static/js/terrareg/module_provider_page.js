@@ -620,10 +620,10 @@ class IntegrationsTab extends ModuleDetailsTab {
                 $("#module-integrations-upload-container").removeClass('default-hidden');
             }
             if (!config.PUBLISH_API_KEYS_ENABLED ||
-                    loggedIn && (
-                        loggedIn.site_admin ||
-                        Object.keys(loggedIn.namespace_permissions).indexOf(this._moduleDetails.namespace) !== -1
-                    )
+                (
+                    loggedIn.site_admin ||
+                    Object.keys(loggedIn.namespace_permissions).indexOf(this._moduleDetails.namespace) !== -1
+                )
             ) {
                 $("#integrations-index-module-version-publish").removeClass('default-hidden');
             }
@@ -696,7 +696,7 @@ class SettingsTab extends ModuleDetailsTab {
             // to modify settings
             if (
                 // If user is not logged in
-                !userPermissions ||
+                !userPermissions.authenticated ||
                 // Or user is not super user and does not have
                 // full or write access to the namespace
                 (

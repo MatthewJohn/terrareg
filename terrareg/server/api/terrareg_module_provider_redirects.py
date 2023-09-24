@@ -6,10 +6,13 @@ from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.auth_wrapper
 import terrareg.user_group_namespace_permission_type
 import terrareg.csrf
+import terrareg.auth_wrapper
 
 
 class ApiTerraregModuleProviderRedirects(ErrorCatchingResource):
     """Provide interface to delete module provider redirect."""
+
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 
     def _get(self, namespace, name, provider):
         """Delete module provider."""

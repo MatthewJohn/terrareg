@@ -8,6 +8,7 @@
   * [Database Migrations](#database-migrations)
 * [Security](#security)
    * [Single Single-On](#single-sign-on)
+   * [Disable Public Access](#disable-public-access)
 * [Module best practices](#module-best-practices)
 * [Uploading Modules](#uploading-modules)
 * [Security Scanning](#security-scanning)
@@ -236,6 +237,34 @@ In the IdP:
 * configure the Single signin URL to `https://{terrareg_installation_domain}/saml/login?sso`;
 * configure the request and response to be signed;
 * ensure at least one attribute is assigned.
+
+
+## Disable Unauthenticated Access
+
+Unauthenticated access can be disabled, enforcing all users to authenticate to use Terrareg, by disabling the setting [ALLOW_UNAUTHENTICATED_ACCESS](./CONFIG.md#allow_unauthenticated_access).
+
+Disabling unauthenticated access requires Terraform to authenticate to obtain modules, see below.
+
+### Enabling Terraform authentication
+
+Terraform can authenticate to the registry via the built-in authentication mechanisms of Terrareg. That is, Terraform attempts to authenticate to Terrareg by redirecting the user to Terrareg. Terrareg ensures the user is authenticated and provides a redirect back to Terraform to finalise authentication using OpenIDC.
+
+For Terrareg to be able to authenticate users, several configurations must be provided:
+ 
+ * [TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT](./CONFIG.md#terraform_oidc_idp_subject_id_hash_salt)
+ * [TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH](./CONFIG.md#terraform_oidc_idp_signing_key_path)
+ * [PUBLIC_URL](./CONFIG.md#public_url)
+ * [TERRAFORM_PRESIGNED_URL_SECRET](./CONFIG.md#terraform_presigned_url_secret)
+
+Consider reviewing the default values for:
+ * [TERRAFORM_OIDC_IDP_SESSION_EXPIRY](./CONFIG.md#terraform_oidc_idp_session_expiry)
+ * [TERRAFORM_PRESIGNED_URL_EXPIRY](./CONFIG.md#terraform_presigned_url_expiry)
+
+Once these are configured, users can authenticate via terraform using:
+```
+terraform login <registry-fqdn>
+# e.g. terraform login my-registry.example.com
+```
 
 
 # Module best practices

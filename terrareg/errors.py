@@ -250,3 +250,15 @@ class ModuleProviderRedirectForceDeletionNotAllowedError(TerraregError):
     """Force deletion of module provider redirects is not allowed"""
 
     pass
+
+
+class InvalidPresignedUrlKeyError(TerraregError):
+    """Invalid pre-signed URL key"""
+
+    pass
+
+
+class PresignedUrlsNotConfiguredError(TerraregError):
+    """Missing configurations for presigned URLs"""
+
+    pass

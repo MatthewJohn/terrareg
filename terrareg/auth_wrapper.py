@@ -16,18 +16,25 @@ def auth_wrapper(auth_check_method, *wrapper_args, request_kwarg_map={}, **wrapp
         """Check user is authenticated as admin and either call function or return 401, if not."""
         @wraps(func)
         def wrapper(*args, **kwargs):
+            # Obtain authentication method of the current user
             auth_method = terrareg.auth.AuthFactory().get_current_auth_method()
 
+            # Obtain all arguments passed to the wrapper and create a map
+            # of arguments to the request
             auth_kwargs = wrapper_kwargs.copy()
             for request_kwarg in request_kwarg_map:
                 if request_kwarg in kwargs:
                     auth_kwargs[request_kwarg_map[request_kwarg]] = kwargs[request_kwarg]
 
+            # Call authentication method.
             if (status := getattr(auth_method, auth_check_method)(*wrapper_args, **auth_kwargs)) == False:
+                # Return 403 and 401 based on whether user is authenticaticated
                 if auth_method.is_authenticated():
                     abort(403)
                 else:
                     abort(401)
+
+            # Otherwise, if the authentication was successful, call the wrapped method
             elif status == True:
                 return func(*args, **kwargs)
             else:

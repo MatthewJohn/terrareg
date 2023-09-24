@@ -5,10 +5,13 @@ from flask import request
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.models
+import terrareg.auth_wrapper
 
 
 class ApiTerraregSubmoduleDetails(ErrorCatchingResource):
     """Interface to obtain submodule details."""
+
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 
     def _get(self, namespace, name, provider, version, submodule):
         """Return details of submodule."""

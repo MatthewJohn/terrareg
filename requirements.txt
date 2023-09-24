@@ -40,3 +40,4 @@ urllib3==1.26.14
 blinker==1.5
 semantic-version==2.10.0
 waitress==2.1.2
+pyop==3.4.0

@@ -147,12 +147,13 @@ For example:
         mock_record_module_version_download):
         """Test endpoint with analytics token and auth token"""
 
-        res = client.get(
-            f"/v1/modules/test_token-name__{namespace}/{module}/{provider}/{f'{version}/' if version else ''}download",
-            headers={'X-Terraform-Version': 'TestTerraformVersion',
-                     'User-Agent': 'TestUserAgent',
-                     'Authorization': 'Bearer test123-authorization-token'}
-        )
+        with unittest.mock.patch('terrareg.config.Config.ANALYTICS_AUTH_KEYS', ['test123-authorization-token:dev']):
+            res = client.get(
+                f"/v1/modules/test_token-name__{namespace}/{module}/{provider}/{f'{version}/' if version else ''}download",
+                headers={'X-Terraform-Version': 'TestTerraformVersion',
+                        'User-Agent': 'TestUserAgent',
+                        'Authorization': 'Bearer test123-authorization-token'}
+            )
 
         test_namespace = terrareg.models.Namespace(name=namespace)
         test_module = terrareg.models.Module(namespace=test_namespace, name=module)
@@ -444,8 +445,6 @@ For example:
                      'Authorization': 'This is invalid'}
         )
 
-
-
         # Ensure new namespace name is present in download URL
         assert res.headers['X-Terraform-Get'] == f'/v1/terrareg/modules/updatedmovednamespacename/newmodulename/newprovidername/2.4.1/source.zip'
         assert res.status_code == 204
@@ -460,3 +459,33 @@ For example:
             user_agent='TestUserAgent',
             auth_token=None
         )
+
+    @pytest.mark.parametrize('auth_token', [
+        'ignore-analytics-token',
+        'analytics-auth-token',
+        'internal-extraction-token'
+    ])
+    @setup_test_data()
+    def test_required_authentication(self, auth_token, client, mock_models, mock_record_module_version_download):
+        """Test that various forms of authentication work when unauthenticated access is disabled"""
+
+        with unittest.mock.patch('terrareg.config.Config.ANALYTICS_AUTH_KEYS', ['analytics-auth-token:dev']), \
+                unittest.mock.patch('terrareg.config.Config.IGNORE_ANALYTICS_TOKEN_AUTH_KEYS', ['ignore-analytics-token']), \
+                unittest.mock.patch('terrareg.config.Config.INTERNAL_EXTRACTION_ANALYTICS_TOKEN', 'internal-extraction-token'), \
+                unittest.mock.patch('terrareg.config.Config.ALLOW_UNAUTHENTICATED_ACCESS', False), \
+                unittest.mock.patch('terrareg.config.Config.TERRAFORM_PRESIGNED_URL_SECRET', 'test'):
+            res = client.get(
+                f"/v1/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1/download",
+                headers={'X-Terraform-Version': 'TestTerraformVersion',
+                        'User-Agent': 'TestUserAgent',
+                        'Authorization': f'Bearer {auth_token}'}
+            )
+        assert res.status_code == 204
+
+    @setup_test_data()
+    def test_unauthenticated(self, client, mock_models, mock_record_module_version_download):
+        """Test unauthenticated call to API"""
+        def call_endpoint():
+            return client.get('/v1/modules/testnamespace/testmodulename/testprovider/1.0.0/download')
+
+        self._test_unauthenticated_terraform_api_endpoint_test(call_endpoint)

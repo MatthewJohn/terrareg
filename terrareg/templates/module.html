@@ -2,6 +2,27 @@
 
 {% block title %}{{ namespace.name }}/{{ module.name }}{% endblock %}
 
+{% block header %}
+<script>
+    async function loadProviders() {
+        // Perform request to obtain the config
+        $.get("/v1/terrareg/modules/{{ namespace.name }}/{{ module.name }}").then((data) => {
+            $.each(data.modules, (itx, module_data) => {
+                createSearchResultCard('module-list-table', module_data);
+            });
+            if (data.modules.length === 0) {
+                $('#no-results').removeClass('default-hidden');
+            }
+        }).fail(() => {
+            $('#module-does-not-exist').removeClass('default-hidden');
+        });
+    }
+    $(document).ready(function() {
+        loadProviders();
+    });
+</script>
+{% endblock %}
+
 {% block content %}
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
@@ -12,33 +33,18 @@
     </ul>
 </nav>
 
-
-<nav class="level">
-    <div class="level-item">
-
-    {% if module_providers %}
-
-        <table class="table">
-            <thead>
-                <th>Provider name</th>
-            </thead>
-            <tbody>
-                {% for provider in module_providers %}
-                <tr>
-                    <td>
-                        <a href="{{ provider.get_view_url() }}">{{ provider.name }}</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-    {% else %}
-
-    This module has no providers.
-
-    {% endif %}
+<div class="columns">
+    <div id="module-does-not-exist" class="column is-three-fifths is-offset-one-fifth default-hidden">
+        This namespace/module does not exist
     </div>
-</nav>
+    <div id="no-results" class="column is-three-fifths is-offset-one-fifth default-hidden">
+        There are no providers for this module
+    </div>
+    <div id="result-list" class="column is-three-fifths is-offset-one-fifth">
+
+        <section id="module-list-table">
+        </section>
+    </div>
+</div>
 
 {% endblock %}

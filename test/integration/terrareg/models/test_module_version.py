@@ -1500,6 +1500,40 @@ module &quot;test-usage3&quot; {
         finally:
             module_provider.update_git_path(None)
 
+    @pytest.mark.parametrize('module_name, module_version, git_path, expected_source_download_url, allow_unauthenticated_access, expect_presigned', [
+        # Test no clone URL in any configuration, defaulting to source archive download
+        ('no-git-provider', '1.0.0', None, '/v1/terrareg/modules/repo_url_tests/no-git-provider/test/1.0.0/source.zip', True, False),
+        ('no-git-provider', '1.0.0', None, '/v1/terrareg/modules/repo_url_tests/no-git-provider/test/1.0.0/source.zip?presign=unittest-presign-key', False, True),
+        # Test clone URL only configured in module version, with public access allowed/disabled
+        ('no-git-provider', '1.4.0', None, 'git::ssh://mv-clone-url.com/repo_url_tests/no-git-provider-test?ref=1.4.0', True, False),
+        ('no-git-provider', '1.4.0', None, 'git::ssh://mv-clone-url.com/repo_url_tests/no-git-provider-test?ref=1.4.0', True, False),
+
+    ])
+    def test_get_source_download_url_presigned(self, module_name, module_version, git_path, expected_source_download_url, allow_unauthenticated_access, expect_presigned):
+        """Ensure clone URL matches the expected values."""
+        namespace = Namespace(name='repo_url_tests')
+        module = Module(namespace=namespace, name=module_name)
+        module_provider = ModuleProvider.get(module=module, name='test')
+        module_provider.update_git_path(git_path)
+
+        try:
+            assert module_provider is not None
+            module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
+            assert module_version is not None
+
+            mock_generate_presigned_key = unittest.mock.MagicMock(return_value='unittest-presign-key')
+            with unittest.mock.patch('terrareg.presigned_url.TerraformSourcePresignedUrl.generate_presigned_key', mock_generate_presigned_key), \
+                    unittest.mock.patch('terrareg.config.Config.ALLOW_UNAUTHENTICATED_ACCESS', allow_unauthenticated_access):
+                assert module_version.get_source_download_url() == expected_source_download_url
+
+            if expect_presigned:
+                mock_generate_presigned_key.assert_called_once_with(url='/v1/terrareg/modules/repo_url_tests/no-git-provider/test/1.0.0/source.zip')
+            else:
+                mock_generate_presigned_key.assert_not_called()
+
+        finally:
+            module_provider.update_git_path(None)
+
     @pytest.mark.parametrize('published,beta,is_latest_version,expected_value', [
         # Latest published non-beta
         (True, False, True, []),

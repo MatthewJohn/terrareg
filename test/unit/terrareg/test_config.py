@@ -84,7 +84,10 @@ class TestConfig:
         ('MODULE_LINKS', None),
         ('DEFAULT_TERRAFORM_VERSION', None),
         ('TERRAFORM_ARCHIVE_MIRROR', None),
-        ('SENTRY_DSN', None)
+        ('SENTRY_DSN', None),
+        ('TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH', None),
+        ('TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT', None),
+        ('TERRAFORM_PRESIGNED_URL_SECRET', None),
     ])
     def test_string_configs(self, config_name, override_expected_value):
         """Test string configs to ensure they are overriden with environment variables."""
@@ -106,6 +109,8 @@ class TestConfig:
         'LISTEN_PORT',
         'GIT_CLONE_TIMEOUT',
         'REDIRECT_DELETION_LOOKBACK_DAYS',
+        'TERRAFORM_OIDC_IDP_SESSION_EXPIRY',
+        'TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS',
     ])
     def test_integer_configs(self, config_name):
         """Test integer configs to ensure they are overriden with environment variables."""
@@ -196,6 +201,7 @@ class TestConfig:
         "MANAGE_TERRAFORM_RC_FILE",
         'DISABLE_ANALYTICS',
         'ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION',
+        'ALLOW_UNAUTHENTICATED_ACCESS',
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
         """Test boolean configs to ensure they are overriden with environment variables."""

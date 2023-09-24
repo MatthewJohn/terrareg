@@ -227,3 +227,9 @@ class TestApiTerraregNamespaceDetails(TerraregUnitTest):
             mock_auth_method.check_namespace_access.assert_called_once_with(UserGroupNamespacePermissionType.FULL, namespace='testnamespace')
             mock_delete.assert_not_called()
 
+    def test_unauthenticated(self, client, mock_models):
+        """Test unauthenticated call to API"""
+        def call_endpoint():
+            return client.get('/v1/terrareg/namespaces/moduledetails')
+
+        self._test_unauthenticated_read_api_endpoint_test(call_endpoint)

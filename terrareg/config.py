@@ -91,6 +91,11 @@ class Config:
 
     @property
     def DATA_DIRECTORY(self):
+        """
+        Directory for storing module data.
+
+        This directory must be persistent (e.g. mounted to shared volume for distributed docker containers)
+        """
         return os.path.join(os.environ.get('DATA_DIRECTORY', os.getcwd()), 'data')
 
     @property
@@ -643,6 +648,15 @@ class Config:
         return self.convert_boolean(os.environ.get('ENABLE_ACCESS_CONTROLS', 'False'))
 
     @property
+    def ALLOW_UNAUTHENTICATED_ACCESS(self):
+        """
+        Whether unauthenticated access to Terrareg is allowed.
+
+        If disabled, all users must authenticate to be able to access the interface and Terraform authentication is required
+        """
+        return self.convert_boolean(os.environ.get("ALLOW_UNAUTHENTICATED_ACCESS", "True"))
+
+    @property
     def OPENID_CONNECT_LOGIN_TEXT(self):
         """
         Text for sign in button for OpenID Connect authentication
@@ -834,6 +848,65 @@ class Config:
             for extension in os.environ.get("EXAMPLE_FILE_EXTENSIONS", "tf,tfvars,sh,json").split(",")
             if extension
         ]
+
+    @property
+    def TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT(self):
+        """
+        Subject ID hash salt for Terraform OIDC identity provider.
+
+        This must be set to authenticate users via terrareg.
+        This is required if disabling ALLOW_UNAUTHENTICATED_ACCESS.
+
+        Must be set to a secure random string
+        """
+        return os.environ.get("TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT")
+
+    @property
+    def TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH(self):
+        """
+        Path of a signing key to be used for Terraform OIDC identity provider.
+
+        This must be set to authenticate users via Terraform.
+
+        The key can be generated used:
+        ```
+        ssh-keygen -t rsa -b 4096 -m PEM -f signing_key.pem
+        # Do not set a password
+        ```
+        """
+        return os.environ.get('TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH', os.path.join(os.getcwd(), "signing_key.pem"))
+
+    @property
+    def TERRAFORM_OIDC_IDP_SESSION_EXPIRY(self):
+        """
+        Terraform OIDC identity token expiry length (seconds).
+
+        Defaults to 1 hour.
+        """
+        return int(os.environ.get("TERRAFORM_OIDC_IDP_SESSION_EXPIRY", "3600"))
+
+    @property
+    def TERRAFORM_PRESIGNED_URL_SECRET(self):
+        """
+        Secret value for encrypting tokens used in presigned URLs to authenticate module source downloads.
+
+        This is required when requiring authentication in Terrareg and modules do not use git.
+        """
+        return os.environ.get("TERRAFORM_PRESIGNED_URL_SECRET")
+
+    @property
+    def TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS(self):
+        """
+        The amount of time a module download pre-signed URL should be valid for (in seconds).
+
+        When Terraform downloads a module, it calls a download endpoint, which returns the pre-signed
+        URL, which should be immediately used by Terraform, meaning that this should not need to be modified.
+
+        If Terrareg runs across multiple containers, across multiple instances that can suffer from time drift,
+        this value may need to be increased.
+        """
+        return int(os.environ.get("TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS", 10))
+
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""
