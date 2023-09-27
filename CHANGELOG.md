@@ -1,5 +1,28 @@
 # Changelog
 
+# [2.80.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.79.0...v2.80.0) (2023-09-27)
+
+
+### Bug Fixes
+
+* Update module provider list page to use APIs and no longer use templating for rendering result list. ([bbdef99](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/bbdef99959c1d8bc124de4c9ee3e47a015aaa0f7)), closes [#289](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/289)
+
+
+### Features
+
+* Add ability to disable anonymous access and require authentication ([e11f777](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e11f777e04d59b70a92d6c8fbb1b7b302ba50fac)), closes [#289](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/289)
+* Add auth method for verifying OIDC client ([2109db7](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2109db7fda45450a2b4c4b037ef2d423c3864126)), closes [#289](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/289)
+* Add custom IDP token expiry with config to set expiry ([d7f999d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/d7f999d8a09ba4912527b320f54056f9e93cf289)), closes [#289](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/289)
+* Add expiry to authorization token and update default expiration to one hour ([8b728b1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8b728b1ce2e7429c2beba64f02967ce9d3b6465b)), closes [#289](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/289)
+* Add new auth decorator to only allow terraform to access required APIs ([335564c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/335564c1412cbc4f8fd9406e625cebd350faf79a)), closes [#289](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/289)
+* Add new auth methods for static terraform tokens to authenticate them when unauthenticated access is disabled. ([d8ceea0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/d8ceea0834304b5a50c72ccea819478c1bee9153)), closes [#289](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/289)
+* Add pre-signed URLs for module source downloading if unauthenticated access is disabled ([7ae266f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7ae266ff33fc696e779de293a1f4337c678b10fc)), closes [#289](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/289)
+* Add Terraform client redirect URIs, sharing configuration with Terraform well-known endpoint ([f9f5adc](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f9f5adccfef904cfc249132f9a0fd22a1d5517f6)), closes [#289](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/289)
+* Add Terrareg API for listing provides for a given module ([0518951](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0518951b851e576ae731a3594e97d7ddd6c3ea8f)), closes [#289](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/289)
+* Disallow unauthenticated user to use index/publish APIs when unauthenticated access is disabled ([f2105a0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f2105a020d22bf3392ae59584145d67a7fb2e365)), closes [#289](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/289)
+* Handle redirect from terraform authentication to login page and redirect back from login page, once authenticated. ([03d82d7](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/03d82d7643c268889d508bc22d9a7c474f0686da)), closes [#289](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/289)
+* Redirect user to login when authentication is required. ([7a29d65](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7a29d65aa942c127385ddcf27f5d461fa2d7b7e2)), closes [#289](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/289)
+
 # [2.79.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.78.0...v2.79.0) (2023-09-14)
 
 
