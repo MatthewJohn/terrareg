@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.80.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.0...v2.80.1) (2023-09-27)
+
+
+### Bug Fixes
+
+* Handle tfsec issues found in root of repo, where path contains the base path ([fbad20b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fbad20b2ca239c20433f01b6af54b8e13be3e480))
+* Update tfsec to 1.28.4 as it was outputting erroneous RDS IAM checks for empty terraform ([161c4f9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/161c4f9ba960a8529d3d026cb54fc0dd8d784b61))
+
 # [2.80.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.79.0...v2.80.0) (2023-09-27)
 
 
