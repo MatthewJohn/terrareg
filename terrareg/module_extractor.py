@@ -160,7 +160,10 @@ class ModuleExtractor:
         # Strip the extraction directory from all paths in results
         if tfsec_results['results']:
             for result in tfsec_results['results']:
-                result['location']['filename'] = result['location']['filename'].replace(self._extract_directory.name + '/', '')
+                result['location']['filename'] = result['location']['filename'].replace(self._extract_directory.name, '')
+                # Replace leading slash if it exists in filename
+                if result['location']['filename'].startswith('/'):
+                    result['location']['filename'] = result['location']['filename'][1:]
 
         return tfsec_results
 

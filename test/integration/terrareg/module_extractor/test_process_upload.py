@@ -60,7 +60,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         ]
 
         # Check tfsec returned no results
-        assert module_version.module_details.tfsec == {'results': None}
+        assert module_version.module_details.tfsec == {'results': []}
 
         # Check infracost returned no results
         assert module_version.module_details.infracost == {}
@@ -671,297 +671,249 @@ class TestProcessUpload(TerraregIntegrationTest):
         # Ensure tfsec output contains security issue about missing encryption key
         assert module_version.module_details.tfsec == {'results': [
             {
-                'description': '',
-                'impact': 'PUT calls with public ACLs specified can make objects '
-                          'public',
-                'links': ['https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/s3/block-public-acls/',
-                          'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block#block_public_acls'],
-                'location': {
-                    'end_line': 8,
-                    'filename': 'main.tf',
-                    'start_line': 2
-                },
-                'long_id': 'aws-s3-block-public-acls',
-                'resolution': 'Enable blocking any PUT calls with a public ACL '
-                              'specified',
-                'resource': 'aws_s3_bucket.mybucket',
-                'rule_description': 'S3 Access block should block public ACL',
                 'rule_id': 'AVD-AWS-0086',
+                'long_id': 'aws-s3-block-public-acls',
+                'rule_description': 'S3 Access block should block public ACL',
                 'rule_provider': 'aws',
                 'rule_service': 's3',
+                'impact': 'PUT calls with public ACLs specified can make objects public',
+                'resolution': 'Enable blocking any PUT calls with a public ACL specified',
+                'links': ['https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/block-public-acls/',
+                'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block#block_public_acls'],
+                'description': '',
                 'severity': 'HIGH',
+                'warning': False,
                 'status': 1,
-                'warning': False
+                'resource': 'aws_s3_bucket.mybucket',
+                'location': {'filename': 'main.tf', 'start_line': 2, 'end_line': 8}
             },
             {
-                'description': '',
-                'impact': 'Users could put a policy that allows public access',
-                'links': ['https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/s3/block-public-policy/',
-                          'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block#block_public_policy'],
-                'location': {
-                    'end_line': 8,
-                    'filename': 'main.tf',
-                    'start_line': 2
-                },
-                'long_id': 'aws-s3-block-public-policy',
-                'resolution': 'Prevent policies that allow public access being '
-                              'PUT',
-                'resource': 'aws_s3_bucket.mybucket',
-                'rule_description': 'S3 Access block should block public policy',
                 'rule_id': 'AVD-AWS-0087',
+                'long_id': 'aws-s3-block-public-policy',
+                'rule_description': 'S3 Access block should block public policy',
                 'rule_provider': 'aws',
                 'rule_service': 's3',
+                'impact': 'Users could put a policy that allows public access',
+                'resolution': 'Prevent policies that allow public access being PUT',
+                'links': ['https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/block-public-policy/',
+                'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block#block_public_policy'],
+                'description': '',
                 'severity': 'HIGH',
+                'warning': False,
                 'status': 1,
-                'warning': False
+                'resource': 'aws_s3_bucket.mybucket',
+                'location': {'filename': 'main.tf', 'start_line': 2, 'end_line': 8}
             },
             {
-                'description': 'Bucket does not have encryption enabled',
-                'impact': 'The bucket objects could be read if compromised',
-                'links': ['https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/s3/enable-bucket-encryption/',
-                            'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket#enable-default-server-side-encryption'],
-                'location': {'end_line': 8,
-                            'filename': 'main.tf',
-                            'start_line': 2},
-                'long_id': 'aws-s3-enable-bucket-encryption',
-                'resolution': 'Configure bucket encryption',
-                'resource': 'aws_s3_bucket.mybucket',
-                'rule_description': 'Unencrypted S3 bucket.',
                 'rule_id': 'AVD-AWS-0088',
+                'long_id': 'aws-s3-enable-bucket-encryption',
+                'rule_description': 'Unencrypted S3 bucket.',
                 'rule_provider': 'aws',
                 'rule_service': 's3',
+                'impact': 'The bucket objects could be read if compromised',
+                'resolution': 'Configure bucket encryption',
+                'links': [
+                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/enable-bucket-encryption/',
+                    'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket#enable-default-server-side-encryption'
+                ],
+                'description': 'Bucket does not have encryption enabled',
                 'severity': 'HIGH',
+                'warning': False,
                 'status': 0,
-                'warning': False
+                'resource': 'aws_s3_bucket.mybucket',
+                'location': {'filename': 'main.tf', 'start_line': 2, 'end_line': 8}
             },
             {
-                'description': 'Bucket does not have logging enabled',
-                'impact': 'There is no way to determine the access to this '
-                          'bucket',
-                'links': ['https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/s3/enable-bucket-logging/',
-                          'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket'],
-                'location': {
-                    'end_line': 8,
-                    'filename': 'main.tf',
-                    'start_line': 2
-                },
-                'long_id': 'aws-s3-enable-bucket-logging',
-                'resolution': 'Add a logging block to the resource to enable '
-                              'access logging',
-                'resource': 'aws_s3_bucket.mybucket',
-                'rule_description': 'S3 Bucket does not have logging enabled.',
                 'rule_id': 'AVD-AWS-0089',
+                'long_id': 'aws-s3-enable-bucket-logging',
+                'rule_description': 'S3 Bucket does not have logging enabled.',
                 'rule_provider': 'aws',
                 'rule_service': 's3',
+                'impact': 'There is no way to determine the access to this bucket',
+                'resolution': 'Add a logging block to the resource to enable access logging',
+                'links': [
+                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/enable-bucket-logging/',
+                    'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket'
+                ],
+                'description': 'Bucket does not have logging enabled',
                 'severity': 'MEDIUM',
+                'warning': False,
                 'status': 0,
-                'warning': False
+                'resource': 'aws_s3_bucket.mybucket',
+                'location': {'filename': 'main.tf', 'start_line': 2, 'end_line': 8}
             },
             {
-                'description': '',
-                'impact': 'Deleted or modified data would not be recoverable',
-                'links': ['https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/s3/enable-versioning/',
-                          'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket#versioning'],
-                'location': {
-                    'end_line': 8,
-                    'filename': 'main.tf',
-                    'start_line': 2
-                },
-                'long_id': 'aws-s3-enable-versioning',
-                'resolution': 'Enable versioning to protect against '
-                              'accidental/malicious removal or modification',
-                'resource': 'aws_s3_bucket.mybucket',
-                'rule_description': 'S3 Data should be versioned',
                 'rule_id': 'AVD-AWS-0090',
+                'long_id': 'aws-s3-enable-versioning',
+                'rule_description': 'S3 Data should be versioned',
                 'rule_provider': 'aws',
                 'rule_service': 's3',
+                'impact': 'Deleted or modified data would not be recoverable',
+                'resolution': 'Enable versioning to protect against accidental/malicious removal or modification',
+                'links': [
+                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/enable-versioning/',
+                    'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket#versioning'
+                ],
+                'description': '',
                 'severity': 'MEDIUM',
+                'warning': False,
                 'status': 1,
-                'warning': False
+                'resource': 'aws_s3_bucket.mybucket',
+                'location': {'filename': 'main.tf', 'start_line': 2, 'end_line': 8}
             },
-            {
-                'description': 'Bucket does not encrypt data with a customer '
-                               'managed key.',
-                'impact': 'Using AWS managed keys does not allow for fine '
-                          'grained control',
-                'links': ['https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/s3/encryption-customer-key/',
-                          'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket#enable-default-server-side-encryption'],
-                'location': {
-                    'end_line': 8,
-                    'filename': 'main.tf',
-                    'start_line': 2
-                },
+                {'rule_id': 'AVD-AWS-0132',
                 'long_id': 'aws-s3-encryption-customer-key',
+                'rule_description': 'S3 encryption should use Customer Managed Keys',
+                'rule_provider': 'aws',
+                'rule_service': 's3',
+                'impact': 'Using AWS managed keys does not allow for fine grained control',
                 'resolution': 'Enable encryption using customer managed keys',
-                'resource': 'aws_s3_bucket.mybucket',
-                'rule_description': 'S3 encryption should use Customer Managed '
-                                    'Keys',
-                'rule_id': 'AVD-AWS-0132',
-                'rule_provider': 'aws',
-                'rule_service': 's3',
+                'links': [
+                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/encryption-customer-key/',
+                    'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket#enable-default-server-side-encryption'
+                ],
+                'description': 'Bucket does not encrypt data with a customer managed key.',
                 'severity': 'HIGH',
+                'warning': False,
                 'status': 0,
-                'warning': False
+                'resource': 'aws_s3_bucket.mybucket',
+                'location': {'filename': 'main.tf', 'start_line': 2, 'end_line': 8}
             },
             {
-                'description': '',
-                'impact': 'PUT calls with public ACLs specified can make objects '
-                          'public',
-                'links': ['https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/s3/ignore-public-acls/',
-                          'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block#ignore_public_acls'],
-                'location': {
-                    'end_line': 8,
-                    'filename': 'main.tf',
-                    'start_line': 2
-                },
-                'long_id': 'aws-s3-ignore-public-acls',
-                'resolution': 'Enable ignoring the application of public ACLs in '
-                              'PUT calls',
-                'resource': 'aws_s3_bucket.mybucket',
-                'rule_description': 'S3 Access Block should Ignore Public Acl',
                 'rule_id': 'AVD-AWS-0091',
+                'long_id': 'aws-s3-ignore-public-acls',
+                'rule_description': 'S3 Access Block should Ignore Public Acl',
                 'rule_provider': 'aws',
                 'rule_service': 's3',
+                'impact': 'PUT calls with public ACLs specified can make objects public',
+                'resolution': 'Enable ignoring the application of public ACLs in PUT calls',
+                'links': ['https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/ignore-public-acls/',
+                'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block#ignore_public_acls'],
+                'description': '',
                 'severity': 'HIGH',
+                'warning': False,
                 'status': 1,
-                'warning': False
+                'resource': 'aws_s3_bucket.mybucket',
+                'location': {'filename': 'main.tf', 'start_line': 2, 'end_line': 8}
             },
             {
-                'description': '',
-                'impact': 'Public access to the bucket can lead to data leakage',
-                'links': ['https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/s3/no-public-access-with-acl/',
-                          'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket'],
-                'location': {
-                    'end_line': 8,
-                    'filename': 'main.tf',
-                    'start_line': 2},
-                'long_id': 'aws-s3-no-public-access-with-acl',
-                'resolution': "Don't use canned ACLs or switch to private acl",
-                'resource': 'aws_s3_bucket.mybucket',
-                'rule_description': 'S3 Buckets not publicly accessible through '
-                                    'ACL.',
                 'rule_id': 'AVD-AWS-0092',
+                'long_id': 'aws-s3-no-public-access-with-acl',
+                'rule_description': 'S3 Buckets not publicly accessible through ACL.',
                 'rule_provider': 'aws',
                 'rule_service': 's3',
+                'impact': 'Public access to the bucket can lead to data leakage',
+                'resolution': "Don't use canned ACLs or switch to private acl",
+                'links': [
+                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/no-public-access-with-acl/',
+                    'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket'
+                ],
+                'description': '',
                 'severity': 'HIGH',
+                'warning': False,
                 'status': 1,
-                'warning': False
+                'resource': 'aws_s3_bucket.mybucket',
+                'location': {'filename': 'main.tf', 'start_line': 2, 'end_line': 8}
             },
             {
-                'description': '',
-                'impact': 'Public buckets can be accessed by anyone',
-                'links': ['https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/s3/no-public-buckets/',
-                          'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block#restrict_public_buckets¡'],
-                'location': {'end_line': 8,
-                            'filename': 'main.tf',
-                            'start_line': 2},
-                'long_id': 'aws-s3-no-public-buckets',
-                'resolution': 'Limit the access to public buckets to only the '
-                                'owner or AWS Services (eg; CloudFront)',
-                'resource': 'aws_s3_bucket.mybucket',
-                'rule_description': 'S3 Access block should restrict public '
-                                    'bucket to limit access',
                 'rule_id': 'AVD-AWS-0093',
+                'long_id': 'aws-s3-no-public-buckets',
+                'rule_description': 'S3 Access block should restrict public bucket to limit access',
                 'rule_provider': 'aws',
                 'rule_service': 's3',
+                'impact': 'Public buckets can be accessed by anyone',
+                'resolution': 'Limit the access to public buckets to only the owner or AWS Services (eg; CloudFront)',
+                'links': [
+                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/no-public-buckets/',
+                    'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block#restrict_public_buckets¡'
+                ],
+                'description': '',
                 'severity': 'HIGH',
+                'warning': False,
                 'status': 1,
-                'warning': False
+                'resource': 'aws_s3_bucket.mybucket',
+                'location': {'filename': 'main.tf', 'start_line': 2, 'end_line': 8}
             },
             {
-                'description': '',
-                'impact': 'Public access policies may be applied to sensitive '
-                          'data buckets',
-                'links': ['https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/s3/specify-public-access-block/',
-                          'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block#bucket'],
-                'location': {
-                    'end_line': 8,
-                    'filename': 'main.tf',
-                    'start_line': 2
-                },
-                'long_id': 'aws-s3-specify-public-access-block',
-                'resolution': 'Define a aws_s3_bucket_public_access_block for '
-                              'the given bucket to control public access '
-                              'policies',
-                'resource': 'aws_s3_bucket.mybucket',
-                'rule_description': 'S3 buckets should each define an '
-                                    'aws_s3_bucket_public_access_block',
                 'rule_id': 'AVD-AWS-0094',
+                'long_id': 'aws-s3-specify-public-access-block',
+                'rule_description': 'S3 buckets should each define an aws_s3_bucket_public_access_block',
                 'rule_provider': 'aws',
                 'rule_service': 's3',
+                'impact': 'Public access policies may be applied to sensitive data buckets',
+                'resolution': 'Define a aws_s3_bucket_public_access_block for the given bucket to control public access policies',
+                'links': [
+                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/specify-public-access-block/',
+                    'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block#bucket'
+                ],
+                'description': '',
                 'severity': 'LOW',
+                'warning': False,
                 'status': 1,
-                'warning': False
-            },
+                'resource': 'aws_s3_bucket.mybucket',
+                'location': {'filename': 'main.tf', 'start_line': 2, 'end_line': 8}
+            }
         ]}
+
 
         # Ensure security issue count shows the issue
         assert module_version.get_tfsec_failures() == [
             {
-                'description': 'Bucket does not have encryption enabled',
-                'impact': 'The bucket objects could be read if compromised',
-                'links': ['https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/s3/enable-bucket-encryption/',
-                            'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket#enable-default-server-side-encryption'],
-                'location': {'end_line': 8,
-                            'filename': 'main.tf',
-                            'start_line': 2},
-                'long_id': 'aws-s3-enable-bucket-encryption',
-                'resolution': 'Configure bucket encryption',
-                'resource': 'aws_s3_bucket.mybucket',
-                'rule_description': 'Unencrypted S3 bucket.',
                 'rule_id': 'AVD-AWS-0088',
+                'long_id': 'aws-s3-enable-bucket-encryption',
+                'rule_description': 'Unencrypted S3 bucket.',
                 'rule_provider': 'aws',
                 'rule_service': 's3',
+                'impact': 'The bucket objects could be read if compromised',
+                'resolution': 'Configure bucket encryption',
+                'links': [
+                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/enable-bucket-encryption/',
+                    'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket#enable-default-server-side-encryption'
+                ],
+                'description': 'Bucket does not have encryption enabled',
                 'severity': 'HIGH',
+                'warning': False,
                 'status': 0,
-                'warning': False
+                'resource': 'aws_s3_bucket.mybucket',
+                'location': {'filename': 'main.tf', 'start_line': 2, 'end_line': 8}
             },
             {
-                'description': 'Bucket does not have logging enabled',
-                'impact': 'There is no way to determine the access to this '
-                          'bucket',
-                'links': ['https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/s3/enable-bucket-logging/',
-                          'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket'],
-                'location': {
-                    'end_line': 8,
-                    'filename': 'main.tf',
-                    'start_line': 2
-                },
-                'long_id': 'aws-s3-enable-bucket-logging',
-                'resolution': 'Add a logging block to the resource to enable '
-                              'access logging',
-                'resource': 'aws_s3_bucket.mybucket',
-                'rule_description': 'S3 Bucket does not have logging enabled.',
                 'rule_id': 'AVD-AWS-0089',
+                'long_id': 'aws-s3-enable-bucket-logging',
+                'rule_description': 'S3 Bucket does not have logging enabled.',
                 'rule_provider': 'aws',
                 'rule_service': 's3',
+                'impact': 'There is no way to determine the access to this bucket',
+                'resolution': 'Add a logging block to the resource to enable access logging',
+                'links': [
+                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/enable-bucket-logging/',
+                    'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket'
+                ],
+                'description': 'Bucket does not have logging enabled',
                 'severity': 'MEDIUM',
+                'warning': False,
                 'status': 0,
-                'warning': False
+                'resource': 'aws_s3_bucket.mybucket',
+                'location': {'filename': 'main.tf', 'start_line': 2, 'end_line': 8}
             },
             {
-                'description': 'Bucket does not encrypt data with a customer '
-                               'managed key.',
-                'impact': 'Using AWS managed keys does not allow for fine '
-                          'grained control',
-                'links': ['https://aquasecurity.github.io/tfsec/v1.26.0/checks/aws/s3/encryption-customer-key/',
-                          'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket#enable-default-server-side-encryption'],
-                'location': {
-                    'end_line': 8,
-                    'filename': 'main.tf',
-                    'start_line': 2
-                },
-                'long_id': 'aws-s3-encryption-customer-key',
-                'resolution': 'Enable encryption using customer managed keys',
-                'resource': 'aws_s3_bucket.mybucket',
-                'rule_description': 'S3 encryption should use Customer Managed '
-                                    'Keys',
                 'rule_id': 'AVD-AWS-0132',
+                'long_id': 'aws-s3-encryption-customer-key',
+                'rule_description': 'S3 encryption should use Customer Managed Keys',
                 'rule_provider': 'aws',
                 'rule_service': 's3',
+                'impact': 'Using AWS managed keys does not allow for fine grained control',
+                'resolution': 'Enable encryption using customer managed keys',
+                'links': [
+                    'https://aquasecurity.github.io/tfsec/v1.28.4/checks/aws/s3/encryption-customer-key/',
+                    'https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket#enable-default-server-side-encryption'
+                ],
+                'description': 'Bucket does not encrypt data with a customer managed key.',
                 'severity': 'HIGH',
+                'warning': False,
                 'status': 0,
-                'warning': False
+                'resource': 'aws_s3_bucket.mybucket',
+                'location': {'filename': 'main.tf', 'start_line': 2, 'end_line': 8}
             }
         ]
 
