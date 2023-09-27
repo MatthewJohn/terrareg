@@ -83,6 +83,9 @@ api_docs = """
 def mock_route(route_class, *urls):
     global api_docs
     newline = "\n\n"
+    class_docs = route_class.__doc__ or ""
+    class_docs = "\n".join([l.strip() for l in class_docs.split("\n")])
+
     api_docs += f"""
 
 
@@ -90,7 +93,7 @@ def mock_route(route_class, *urls):
 
 {newline.join([f'`{url}`' for url in urls])}
 
-{(route_class.__doc__ or "").strip()}
+{class_docs}
 
 """
 
@@ -108,7 +111,24 @@ def mock_route(route_class, *urls):
             if getattr(route_class, internal_method) == getattr(ErrorCatchingResource, internal_method):
                 continue
 
-        api_docs += f'\n### {method}\n\n{(getattr(route_class, internal_method).__doc__ or "").strip()}'
+        method_docs = getattr(route_class, internal_method).__doc__ or ""
+        method_docs = "\n".join([l.strip() for l in method_docs.split("\n")])
+
+        api_docs += f'\n#### {method}\n\n{method_docs}'
+
+        # Attempt to get arg parser
+        if route_class in ErrorCatchingResource.__subclasses__():
+            arg_parser_method = f"_{method.lower()}_arg_parser"
+            if getattr(route_class, arg_parser_method) != getattr(ErrorCatchingResource, arg_parser_method):
+                api_docs += """
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+"""
+                arg_parser = getattr(route_class(), arg_parser_method)()
+                for arg in arg_parser.args:
+                    api_docs += f'| {arg.name} | {arg.location} | {arg.type.__name__ if arg.type else ""} | {arg.required} | `{arg.default}` | {arg.help if arg.help else ""} |\n'
 
 
 server._app.route = unittest.mock.MagicMock()

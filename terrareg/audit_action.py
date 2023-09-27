@@ -6,6 +6,9 @@ class AuditAction(Enum):
     """Types of audit events"""
 
     NAMESPACE_CREATE = "namespace_create"
+    NAMESPACE_MODIFY_NAME = "namespace_modify_name"
+    NAMESPACE_MODIFY_DISPLAY_NAME = "namespace_modify_display_name"
+    NAMESPACE_DELETE = "namespace_delete"
 
     MODULE_PROVIDER_CREATE = "module_provider_create"
     MODULE_PROVIDER_DELETE = "module_provider_delete"
@@ -17,6 +20,11 @@ class AuditAction(Enum):
     MODULE_PROVIDER_UPDATE_GIT_CUSTOM_CLONE_URL = "module_provider_update_git_custom_clone_url"
     MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BROWSE_URL = "module_provider_update_git_custom_browse_url"
     MODULE_PROVIDER_UPDATE_VERIFIED = "module_provider_update_verified"
+    MODULE_PROVIDER_UPDATE_NAMESPACE = "module_provider_update_namespace"
+    MODULE_PROVIDER_UPDATE_MODULE_NAME = "module_provider_update_module_name"
+    MODULE_PROVIDER_UPDATE_PROVIDER_NAME = "module_provider_update_provider_name"
+
+    MODULE_PROVIDER_REDIRECT_DELETE = "module_provider_redirect_delete"
 
     MODULE_VERSION_INDEX = "module_version_index"
     MODULE_VERSION_PUBLISH = "module_version_publish"

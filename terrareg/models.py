@@ -1,4 +1,5 @@
 
+import contextlib
 import datetime
 from enum import Enum
 import os
@@ -6,21 +7,23 @@ from distutils.version import LooseVersion
 import json
 import re
 import secrets
-import sqlalchemy
 import urllib.parse
 
+import sqlalchemy
+import semantic_version
 import markdown
 import pygraphviz
 import networkx as nx
+
 import terrareg.analytics
 from terrareg.database import Database
 import terrareg.config
 import terrareg.audit
 import terrareg.audit_action
 from terrareg.errors import (
-    DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
-    InvalidVersionError, NamespaceAlreadyExistsError, NoModuleVersionAvailableError,
-    InvalidGitTagFormatError, InvalidNamespaceNameError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError, RepositoryUrlContainsInvalidTemplateError,
+    DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
+    InvalidVersionError, ModuleProviderRedirectForceDeletionNotAllowedError, ModuleProviderRedirectInUseError, NamespaceAlreadyExistsError, NamespaceNotEmptyError, NoModuleVersionAvailableError,
+    InvalidGitTagFormatError, InvalidNamespaceNameError, NonExistentModuleProviderRedirectError, NonExistentNamespaceRedirectError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError, RepositoryUrlContainsInvalidTemplateError,
     RepositoryUrlDoesNotContainValidSchemeError,
     RepositoryUrlContainsInvalidSchemeError,
     RepositoryUrlDoesNotContainHostError,
@@ -34,6 +37,7 @@ import terrareg.version_constraint
 from terrareg.utils import convert_markdown_to_html, get_public_url_details, safe_join_paths, sanitise_html_content
 from terrareg.validators import GitUrlValidator
 from terrareg.constants import EXTRACTION_VERSION
+from terrareg.presigned_url import TerraformSourcePresignedUrl
 
 
 class Session:
@@ -262,6 +266,35 @@ class UserGroupNamespacePermission:
             ]
 
     @classmethod
+    def get_permissions_by_namespace(cls, namespace):
+        """Return permissions by namespace"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            query = sqlalchemy.select(
+                db.user_group.c.name.label('user_group_name'),
+                db.namespace.c.namespace.label('namespace_name')
+            ).select_from(
+                db.user_group_namespace_permission
+            ).join(
+                db.user_group,
+                db.user_group_namespace_permission.c.user_group_id==db.user_group.c.id
+            ).join(
+                db.namespace,
+                db.user_group_namespace_permission.c.namespace_id==db.namespace.c.id
+            ).where(
+                db.namespace.c.id==namespace.pk
+            )
+            res = conn.execute(query)
+
+            return [
+                cls(
+                    user_group=UserGroup(name=r['user_group_name']),
+                    namespace=Namespace(name=r['namespace_name'])
+                )
+                for r in res.fetchall()
+            ]
+
+    @classmethod
     def get_permissions_by_user_group_and_namespace(cls, user_group, namespace):
         """Return permission by user group and namespace"""
         permissions = cls.get_permissions_by_user_groups_and_namespace([user_group], namespace)
@@ -387,14 +420,15 @@ class UserGroupNamespacePermission:
                 self._row_cache = res.fetchone()
         return self._row_cache
 
-    def delete(self):
+    def delete(self, create_audit_event=True):
         """Delete user group namespace permission."""
-        terrareg.audit.AuditEvent.create_audit_event(
-            action=terrareg.audit_action.AuditAction.USER_GROUP_NAMESPACE_PERMISSION_DELETE,
-            object_type=self.__class__.__name__,
-            object_id=self.id,
-            old_value=None, new_value=None
-        )
+        if create_audit_event:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.USER_GROUP_NAMESPACE_PERMISSION_DELETE,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=None, new_value=None
+            )
 
         self._delete_from_database()
 
@@ -557,15 +591,129 @@ class GitProvider:
         return self._row_cache
 
 
+class NamespaceRedirect(object):
+    """Redirect objects for providing redirects after a namespace name has changed"""
+
+    @classmethod
+    def create(cls, namespace, name):
+        """Create instance of object in database."""
+        # Create module provider
+        db = Database.get()
+        namespace_redirect_insert = db.namespace_redirect.insert().values(
+            namespace_id=namespace.pk,
+            name=name
+        )
+        with db.get_connection() as conn:
+            conn.execute(namespace_redirect_insert)
+
+    @classmethod
+    def delete_by_namespace(cls, namespace):
+        """Delete all redirects for a given namespace"""
+        db = Database.get()
+        delete = sqlalchemy.delete(
+            db.namespace_redirect
+        ).where(
+            db.namespace_redirect.c.namespace_id==namespace.pk
+        )
+        with db.get_connection() as conn:
+            conn.execute(delete)
+
+    @classmethod
+    def get_by_namespace(cls, namespace):
+        """Return list of Namespace redirect objects that have the given namespace as destination"""
+        db = Database.get()
+        select = sqlalchemy.select(
+            db.namespace_redirect.c.id
+        ).select_from(
+            db.namespace_redirect
+        ).where(
+            db.namespace_redirect.c.namespace_id==namespace.pk
+        )
+
+        with db.get_connection() as conn:
+            rows = conn.execute(select).all()
+
+        return [
+            cls(pk=row['id'])
+            for row in rows
+        ]
+
+    @classmethod
+    def get_namespace_by_name(cls, name, case_insensitive=False):
+        """Get namespace redirect by name"""
+        db = Database.get()
+        # Get namespace table namespace column,
+        # joined from namespace redirect table,
+        # using
+        select = sqlalchemy.select(
+            db.namespace.c.namespace
+        ).select_from(
+            db.namespace_redirect
+        ).join(
+            db.namespace,
+            db.namespace_redirect.c.namespace_id==db.namespace.c.id
+        )
+
+        if case_insensitive:
+            select = select.where(
+                db.namespace_redirect.c.name == name
+            )
+        else:
+            select = select.where(
+                db.namespace_redirect.c.name.like(name)
+            )
+
+        with db.get_connection() as conn:
+            res = conn.execute(select)
+            row = res.fetchone()
+        if not row:
+            return None
+
+        return Namespace.get(name=row['namespace'])
+
+    @property
+    def name(self):
+        """Return source name for redirect"""
+        return self._get_db_row()['name']
+
+    @property
+    def namespace_id(self):
+        """Return source namespace ID for redirect"""
+        return self._get_db_row()['namespace_id']
+
+    def __init__(self, pk):
+        """Store member variable"""
+        self._pk = pk
+        self._cache_db_row = self._get_db_row()
+
+    def _get_db_row(self):
+        """Return database row for module provider."""
+        db = Database.get()
+        select = db.namespace_redirect.select(
+        ).where(
+            db.namespace_redirect.c.id == self._pk
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(select)
+            data = res.fetchone()
+            if not data:
+                raise NonExistentNamespaceRedirectError("Namespace redirect does not exist with the given ID")
+            return data
+
+
 class Namespace(object):
 
     @classmethod
-    def get(cls, name, create=False):
+    def get(cls, name, create=False, include_redirect=True):
         """Create object and ensure the object exists."""
         obj = cls(name=name)
 
         # If there is no row, the module provider does not exist
         if obj._get_db_row() is None:
+
+            # Check for redirect
+            if include_redirect and (redirect_namespace := NamespaceRedirect.get_namespace_by_name(name=name, case_insensitive=False)):
+                return redirect_namespace
 
             # If set to create and auto module-provider creation
             # is enabled in config, create the module provider
@@ -604,7 +752,30 @@ class Namespace(object):
         return None
 
     @classmethod
-    def get_by_case_insensitive_name(cls, name):
+    def get_by_pk(cls, pk):
+        """Get namespace by pk"""
+        if not pk:
+            return None
+
+        db = Database.get()
+        display_name_query = sqlalchemy.select(
+            db.namespace.c.namespace
+        ).select_from(
+            db.namespace
+        ).where(
+            # Use a like to use case-insentive
+            # match for pre-existing namespaces
+            db.namespace.c.id==pk
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(display_name_query).fetchone()
+            if res:
+                return cls.get(res.namespace)
+
+        return None
+
+    @classmethod
+    def get_by_case_insensitive_name(cls, name, include_redirect=True):
         """Get namespace by case-insensitive name match."""
         db = Database.get()
 
@@ -622,6 +793,12 @@ class Namespace(object):
 
             if res:
                 return cls.get(res.namespace)
+
+        # Check for redirect
+        if include_redirect and (redirect_namespace := NamespaceRedirect.get_namespace_by_name(
+                name=name, case_insensitive=True)):
+            return redirect_namespace
+
         return None
 
     @classmethod
@@ -642,7 +819,7 @@ class Namespace(object):
         cls._validate_name(name)
         cls._validate_display_name(display_name)
 
-        if cls.get_by_case_insensitive_name(name):
+        if cls.get_by_case_insensitive_name(name, include_redirect=False):
             raise NamespaceAlreadyExistsError("A namespace already exists with this name")
 
         if cls.get_by_display_name(display_name):
@@ -806,6 +983,16 @@ class Namespace(object):
         """Return display name for namespace"""
         return self._get_db_row()["display_name"]
 
+    def __eq__(self, __o):
+        """Check if two namespaces are the same"""
+        if isinstance(__o, self.__class__):
+            return self.pk == __o.pk
+        return super(Namespace, self).__eq__(__o)
+
+    def __hash__(self):
+        """Return hashed method of pk"""
+        return hash(self.pk)
+
     def __init__(self, name: str):
         """Validate name and store member variables"""
         self._name = name
@@ -824,6 +1011,72 @@ class Namespace(object):
                 self._cache_db_row = res.fetchone()
 
         return self._cache_db_row
+
+    def update_display_name(self, new_display_name):
+        """Update display name"""
+        # If no change to display name, return early.
+        # Handle comparison of empty string vs null
+        if new_display_name == self.display_name or (not new_display_name and not self.display_name):
+            return
+
+        # Validate name
+        self._validate_display_name(new_display_name)
+
+        if duplicate_namespace := self.get_by_display_name(new_display_name):
+            if duplicate_namespace.pk != self.pk:
+                raise DuplicateNamespaceDisplayNameError("A namespace already has this display name")
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_DISPLAY_NAME,
+            object_type=self.__class__.__name__,
+            object_id=self.name,
+            old_value=self.display_name,
+            new_value=new_display_name
+        )
+
+        self.update_attributes(display_name=new_display_name)
+
+    def update_name(self, new_name):
+        """Update name"""
+        # If no change to name, return early
+        if new_name == self.name:
+            return
+
+        # Validate name
+        self._validate_name(new_name)
+
+        if duplicate_namespace := self.get_by_case_insensitive_name(new_name, include_redirect=False):
+            if duplicate_namespace.pk != self.pk:
+                raise NamespaceAlreadyExistsError("A namespace already exists with this name")
+
+        # Create namespace redirect for old name
+        NamespaceRedirect.create(namespace=self, name=self.name)
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.NAMESPACE_MODIFY_NAME,
+            object_type=self.__class__.__name__,
+            object_id=self.name,
+            old_value=self.name,
+            new_value=new_name
+        )
+
+        self.update_attributes(namespace=new_name)
+
+        # Update member variable for name to new name
+        self._name = new_name
+
+    def update_attributes(self, **kwargs):
+        """Update DB row."""
+        db = Database.get()
+        update = db.namespace.update(
+        ).where(
+            db.namespace.c.id==self.pk
+        ).values(**kwargs)
+        with db.get_connection() as conn:
+            conn.execute(update)
+
+        # Remove cached DB row
+        self._cache_db_row = None
 
     def get_view_url(self):
         """Return view URL"""
@@ -858,6 +1111,32 @@ class Namespace(object):
             for module in modules
         ]
 
+    def delete(self):
+        """Delete namespace"""
+        # Check for any modules in the namespace
+        if self.get_all_modules():
+            raise NamespaceNotEmptyError("Namespace cannot be deleted as it contains modules")
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.NAMESPACE_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.name,
+            old_value=None, new_value=None
+        )
+
+        # Delete any permissions associated with the namespace
+        for permission in UserGroupNamespacePermission.get_permissions_by_namespace(namespace=self):
+            permission.delete(create_audit_event=False)
+
+        # Delete any redirects
+        NamespaceRedirect.delete_by_namespace(self)
+
+        # Delete namespace
+        db = Database.get()
+        delete = sqlalchemy.delete(db.namespace).where(db.namespace.c.id==self.pk)
+        with db.get_connection() as conn:
+            conn.execute(delete)
+
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
         # Check if data directory exists
@@ -889,6 +1168,11 @@ class Module(object):
     def base_directory(self):
         """Return base directory."""
         return safe_join_paths(self._namespace.base_directory, self._name)
+
+    @property
+    def namespace(self):
+        """Return namespace of module"""
+        return self._namespace
 
     def __init__(self, namespace: Namespace, name: str):
         """Validate name and store member variables."""
@@ -1204,6 +1488,32 @@ class ModuleDetails:
 
         return cytoscape_json
 
+    @property
+    def terraform_version(self):
+        """Return terraform version output"""
+        db_row = self._get_db_row()
+        if db_row and db_row["terraform_version"]:
+            data = Database.decode_blob(db_row["terraform_version"])
+            if data:
+                try:
+                    return json.loads(data)
+                except:
+                    pass
+        return None
+
+    @property
+    def terraform_modules(self):
+        """Return terraform modules output"""
+        db_row = self._get_db_row()
+        if db_row and db_row["terraform_modules"]:
+            data = Database.decode_blob(db_row["terraform_modules"])
+            if data:
+                try:
+                    return json.loads(data)
+                except:
+                    pass
+        return None
+
     def __init__(self, id: int):
         """Store member variables."""
         self._id = id
@@ -1233,7 +1543,8 @@ class ModuleDetails:
         """Update DB row."""
         # Check for any blob and encode the values
         for kwarg in kwargs:
-            if kwarg in ['readme_content', 'terraform_docs', 'tfsec', 'infracost', 'terraform_graph']:
+            if kwarg in ['readme_content', 'terraform_docs', 'tfsec', 'infracost',
+                         'terraform_graph', 'terraform_modules', 'terraform_version']:
                 kwargs[kwarg] = Database.encode_blob(kwargs[kwarg])
 
         db = Database.get()
@@ -1360,6 +1671,171 @@ class ProviderLogo:
         return self._details['link'] if self._details is not None else None
 
 
+class ModuleProviderRedirect(object):
+    """Redirect objects for providing redirects after a module provider name, provider or namespace is changed."""
+
+    @classmethod
+    def create(cls, module_provider, original_namespace, original_name, original_provider):
+        """Create instance of object in database."""
+        # Create module provider
+        db = Database.get()
+        module_provider_redirect_insert = db.module_provider_redirect.insert().values(
+            module_provider_id=module_provider.pk,
+            namespace_id=original_namespace.pk,
+            module=original_name,
+            provider=original_provider
+        )
+        with db.get_connection() as conn:
+            conn.execute(module_provider_redirect_insert)
+
+    @classmethod
+    def get_module_provider_by_original_details(cls, namespace, module, provider, case_insensitive=False):
+        """Get namespace redirect by name"""
+        db = Database.get()
+        # Obtain targetted module provider and it's namespace details
+        # using ID from module provider redirect table,
+        # filtering by original namespace ID, module and provider
+        select = sqlalchemy.select(
+            db.module_provider.c.module,
+            db.module_provider.c.provider,
+            db.namespace.c.namespace
+        ).select_from(
+            db.module_provider_redirect
+        ).join(
+            db.module_provider,
+            db.module_provider_redirect.c.module_provider_id==db.module_provider.c.id
+        ).join(
+            db.namespace,
+            db.module_provider.c.namespace_id==db.namespace.c.id
+        ).where(
+            db.module_provider_redirect.c.namespace_id==namespace.pk
+        )
+
+        if case_insensitive:
+            select = select.where(
+                db.module_provider_redirect.c.module==module,
+                db.module_provider_redirect.c.provider==provider
+            )
+        else:
+            select = select.where(
+                db.module_provider_redirect.c.module.like(module),
+                db.module_provider_redirect.c.provider.like(provider),
+            )
+
+        with db.get_connection() as conn:
+            res = conn.execute(select)
+            row = res.fetchone()
+        if not row:
+            return None
+
+        target_namespace = Namespace.get(name=row['namespace'])
+        target_module = Module(namespace=target_namespace, name=row['module'])
+        return ModuleProvider(module=target_module, name=row['provider'])
+
+    @classmethod
+    def get_by_module_provider(cls, module_provider):
+        """Get all redirects that point to a given module provider"""
+        db = Database.get()
+        select = sqlalchemy.select(
+            db.module_provider_redirect.c.id
+        ).select_from(
+            db.module_provider_redirect
+        ).where(
+            db.module_provider_redirect.c.module_provider_id==module_provider.pk
+        )
+
+        with db.get_connection() as conn:
+            rows = conn.execute(select).all()
+
+        return [
+            cls(pk=row['id'])
+            for row in rows
+        ]
+
+    @property
+    def module_name(self):
+        """Return source module name for redirect"""
+        return self._get_db_row()['module']
+
+    @property
+    def provider_name(self):
+        """Return source provider name for redirect"""
+        return self._get_db_row()['provider']
+
+    @property
+    def namespace_id(self):
+        """Return source namespace ID for redirect"""
+        return self._get_db_row()['namespace_id']
+
+    @property
+    def namespace(self):
+        """Return source namespace ID for redirect"""
+        return Namespace.get_by_pk(self._get_db_row()['namespace_id'])
+
+    @property
+    def module_provider_id(self):
+        """Return destination module provider id for redirect"""
+        return self._get_db_row()['module_provider_id']
+
+    @property
+    def pk(self):
+        """Return pk of entity"""
+        return self._pk
+
+    @property
+    def id(self):
+        """User-readable representation of redirect object"""
+        return f"{self.namespace.name}/{self.module_name}/{self.provider_name}"
+
+    def __init__(self, pk):
+        """Store member variable"""
+        self._pk = pk
+        self._cache_db_row = self._get_db_row()
+
+    def _get_db_row(self):
+        """Return database row for module provider."""
+        db = Database.get()
+        select = db.module_provider_redirect.select(
+        ).where(
+            db.module_provider_redirect.c.id == self._pk
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(select)
+            data = res.fetchone()
+            if not data:
+                raise NonExistentModuleProviderRedirectError("Module provider redirect does not exist with the given ID")
+            return data
+
+    def delete(self, force=False, internal_force=False, create_audit_event=True):
+        """
+        Delete module provider redirect.
+        Force will override check for whether the module is in use, as supplied by the user.
+        Internal force is used to override check, when deleting a module provider.
+        """
+        if force and not terrareg.config.Config().ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION:
+            raise ModuleProviderRedirectForceDeletionNotAllowedError("Force deletion of module provider redirects is not allowed")
+
+        # Check if module provider redirect is in use
+        if not (force or internal_force) and terrareg.analytics.AnalyticsEngine.check_module_provider_redirect_usage(self):
+            raise ModuleProviderRedirectInUseError("Module provider redirect is in use, so cannot be deleted without forceful deletion")
+
+        if create_audit_event:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_REDIRECT_DELETE,
+                object_type=self.__class__.__name__,
+                # ID of the actual module
+                object_id=self.id,
+                # ID of target module provider
+                old_value=self.module_provider_id,
+                new_value=None
+            )
+
+        # Delete from database
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.module_provider_redirect.delete(db.module_provider_redirect.c.id==self.pk))
+
+
 class ModuleProvider(object):
 
     @staticmethod
@@ -1414,6 +1890,17 @@ class ModuleProvider(object):
     @classmethod
     def create(cls, module, name):
         """Create instance of object in database."""
+        # Validate module provider name
+        cls._validate_name(name)
+
+        # Ensure that there is not already a module provider that exists
+        duplicate_provider = ModuleProvider.get(module=module, name=name, include_redirect=True)
+        if duplicate_provider:
+            # Check if duplicate is a redirect
+            if duplicate_provider.name != name or duplicate_provider.module.name != module.name or duplicate_provider.module.namespace.name != module.namespace.name:
+                raise DuplicateModuleProviderError("A module provider redirect exists with the same name in the namespace")
+            raise DuplicateModuleProviderError("A duplicate module provider exists with the same name in the namespace")
+
         # Create module provider
         db = Database.get()
         module_provider_insert = db.module_provider.insert().values(
@@ -1437,7 +1924,7 @@ class ModuleProvider(object):
         return obj
 
     @classmethod
-    def get(cls, module, name, create=False):
+    def get(cls, module, name, create=False, include_redirect=True):
         """Create object and ensure the object exists."""
         obj = cls(module=module, name=name)
 
@@ -1451,7 +1938,17 @@ class ModuleProvider(object):
 
                 return obj
 
-            # If not creating, return None
+            elif include_redirect:
+                # If not creating, attempt to find redirected name
+                redirect_module_provider = ModuleProviderRedirect.get_module_provider_by_original_details(
+                    namespace=module.namespace,
+                    module=module.name,
+                    provider=name,
+                    case_insensitive=False
+                )
+                if redirect_module_provider:
+                    return redirect_module_provider
+
             return None
 
         # Otherwise, return object
@@ -1491,6 +1988,11 @@ class ModuleProvider(object):
         return self._get_db_row()['verified']
 
     @property
+    def can_index_by_version(self):
+        """Whether the module version can be indexed by version"""
+        return '{version}' in self.git_tag_format
+
+    @property
     def git_tag_format(self):
         """Return git tag format"""
         if self._get_db_row()['git_tag_format']:
@@ -1502,21 +2004,39 @@ class ModuleProvider(object):
     def git_ref_format(self):
         return 'refs/tags/{}'.format(self.git_tag_format)
 
-    @property
-    def tag_ref_regex(self):
-        """Return regex match for git ref to match version"""
+    def get_tag_regex(self, source_format):
+        """Convert tag formatting string to regex, replacing placeholders"""
         # Hacky method to replace placeholder with temporary string,
         # escape regex characters and then replace temporary string
         # with regex for version
-        string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m153'
-        version_re = self.git_ref_format.format(version=string_does_not_exist)
+        version_string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m1531'
+        major_string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m1532'
+        minor_string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m1533'
+        patch_string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m1534'
+        build_string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m1535'
+        version_re = source_format.format(
+            version=version_string_does_not_exist,
+            major=major_string_does_not_exist,
+            minor=minor_string_does_not_exist,
+            patch=patch_string_does_not_exist,
+            build=build_string_does_not_exist
+        )
         version_re = re.escape(version_re)
         # Add EOL and SOL characters
         version_re = '^{version_re}$'.format(version_re=version_re)
         # Replace temporary string with regex for symatec version
-        version_re = version_re.replace(string_does_not_exist, r'(\d+\.\d+.\d+)')
+        version_re = version_re.replace(version_string_does_not_exist, r'(?P<version>\d+\.\d+.\d+)')
+        version_re = version_re.replace(major_string_does_not_exist, r'(?P<major>\d+)')
+        version_re = version_re.replace(minor_string_does_not_exist, r'(?P<minor>\d+)')
+        version_re = version_re.replace(patch_string_does_not_exist, r'(?P<patch>\d+)')
+        version_re = version_re.replace(build_string_does_not_exist, r'(?P<build>-[a-z0-9]+)')
         # Return copmiled regex
         return re.compile(version_re)
+
+    @property
+    def tag_ref_regex(self):
+        """Return regex match for git ref to match version"""
+        return self.get_tag_regex(self.git_ref_format)
 
     @property
     def git_path(self):
@@ -1538,43 +2058,89 @@ class ModuleProvider(object):
         # Otherwise, return the path
         return row_value
 
-    def get_version_from_tag_ref(self, tag_ref):
-        """Match tag ref against version number and return actual version number."""
+    def update_name(self, namespace, module_name, provider_name):
+        """Update namespace, module name and/or provider of module"""
+        # Validate provider name
+        Module._validate_name(module_name)
+
+        # Validate new name
+        self._validate_name(provider_name)
+
+        # Ensure a module does not exist with the new name/provider
+        duplicate_provider = ModuleProvider.get(module=Module(namespace=namespace, name=module_name), name=provider_name)
+        if duplicate_provider:
+            raise DuplicateModuleProviderError("A module/provider already exists with the same name in the namespace")
+
+        # Create audit events for the modifications
+        for action, old_value, new_value in [
+                [terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_NAMESPACE, self.module.namespace.name, namespace.name],
+                [terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_MODULE_NAME, self.module.name, module_name],
+                [terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_PROVIDER_NAME, self.name, provider_name]]:
+            if old_value != new_value:
+                terrareg.audit.AuditEvent.create_audit_event(
+                    action=action,
+                    object_type=self.__class__.__name__,
+                    object_id=self.id,
+                    old_value=old_value, new_value=new_value
+                )
+
+        # Create redirect to new name
+        ModuleProviderRedirect.create(
+            module_provider=self,
+            original_namespace=self.module.namespace,
+            original_name=self.module.name,
+            original_provider=self.name
+        )
+
+        self.update_attributes(
+            namespace_id=namespace.pk,
+            module=module_name,
+            provider=provider_name,
+        )
+        new_module = Module(namespace=namespace, name=module_name)
+        new_module_provider = ModuleProvider.get(module=new_module, name=provider_name)
+
+        return new_module_provider
+
+    def _get_version_from_version_regex(self, regex, match_value):
+        """Return a semantic version from one of the tag version regexes"""
         # Handle empty/None tag_ref
-        if not tag_ref:
+        if not match_value:
             return None
 
-        res = self.tag_ref_regex.match(tag_ref)
+        res = regex.match(match_value)
         if res:
-            return res.group(1)
+            groups = res.groupdict()
+            # If the regex contains a group for the full version,
+            # return that as the version
+            if 'version' in groups:
+                return groups['version']
+
+            # Otherwise, obtain each of the major, minor, patch,
+            # defaulting each value to 0.
+            # At least one of these will be present, as they
+            # are required when setting the git tag format
+            return '{major}.{minor}.{patch}'.format(
+                major=groups.get('major', 0),
+                minor=groups.get('minor', 0),
+                patch=groups.get('patch', 0)
+            )
+        # The git tag format didn't match against the tag,
+        # so return None
         return None
+
+    def get_version_from_tag_ref(self, tag_ref):
+        """Match tag ref against version number and return actual version number."""
+        return self._get_version_from_version_regex(self.tag_ref_regex, tag_ref)
 
     @property
     def tag_version_regex(self):
         """Return regex match for git ref to match version"""
-        # Hacky method to replace placeholder with temporary string,
-        # escape regex characters and then replace temporary string
-        # with regex for version
-        string_does_not_exist = 'th15w1lln3v3rc0m3up1Pr0m153'
-        version_re = self.git_tag_format.format(version=string_does_not_exist)
-        version_re = re.escape(version_re)
-        # Add EOL and SOL characters
-        version_re = '^{version_re}$'.format(version_re=version_re)
-        # Replace temporary string with regex for symatec version
-        version_re = version_re.replace(string_does_not_exist, r'(\d+\.\d+.\d+)')
-        # Return copmiled regex
-        return re.compile(version_re)
+        return self.get_tag_regex(self.git_tag_format)
 
     def get_version_from_tag(self, tag):
         """Match tag against version number and return actual version number."""
-        # Handle empty/None tag_ref
-        if not tag:
-            return None
-
-        res = self.tag_version_regex.match(tag)
-        if res:
-            return res.group(1)
-        return None
+        return self._get_version_from_version_regex(self.tag_version_regex, tag)
 
     @property
     def base_directory(self):
@@ -1626,7 +2192,24 @@ class ModuleProvider(object):
             old_value=None, new_value=None
         )
 
+        # Delete any redirects
+        for redirect in ModuleProviderRedirect.get_by_module_provider(self):
+            redirect.delete(internal_force=True, create_audit_event=False)
+
         db = Database.get()
+
+        # Remove directory for module provider
+        if os.path.isdir(self.base_directory):
+            try:
+                os.rmdir(self.base_directory)
+            except OSError as exc:
+                # Handle OSError which can be caused when
+                # files that are not managed by Terrareg
+                # exist in the module provider data directory.
+                # This is safer than forcefully deleting
+                # all data in the directory and should not happen
+                # during normal conditions
+                print(f'An error occured when attempting to remove module provider directory: {str(exc)}')
 
         with db.get_connection() as conn:
             # Delete module from module_version table
@@ -1710,15 +2293,21 @@ class ModuleProvider(object):
 
     def update_git_tag_format(self, git_tag_format):
         """Update git_tag_format."""
-        sanitised_git_tag_format = urllib.parse.quote(git_tag_format, safe=r'/{}')
-
         if git_tag_format:
+            sanitised_git_tag_format = urllib.parse.quote(git_tag_format, safe=r'/{}')
+
             # If tag format was provided, ensured it can be passed with 'format'
             try:
-                sanitised_git_tag_format.format(version='1.1.1')
-                assert '{version}' in sanitised_git_tag_format
-            except (ValueError, AssertionError):
-                raise InvalidGitTagFormatError('Invalid git tag format. Must contain one placeholder: {version}.')
+                sanitised_git_tag_format.format(version='1.1.1', major='1', minor='2', patch='3')
+                # Ensure either '{version}' placeholder is present, or at least one of
+                # '{major}', '{minor}' or '{patch}'
+                if ('{version}' not in sanitised_git_tag_format and
+                        '{major}' not in sanitised_git_tag_format and
+                        '{minor}' not in sanitised_git_tag_format and
+                        '{patch}' not in sanitised_git_tag_format):
+                    raise ValueError
+            except (ValueError, KeyError):
+                raise InvalidGitTagFormatError('Invalid git tag format. Must contain one placeholder: {version}, {major}, {minor}, {patch}.')
         else:
             # If not value was provided, default to None
             sanitised_git_tag_format = None
@@ -2196,7 +2785,7 @@ class TerraformSpecsObject(object):
             return None
 
         for result in self._tfsec_results:
-            
+
             # Only return failed results
             if (TfsecResultStatus(
                         result.get('status', TfsecResultStatus.UNSPECIFIED.value)
@@ -2342,9 +2931,121 @@ module "{self.module_version.module_provider.module.name}" {{
 
         return depedencies
 
-    def get_terraform_modules(self):
+    def get_terraform_modules(self, recursive=False):
         """Obtain module calls."""
-        return self.get_module_specs().get('modules', [])
+        root_modules = self.get_module_specs().get('modules', [])
+
+        # For the official API, only root modules should be returned
+        if not recursive:
+            return root_modules
+
+        # Obtain terraform modules JSON content to populate recursive modules
+        terraform_modules_data = {}
+
+        module_details = self.module_details
+        if module_details:
+            terraform_modules_data = module_details.terraform_modules
+
+        pre_existing_modules = {
+            module.get("name"): module
+            for module in root_modules
+        }
+        recursive_modules = {}
+        if isinstance(terraform_modules_data, dict) and 'Modules' in terraform_modules_data:
+            for module in terraform_modules_data['Modules']:
+                # If key exists and is not empty (root module)
+                if (key := module.get("Key")) and key != "":
+                    if key not in pre_existing_modules:
+                        recursive_modules[key] = module
+
+        def remove_superfluous_directory_changes_in_path(path):
+            """
+            Convert path, removing superfluous changes.
+            E.g. '.././test/../test2/./' -> '../test2'
+            """
+            dir_names_found = 0
+            keep_parts = []
+            for part in path.split('/'):
+                # Skip empty path parts
+                if not part:
+                    continue
+                elif part == '.':
+                    # If path part is current directly, skip it
+                    continue
+                elif part == '..':
+                    # If a parent directory is found...
+                    if dir_names_found:
+                        # If a directory is already being called,
+                        # remove previous directory from part of path to keep
+                        # and skip this one
+                        keep_parts.pop()
+                        dir_names_found -= 1
+                        continue
+                else:
+                    # Otherwise, if a real directory is found,
+                    # mark as having found a real directory
+                    dir_names_found += 1
+                # Add directory name (or parent directory move, if kept)
+                keep_parts.append(part)
+
+            return "/".join(keep_parts)
+
+        def add_child_module(key, module_data, parent_data):
+            source_path = module_data.get("Source")
+            if parent_data:
+                # Handle parent paths that are local paths
+                parent_path = parent_data.get("source")
+                if parent_path.startswith("./") or parent_path.startswith("../"):
+                    # Join paths together to generate child source path
+                    source_path = remove_superfluous_directory_changes_in_path(
+                        os.path.join(parent_path, source_path))
+                    # Prepend with relative path
+                    source_path = './' + source_path
+                else:
+                    # Otherwise, handle remote paths...
+                    # Remove any query string params (e.g. github.com/example/test//submodule?ref=v1.1.1)
+                    parent_query_string_split = parent_path.split('?')
+
+                    # Split source and sub-directory (e.g. github.com/example/test//submodule/path)
+                    parent_path_split = parent_query_string_split[0].split("//")
+
+                    # Get the subpath, defaulting to root directory
+                    parent_sub_path = parent_path_split[1] if len(parent_path_split) == 2 else "./"
+                    # Add leading dot if not present
+                    if not parent_sub_path.startswith("/"):
+                        parent_sub_path = f"/{parent_sub_path}"
+
+                    # Join child path and parent path and remove superfluous directory changes
+                    source_path = remove_superfluous_directory_changes_in_path(
+                        os.path.join(parent_sub_path, source_path))
+
+                    # Nest child path in full URL
+                    source_path = f"{parent_path_split[0]}//{source_path}"
+                    # Add query string paramters, if present
+                    if len(parent_query_string_split) == 2:
+                        source_path = f"{source_path}?{parent_query_string_split[1]}"
+
+            pre_existing_modules[key] = {
+                'name': key,
+                'source': source_path,
+                'version': parent_data.get("version") if parent_data else None,
+                'description': parent_data.get("description") if parent_data else None
+            }
+
+        # Iterate through keys, sorted, so that parents are processed before
+        # child modules
+        for recursive_module_key in sorted(recursive_modules.keys()):
+            # if module is a child of another module, lookup parents source
+            if '.' in recursive_module_key:
+                parent_key = '.'.join(recursive_module_key.split('.')[:-1])
+
+                # Lookup parent in main module data
+                parent = pre_existing_modules[parent_key] if parent_key in pre_existing_modules else None
+                add_child_module(recursive_module_key, recursive_modules[recursive_module_key], parent)
+
+
+        # Return all values from module
+        return [v for v in pre_existing_modules.values()]
 
     def get_terraform_provider_dependencies(self):
         """Obtain module dependencies."""
@@ -2494,12 +3195,26 @@ class ModuleVersion(TerraformSpecsObject):
     @property
     def source_git_tag(self):
         """Return git tag used for extraction clone"""
-        return self._module_provider.git_tag_format.format(version=self._version)
+        tag = semantic_version.Version(version_string=self._version)
+        return self._module_provider.git_tag_format.format(
+            version=self._version,
+            major=tag.major,
+            minor=tag.minor,
+            patch=tag.patch,
+            build=tag.build
+        )
 
     @property
     def git_tag_ref(self):
         """Return git tag ref for extraction."""
-        return self._module_provider.git_ref_format.format(version=self._version)
+        tag = semantic_version.Version(version_string=self._version)
+        return self._module_provider.git_ref_format.format(
+            version=self._version,
+            major=tag.major,
+            minor=tag.minor,
+            patch=tag.patch,
+            build=tag.build
+        )
 
     @property
     def base_directory(self):
@@ -2601,7 +3316,7 @@ class ModuleVersion(TerraformSpecsObject):
                     elif input_variable['type'].startswith('map('):
                         converted_type = 'text'
                         quote_value = False
-                    
+
                     variables.append({
                         'name': input_variable['name'],
                         'type': converted_type,
@@ -2794,8 +3509,18 @@ class ModuleVersion(TerraformSpecsObject):
 
             return rendered_url
 
-        if terrareg.config.Config().ALLOW_MODULE_HOSTING:
-            return '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
+        config = terrareg.config.Config()
+
+        # If a git URL is not present, revert to using built-in module hosting
+        if config.ALLOW_MODULE_HOSTING:
+            url = '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
+
+            # If authentication is required, generate pre-signed URL
+            if not config.ALLOW_UNAUTHENTICATED_ACCESS:
+                presign_key = TerraformSourcePresignedUrl.generate_presigned_key(url=url)
+                url = f'{url}?presign={presign_key}'
+
+            return url
 
         raise NoModuleDownloadMethodConfiguredError(
             'Module is not configured with a git URL and direct downloads are disabled'
@@ -2958,7 +3683,7 @@ class ModuleVersion(TerraformSpecsObject):
 
         # Update the root API specs to include "modules", as this is not part of the official
         # API spec
-        api_details["root"]["modules"] = self.get_terraform_modules()
+        api_details["root"]["modules"] = self.get_terraform_modules(recursive=True)
 
         source_browse_url = self.get_source_browse_url()
         tfsec_failures = self.get_tfsec_failures()
@@ -2981,14 +3706,26 @@ class ModuleVersion(TerraformSpecsObject):
         })
         return api_details
 
+    @contextlib.contextmanager
+    def module_create_extraction_wrapper(self):
+        """Handle module creation with yield for extraction"""
+        should_publish = self.prepare_module()
+
+        yield
+
+        # If modle version is replacing a previously published module
+        # or auto publish is enabled, publish the module
+        if should_publish:
+            self.publish()
+
     def prepare_module(self):
         """
         Handle file upload of module version.
 
-        Returns boolean whethe previous DB row (if exists) was published.
+        Returns boolean whether the module should be published after creation.
         """
         self.create_data_directory()
-        previous_version_published = self._create_db_row()
+        should_publish = self._create_db_row()
 
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.MODULE_VERSION_INDEX,
@@ -2997,7 +3734,7 @@ class ModuleVersion(TerraformSpecsObject):
             old_value=None,
             new_value=None
         )
-        return previous_version_published
+        return should_publish
 
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""
@@ -3049,6 +3786,23 @@ class ModuleVersion(TerraformSpecsObject):
             new_value=None
         )
 
+        # Delete archives for module version and version directory
+        if os.path.isfile(self.archive_path_tar_gz):
+            os.unlink(self.archive_path_tar_gz)
+        if os.path.isfile(self.archive_path_zip):
+            os.unlink(self.archive_path_zip)
+        if os.path.isdir(self.base_directory):
+            try:
+                os.rmdir(self.base_directory)
+            except OSError as exc:
+                # Handle OSError which can be caused when
+                # files that are not managed by Terrareg
+                # exist in the module version data directory.
+                # This is safer than forcefully deleting
+                # all data in the directory and should not happen
+                # during normal conditions
+                print(f'An error occured when attempting to remove module provider directory: {str(exc)}')
+
         with db.get_connection() as conn:
             # Delete module from module_version table
             delete_statement = db.module_version.delete().where(
@@ -3069,7 +3823,8 @@ class ModuleVersion(TerraformSpecsObject):
         """
         Insert into datadabase, removing any existing duplicate versions.
 
-        Returns boolean whethe previous DB row (if exists) was published.
+        Returns boolean whether the new version should be published
+        (depending on previous DB row (if exists) was published or if auto publish is enabled.
         """
         db = Database.get()
 
@@ -3107,7 +3862,7 @@ class ModuleVersion(TerraformSpecsObject):
                 old_version_version_pk=old_module_version_pk,
                 new_module_version=self)
 
-        return previous_version_published
+        return previous_version_published or terrareg.config.Config().AUTO_PUBLISH_MODULE_VERSIONS
 
     def get_submodules(self):
         """Return list of submodules."""

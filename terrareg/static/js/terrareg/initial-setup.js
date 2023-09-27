@@ -62,7 +62,7 @@ async function loadSetupPage(overrideHttpsCheck = false) {
 
         // Check if user is logged in
         let loggedIn = await isLoggedIn();
-        if (! loggedIn) {
+        if (! loggedIn.authenticated) {
             toggleSetupCard(getSetupCardByName('login'));
             return;
         }

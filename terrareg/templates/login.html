@@ -16,8 +16,18 @@
             },
             statusCode: {
                 200: () => {
-                    // Redirect to homepage
-                    location.href = '/';
+                    // Obtain redirect URL from query string
+                    const queryString = window.location.search;
+                    const urlParams = new URLSearchParams(queryString);
+                    const redirectUrl = urlParams.get('redirect');
+                    // If redirect has been provided and is relative (starts with /),
+                    // use this
+                    if (redirectUrl && redirectUrl.indexOf('/') === 0) {
+                        location.href = redirectUrl;
+                    } else {
+                        // Redirect to homepage
+                        location.href = '/';
+                    }
                 },
                 401: () => {
                     // Show login error

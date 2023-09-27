@@ -8,6 +8,7 @@
   * [Database Migrations](#database-migrations)
 * [Security](#security)
    * [Single Single-On](#single-sign-on)
+   * [Disable Public Access](#disable-public-access)
 * [Module best practices](#module-best-practices)
 * [Uploading Modules](#uploading-modules)
 * [Security Scanning](#security-scanning)
@@ -236,6 +237,34 @@ In the IdP:
 * configure the Single signin URL to `https://{terrareg_installation_domain}/saml/login?sso`;
 * configure the request and response to be signed;
 * ensure at least one attribute is assigned.
+
+
+## Disable Unauthenticated Access
+
+Unauthenticated access can be disabled, enforcing all users to authenticate to use Terrareg, by disabling the setting [ALLOW_UNAUTHENTICATED_ACCESS](./CONFIG.md#allow_unauthenticated_access).
+
+Disabling unauthenticated access requires Terraform to authenticate to obtain modules, see below.
+
+### Enabling Terraform authentication
+
+Terraform can authenticate to the registry via the built-in authentication mechanisms of Terrareg. That is, Terraform attempts to authenticate to Terrareg by redirecting the user to Terrareg. Terrareg ensures the user is authenticated and provides a redirect back to Terraform to finalise authentication using OpenIDC.
+
+For Terrareg to be able to authenticate users, several configurations must be provided:
+ 
+ * [TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT](./CONFIG.md#terraform_oidc_idp_subject_id_hash_salt)
+ * [TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH](./CONFIG.md#terraform_oidc_idp_signing_key_path)
+ * [PUBLIC_URL](./CONFIG.md#public_url)
+ * [TERRAFORM_PRESIGNED_URL_SECRET](./CONFIG.md#terraform_presigned_url_secret)
+
+Consider reviewing the default values for:
+ * [TERRAFORM_OIDC_IDP_SESSION_EXPIRY](./CONFIG.md#terraform_oidc_idp_session_expiry)
+ * [TERRAFORM_PRESIGNED_URL_EXPIRY](./CONFIG.md#terraform_presigned_url_expiry)
+
+Once these are configured, users can authenticate via terraform using:
+```
+terraform login <registry-fqdn>
+# e.g. terraform login my-registry.example.com
+```
 
 
 # Module best practices
@@ -564,6 +593,32 @@ Enter a module name and provider - these must adhere to Terraform's naming restr
 The git provider can be selected - for information on this see [Git Providers](#git-providers).
 
 If a [ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER](./CONFIG.md#allow_custom_git_url_module_provider) is enabled, the custom URLs (as docuented in the Git Providers section) can be entered specifically for the module.
+
+### Git tag format
+
+The git tag format is used for bi-directional conversion of the Semantic Version used for module versions and the tag for the version in Git.
+
+The git tag format is provided as a templated string of the naming convension that the git repository uses.
+
+The primary placeholder that should be used is `{version}`, which will contain the full semantic version (e.g `1.0.0` or `1.0.0-beta`).
+
+If the tags are prefixed or suffixed with any static string, this can be added to the git tag format, e.g. `release/{version}` or `v{version}` for tags such as `release/1.2.3` or `v1.2.3`, respectively.
+
+#### Non-semantic versioned git tags
+
+If the git tagging format of the repository does not contain the full semantic version, specific placeholders are availale to designate how to extract the individual major, minor and patch parts of the release.
+**However**, using this methology is strongly discouraged as it _could_ lead to a many-to-one mapping between module versions and git tags. This is because Terraform (and the associated Terraform module registry APIs) must adhere to Semantic versioning. If a *part* of the semantic version is not provided in the "git tag format", it will be set to 0, i.e. if a git tag format of `{major}.{minor}` is used, a git tag 1.1 would be used for all `1.1.X` semantic versions.
+
+To attempt to avoid this, the module version import API endpoints do not allow indexing by **version** if these placeholders are uesd and, instead, a git tag must be supplied to the [import api](./API.md#apimoduleversionimport). Importing/indexing modules using the Github/Gitlab/Bitbucket hooks are unaffected by this restriction.
+
+Placeholders for non-semantic versions:
+ * `{major}` - Specifies the major part of the semantic version
+ * `{minor}` - Specifies the minor part of the semantic version
+ * `{patch}` - Specifies the patch part of the semantic version
+
+**NOTE:** The preference of these should always be in the above order, i.e.:
+ * If you version using `v1`, you should use the placeholder `v{major}`
+ * If you version using `v1.1`, you should use the placeholder `v{major}.{minor}`
 
 ## Restricting providers
 

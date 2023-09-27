@@ -1,10 +1,13 @@
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.models
+import terrareg.auth_wrapper
 
 
 class ApiTerraregExampleFileList(ErrorCatchingResource):
     """Interface to obtain list of example files."""
+
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 
     def _get(self, namespace, name, provider, version, example):
         """Return list of files available in example."""
@@ -13,6 +16,9 @@ class ApiTerraregExampleFileList(ErrorCatchingResource):
             return error
 
         example_obj = terrareg.models.Example(module_version=module_version, module_path=example)
+
+        if example_obj is None:
+            return self._get_404_response()
 
         return [
             {

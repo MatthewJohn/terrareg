@@ -79,6 +79,10 @@
             <p id="unpublished-warning" class="subtitle default-hidden">
                 <b>WARNING:</b> This version of the module is not published.<br />
                 It cannot be used in Terraform until it is published.
+                <span id="unpublished-publish-info" class="default-hidden">
+                    <br />
+                    See the 'settings' tab to publish the module.
+                </span>
             </p>
             <p id="beta-warning" class="subtitle default-hidden">
                 <b>WARNING:</b> This is a beta module version.<br />
@@ -321,7 +325,7 @@
         <!-- Resources tab -->
         <div id="module-tab-resources" class="module-tabs default-hidden">
 
-            <a id="resourceDependencyGraphLink" href="#">View a resource dependency graph</a>
+            <button class="button is-info is-small" id="resourceDependencyGraphLink">View resource dependency graph</button>
 
             <table class="table module-provider-tab-content-table">
                 <thead>
@@ -456,111 +460,224 @@
 
         <!-- Module settings tab -->
         <div id="module-tab-settings" class="module-tabs default-hidden">
-            <div class="field is-vertical">
-                <div id="settings-status-success" class="notification is-success default-hidden">
-                    Settings Updated
-                </div>
-                <div id="settings-status-error" class="notification is-danger default-hidden">
-                </div>
-                <form id="settings-form">
-                    <input type="hidden" id="settings-csrf-token" value="{{ csrf_token }}" />
-                    <div class="field">
-                        <label class="label">Verified</label>
-                        <div class="control">
-                            <input class="checkbox" type="checkbox" value="true" id="settings-verified" />
-                        </div>
-                        <span id="settings-verified-auto-verified-message" class="default-hidden">
-                            All modules within this namespace are automatically approved on creation.
-                        </span>
+            <div id="settings-module-version-card" class="card default-hidden">
+                <div class="card-content" style="background: #edf7ff">
+                    <h2 class="subtitle is-h2">Module Version</h2>
+
+                    <div id="settings-publish-button-container" class="default-hidden">
+                        The module version is currently unpublished.<br />
+                        <button class="button is-warning is-small" id="settings-publish-button">Publish</button>
+                        <br />
                     </div>
 
-                    <div class="field">
-                        <label class="label">Git Repository Provider</label>
-                        <div class="control select">
-                            <select id="settings-git-provider">
-                            </select>
-                        </div>
+                    <div id="settings-module-version-status-error" class="notification is-danger default-hidden">
                     </div>
-
-                    <div class="field settings-custom-git-provider-container default-hidden">
-                        <label class="label">Custom Repository base URL</label>
-                        <div class="control">
-                            <input class="input" type="text" id="settings-base-url-template">
-                        </div>
-                        This URL must be valid for browsing the base of the repository.<br />
-                        It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
-                        E.g. <code>https://github.com/{namespace}/{module}-{provider}</code><br />
-                        NOTE: Setting this field will override the repository provider configuration.
-                    </div>
-                    <div class="field settings-custom-git-provider-container default-hidden">
-                        <label class="label">Custom Repository Clone URL</label>
-                        <div class="control">
-                            <input class="input" type="text" id="settings-clone-url-template">
-                        </div>
-                        This URL must be valid for cloning the repository.<br />
-                        It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
-                        E.g. <code>ssh://git@github.com/{namespace}/{module}-{provider}.git</code><br />
-                        NOTE: Setting this field will override the repository provider configuration.
-                    </div>
-                    <div class="field settings-custom-git-provider-container default-hidden">
-                        <label class="label">Custom Repository source browse URL</label>
-                        <div class="control">
-                            <input class="input" type="text" id="settings-browse-url-template">
-                        </div>
-                        This URL must be valid for browsing the source code of the repository at a particular tag/path.<br />
-                        It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
-                        It must include the following template values: <code>{tag}</code> and <code>{path}</code><br />
-                        E.g. <code>https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}</code><br />
-                        NOTE: Setting this field will override the repository provider configuration.
-                    </div>
-
-                    <div class="field">
-                        <label class="label">Git tag format</label>
-                        <div class="control">
-                            <input placeholder="v{version}" class="input" type="text" id="settings-git-tag-format">
-                        </div>
-                        This value will be converted to the expected git tag for a module version.<br />
-                        {version} will be replaced by the actual module version.<br />
-                        For example <code>v{version}</code> will translate to a git tag 'v1.1.1' for module version '1.1.1'
-                    </div>
-
-                    <div class="field">
-                        <label class="label">Git path</label>
-                        <div class="control">
-                            <input placeholder="/" class="input" type="text" id="settings-git-path">
-                        </div>
-                        Set the path within the repository that the module exists.<br />
-                        Defaults to th root of the repository.<br />
-                    </div>
-
-                    <div class="field">
-                        <div class="control">
-                            <button id="module-provider-settings-update" class="button is-link">Update</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div id="module-version-delete-container" class="field is-vertical default-hidden">
-                <div class="control">
-                    <button id="module-version-delete-button" class="button is-link is-danger"></button>
-                </div>
-                <br />
-                <div id="confirm-delete-module-version-div" class="default-hidden">
-                    Type the version number of the current version to be deleted (e.g. 1.0.0) and click delete again:<br />
-                    <input autocomplete="off" id="confirm-delete-module-version" type="text" />
                 </div>
             </div>
+            <div id="settings-module-version-card" class="card">
+                <div class="card-content" style="background: #edfff8">
+                    <h2 class="subtitle is-h2">Module Provider</h2>
 
-            <div class="field is-vertical">
-                <script>
-                </script>
-                <div class="control">
-                    <button id="module-provider-delete-button" class="button is-link is-danger">Delete Module Provider</button>
+                    <div class="field is-vertical">
+                        <div id="settings-status-success" class="notification is-success default-hidden">
+                            Settings Updated
+                        </div>
+                        <div id="settings-status-error" class="notification is-danger default-hidden">
+                        </div>
+
+                        <form id="settings-form">
+                            <input type="hidden" id="settings-csrf-token" value="{{ csrf_token }}" />
+                            <div class="field">
+                                <label class="label">Verified</label>
+                                <div class="control">
+                                    <input class="checkbox" type="checkbox" value="true" id="settings-verified" />
+                                </div>
+                                <span id="settings-verified-auto-verified-message" class="default-hidden">
+                                    All modules within this namespace are automatically approved on creation.
+                                </span>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Git Repository Provider</label>
+                                <div class="control select">
+                                    <select id="settings-git-provider">
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="field settings-custom-git-provider-container default-hidden">
+                                <label class="label">Custom Repository base URL</label>
+                                <div class="control">
+                                    <input class="input" type="text" id="settings-base-url-template">
+                                </div>
+                                This URL must be valid for browsing the base of the repository.<br />
+                                It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                                E.g. <code>https://github.com/{namespace}/{module}-{provider}</code><br />
+                                NOTE: Setting this field will override the repository provider configuration.
+                            </div>
+                            <div class="field settings-custom-git-provider-container default-hidden">
+                                <label class="label">Custom Repository Clone URL</label>
+                                <div class="control">
+                                    <input class="input" type="text" id="settings-clone-url-template">
+                                </div>
+                                This URL must be valid for cloning the repository.<br />
+                                It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                                E.g. <code>ssh://git@github.com/{namespace}/{module}-{provider}.git</code><br />
+                                NOTE: Setting this field will override the repository provider configuration.
+                            </div>
+                            <div class="field settings-custom-git-provider-container default-hidden">
+                                <label class="label">Custom Repository source browse URL</label>
+                                <div class="control">
+                                    <input class="input" type="text" id="settings-browse-url-template">
+                                </div>
+                                This URL must be valid for browsing the source code of the repository at a particular tag/path.<br />
+                                It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                                It must include the following template values: <code>{tag}</code> and <code>{path}</code><br />
+                                E.g. <code>https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}</code><br />
+                                NOTE: Setting this field will override the repository provider configuration.
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Git tag format</label>
+                                <div class="control">
+                                    <input placeholder="v{version}" class="input" type="text" id="settings-git-tag-format">
+                                </div>
+                                This value will be converted to the expected git tag for a module version.<br />
+                                The <code>{version}</code> placeholder will be used to generated the git tag when translating the module version to a git tag.<br />
+                                For example <code>v{version}</code> will translate to a git tag 'v1.1.1' for module version '1.1.1'<br />
+                                <br />
+                                If the git tagging format in use does not contain a full semantic version, use placeholders <code>{major}</code>, <code>{minor}</code> and <code>{patch}</code><br />
+                                to indicate which values are present in the tag - any missing values will be assumed to be '0'.<br />
+                                For example a git tag format of <code>v{major}.{minor}</code> would interpret a tag <code>v1.2</code> as a module version <code>1.2.0</code>,<br />
+                                where as a git tag format <code>v{major}.{patch}</code> would generate a version <code>v1.0.2</code>.<br />
+                                <br />
+                                Note that if the <code>{version}</code> placeholder is not used, the module version import API must be provided with the <code>git_tag</code> argument and indexing with <code>version</code> argument is disabled.
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Git path</label>
+                                <div class="control">
+                                    <input placeholder="/" class="input" type="text" id="settings-git-path">
+                                </div>
+                                Set the path within the repository that the module exists.<br />
+                                Defaults to the root of the repository.<br />
+                            </div>
+
+                            <div class="field">
+                                <div class="control">
+                                    <button id="module-provider-settings-update" class="button is-link">Update</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <br />
-                <div id="confirm-delete-module-provider-div" class="default-hidden">
-                    Type the 'id' of the module provider (e.g. namespace/module/provider) and click delete again:<br />
-                    <input autocomplete="off" id="confirm-delete-module-provider" type="text" />
+            </div>
+            <div class="card">
+                <div class="card-content" style="background: #FFF9ED">
+                    <h2 class="subtitle is-h2">Rename/Move</h2>
+                    <div id="settings-move-error" class="notification is-danger default-hidden">
+                    </div>
+
+                    <form id="settings-move-form">
+                        <input type="hidden" id="settings-move-csrf-token" value="{{ csrf_token }}" />
+                        <div class="field">
+                            <label class="label">Namespace</label>
+                            <div class="control select">
+                                <select id="settings-move-namespace">
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Module Name</label>
+                            <div class="control">
+                                <input required id="settings-move-module" class="input" type="text" placeholder="my-module">
+                            </div>
+                        </div>
+        
+                        <div class="field">
+                            <label class="label">Provider</label>
+                            <div class="control">
+                                <input required id="settings-move-provider" class="input" type="text" placeholder="e.g. aws, null...">
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Confirm</label>
+                            <div class="control">
+                                <input class="checkbox" type="checkbox" value="true" id="settings-move-confirm" />
+                            </div>
+                            <span>
+                                Confirm that the module will be renamed/moved.<br />
+                                The module will initially still be accessible using the old URL,
+                                but any Terraform code using the module (and any saved links)
+                                should be updated as soon as possible.<br />
+                                The temporary redirect using the old URL will cease to work if a new module is created with a matching details (namespace, name and provider).
+                            </span>
+                        </div>
+
+                        <div class="field">
+                            <div class="control">
+                                <button id="settings-move-submit" class="button is-link">Update</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <br />
+
+            <div id="settingsRedirectCard" class="card default-hidden">
+                <div class="card-content" style="background-color: #FFFFFF">
+
+                    <h2 class="subtitle is-h2">Redirects</h2>
+
+                    <table id="redirects-table" class="table module-provider-tab-content-table">
+                        <thead>
+                            <tr>
+                                <th>Namespace</th>
+                                <th>Module Name</th>
+                                <th>Module Provider</th>
+                                <th>Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody id="settingsRedirectTable">
+                        </tbody>
+                    </table>
+
+                    <div id="settings-redirect-error" class="notification is-danger default-hidden">
+                    </div>
+                </div>
+            </div>
+            <br />
+
+            <div class="card">
+                <div class="card-content" style="background-color: #FFEDED">
+
+                    <h2 class="subtitle is-h2">Delete</h2>
+
+                    <div id="module-version-delete-container" class="field is-vertical default-hidden">
+                        <div class="control">
+                            <button id="module-version-delete-button" class="button is-link is-danger"></button>
+                        </div>
+                        <br />
+                        <div id="confirm-delete-module-version-div" class="default-hidden">
+                            Type the version number of the current version to be deleted (e.g. 1.0.0) and click delete again:<br />
+                            <input autocomplete="off" id="confirm-delete-module-version" type="text" />
+                        </div>
+                    </div>
+
+                    <div class="field is-vertical">
+                        <script>
+                        </script>
+                        <div class="control">
+                            <button id="module-provider-delete-button" class="button is-link is-danger">Delete Module Provider</button>
+                        </div>
+                        <br />
+                        <div id="confirm-delete-module-provider-div" class="default-hidden">
+                            Type the 'id' of the module provider (e.g. namespace/module/provider) and click delete again:<br />
+                            <input autocomplete="off" id="confirm-delete-module-provider" type="text" />
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

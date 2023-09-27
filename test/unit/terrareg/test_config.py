@@ -80,11 +80,14 @@ class TestConfig:
         ('SAML2_PRIVATE_KEY', None),
         ('SAML2_PUBLIC_KEY', None),
         ('SAML2_GROUP_ATTRIBUTE', None),
-        ('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', None),
+        ('INTERNAL_EXTRACTION_ANALYTICS_TOKEN', None),
         ('MODULE_LINKS', None),
         ('DEFAULT_TERRAFORM_VERSION', None),
         ('TERRAFORM_ARCHIVE_MIRROR', None),
-        ('SENTRY_DSN', None)
+        ('SENTRY_DSN', None),
+        ('TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH', None),
+        ('TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT', None),
+        ('TERRAFORM_PRESIGNED_URL_SECRET', None),
     ])
     def test_string_configs(self, config_name, override_expected_value):
         """Test string configs to ensure they are overriden with environment variables."""
@@ -104,7 +107,10 @@ class TestConfig:
     @pytest.mark.parametrize('config_name', [
         'ADMIN_SESSION_EXPIRY_MINS',
         'LISTEN_PORT',
-        'GIT_CLONE_TIMEOUT'
+        'GIT_CLONE_TIMEOUT',
+        'REDIRECT_DELETION_LOOKBACK_DAYS',
+        'TERRAFORM_OIDC_IDP_SESSION_EXPIRY',
+        'TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS',
     ])
     def test_integer_configs(self, config_name):
         """Test integer configs to ensure they are overriden with environment variables."""
@@ -144,7 +150,8 @@ class TestConfig:
             assert getattr(terrareg.config.Config(), config_name) == expected_value
 
     @pytest.mark.parametrize('config_name,enum,expected_default', [
-        ('MODULE_VERSION_REINDEX_MODE', terrareg.config.ModuleVersionReindexMode, terrareg.config.ModuleVersionReindexMode.LEGACY)
+        ('MODULE_VERSION_REINDEX_MODE', terrareg.config.ModuleVersionReindexMode, terrareg.config.ModuleVersionReindexMode.LEGACY),
+        ('SERVER', terrareg.config.ServerType, terrareg.config.ServerType.BUILTIN),
     ])
     def test_enum_configs(self, config_name, enum, expected_default):
         """Test enum configs to ensure they are overriden with environment variables."""
@@ -192,7 +199,9 @@ class TestConfig:
         'SAML2_DEBUG',
         'OPENID_CONNECT_DEBUG',
         "MANAGE_TERRAFORM_RC_FILE",
-        'DISABLE_ANALYTICS'
+        'DISABLE_ANALYTICS',
+        'ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION',
+        'ALLOW_UNAUTHENTICATED_ACCESS',
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
         """Test boolean configs to ensure they are overriden with environment variables."""

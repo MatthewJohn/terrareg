@@ -2,7 +2,7 @@
 import tempfile
 from enum import Enum
 import os
-import shutil
+import subprocess
 import re
 
 from terrareg.module_extractor import ApiUploadModuleExtractor
@@ -86,10 +86,10 @@ output "submodule_test_output_{itx}" {{
         """Zip file and perform tidy up"""
         if self._state is UploadTestModuleState.READY_TO_CREATE_ZIP:
             # Zip source directory
-            shutil.make_archive(
-                re.sub(r'\.zip$', '', self._zip_file_name),
-                'zip',
-                self._source_directory.name)
+            subprocess.call(
+                ['zip', '-r', self._zip_file_name, '.'],
+                cwd=self._source_directory.name
+            )
             self._state = UploadTestModuleState.CREATED_ZIP
         elif self._state is UploadTestModuleState.CREATED_ZIP:
             # On second exit, delete temporary directories

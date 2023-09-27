@@ -1,4 +1,6 @@
 
+const router = new Navigo("/");
+
 class TabFactory {
     constructor() {
         this._tabs = [];
@@ -560,7 +562,7 @@ class ResourcesTab extends ModuleDetailsTab {
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
             // Populate link to resources graph
-            $('#resourceDependencyGraphLink').attr("href", this._graphUrl);
+            $('#resourceDependencyGraphLink').on("click", () => {window.location.href = this._graphUrl});
 
             let resourceTab = $("#module-tab-resources");
             let resourceTabTbody = resourceTab.find("tbody");
@@ -618,10 +620,10 @@ class IntegrationsTab extends ModuleDetailsTab {
                 $("#module-integrations-upload-container").removeClass('default-hidden');
             }
             if (!config.PUBLISH_API_KEYS_ENABLED ||
-                    loggedIn && (
-                        loggedIn.site_admin ||
-                        Object.keys(loggedIn.namespace_permissions).indexOf(this._moduleDetails.namespace) !== -1
-                    )
+                (
+                    loggedIn.site_admin ||
+                    Object.keys(loggedIn.namespace_permissions).indexOf(this._moduleDetails.namespace) !== -1
+                )
             ) {
                 $("#integrations-index-module-version-publish").removeClass('default-hidden');
             }
@@ -694,7 +696,7 @@ class SettingsTab extends ModuleDetailsTab {
             // to modify settings
             if (
                 // If user is not logged in
-                !userPermissions ||
+                !userPermissions.authenticated ||
                 // Or user is not super user and does not have
                 // full or write access to the namespace
                 (
@@ -764,6 +766,62 @@ class SettingsTab extends ModuleDetailsTab {
             browseUrlTemplate.attr('placeholder', `https://github.com/${this._moduleDetails.namespace}/${this._moduleDetails.name}-${this._moduleDetails.provider}/tree/{tag}/{path}`);
             browseUrlTemplate.val(this._moduleDetails.repo_browse_url_template);
 
+            // Obtain list of namespaces to move to
+            isLoggedIn().then((auth) => {
+                $.get('/v1/terrareg/namespaces').then((data) => {
+                    data.forEach((namespace) => {
+                        if (auth.site_admin || auth.namespace_permissions[namespace.name] == 'FULL') {
+                            $('#settings-move-namespace').append($(`
+                                <option value="${namespace.name}"
+                                        ${namespace.name == this._moduleDetails.namespace ? "selected" : ""}>
+                                    ${namespace.display_name || namespace.name}
+                                </option>
+                            `));
+                        }
+                    });
+                });
+            });
+
+            // Populate name and provider form values
+            $('#settings-move-module').val(this._moduleDetails.name);
+            $('#settings-move-provider').val(this._moduleDetails.provider);
+
+            // Obtain list of redirects and update table
+            $.get(`/v1/terrareg/modules/${this._moduleDetails.module_provider_id}/redirects`).then((data) => {
+                if (data.length) {
+                    $('#settingsRedirectCard').removeClass('default-hidden');
+                }
+
+                let redirectTableBody = $('#settingsRedirectTable');
+
+                data.forEach((redirectRow) => {
+                    // Create tr for integration
+                    let redirectTr = $("<tr></tr>");
+
+                    // Create td for namespace
+                    let redirectNamespace = $(`<td>${redirectRow.namespace}</td>`);
+                    redirectTr.append(redirectNamespace);
+
+                    let redirectModule = $(`<td>${redirectRow.module}</td>`);
+                    redirectTr.append(redirectModule);
+
+                    let redirectProvider = $(`<td>${redirectRow.provider}</td>`);
+                    redirectTr.append(redirectProvider);
+
+                    let redirectActionTd = $(`<td></td>`);
+                    let redirectDeleteButton = $(`<button class="button is-danger">Delete</button>`);
+
+                    // Handle callback for deleting redirect
+                    redirectDeleteButton.on('click', () => {
+                        this.deleteRedirect(redirectRow.id);
+                    });
+                    redirectActionTd.append(redirectDeleteButton);
+                    redirectTr.append(redirectActionTd);
+
+                    redirectTableBody.append(redirectTr);
+                });
+            });
+
             // Bind module provider delete button
             let moduleProviderDeleteButton = $('#module-provider-delete-button');
             moduleProviderDeleteButton.bind('click', () => {
@@ -776,9 +834,81 @@ class SettingsTab extends ModuleDetailsTab {
                 return false;
             });
 
+            // Bind move form submission with function
+            $('#settings-move-form').submit(() => {
+                moveModuleProvider(this._moduleDetails);
+                return false;
+            });
+
+            // If module is unpublished and user can publish the module, show these settings
+            if (!this._moduleDetails.published) {
+                if (!config.PUBLISH_API_KEYS_ENABLED || userPermissions && (
+                        userPermissions.site_admin ||
+                        Object.keys(userPermissions.namespace_permissions).indexOf(this._moduleDetails.namespace) !== -1
+                    )
+                ) {
+                    // Setup callback for publish button click
+                    $('#settings-publish-button').bind('click', () => {
+                        // Hide any errors
+                        let errorMessage = $('#settings-module-version-status-error');
+                        errorMessage.addClass('default-hidden');
+
+                        publishModule(this._moduleDetails, this._moduleDetails.version).then(() => {
+                            // Reload page
+                            location.reload();
+                        }).fail((res) => {
+                            // Display any errors
+                            errorMessage.html(failedResponseToErrorString(res));
+                            errorMessage.removeClass('default-hidden');
+                        });
+                    });
+                    // If user has permission to publish, show the publish button
+                    $('#settings-publish-button-container').removeClass('default-hidden');
+
+                    // Show module version section of settings, as this
+                    // is the only item in it
+                    $("#settings-module-version-card").removeClass('default-hidden');
+                }
+            }
+
             // Show settings tab
             $('#module-tab-link-settings').removeClass('default-hidden');
             resolve(true);
+        });
+    }
+
+    deleteRedirect(redirectId, additionalArgs={}) {
+        $.ajax({
+            url: `/v1/terrareg/modules/${this._moduleDetails.namespace}/${this._moduleDetails.name}/${this._moduleDetails.provider}/redirects/${redirectId}`,
+            method: 'delete',
+            data: JSON.stringify({
+                csrf_token: $('#settings-csrf-token').val(),
+                ...additionalArgs
+            }),
+            contentType: 'application/json'
+        }).done(() => {
+            // Refresh page
+            location.reload();
+        }).fail((res) => {
+            let redirectError = $('#settings-redirect-error');
+            if (res.status == 401) {
+                redirectError.html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
+            } else if (res.responseJSON && res.responseJSON.message) {
+                redirectError.html(res.responseJSON.message);
+
+                // Check for errors containing force and allow to retry
+                if (res.responseJSON.message.indexOf('force') !== -1) {
+                    let forceRetryButton = $('<button class="button is-warning">Force Retry</button>');
+                    forceRetryButton.on('click', () => {
+                        this.deleteRedirect(redirectId, {force: true})
+                    });
+                    redirectError.append("<br />");
+                    redirectError.append(forceRetryButton);
+                }
+            } else {
+                redirectError.html('An unexpected error occurred');
+            }
+            redirectError.removeClass('default-hidden');
         });
     }
 }
@@ -1421,29 +1551,47 @@ ${outputTf}
  * Setup router and call setup page depending on the page/module type
  */
 function renderPage() {
-    const router = new Navigo("/");
-
     const baseRoute = "/modules/:namespace/:module/:provider";
 
     // Base module provider route
-    router.on(baseRoute, function ({ data }) {
-        setupBasePage(data);
-        setupRootModulePage(data);
+    router.on({
+        [baseRoute]: {
+            as: "rootModuleProvider",
+            uses: function ({ data }) {
+                setupBasePage(data);
+                setupRootModulePage(data);
+            }
+        }
     });
     // Base module version route
-    router.on(baseRoute + "/:version", function ({ data }) {
-        setupBasePage(data);
-        setupRootModulePage(data);
+    router.on({
+        [`${baseRoute}/:version`]: {
+            as: "rootModuleVersion",
+            uses: function ({ data }) {
+                setupBasePage(data);
+                setupRootModulePage(data);
+            }
+        }
     });
     // Submodule route
-    router.on(baseRoute + "/:version/submodule/(.*)", ({ data }) => {
-        setupBasePage(data);
-        setupSubmodulePage(data);
+    router.on({
+        [`${baseRoute}/:version/submodule/(?<submodulePath>.*)`]:{
+            as: "submodulePage",
+            uses: ({ data }) => {
+                setupBasePage(data);
+                setupSubmodulePage(data);
+            }
+        }
     });
     // Example route
-    router.on(baseRoute + "/:version/example/(.*)", ({ data }) => {
-        setupBasePage(data);
-        setupExamplePage(data);
+    router.on({
+        [`${baseRoute}/:version/example/(?<submodulePath>.*)`]:{
+            as: "examplePage",
+            uses: ({ data }) => {
+                setupBasePage(data);
+                setupExamplePage(data);
+            }
+        }
     });
 
     router.resolve();
@@ -1541,7 +1689,7 @@ function populateVersionSelect(moduleDetails) {
 
     $.get(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/versions` +
         `?include-beta=${userPreferences["show-beta-versions"]}&` +
-        `include-unpublished=${userPreferences["show-unpublished-versions"]}`).then((versions) => {
+        `include-unpublished=${userPreferences["show-unpublished-versions"]}`).then(async (versions) => {
             let foundLatest = false;
             for (let versionDetails of versions) {
                 let versionOption = $("<option></option>");
@@ -1609,9 +1757,22 @@ function populateVersionSelect(moduleDetails) {
                     $("#beta-warning").removeClass('default-hidden');
                 }
             }
+
+            let loggedIn = await isLoggedIn();
+            let config = await getConfig();
+
             if (!moduleDetails.published) {
                 // Add warning to page about unpublished version
                 $("#unpublished-warning").removeClass('default-hidden');
+
+                if (!config.PUBLISH_API_KEYS_ENABLED || loggedIn && (
+                        loggedIn.site_admin ||
+                        Object.keys(loggedIn.namespace_permissions).indexOf(this._moduleDetails.namespace) !== -1
+                    )
+                ) {
+                    // If user has permission to publish, show information about publishing
+                    $('#unpublished-publish-info').removeClass('default-hidden');
+                }
             }
 
             // Show version drop-down
@@ -1952,6 +2113,10 @@ function selectExampleFile(eventTarget) {
     });
 }
 
+function publishModule(moduleDetails, moduleVersionToIndex) {
+    return $.post(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/publish`);
+}
+
 /*
  * Index new module provider version
  */
@@ -1977,7 +2142,7 @@ function indexModuleVersion(moduleDetails) {
             // If publish checkbox is checked, perform request to publish
             if ($("#indexModuleVersionPublish").is(":checked")) {
                 inProgressMessage.html('Publishing module version in progress...');
-                $.post(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/${moduleVersionToIndex}/publish`)
+                publishModule(moduleDetails, moduleVersionToIndex)
                     .done(() => {
                         // If successful, update success message
                         successMessage.html("Successfully indexed and published version.");
@@ -2142,6 +2307,51 @@ function updateModuleProviderSettings(moduleDetails) {
     return false;
 }
 
+/*
+ * Handle form submission for moving/renaming module provider
+ */
+function moveModuleProvider(moduleDetails) {
+    $('#settings-move-error').addClass('default-hidden');
+
+    // Check user has confirmed the move
+    if (!$('#settings-move-confirm').is(':checked')) {
+        $('#settings-move-error').html('The move action must be confirmed, by checking the confirm checkbox.');
+        $('#settings-move-error').removeClass('default-hidden');
+        $(window).scrollTop($('#settings-move-error').offset().top);
+        return;
+    }
+
+    let new_namespace = $('select[id=settings-move-namespace] option').filter(':selected').val();
+    let new_module = $('#settings-move-module').val();
+    let new_provider = $('#settings-move-provider').val();
+    $.post({
+        url: `/v1/terrareg/modules/${moduleDetails.module_provider_id}/settings`,
+        data: JSON.stringify({
+            namespace: new_namespace,
+            module: new_module,
+            provider: new_provider,
+            csrf_token: $('#settings-move-csrf-token').val()
+        }),
+        contentType: 'application/json'
+    }).done(() => {
+        // Redirect to new module provider
+        window.location.href = `/modules/${new_namespace}/${new_module}/${new_provider}`;
+    }).fail((res) => {
+        if (res.status == 401) {
+            $('#settings-move-error').html('You must be logged in to perform this action.<br />If you were previously logged in, please re-authentication and try again.');
+        } else if (res.responseJSON && res.responseJSON.message) {
+            $('#settings-move-error').html(res.responseJSON.message);
+        } else {
+            $('#settings-move-error').html('An unexpected error occurred');
+        }
+        $('#settings-move-error').removeClass('default-hidden');
+        $(window).scrollTop($('#settings-move-error').offset().top);
+    });
+
+    // Return false to present default action
+    return false;
+}
+
 function capitaliseWord(string) {
     return string[0].toUpperCase() + string.slice(1).toLowerCase();
   }
@@ -2231,6 +2441,58 @@ function setPageTitle(id) {
     document.title = `${id} - Terrareg`;
 }
 
+/*
+ * Get redirect URL if URL does not match actual
+ * module provider details, meaning it's
+ * obtained details for a redirected module
+ *
+ * @param data Route data
+ * @param moduleDetails Module details for module
+ *
+ * @returns null if no redirect or string of redirect URL
+ */
+function getRedirectUrl(data, moduleDetails) {
+    // Check for any redirects by comparing
+    // moduleDetails and URL attributes
+    if (data.namespace !== moduleDetails.namespace ||
+        data.module !== moduleDetails.name ||
+        data.provider !== moduleDetails.provider
+    ) {
+        // Generate redirect
+        let currentRoutes = router.lastResolved();
+        if (currentRoutes.length) {
+            let currentRoute = currentRoutes[0];
+
+            let redirectData = Object.assign({}, data);
+            redirectData.namespace = moduleDetails.namespace;
+            redirectData.provider = moduleDetails.provider;
+            redirectData.module = moduleDetails.name;
+            if (redirectData.undefined) {
+                redirectData.submodulePath = redirectData.undefined
+            }
+            
+            // Generate new URL using current route data,
+            // correcting the namespace, module and provider
+            let newUrl = router.generate(
+                currentRoute.route.name,
+                redirectData,
+                {includeRoot: true, replaceRegexGroups: true}
+            );
+
+            // Copy query string
+            if (currentRoute.queryString)
+                newUrl += `?${currentRoute.queryString}`;
+
+            // Copy hash
+            if (currentRoute.hashString)
+                newUrl += `#${currentRoute.hashString}`;
+
+            // Return new redirect URL
+            return newUrl;
+        }
+    }
+    return null;
+}
 
 /*
  * Setup common elements of the page, shared between all types
@@ -2243,6 +2505,13 @@ async function setupBasePage(data) {
     let id = getCurrentObjectId(data);
 
     let moduleDetails = await getModuleDetails(id);
+
+    let redirectUrl = getRedirectUrl(data, moduleDetails);
+    if (redirectUrl) {
+        window.location.href = redirectUrl;
+        // Return early to stop rendering the page
+        return;
+    }
 
     // If current version is not available or there are no
     // versions, set warning and exit
@@ -2332,6 +2601,11 @@ async function setupSubmodulePage(data) {
     let submodulePath = data.undefined;
     let submoduleDetails = await getSubmoduleDetails(moduleDetails.id, submodulePath);
 
+    if (submoduleDetails === null) {
+        populateCurrentSubmodule("This submodule does not exist");
+        return;
+    }
+
     createBreadcrumbs(data, submodulePath);
 
     setPageTitle(`${moduleDetails.module_provider_id}/${submoduleDetails.path}`);
@@ -2370,6 +2644,11 @@ async function setupExamplePage(data) {
 
     let examplePath = data.undefined;
     let submoduleDetails = await getExampleDetails(moduleDetails.id, examplePath);
+
+    if (submoduleDetails === null) {
+        populateCurrentSubmodule("This example does not exist");
+        return;
+    }
 
     createBreadcrumbs(data, examplePath);
 

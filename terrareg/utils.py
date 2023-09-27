@@ -1,4 +1,5 @@
 
+import datetime
 import os
 import glob
 import urllib.parse
@@ -159,3 +160,7 @@ def get_public_url_details(fallback_domain=None):
             domain = parsed_url.hostname
 
     return protocol, domain, port
+
+def get_datetime_now():
+    """Return datetime now"""
+    return datetime.datetime.now()

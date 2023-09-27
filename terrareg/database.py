@@ -47,10 +47,15 @@ class Database():
     def __init__(self):
         """Setup member variables."""
         self._session = None
+        self._terraform_idp_authorization_code = None
+        self._terraform_idp_access_token = None
+        self._terraform_idp_subject_identifier = None
         self._user_group = None
         self._user_group_namespace_permission = None
         self._git_provider = None
+        self._namespace_redirect = None
         self._namespace = None
+        self._module_provider_redirect = None
         self._module_provider = None
         self._module_details = None
         self._module_version = None
@@ -68,15 +73,36 @@ class Database():
         return self._session
 
     @property
+    def terraform_idp_authorization_code(self):
+        """Return terraform_idp_authorization_code table"""
+        if self._terraform_idp_authorization_code is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._terraform_idp_authorization_code
+
+    @property
+    def terraform_idp_access_token(self):
+        """Return terraform_idp_access_token table"""
+        if self._terraform_idp_access_token is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._terraform_idp_access_token
+
+    @property
+    def terraform_idp_subject_identifier(self):
+        """Return terraform_idp_subject_identifier table"""
+        if self._terraform_idp_subject_identifier is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._terraform_idp_subject_identifier
+
+    @property
     def user_group(self):
-        """Return namespace table."""
+        """Return user_group table."""
         if self._user_group is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._user_group
 
     @property
     def user_group_namespace_permission(self):
-        """Return namespace table."""
+        """Return user_group_namespace_permission table."""
         if self._user_group_namespace_permission is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._user_group_namespace_permission
@@ -89,11 +115,25 @@ class Database():
         return self._git_provider
 
     @property
+    def namespace_redirect(self):
+        """Return namespace_redirect redirect table."""
+        if self._namespace_redirect is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._namespace_redirect
+
+    @property
     def namespace(self):
         """Return namespace table."""
         if self._namespace is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._namespace
+
+    @property
+    def module_provider_redirect(self):
+        """Return module provider redirect table."""
+        if self._module_provider_redirect is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._module_provider_redirect
 
     @property
     def module_provider(self):
@@ -199,6 +239,30 @@ class Database():
             sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
         )
 
+        self._terraform_idp_authorization_code = sqlalchemy.Table(
+            'terraform_idp_authorization_code', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('key', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False, unique=True),
+            sqlalchemy.Column('data', Database.medium_blob()),
+            sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
+        )
+
+        self._terraform_idp_access_token = sqlalchemy.Table(
+            'terraform_idp_access_token', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('key', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False, unique=True),
+            sqlalchemy.Column('data', Database.medium_blob()),
+            sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
+        )
+
+        self._terraform_idp_subject_identifier = sqlalchemy.Table(
+            'terraform_idp_subject_identifier', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('key', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False, unique=True),
+            sqlalchemy.Column('data', Database.medium_blob()),
+            sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
+        )
+
         self._user_group = sqlalchemy.Table(
             'user_group', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
@@ -245,6 +309,49 @@ class Database():
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
             sqlalchemy.Column('namespace', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
             sqlalchemy.Column('display_name', sqlalchemy.String(GENERAL_COLUMN_SIZE))
+        )
+
+        self._namespace_redirect = sqlalchemy.Table(
+            'namespace_redirect', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column(
+                'namespace_id',
+                sqlalchemy.ForeignKey(
+                    'namespace.id',
+                    name='fk_namespace_redirect_namespace_id_namespace_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            )
+        )
+
+        self._module_provider_redirect = sqlalchemy.Table(
+            'module_provider_redirect', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            # Original module name/provider
+            sqlalchemy.Column('module', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('provider', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            # Original namespace ID
+            sqlalchemy.Column(
+                'namespace_id',
+                sqlalchemy.ForeignKey(
+                    'namespace.id',
+                    name='fk_module_provider_redirect_namespace_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            ),
+            # Target module provider
+            sqlalchemy.Column(
+                'module_provider_id',
+                sqlalchemy.ForeignKey(
+                    'module_provider.id',
+                    name='fk_module_provider_redirect_module_provider_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            )
         )
 
         self._module_provider = sqlalchemy.Table(
@@ -296,7 +403,9 @@ class Database():
             sqlalchemy.Column('terraform_docs', Database.medium_blob()),
             sqlalchemy.Column('tfsec', Database.medium_blob()),
             sqlalchemy.Column('infracost', Database.medium_blob()),
-            sqlalchemy.Column('terraform_graph', Database.medium_blob())
+            sqlalchemy.Column('terraform_graph', Database.medium_blob()),
+            sqlalchemy.Column('terraform_modules', Database.medium_blob()),
+            sqlalchemy.Column('terraform_version', Database.medium_blob())
         )
 
         self._module_version = sqlalchemy.Table(
@@ -371,7 +480,12 @@ class Database():
             sqlalchemy.Column('terraform_version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('analytics_token', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('auth_token', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('environment', sqlalchemy.String(GENERAL_COLUMN_SIZE))
+            sqlalchemy.Column('environment', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+
+            # Columns for providing redirect deletion protection
+            sqlalchemy.Column('namespace_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('module_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('provider_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
         )
 
         self._example_file = sqlalchemy.Table(

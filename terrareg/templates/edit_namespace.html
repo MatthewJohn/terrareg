@@ -1,0 +1,168 @@
+{% extends 'template.html' %}
+
+{% block title %}Edit Module{% endblock %}
+
+{% block header %}
+<script>
+    function editNamespace(namespace) {
+        if (! $('#edit-namespace-form')[0].reportValidity()) {
+            return;
+        }
+        $.post({
+            url: `/v1/terrareg/namespaces/${namespace}`,
+            data: JSON.stringify({
+                name: $('#namespace-name').val(),
+                display_name: $('#namespace-display-name').val(),
+                csrf_token: '{{ csrf_token }}'
+            }),
+            contentType: 'application/json'
+        }).done((res) => {
+            // Redirect to namespace page
+            window.location.href = res.view_href;
+        }).fail((res) => {
+            $('#edit-error').html(failedResponseToErrorString(res));
+            $('#edit-error').removeClass('default-hidden');
+            $(window).scrollTop($('#edit-error').offset().top);
+        });
+    }
+
+    /*
+    Bind edit form submission method to inject namespace name
+    */
+    function bindFormSubmit(namespace) {
+        $('#edit-namespace-form').on('submit', function(e) {
+            e.preventDefault();
+            editNamespace(namespace);
+        });
+    }
+
+    /* Load default form values */
+    async function loadDefaultValues(namespace) {
+        let namespaceDetails = await getNamespaceDetails(namespace);
+        console.log(namespaceDetails);
+
+        // If namespace does not exist, set warning and return
+        if (namespaceDetails === null) {
+            $('#edit-error').text('Namespace does not exist');
+            $('#edit-error').removeClass('default-hidden');
+            $('#edit-namespace-form').addClass('default-hidden');
+            return;
+        }
+
+        // Populate namespace name
+        $('#namespace-name').val(namespace);
+        $('#namespace-display-name').val(namespaceDetails.display_name);
+    }
+
+    /*
+    Bind delete namespace button with callback to create request
+    */
+    function bindDeleteButton(namespace) {
+        $('#deleteNamespaceButton').on('click', function(e) {
+            $.ajax({
+                method: 'DELETE',
+                url: `/v1/terrareg/namespaces/${namespace}`,
+                data: JSON.stringify({
+                    csrf_token: '{{ csrf_token }}'
+                }),
+                contentType: 'application/json'
+            }).done((res) => {
+                // Redirect to homepage
+                window.location.href = '/';
+            }).fail((res) => {
+                $('#delete-error').html(failedResponseToErrorString(res));
+                $('#delete-error').removeClass('default-hidden');
+                $(window).scrollTop($('#delete-error').offset().top);
+            });
+        });
+    }
+
+    /*
+    Handle extraction of namespace from URL and process page rendering
+    */
+    function renderPage() {
+        const router = new Navigo("/");
+
+        const baseRoute = "/edit-namespace/:namespace";
+
+        // Handle namespace route
+        router.on(baseRoute, function ({ data }) {
+            let namespace = data.namespace;
+            bindFormSubmit(namespace);
+            loadDefaultValues(namespace);
+            bindDeleteButton(namespace);
+        });
+
+        router.resolve();
+    }
+
+    $(document).ready(function() {
+        renderPage();
+    });
+
+</script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li class="is-active"><a href="/edit-namespace">Edit Namespace</a></li>
+    </ul>
+</nav>
+
+<div class="columns">
+    <div class="column is-one-third is-offset-one-third">
+
+        <div class="field is-vertical">
+            <div id="edit-error" class="notification is-danger default-hidden">
+            </div>
+            <form id="edit-namespace-form">
+                <div class="field">
+                    <label class="label">Name</label>
+                    <div class="control">
+                    <input required id="namespace-name" class="input" type="text" placeholder="">
+                    </div>
+                    <b>Warning:</b> After changing the namespace name, URLs with the old namespace
+                    will continue to work. However, if a new namespace is created with the original name,
+                    the old URLs will cease to work.
+                </div>
+                <div class="field">
+                    <label class="label">Display Name</label>
+                    <div class="control">
+                    <input id="namespace-display-name" class="input" type="text" placeholder="My Team">
+                    </div>
+                </div>
+                <div class="field">
+                    <div class="control">
+                        <button class="button is-link">Edit Namespace</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div id="delete-error" class="notification is-danger default-hidden">
+        </div>
+
+        <div class="card">
+            <div class="card-content" style="background-color: #FFEDED">
+                <h2 class="subtitle is-h2">Delete</h2>
+
+                Warning:<br />
+                <!-- Override bulma list-style of none -->
+                <ul style="list-style: inside;">
+                    <li>The namespace cannot be deleted if there are any modules present - either delete or move the modules before proceeding</li>
+                    <li>Deleting this module will remove any redirects for modules that have been moved from this namespace,</li>
+                    <li>Any permissions associated with the namespace will be deleted,</li>
+                </ul>
+
+                <br />
+                <button class="button is-danger" id="deleteNamespaceButton">Delete Namespace</button>
+
+            </div>
+        </div>
+
+    </div>
+</nav>
+
+{% endblock %}

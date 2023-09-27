@@ -2,7 +2,7 @@
 from unittest import mock
 import pytest
 
-from terrareg.auth import UserGroupNamespacePermissionType
+from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from test import BaseTest
 import terrareg.models
 from test.unit.terrareg import (
@@ -299,3 +299,13 @@ class BaseSsoAuthMethodTests:
         """Test requires_csrf_token method"""
         obj = self.CLS()
         assert obj.requires_csrf_tokens is True
+
+    def test_should_record_terraform_analytics(self):
+        """Test should_record_terraform_analytics method"""
+        obj = self.CLS()
+        assert obj.should_record_terraform_analytics() is True
+
+    def test_get_terraform_auth_token(self):
+        """Test get_terraform_auth_token method"""
+        obj = self.CLS()
+        assert obj.get_terraform_auth_token() is None

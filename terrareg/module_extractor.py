@@ -11,7 +11,6 @@ import tarfile
 import subprocess
 import json
 import datetime
-import shutil
 import re
 import glob
 import pathlib
@@ -190,7 +189,7 @@ disable_checkpoint = true
             if domain_name:
                 terraform_rc_file_content += f"""
 credentials "{domain_name}" {{
-  token = "{config.INTERNAL_EXTRACTION_ANALYITCS_TOKEN}"
+  token = "{config.INTERNAL_EXTRACTION_ANALYTICS_TOKEN}"
 }}
 """
             with open(self.terraform_rc_file, "w") as terraform_rc_fh:
@@ -251,6 +250,35 @@ terraform {{
         terraform_graph_data = terraform_graph_data.decode("utf-8")
 
         return terraform_graph_data
+
+    def _get_terraform_modules(self, module_path):
+        """Obtain list of all modules from terraform metadata"""
+        modules_file_path = os.path.join(module_path, ".terraform", "modules", "modules.json")
+        if os.path.isfile(modules_file_path):
+            try:
+                with open(modules_file_path, "r") as modules_file_fh:
+                    res = json.load(modules_file_fh)
+                    return json.dumps(res)
+            except Exception as exc:
+                print(f"Failed to read terraform modules.json: {exc}")
+
+        return None
+
+    def _get_terraform_version(self, module_path):
+        """Run terraform -version and return output"""
+        try:
+            terraform_version_data = subprocess.check_output(
+                [self.terraform_binary, "-version", "-json"],
+                cwd=module_path
+            )
+        except subprocess.CalledProcessError as exc:
+            print("Failed to generate Terraform version data:", str(exc))
+            print(exc.output.decode('utf-8'))
+            return None
+
+        terraform_version_data = terraform_version_data.decode("utf-8")
+
+        return terraform_version_data
 
     @staticmethod
     def _get_readme_content(module_path):
@@ -317,16 +345,38 @@ terraform {{
 
     def _generate_archive(self):
         """Generate archive of extracted module"""
+        # Create data directory path.
+        # This should have been created during namespace, module, version creation,
+        # however, in situations where the users do not use/care about generated archives
+        # and DELETE_EXTERNALLY_HOSTED_ARTIFACTS has not been disabled and
+        # the data directory has not been mounted outside of ephemeral storage,
+        # the parent directories may have been lost
+        os.makedirs(self._module_version.base_directory, exist_ok=True)
+
+        def tar_filter(tarinfo):
+            """Filter files being added to tar archive"""
+            # Do not include .git directory in archive
+            if tarinfo.name == ".git":
+                return None
+            return tarinfo
+
         # Create tar.gz
         with tarfile.open(self._module_version.archive_path_tar_gz, "w:gz") as tar:
-            tar.add(self.extract_directory, arcname='', recursive=True)
-        # Create zip
-        shutil.make_archive(
-            re.sub(r'\.zip$', '', self._module_version.archive_path_zip),
-            'zip',
-            self.extract_directory)
+            tar.add(self.extract_directory, arcname='', recursive=True, filter=tar_filter)
 
-    def _create_module_details(self, readme_content, terraform_docs, tfsec, terraform_graph, infracost=None):
+        # Create zip
+        # Use 'cwd' to ensure zip file is generated with directory structure
+        # from the root of the module.
+        # Use subprocess to execute zip, rather than shutil.make_archive,
+        # as make_archive is not thread-safe and changes the CWD of the main
+        # process.
+        # Exclude .git directory from archive
+        subprocess.call(
+            ['zip', '-r', self._module_version.archive_path_zip, '--exclude=./.git/*', '.'],
+            cwd=self.extract_directory
+        )
+
+    def _create_module_details(self, readme_content, terraform_docs, tfsec, terraform_graph, terraform_modules, terraform_version, infracost=None):
         """Create module details row."""
         module_details = ModuleDetails.create()
         module_details.update_attributes(
@@ -334,7 +384,9 @@ terraform {{
             terraform_docs=json.dumps(terraform_docs),
             tfsec=json.dumps(tfsec),
             infracost=json.dumps(infracost) if infracost else None,
-            terraform_graph=terraform_graph
+            terraform_graph=terraform_graph,
+            terraform_version=terraform_version,
+            terraform_modules=terraform_modules
         )
         return module_details
 
@@ -345,14 +397,18 @@ terraform {{
         terraform_docs: dict,
         tfsec: dict,
         terrareg_metadata: dict,
-        terraform_graph: str) -> int:
+        terraform_graph: str,
+        terraform_version: str,
+        terraform_modules: str) -> None:
         """Insert module into DB, overwrite any pre-existing"""
         # Create module details row
         module_details = self._create_module_details(
             terraform_docs=terraform_docs,
             readme_content=readme_content,
             tfsec=tfsec,
-            terraform_graph=terraform_graph
+            terraform_graph=terraform_graph,
+            terraform_version=terraform_version,
+            terraform_modules=terraform_modules
         )
 
         # Update attributes of module_version in database
@@ -368,7 +424,7 @@ terraform {{
             repo_browse_url_template=terrareg_metadata.get('repo_browse_url', None),
             repo_base_url_template=terrareg_metadata.get('repo_base_url', None),
             variable_template=json.dumps(terrareg_metadata.get('variable_template', {})),
-            published=Config().AUTO_PUBLISH_MODULE_VERSIONS,
+            published=False,
             internal=terrareg_metadata.get('internal', False),
             extraction_version=EXTRACTION_VERSION
         )
@@ -389,9 +445,13 @@ terraform {{
         readme_content = self._get_readme_content(submodule_dir)
 
         terraform_graph = None
+        terraform_modules = None
+        terraform_version = None
         with self._switch_terraform_versions(submodule_dir):
             if self._run_tf_init(submodule_dir):
                 terraform_graph = self._get_graph_data(submodule_dir)
+                terraform_modules = self._get_terraform_modules(self.module_directory)
+                terraform_version = self._get_terraform_version(self.module_directory)
 
         infracost = None
         # Run infracost on examples, if API key is set
@@ -407,7 +467,9 @@ terraform {{
             readme_content=readme_content,
             tfsec=tfsec,
             infracost=infracost,
-            terraform_graph=terraform_graph
+            terraform_graph=terraform_graph,
+            terraform_modules=terraform_modules,
+            terraform_version=terraform_version
         )
 
         submodule.update_attributes(
@@ -422,7 +484,7 @@ terraform {{
         infracost_env = dict(os.environ)
         _, domain_name, _ = get_public_url_details()
         if domain_name:
-            infracost_env['INFRACOST_TERRAFORM_CLOUD_TOKEN'] = Config().INTERNAL_EXTRACTION_ANALYITCS_TOKEN
+            infracost_env['INFRACOST_TERRAFORM_CLOUD_TOKEN'] = Config().INTERNAL_EXTRACTION_ANALYTICS_TOKEN
             infracost_env['INFRACOST_TERRAFORM_CLOUD_HOST'] = domain_name
 
         # Create temporary file safely and immediately close to
@@ -579,15 +641,26 @@ terraform {{
 
     def process_upload(self):
         """Handle data extraction from module source."""
+        # Generate the archive, unless the module has a git clone URL and
+        # the config for deleting externally hosted artifacts is enabled.
+        # Always perform this first before making any modifications to the repo
+        if not (self._module_version.get_git_clone_url() and
+                Config().DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
+            self._generate_archive()
+
         # Run terraform-docs on module content and obtain README
         terraform_docs = self._run_terraform_docs(self.module_directory)
         tfsec = self._run_tfsec(self.module_directory)
         readme_content = self._get_readme_content(self.module_directory)
 
         terraform_graph = None
+        terraform_modules = None
+        terraform_version = None
         with self._switch_terraform_versions(self.module_directory):
             if self._run_tf_init(self.module_directory):
                 terraform_graph = self._get_graph_data(self.module_directory)
+                terraform_modules = self._get_terraform_modules(self.module_directory)
+                terraform_version = self._get_terraform_version(self.module_directory)
 
         # Check for any terrareg metadata files
         terrareg_metadata = self._get_terrareg_metadata(self.module_directory)
@@ -604,14 +677,10 @@ terraform {{
             tfsec=tfsec,
             terraform_docs=terraform_docs,
             terrareg_metadata=terrareg_metadata,
-            terraform_graph=terraform_graph
+            terraform_graph=terraform_graph,
+            terraform_modules=terraform_modules,
+            terraform_version=terraform_version
         )
-
-        # Generate the archive, unless the module has a git clone URL and
-        # the config for deleting externally hosted artifacts is enabled.
-        if not (self._module_version.get_git_clone_url() and
-                Config().DELETE_EXTERNALLY_HOSTED_ARTIFACTS):
-            self._generate_archive()
 
         self._extract_additional_tab_files()
 

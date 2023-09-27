@@ -2,10 +2,13 @@
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.analytics
 import terrareg.models
+import terrareg.auth_wrapper
 
 
 class ApiTerraregGlobalUsageStats(ErrorCatchingResource):
     """Provide interface to obtain statistics about global module usage."""
+
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 
     def _get(self):
         """

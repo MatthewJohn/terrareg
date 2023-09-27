@@ -278,3 +278,10 @@ class TestApiModuleSearch(TerraregUnitTest):
             "compatible",
             "implicit_compatible"
         ]
+
+    def test_unauthenticated(self, client, mock_models):
+        """Test unauthenticated call to API"""
+        def call_endpoint():
+            return client.get('/v1/modules/search')
+
+        self._test_unauthenticated_read_api_endpoint_test(call_endpoint)

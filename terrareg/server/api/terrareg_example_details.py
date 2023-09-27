@@ -5,10 +5,13 @@ from flask import request
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.models
+import terrareg.auth_wrapper
 
 
 class ApiTerraregExampleDetails(ErrorCatchingResource):
     """Interface to obtain example details."""
+
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 
     def _get(self, namespace, name, provider, version, example):
         """Return details of example."""
@@ -17,6 +20,8 @@ class ApiTerraregExampleDetails(ErrorCatchingResource):
             return error
 
         example_obj = terrareg.models.Example.get(module_version=module_version, module_path=example)
+        if example_obj is None:
+            return self._get_404_response()
 
         return example_obj.get_terrareg_api_details(
             request_domain=urllib.parse.urlparse(request.base_url).hostname)

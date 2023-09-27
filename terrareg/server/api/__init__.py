@@ -6,6 +6,7 @@ from .module_search import ApiModuleSearch
 from .module_version_create_bitbucket_hook import ApiModuleVersionCreateBitBucketHook
 from .module_version_create_github_hook import ApiModuleVersionCreateGitHubHook
 from .module_version_create import ApiModuleVersionCreate
+from .module_version_import import ApiModuleVersionImport
 from .module_version_details import ApiModuleVersionDetails
 from .module_version_download import ApiModuleVersionDownload
 from .module_version_source_download import ApiModuleVersionSourceDownload
@@ -59,3 +60,5 @@ from .terrareg_submodule_readme_html import ApiTerraregSubmoduleReadmeHtml
 from .terrareg_user_group_namespace_permissions import ApiTerraregAuthUserGroupNamespacePermissions
 from .terrareg_user_group import ApiTerraregAuthUserGroup
 from .terrareg_graph_data import ApiTerraregGraphData
+from .terrareg_module_provider_redirects import ApiTerraregModuleProviderRedirects
+from .terrareg_module_provider_redirect_delete import ApiTerraregModuleProviderRedirectDelete

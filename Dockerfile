@@ -4,7 +4,7 @@ WORKDIR /
 
 RUN apt-get update && \
     apt-get install --assume-yes \
-        curl unzip git \
+        curl zip unzip git \
         pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 libgraphviz-dev && \
     apt-get clean all
 
@@ -57,4 +57,4 @@ ENV MANAGE_TERRAFORM_RC_FILE=True
 
 EXPOSE 5000
 
-ENTRYPOINT [ "bash", "scripts/entrypoint.sh" ]
+CMD [ "bash", "scripts/entrypoint.sh" ]

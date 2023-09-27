@@ -214,3 +214,51 @@ class DuplicateNamespaceDisplayNameError(TerraregError):
     """A namespace already exists with this display name"""
 
     pass
+
+
+class NamespaceNotEmptyError(TerraregError):
+    """Namespace cannot be deleted due to containing modules"""
+
+    pass
+
+
+class DuplicateModuleProviderError(TerraregError):
+    """A module/provider already exists with the same name"""
+
+    pass
+
+
+class NonExistentModuleProviderRedirectError(TerraregError):
+    """Module provider redirect does not exist"""
+
+    pass
+
+
+class NonExistentNamespaceRedirectError(TerraregError):
+    """Namespace redirect does not exist"""
+
+    pass
+
+
+class ModuleProviderRedirectInUseError(TerraregError):
+    """Module provider redirect is in use."""
+
+    pass
+
+
+class ModuleProviderRedirectForceDeletionNotAllowedError(TerraregError):
+    """Force deletion of module provider redirects is not allowed"""
+
+    pass
+
+
+class InvalidPresignedUrlKeyError(TerraregError):
+    """Invalid pre-signed URL key"""
+
+    pass
+
+
+class PresignedUrlsNotConfiguredError(TerraregError):
+    """Missing configurations for presigned URLs"""
+
+    pass

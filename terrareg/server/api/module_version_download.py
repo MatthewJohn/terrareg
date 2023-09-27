@@ -7,10 +7,14 @@ from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.models
 import terrareg.config
 import terrareg.analytics
+import terrareg.auth_wrapper
+import terrareg.auth
 
 
 class ApiModuleVersionDownload(ErrorCatchingResource):
     """Provide download endpoint."""
+
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_terraform_api')]
 
     def _get(self, namespace, name, provider, version=None):
         """Provide download header for location to download source."""
@@ -18,31 +22,23 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
 
         # If a version has been provided, get the exact version
         if version:
-            namespace, module, module_provider, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
+            namespace_obj, module_obj, module_provider_obj, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
             if error:
                 return self._get_404_response()
         else:
             # Otherwise, get the module provider, returning an error if it doesn't exist
-            namespace, module, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
+            namespace_obj, module_obj, module_provider_obj, error = self.get_module_provider_by_names(namespace, name, provider)
             if error:
                 return self._get_404_response()
             # Get the latest module version, returning an error if one doesn't exist
-            module_version = module_provider.get_latest_version()
+            module_version = module_provider_obj.get_latest_version()
             if not module_version:
                 return self._get_404_response()
 
-        auth_token = None
-        auth_token_match = re.match(r'Bearer (.*)', request.headers.get('Authorization', ''))
-        if auth_token_match:
-            auth_token = auth_token_match.group(1)
+        auth_method = terrareg.auth.AuthFactory().get_current_auth_method()
 
-        # Determine if auth token is for internal initialisation of modules
-        # during module extraction
-        if auth_token == terrareg.config.Config().INTERNAL_EXTRACTION_ANALYITCS_TOKEN:
-            pass
-
-        # Determine if auth token is one the auth tokens for ignore anlaytics token check
-        elif auth_token in terrareg.config.Config().IGNORE_ANALYTICS_TOKEN_AUTH_KEYS:
+        # Determine if auth method ignores recording analytics
+        if not auth_method.should_record_terraform_analytics():
             pass
 
         # otherwise, if module download should be rejected due to
@@ -55,20 +51,23 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
                     analytics_token_phrase=terrareg.config.Config().ANALYTICS_TOKEN_PHRASE,
                     host=request.host,
                     example_analytics_token=terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN,
-                    namespace=namespace.name,
-                    module_name=module.name,
-                    provider=module_provider.name
+                    namespace=namespace_obj.name,
+                    module_name=module_obj.name,
+                    provider=module_provider_obj.name
                 ),
                 401
             )
         else:
             # Otherwise, if download is allowed and not internal, record the download
             terrareg.analytics.AnalyticsEngine.record_module_version_download(
+                namespace_name=namespace,
+                module_name=name,
+                provider_name=provider,
                 module_version=module_version,
                 analytics_token=analytics_token,
                 terraform_version=request.headers.get('X-Terraform-Version', None),
                 user_agent=request.headers.get('User-Agent', None),
-                auth_token=auth_token
+                auth_token=auth_method.get_terraform_auth_token()
             )
 
         resp = make_response('', 204)

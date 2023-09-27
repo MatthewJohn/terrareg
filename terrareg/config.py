@@ -12,25 +12,37 @@ class ModuleVersionReindexMode(Enum):
     PROHIBIT = "prohibit"
 
 
+class ServerType(Enum):
+    """Server type to run"""
+    BUILTIN = "builtin"
+    WAITRESS = "waitress"
+
+
 class Config:
 
     @property
-    def INTERNAL_EXTRACTION_ANALYITCS_TOKEN(self):
+    def INTERNAL_EXTRACTION_ANALYTICS_TOKEN(self):
         """
-        Analaytics token used by Terraform initialised by the registry.
+        Analytics token used by Terraform initialised by the registry.
 
         This is used by the registry to call back to itself when analysing module examples.
 
         The value should be changed if it might result in a conflict with a legitimate analytics token used in Terraform
         that calls modules from the registry.
+
+        This variable was previously called INTERNAL_EXTRACTION_ANALYITCS_TOKEN. Support for the previous name will be
+        dropped in a future release.
+        INTERNAL_EXTRACTION_ANALYITCS_TOKEN will be read if INTERNAL_EXTRACTION_ANALYTICS_TOKEN is unset.
         """
-        return os.environ.get('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', 'internal-terrareg-analytics-token')
+        return os.environ.get('INTERNAL_EXTRACTION_ANALYTICS_TOKEN',
+            os.environ.get('INTERNAL_EXTRACTION_ANALYITCS_TOKEN', 'internal-terrareg-analytics-token')
+        )
 
     @property
     def IGNORE_ANALYTICS_TOKEN_AUTH_KEYS(self):
         """
         A list of a Terraform auth keys that can be used to authenticate to the registry
-        to ignore check for valid analaytics token in module path.
+        to ignore check for valid analytics token in module path.
 
         It is recommended that examples in modules do not include analytics tokens in calls to other modules
         hosted in the registry, to avoid having to add analytics tokens to test the examples during development
@@ -79,6 +91,11 @@ class Config:
 
     @property
     def DATA_DIRECTORY(self):
+        """
+        Directory for storing module data.
+
+        This directory must be persistent (e.g. mounted to shared volume for distributed docker containers)
+        """
         return os.path.join(os.environ.get('DATA_DIRECTORY', os.getcwd()), 'data')
 
     @property
@@ -87,7 +104,7 @@ class Config:
         URL for database.
         Defaults to local sqlite database.
 
-        To setup SQLite datbase, use `sqlite:///<path to sqlite DB>`
+        To setup SQLite database, use `sqlite:///<path to sqlite DB>`
 
         To setup MySQL, use `mysql+mysqlconnector://<user>:<password>@<host>[:<port>]/<database>`
         """
@@ -99,6 +116,16 @@ class Config:
         Port for server to listen on.
         """
         return int(os.environ.get('LISTEN_PORT', 5000))
+
+    @property
+    def SERVER(self):
+        """
+        Set the server application used for running the application. Set the `SERVER` environment variable to one of the following options:
+
+        * `builtin` - Use the default built-in flask web server. This is less performant and is no longer recommended for production use-cases.
+        * `waitress` - Uses [waitress](https://docs.pylonsproject.org/projects/waitress/en/latest/index.html) for running the application. This does not support SSL offloading, meaning that it must be used behind a reverse proxy that performs SSL-offloading.
+        """
+        return ServerType(os.environ.get("SERVER", "builtin"))
 
     @property
     def SSL_CERT_PRIVATE_KEY(self):
@@ -138,13 +165,37 @@ class Config:
     @property
     def DISABLE_ANALYTICS(self):
         """
-        Disable module download anaytics.
+        Disable module download analytics.
 
         This stops analytics tokens being displayed in the UI.
 
         This also sets `ALLOW_UNIDENTIFIED_DOWNLOADS` to True
         """
         return self.convert_boolean(os.environ.get('DISABLE_ANALYTICS', 'False'))
+
+    @property
+    def ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION(self):
+        """
+        Whether to allow the force deletion of module provider redirects.
+
+        Force deletion is required if module calls are still using the redirect and analytics tokens indicate that
+        some have not used migrated to the new name.
+        """
+        return self.convert_boolean(os.environ.get("ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION", "False"))
+
+    @property
+    def REDIRECT_DELETION_LOOKBACK_DAYS(self):
+        """
+        Number of days' worth of analytics data to use to determine if a redirect is still in use.
+
+        For example, if set to 1, if a Terraform module was accessed via a redirect in the past 1 day, it will require
+        forceful deletion to delete (unless a more recent download of the module by the same analytics token no longer uses the redirect).
+
+        Value of `0` disables the lookback and redirects can always be removed without force
+
+        Value of `-1` will not limit the lookback period and all analytics will be used.
+        """
+        return int(os.environ.get('REDIRECT_DELETION_LOOKBACK_DAYS', "-1"))
 
     @property
     def DEBUG(self):
@@ -163,7 +214,7 @@ class Config:
 
     @property
     def ANALYTICS_TOKEN_DESCRIPTION(self):
-        """Describe to be provided to user about analytics token (e.g. `The name of your application`)"""
+        """Description to be provided to user about analytics token (e.g. `The name of your application`)"""
         return os.environ.get('ANALYTICS_TOKEN_DESCRIPTION', '')
 
     @property
@@ -173,7 +224,7 @@ class Config:
 
         Note that, if this token is used in a module call, it will be ignored and treated as if
         an analytics token has not been provided.
-        If analytics tokens are required, this stops users from accidently using the example placeholder in
+        If analytics tokens are required, this stops users from accidentally using the example placeholder in
         Terraform projects.
         """
         return os.environ.get('EXAMPLE_ANALYTICS_TOKEN', 'my-tf-application')
@@ -437,7 +488,7 @@ class Config:
         - browse_url - Formatted URL for user-viewable source code
                         (e.g. 'https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}'
                         or 'https://bitbucket.org/{namespace}/{module}/src/{version}?at=refs%2Ftags%2F{tag_uri_encoded}').
-                        Must include placeholdes:
+                        Must include placeholders:
                          - {path} (for source file/folder path)
                          - {tag} or {tag_uri_encoded} for the git tag
 
@@ -597,6 +648,15 @@ class Config:
         return self.convert_boolean(os.environ.get('ENABLE_ACCESS_CONTROLS', 'False'))
 
     @property
+    def ALLOW_UNAUTHENTICATED_ACCESS(self):
+        """
+        Whether unauthenticated access to Terrareg is allowed.
+
+        If disabled, all users must authenticate to be able to access the interface and Terraform authentication is required
+        """
+        return self.convert_boolean(os.environ.get("ALLOW_UNAUTHENTICATED_ACCESS", "True"))
+
+    @property
     def OPENID_CONNECT_LOGIN_TEXT(self):
         """
         Text for sign in button for OpenID Connect authentication
@@ -606,21 +666,21 @@ class Config:
     @property
     def OPENID_CONNECT_CLIENT_ID(self):
         """
-        Client ID for OpenID Conect authentication
+        Client ID for OpenID Connect authentication
         """
         return os.environ.get('OPENID_CONNECT_CLIENT_ID', None)
 
     @property
     def OPENID_CONNECT_CLIENT_SECRET(self):
         """
-        Client secret for OpenID Conect authentication
+        Client secret for OpenID Connect authentication
         """
         return os.environ.get('OPENID_CONNECT_CLIENT_SECRET', None)
 
     @property
     def OPENID_CONNECT_ISSUER(self):
         """
-        Base Issuer URL for OpenID Conect authentication.
+        Base Issuer URL for OpenID Connect authentication.
 
         A well-known URL will be expected at `${OPENID_CONNECT_ISSUER}/.well-known/openid-configuration`
         """
@@ -788,6 +848,65 @@ class Config:
             for extension in os.environ.get("EXAMPLE_FILE_EXTENSIONS", "tf,tfvars,sh,json").split(",")
             if extension
         ]
+
+    @property
+    def TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT(self):
+        """
+        Subject ID hash salt for Terraform OIDC identity provider.
+
+        This must be set to authenticate users via terrareg.
+        This is required if disabling ALLOW_UNAUTHENTICATED_ACCESS.
+
+        Must be set to a secure random string
+        """
+        return os.environ.get("TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT")
+
+    @property
+    def TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH(self):
+        """
+        Path of a signing key to be used for Terraform OIDC identity provider.
+
+        This must be set to authenticate users via Terraform.
+
+        The key can be generated used:
+        ```
+        ssh-keygen -t rsa -b 4096 -m PEM -f signing_key.pem
+        # Do not set a password
+        ```
+        """
+        return os.environ.get('TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH', os.path.join(os.getcwd(), "signing_key.pem"))
+
+    @property
+    def TERRAFORM_OIDC_IDP_SESSION_EXPIRY(self):
+        """
+        Terraform OIDC identity token expiry length (seconds).
+
+        Defaults to 1 hour.
+        """
+        return int(os.environ.get("TERRAFORM_OIDC_IDP_SESSION_EXPIRY", "3600"))
+
+    @property
+    def TERRAFORM_PRESIGNED_URL_SECRET(self):
+        """
+        Secret value for encrypting tokens used in presigned URLs to authenticate module source downloads.
+
+        This is required when requiring authentication in Terrareg and modules do not use git.
+        """
+        return os.environ.get("TERRAFORM_PRESIGNED_URL_SECRET")
+
+    @property
+    def TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS(self):
+        """
+        The amount of time a module download pre-signed URL should be valid for (in seconds).
+
+        When Terraform downloads a module, it calls a download endpoint, which returns the pre-signed
+        URL, which should be immediately used by Terraform, meaning that this should not need to be modified.
+
+        If Terrareg runs across multiple containers, across multiple instances that can suffer from time drift,
+        this value may need to be increased.
+        """
+        return int(os.environ.get("TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS", 10))
+
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""

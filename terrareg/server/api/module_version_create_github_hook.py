@@ -26,7 +26,7 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
             # Validate signature
             if terrareg.config.Config().UPLOAD_API_KEYS:
                 # Get signature from request
-                request_signature = request.headers.get('X-Hub-Signature', '')
+                request_signature = request.headers.get('X-Hub-Signature-256', '')
                 # Remove 'sha256=' from beginning of header
                 request_signature = re.sub(r'^sha256=', '', request_signature)
                 # Iterate through each of the keys and test
@@ -85,12 +85,9 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
             else:
                 # Perform import from git
                 try:
-                    previous_version_published = module_version.prepare_module()
-                    with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
-                        me.process_upload()
-
-                    if previous_version_published:
-                        module_version.publish()
+                    with module_version.module_create_extraction_wrapper():
+                        with terrareg.module_extractor.GitModuleExtractor(module_version=module_version) as me:
+                            me.process_upload()
 
                 except terrareg.errors.TerraregError as exc:
                     # Roll back creation of module version
@@ -98,7 +95,7 @@ class ApiModuleVersionCreateGitHubHook(ErrorCatchingResource):
 
                     return {
                         'status': 'Error',
-                        'message': 'Tag failed to import',
+                        'message': f'Tag failed to import: {str(exc)}',
                         'tag': tag_ref
                     }, 500
                 else:

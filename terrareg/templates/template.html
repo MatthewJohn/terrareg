@@ -59,7 +59,7 @@
 
           async function setupPageLogin() {
             let loggedIn = await isLoggedIn(); 
-            if (loggedIn) {
+            if (loggedIn.authenticated) {
               $('#navbar_login_link').attr('href', '/logout');
               $('#navbar_login_icon').removeClass('fa-lock');
               $('#navbar_login_icon').addClass('fa-right-from-bracket');
@@ -83,6 +83,11 @@
                 // Show create module button
                 $('#navbarCreateModuleButton').css('display', 'block');
               }
+
+            } else if (!loggedIn.read_access && window.location.pathname !== '/login') {
+              // If not logged in and read access is not allowed,
+              // and not currently redirect to login page
+              window.location.href = '/login';
             }
           }
 

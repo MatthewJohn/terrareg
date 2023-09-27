@@ -44,8 +44,10 @@ async function getNamespaceDetails(namespace) {
             $.ajax({
                 type: "GET",
                 url: `/v1/terrareg/namespaces/${namespace}`,
-                success: function (data) {
-                    resolve(data);
+                statusCode: {
+                    200: (data) => {resolve(data)},
+                    401: () => {resolve(false)},
+                    404: () => {resolve(null)}
                 }
             });
         });
@@ -85,8 +87,7 @@ async function isLoggedIn() {
             $.ajax({
                 url: '/v1/terrareg/auth/admin/is_authenticated',
                 statusCode: {
-                  200: (data) => {resolve(data)},
-                  401: () => {resolve(false)}
+                  200: (data) => {resolve(data)}
                 }
             });
         })

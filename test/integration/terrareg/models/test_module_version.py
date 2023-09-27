@@ -1,5 +1,9 @@
 
 from datetime import datetime
+import os
+import shutil
+import tempfile
+from unicodedata import name
 import unittest.mock
 import pytest
 import sqlalchemy
@@ -113,22 +117,27 @@ class TestModuleVersion(TerraregIntegrationTest):
                      'variable_template']:
             assert new_db_row[attr] == None
 
-    @pytest.mark.parametrize('module_version_reindex_mode,previous_publish_state,expected_return_value,should_raise_error', [
+    @pytest.mark.parametrize('module_version_reindex_mode,previous_publish_state,config_auto_publish,expected_return_value,should_raise_error', [
         # Legacy mode should allow the re-index and ignore pre-existing version for setting published
-        (ModuleVersionReindexMode.LEGACY, False, False, False),
+        (ModuleVersionReindexMode.LEGACY, False, False, False, False),
         ## With previous version published
-        (ModuleVersionReindexMode.LEGACY, True, False, False),
+        (ModuleVersionReindexMode.LEGACY, True, False, False, False),
+        # Legacy mode with auto publish config enabled
+        (ModuleVersionReindexMode.LEGACY, False, True, True, False),
 
         # Auto-publish mode should return the previously indexed module's published state
-        (ModuleVersionReindexMode.AUTO_PUBLISH, False, False, False),
-        (ModuleVersionReindexMode.AUTO_PUBLISH, True, True, False),
+        (ModuleVersionReindexMode.AUTO_PUBLISH, False, False, False, False),
+        (ModuleVersionReindexMode.AUTO_PUBLISH, True, False, True, False),
+        # The AUTO_PUBLISH config should ensure that modules are always published
+        (ModuleVersionReindexMode.AUTO_PUBLISH, False, True, True, False),
+        (ModuleVersionReindexMode.AUTO_PUBLISH, True, True, True, False),
 
         # Prohibit mode should raise an error
-        (ModuleVersionReindexMode.PROHIBIT, False, False, True)
+        (ModuleVersionReindexMode.PROHIBIT, False, False, False, True)
     ])
     def test_create_db_row_replace_existing(self, module_version_reindex_mode,
-                                            previous_publish_state, expected_return_value,
-                                            should_raise_error):
+                                            previous_publish_state, config_auto_publish,
+                                            expected_return_value, should_raise_error):
         """Test creating DB row with pre-existing module version"""
 
         db = Database.get()
@@ -203,7 +212,8 @@ class TestModuleVersion(TerraregIntegrationTest):
             assert pre_existing_row is not None
             assert pre_existing_row['id'] == 10001
 
-            with unittest.mock.patch('terrareg.config.Config.MODULE_VERSION_REINDEX_MODE', module_version_reindex_mode):
+            with unittest.mock.patch('terrareg.config.Config.MODULE_VERSION_REINDEX_MODE', module_version_reindex_mode), \
+                    unittest.mock.patch('terrareg.config.Config.AUTO_PUBLISH_MODULE_VERSIONS', config_auto_publish):
                 # If confiugred to raise an error, check that it is
                 if should_raise_error:
                     with pytest.raises(terrareg.errors.ReindexingExistingModuleVersionsIsProhibitedError):
@@ -285,6 +295,69 @@ class TestModuleVersion(TerraregIntegrationTest):
                         db.namespace.c.id==9999
                     ))
 
+    @pytest.mark.parametrize('should_publish', [
+        True,
+        False
+    ])
+    def test_module_create_extraction_wrapper(self, should_publish):
+        """Test module_create_extraction_wrapper method"""
+        mock_prepare_module = unittest.mock.MagicMock(return_value=should_publish)
+        mock_publish = unittest.mock.MagicMock()
+
+        namespace = Namespace.get(name='test', create=True)
+        module = Module(namespace=namespace, name='test')
+        module_provider = ModuleProvider.get(module=module, name='test', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='5.8.0')
+
+        try:
+            with unittest.mock.patch('terrareg.models.ModuleVersion.prepare_module', mock_prepare_module), \
+                    unittest.mock.patch('terrareg.models.ModuleVersion.publish', mock_publish):
+
+                with module_version.module_create_extraction_wrapper():
+                    mock_prepare_module.assert_called_once_with()
+
+                if should_publish:
+                    mock_publish.assert_called_once_with()
+                else:
+                    mock_publish.assert_not_called()
+        finally:
+            if module_version._get_db_row():
+                module_version.delete()
+            module_provider.delete()
+            namespace.delete()
+
+    @pytest.mark.parametrize('should_publish', [
+        True,
+        False
+    ])
+    def test_module_create_extraction_wrapper_exception(self, should_publish):
+        """Test module_create_extraction_wrapper method"""
+        mock_prepare_module = unittest.mock.MagicMock(return_value=should_publish)
+        mock_publish = unittest.mock.MagicMock()
+
+        namespace = Namespace.get(name='test', create=True)
+        module = Module(namespace=namespace, name='test')
+        module_provider = ModuleProvider.get(module=module, name='test', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='5.8.0')
+
+        class TestException(Exception):
+            pass
+
+        try:
+            with unittest.mock.patch('terrareg.models.ModuleVersion.prepare_module', mock_prepare_module), \
+                    unittest.mock.patch('terrareg.models.ModuleVersion.publish', mock_publish):
+
+                with pytest.raises(TestException):
+                    with module_version.module_create_extraction_wrapper():
+                        mock_prepare_module.assert_called_once_with()
+                        raise TestException("Test Exception")
+
+                mock_publish.assert_not_called()
+        finally:
+            if module_version._get_db_row():
+                module_version.delete()
+            module_provider.delete()
+            namespace.delete()
 
     @pytest.mark.parametrize('template,version,published,expected_string', [
         ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '0.0.0', True, '>= 0.0.0'),
@@ -340,6 +413,9 @@ class TestModuleVersion(TerraregIntegrationTest):
 
         # Create analytics
         AnalyticsEngine.record_module_version_download(
+            namespace_name='testnamespace',
+            module_name='wrongversionorder',
+            provider_name='testprovider',
             module_version=module_version,
             terraform_version='1.0.0',
             analytics_token='unittest',
@@ -388,6 +464,105 @@ class TestModuleVersion(TerraregIntegrationTest):
                 )
             )
             assert analytics_res.fetchone() is None
+
+    @pytest.mark.parametrize('module_provider_directory_exists, module_version_directory_exists, zip_file_exists, tar_gz_file_exists, non_managed_file_exists', [
+        # Data directory does not exist for module provider
+        (False, False, False, False, False),
+        # Data Directory for module version does not exist
+        (True, False, False, False, False),
+        # Archive files do not exist
+        (True, True, False, False, False),
+        # Check that archive files are removed and are not dependent on
+        # either existing
+        (True, True, True, False, False),
+        (True, True, False, True, False),
+        (True, True, True, True, False),
+
+        # Handle case where non-terrareg managed file exists in the
+        # module version directory that shouldn't be removed
+        (True, True, True, True, True),
+    ])
+    def test_delete_removes_data_files(self, module_provider_directory_exists, module_version_directory_exists, zip_file_exists, tar_gz_file_exists, non_managed_file_exists):
+        """Ensure removal of module version removes any data files for the module version"""
+        namespace = Namespace(name='testnamespace')
+        module = Module(namespace=namespace, name='wrongversionorder')
+        module_provider = ModuleProvider.get(module=module, name='testprovider')
+
+        existing_module_versions = [v.version for v in module_provider.get_versions()]
+        assert '2.5.5' not in existing_module_versions
+
+        # Patch data directory to a temporary directory
+        data_directory = tempfile.mkdtemp()
+        try:
+            with unittest.mock.patch('terrareg.config.Config.DATA_DIRECTORY', data_directory):
+                # Create modules directory
+                os.mkdir(os.path.join(data_directory, 'modules'))
+
+                # Create module provider data directory tree
+                namespace.create_data_directory()
+                module_provider.create_data_directory()
+
+                # Create test module version
+                module_version = ModuleVersion(module_provider=module_provider, version='2.5.5')
+                module_version.prepare_module()
+                module_version.publish()
+
+                # Create test zip/targz files
+                if zip_file_exists:
+                    with open(module_version.archive_path_zip, 'w'):
+                        pass
+                if tar_gz_file_exists:
+                    with open(module_version.archive_path_tar_gz, 'w'):
+                        pass
+
+                # Create additional test file in module provider directory
+                # to ensure it is not accidently removed
+                test_module_provider_file = os.path.join(module_provider.base_directory, 'test_file')
+                if module_provider_directory_exists:
+                    with open(test_module_provider_file, 'w'):
+                        pass
+
+                # Create non-managed Terrareg file in module version
+                # directory
+                test_module_version_file = os.path.join(module_version.base_directory, 'test_file')
+                if non_managed_file_exists:
+                    with open(test_module_version_file, 'w'):
+                        pass
+
+                # Remove module version/provider directories to match
+                # test case
+                if not module_version_directory_exists:
+                    os.rmdir(module_version.base_directory)
+                if not module_provider_directory_exists:
+                    os.rmdir(module_provider.base_directory)
+
+                zip_file_path = module_version.archive_path_zip
+                tar_gz_file_path = module_version.archive_path_zip
+                module_version_directory = module_version.base_directory
+
+                # Remove module version
+                module_version.delete()
+
+                # Ensure files/directories were removed
+                assert os.path.exists(zip_file_path) is False
+                assert os.path.exists(tar_gz_file_path) is False
+
+                # Ensure module version directory is removed, unless an un managed file
+                # existed in the module version directory
+                if non_managed_file_exists:
+                    assert os.path.isdir(module_version_directory) is True
+                    assert os.path.isfile(test_module_version_file)
+                else:
+                    assert os.path.exists(module_version_directory) is False
+
+                # Ensure module provider directory exists, if it
+                # existed in test case
+                if module_provider_directory_exists:
+                    assert os.path.isdir(module_provider.base_directory)
+                    assert os.path.isfile(test_module_provider_file)
+
+        finally:
+            shutil.rmtree(data_directory)
 
     def test_variable_template(self):
         """Test variable template of module version."""
@@ -1325,6 +1500,40 @@ module &quot;test-usage3&quot; {
         finally:
             module_provider.update_git_path(None)
 
+    @pytest.mark.parametrize('module_name, module_version, git_path, expected_source_download_url, allow_unauthenticated_access, expect_presigned', [
+        # Test no clone URL in any configuration, defaulting to source archive download
+        ('no-git-provider', '1.0.0', None, '/v1/terrareg/modules/repo_url_tests/no-git-provider/test/1.0.0/source.zip', True, False),
+        ('no-git-provider', '1.0.0', None, '/v1/terrareg/modules/repo_url_tests/no-git-provider/test/1.0.0/source.zip?presign=unittest-presign-key', False, True),
+        # Test clone URL only configured in module version, with public access allowed/disabled
+        ('no-git-provider', '1.4.0', None, 'git::ssh://mv-clone-url.com/repo_url_tests/no-git-provider-test?ref=1.4.0', True, False),
+        ('no-git-provider', '1.4.0', None, 'git::ssh://mv-clone-url.com/repo_url_tests/no-git-provider-test?ref=1.4.0', True, False),
+
+    ])
+    def test_get_source_download_url_presigned(self, module_name, module_version, git_path, expected_source_download_url, allow_unauthenticated_access, expect_presigned):
+        """Ensure clone URL matches the expected values."""
+        namespace = Namespace(name='repo_url_tests')
+        module = Module(namespace=namespace, name=module_name)
+        module_provider = ModuleProvider.get(module=module, name='test')
+        module_provider.update_git_path(git_path)
+
+        try:
+            assert module_provider is not None
+            module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
+            assert module_version is not None
+
+            mock_generate_presigned_key = unittest.mock.MagicMock(return_value='unittest-presign-key')
+            with unittest.mock.patch('terrareg.presigned_url.TerraformSourcePresignedUrl.generate_presigned_key', mock_generate_presigned_key), \
+                    unittest.mock.patch('terrareg.config.Config.ALLOW_UNAUTHENTICATED_ACCESS', allow_unauthenticated_access):
+                assert module_version.get_source_download_url() == expected_source_download_url
+
+            if expect_presigned:
+                mock_generate_presigned_key.assert_called_once_with(url='/v1/terrareg/modules/repo_url_tests/no-git-provider/test/1.0.0/source.zip')
+            else:
+                mock_generate_presigned_key.assert_not_called()
+
+        finally:
+            module_provider.update_git_path(None)
+
     @pytest.mark.parametrize('published,beta,is_latest_version,expected_value', [
         # Latest published non-beta
         (True, False, True, []),
@@ -1348,3 +1557,25 @@ module &quot;test-usage3&quot; {
             module_version = ModuleVersion.get(module_provider, '1.5.0')
 
             assert module_version.get_terraform_example_version_comment() == expected_value
+
+    @pytest.mark.parametrize('git_tag_format, version, expected_git_tag', [
+        ('{version}', '1.0.0', '1.0.0'),
+        ('releases/v{version}a', '1.0.0', 'releases/v1.0.0a'),
+        ('v{major}a', '2.3.4', 'v2a'),
+        ('v{minor}a', '2.3.4', 'v3a'),
+        ('v{patch}a', '2.3.4', 'v4a'),
+
+        ('{major}-{minor}-{patch}', '2.3.4', '2-3-4'),
+        ('{major}-{minor}-{patch}', '2.3.4-beta', '2-3-4'),
+    ])
+    def test_source_git_tag(self, git_tag_format, version, expected_git_tag):
+        """Test source_git_tag property"""
+        module_provider = ModuleProvider.create(Module(Namespace('testnamespace'), 'testsourcegittag'), 'testsourcegittag')
+        try:
+            module_provider.update_git_tag_format(git_tag_format=git_tag_format)
+
+            module_version = ModuleVersion(module_provider, version)
+            assert module_version.source_git_tag == expected_git_tag
+
+        finally:
+            module_provider.delete()

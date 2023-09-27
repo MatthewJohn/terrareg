@@ -75,11 +75,34 @@ Whether module versions can specify git repository in terrareg config.
 Default: `True`
 
 
+### ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION
+
+
+Whether to allow the force deletion of module provider redirects.
+
+Force deletion is required if module calls are still using the redirect and analytics tokens indicate that
+some have not used migrated to the new name.
+
+
+Default: `False`
+
+
 ### ALLOW_MODULE_HOSTING
 
 
 Whether uploaded modules can be downloaded directly.
 If disabled, all modules must be configured with a git URL.
+
+
+Default: `True`
+
+
+### ALLOW_UNAUTHENTICATED_ACCESS
+
+
+Whether unauthenticated access to Terrareg is allowed.
+
+If disabled, all users must authenticate to be able to access the interface and Terraform authentication is required
 
 
 Default: `True`
@@ -117,7 +140,7 @@ Default: ``
 
 ### ANALYTICS_TOKEN_DESCRIPTION
 
-Describe to be provided to user about analytics token (e.g. `The name of your application`)
+Description to be provided to user about analytics token (e.g. `The name of your application`)
 
 Default: ``
 
@@ -208,7 +231,7 @@ Default: `Contributed`
 URL for database.
 Defaults to local sqlite database.
 
-To setup SQLite datbase, use `sqlite:///<path to sqlite DB>`
+To setup SQLite database, use `sqlite:///<path to sqlite DB>`
 
 To setup MySQL, use `mysql+mysqlconnector://<user>:<password>@<host>[:<port>]/<database>`
 
@@ -218,6 +241,10 @@ Default: `sqlite:///modules.db`
 
 ### DATA_DIRECTORY
 
+
+Directory for storing module data.
+
+This directory must be persistent (e.g. mounted to shared volume for distributed docker containers)
 
 
 Default: `./data`
@@ -253,7 +280,7 @@ Default: `False`
 ### DISABLE_ANALYTICS
 
 
-Disable module download anaytics.
+Disable module download analytics.
 
 This stops analytics tokens being displayed in the UI.
 
@@ -330,7 +357,7 @@ Example analytics token to provide in responses (e.g. my-tf-application, my-slac
 
 Note that, if this token is used in a module call, it will be ignored and treated as if
 an analytics token has not been provided.
-If analytics tokens are required, this stops users from accidently using the example placeholder in
+If analytics tokens are required, this stops users from accidentally using the example placeholder in
 Terraform projects.
 
 
@@ -394,7 +421,7 @@ If using SSH, the domain must be seperated by the path using a forward slash. Us
 - browse_url - Formatted URL for user-viewable source code
 (e.g. 'https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}'
 or 'https://bitbucket.org/{namespace}/{module}/src/{version}?at=refs%2Ftags%2F{tag_uri_encoded}').
-Must include placeholdes:
+Must include placeholders:
 - {path} (for source file/folder path)
 - {tag} or {tag_uri_encoded} for the git tag
 
@@ -413,7 +440,7 @@ Default: `[]`
 
 
 A list of a Terraform auth keys that can be used to authenticate to the registry
-to ignore check for valid analaytics token in module path.
+to ignore check for valid analytics token in module path.
 
 It is recommended that examples in modules do not include analytics tokens in calls to other modules
 hosted in the registry, to avoid having to add analytics tokens to test the examples during development
@@ -465,15 +492,19 @@ Whether to skip TLS verification for self-hosted pricing endpoints
 Default: `False`
 
 
-### INTERNAL_EXTRACTION_ANALYITCS_TOKEN
+### INTERNAL_EXTRACTION_ANALYTICS_TOKEN
 
 
-Analaytics token used by Terraform initialised by the registry.
+Analytics token used by Terraform initialised by the registry.
 
 This is used by the registry to call back to itself when analysing module examples.
 
 The value should be changed if it might result in a conflict with a legitimate analytics token used in Terraform
 that calls modules from the registry.
+
+This variable was previously called INTERNAL_EXTRACTION_ANALYITCS_TOKEN. Support for the previous name will be
+dropped in a future release.
+INTERNAL_EXTRACTION_ANALYITCS_TOKEN will be read if INTERNAL_EXTRACTION_ANALYTICS_TOKEN is unset.
 
 
 Default: `internal-terrareg-analytics-token`
@@ -570,7 +601,7 @@ Default: `legacy`
 ### OPENID_CONNECT_CLIENT_ID
 
 
-Client ID for OpenID Conect authentication
+Client ID for OpenID Connect authentication
 
 
 Default: ``
@@ -579,7 +610,7 @@ Default: ``
 ### OPENID_CONNECT_CLIENT_SECRET
 
 
-Client secret for OpenID Conect authentication
+Client secret for OpenID Connect authentication
 
 
 Default: ``
@@ -599,7 +630,7 @@ Default: `False`
 ### OPENID_CONNECT_ISSUER
 
 
-Base Issuer URL for OpenID Conect authentication.
+Base Issuer URL for OpenID Connect authentication.
 
 A well-known URL will be expected at `${OPENID_CONNECT_ISSUER}/.well-known/openid-configuration`
 
@@ -659,6 +690,22 @@ To disable authentication for publish endpoint, leave empty.
 
 
 Default: ``
+
+
+### REDIRECT_DELETION_LOOKBACK_DAYS
+
+
+Number of days' worth of analytics data to use to determine if a redirect is still in use.
+
+For example, if set to 1, if a Terraform module was accessed via a redirect in the past 1 day, it will require
+forceful deletion to delete (unless a more recent download of the module by the same analytics token no longer uses the redirect).
+
+Value of `0` disables the lookback and redirects can always be removed without force
+
+Value of `-1` will not limit the lookback period and all analytics will be used.
+
+
+Default: `-1`
 
 
 ### REQUIRED_MODULE_METADATA_ATTRIBUTES
@@ -786,6 +833,18 @@ Must be a number between 0.0 and 1.0
 Default: `1.0`
 
 
+### SERVER
+
+
+Set the server application used for running the application. Set the `SERVER` environment variable to one of the following options:
+
+* `builtin` - Use the default built-in flask web server. This is less performant and is no longer recommended for production use-cases.
+* `waitress` - Uses [waitress](https://docs.pylonsproject.org/projects/waitress/en/latest/index.html) for running the application. This does not support SSL offloading, meaning that it must be used behind a reverse proxy that performs SSL-offloading.
+
+
+Default: `builtin`
+
+
 ### SSL_CERT_PRIVATE_KEY
 
 
@@ -845,6 +904,74 @@ For more information, see Terraform documentation: https://www.terraform.io/lang
 
 
 Default: `{major}.{minor}.{patch}`
+
+
+### TERRAFORM_OIDC_IDP_SESSION_EXPIRY
+
+
+Terraform OIDC identity token expiry length (seconds).
+
+Defaults to 1 hour.
+
+
+Default: `3600`
+
+
+### TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH
+
+
+Path of a signing key to be used for Terraform OIDC identity provider.
+
+This must be set to authenticate users via Terraform.
+
+The key can be generated used:
+```
+ssh-keygen -t rsa -b 4096 -m PEM -f signing_key.pem
+# Do not set a password
+```
+
+
+Default: `./signing_key.pem`
+
+
+### TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT
+
+
+Subject ID hash salt for Terraform OIDC identity provider.
+
+This must be set to authenticate users via terrareg.
+This is required if disabling ALLOW_UNAUTHENTICATED_ACCESS.
+
+Must be set to a secure random string
+
+
+Default: ``
+
+
+### TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS
+
+
+The amount of time a module download pre-signed URL should be valid for (in seconds).
+
+When Terraform downloads a module, it calls a download endpoint, which returns the pre-signed
+URL, which should be immediately used by Terraform, meaning that this should not need to be modified.
+
+If Terrareg runs across multiple containers, across multiple instances that can suffer from time drift,
+this value may need to be increased.
+
+
+Default: `10`
+
+
+### TERRAFORM_PRESIGNED_URL_SECRET
+
+
+Secret value for encrypting tokens used in presigned URLs to authenticate module source downloads.
+
+This is required when requiring authentication in Terrareg and modules do not use git.
+
+
+Default: ``
 
 
 ### THREADED

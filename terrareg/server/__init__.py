@@ -6,14 +6,17 @@ from flask import Flask, session, redirect, request
 from flask_restful import Api
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
+from waitress import serve
 
 import terrareg.config
 import terrareg.database
 import terrareg.models
 import terrareg.errors
 import terrareg.auth
+from terrareg.server.api.terrareg_module_providers import ApiTerraregModuleProviders
 from .base_handler import BaseHandler
 from terrareg.server.api import *
+import terrareg.server.api.terraform_oauth
 
 
 def catch_name_exceptions(f):
@@ -113,6 +116,8 @@ class Server(BaseHandler):
         self.ssl_public_key = ssl_public_key
         self.ssl_private_key = ssl_private_key
 
+        self._app.register_blueprint(terrareg.server.api.terraform_oauth.terraform_oidc_provider_blueprint)
+
         if not os.path.isdir(terrareg.config.Config().DATA_DIRECTORY):
             os.mkdir(terrareg.config.Config().DATA_DIRECTORY)
         if not os.path.isdir(self._get_upload_directory()):
@@ -201,6 +206,9 @@ class Server(BaseHandler):
         self._app.route(
             '/create-namespace',
         )(self._view_serve_create_namespace)
+        self._app.route(
+            '/edit-namespace/<string:namespace>',
+        )(self._view_serve_edit_namespace)
         self._app.route(
             '/create-module'
         )(self._view_serve_create_module)
@@ -348,6 +356,10 @@ class Server(BaseHandler):
             '/v1/terrareg/modules/<string:namespace>'
         )
         self._api.add_resource(
+            ApiTerraregModuleProviders,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>'
+        )
+        self._api.add_resource(
             ApiTerraregModuleProviderDetails,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>'
         )
@@ -376,6 +388,14 @@ class Server(BaseHandler):
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/integrations'
         )
         self._api.add_resource(
+            ApiTerraregModuleProviderRedirects,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/redirects'
+        )
+        self._api.add_resource(
+            ApiTerraregModuleProviderRedirectDelete,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/redirects/<string:module_provider_redirect_id>'
+        )
+        self._api.add_resource(
             ApiModuleVersionCreateBitBucketHook,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/hooks/bitbucket'
         )
@@ -402,6 +422,10 @@ class Server(BaseHandler):
         self._api.add_resource(
             ApiModuleVersionCreate,
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/import'
+        )
+        self._api.add_resource(
+            ApiModuleVersionImport,
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/import'
         )
         self._api.add_resource(
             ApiModuleVersionSourceDownload,
@@ -505,6 +529,12 @@ class Server(BaseHandler):
 
         self._app.run(**kwargs)
 
+    def run_waitress(self):
+        """Run waitress server"""
+        self._app.secret_key = terrareg.config.Config().SECRET_KEY
+
+        serve(self._app, host=self.host, port=self.port)
+
     def _namespace_404(self, namespace_name: str):
         """Return 404 page for non-existent namespace"""
         return self._render_template(
@@ -570,6 +600,12 @@ class Server(BaseHandler):
         """Provide view to create namespace."""
         return self._render_template(
             'create_namespace.html'
+        )
+
+    def _view_serve_edit_namespace(self, namespace):
+        """Provide view for editing namespace"""
+        return self._render_template(
+            'edit_namespace.html'
         )
 
     def _view_serve_initial_setup(self):

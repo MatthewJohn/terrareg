@@ -9,7 +9,7 @@ from test.unit.terrareg import (
     setup_test_data, TerraregUnitTest
 )
 import terrareg.models
-from test import client
+from test import client, mock_create_audit_event
 from . import mock_record_module_version_download
 
 
@@ -64,6 +64,9 @@ For example:
         assert res.headers['X-Terraform-Get'] == f'/v1/terrareg/modules/testnamespace/testmodulename/testprovider/{expected_version}/source.zip'
 
         AnalyticsEngine.record_module_version_download.assert_called_once_with(
+            namespace_name='testnamespace',
+            module_name='testmodulename',
+            provider_name='testprovider',
             module_version=unittest.mock.ANY,
             analytics_token=None,
             terraform_version='TestTerraformVersion',
@@ -104,6 +107,9 @@ For example:
         assert res.status_code == 204
 
         AnalyticsEngine.record_module_version_download.assert_called_with(
+            namespace_name='testnamespace',
+            module_name='testmodulename',
+            provider_name='testprovider',
             module_version=unittest.mock.ANY,
             analytics_token='test_token-name',
             terraform_version='TestTerraformVersion',
@@ -141,12 +147,13 @@ For example:
         mock_record_module_version_download):
         """Test endpoint with analytics token and auth token"""
 
-        res = client.get(
-            f"/v1/modules/test_token-name__{namespace}/{module}/{provider}/{f'{version}/' if version else ''}download",
-            headers={'X-Terraform-Version': 'TestTerraformVersion',
-                     'User-Agent': 'TestUserAgent',
-                     'Authorization': 'Bearer test123-authorization-token'}
-        )
+        with unittest.mock.patch('terrareg.config.Config.ANALYTICS_AUTH_KEYS', ['test123-authorization-token:dev']):
+            res = client.get(
+                f"/v1/modules/test_token-name__{namespace}/{module}/{provider}/{f'{version}/' if version else ''}download",
+                headers={'X-Terraform-Version': 'TestTerraformVersion',
+                        'User-Agent': 'TestUserAgent',
+                        'Authorization': 'Bearer test123-authorization-token'}
+            )
 
         test_namespace = terrareg.models.Namespace(name=namespace)
         test_module = terrareg.models.Module(namespace=test_namespace, name=module)
@@ -157,6 +164,9 @@ For example:
         assert res.status_code == 204
 
         AnalyticsEngine.record_module_version_download.assert_called_with(
+            namespace_name=namespace,
+            module_name=module,
+            provider_name=provider,
             module_version=unittest.mock.ANY,
             analytics_token='test_token-name',
             terraform_version='TestTerraformVersion',
@@ -191,7 +201,7 @@ For example:
         mock_record_module_version_download):
         """Test endpoint without analytics token and with an internal auth token"""
 
-        with unittest.mock.patch('terrareg.config.Config.INTERNAL_EXTRACTION_ANALYITCS_TOKEN', 'unittest-internal-api-key'):
+        with unittest.mock.patch('terrareg.config.Config.INTERNAL_EXTRACTION_ANALYTICS_TOKEN', 'unittest-internal-api-key'):
             res = client.get(
                 '/v1/modules/testnamespace/testmodulename/testprovider/2.4.1/download',
                 headers={'X-Terraform-Version': 'TestTerraformVersion',
@@ -251,6 +261,9 @@ For example:
         assert res.status_code == 204
 
         AnalyticsEngine.record_module_version_download.assert_called_with(
+            namespace_name='testnamespace',
+            module_name='testmodulename',
+            provider_name='testprovider',
             module_version=unittest.mock.ANY,
             analytics_token='test_token-name',
             terraform_version='TestTerraformVersion',
@@ -263,3 +276,216 @@ For example:
         )
         assert AnalyticsEngine.record_module_version_download.call_args.kwargs['module_version'].id == test_module_version.id
 
+    @setup_test_data()
+    def test_download_with_following_namespace_redirect(
+            self, client, mock_models,
+            mock_record_module_version_download,
+            mock_create_audit_event):
+        """Test endpoint following namespace redirect"""
+        test_namespace = terrareg.models.Namespace.get(name='testnamespace')
+
+        with mock_create_audit_event:
+            # Rename namespace
+            test_namespace.update_name('newredirectname')
+
+        # Call redirect, ensuring original name is passed to analytics
+        res = client.get(
+            '/v1/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1/download',
+            headers={'X-Terraform-Version': 'TestTerraformVersion',
+                     'User-Agent': 'TestUserAgent',
+                     'Authorization': 'This is invalid'}
+        )
+
+        # Ensure new namespace name is present in download URL
+        assert res.headers['X-Terraform-Get'] == '/v1/terrareg/modules/newredirectname/testmodulename/testprovider/2.4.1/source.zip'
+        assert res.status_code == 204
+
+        AnalyticsEngine.record_module_version_download.assert_called_with(
+            namespace_name='testnamespace',
+            module_name='testmodulename',
+            provider_name='testprovider',
+            module_version=unittest.mock.ANY,
+            analytics_token='test_token-name',
+            terraform_version='TestTerraformVersion',
+            user_agent='TestUserAgent',
+            auth_token=None
+        )
+
+        # Call new namespace name, ensuring that the new namespace is passed to analaytics
+        res = client.get(
+            '/v1/modules/test_token-name__newredirectname/testmodulename/testprovider/2.4.1/download',
+            headers={'X-Terraform-Version': 'TestTerraformVersion',
+                     'User-Agent': 'TestUserAgent',
+                     'Authorization': 'This is invalid'}
+        )
+
+        assert res.headers['X-Terraform-Get'] == '/v1/terrareg/modules/newredirectname/testmodulename/testprovider/2.4.1/source.zip'
+        assert res.status_code == 204
+
+        AnalyticsEngine.record_module_version_download.assert_called_with(
+            namespace_name='newredirectname',
+            module_name='testmodulename',
+            provider_name='testprovider',
+            module_version=unittest.mock.ANY,
+            analytics_token='test_token-name',
+            terraform_version='TestTerraformVersion',
+            user_agent='TestUserAgent',
+            auth_token=None
+        )
+
+    @setup_test_data()
+    @pytest.mark.parametrize('new_namespace_name, new_module_name, new_provider_name', [
+        # Change namespace
+        ('moduledetails', 'testmodulename', 'testprovider'),
+
+        # Change module name
+        ('testnamespace', 'testredirectmodulename', 'testprovider'),
+
+        # Change provider name
+        ('testnamespace', 'testmodulename', 'testnewproviderredirect'),
+
+        # Change namespace, module and provider names
+        ('moduledetails', 'testredirectmodulename', 'testnewproviderredirect'),
+    ])
+    def test_download_with_following_module_provider_redirect(
+            self, new_namespace_name, new_module_name, new_provider_name,
+            client, mock_models, mock_create_audit_event, mock_record_module_version_download):
+        """Test endpoint following module redirect"""
+        test_namespace = terrareg.models.Namespace.get(name='testnamespace')
+        test_module = terrareg.models.Module(namespace=test_namespace, name='testmodulename')
+        test_module_provider = terrareg.models.ModuleProvider(module=test_module, name='testprovider')
+
+        new_namespace_obj = terrareg.models.Namespace.get(name=new_namespace_name)
+
+        with mock_create_audit_event:
+            # Rename namespace
+            test_module_provider.update_name(namespace=new_namespace_obj, module_name=new_module_name, provider_name=new_provider_name)
+
+        # Call redirect, ensuring original name is passed to analytics
+        res = client.get(
+            '/v1/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1/download',
+            headers={'X-Terraform-Version': 'TestTerraformVersion',
+                     'User-Agent': 'TestUserAgent',
+                     'Authorization': 'This is invalid'}
+        )
+
+        # Ensure new namespace name is present in download URL
+        assert res.headers['X-Terraform-Get'] == f'/v1/terrareg/modules/{new_namespace_name}/{new_module_name}/{new_provider_name}/2.4.1/source.zip'
+        assert res.status_code == 204
+
+        AnalyticsEngine.record_module_version_download.assert_called_with(
+            namespace_name='testnamespace',
+            module_name='testmodulename',
+            provider_name='testprovider',
+            module_version=unittest.mock.ANY,
+            analytics_token='test_token-name',
+            terraform_version='TestTerraformVersion',
+            user_agent='TestUserAgent',
+            auth_token=None
+        )
+
+        # Call new namespace name, ensuring that the new namespace is passed to analaytics
+        res = client.get(
+            f'/v1/modules/test_token-name__{new_namespace_name}/{new_module_name}/{new_provider_name}/2.4.1/download',
+            headers={'X-Terraform-Version': 'TestTerraformVersion',
+                     'User-Agent': 'TestUserAgent',
+                     'Authorization': 'This is invalid'}
+        )
+
+        assert res.headers['X-Terraform-Get'] == f'/v1/terrareg/modules/{new_namespace_name}/{new_module_name}/{new_provider_name}/2.4.1/source.zip'
+        assert res.status_code == 204
+
+        AnalyticsEngine.record_module_version_download.assert_called_with(
+            namespace_name=new_namespace_name,
+            module_name=new_module_name,
+            provider_name=new_provider_name,
+            module_version=unittest.mock.ANY,
+            analytics_token='test_token-name',
+            terraform_version='TestTerraformVersion',
+            user_agent='TestUserAgent',
+            auth_token=None
+        )
+
+    @setup_test_data()
+    @pytest.mark.parametrize('call_namespace, call_module, call_provider', [
+        # Original module name, provider and namespace, with original namespace name
+        ("testnamespace", "testmodulename", "testprovider"),
+        # Original module name, provider and namespace, with new namespace name
+        ("updatedoriginalnamespacename", "testmodulename", "testprovider"),
+
+        # New module name, provider and namespace, with original namespace name
+        ("moduledetails", "newmodulename", "newprovidername"),
+        # New module name, provider and namespace, with new namespace name
+        ("updatedmovednamespacename", "newmodulename", "newprovidername"),
+    ])
+    def test_download_with_following_namespace_and_module_provider_redirect(
+            self, call_namespace, call_module, call_provider,
+            client, mock_models, mock_create_audit_event,
+            mock_record_module_version_download):
+        """Test endpoint following namespace and module redirect"""
+        test_namespace = terrareg.models.Namespace.get(name='testnamespace')
+        test_module = terrareg.models.Module(namespace=test_namespace, name='testmodulename')
+        test_module_provider = terrareg.models.ModuleProvider(module=test_module, name='testprovider')
+
+        new_namespace_obj = terrareg.models.Namespace.get(name='moduledetails')
+
+        with mock_create_audit_event:
+            # Rename namespace
+            test_module_provider.update_name(namespace=new_namespace_obj, module_name='newmodulename', provider_name='newprovidername')
+
+            # Update name of original and new namespace
+            test_namespace.update_name('updatedoriginalnamespacename')
+            new_namespace_obj.update_name('updatedmovednamespacename')
+
+        # Call redirect, ensuring original name is passed to analytics
+        res = client.get(
+            f'/v1/modules/test_token-name__{call_namespace}/{call_module}/{call_provider}/2.4.1/download',
+            headers={'X-Terraform-Version': 'TestTerraformVersion',
+                     'User-Agent': 'TestUserAgent',
+                     'Authorization': 'This is invalid'}
+        )
+
+        # Ensure new namespace name is present in download URL
+        assert res.headers['X-Terraform-Get'] == f'/v1/terrareg/modules/updatedmovednamespacename/newmodulename/newprovidername/2.4.1/source.zip'
+        assert res.status_code == 204
+
+        AnalyticsEngine.record_module_version_download.assert_called_with(
+            namespace_name=call_namespace,
+            module_name=call_module,
+            provider_name=call_provider,
+            module_version=unittest.mock.ANY,
+            analytics_token='test_token-name',
+            terraform_version='TestTerraformVersion',
+            user_agent='TestUserAgent',
+            auth_token=None
+        )
+
+    @pytest.mark.parametrize('auth_token', [
+        'ignore-analytics-token',
+        'analytics-auth-token',
+        'internal-extraction-token'
+    ])
+    @setup_test_data()
+    def test_required_authentication(self, auth_token, client, mock_models, mock_record_module_version_download):
+        """Test that various forms of authentication work when unauthenticated access is disabled"""
+
+        with unittest.mock.patch('terrareg.config.Config.ANALYTICS_AUTH_KEYS', ['analytics-auth-token:dev']), \
+                unittest.mock.patch('terrareg.config.Config.IGNORE_ANALYTICS_TOKEN_AUTH_KEYS', ['ignore-analytics-token']), \
+                unittest.mock.patch('terrareg.config.Config.INTERNAL_EXTRACTION_ANALYTICS_TOKEN', 'internal-extraction-token'), \
+                unittest.mock.patch('terrareg.config.Config.ALLOW_UNAUTHENTICATED_ACCESS', False), \
+                unittest.mock.patch('terrareg.config.Config.TERRAFORM_PRESIGNED_URL_SECRET', 'test'):
+            res = client.get(
+                f"/v1/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1/download",
+                headers={'X-Terraform-Version': 'TestTerraformVersion',
+                        'User-Agent': 'TestUserAgent',
+                        'Authorization': f'Bearer {auth_token}'}
+            )
+        assert res.status_code == 204
+
+    @setup_test_data()
+    def test_unauthenticated(self, client, mock_models, mock_record_module_version_download):
+        """Test unauthenticated call to API"""
+        def call_endpoint():
+            return client.get('/v1/modules/testnamespace/testmodulename/testprovider/1.0.0/download')
+
+        self._test_unauthenticated_terraform_api_endpoint_test(call_endpoint)
