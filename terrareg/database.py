@@ -61,6 +61,7 @@ class Database():
         self._module_details = None
         self._module_version = None
         self._sub_module = None
+        self._gpg_key = None
         self._provider_source = None
         self._provider = None
         self._analytics = None
@@ -186,6 +187,13 @@ class Database():
         if self._module_version_file is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._module_version_file
+
+    @property
+    def gpg_key(self):
+        """Return gpg_key table."""
+        if self._gpg_key is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._gpg_key
 
     @property
     def provider_source(self):
@@ -538,6 +546,26 @@ class Database():
             sqlalchemy.Column('content', Database.medium_blob())
         )
 
+        self._gpg_key = sqlalchemy.Table(
+            'gpg_key', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column(
+                'namespace_id',
+                sqlalchemy.ForeignKey(
+                    'namespace.id',
+                    name='fk_gpg_key_namespace_id_namespace_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            ),
+            sqlalchemy.Column('ascii_armor', Database.medium_blob()),
+            sqlalchemy.Column('key_id', sqlalchemy.String(LARGE_COLUMN_SIZE)),
+            sqlalchemy.Column('source', sqlalchemy.String(LARGE_COLUMN_SIZE)),
+            sqlalchemy.Column('source_url', sqlalchemy.String(LARGE_COLUMN_SIZE)),
+            sqlalchemy.Column('created_at', sqlalchemy.DateTime),
+            sqlalchemy.Column('updated_at', sqlalchemy.DateTime),
+        )
+
         self._provider_source = sqlalchemy.Table(
             'provider_source', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
@@ -552,7 +580,7 @@ class Database():
             sqlalchemy.Column(
                 'namespace_id',
                 sqlalchemy.ForeignKey(
-                    'provider_namespace_id.id',
+                    'namespace.id',
                     name='fk_provider_namespace_id_namespace_id',
                     onupdate='CASCADE',
                     ondelete='CASCADE'),
