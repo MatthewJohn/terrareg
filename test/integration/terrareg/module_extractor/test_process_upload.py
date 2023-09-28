@@ -1751,3 +1751,106 @@ resource "aws_s3_bucket" "test" {
 
             finally:
                 shutil.rmtree(temp_dir)
+
+    def test_terraform_version(self):
+        """Test terraform_version data extraction"""
+        test_upload = UploadTestModule()
+
+        namespace = Namespace.get(name='testprocessupload', create=True)
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='21.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines("""
+terraform {
+  required_version = ">= 1.0, < 1.1.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.0, < 5.1.0"
+    }
+  }
+}
+""")
+
+                # Create module with version data
+                os.mkdir(os.path.join(upload_directory, 'modules'))
+                os.mkdir(os.path.join(upload_directory, 'modules', 'test-module'))
+                with open(os.path.join(upload_directory, 'modules', 'test-module', 'versions.tf'), 'w') as module_examples:
+                    module_examples.writelines("""
+terraform {
+  required_version = ">= 1.0, < 1.2.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.0, < 5.2.0"
+    }
+  }
+}
+""")
+
+                # Create example with version data
+                os.mkdir(os.path.join(upload_directory, 'examples'))
+                os.mkdir(os.path.join(upload_directory, 'examples', 'test-example'))
+                with open(os.path.join(upload_directory, 'examples', 'test-example', 'versions.tf'), 'w') as example_versions:
+                    example_versions.writelines("""
+terraform {
+  required_version = ">= 1.0, < 1.3.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 5.0, < 5.3.0"
+    }
+  }
+}
+""")
+
+            temp_dir = tempfile.mkdtemp()
+            try:
+
+                with mock.patch('terrareg.config.Config.DELETE_EXTERNALLY_HOSTED_ARTIFACTS', False), \
+                        mock.patch('terrareg.config.Config.DATA_DIRECTORY', temp_dir):
+                    UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+
+                    # Ensure the module version terraform_version argument is correct
+                    assert module_version.module_details.terraform_version == {
+                        'platform': 'linux_amd64',
+                        'provider_selections': {
+                            'registry.terraform.io/hashicorp/aws': '5.0.1'
+                        },
+                        'terraform_outdated': False,
+                        'terraform_version': '1.0.11'
+                    }
+
+                    # Ensure the sub-module terraform_version argument is correct
+                    assert len(module_version.get_submodules()) == 1
+                    assert module_version.get_submodules()[0].module_details.terraform_version == {
+                        'platform': 'linux_amd64',
+                        'provider_selections': {
+                            'registry.terraform.io/hashicorp/aws': '5.1.0'
+                        },
+                        'terraform_outdated': False,
+                        'terraform_version': '1.1.9'
+                    }
+
+                    # Ensure the example terraform_version argument is correct
+                    assert len(module_version.get_examples()) == 1
+                    assert module_version.get_examples()[0].module_details.terraform_version == {
+                        'platform': 'linux_amd64',
+                        'provider_selections': {
+                            'registry.terraform.io/hashicorp/aws': '5.2.0'
+                        },
+                        'terraform_outdated': False,
+                        'terraform_version': '1.2.9'
+                    }
+
+            finally:
+                shutil.rmtree(temp_dir)
