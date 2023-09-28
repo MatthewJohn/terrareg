@@ -1,12 +1,13 @@
 
 from functools import wraps
+import types
 
 from flask import abort
 
 import terrareg.auth
 
 
-def auth_wrapper(auth_check_method, *wrapper_args, request_kwarg_map={}, **wrapper_kwargs):
+def auth_wrapper(auth_check_method, *wrapper_args, request_kwarg_map={}, kwarg_values={}, **wrapper_kwargs):
     """
     Wrapper to custom authentication decorators.
     An authentication checking method should be passed with args/kwargs, which will be
@@ -25,6 +26,14 @@ def auth_wrapper(auth_check_method, *wrapper_args, request_kwarg_map={}, **wrapp
             for request_kwarg in request_kwarg_map:
                 if request_kwarg in kwargs:
                     auth_kwargs[request_kwarg_map[request_kwarg]] = kwargs[request_kwarg]
+
+            # Iterate through kwarg values map and add these directly to the call
+            for auth_kwarg_itx in kwarg_values:
+                # If value is a lambda, execute it to generate the value
+                if isinstance(kwarg_values[auth_kwarg_itx], types.LambdaType):
+                    auth_kwargs[auth_kwarg_itx] = kwarg_values[auth_kwarg_itx]()
+                else:
+                    auth_kwargs[auth_kwarg_itx] = kwarg_values[auth_kwarg_itx]
 
             # Call authentication method.
             if (status := getattr(auth_method, auth_check_method)(*wrapper_args, **auth_kwargs)) == False:

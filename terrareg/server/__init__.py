@@ -195,6 +195,12 @@ class Server(BaseHandler):
             '/v1/modules/<string:namespace>/<string:name>/<string:provider>/downloads/summary'
         )
 
+        # Terraform cloud/registry APIs for GPG key
+        self._api.add_resource(
+            ApiGpgKey,
+            '/v2/gpg-keys'
+        )
+
         # Views
         self._app.route('/')(self._view_serve_static_index)
         self._app.route(

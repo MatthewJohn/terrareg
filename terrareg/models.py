@@ -1165,6 +1165,91 @@ class Namespace(object):
         return links
 
 
+class GpgKey:
+
+    @classmethod
+    def create(cls, namespace, ascii_armor):
+        """Create GPG key"""
+        # @TODO Validate GPG key
+
+        id_ = cls.create_db_row(namespace=namespace, ascii_armor=ascii_armor)
+
+        obj = cls(id_=id_)
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_CREATE,
+            object_type=obj.__class__.__name__,
+            object_id=obj.id,
+            old_value=None, new_value=None
+        )
+
+        return obj
+
+    @classmethod
+    def create_db_row(cls, namespace, ascii_armor):
+        """Create intsance of GPG key in database"""
+        db = Database.get()
+        gpg_key_insert = db.gpg_key.insert().values(
+            namespace_id=namespace.pk,
+            ascii_armor=Database.encode_blob(ascii_armor),
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(gpg_key_insert)
+        return res.lastrowid
+
+    @property
+    def pk(self):
+        """Return primary key of object"""
+        return self._id
+
+    @property
+    def namespace(self):
+        """Return namespace for object"""
+        return Namespace.get_by_pk(self._get_db_row()['namespace_id'])
+
+    @property
+    def ascii_armor(self):
+        """Return ascii_armor for gpg key"""
+        return Database.decode_blob(self._get_db_row()['ascii_armor'])
+
+    def __init__(self, id_):
+        """Store member variables"""
+        self._id = id_
+        self._cache_db_row = None
+
+    def _get_db_row(self):
+        """Return database row for module details."""
+        if self._cache_db_row is None:
+            db = Database.get()
+            select = db.gpg_key.select(
+            ).where(
+                db.gpg_key.c.id == self.pk
+            )
+            with db.get_connection() as conn:
+                res = conn.execute(select)
+                self._cache_db_row = res.fetchone()
+
+        return self._cache_db_row
+
+    def get_api_data(self):
+        """Return API data for model"""
+        return {
+            "type": "gpg-keys",
+            "id": str(self.pk),
+            "attributes": {
+                "ascii-armor": self.ascii_armor,
+                "created-at": self._get_db_row()['created_at'].isoformat(),
+                "key-id": "32966F3FB5AC1129",
+                "namespace": self.namespace.name,
+                "source": "",
+                "source-url": None,
+                "trust-signature": "",
+                "updated-at": self._get_db_row()['updated_at'].isoformat()
+            }
+        }
+
 class Module(object):
 
     @staticmethod
