@@ -1854,3 +1854,154 @@ terraform {
 
             finally:
                 shutil.rmtree(temp_dir)
+
+    def test_terraform_modules(self):
+        """Test terraform_modules data extraction"""
+        test_upload = UploadTestModule()
+
+        namespace = Namespace.get(name='testprocessupload', create=True)
+        module = Module(namespace=namespace, name='test-module')
+        module_provider = ModuleProvider.get(module=module, name='aws', create=True)
+        module_version = ModuleVersion(module_provider=module_provider, version='21.0.0')
+        module_version.prepare_module()
+
+        with test_upload as zip_file:
+            with test_upload as upload_directory:
+                # Create main.tf
+                with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
+                    main_tf_fh.writelines("""
+# Call external module
+module "external_module" {
+  source  = "terraform-aws-modules/iam/aws"
+  version = "5.30.0"
+}
+
+# Call submodule
+module "internal_module" {
+  source = "./internal_module"
+}
+""")
+
+                os.mkdir(os.path.join(upload_directory, "internal_module"))
+                with open(os.path.join(upload_directory, "internal_module", "main.tf"), "w") as internal_tf:
+                    internal_tf.write("""
+output "test" { value = "test" }
+""")
+
+                # Create module with version data
+                os.mkdir(os.path.join(upload_directory, 'modules'))
+                os.mkdir(os.path.join(upload_directory, 'modules', 'test-module'))
+                with open(os.path.join(upload_directory, 'modules', 'test-module', 'main.tf'), 'w') as module_examples:
+                    module_examples.writelines("""
+# Call root module
+module "root_module" {
+  source = "../../"
+}
+# Call internal module
+module "internal_module" {
+  source = "../../internal_module"
+}
+""")
+
+                # Create example with version data
+                os.mkdir(os.path.join(upload_directory, 'examples'))
+                os.mkdir(os.path.join(upload_directory, 'examples', 'test-example'))
+                with open(os.path.join(upload_directory, 'examples', 'test-example', 'main.tf'), 'w') as example_versions:
+                    example_versions.writelines("""
+# Call root module
+module "root" {
+  source = "../../"
+}
+""")
+
+            temp_dir = tempfile.mkdtemp()
+            try:
+
+                with mock.patch('terrareg.config.Config.DELETE_EXTERNALLY_HOSTED_ARTIFACTS', False), \
+                        mock.patch('terrareg.config.Config.DATA_DIRECTORY', temp_dir):
+                    UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+
+                    # Ensure the module version terraform_modules argument is correct
+                    assert module_version.module_details.terraform_modules == {
+                        'Modules': [
+                            {
+                                'Dir': '.',
+                                'Key': '',
+                                'Source': ''},
+                            {
+                                'Dir': '.terraform/modules/external_module',
+                                'Key': 'external_module',
+                                'Source': 'registry.terraform.io/terraform-aws-modules/iam/aws',
+                                'Version': '5.30.0'},
+                            {
+                                'Dir': 'internal_module',
+                                'Key': 'internal_module',
+                                'Source': './internal_module'
+                            }
+                        ]
+                    }
+
+                    # Ensure the sub-module terraform_modules argument is correct
+                    assert len(module_version.get_submodules()) == 1
+                    assert module_version.get_submodules()[0].module_details.terraform_modules == {
+                        'Modules': [
+                            {
+                                'Dir': '.',
+                                'Key': '',
+                                'Source': ''
+                            },
+                            {
+                                'Dir': '../../internal_module',
+                                'Key': 'internal_module',
+                                'Source': '../../internal_module'
+                            },
+                            {
+                                'Dir': '../..',
+                                'Key': 'root_module',
+                                'Source': '../..'
+                            },
+                            {
+                                'Dir': '.terraform/modules/root_module.external_module',
+                                'Key': 'root_module.external_module',
+                                'Source': 'registry.terraform.io/terraform-aws-modules/iam/aws',
+                                'Version': '5.30.0'
+                            },
+                            {
+                                'Dir': '../../internal_module',
+                                'Key': 'root_module.internal_module',
+                                'Source': './internal_module'
+                            }
+                        ]
+                    }
+
+                    # Ensure the example terraform_modules argument is correct
+                    assert len(module_version.get_examples()) == 1
+                    assert module_version.get_examples()[0].module_details.terraform_modules == {
+                        'Modules': [
+                            {
+                                'Dir': '.',
+                                'Key': '',
+                                'Source': ''
+                            },
+                            {
+                                'Dir': '../..',
+                                'Key': 'root',
+                                'Source': '../..'
+                            },
+                            {
+                                'Dir': '.terraform/modules/root.external_module',
+                                'Key': 'root.external_module',
+                                'Source': 'registry.terraform.io/terraform-aws-modules/iam/aws',
+                                'Version': '5.30.0'
+                            },
+                            {
+                                'Dir': '../../internal_module',
+                                'Key': 'root.internal_module',
+                                'Source': './internal_module'
+                            }
+                        ]
+                    }
+
+            finally:
+                shutil.rmtree(temp_dir)
+
