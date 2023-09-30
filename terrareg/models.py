@@ -1505,14 +1505,17 @@ class ModuleDetails:
     def terraform_modules(self):
         """Return terraform modules output"""
         db_row = self._get_db_row()
+        data = None
         if db_row and db_row["terraform_modules"]:
             data = Database.decode_blob(db_row["terraform_modules"])
             if data:
                 try:
-                    return json.loads(data)
+                    data = json.loads(data)
+                    if isinstance(data, dict) and "Modules" in data and isinstance(data["Modules"], list):
+                        data["Modules"] = sorted(data.get("Modules", []), key=lambda x: x.get("Key"))
                 except:
                     pass
-        return None
+        return data
 
     def __init__(self, id: int):
         """Store member variables."""
