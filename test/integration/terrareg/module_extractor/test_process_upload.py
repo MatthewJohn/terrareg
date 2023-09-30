@@ -6,6 +6,7 @@ import os
 import tarfile
 from tempfile import mkdtemp
 import tempfile
+import platform
 
 from unittest import mock
 import zipfile
@@ -1820,35 +1821,37 @@ terraform {
                         mock.patch('terrareg.config.Config.DATA_DIRECTORY', temp_dir):
                     UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
+                    terraform_arch = "linux_amd64" if platform.uname().processor == "x86_64" else "linux_arm64"
+
                     # Ensure the module version terraform_version argument is correct
                     assert module_version.module_details.terraform_version == {
-                        'platform': 'linux_amd64',
+                        'platform': terraform_arch,
                         'provider_selections': {
                             'registry.terraform.io/hashicorp/aws': '5.0.1'
                         },
-                        'terraform_outdated': False,
+                        'terraform_outdated': True,
                         'terraform_version': '1.0.11'
                     }
 
                     # Ensure the sub-module terraform_version argument is correct
                     assert len(module_version.get_submodules()) == 1
                     assert module_version.get_submodules()[0].module_details.terraform_version == {
-                        'platform': 'linux_amd64',
+                        'platform': terraform_arch,
                         'provider_selections': {
                             'registry.terraform.io/hashicorp/aws': '5.1.0'
                         },
-                        'terraform_outdated': False,
+                        'terraform_outdated': True,
                         'terraform_version': '1.1.9'
                     }
 
                     # Ensure the example terraform_version argument is correct
                     assert len(module_version.get_examples()) == 1
                     assert module_version.get_examples()[0].module_details.terraform_version == {
-                        'platform': 'linux_amd64',
+                        'platform': terraform_arch,
                         'provider_selections': {
                             'registry.terraform.io/hashicorp/aws': '5.2.0'
                         },
-                        'terraform_outdated': False,
+                        'terraform_outdated': True,
                         'terraform_version': '1.2.9'
                     }
 
