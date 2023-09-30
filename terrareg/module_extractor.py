@@ -450,8 +450,8 @@ terraform {{
         with self._switch_terraform_versions(submodule_dir):
             if self._run_tf_init(submodule_dir):
                 terraform_graph = self._get_graph_data(submodule_dir)
-                terraform_modules = self._get_terraform_modules(self.module_directory)
-                terraform_version = self._get_terraform_version(self.module_directory)
+                terraform_modules = self._get_terraform_modules(submodule_dir)
+                terraform_version = self._get_terraform_version(submodule_dir)
 
         infracost = None
         # Run infracost on examples, if API key is set
