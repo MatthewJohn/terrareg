@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.80.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.1...v2.80.2) (2023-09-30)
+
+
+### Bug Fixes
+
+* Obtain terraform module data and terraform version data from submodule when extracting module version ([31569c0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/31569c04d799f69856a480ce17c25e6f435b8d24)), closes [#444](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/444)
+
 ## [2.80.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.0...v2.80.1) (2023-09-27)
 
 
