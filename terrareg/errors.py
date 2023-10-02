@@ -262,3 +262,15 @@ class PresignedUrlsNotConfiguredError(TerraregError):
     """Missing configurations for pre-signed URLs"""
 
     pass
+
+
+class InvalidGpgKeyError(TerraregError):
+    """Invalid GPG Key"""
+
+    pass
+
+
+class DuplicateGpgKeyError(TerraregError):
+    """"Duplicate GPG key exists"""
+
+    pass

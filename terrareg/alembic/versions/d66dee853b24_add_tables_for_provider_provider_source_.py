@@ -31,6 +31,7 @@ def upgrade():
     sa.Column('namespace_id', sa.Integer(), nullable=False),
     sa.Column('ascii_armor', sa.LargeBinary(length=16777215).with_variant(mysql.MEDIUMBLOB(), 'mysql'), nullable=True),
     sa.Column('key_id', sa.String(length=1024), nullable=True),
+    sa.Column('fingerprint', sa.String(length=1024), nullable=True),
     sa.Column('source', sa.String(length=1024), nullable=True),
     sa.Column('source_url', sa.String(length=1024), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),

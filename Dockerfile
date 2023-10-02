@@ -5,7 +5,8 @@ WORKDIR /
 RUN apt-get update && \
     apt-get install --assume-yes \
         curl zip unzip git \
-        pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 libgraphviz-dev && \
+        pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 libgraphviz-dev \
+        python3-gpg && \
     apt-get clean all
 
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \

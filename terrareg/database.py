@@ -560,6 +560,7 @@ class Database():
             ),
             sqlalchemy.Column('ascii_armor', Database.medium_blob()),
             sqlalchemy.Column('key_id', sqlalchemy.String(LARGE_COLUMN_SIZE)),
+            sqlalchemy.Column('fingerprint', sqlalchemy.String(LARGE_COLUMN_SIZE)),
             sqlalchemy.Column('source', sqlalchemy.String(LARGE_COLUMN_SIZE)),
             sqlalchemy.Column('source_url', sqlalchemy.String(LARGE_COLUMN_SIZE)),
             sqlalchemy.Column('created_at', sqlalchemy.DateTime),

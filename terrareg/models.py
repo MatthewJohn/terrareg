@@ -7,7 +7,10 @@ from distutils.version import LooseVersion
 import json
 import re
 import secrets
+from tempfile import mkdtemp
+import tempfile
 import urllib.parse
+import gnupg
 
 import sqlalchemy
 import semantic_version
@@ -22,7 +25,7 @@ import terrareg.audit
 import terrareg.audit_action
 import terrareg.result_data
 from terrareg.errors import (
-    DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
+    DuplicateGpgKeyError, DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, InvalidGpgKeyError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
     InvalidVersionError, ModuleProviderRedirectForceDeletionNotAllowedError, ModuleProviderRedirectInUseError, NamespaceAlreadyExistsError, NamespaceNotEmptyError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError, NonExistentModuleProviderRedirectError, NonExistentNamespaceRedirectError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError, RepositoryUrlContainsInvalidTemplateError,
     RepositoryUrlDoesNotContainValidSchemeError,
@@ -1167,31 +1170,80 @@ class Namespace(object):
 
 class GpgKey:
 
+
+    @classmethod
+    def _get_gpg_object_from_ascii_armor(cls, ascii_armor):
+        """Validate ascii armor and generate gpg object"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            gpg = gnupg.GPG(gnupghome=temp_dir, keyring=None, use_agent=False)
+            return gpg.import_keys(key_data=ascii_armor)
+
+    @classmethod
+    def get_by_fingerprint(cls, fingerprint):
+        """Get GPG key by fingerprint"""
+        db = Database.get()
+        select = sqlalchemy.select(
+            db.gpg_key.c.id
+        ).select_from(
+            db.gpg_key
+        ).where(
+            db.gpg_key.c.fingerprint==fingerprint
+        )
+
+        with db.get_connection() as conn:
+            row = conn.execute(select).fetchone()
+
+        if row:
+            return cls(pk=row['id'])
+        return None
+
     @classmethod
     def create(cls, namespace, ascii_armor):
         """Create GPG key"""
-        # @TODO Validate GPG key
+        ascii_armor = ascii_armor.strip()
 
-        id_ = cls.create_db_row(namespace=namespace, ascii_armor=ascii_armor)
+        fingerprint = None
+        if ascii_armor:
+            # Validate ascii armor
+            gpg_key = cls._get_gpg_object_from_ascii_armor(ascii_armor)
+            if gpg_key.returncode == 0 or len(gpg_key.fingerprints) != 1:
+                fingerprint = gpg_key.fingerprints[0]
 
-        obj = cls(id_=id_)
+        if not fingerprint:
+            raise InvalidGpgKeyError("GPG key provided is invalid or could not be read")
+
+        # Ensure that there is not already GPG key with the same fingerprint
+        duplicate_gpg_key = cls.get_by_fingerprint(fingerprint)
+        if duplicate_gpg_key:
+            raise DuplicateGpgKeyError("A duplicate GPG key exists with the same fingerprint")
+
+        pk = cls.create_db_row(
+            namespace=namespace,
+            ascii_armor=ascii_armor,
+            fingerprint=fingerprint,
+            key_id=fingerprint[-16:]
+        )
+
+        obj = cls(pk=pk)
 
         terrareg.audit.AuditEvent.create_audit_event(
-            action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_CREATE,
+            action=terrareg.audit_action.AuditAction.GPG_KEY_CREATE,
             object_type=obj.__class__.__name__,
-            object_id=obj.id,
+            object_id=obj.pk,
             old_value=None, new_value=None
         )
 
         return obj
 
     @classmethod
-    def create_db_row(cls, namespace, ascii_armor):
+    def create_db_row(cls, namespace, ascii_armor, fingerprint, key_id):
         """Create intsance of GPG key in database"""
         db = Database.get()
         gpg_key_insert = db.gpg_key.insert().values(
             namespace_id=namespace.pk,
             ascii_armor=Database.encode_blob(ascii_armor),
+            fingerprint=fingerprint,
+            key_id=key_id,
             created_at=datetime.datetime.now(),
             updated_at=datetime.datetime.now(),
         )
@@ -1202,7 +1254,7 @@ class GpgKey:
     @property
     def pk(self):
         """Return primary key of object"""
-        return self._id
+        return self._pk
 
     @property
     def namespace(self):
@@ -1214,9 +1266,9 @@ class GpgKey:
         """Return ascii_armor for gpg key"""
         return Database.decode_blob(self._get_db_row()['ascii_armor'])
 
-    def __init__(self, id_):
+    def __init__(self, pk):
         """Store member variables"""
-        self._id = id_
+        self._pk = pk
         self._cache_db_row = None
 
     def _get_db_row(self):

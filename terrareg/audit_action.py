@@ -37,3 +37,6 @@ class AuditAction(Enum):
     USER_GROUP_NAMESPACE_PERMISSION_DELETE = "user_group_namespace_permission_delete"
 
     USER_LOGIN = "user_login"
+
+    GPG_KEY_CREATE = "gpg_key_create"
+    GPG_KEY_DELETE = "gpg_key_delete"
