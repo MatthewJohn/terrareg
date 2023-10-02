@@ -20,9 +20,24 @@ class ApiGpgKey(ErrorCatchingResource):
             kwarg_values={'namespace': lambda: request.get_json().get("data", {}).get("attributes").get("namespace")})
     ]
 
-
     def _post(self):
-        """Handle update to settings."""
+        """
+        Handle creation of GPG key.
+
+        POST Body must be JSON, in the format:
+        ```
+        {
+            "data": {
+                "type": "gpg-keys",
+                "attributes": {
+                    "namespace": "my-namespace",
+                    "ascii-armor": "-----BEGIN PGP PUBLIC KEY BLOCK-----\n...\n-----END PGP PUBLIC KEY BLOCK-----\n"
+                }
+            },
+            "csrf_token": "xxxaaabbccc"
+        }
+        ```
+        """
         data = request.get_json().get("data", {})
         attributes = data.get("attributes", {})
         namespace_name = attributes.get("namespace")

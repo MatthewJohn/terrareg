@@ -383,14 +383,14 @@ Comma-separated list of file extensions to be extracted/shown in example file li
 Example: `tf,sh,json`
 
 Supported languages for syntax highlighting:
-* HCL
-* JavaScript/JSON
-* Bash
-* Batch
-* PL/SQL
-* PowerShell
-* Python
-* Dockerfile/docker-compose
+ * HCL
+ * JavaScript/JSON
+ * Bash
+ * Batch
+ * PL/SQL
+ * PowerShell
+ * Python
+ * Dockerfile/docker-compose
 
 NOTE: For new file types to be shown module versions must be re-indexed
 
@@ -475,21 +475,21 @@ Each item in the list should contain the following attributes:
 - name - Name of the git provider (e.g. 'Corporate Gitlab')
 
 - base_url - Formatted base URL for project's repo.
-(e.g. 'https://github.com/{namespace}/{module}'
-or 'https://gitlab.corporate.com/{namespace}/{module}')
+            (e.g. 'https://github.com/{namespace}/{module}'
+                or 'https://gitlab.corporate.com/{namespace}/{module}')
 - clone_url - Formatted clone URL for modules.
-(e.g. 'ssh://gitlab.corporate.com/scm/{namespace}/{module}.git'
-or 'https://github.com/{namespace}/{module}-{provider}.git')
-Note: Do not include '{version}' placeholder in the URL -
-the git tag will be automatically provided.
-If using SSH, the domain must be separated by the path using a forward slash. Use a colon to specify a port (e.g. `ssh://gitlab.corp.com:7999/namespace/name.git`)
+            (e.g. 'ssh://gitlab.corporate.com/scm/{namespace}/{module}.git'
+                or 'https://github.com/{namespace}/{module}-{provider}.git')
+            Note: Do not include '{version}' placeholder in the URL -
+            the git tag will be automatically provided.
+            If using SSH, the domain must be separated by the path using a forward slash. Use a colon to specify a port (e.g. `ssh://gitlab.corp.com:7999/namespace/name.git`)
 
 - browse_url - Formatted URL for user-viewable source code
-(e.g. 'https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}'
-or 'https://bitbucket.org/{namespace}/{module}/src/{version}?at=refs%2Ftags%2F{tag_uri_encoded}').
-Must include placeholders:
-- {path} (for source file/folder path)
-- {tag} or {tag_uri_encoded} for the git tag
+                (e.g. 'https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}'
+                or 'https://bitbucket.org/{namespace}/{module}/src/{version}?at=refs%2Ftags%2F{tag_uri_encoded}').
+                Must include placeholders:
+                 - {path} (for source file/folder path)
+                 - {tag} or {tag_uri_encoded} for the git tag
 
 An example for public repositories, using SSH for cloning, might be:
 ```
@@ -630,20 +630,20 @@ List of custom links to display on module provides.
 
 Each link must contain a display and and link URL.
 These can contain placeholders, such as:
-* namespace
-* module
-* provider
-* version
+ * namespace
+ * module
+ * provider
+ * version
 
 The links can be provided with a list of namespaces to limit the link to only modules within those namespaces.
 
 The format should be similar to this example:
 [
-{"text": "Text for the link e.g. Github Issues for {module}",
-"url": "https://github.com/{namespace}/{module}-{provider}/issues"},
-{"text": "Second link limited to two namespaces",
-"url": "https://mydomain.example.com/",
-"namespaces": ["namespace1", "namespace2"]}
+    {"text": "Text for the link e.g. Github Issues for {module}",
+     "url": "https://github.com/{namespace}/{module}-{provider}/issues"},
+    {"text": "Second link limited to two namespaces",
+     "url": "https://mydomain.example.com/",
+     "namespaces": ["namespace1", "namespace2"]}
 ]
 
 
@@ -656,9 +656,9 @@ Default: `[]`
 This configuration defines how re-indexes a module version, that already exists, behaves.
 
 This can be set to one of:
-* 'legacy' - The new module version will replace the old one. Until the version is re-published, it will not be available to Terraform. Analytics for the module version will be retained.
-* 'auto-publish' - The new module version will replace the old one. If the previous version was published, the new version will be automatically published. Analytics for the module version will be retained.
-* 'prohibit' - If a module version has already been indexed, it cannot be re-indexed via hooks/API calls without the version first being deleted.
+ * 'legacy' - The new module version will replace the old one. Until the version is re-published, it will not be available to Terraform. Analytics for the module version will be retained.
+ * 'auto-publish' - The new module version will replace the old one. If the previous version was published, the new version will be automatically published. Analytics for the module version will be retained.
+ * 'prohibit' - If a module version has already been indexed, it cannot be re-indexed via hooks/API calls without the version first being deleted.
 
 
 Default: `legacy`
@@ -957,13 +957,13 @@ Template of version number string to be used in Terraform examples in the UI.
 This is used by the snippet example of a Terraform module and the 'resource builder' example.
 
 The template can contain the following placeholders:
-* `{major}`, `{minor}`, `{patch}`
-* `{major_minus_one}`, `{minor_minus_one}`, `{patch_minus_one}`
-* `{major_plus_one}`, `{minor_plus_one}`, `{patch_plus_one}`
+ * `{major}`, `{minor}`, `{patch}`
+ * `{major_minus_one}`, `{minor_minus_one}`, `{patch_minus_one}`
+ * `{major_plus_one}`, `{minor_plus_one}`, `{patch_plus_one}`
 
 Some examples:
-* `>= {major}.{minor}.{patch}, < {major_plus_one}.0.0`
-* `~> {major}.{minor}.{patch}`
+ * `>= {major}.{minor}.{patch}, < {major_plus_one}.0.0`
+ * `~> {major}.{minor}.{patch}`
 
 For more information, see Terraform documentation: https://www.terraform.io/language/expressions/version-constraints
 

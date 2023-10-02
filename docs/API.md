@@ -154,6 +154,37 @@ Provide download summary for module provider.
 Return list of download counts for module provider.
 
 
+## ApiGpgKey
+
+`/v2/gpg-keys`
+
+Provide interface to create GPG Keys.
+
+
+#### POST
+
+
+Handle creation of GPG key.
+
+POST Body must be JSON, in the format:
+```
+{
+    "data": {
+        "type": "gpg-keys",
+        "attributes": {
+            "namespace": "my-namespace",
+            "ascii-armor": "-----BEGIN PGP PUBLIC KEY BLOCK-----
+...
+-----END PGP PUBLIC KEY BLOCK-----
+"
+        }
+    },
+    "csrf_token": "xxxaaabbccc"
+}
+```
+
+
+
 ## ApiTerraregGraphData
 
 `/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data`
@@ -393,7 +424,7 @@ Edit name/display name of a namespace
 Delete namespace
 
 JSON body:
-* csrf_token - CSRF token required for session-based authentication
+ * csrf_token - CSRF token required for session-based authentication
 
 
 
