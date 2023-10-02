@@ -1266,6 +1266,11 @@ class GpgKey:
         """Return ascii_armor for gpg key"""
         return Database.decode_blob(self._get_db_row()['ascii_armor'])
 
+    @property
+    def key_id(self):
+        """Return Key ID for GPG key"""
+        return self._get_db_row()['key_id']
+
     def __init__(self, pk):
         """Store member variables"""
         self._pk = pk
@@ -1293,7 +1298,7 @@ class GpgKey:
             "attributes": {
                 "ascii-armor": self.ascii_armor,
                 "created-at": self._get_db_row()['created_at'].isoformat(),
-                "key-id": "32966F3FB5AC1129",
+                "key-id": self.key_id,
                 "namespace": self.namespace.name,
                 "source": "",
                 "source-url": None,
