@@ -161,6 +161,15 @@ Return list of download counts for module provider.
 Provide interface to create GPG Keys.
 
 
+#### GET
+
+Lists GPG keys for given namespaces
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| filter[namespace] | args | str | True | `None` | Comma-separated list of namespaces to obtain GPG keys for |
+
 #### POST
 
 

@@ -1179,6 +1179,26 @@ class GpgKey:
             return gpg.import_keys(key_data=ascii_armor)
 
     @classmethod
+    def get_by_namespace(cls, namespace):
+        """Obtain GPG Keys for given namespace"""
+        db = Database.get()
+        select = sqlalchemy.select(
+            db.gpg_key.c.id
+        ).select_from(
+            db.gpg_key
+        ).where(
+            db.gpg_key.c.namespace_id==namespace.pk
+        )
+
+        with db.get_connection() as conn:
+            rows = conn.execute(select).fetchall()
+
+        return [
+            cls(pk=row["id"])
+            for row in rows
+        ]
+
+    @classmethod
     def get_by_fingerprint(cls, fingerprint):
         """Get GPG key by fingerprint"""
         db = Database.get()
