@@ -58,6 +58,10 @@
                 $('#saml-login').text(config.SAML_LOGIN_TEXT);
                 $('#saml-login').removeClass('default-hidden');
             }
+            if (config.GITHUB_ENABLED) {
+                $('#github-login').text(config.GITHUB_LOGIN_TEXT);
+                $('#github-login').removeClass('default-hidden');
+            }
         }
 
         if (authenticationEnabled === false) {
@@ -110,6 +114,7 @@
                 <label class="label">Single Sign-On</label>
                 <a id="openid-connect-login" class="button default-hidden" href="/openid/login">Login with OpenID Connect</a>
                 <a id="saml-login" class="button default-hidden" href="/saml/login?sso">Login with SAML</a>
+                <a id="github-login" class="button default-hidden" href="/github/login">Login with Github</a>
             </section>
         </div>
 

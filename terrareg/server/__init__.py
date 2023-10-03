@@ -302,6 +302,12 @@ class Server(BaseHandler):
             '/saml/metadata'
         )
 
+        # Github auth endpoints
+        self._api.add_resource(
+            GithubLoginInitiate,
+            '/github/login'
+        )
+
         # Terrareg APIs
         ## Config endpoint
         self._api.add_resource(

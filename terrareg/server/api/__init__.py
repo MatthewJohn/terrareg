@@ -62,3 +62,4 @@ from .terrareg_user_group import ApiTerraregAuthUserGroup
 from .terrareg_graph_data import ApiTerraregGraphData
 from .terrareg_module_provider_redirects import ApiTerraregModuleProviderRedirects
 from .terrareg_module_provider_redirect_delete import ApiTerraregModuleProviderRedirectDelete
+from .github_login_initiate import GithubLoginInitiate
