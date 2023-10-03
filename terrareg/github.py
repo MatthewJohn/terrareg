@@ -33,6 +33,6 @@ class Github:
             }
         )
         if res.status_code == 200:
-            data = parse_qs(res.content)
-            if access_token := data.get("access_token"):
-                return access_token
+            data = parse_qs(res.text)
+            if (access_tokens := data.get("access_token")) and len(access_tokens) == 1:
+                return access_tokens[0]
