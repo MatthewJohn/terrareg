@@ -11,6 +11,13 @@ class GithubLoginInitiate(ErrorCatchingResource):
     def _get(self):
         """Redirect to github login."""
 
+        if self.create_session() is None:
+            return make_response(render_template(
+                'error.html',
+                error_title='Login error',
+                error_description='Sessions are not available'
+            ))
+
         if not terrareg.github.Github.is_enabled():
             return make_response(render_template(
                 'error.html',
