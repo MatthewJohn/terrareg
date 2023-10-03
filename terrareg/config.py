@@ -907,6 +907,51 @@ class Config:
         """
         return int(os.environ.get("TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS", 10))
 
+    @property
+    def GITHUB_URL(self):
+        """
+        URL to Github for using Github authentication.
+
+        Defaults to public Github.
+        Change to use self-hosted hosted Github.
+        """
+        return os.environ.get("GITHUB_URL", "https://github.com")
+
+    @property
+    def GITHUB_API_URL(self):
+        """
+        Github API URL for using Github authentication.
+
+        Defaults to public Github.
+        Change to use self-hosted hosted Github, e.g. https://github-ent.example.com/api
+        """
+        return os.environ.get("GITHUB_API_URL", "https://api.github.com")
+
+    @property
+    def GITHUB_APP_CLIENT_ID(self):
+        """
+        Github app client ID for Github authentication.
+
+        See USER_GUIDE for setting up Github app.
+        """
+        return os.environ.get("GITHUB_APP_CLIENT_ID")
+
+    @property
+    def GITHUB_APP_CLIENT_SECRET(self):
+        """
+        Github App client secret for Github authentication.
+
+        See USER_GUIDE for setting up Github app.
+        """
+        return os.environ.get("GITHUB_APP_CLIENT_SECRET")
+
+    @property
+    def GITHUB_LOGIN_TEXT(self):
+        """
+        Login button text for authenticating to Github
+        """
+        return os.environ.get("GITHUB_LOGIN_TEXT", "Login with Github")
+
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""

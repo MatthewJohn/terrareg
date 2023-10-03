@@ -387,6 +387,61 @@ NOTE: For new file types to be shown module versions must be re-indexed
 Default: `['tf', 'tfvars', 'sh', 'json']`
 
 
+### GITHUB_API_URL
+
+
+Github API URL for using Github authentication.
+
+Defaults to public Github.
+Change to use self-hosted hosted Github, e.g. https://github-ent.example.com/api
+
+
+Default: `https://api.github.com`
+
+
+### GITHUB_APP_CLIENT_ID
+
+
+Github app client ID for Github authentication.
+
+See USER_GUIDE for setting up Github app.
+
+
+Default: ``
+
+
+### GITHUB_APP_CLIENT_SECRET
+
+
+Github App client secret for Github authentication.
+
+See USER_GUIDE for setting up Github app.
+
+
+Default: ``
+
+
+### GITHUB_LOGIN_TEXT
+
+
+Login button text for authenticating to Github
+
+
+Default: `Login with Github`
+
+
+### GITHUB_URL
+
+
+URL to Github for using Github authentication.
+
+Defaults to public Github.
+Change to use self-hosted hosted Github.
+
+
+Default: `https://github.com`
+
+
 ### GIT_CLONE_TIMEOUT
 
 
