@@ -221,6 +221,30 @@ Meta-data endpoint for SAML
 Return SAML SP metadata.
 
 
+## GithubLoginInitiate
+
+`/github/login`
+
+Interface to initiate authentication via Github
+
+
+#### GET
+
+Redirect to github login.
+
+
+## GithubLoginCallback
+
+`/github/callback`
+
+Interface to handle callback from Github login
+
+
+#### GET
+
+Handle callback from github auth.
+
+
 ## ApiTerraregConfig
 
 `/v1/terrareg/config`

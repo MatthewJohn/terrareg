@@ -11,3 +11,4 @@ class AuthenticationType(Enum):
     SESSION_PASSWORD = 3
     SESSION_OPENID_CONNECT = 4
     SESSION_SAML = 5
+    SESSION_GITHUB = 6

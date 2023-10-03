@@ -307,6 +307,10 @@ class Server(BaseHandler):
             GithubLoginInitiate,
             '/github/login'
         )
+        self._api.add_resource(
+            GithubLoginCallback,
+            '/github/callback'
+        )
 
         # Terrareg APIs
         ## Config endpoint

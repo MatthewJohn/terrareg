@@ -1,4 +1,8 @@
 
+from urllib.parse import parse_qs
+
+import requests
+
 import terrareg.config
 
 
@@ -15,3 +19,20 @@ class Github:
         """Generate login redirect URL"""
         config = terrareg.config.Config()
         return f"{config.GITHUB_URL}/login/oauth/authorize?client_id={config.GITHUB_APP_CLIENT_ID}"
+
+    @classmethod
+    def get_access_token(cls, code):
+        """Obtain access token from code"""
+        config = terrareg.config.Config()
+        res = requests.post(
+            f"{config.GITHUB_URL}/login/oauth/access_token",
+            data={
+                "client_id": config.GITHUB_APP_CLIENT_ID,
+                "client_secret": config.GITHUB_APP_CLIENT_SECRET,
+                "code": code
+            }
+        )
+        if res.status_code == 200:
+            data = parse_qs(res.content)
+            if access_token := data.get("access_token"):
+                return access_token
