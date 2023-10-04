@@ -2,6 +2,7 @@
 import flask
 
 import terrareg.saml
+import terrareg.config
 from .base_sso_auth_method import BaseSsoAuthMethod
 from .authentication_type import AuthenticationType
 
