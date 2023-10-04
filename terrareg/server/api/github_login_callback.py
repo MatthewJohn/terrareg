@@ -32,6 +32,8 @@ class GithubLoginCallback(ErrorCatchingResource):
             return self._github_login_error("Invalid code returned from Github")
 
         # If user is authenticated, update session
+        session['github_username'] = terrareg.github.Github.get_username(access_token)
+        session['organisations'] = terrareg.github.Github.get_user_organisations(access_token)
         session['is_admin_authenticated'] = True
         session['authentication_type'] = terrareg.auth.AuthenticationType.SESSION_GITHUB.value
         session.modified = True

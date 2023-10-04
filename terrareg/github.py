@@ -36,3 +36,45 @@ class Github:
             data = parse_qs(res.text)
             if (access_tokens := data.get("access_token")) and len(access_tokens) == 1:
                 return access_tokens[0]
+
+    @classmethod
+    def get_username(cls, access_token):
+        """Get username of authenticated user"""
+        config = terrareg.config.Config()
+        res = requests.get(
+            f"{config.GITHUB_API_URL}/user",
+            headers={
+                "X-GitHub-Api-Version": "2022-11-28",
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"Bearer {access_token}"
+            }
+        )
+        if res.status_code == 200:
+            return res.json().get("login")
+
+    @classmethod
+    def get_user_organisations(cls, access_token):
+        """Get username of authenticated user"""
+        config = terrareg.config.Config()
+        res = requests.get(
+            f"{config.GITHUB_API_URL}/user/memberships/orgs",
+            headers={
+                "X-GitHub-Api-Version": "2022-11-28",
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"Bearer {access_token}"
+            }
+        )
+
+        if res.status_code == 200:
+            # Iterate over memberships, only get active memberships
+            # that where the user is admin
+            return [
+                org_membership.get("organization", {}).get("login")
+                for org_membership in res.json()
+                if (
+                    org_membership.get("organization", {}).get("login") and
+                    org_membership.get("state") == "active" and
+                    org_membership.get("role") == "admin"
+                )
+            ]
+        return []
