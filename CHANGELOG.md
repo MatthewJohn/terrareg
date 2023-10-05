@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.80.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.2...v2.80.3) (2023-10-05)
+
+
+### Bug Fixes
+
+* Add missing import in saml authentication auth method ([2ccc00f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2ccc00fdb1897fdc0d2cf4435d3b3fbebf8a5b55))
+
 ## [2.80.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.1...v2.80.2) (2023-09-30)
 
 
