@@ -952,6 +952,14 @@ class Config:
         """
         return os.environ.get("GITHUB_LOGIN_TEXT", "Login with Github")
 
+    @property
+    def AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES(self):
+        """
+        Whether to automatically generated namespaces for each user (and all related organisations) that authenticate to Terrareg.
+
+        The user will have full permissions over these namespaces.
+        """
+        return self.convert_boolean(os.environ.get("AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES", "False"))
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""

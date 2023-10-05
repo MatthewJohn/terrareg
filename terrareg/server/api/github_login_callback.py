@@ -6,6 +6,7 @@ import terrareg.github
 import terrareg.auth
 import terrareg.audit
 import terrareg.audit_action
+import terrareg.config
 
 
 class GithubLoginCallback(ErrorCatchingResource):
@@ -32,8 +33,13 @@ class GithubLoginCallback(ErrorCatchingResource):
             return self._github_login_error("Invalid code returned from Github")
 
         # If user is authenticated, update session
-        session['github_username'] = terrareg.github.Github.get_username(access_token)
-        session['organisations'] = terrareg.github.Github.get_user_organisations(access_token)
+        user_id = terrareg.github.Github.get_username(access_token)
+        session['github_username'] = user_id
+
+        # Obtain list of organisations that the user is an owner of and add the user's user ID to the list
+        organisations = terrareg.github.Github.get_user_organisations(access_token)
+        organisations.append(user_id)
+        session['organisations'] = organisations
         session['is_admin_authenticated'] = True
         session['authentication_type'] = terrareg.auth.AuthenticationType.SESSION_GITHUB.value
         session.modified = True
