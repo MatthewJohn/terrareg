@@ -289,7 +289,7 @@ Generate client ID and client secret:
  * Copy the value from the client secret to populate `GITHUB_APP_CLIENT_SECRET`
 
 
-Once created, generate a private key:
+Once created, generate a private key (this is not currently used, but will be in future):
 
  * On the same page, find `Private keys` and click "Generate a private key"
  * Download the file and make the file accessible to the Terrareg installation, set in `GITHUB_APP_PRIVATE_KEY_PATH`
