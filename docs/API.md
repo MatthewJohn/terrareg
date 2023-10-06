@@ -355,6 +355,14 @@ Provide interface to obtain namespaces.
 #### GET
 
 Return list of namespaces.
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| only_published | args | boolean | False | `False` | Whether to only show namespaces with published modules |
+| offset | args | int | False | `0` | Pagination offset |
+| limit | args | int | False | `10` | Pagination limit |
+
 #### POST
 
 Create namespace.

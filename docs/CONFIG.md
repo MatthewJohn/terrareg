@@ -203,6 +203,17 @@ If disabled, namespaces must be created using the namespace create endpoint (or 
 Default: `True`
 
 
+### AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES
+
+
+Whether to automatically generated namespaces for each user (and all related organisations) that authenticate to Terrareg.
+
+The user will have full permissions over these namespaces.
+
+
+Default: `False`
+
+
 ### AUTO_PUBLISH_MODULE_VERSIONS
 
 

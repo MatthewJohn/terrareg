@@ -15,7 +15,7 @@ class ApiTerraregInitialSetupData(ErrorCatchingResource):
         namespace = None
         module = None
         module_provider = None
-        namespaces = terrareg.models.Namespace.get_all(only_published=False)
+        namespaces = terrareg.models.Namespace.get_all(only_published=False).rows
         version = None
         integrations = {}
         if namespaces:

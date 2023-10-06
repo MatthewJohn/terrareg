@@ -257,6 +257,7 @@ For self-hosted Github Enterprise installations, `GITHUB_URL` and `GITHUB_API_UR
 Github users are automatically mapped to any groups in Terrareg that are named after organisations that they are named after.
 E.g. User `testuser`, who is a member of the `testorg` organisation would be mapped to the groups `testuser` and `testorg` Terrareg group, if they exist.
 
+
 #### Setup Github app
 
 To setup the application for Github, goto `https://github.com/settings/apps/new` (or `https://github.com/organizations/<organisation>/settings/apps`)
@@ -292,6 +293,12 @@ Once created, generate a private key:
 
  * On the same page, find `Private keys` and click "Generate a private key"
  * Download the file and make the file accessible to the Terrareg installation, set in `GITHUB_APP_PRIVATE_KEY_PATH`
+
+#### Github namespace mapping
+
+If `AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES` is enabled, namespaces are automatically created for the logged in Github user and all organisations that they are an owner of.
+
+The user has full permissions to each of these namespaces, allowing them to create modules in them.
 
 
 ## Disable Unauthenticated Access
