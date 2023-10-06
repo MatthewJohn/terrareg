@@ -354,14 +354,20 @@ Provide interface to obtain namespaces.
 
 #### GET
 
+
 Return list of namespaces.
+
+The offset/limit arguments are currently optional.
+Without them, all namespaces will be returned in a list (legacy response format).
+Providing these values will return an object with a meta object and a list of namespaces.
+
 ##### Arguments
 
 | Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
 |----------|----------------------------------------------------|------|----------|---------|------|
 | only_published | args | boolean | False | `False` | Whether to only show namespaces with published modules |
 | offset | args | int | False | `0` | Pagination offset |
-| limit | args | int | False | `10` | Pagination limit |
+| limit | args | int | False | `None` | Pagination limit |
 
 #### POST
 

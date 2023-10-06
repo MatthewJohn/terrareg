@@ -19,15 +19,12 @@ class TestApiTerraregNamespaceList(TerraregUnitTest):
             res = client.get('/v1/terrareg/namespaces')
 
             assert res.status_code == 200
-            assert res.json == {
-                'meta': {'current_offset': 0, 'limit': 10},
-                'namespaces': []
-            }
+            assert res.json == []
 
-            mocked_namespace_get_all.assert_called_once_with(only_published=False, limit=10, offset=0)
+            mocked_namespace_get_all.assert_called_once_with(only_published=False, limit=None, offset=0)
 
-    def test_with_no_namespaces_only_published(self, client):
-        """Test endpoint when no namespaces are present."""
+    def test_with_no_namespaces_and_limit_offset(self, client):
+        """Test endpoint when no namespaces are present with limit and offset."""
         with mock.patch('terrareg.models.Namespace.get_all') as mocked_namespace_get_all:
             mocked_namespace_get_all.return_value = terrareg.result_data.ResultData(offset=0, limit=10, rows=[], count=0)
 
@@ -47,17 +44,14 @@ class TestApiTerraregNamespaceList(TerraregUnitTest):
         """Test endpoint with existing namespaces."""
         res = client.get('/v1/terrareg/namespaces')
         assert res.status_code == 200
-        assert res.json == {
-            'meta': {'current_offset': 0, 'limit': 10},
-            'namespaces': [
-                {'name': 'testnamespace', 'view_href': '/modules/testnamespace', 'display_name': None},
-                {'name': 'moduledetails', 'view_href': '/modules/moduledetails', 'display_name': None},
-                {'name': 'secondtestnamespace', 'view_href': '/modules/secondtestnamespace', 'display_name': None},
-                {'name': 'smallernamespacelist', 'view_href': '/modules/smallernamespacelist', 'display_name': 'Smaller Namespace List'},
-                {'name': 'moduleextraction', 'view_href': '/modules/moduleextraction', 'display_name': None},
-                {'name': 'emptynamespace', 'view_href': '/modules/emptynamespace', 'display_name': None}
-            ]
-        }
+        assert res.json == [
+            {'name': 'testnamespace', 'view_href': '/modules/testnamespace', 'display_name': None},
+            {'name': 'moduledetails', 'view_href': '/modules/moduledetails', 'display_name': None},
+            {'name': 'secondtestnamespace', 'view_href': '/modules/secondtestnamespace', 'display_name': None},
+            {'name': 'smallernamespacelist', 'view_href': '/modules/smallernamespacelist', 'display_name': 'Smaller Namespace List'},
+            {'name': 'moduleextraction', 'view_href': '/modules/moduleextraction', 'display_name': None},
+            {'name': 'emptynamespace', 'view_href': '/modules/emptynamespace', 'display_name': None}
+        ]
 
     def test_unauthenticated(self, client, mock_models):
         """Test unauthenticated call to API"""

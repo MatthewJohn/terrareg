@@ -18,7 +18,7 @@
         }
     }
     function getResults(offset) {
-        $.get(`/v1/terrareg/namespaces?only_published=true&offset=${offset}`, function(data) {
+        $.get(`/v1/terrareg/namespaces?only_published=true&offset=${offset}&limit=10`, function(data) {
 
             // Update current meta data
             currentSearchMeta = data.meta;

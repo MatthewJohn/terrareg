@@ -37,12 +37,18 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
         parser.add_argument(
             'limit', type=int,
             location='args',
-            default=10, help='Pagination limit'
+            default=None, help='Pagination limit'
         )
         return parser
 
     def _get(self):
-        """Return list of namespaces."""
+        """
+        Return list of namespaces.
+
+        The offset/limit arguments are currently optional.
+        Without them, all namespaces will be returned in a list (legacy response format).
+        Providing these values will return an object with a meta object and a list of namespaces.
+        """
         parser = self._get_arg_parser()
         args = parser.parse_args()
 
@@ -50,17 +56,22 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
             only_published=args.only_published, limit=args.limit, offset=args.offset
         )
 
-        return {
-            "meta": namespace_results.meta,
-            "namespaces": [
-                {
-                    "name": namespace.name,
-                    "view_href": namespace.get_view_url(),
-                    "display_name": namespace.display_name
-                }
-                for namespace in namespace_results.rows
-            ]
-        }
+        namespace_list = [
+            {
+                "name": namespace.name,
+                "view_href": namespace.get_view_url(),
+                "display_name": namespace.display_name
+            }
+            for namespace in namespace_results.rows
+        ]
+
+        if args.limit is not None:
+            return {
+                "meta": namespace_results.meta,
+                "namespaces": namespace_list
+            }
+        else:
+            return namespace_list
 
     def _post(self):
         """Create namespace."""
