@@ -23,6 +23,9 @@ class Github:
     @classmethod
     def get_access_token(cls, code):
         """Obtain access token from code"""
+        if not code:
+            return None
+
         config = terrareg.config.Config()
         res = requests.post(
             f"{config.GITHUB_URL}/login/oauth/access_token",
@@ -40,6 +43,8 @@ class Github:
     @classmethod
     def get_username(cls, access_token):
         """Get username of authenticated user"""
+        if not access_token:
+            return None
         config = terrareg.config.Config()
         res = requests.get(
             f"{config.GITHUB_API_URL}/user",
@@ -55,6 +60,9 @@ class Github:
     @classmethod
     def get_user_organisations(cls, access_token):
         """Get username of authenticated user"""
+        if not access_token:
+            return []
+
         config = terrareg.config.Config()
         res = requests.get(
             f"{config.GITHUB_API_URL}/user/memberships/orgs",
@@ -65,12 +73,12 @@ class Github:
             }
         )
 
-        if res.status_code == 200:
+        if res.status_code == 200 and (response_data := res.json()):
             # Iterate over memberships, only get active memberships
             # that where the user is admin
             return [
                 org_membership.get("organization", {}).get("login")
-                for org_membership in res.json()
+                for org_membership in response_data
                 if (
                     org_membership.get("organization", {}).get("login") and
                     org_membership.get("state") == "active" and
