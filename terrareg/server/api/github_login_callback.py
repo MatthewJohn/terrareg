@@ -34,6 +34,8 @@ class GithubLoginCallback(ErrorCatchingResource):
 
         # If user is authenticated, update session
         user_id = terrareg.github.Github.get_username(access_token)
+        if user_id is None:
+            return self._github_login_error("Invalid user data returned from Github")
         session['github_username'] = user_id
 
         # Obtain list of organisations that the user is an owner of and add the user's user ID to the list
