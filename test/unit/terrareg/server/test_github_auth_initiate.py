@@ -41,6 +41,11 @@ class TestGithubAuthInitiate(TerraregUnitTest):
 
             mock_is_enabled.assert_called_once_with()
 
+            # Ensure session variables have not been set
+            with client.session_transaction() as session:
+                assert 'csrf_token' in session
+                assert 'session_id' in session
+
     def test_call(self, client, mock_models):
         """Test valid call to endpoint."""
         with unittest.mock.patch('terrareg.config.Config.SECRET_KEY', 'abcdefg'), \
@@ -59,3 +64,8 @@ class TestGithubAuthInitiate(TerraregUnitTest):
 
             mock_is_enabled.assert_called_once_with()
             mock_get_login_redirect_url.assert_called_once_with()
+
+            # Ensure session variables have not been set
+            with client.session_transaction() as session:
+                assert 'csrf_token' in session
+                assert 'session_id' in session
