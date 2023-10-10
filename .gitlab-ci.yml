@@ -80,8 +80,6 @@ spell-checker:
   extends: .test_image
   script:
     ./scripts/check_spelling.sh
-  only:
-    - merge_requests
 
 test-docker-image:
   stage: test
