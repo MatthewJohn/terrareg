@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.80.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.3...v2.80.4) (2023-10-10)
+
+
+### Bug Fixes
+
+* requirements-dev.txt to reduce vulnerabilities ([7ce0ea8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7ce0ea80b6495a5cf7d0cf1bdd12c07a9ff9e094))
+* requirements-dev.txt to reduce vulnerabilities ([f1e1f32](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f1e1f32d17eac7b39834d3309d6329f80d839cf8))
+* requirements-dev.txt to reduce vulnerabilities ([c777375](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c777375a497fa152a4db9c578ee7028fdd91a0cc))
+* requirements.txt to reduce vulnerabilities ([7d15835](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7d158356f5840e81c62fceac19829a0236b7556b))
+* Upgrade pyopenssl package to fix compatibility issues with newer versions of cryptography package ([2a5529e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2a5529e576d368d4b5218e2385814b822503be73))
+
 ## [2.80.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.2...v2.80.3) (2023-10-05)
 
 
