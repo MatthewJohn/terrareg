@@ -28,7 +28,7 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     wget https://github.com/aquasecurity/tfsec/releases/download/v1.28.4/tfsec-linux-${arch} -O /usr/local/bin/tfsec && \
     chmod +x /usr/local/bin/tfsec'
 
-# Download infracost
+# Download Infracost
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     then \
       arch=arm64; \
@@ -61,6 +61,9 @@ RUN apt-get update && \
 
 # Install firefox and geckodriver
 RUN apt-get update && apt-get install -y firefox firefox-geckodriver && apt-get clean all
+
+# Install packages for spell checking
+RUN apt-get update && apt-get install -y hunspell-en-gb python3-enchant pylint && apt-get clean all
 
 COPY requirements-dev.txt .
 RUN pip install --proxy=$http_proxy -r requirements-dev.txt

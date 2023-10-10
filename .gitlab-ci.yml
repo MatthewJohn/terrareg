@@ -75,6 +75,14 @@ mysql-integration-selenium-tests:
     reports:
       junit: pytest-report.xml
 
+spell-checker:
+  stage: test
+  extends: .test_image
+  script:
+    ./scripts/check_spelling.sh
+  only:
+    - merge_requests
+
 test-docker-image:
   stage: test
   # Use python:3.10, as it's already used
