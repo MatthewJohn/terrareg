@@ -81,7 +81,7 @@ For information about running with docker-compose, SSL certificate generation or
   Navigate to http://localhost:5000 to get started, or http://localhost/modules/helloworld/my-tf-module to see the uploaded example!
 
 
-**NOTE:** To use modules from the registry in Terraform, a valid SSL certificate must be used. Terraform will not work if you supply `http://` as a protocol for the module URL, as it will treat this as a direct HTTP download, rather than treating it as a registry.
+**NOTE:** To use modules from the registry in Terraform, a valid SSL certificate is incredibly highly recommended. Terraform will not work if you supply `http://` as a protocol for the module URL, as it will treat this as a direct HTTP download, rather than treating it as a registry. Whilst Terrareg does handle these types of requests, you will not be able to the module version ranges that Terraform provides.
 
 
 ## Additional configuration
