@@ -17,7 +17,7 @@ class Saml2:
 
     @classmethod
     def is_enabled(cls):
-        """Whether SAML auithentication is enabled"""
+        """Whether SAML authentication is enabled"""
         config = terrareg.config.Config()
         _, domain, _ = get_public_url_details()
         return (domain is not None and

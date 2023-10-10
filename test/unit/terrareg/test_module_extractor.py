@@ -330,7 +330,7 @@ terraform {
                     pass
 
     def test_switch_terraform_versions_with_lock(self):
-        """Test switching terraform versions whilst Terraform locked is already aquired."""
+        """Test switching terraform versions whilst Terraform locked is already acquired."""
         module_extractor = GitModuleExtractor(module_version=None)
         mock_lock = unittest.mock.MagicMock()
         mock_lock.acquire.return_value = False

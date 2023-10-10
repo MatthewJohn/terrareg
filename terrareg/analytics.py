@@ -304,8 +304,8 @@ class AnalyticsEngine:
             db.analytics.c.namespace_name.in_(namespace_names)
         )
 
-        # If lookback days has been configured, limit the query
-        # to timestamps more recent than the cutoff
+        # If look-back days has been configured, limit the query
+        # to timestamps more recent than the cut-off
         lookback_days = Config().REDIRECT_DELETION_LOOKBACK_DAYS
         if lookback_days >= 0:
             filter_query = filter_query.where(
@@ -370,7 +370,7 @@ class AnalyticsEngine:
             for row in res:
 
                 # Check if row is usable
-                ## Skip any rows without ananlytics tokens, if they are required.
+                ## Skip any rows without analytics tokens, if they are required.
                 if AnalyticsEngine.are_tokens_enabled() and not row['analytics_token']:
                     continue
                 ## Skip any rows without an environment, if they are required.
@@ -469,7 +469,7 @@ class AnalyticsEngine:
 
     @classmethod
     def get_prometheus_metrics(cls):
-        """Return prometheus metrics for modules and usage."""
+        """Return Prometheus metrics for modules and usage."""
         prometheus_generator = PrometheusGenerator()
         
         module_count_metric = PrometheusMetric(
@@ -526,7 +526,7 @@ class PrometheusMetric:
     """Prometheus metric"""
 
     def __init__(self, name, type_, help):
-        """Store member variables and initailise help and type lines."""
+        """Store member variables and initialise help and type lines."""
         self._name = name
         self._type = type_
         self._help = help
@@ -550,7 +550,7 @@ class PrometheusMetric:
         return self._lines
 
 class PrometheusGenerator:
-    """Generate prometheus metrics output"""
+    """Generate Prometheus metrics output"""
 
     def __init__(self):
         """Initialise empty data"""
@@ -561,5 +561,5 @@ class PrometheusGenerator:
         self._lines += metric.generate()
 
     def generate(self):
-        """Generate output for prometheus metrics"""
+        """Generate output for Prometheus metrics"""
         return '\n'.join(self._lines)

@@ -10,7 +10,7 @@ import terrareg.auth_wrapper
 
 
 class ApiTerraregModuleVersionDetails(ErrorCatchingResource):
-    """Interface to obtain module verison details."""
+    """Interface to obtain module version details."""
 
     method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 

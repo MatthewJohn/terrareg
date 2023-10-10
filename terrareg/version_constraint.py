@@ -8,7 +8,7 @@ import semantic_version
 class VersionCompatibilityType(Enum):
     """Version compatibility status types"""
 
-    # There is no contraint on the module version,
+    # There is no constraint on the module version,
     # so compatibility cannot be determined
     NO_CONSTRAINT = "no_constraint"
     # Compatible
@@ -32,7 +32,7 @@ class VersionConstraint:
 
     @classmethod
     def version_string_to_sem_version(cls, version_string):
-        """Convert version string to sem version. Returns sem version, whether minor matched and whether patch matched"""
+        """Convert version string to semantic version. Returns semantic version, whether minor matched and whether patch matched"""
         version_match = cls.RE_VERSION_MATCH_PART.match(version_string)
         if version_match is None:
             return None, False, False
@@ -161,7 +161,7 @@ class VersionConstraint:
                 if version_match_sem == target_version_sem:
                     return VersionCompatibilityType.INCOMPATIBLE
 
-            # If an unkown comparison is found, return error
+            # If an unknown comparison is found, return error
             else:
                 return VersionCompatibilityType.ERROR
 

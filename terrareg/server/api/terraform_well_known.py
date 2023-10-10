@@ -9,7 +9,7 @@ class ApiTerraformWellKnown(Resource):
     """Terraform .well-known discovery"""
 
     def get(self):
-        """Return wellknown JSON"""
+        """Return well-known JSON"""
         data = {
             "modules.v1": "/v1/modules/",
         }

@@ -28,7 +28,7 @@ class ApiModuleVersions(ErrorCatchingResource):
                         {
                             "version": v.version,
                             "root": {
-                                # @TODO: Add providers/depdencies
+                                # @TODO: Add providers/dependencies
                                 "providers": [],
                                 "dependencies": []
                             },

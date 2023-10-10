@@ -102,7 +102,7 @@ Because everything referencing localhost routes to 172.0.0.1 no special host fil
     # Set random secret key, used encrypting client session data
     export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex())')
     
-    # Obtain terraform-docs, tfsec and infracost
+    # Obtain terraform-docs, Tfsec and Infracost
     mkdir bin
     export PATH=$PATH:`pwd`/bin
     if [ "$(uname -m)" == "aarch64" ]; then arch=arm64; else arch=amd64; fi

@@ -10,7 +10,7 @@ class ApiTerraregModuleVersionFile(ErrorCatchingResource):
     method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 
     def _get(self, namespace, name, provider, version, path):
-        """Return conent of module version file."""
+        """Return content of module version file."""
         _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
         if error:
             return error

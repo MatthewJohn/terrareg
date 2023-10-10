@@ -61,7 +61,7 @@ class ApiModuleSearch(ErrorCatchingResource):
         args = parser.parse_args()
 
         namespace_trust_filters = terrareg.module_search.NamespaceTrustFilter.UNSPECIFIED
-        # If either trusted namepsaces or contributed have been provided
+        # If either trusted namespaces or contributed have been provided
         # (irrelevant of whether they are set to true or false),
         # setup the filter to no longer be unspecified.
         if args.trusted_namespaces is not None or args.contributed is not None:

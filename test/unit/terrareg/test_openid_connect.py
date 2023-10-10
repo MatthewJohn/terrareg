@@ -79,7 +79,7 @@ class TestOpenidConnect(TerraregUnitTest):
             assert OpenidConnect.get_redirect_url() == 'https://unittest.domainfallback/openid/callback'
 
     def test_obtain_issuer_metadata(self):
-        """Obtain wellknown metadata from issuer"""
+        """Obtain well-known metadata from issuer"""
 
         mock_request_repsonse = mock.MagicMock()
         mock_request_repsonse.json = mock.MagicMock(return_value={'example': 'metadata'})

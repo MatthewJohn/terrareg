@@ -14,7 +14,7 @@ class ApiTerraregExampleFile(ErrorCatchingResource):
     method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 
     def _get(self, namespace, name, provider, version, example_file):
-        """Return conent of example file in example module."""
+        """Return content of example file in example module."""
         _, _, _, module_version, error = self.get_module_version_by_name(namespace, name, provider, version)
         if error:
             return error

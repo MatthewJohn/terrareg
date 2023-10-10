@@ -24,7 +24,7 @@ def upgrade():
 
     # Populate new columns for analytics
     # NOTE: This is not the most efficient way (AT ALL!),
-    # but certainly compatible between sqlite and mysql
+    # but certainly compatible between SQLite and MySQL
     bind = op.get_bind()
 
     module_version_rows = bind.execute("""

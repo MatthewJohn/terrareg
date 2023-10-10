@@ -71,7 +71,7 @@ def upgrade():
                     onupdate=foreign_key['onupdate'], ondelete=foreign_key['ondelete']
                 )
         except ValueError:
-            # Catch "No such constraint: 'new_name'" error from sqlite
+            # Catch "No such constraint: 'new_name'" error from SQLite
             with op.batch_alter_table('analytics', schema=None) as batch_op:
                 batch_op.create_foreign_key(
                     foreign_key['new_name'], foreign_key['other_table'],
@@ -84,7 +84,7 @@ def downgrade():
     for foreign_key in foreign_keys:
         with op.batch_alter_table('analytics', schema=None) as batch_op:
             batch_op.drop_constraint(foreign_key['new_name'], type_='foreignkey')
-            # Use default mysql name when downgrading - this will still allow the sqlite upgrade
+            # Use default mysql name when downgrading - this will still allow the SQLite upgrade
             # to happen, but without the catch
             batch_op.create_foreign_key(
                 foreign_key['old_name'], foreign_key['other_table'],

@@ -20,7 +20,7 @@ class BaseSessionAuthMethod(BaseAuthMethod):
     @classmethod
     def check_session_auth_type(cls):
         """Check if the current type of authenticate is set in session."""
-        # Check if auth type value has been overriden
+        # Check if auth type value has been overridden
         if cls.SESSION_AUTH_TYPE_VALUE is None:
             raise NotImplementedError
 

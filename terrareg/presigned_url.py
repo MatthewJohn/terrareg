@@ -51,7 +51,7 @@ class TerraformSourcePresignedUrl:
 
     @classmethod
     def generate_presigned_key(cls, url):
-        """Generate presigned key for URL"""
+        """Generate pre-signed key for URL"""
         if not cls.is_enabled():
             raise PresignedUrlsNotConfiguredError("Presigned URL configurations are not present. Please see documentation")
 
@@ -67,7 +67,7 @@ class TerraformSourcePresignedUrl:
         if not cls.is_enabled():
             raise PresignedUrlsNotConfiguredError("Presigned URL configurations are not present. Please see documentation")
 
-        # Generate exception that is identicle to end user,
+        # Generate exception that is identical to end user,
         # but can be raised multiple in multiple places to allow
         # identification of specific problem to system maintainers 
         generic_exception = InvalidPresignedUrlKeyError("Invalid pre-signed URL key")
@@ -85,6 +85,6 @@ class TerraformSourcePresignedUrl:
         if not cls.expiry_is_valid(decrypted_payload.get("expiry")):
             raise generic_exception
         
-        # Ensure URL in presigned token matches the actual URL
+        # Ensure URL in pre-signed token matches the actual URL
         if url != decrypted_payload.get("url"):
             raise generic_exception

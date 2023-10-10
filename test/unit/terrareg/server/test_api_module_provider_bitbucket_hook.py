@@ -445,7 +445,7 @@ class TestApiModuleVersionBitbucketHook(TerraregUnitTest):
             mocked_process_upload.assert_called()
 
     def _test_bitbucket_with_no_tag_result_expected(self, client, payload):
-        """Test bitbucket call expecting no tags found."""
+        """Test Bitbucket call expecting no tags found."""
         with unittest.mock.patch(
                     'terrareg.models.ModuleVersion.prepare_module', return_value=False) as mocked_prepare_module, \
                 unittest.mock.patch(

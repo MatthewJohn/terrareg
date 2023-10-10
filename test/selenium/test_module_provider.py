@@ -2758,7 +2758,7 @@ Consider re-indexing this module version to enable all features.
         assert res.status_code == 200
 
     def test_analytics_disabled(self):
-        """Test module provider page with anayltics disabled."""
+        """Test module provider page with analytics disabled."""
         with self.update_mock(self._config_disable_analytics, 'new', True):
             self.selenium_instance.get(self.get_url("/modules/moduledetails/fullypopulated/testprovider/1.5.0"))
 

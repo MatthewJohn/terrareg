@@ -73,7 +73,7 @@ test_data_full = {
             }},
             'modulenotpublished': {'testprovider': {
                 'id': 15,
-                'latest_verison': None,
+                'latest_version': None,
                 'repo_base_url_template': 'https://custom-localhost.com/{namespace}/{module}-{provider}',
                 'repo_browse_url_template': 'https://custom-localhost.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
                 'repo_clone_url_template': 'ssh://custom-localhost.com/{namespace}/{module}-{provider}',
@@ -202,7 +202,7 @@ test_data_full = {
                                     "Version": "1.5.0",
                                     "Dir": ".terraform/modules/hashicorp-registry-module"
                                 },
-                                # Child module of hashicorp registry call
+                                # Child module of Hashicorp registry call
                                 {
                                     "Key": "hashicorp-registry-module.hashicorp-sub-module",
                                     "Source": "./modules/hashi-submodule",

@@ -25,7 +25,7 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     wget https://github.com/aquasecurity/tfsec/releases/download/v1.28.4/tfsec-linux-${arch} -O /usr/local/bin/tfsec && \
     chmod +x /usr/local/bin/tfsec'
 
-# Download infracost
+# Download Infracost
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     then \
       arch=arm64; \

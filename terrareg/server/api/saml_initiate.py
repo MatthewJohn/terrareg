@@ -42,7 +42,7 @@ class ApiSamlInitiate(ErrorCatchingResource):
                 if 'AuthNRequestID' in session:
                     del session['AuthNRequestID']
 
-                # Setup Authentcation session
+                # Setup authentication session
                 session['samlUserdata'] = auth.get_attributes()
                 session['samlNameId'] = auth.get_nameid()
                 session['samlNameIdFormat'] = auth.get_nameid_format()
