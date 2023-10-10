@@ -83,3 +83,10 @@ HCL
 pylonsproject
 DSN
 org
+noqa
+mysql
+mysqlconnector
+builtin
+submodulename
+myexample
+md

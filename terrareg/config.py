@@ -104,7 +104,7 @@ class Config:
         URL for database.
         Defaults to local SQLite database.
 
-        To setup SQLite database, use `sqlite:///<path to sqlite DB>`
+        To setup SQLite database, use `sqlite:///<path to SQLite DB>`
 
         To setup MySQL, use `mysql+mysqlconnector://<user>:<password>@<host>[:<port>]/<database>`
         """
