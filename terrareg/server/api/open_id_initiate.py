@@ -9,7 +9,7 @@ class ApiOpenIdInitiate(ErrorCatchingResource):
     """Interface to initiate authentication via OpenID connect"""
 
     def _get(self):
-        """Generate session for storing OpenID state token and redirect to openid login provider."""
+        """Generate session for storing OpenID state token and redirect to OpenID login provider."""
         redirect_url, state = terrareg.openid_connect.OpenidConnect.get_authorize_redirect_url()
 
         if redirect_url is None:

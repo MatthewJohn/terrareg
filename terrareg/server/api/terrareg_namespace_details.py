@@ -58,7 +58,7 @@ class ApiTerraregNamespaceDetails(ErrorCatchingResource):
         Delete namespace
 
         JSON body:
-         * csrf_token - CSRF token required for sessioned-based authentication
+         * csrf_token - CSRF token required for session-based authentication
         """
         namespace = terrareg.models.Namespace.get(namespace)
         if namespace is None:

@@ -331,7 +331,7 @@ class TestApiModuleVersionGithubHook(TerraregUnitTest):
             mocked_process_upload.assert_called()
 
     def _test_github_with_client_error_expected(self, client, payload, expected_error=None):
-        """Test github call with invalid payload."""
+        """Test Github call with invalid payload."""
         if expected_error is None:
             expected_error = 'Received a non-release hook request'
         with unittest.mock.patch(

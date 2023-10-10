@@ -73,7 +73,7 @@ def check_subdirectory_within_base_dir(base_dir, sub_dir, is_dir=False, is_file=
     except OSError:
         raise PathDoesNotExistError('File/directory does not exist')
 
-    ## Ensure sub-path starts wtih base path.
+    ## Ensure sub-path starts with base path.
     ## Append trailing slash to ensure, to avoid
     ## allowing /opt/test-this with a base directory of /opt/test
     ## If allowing the sub directory to match the base directory,
@@ -142,7 +142,7 @@ def convert_markdown_to_html(file_name, markdown_html):
     )
 
 def get_public_url_details(fallback_domain=None):
-    """Get protocol, domain and port used to access terrareg."""
+    """Get protocol, domain and port used to access Terrareg."""
     config = terrareg.config.Config()
 
     # Set default values

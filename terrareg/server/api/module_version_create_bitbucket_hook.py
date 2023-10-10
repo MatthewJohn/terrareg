@@ -14,10 +14,10 @@ import terrareg.errors
 
 
 class ApiModuleVersionCreateBitBucketHook(ErrorCatchingResource):
-    """Provide interface for bitbucket hook to detect pushes of new tags."""
+    """Provide interface for Bitbucket hook to detect pushes of new tags."""
 
     def _post(self, namespace, name, provider):
-        """Create new version based on bitbucket hooks."""
+        """Create new version based on Bitbucket hooks."""
         with terrareg.database.Database.start_transaction() as transaction_context:
             _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
             if error:

@@ -61,7 +61,7 @@ For information about running with docker-compose, SSL certificate generation or
   * Provide a name for the namespace and create.
 * Goto 'Create' -> 'Modules' (http://localhost:5000/create-module)
 * Fill in the details for your module and 'Create'
-* Use the 'Manually index version' form of your module, filling out the verison and select 'Publish' and then press 'Index Version'
+* Use the 'Manually index version' form of your module, filling out the version and select 'Publish' and then press 'Index Version'
 
 ### From source
 

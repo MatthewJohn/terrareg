@@ -184,8 +184,8 @@ class TestInitialSetup(SeleniumTest):
         assert self.selenium_instance.find_element(By.ID, 'setup-step-index-git-not-published-warning').is_displayed() == False
 
         # Check link to integrations tab
-        index_module_verison_link = index_git_card_content.find_element(By.TAG_NAME, 'a')
-        assert index_module_verison_link.get_attribute('href') == self.get_url('/modules/unittestnamespace/setupmodulename/setupprovider#integrations')
+        index_module_version_link = index_git_card_content.find_element(By.TAG_NAME, 'a')
+        assert index_module_version_link.get_attribute('href') == self.get_url('/modules/unittestnamespace/setupmodulename/setupprovider#integrations')
 
     def _test_index_version_upload_step(self, module_provider, upload_api_key_enabled, publish_api_key_enabled):
         """Test step for uploading a module version."""

@@ -18,7 +18,7 @@ from terrareg.database import Database
 
 
 class TerraformIdpUserLookup:
-    """Implement pypo.userinfo.Userinfo to provide interface for looking up users"""
+    """Implement pyop.userinfo.Userinfo to provide interface for looking up users"""
 
     def __init__(self):
         pass
@@ -50,7 +50,7 @@ class BaseIdpDatabase:
         raise NotImplementedError
 
     def __getitem__(self, item):
-        """Obbtain data from database where code matches the key"""
+        """Obtain data from database where code matches the key"""
         db = Database.get()
         print(f"{self.__class__.__name__}: __getitem__ {item}")
         with db.get_connection() as conn:
@@ -76,7 +76,7 @@ class BaseIdpDatabase:
             # Perform update, determine if any rows are affected and fallback
             # to insert.
             # Upsert operations appear to be database-specific and might
-            # be brittle across sqlite and mysql
+            # be brittle across SQLite and MySQL
             blob_value = Database.encode_blob(json.dumps(value))
             with conn.begin() as transaction:
                 res = conn.execute(
