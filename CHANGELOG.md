@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.80.5](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.4...v2.80.5) (2023-10-11)
+
+
+### Bug Fixes
+
+* Correct typos in code base and API/CONFIG documentation ([805ee5c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/805ee5c2b5b8721ad412fde583686f8004467212))
+
 ## [2.80.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.3...v2.80.4) (2023-10-10)
 
 
