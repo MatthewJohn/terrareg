@@ -13,7 +13,7 @@ from terrareg.user_group_namespace_permission_type import UserGroupNamespacePerm
 
 
 class Database():
-    """Handle database connection and settng up database schema"""
+    """Handle database connection and setting up database schema"""
 
     _META = None
     _ENGINE = None
@@ -606,7 +606,7 @@ class TransactionConnectionWrapper:
 
 
 class Transaction:
-    """Custom wrapper for database tranaction."""
+    """Custom wrapper for database transaction."""
 
     @property
     def transaction(self):

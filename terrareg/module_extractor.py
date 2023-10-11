@@ -37,7 +37,7 @@ from terrareg.constants import EXTRACTION_VERSION
 
 
 class ModuleExtractor:
-    """Provide extraction method of moduls."""
+    """Provide extraction method of modules."""
 
     TERRAREG_METADATA_FILES = ['terrareg.json', '.terrareg.json']
     TERRAFORM_LOCK = threading.Lock()
@@ -454,7 +454,7 @@ terraform {{
                 terraform_version = self._get_terraform_version(submodule_dir)
 
         infracost = None
-        # Run infracost on examples, if API key is set
+        # Run Infracost on examples, if API key is set
         if isinstance(submodule, Example) and Config().INFRACOST_API_KEY:
             try:
                 infracost = self._run_infracost(example=submodule)
@@ -477,7 +477,7 @@ terraform {{
         )
 
     def _run_infracost(self, example: Example):
-        """Run infracost to obtain cost of examples."""
+        """Run Infracost to obtain cost of examples."""
         # Ensure example path is within root module
         safe_join_paths(self.module_directory, example.path)
 
@@ -488,7 +488,7 @@ terraform {{
             infracost_env['INFRACOST_TERRAFORM_CLOUD_HOST'] = domain_name
 
         # Create temporary file safely and immediately close to
-        # pass path to infracost
+        # pass path to Infracost
         with tempfile.NamedTemporaryFile(delete=False) as output_file:
             output_file.close()
             try:
@@ -626,7 +626,7 @@ terraform {{
 
                 # Check length of combined sentences.
                 # For combining a new sentence, check overall description
-                # length of 100 chracters.
+                # length of 100 characters.
                 # If this is the first sentence, give a higher allowance, as it's
                 # preferable to extract a description.
                 if ((new_description and len(new_description) >= 80) or
@@ -716,12 +716,12 @@ class ApiUploadModuleExtractor(ModuleExtractor):
         self._upload_file.save(source_file)
 
     def _check_file_type(self):
-        """Check filetype"""
+        """Check file-type"""
         file_type = magic.from_file(self.source_file, mime=True)
         if file_type == 'application/zip':
             pass
         else:
-            raise UnknownFiletypeError('Upload file is of unknown filetype. Must by zip, tar.gz')
+            raise UnknownFiletypeError('Upload file is of unknown file-type. Must by zip, tar.gz')
 
     def _extract_archive(self):
         """Extract uploaded archive into extract directory."""
@@ -753,7 +753,7 @@ class GitModuleExtractor(ModuleExtractor):
         """Extract uploaded archive into extract directory."""
         # Copy current environment variables to add GIT SSH option
         env = os.environ.copy()
-        # Set SSH to autoaccept new host keys
+        # Set SSH to auto-accept new host keys
         env['GIT_SSH_COMMAND'] = 'ssh -o StrictHostKeyChecking=accept-new'
 
         git_url = self._module_version._module_provider.get_git_clone_url()

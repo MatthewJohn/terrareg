@@ -44,7 +44,7 @@ class LinkAnchorReplacement(Treeprocessor):
     """Add IDs to headings and convert links to current filename"""
 
     def run(self, root):
-        """Replace IDs of anchorable elements and replace anchor links with correct ID"""
+        """Replace IDs of anchor-able elements and replace anchor links with correct ID"""
 
         # Iterate over links, replacing href with Terrareg links
         for link in root.findall('.//a'):
@@ -68,7 +68,7 @@ class ImageSourceCheck(Treeprocessor):
             if src := link.attrib.get('src', ''):
                 # Delete src attribute, if it does not
                 # start with http:// or https://.
-                # Relative URLs wthin a repository will not work
+                # Relative URLs within a repository will not work
                 # and will be displayed as broken images, which
                 # does not look nice.
                 # Removing the 'src' attribute will show white space,
@@ -82,7 +82,7 @@ class HTMLExtractorWithAttribs(HTMLExtractor):
     """Custom HTMLExtractor override, replacing name attributes of embedded HTML"""
 
     def reset(self):
-        """Reset/setup member varibales."""
+        """Reset/setup member variables."""
         self.__starttag_text = None
         return super().reset()
 

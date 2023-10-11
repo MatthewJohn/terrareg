@@ -1,4 +1,4 @@
-"""Add infracost output column to module_details table
+"""Add Infracost output column to module_details table
 
 Revision ID: 6416ffbf606d
 Revises: 51d3707d6334

@@ -6,7 +6,7 @@ import terrareg.analytics
 
 
 class PrometheusMetrics(ErrorCatchingResource):
-    """Provide usage anayltics for Prometheus scraper"""
+    """Provide usage analytics for Prometheus scraper"""
 
     def _get(self):
         """
