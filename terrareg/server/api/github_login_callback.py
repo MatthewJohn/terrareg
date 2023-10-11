@@ -10,7 +10,7 @@ import terrareg.config
 
 
 class GithubLoginCallback(ErrorCatchingResource):
-    """Interface to handle callback from Github login"""
+    """Interface to handle call-back from Github login"""
 
     def _github_login_error(self, error):
         """Return github login error"""
@@ -21,7 +21,7 @@ class GithubLoginCallback(ErrorCatchingResource):
         ))
 
     def _get(self):
-        """Handle callback from github auth."""
+        """Handle callback from Github auth."""
         code = request.args.get("code")
 
         if not terrareg.github.Github.is_enabled():

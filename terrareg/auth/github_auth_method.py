@@ -25,7 +25,10 @@ class GithubAuthMethod(BaseSsoAuthMethod):
 
     def _get_organisation_memeberships(self):
         """Return list of organisations that the user is an owener of"""
-        return flask.session.get('organisations', [])
+        organisations = flask.session.get('organisations', [])
+        if not isinstance(organisations, list):
+            return []
+        return organisations
 
     def get_group_memberships(self):
         """Return list of groups that the user a member of"""
@@ -33,7 +36,9 @@ class GithubAuthMethod(BaseSsoAuthMethod):
 
     def get_username(self):
         """Get username of current user"""
-        return flask.session.get('github_username')
+        if username := flask.session.get('github_username'):
+            return username
+        return None
 
     def check_namespace_access(self, permission_type, namespace):
         """Check access level to a given namespace."""

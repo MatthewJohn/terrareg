@@ -79,7 +79,8 @@ class TestSamlAuthMethod(BaseSsoAuthMethodTests, BaseSessionAuthMethodTests):
         (AuthenticationType.AUTHENTICATION_TOKEN, False),
         (AuthenticationType.SESSION_PASSWORD, False),
         (AuthenticationType.SESSION_OPENID_CONNECT, False),
-        (AuthenticationType.SESSION_SAML, True)
+        (AuthenticationType.SESSION_SAML, True),
+        (AuthenticationType.SESSION_GITHUB, False),
     ])
     def test_check_session_auth_type(self, auth_type, expected_result, test_request_context):
         """Test check_session_auth_type"""
