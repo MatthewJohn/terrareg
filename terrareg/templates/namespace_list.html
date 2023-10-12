@@ -5,6 +5,49 @@
 
 {% block header %}
 <script>
+    let currentSearchMeta = undefined;
+
+    function prevResults() {
+        if (currentSearchMeta && currentSearchMeta.prev_offset !== undefined) {
+            getResults(currentSearchMeta.prev_offset);
+        }
+    }
+    function nextResults() {
+        if (currentSearchMeta && currentSearchMeta.next_offset !== undefined) {
+            getResults(currentSearchMeta.next_offset);
+        }
+    }
+    function getResults(offset) {
+        // Obtain whether unpublished should be shown
+        let onlyPublished = !$('#show-unpublished').is(':checked');
+        $.get(`/v1/terrareg/namespaces?only_published=${onlyPublished}&offset=${offset}&limit=10`, function(data) {
+
+            // Update current meta data
+            currentSearchMeta = data.meta;
+
+            // Clear any existing namespaces
+            $('#namespaces-table-data').html('');
+
+            // Disable/activate next/previous buttons
+            $('#prevButton').prop('disabled', (data.meta.prev_offset === undefined));
+            $('#nextButton').prop('disabled', (data.meta.next_offset === undefined));
+
+            // Add each of the modules to the page
+            $.each(data.namespaces, (itx, namespace) => {
+                $('#namespaces-table-data').append(
+                    `<tr><td><a href="${namespace.view_href}">${namespace.display_name || namespace.name}</a><td></tr>`
+                );
+            });
+        }).fail(() => {
+            // Check for non-existent namespace
+            $('#result-list').addClass('default-hidden')
+            $('#namespace-does-not-exist').removeClass('default-hidden');
+
+            $('#prevButton').hide();
+            $('#nextButton').hide();
+        });
+    }
+
     async function loadNamespaces() {
         let namespaces = await getNamespaces();
 
@@ -18,11 +61,7 @@
             window.location.href = namespaces[0].view_href;
         }
 
-        $.each(namespaces, (itx, namespace) => {
-            $('#namespaces-table-data').append(
-                `<tr><td><a href="${namespace.view_href}">${namespace.display_name || namespace.name}</a><td></tr>`
-            );
-        })
+        getResults(0);
     }
     $(document).ready(function() {
         loadNamespaces();
@@ -48,7 +87,12 @@
 
             </tbody>
         </table>
-
+        <section>
+            <button class="button" id="prevButton" onclick="prevResults();">Prev</button>
+            <button class="button" id="nextButton" onclick="nextResults();">Next</button>
+            <br /><br />
+            <input onchange="getResults(0)" class="checkbox" id="show-unpublished" type="checkbox"> Show empty namespaces</input>
+        </section>
     </div>
 </div>
 

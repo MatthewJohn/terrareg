@@ -88,6 +88,11 @@ class TestConfig:
         ('TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH', None),
         ('TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT', None),
         ('TERRAFORM_PRESIGNED_URL_SECRET', None),
+        ('GITHUB_URL', None),
+        ('GITHUB_API_URL', None),
+        ('GITHUB_APP_CLIENT_ID', None),
+        ('GITHUB_APP_CLIENT_SECRET', None),
+        ('GITHUB_LOGIN_TEXT', None),
     ])
     def test_string_configs(self, config_name, override_expected_value):
         """Test string configs to ensure they are overridden with environment variables."""
@@ -202,6 +207,7 @@ class TestConfig:
         'DISABLE_ANALYTICS',
         'ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION',
         'ALLOW_UNAUTHENTICATED_ACCESS',
+        'AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES',
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
         """Test boolean configs to ensure they are overridden with environment variables."""

@@ -16,13 +16,28 @@ class TestLogin(SeleniumTest):
         """Setup required mocks."""
         cls._config_openid_connect_button_text = mock.patch('terrareg.config.Config.OPENID_CONNECT_LOGIN_TEXT', '')
         cls._config_saml_button_text = mock.patch('terrareg.config.Config.SAML2_LOGIN_TEXT', '')
+        cls._config_github_button_text = mock.patch('terrareg.config.Config.GITHUB_LOGIN_TEXT', '')
         cls._config_admin_authentication_token = mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', '')
         cls._config_enable_access_controls = mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', False)
+        cls._config_auto_generate_github_organisation_namespaces = mock.patch('terrareg.config.Config.AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES', False)
+
+        cls._mock_github_is_enabled = mock.patch('terrareg.github.Github.is_enabled', mock.MagicMock(return_value=False))
+        cls._mock_github_get_login_redirect_url = mock.patch("terrareg.github.Github.get_login_redirect_url", mock.MagicMock(return_value=None))
+        cls._mock_github_get_access_token = mock.patch('terrareg.github.Github.get_access_token', mock.MagicMock(return_value=None))
+        cls._mock_github_get_username = mock.patch('terrareg.github.Github.get_username', mock.MagicMock(return_value=None))
+        cls._mock_github_get_user_organisations = mock.patch('terrareg.github.Github.get_user_organisations', mock.MagicMock(return_value=None))
 
         cls.register_patch(cls._config_openid_connect_button_text)
         cls.register_patch(cls._config_saml_button_text)
+        cls.register_patch(cls._config_github_button_text)
         cls.register_patch(cls._config_admin_authentication_token)
         cls.register_patch(cls._config_enable_access_controls)
+        cls.register_patch(cls._mock_github_is_enabled)
+        cls.register_patch(cls._mock_github_get_login_redirect_url)
+        cls.register_patch(cls._mock_github_get_access_token)
+        cls.register_patch(cls._mock_github_get_username)
+        cls.register_patch(cls._mock_github_get_user_organisations)
+        cls.register_patch(cls._config_auto_generate_github_organisation_namespaces)
         super(TestLogin, cls).setup_class()
 
     def teardown_method(self, method):
@@ -304,6 +319,122 @@ class TestLogin(SeleniumTest):
             self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'error-title').text, 'Login error')
             self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'error-content').text,
                                'An error occured whilst processing SAML login request')
+
+            # Ensure user is not logged in
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbar_login_span').text, 'Login')
+
+            mock_auth_object.get_attributes.assert_not_called()
+
+    def test_ensure_github_login_not_shown(self):
+        """Ensure Github login button is not shown when Github login is not available"""
+        with self.update_mock(self._mock_github_is_enabled, 'new', mock.MagicMock(return_value=False)):
+            self.selenium_instance.get(self.get_url('/login'))
+            self._wait_for_login_form_ready()
+
+            # Ensure SAML login is not displayed
+            assert self.selenium_instance.find_element(By.ID, 'github-login').is_displayed() == False
+
+    @pytest.mark.parametrize('enable_access_controls,auto_generate_github_organisation_namespaces,group_memberships,has_site_admin,can_create_module', [
+        (True, False, ['nopermissions'], False, False),
+        (True, False, ['siteadmin'], True, True),
+        (True, False, ['moduledetailsfull'], False, True),
+        (True, False, [], False, False),
+        (False, False, ['nopermissions'], True, True),
+        (False, False, ['siteadmin'], True, True),
+        (False, False, ['moduledetailsfull'], True, True),
+        (False, False, [], True, True),
+
+        # With auto github namespace creation enabled
+        (True, True, ['nopermissions'], False, True),
+        (True, True, ['siteadmin'], True, True),
+        (True, True, ['moduledetailsfull'], False, True),
+        (True, True, [], False, True),
+        (False, True, ['nopermissions'], True, True),
+        (False, True, ['siteadmin'], True, True),
+        (False, True, ['moduledetailsfull'], True, True),
+        (False, True, [], True, True),
+    ])
+    def test_valid_github_login(self, enable_access_controls, auto_generate_github_organisation_namespaces,
+                                group_memberships, has_site_admin, can_create_module):
+        """Ensure Github login works"""
+
+        def mock_get_access_token_side_effect(code):
+            assert code == "1234"
+            return "unittest-access-code"
+        mock_get_access_token = mock.MagicMock(side_effect=mock_get_access_token_side_effect)
+
+        def mock_get_username_side_effect(access_token):
+            assert access_token == "unittest-access-code"
+            return "unitttest-github-username"
+        mock_get_username = mock.MagicMock(side_effect=mock_get_username_side_effect)
+
+        def mock_get_user_organisations_side_effect(access_token):
+            assert access_token == "unittest-access-code"
+            return group_memberships
+        mock_get_user_organisations = mock.MagicMock(side_effect=mock_get_user_organisations_side_effect)
+
+        with self.update_multiple_mocks((self._config_enable_access_controls, 'new', enable_access_controls), \
+                (self._config_auto_generate_github_organisation_namespaces, 'new', auto_generate_github_organisation_namespaces), \
+                (self._mock_github_is_enabled, 'new', mock.MagicMock(return_value=True)), \
+                (self._mock_github_get_login_redirect_url, 'new', mock.MagicMock(return_value="/github/callback?code=1234")), \
+                (self._mock_github_get_access_token, 'new', mock_get_access_token), \
+                (self._mock_github_get_username, 'new', mock_get_username), \
+                (self._mock_github_get_user_organisations, 'new', mock_get_user_organisations), \
+                (self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
+                (self._config_github_button_text, 'new', 'Unittest Github Login Button')):
+
+            self.selenium_instance.get(self.get_url('/login'))
+            # Wait for SSO login button to be displayed
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'github-login').is_displayed(), True)
+
+            github_login_button = self.selenium_instance.find_element(By.ID, 'github-login')
+
+            assert github_login_button.text == 'Unittest Github Login Button'
+            github_login_button.click()
+
+            # Ensure redirected to login
+            self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/'))
+
+            # Ensure user is logged in
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbar_login_span').text, 'Logout')
+
+            # Ensure 'settings' drop-down is shown, depending on whether
+            # user is a site admin
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbarSettingsDropdown').is_displayed(), has_site_admin)
+
+            # Ensure 'create' drop-down is shown, depending on whether
+            # user has permissions to a namespace
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbarCreateDropdown').is_displayed(), can_create_module)
+
+            mock_get_access_token.assert_called_once_with("1234")
+            mock_get_username.assert_called_once_with("unittest-access-code")
+            mock_get_user_organisations.assert_called_once_with("unittest-access-code")
+
+    def test_invalid_github_response(self):
+        """Test handling of invalid SAML authentication error"""
+        mock_auth_object = mock.MagicMock()
+
+        def mock_get_access_token_side_effect(code):
+            return None
+        mock_get_access_token = mock.MagicMock(side_effect=mock_get_access_token_side_effect)
+
+        with self.update_multiple_mocks((self._mock_github_is_enabled, 'new', mock.MagicMock(return_value=True)), \
+                (self._mock_github_get_login_redirect_url, 'new', mock.MagicMock(return_value="/github/callback?code=1234")), \
+                (self._mock_github_get_access_token, 'new', mock_get_access_token), \
+                (self._config_secret_key_mock, 'new', 'abcdefabcdef'), \
+                (self._config_github_button_text, 'new', 'Unittest Github Login Button')):
+
+            self.selenium_instance.get(self.get_url('/login'))
+            # Wait for SSO login button to be displayed
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'github-login').is_displayed(), True)
+
+            self.selenium_instance.find_element(By.ID, 'github-login').click()
+
+            # Ensure still on callback URL and error is displayed
+            self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/github/callback?code=1234'))
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'error-title').text, 'Login error')
+            self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'error-content').text,
+                               'Invalid code returned from Github')
 
             # Ensure user is not logged in
             self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbar_login_span').text, 'Login')

@@ -8,6 +8,7 @@
   * [Database Migrations](#database-migrations)
 * [Security](#security)
    * [Single Single-On](#single-sign-on)
+   * [Github Authentication](#github-authentication)
    * [Disable Public Access](#disable-public-access)
 * [Module best practices](#module-best-practices)
 * [Uploading Modules](#uploading-modules)
@@ -192,7 +193,7 @@ Once single sign-on has been setup, the [ADMIN_AUTHENTICATION_TOKEN](./CONFIG.md
 
 It is advised to use with caution and avoid using on publicly hosted/accessible instances.
 
-## OpenID Connect
+### OpenID Connect
 
 To configure OpenID connect, setup an application in an identity provider (IdP) with the following:
 
@@ -216,7 +217,7 @@ The instance should be configured with SSL certificates ([SSL_CERT_PRIVATE_KEY](
 
 The text displayed on the login button can be customised by setting [OPENID_CONNECT_LOGIN_TEXT](./CONFIG.md#openid_connect_login_text)
 
-## SAML2
+### SAML2
 
 Generate a public and a private key, using:
 
@@ -237,6 +238,67 @@ In the IdP:
 * configure the Single signin URL to `https://{terrareg_installation_domain}/saml/login?sso`;
 * configure the request and response to be signed;
 * ensure at least one attribute is assigned.
+
+
+### Github Authentication
+
+Terrareg can be configured to authenticate users via Github.
+
+This makes several changes to the workflow for users:
+
+The following configurations must be configured (see CONFIG.md for details about how to generate them):
+ * GITHUB_APP_CLIENT_ID
+ * GITHUB_APP_CLIENT_SECRET
+ * GITHUB_APP_WEBHOOK_SECRET
+ * GITHUB_APP_PRIVATE_KEY_PATH
+
+For self-hosted Github Enterprise installations, `GITHUB_URL` and `GITHUB_API_URL` can be set
+
+Github users are automatically mapped to any groups in Terrareg that are named after organisations that they are named after.
+E.g. User `testuser`, who is a member of the `testorg` organisation would be mapped to the groups `testuser` and `testorg` Terrareg group, if they exist.
+
+
+#### Setup Github app
+
+To setup the application for Github, goto `https://github.com/settings/apps/new` (or `https://github.com/organizations/<organisation>/settings/apps`)
+
+Configure the following:
+
+ * Homepage URL: https://my-terrareg-installation.example.com
+ * Identifying and authorizing users
+   * Callback URL: https://my-terrareg-installation.example.com/github/callback
+   * Expire user authorization tokens: Check
+   * Request user authorization (OAuth) during installation: Check
+   * Enable Device Flow: Uncheck
+ * Post installation
+   * Setup URL: `Not set`
+   * Redirect on update: Uncheck
+ * Webhook
+   * Active: Check
+   * Webhook URL: https://my-terrareg-installation.example.com/github/webhook
+   * Webhook secret: `Value from GITHUB_APP_WEBHOOK_SECRET`
+ * Permissions:
+   * None
+ * Where can this GitHub App be installed?
+   * Select based on whether you with to limit who can authenticate to Terrareg (publicly or members of the organisation)
+
+Generate client ID and client secret:
+
+ * On the same page, obtain the client ID from the "about" section of the page. Use this to populate `GITHUB_APP_CLIENT_ID`
+ * Click "Generate a new client secret"
+ * Copy the value from the client secret to populate `GITHUB_APP_CLIENT_SECRET`
+
+
+Once created, generate a private key (this is not currently used, but will be in future):
+
+ * On the same page, find `Private keys` and click "Generate a private key"
+ * Download the file and make the file accessible to the Terrareg installation, set in `GITHUB_APP_PRIVATE_KEY_PATH`
+
+#### Github namespace mapping
+
+If `AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES` is enabled, namespaces are automatically created for the logged in Github user and all organisations that they are an owner of.
+
+The user has full permissions to each of these namespaces, allowing them to create modules in them.
 
 
 ## Disable Unauthenticated Access

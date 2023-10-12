@@ -203,6 +203,17 @@ If disabled, namespaces must be created using the namespace create endpoint (or 
 Default: `True`
 
 
+### AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES
+
+
+Whether to automatically generated namespaces for each user (and all related organisations) that authenticate to Terrareg.
+
+The user will have full permissions over these namespaces.
+
+
+Default: `False`
+
+
 ### AUTO_PUBLISH_MODULE_VERSIONS
 
 
@@ -231,7 +242,7 @@ Default: `Contributed`
 URL for database.
 Defaults to local SQLite database.
 
-To setup SQLite database, use `sqlite:///<path to sqlite DB>`
+To setup SQLite database, use `sqlite:///<path to SQLite DB>`
 
 To setup MySQL, use `mysql+mysqlconnector://<user>:<password>@<host>[:<port>]/<database>`
 
@@ -385,6 +396,61 @@ NOTE: For new file types to be shown module versions must be re-indexed
 
 
 Default: `['tf', 'tfvars', 'sh', 'json']`
+
+
+### GITHUB_API_URL
+
+
+Github API URL for using Github authentication.
+
+Defaults to public Github.
+Change to use self-hosted hosted Github, e.g. https://github-ent.example.com/api
+
+
+Default: `https://api.github.com`
+
+
+### GITHUB_APP_CLIENT_ID
+
+
+Github app client ID for Github authentication.
+
+See USER_GUIDE for setting up Github app.
+
+
+Default: ``
+
+
+### GITHUB_APP_CLIENT_SECRET
+
+
+Github App client secret for Github authentication.
+
+See USER_GUIDE for setting up Github app.
+
+
+Default: ``
+
+
+### GITHUB_LOGIN_TEXT
+
+
+Login button text for authenticating to Github
+
+
+Default: `Login with Github`
+
+
+### GITHUB_URL
+
+
+URL to Github for using Github authentication.
+
+Defaults to public Github.
+Change to use self-hosted hosted Github.
+
+
+Default: `https://github.com`
 
 
 ### GIT_CLONE_TIMEOUT

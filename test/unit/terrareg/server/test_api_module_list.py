@@ -1,5 +1,6 @@
 
-from terrareg.module_search import ModuleSearch, ModuleSearchResults
+from terrareg.module_search import ModuleSearch
+from terrareg.result_data import ResultData
 
 from . import mocked_search_module_providers
 from test import client
@@ -75,9 +76,9 @@ class TestApiModuleList(TerraregUnitTest):
         mock_module_provider = terrareg.models.ModuleProvider(module=module, name='testprovider')
 
         def side_effect(*args, **kwargs):
-            return ModuleSearchResults(
+            return ResultData(
                 offset=0, limit=1,
-                count=1, module_providers=[mock_module_provider]
+                count=1, rows=[mock_module_provider]
             )
         ModuleSearch.search_module_providers.side_effect = side_effect
 
@@ -103,9 +104,9 @@ class TestApiModuleList(TerraregUnitTest):
         mock_module_provider = terrareg.models.ModuleProvider(module=module, name='testprovider')
 
         def side_effect(*args, **kwargs):
-            return ModuleSearchResults(
+            return ResultData(
                 offset=0, limit=1,
-                count=2, module_providers=[mock_module_provider]
+                count=2, rows=[mock_module_provider]
             )
         ModuleSearch.search_module_providers.side_effect = side_effect
 
@@ -136,9 +137,9 @@ class TestApiModuleList(TerraregUnitTest):
         mock_module_provider_2.MOCK_LATEST_VERSION_NUMBER = '3.0.0'
 
         def side_effect(*args, **kwargs):
-            return ModuleSearchResults(
+            return ResultData(
                 offset=0, limit=2,
-                count=3, module_providers=[mock_module_provider_2, mock_module_provider]
+                count=3, rows=[mock_module_provider_2, mock_module_provider]
             )
         ModuleSearch.search_module_providers.side_effect = side_effect
 

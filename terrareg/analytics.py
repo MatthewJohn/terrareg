@@ -437,7 +437,7 @@ class AnalyticsEngine:
         major_count = 0
         minor_count = 0
         patch_count = 0
-        for namespace in terrareg.models.Namespace.get_all(only_published=True):
+        for namespace in terrareg.models.Namespace.get_all(only_published=True).rows:
             for module in namespace.get_all_modules():
                 for module_provider in module.get_providers():
                     versions = module_provider.get_versions(include_beta=False, include_unpublished=False)

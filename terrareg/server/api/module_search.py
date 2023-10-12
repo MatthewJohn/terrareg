@@ -88,7 +88,7 @@ class ApiModuleSearch(ErrorCatchingResource):
                 module_provider.get_latest_version().get_api_outline(
                     target_terraform_version=args.target_terraform_version
                 )
-                for module_provider in search_results.module_providers
+                for module_provider in search_results.rows
                 if module_provider.get_latest_version()
             ]
         }

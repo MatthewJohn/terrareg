@@ -51,10 +51,10 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
         assert result.count == 1
 
         if result.meta['current_offset'] == 0:
-            assert len(result.module_providers) == 1
-            assert result.module_providers[0].id == module_provider.id
+            assert len(result.rows) == 1
+            assert result.rows[0].id == module_provider.id
         else:
-            assert result.module_providers == []
+            assert result.rows == []
 
     @pytest.mark.parametrize('namespace_trust_filter,expected_result_count', [
         (NamespaceTrustFilter.UNSPECIFIED, 5),
@@ -112,7 +112,7 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
 
         resulting_module_provider_ids = [
             module_provider.id
-            for module_provider in result.module_providers
+            for module_provider in result.rows
         ]
         for expected_module_provider in expected_results:
             assert expected_module_provider in resulting_module_provider_ids
@@ -147,7 +147,7 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
         assert result.count == len(expected_module_provider_ids)
         resulting_module_provider_ids = [
             module_provider.id
-            for module_provider in result.module_providers
+            for module_provider in result.rows
         ]
         for expected_module_provider in expected_module_provider_ids:
             assert expected_module_provider in resulting_module_provider_ids
@@ -201,7 +201,7 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
         assert result.count == len(expected_module_provider_ids)
         resulting_module_provider_ids = [
             module_provider.id
-            for module_provider in result.module_providers
+            for module_provider in result.rows
         ]
         for expected_module_provider in expected_module_provider_ids:
             assert expected_module_provider in resulting_module_provider_ids
@@ -230,7 +230,7 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
 
         resulting_module_provider_ids = [
             module_provider.id
-            for module_provider in result.module_providers
+            for module_provider in result.rows
         ]
 
         assert result.count == len(expected_module_provider_ids)
@@ -270,7 +270,7 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
         assert result.count == len(expected_module_provider_ids)
         resulting_module_provider_ids = [
             module_provider.id
-            for module_provider in result.module_providers
+            for module_provider in result.rows
         ]
         for expected_module_provider in expected_module_provider_ids:
             assert expected_module_provider in resulting_module_provider_ids
@@ -301,7 +301,7 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
 
         resulting_module_provider_ids = [
             module_provider.id
-            for module_provider in result.module_providers
+            for module_provider in result.rows
         ]
 
         assert result.count == len(expected_module_provider_ids)
@@ -337,7 +337,7 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
         assert result.count == len(expected_module_provider_ids)
         resulting_module_provider_ids = [
             module_provider.id
-            for module_provider in result.module_providers
+            for module_provider in result.rows
         ]
         for expected_module_provider in expected_module_provider_ids:
             assert expected_module_provider in resulting_module_provider_ids
@@ -368,7 +368,7 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
 
         resulting_module_provider_ids = [
             module_provider.id
-            for module_provider in result.module_providers
+            for module_provider in result.rows
         ]
 
         assert result.count == len(expected_module_provider_ids)
@@ -386,7 +386,7 @@ class TestSearchModuleProviders(TerraregIntegrationTest):
 
         # Ensure that only one result is returned
         assert result.count == 1
-        assert result.module_providers[0].id == 'modulesearch/contributedmodule-oneversion/aws'
+        assert result.rows[0].id == 'modulesearch/contributedmodule-oneversion/aws'
 
     @pytest.mark.parametrize('search_query', [
         # Search by description of non-latest version of module

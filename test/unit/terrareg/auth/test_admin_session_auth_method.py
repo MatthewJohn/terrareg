@@ -92,7 +92,8 @@ class TestAdminSessionAuthMethod(BaseSessionAuthMethodTests):
         (AuthenticationType.AUTHENTICATION_TOKEN, False),
         (AuthenticationType.SESSION_PASSWORD, True),
         (AuthenticationType.SESSION_OPENID_CONNECT, False),
-        (AuthenticationType.SESSION_SAML, False)
+        (AuthenticationType.SESSION_SAML, False),
+        (AuthenticationType.SESSION_GITHUB, False),
     ])
     def test_check_session_auth_type(self, auth_type, expected_result, test_request_context):
         """Test check_session_auth_type"""

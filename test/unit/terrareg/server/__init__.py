@@ -5,6 +5,7 @@ import pytest
 
 import terrareg.filters
 import terrareg.module_search
+import terrareg.result_data
 
 
 @pytest.fixture
@@ -19,7 +20,7 @@ def mocked_search_module_providers(request):
             providers: list=None,
             verified: bool=False,
             namespace_trust_filters: list=terrareg.filters.NamespaceTrustFilter.UNSPECIFIED):
-        return terrareg.module_search.ModuleSearchResults(offset=offset, limit=limit, count=0, module_providers=[])
+        return terrareg.result_data.ResultData(offset=offset, limit=limit, count=0, rows=[])
 
     magic_mock = unittest.mock.MagicMock(
         side_effect=search_results_func

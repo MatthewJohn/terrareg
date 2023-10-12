@@ -33,14 +33,14 @@ class ApiModuleDetails(ErrorCatchingResource):
             modules=[name]
         )
 
-        if not search_results.module_providers:
+        if not search_results.rows:
             return self._get_404_response()
 
         return {
             "meta": search_results.meta,
             "modules": [
                 module_provider.get_latest_version().get_api_outline()
-                for module_provider in search_results.module_providers
+                for module_provider in search_results.rows
             ]
         }
 

@@ -1,5 +1,6 @@
 
 from flask import request
+from flask_restful import reqparse, inputs
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource, api_error
 from terrareg.errors import (
@@ -20,18 +21,57 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
         "post": [terrareg.auth_wrapper.auth_wrapper('is_admin')]
     }
 
-    def _get(self):
-        """Return list of namespaces."""
-        namespaces = terrareg.models.Namespace.get_all(only_published=False)
+    def _get_arg_parser(self):
+        """Return arg parser for get method"""
+        parser = reqparse.RequestParser()
+        parser.add_argument(
+            'only_published', type=inputs.boolean,
+            location='args',
+            default=False,
+            help='Whether to only show namespaces with published modules'
+        )
+        parser.add_argument(
+            'offset', type=int,
+            location='args',
+            default=0, help='Pagination offset')
+        parser.add_argument(
+            'limit', type=int,
+            location='args',
+            default=None, help='Pagination limit'
+        )
+        return parser
 
-        return [
+    def _get(self):
+        """
+        Return list of namespaces.
+
+        The offset/limit arguments are currently optional.
+        Without them, all namespaces will be returned in a list (legacy response format).
+        Providing these values will return an object with a meta object and a list of namespaces.
+        """
+        parser = self._get_arg_parser()
+        args = parser.parse_args()
+
+        namespace_results = terrareg.models.Namespace.get_all(
+            only_published=args.only_published, limit=args.limit, offset=args.offset
+        )
+
+        namespace_list = [
             {
                 "name": namespace.name,
                 "view_href": namespace.get_view_url(),
                 "display_name": namespace.display_name
             }
-            for namespace in namespaces
+            for namespace in namespace_results.rows
         ]
+
+        if args.limit is not None:
+            return {
+                "meta": namespace_results.meta,
+                "namespaces": namespace_list
+            }
+        else:
+            return namespace_list
 
     def _post(self):
         """Create namespace."""

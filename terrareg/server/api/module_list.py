@@ -43,6 +43,6 @@ class ApiModuleList(ErrorCatchingResource):
             "meta": search_results.meta,
             "modules": [
                 module_provider.get_latest_version().get_api_outline()
-                for module_provider in search_results.module_providers
+                for module_provider in search_results.rows
             ]
         }

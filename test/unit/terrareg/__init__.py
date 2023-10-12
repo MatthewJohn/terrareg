@@ -12,6 +12,7 @@ from terrareg.errors import DuplicateNamespaceDisplayNameError, NamespaceAlready
 import terrareg.models
 from terrareg.server import Server
 import terrareg.config
+import terrareg.result_data
 from test import BaseTest
 from .test_data import test_data_full, test_git_providers, test_user_group_data_full
 from terrareg.constants import EXTRACTION_VERSION
@@ -603,7 +604,7 @@ def mock_namespace(request):
         return len(TEST_MODULE_DATA)
     mock_method(request, 'terrareg.models.Namespace.get_total_count', get_total_count)
 
-    def get_all(only_published=False):
+    def get_all(only_published=False, limit=None, offset=0):
         """Return all namespaces."""
         valid_namespaces = []
         if only_published:
@@ -621,10 +622,14 @@ def mock_namespace(request):
         else:
             valid_namespaces = TEST_MODULE_DATA.keys()
 
-        return [
+        count = len(valid_namespaces)
+        if limit:
+            valid_namespaces = list(valid_namespaces)[offset:(offset+limit)]
+
+        return terrareg.result_data.ResultData(offset=offset, limit=limit, count=count, rows=[
             terrareg.models.Namespace(namespace)
             for namespace in valid_namespaces
-        ]
+        ])
     mock_method(request, 'terrareg.models.Namespace.get_all', get_all)
 
     def get_all_modules(self):

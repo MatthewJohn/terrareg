@@ -9,7 +9,7 @@ from test.unit.terrareg import (
 import terrareg.models
 from test import client
 from test.unit.terrareg.server import mocked_search_module_providers
-from terrareg.module_search import ModuleSearchResults
+from terrareg.result_data import ResultData
 
 
 class TestApiModuleDetails(TerraregUnitTest):
@@ -25,11 +25,11 @@ class TestApiModuleDetails(TerraregUnitTest):
         mock_module_provider = terrareg.models.ModuleProvider(module=module, name='testprovider')
 
         def return_results(*args, **kwargs):
-            return ModuleSearchResults(
+            return ResultData(
                 offset=0,
                 limit=10,
                 count=1,
-                module_providers=[mock_module_provider]
+                rows=[mock_module_provider]
             )
         mocked_search_module_providers.side_effect = return_results
 
@@ -60,11 +60,11 @@ class TestApiModuleDetails(TerraregUnitTest):
         mock_module_provider = terrareg.models.ModuleProvider(module=module, name='testprovider')
 
         def return_results(*args, **kwargs):
-            return ModuleSearchResults(
+            return ResultData(
                 offset=0,
                 limit=10,
                 count=1,
-                module_providers=[mock_module_provider]
+                rows=[mock_module_provider]
             )
         mocked_search_module_providers.side_effect = return_results
 
@@ -90,11 +90,11 @@ class TestApiModuleDetails(TerraregUnitTest):
         """Test endpoint with non-existent module"""
 
         def return_results(*args, **kwargs):
-            return ModuleSearchResults(
+            return ResultData(
                 offset=0,
                 limit=10,
                 count=0,
-                module_providers=[]
+                rows=[]
             )
         mocked_search_module_providers.side_effect = return_results
 
@@ -116,20 +116,20 @@ class TestApiModuleDetails(TerraregUnitTest):
         mock_module_provider = terrareg.models.ModuleProvider(module=module, name='testprovider')
 
         def return_results(*args, **kwargs):
-            return ModuleSearchResults(
+            return ResultData(
                 offset=0,
                 limit=10,
                 count=1,
-                module_providers=[mock_module_provider]
+                rows=[mock_module_provider]
             )
         mocked_search_module_providers.side_effect = return_results
 
         def return_results(*args, **kwargs):
-            return ModuleSearchResults(
+            return ResultData(
                 offset=0,
                 limit=10,
                 count=1,
-                module_providers=[mock_module_provider]
+                rows=[mock_module_provider]
             )
         mocked_search_module_providers.side_effect = return_results
 
