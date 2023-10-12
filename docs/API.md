@@ -237,12 +237,12 @@ Redirect to github login.
 
 `/github/callback`
 
-Interface to handle callback from Github login
+Interface to handle call-back from Github login
 
 
 #### GET
 
-Handle callback from github auth.
+Handle callback from Github auth.
 
 
 ## ApiTerraregConfig
