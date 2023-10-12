@@ -138,7 +138,7 @@ class TestCheckModuleProviderRedirectUsage(TerraregIntegrationTest):
             del expected_results[row[0]]
 
     @pytest.mark.parametrize('lookback_days, expected_results', [
-        # Expect all results using 14 day's worth of lookback
+        # Expect all results using 14 day's worth of look-back
         (14, {
             'beforemove': datetime(year=2023, month=3, day=5, hour=5, minute=5, second=0),
             'oldnameaftermove': datetime(year=2023, month=3, day=7, hour=5, minute=5, second=0)
@@ -162,7 +162,7 @@ class TestCheckModuleProviderRedirectUsage(TerraregIntegrationTest):
         }),
     ])
     def test_lookback_period(self, lookback_days, expected_results):
-        """Test lookback period to determine that the correct results are returned."""
+        """Test look-back period to determine that the correct results are returned."""
 
         provider = self._setup_test_analytics()
 
@@ -170,7 +170,7 @@ class TestCheckModuleProviderRedirectUsage(TerraregIntegrationTest):
         assert len(redirects) == 1
         redirect = redirects[0]
 
-        # Mock lookback period to 
+        # Mock look-back period to 
         with mock.patch('terrareg.config.Config.REDIRECT_DELETION_LOOKBACK_DAYS', lookback_days), \
                 mock.patch('terrareg.analytics.AnalyticsEngine.get_datetime_now',
                            mock.MagicMock(return_value=datetime(year=2023, month=3, day=15, hour=4, minute=0, second=0))):

@@ -14,7 +14,7 @@ class ModuleSearch(object):
 
     @classmethod
     def _get_search_query_filter(cls, query: str):
-        """Filter query based on wildcarded match of fields."""
+        """Filter query based on wild-carded match of fields."""
 
         db = Database.get()
         wheres = []

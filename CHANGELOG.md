@@ -1,5 +1,30 @@
 # Changelog
 
+## [2.80.5](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.4...v2.80.5) (2023-10-11)
+
+
+### Bug Fixes
+
+* Correct typos in code base and API/CONFIG documentation ([805ee5c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/805ee5c2b5b8721ad412fde583686f8004467212))
+
+## [2.80.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.3...v2.80.4) (2023-10-10)
+
+
+### Bug Fixes
+
+* requirements-dev.txt to reduce vulnerabilities ([7ce0ea8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7ce0ea80b6495a5cf7d0cf1bdd12c07a9ff9e094))
+* requirements-dev.txt to reduce vulnerabilities ([f1e1f32](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f1e1f32d17eac7b39834d3309d6329f80d839cf8))
+* requirements-dev.txt to reduce vulnerabilities ([c777375](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c777375a497fa152a4db9c578ee7028fdd91a0cc))
+* requirements.txt to reduce vulnerabilities ([7d15835](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7d158356f5840e81c62fceac19829a0236b7556b))
+* Upgrade pyopenssl package to fix compatibility issues with newer versions of cryptography package ([2a5529e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2a5529e576d368d4b5218e2385814b822503be73))
+
+## [2.80.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.2...v2.80.3) (2023-10-05)
+
+
+### Bug Fixes
+
+* Add missing import in saml authentication auth method ([2ccc00f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2ccc00fdb1897fdc0d2cf4435d3b3fbebf8a5b55))
+
 ## [2.80.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.1...v2.80.2) (2023-09-30)
 
 

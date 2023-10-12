@@ -63,7 +63,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         # Check tfsec returned no results
         assert module_version.module_details.tfsec == {'results': []}
 
-        # Check infracost returned no results
+        # Check Infracost returned no results
         assert module_version.module_details.infracost == {}
 
     def test_terrareg_metadata(self):
@@ -271,7 +271,7 @@ class TestProcessUpload(TerraregIntegrationTest):
         module = Module(namespace=namespace, name='module-provider-override-git-provider')
         module_provider = ModuleProvider.get(module=module, name='test')
 
-        # Ensure that module provider is setup with git proider and overriden repo URLs
+        # Ensure that module provider is setup with git proider and overridden repo URLs
         assert module_provider is not None
         assert module_provider._get_db_row()['repo_base_url_template']
         assert module_provider._get_db_row()['repo_clone_url_template']
@@ -966,7 +966,7 @@ output "name" {{
 
             UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
-        # Ensure infracost output contains monthly cost
+        # Ensure Infracost output contains monthly cost
         assert module_version.module_details.terraform_graph.strip() == """
 digraph {
 	compound = "true"
@@ -1026,7 +1026,7 @@ digraph {
 
 
     def test_graph_data_with_s3_backend(self):
-        """Test extraction with s3 backend in terraform, ensuring it is overriden with local state"""
+        """Test extraction with s3 backend in terraform, ensuring it is overridden with local state"""
         test_upload = UploadTestModule()
 
         namespace = Namespace.get(name='testprocessupload', create=True)
@@ -1056,7 +1056,7 @@ resource "aws_s3_bucket" "test_bucket" {
 
             UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
-        # Ensure infracost output contains monthly cost
+        # Ensure Infracost output contains monthly cost
         assert module_version.module_details.terraform_graph.strip() == """
 digraph {
 	compound = "true"
@@ -1073,7 +1073,7 @@ digraph {
 
     @pytest.mark.skipif(terrareg.config.Config().INFRACOST_API_KEY == None, reason="Requires valid infracost API key")
     def test_uploading_module_with_infracost(self):
-        """Test uploading a module with real infracost API key."""
+        """Test uploading a module with real Infracost API key."""
         test_upload = UploadTestModule()
 
         namespace = Namespace.get(name='testprocessupload', create=True)
@@ -1095,11 +1095,11 @@ resource "aws_s3_bucket" "test" {
 
             UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
-        # Ensure infracost output contains monthly cost
+        # Ensure Infracost output contains monthly cost
         assert 'totalMonthlyCost' in module_version.get_examples()[0].module_details.infracost
 
     def test_uploading_module_without_infracost_api_key(self):
-        """Test uploading a module without infracost API key."""
+        """Test uploading a module without Infracost API key."""
         test_upload = UploadTestModule()
 
         namespace = Namespace.get(name='testprocessupload', create=True)
@@ -1116,7 +1116,7 @@ resource "aws_s3_bucket" "test" {
                 infracost_called = True
             return check_output(command, *args, **kwargs)
 
-        # Mock subprocess.check_output to mock call to infracost
+        # Mock subprocess.check_output to mock call to Infracost
         with mock.patch('terrareg.module_extractor.subprocess.check_output', mock_check_ouput) as mocked_check_output, \
                 mock.patch('terrareg.config.Config.INFRACOST_API_KEY', None):
             with test_upload as zip_file:
@@ -1134,7 +1134,7 @@ resource "aws_s3_bucket" "test" {
         assert infracost_called == False
 
     def test_uploading_module_with_infracost_run_error(self):
-        """Test uploading a module with infracost throwing an error."""
+        """Test uploading a module with Infracost throwing an error."""
         test_upload = UploadTestModule()
 
         namespace = Namespace.get(name='testprocessupload', create=True)
@@ -1150,7 +1150,7 @@ resource "aws_s3_bucket" "test" {
                 raise subprocess.CalledProcessError(cmd='Unit test error', returncode=1)
             return check_output(command, *args, **kwargs)
 
-        # Mock subprocess.check_output to mock call to infracost
+        # Mock subprocess.check_output to mock call to Infracost
         with mock.patch('terrareg.module_extractor.subprocess.check_output', mock_check_ouput) as mocked_check_output, \
                 mock.patch('terrareg.config.Config.INFRACOST_API_KEY', 'some-api-key'):
             with test_upload as zip_file:
@@ -1166,7 +1166,7 @@ resource "aws_s3_bucket" "test" {
         assert module_version.get_examples()[0].module_details.infracost == {}
 
     def test_uploading_module_with_infracost_mocked(self):
-        """Test uploading a module with infracost."""
+        """Test uploading a module with Infracost."""
         test_upload = UploadTestModule()
 
         namespace = Namespace.get(name='testprocessupload', create=True)
@@ -1355,7 +1355,7 @@ resource "aws_s3_bucket" "test" {
                 return None
             return check_output(command, *args, **kwargs)
 
-        # Mock subprocess.check_output to mock call to infracost
+        # Mock subprocess.check_output to mock call to Infracost
         with mock.patch('terrareg.module_extractor.subprocess.check_output', mock_check_ouput) as mocked_check_output, \
                 mock.patch('terrareg.config.Config.INFRACOST_API_KEY', 'test-infracost-api-key'):
             with test_upload as zip_file:

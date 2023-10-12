@@ -518,7 +518,7 @@ class Server(BaseHandler):
             '/v1/terrareg/auth/admin/is_authenticated'
         )
 
-        # Healthcheck endpoint
+        # Health-check endpoint
         self._api.add_resource(
             ApiTerraregHealth,
             '/v1/terrareg/health'
@@ -619,7 +619,7 @@ class Server(BaseHandler):
         )
 
     def _view_serve_initial_setup(self):
-        """Rendew view for initial setup."""
+        """Render view for initial setup."""
         return self._render_template('initial_setup.html')
 
     def _view_serve_graph(self, namespace, name, provider, version, submodule_path=None, example_path=None):
@@ -709,7 +709,7 @@ class Server(BaseHandler):
     def _view_serve_module_provider(self, namespace, name, provider, version=None):
         """Render view for displaying module provider information"""
 
-        # Check if used by terraform and return module download Api
+        # Check if used by terraform and return module download API
         if request.args.get("terraform-get") == "1":
             # Convert name 'latest' for version to None
             if version == 'latest':

@@ -5,7 +5,7 @@ import terrareg.auth
 
 
 class ApiTerraregIsAuthenticated(ErrorCatchingResource):
-    """Interface to teturn whether user is authenticated as an admin."""
+    """Interface to return whether user is authenticated as an admin."""
 
     def _get(self):
         """Return information about current user."""

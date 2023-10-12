@@ -131,7 +131,7 @@ class UserGroup:
 
     @classmethod
     def create(cls, name, site_admin):
-        """Create usergroup"""
+        """Create user group"""
         # Check if group exists with name
         if cls.get_by_group_name(name=name):
             return None
@@ -741,7 +741,7 @@ class Namespace(object):
         ).select_from(
             db.namespace
         ).where(
-            # Use a like to use case-insentive
+            # Use a like to use case-insensitive
             # match for pre-existing namespaces
             db.namespace.c.display_name.like(display_name)
         )
@@ -764,7 +764,7 @@ class Namespace(object):
         ).select_from(
             db.namespace
         ).where(
-            # Use a like to use case-insentive
+            # Use a like to use case-insensitive
             # match for pre-existing namespaces
             db.namespace.c.id==pk
         )
@@ -785,7 +785,7 @@ class Namespace(object):
         ).select_from(
             db.namespace
         ).where(
-            # Use a like to use case-insentive
+            # Use a like to use case-insensitive
             # match for pre-existing namespaces
             db.namespace.c.namespace.like(name)
         )
@@ -953,7 +953,7 @@ class Namespace(object):
 
     @property
     def is_auto_verified(self):
-        """Whether the namespace is set to verfied in the config."""
+        """Whether the namespace is set to verified in the config."""
         return self.name in terrareg.config.Config().VERIFIED_MODULE_NAMESPACES
 
     @property
@@ -1281,7 +1281,7 @@ class ModuleDetails:
 
     @property
     def infracost(self):
-        """Return infracost data."""
+        """Return Infracost data."""
         db_row = self._get_db_row()
         if (db_row is not None and
                 db_row['infracost']):
@@ -1341,9 +1341,9 @@ class ModuleDetails:
         to_remove = []
         # Store labels to be pushed to graph JSON
         labels = {}
-        # Stoe type mappings for determing node attributes
+        # Store type mappings for determine node attributes
         type_mapping = {}
-        # Store parents of attirbutes to modules, used for
+        # Store parents of attributes to modules, used for
         # parent mapping in JSON
         parents = {}
 
@@ -1483,7 +1483,7 @@ class ModuleDetails:
                     ]
                 })
 
-        # Iterate through all modukes...
+        # Iterate through all modules...
         for module, type_mapping in type_mapping.items():
             if type_mapping == "module":
                 # If a module link has not already been seen,
@@ -2041,13 +2041,13 @@ class ModuleProvider(object):
         version_re = re.escape(version_re)
         # Add EOL and SOL characters
         version_re = '^{version_re}$'.format(version_re=version_re)
-        # Replace temporary string with regex for symatec version
+        # Replace temporary string with regex for semantic version
         version_re = version_re.replace(version_string_does_not_exist, r'(?P<version>\d+\.\d+.\d+)')
         version_re = version_re.replace(major_string_does_not_exist, r'(?P<major>\d+)')
         version_re = version_re.replace(minor_string_does_not_exist, r'(?P<minor>\d+)')
         version_re = version_re.replace(patch_string_does_not_exist, r'(?P<patch>\d+)')
         version_re = version_re.replace(build_string_does_not_exist, r'(?P<build>-[a-z0-9]+)')
-        # Return copmiled regex
+        # Return compiled regex
         return re.compile(version_re)
 
     @property
@@ -2396,7 +2396,7 @@ class ModuleProvider(object):
                 int(url.port)
             except ValueError:
                 # Value error is thrown when port contains a value, but is
-                # not convertable to an int
+                # not convertible to an int
                 raise RepositoryUrlContainsInvalidPortError(
                     'URL contains a invalid port. '
                     'Only use a colon to for specifying a port, otherwise a forward slash should be used.'
@@ -2464,7 +2464,7 @@ class ModuleProvider(object):
                 int(url.port)
             except ValueError:
                 # Value error is thrown when port contains a value, but is
-                # not convertable to an int
+                # not convertible to an int
                 raise RepositoryUrlContainsInvalidPortError(
                     'URL contains a invalid port. '
                     'Only use a colon to for specifying a port, otherwise a forward slash should be used.'
@@ -2525,7 +2525,7 @@ class ModuleProvider(object):
                 int(url.port)
             except ValueError:
                 # Value error is thrown when port contains a value, but is
-                # not convertable to an int
+                # not convertible to an int
                 raise RepositoryUrlContainsInvalidPortError(
                     'URL contains a invalid port. '
                     'Only use a colon to for specifying a port, otherwise a forward slash should be used.'
@@ -2574,7 +2574,7 @@ class ModuleProvider(object):
         return ModuleVersion(module_provider=self, version=version['version'])
 
     def calculate_latest_version(self):
-        """Obtain all versions of module and sort by semantec version numbers to obtain latest version."""
+        """Obtain all versions of module and sort by semantic version numbers to obtain latest version."""
         db = Database.get()
         select = db.select_module_version_joined_module_provider(
             db.module_version.c.version
@@ -2589,7 +2589,7 @@ class ModuleProvider(object):
             # Convert to list
             rows = [r for r in res]
 
-        # Sort rows by semantec versioning
+        # Sort rows by semantic versioning
         rows.sort(key=lambda x: LooseVersion(x['version']), reverse=True)
 
         # Ensure at least one row
@@ -2839,7 +2839,7 @@ module "{self.module_version.module_provider.module.name}" {{
         return terraform
 
     def get_terraform_url_and_version_strings(self, request_domain, module_path):
-        """Return terraform source URL and version values for given requested protoco, domain, port and module path"""
+        """Return terraform source URL and version values for given requested protocol, domain, port and module path"""
         protocol, domain, port = get_public_url_details(fallback_domain=request_domain)
 
         isHttps = protocol.lower() == "https"
@@ -2847,7 +2847,7 @@ module "{self.module_version.module_provider.module.name}" {{
         # Set default port if port is None or empty string, or port matches the default port for the protocol
         isDefaultPort = not port or (str(port) == "443" and isHttps) or (str(port) == "80" and not isHttps)
 
-        # Add protocl for http
+        # Add protocol for http
         source_url = '' if isHttps else 'http://'
         # Add domain name
         source_url += domain
@@ -3026,7 +3026,7 @@ module "{self.module_version.module_provider.module.name}" {{
                     # Split source and sub-directory (e.g. github.com/example/test//submodule/path)
                     parent_path_split = parent_query_string_split[0].split("//")
 
-                    # Get the subpath, defaulting to root directory
+                    # Get the sub-path, defaulting to root directory
                     parent_sub_path = parent_path_split[1] if len(parent_path_split) == 2 else "./"
                     # Add leading dot if not present
                     if not parent_sub_path.startswith("/"):
@@ -3038,7 +3038,7 @@ module "{self.module_version.module_provider.module.name}" {{
 
                     # Nest child path in full URL
                     source_path = f"{parent_path_split[0]}//{source_path}"
-                    # Add query string paramters, if present
+                    # Add query string parameters, if present
                     if len(parent_query_string_split) == 2:
                         source_path = f"{source_path}?{parent_query_string_split[1]}"
 
@@ -3070,7 +3070,7 @@ module "{self.module_version.module_provider.module.name}" {{
         for provider in self.get_module_specs().get('providers', []):
 
             name_split = provider['name'].split('/')
-            # Default to name being the name and hashicorp
+            # Default to name being the name and Hashicorp
             # as the namespace
             name = provider['name']
             namespace = 'hashicorp'
@@ -3508,7 +3508,7 @@ class ModuleVersion(TerraformSpecsObject):
             # Check if git_path has been set and prepend to path, if set.
             path = os.path.join(self.git_path or '', path or '')
 
-            # Remove any trailing slashses from path
+            # Remove any trailing slashes from path
             if path and path.endswith('/'):
                 path = path[:-1]
 
@@ -3563,7 +3563,7 @@ class ModuleVersion(TerraformSpecsObject):
         # Check if git_path has been set and prepend to path, if set.
         path = os.path.join(self.git_path or '', path or '')
 
-        # Remove any trailing slashses from path
+        # Remove any trailing slashes from path
         if path and path.endswith('/'):
             path = path[:-1]
 
@@ -3680,7 +3680,7 @@ class ModuleVersion(TerraformSpecsObject):
 
     def get_terrareg_api_details(self, request_domain, target_terraform_version=None):
         """Return dict of version details with additional attributes used by terrareg UI."""
-        # Obtain module provider terrareg api details
+        # Obtain module provider terrareg API details
         api_details = self._module_provider.get_terrareg_api_details()
 
         # Capture versions from module provider API output, as this limits
@@ -3730,7 +3730,7 @@ class ModuleVersion(TerraformSpecsObject):
 
         yield
 
-        # If modle version is replacing a previously published module
+        # If module version is replacing a previously published module
         # or auto publish is enabled, publish the module
         if should_publish:
             self.publish()
@@ -3838,7 +3838,7 @@ class ModuleVersion(TerraformSpecsObject):
 
     def _create_db_row(self):
         """
-        Insert into datadabase, removing any existing duplicate versions.
+        Insert into database, removing any existing duplicate versions.
 
         Returns boolean whether the new version should be published
         (depending on previous DB row (if exists) was published or if auto publish is enabled.

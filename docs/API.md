@@ -13,14 +13,14 @@ Terraform .well-known discovery
 
 #### GET
 
-Return wellknown JSON
+Return well-known JSON
 
 
 ## PrometheusMetrics
 
 `/metrics`
 
-Provide usage anayltics for Prometheus scraper
+Provide usage analytics for Prometheus scraper
 
 
 #### GET
@@ -162,7 +162,7 @@ Return list of download counts for module provider.
 
 `/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data/example/<path:example_path>`
 
-Interface to obtain module verison graph data.
+Interface to obtain module version graph data.
 
 
 #### GET
@@ -179,7 +179,7 @@ Interface to initiate authentication via OpenID connect
 
 #### GET
 
-Generate session for storing OpenID state token and redirect to openid login provider.
+Generate session for storing OpenID state token and redirect to OpenID login provider.
 
 
 ## ApiOpenIdCallback
@@ -393,7 +393,7 @@ Edit name/display name of a namespace
 Delete namespace
 
 JSON body:
-* csrf_token - CSRF token required for sessioned-based authentication
+* csrf_token - CSRF token required for session-based authentication
 
 
 
@@ -437,7 +437,7 @@ Return details about module version.
 
 `/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>`
 
-Interface to obtain module verison details.
+Interface to obtain module version details.
 
 
 #### GET
@@ -533,12 +533,12 @@ Delete module provider.
 
 `/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/hooks/bitbucket`
 
-Provide interface for bitbucket hook to detect pushes of new tags.
+Provide interface for Bitbucket hook to detect pushes of new tags.
 
 
 #### POST
 
-Create new version based on bitbucket hooks.
+Create new version based on Bitbucket hooks.
 
 
 ## ApiModuleVersionCreateGitHubHook
@@ -574,7 +574,7 @@ Interface to obtain content of module version file.
 
 #### GET
 
-Return conent of module version file.
+Return content of module version file.
 
 
 ## ApiTerraregModuleVersionReadmeHtml
@@ -772,7 +772,7 @@ Interface to obtain content of example file.
 
 #### GET
 
-Return conent of example file in example module.
+Return content of example file in example module.
 
 
 ## ApiTerraregProviderLogos
@@ -791,7 +791,7 @@ Return all details about provider logos.
 
 `/v1/terrareg/search_filters`
 
-Return list of filters availabe for search.
+Return list of filters available for search.
 
 
 #### GET
@@ -869,7 +869,7 @@ Handle POST requests to the authentication endpoint.
 
 `/v1/terrareg/auth/admin/is_authenticated`
 
-Interface to teturn whether user is authenticated as an admin.
+Interface to return whether user is authenticated as an admin.
 
 
 #### GET
