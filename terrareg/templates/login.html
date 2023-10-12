@@ -45,7 +45,7 @@
             authenticationEnabled = true;
             $('#admin-login').removeClass('default-hidden');
         }
-        if (config.OPENID_CONNECT_ENABLED || config.SAML_ENABLED) {
+        if (config.OPENID_CONNECT_ENABLED || config.SAML_ENABLED || config.GITHUB_ENABLED) {
             authenticationEnabled = true;
 
             $('#sso-login').removeClass('default-hidden');
