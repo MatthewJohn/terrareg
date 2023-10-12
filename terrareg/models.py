@@ -920,7 +920,7 @@ class Namespace(object):
                 db.namespace.c.namespace
             )
 
-        count_query = sqlalchemy.select([sqlalchemy.func.count()]).select_from(namespace_query)
+        count_query = sqlalchemy.select([sqlalchemy.func.count()]).select_from(namespace_query.subquery())
 
         limit_query = namespace_query
         if limit is not None:
