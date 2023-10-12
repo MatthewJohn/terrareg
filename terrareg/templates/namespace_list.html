@@ -18,7 +18,9 @@
         }
     }
     function getResults(offset) {
-        $.get(`/v1/terrareg/namespaces?only_published=true&offset=${offset}&limit=10`, function(data) {
+        // Obtain whether unpublished should be shown
+        let onlyPublished = !$('#show-unpublished').is(':checked');
+        $.get(`/v1/terrareg/namespaces?only_published=${onlyPublished}&offset=${offset}&limit=10`, function(data) {
 
             // Update current meta data
             currentSearchMeta = data.meta;
@@ -88,6 +90,8 @@
         <section>
             <button class="button" id="prevButton" onclick="prevResults();">Prev</button>
             <button class="button" id="nextButton" onclick="nextResults();">Next</button>
+            <br /><br />
+            <input onchange="getResults(0)" class="checkbox" id="show-unpublished" type="checkbox"> Show empty namespaces</input>
         </section>
     </div>
 </div>
