@@ -162,7 +162,7 @@ class ModuleSearch(object):
         return terrareg.result_data.ResultData(
             offset=offset,
             limit=limit,
-            module_providers=module_providers,
+            rows=module_providers,
             count=count
         )
 
