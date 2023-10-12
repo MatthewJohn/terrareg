@@ -37,6 +37,7 @@ class TestLogin(SeleniumTest):
         cls.register_patch(cls._mock_github_get_access_token)
         cls.register_patch(cls._mock_github_get_username)
         cls.register_patch(cls._mock_github_get_user_organisations)
+        cls.register_patch(cls._config_auto_generate_github_organisation_namespaces)
         super(TestLogin, cls).setup_class()
 
     def teardown_method(self, method):
