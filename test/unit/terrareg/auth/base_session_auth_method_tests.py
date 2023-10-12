@@ -61,6 +61,10 @@ class BaseSessionAuthMethodTests(BaseAuthMethodTest):
         """Test check_session_auth_type"""
         raise NotImplementedError
 
+    def test_check_session(self):
+        """test check_session method"""
+        raise NotImplementedError
+
     def test_can_access_read_api(self):
         """Test can_access_read_api method"""
         obj = self.CLS()

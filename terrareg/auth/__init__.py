@@ -7,6 +7,7 @@ from .upload_api_key_auth_method import UploadApiKeyAuthMethod
 from .publish_api_key_auth_method import PublishApiKeyAuthMethod
 from .saml_auth_method import SamlAuthMethod
 from .openid_auth_method import OpenidConnectAuthMethod
+from .github_auth_method import GithubAuthMethod
 from .terraform_oidc_auth_method import TerraformOidcAuthMethod
 from .terraform_analytics_auth_key_auth_method import TerraformAnalyticsAuthKeyAuthMethod
 from .terraform_ignore_analytics_auth_method import TerraformIgnoreAnalyticsAuthMethod
@@ -36,6 +37,7 @@ class AuthFactory:
                     PublishApiKeyAuthMethod,
                     SamlAuthMethod,
                     OpenidConnectAuthMethod,
+                    GithubAuthMethod,
                     TerraformOidcAuthMethod,
                     TerraformAnalyticsAuthKeyAuthMethod,
                     TerraformIgnoreAnalyticsAuthMethod,

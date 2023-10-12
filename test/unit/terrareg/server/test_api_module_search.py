@@ -1,6 +1,7 @@
 
 from unittest import mock
-from terrareg.module_search import ModuleSearch, ModuleSearchResults
+from terrareg.module_search import ModuleSearch
+from terrareg.result_data import ResultData
 import terrareg.version_constraint
 from terrareg.filters import NamespaceTrustFilter
 from test.unit.terrareg import (
@@ -154,11 +155,11 @@ class TestApiModuleSearch(TerraregUnitTest):
         mock_module_provider.MOCK_LATEST_VERSION_NUMBER = '1.2.3'
 
         def return_results(*args, **kwargs):
-            return ModuleSearchResults(
+            return ResultData(
                 offset=0,
                 limit=1,
                 count=1,
-                module_providers=[mock_module_provider]
+                rows=[mock_module_provider]
             )
         mocked_search_module_providers.side_effect = return_results
 
@@ -189,11 +190,11 @@ class TestApiModuleSearch(TerraregUnitTest):
         mock_module_provider_2.MOCK_LATEST_VERSION_NUMBER = '3.0.0'
 
         def return_results(*args, **kwargs):
-            return ModuleSearchResults(
+            return ResultData(
                 offset=0,
                 limit=2,
                 count=2,
-                module_providers=[mock_module_provider_2, mock_module_provider]
+                rows=[mock_module_provider_2, mock_module_provider]
             )
         mocked_search_module_providers.side_effect = return_results
 
@@ -220,11 +221,11 @@ class TestApiModuleSearch(TerraregUnitTest):
         mock_module_provider_2.MOCK_LATEST_VERSION_NUMBER = '3.0.0'
 
         def return_results(*args, **kwargs):
-            return ModuleSearchResults(
+            return ResultData(
                 offset=4,
                 limit=2,
                 count=7,
-                module_providers=[mock_module_provider_2, mock_module_provider]
+                rows=[mock_module_provider_2, mock_module_provider]
             )
         mocked_search_module_providers.side_effect = return_results
 
@@ -252,11 +253,11 @@ class TestApiModuleSearch(TerraregUnitTest):
         mock_module_provider_2.MOCK_LATEST_VERSION_NUMBER = '3.0.0'
 
         def return_results(*args, **kwargs):
-            return ModuleSearchResults(
+            return ResultData(
                 offset=0,
                 limit=2,
                 count=2,
-                module_providers=[mock_module_provider_2, mock_module_provider]
+                rows=[mock_module_provider_2, mock_module_provider]
             )
         mocked_search_module_providers.side_effect = return_results
 

@@ -20,6 +20,7 @@ from terrareg.database import Database
 import terrareg.config
 import terrareg.audit
 import terrareg.audit_action
+import terrareg.result_data
 from terrareg.errors import (
     DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
     InvalidVersionError, ModuleProviderRedirectForceDeletionNotAllowedError, ModuleProviderRedirectInUseError, NamespaceAlreadyExistsError, NamespaceNotEmptyError, NoModuleVersionAvailableError,
@@ -878,7 +879,7 @@ class Namespace(object):
         return namespace, None
 
     @staticmethod
-    def get_all(only_published=False):
+    def get_all(only_published=False, limit=None, offset=0):
         """Return all namespaces."""
         db = Database.get()
 
@@ -919,13 +920,26 @@ class Namespace(object):
                 db.namespace.c.namespace
             )
 
-        with db.get_connection() as conn:
-            res = conn.execute(namespace_query)
+        count_query = sqlalchemy.select([sqlalchemy.func.count()]).select_from(namespace_query.subquery())
 
-            return [
-                Namespace(name=r['namespace'])
-                for r in res
-            ]
+        limit_query = namespace_query
+        if limit is not None:
+            limit_query = namespace_query.limit(limit).offset(offset)
+
+        with db.get_connection() as conn:
+            count_res = conn.execute(count_query)
+
+            res = conn.execute(limit_query)
+
+            return terrareg.result_data.ResultData(
+                offset=offset,
+                limit=limit,
+                rows=[
+                    Namespace(name=r['namespace'])
+                    for r in res
+                ],
+                count=count_res.scalar()
+            )
 
     @property
     def base_directory(self):
