@@ -64,4 +64,5 @@ from .terrareg_module_provider_redirects import ApiTerraregModuleProviderRedirec
 from .terrareg_module_provider_redirect_delete import ApiTerraregModuleProviderRedirectDelete
 from .github_login_initiate import GithubLoginInitiate
 from .github_login_callback import GithubLoginCallback
+from .gpg_keys import ApiGpgKeys
 from .gpg_key import ApiGpgKey

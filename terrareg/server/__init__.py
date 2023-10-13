@@ -197,8 +197,12 @@ class Server(BaseHandler):
 
         # Terraform cloud/registry APIs for GPG key
         self._api.add_resource(
-            ApiGpgKey,
+            ApiGpgKeys,
             '/v2/gpg-keys'
+        )
+        self._api.add_resource(
+            ApiGpgKey,
+            '/v2/gpg-keys/<string:namespace>/<string:key_id>'
         )
 
         # Views

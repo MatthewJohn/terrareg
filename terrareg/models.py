@@ -1199,6 +1199,26 @@ class GpgKey:
         ]
 
     @classmethod
+    def get_by_id_and_namespace(cls, id_, namespace):
+        """Get GPG key by key id"""
+        db = Database.get()
+        select = sqlalchemy.select(
+            db.gpg_key.c.id
+        ).select_from(
+            db.gpg_key
+        ).where(
+            db.gpg_key.c.id==id_,
+            db.gpg_key.c.namespace_id==namespace.pk
+        )
+
+        with db.get_connection() as conn:
+            row = conn.execute(select).fetchone()
+
+        if row:
+            return cls(pk=row['id'])
+        return None
+
+    @classmethod
     def get_by_fingerprint(cls, fingerprint):
         """Get GPG key by fingerprint"""
         db = Database.get()
@@ -1309,6 +1329,21 @@ class GpgKey:
                 self._cache_db_row = res.fetchone()
 
         return self._cache_db_row
+
+    def delete(self):
+        """Delete GPG key"""
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.GPG_KEY_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.pk,
+            old_value=None, new_value=None
+        )
+        db = Database.get()
+        gpg_key_delete = db.gpg_key.delete().where(
+            db.gpg_key.c.id == self.pk
+        )
+        with db.get_connection() as conn:
+            conn.execute(gpg_key_delete)
 
     def get_api_data(self):
         """Return API data for model"""
