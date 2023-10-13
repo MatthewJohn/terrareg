@@ -974,6 +974,17 @@ class Namespace(object):
         """Return type of namespace"""
         return self._get_db_row()['type']
 
+    @property
+    def can_publish_providers(self):
+        """Determine whether the namespace can publish providers"""
+        # Ensure at least one GPG key is assigned with the namespace
+        if not GpgKey.get_by_namespace(self):
+            return False
+
+        # Ensure the namespace is a github namespace
+        if self.namespace_type not in [NamespaceType.GITHUB_USER, NamespaceType.GITHUB_ORGANISATION]:
+            return False
+
     @staticmethod
     def _validate_name(name):
         """Validate name of namespace"""
