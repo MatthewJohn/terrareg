@@ -7,6 +7,7 @@ import terrareg.auth
 import terrareg.audit
 import terrareg.audit_action
 import terrareg.config
+import terrareg.namespace_type
 
 
 class GithubLoginCallback(ErrorCatchingResource):
@@ -39,8 +40,11 @@ class GithubLoginCallback(ErrorCatchingResource):
         session['github_username'] = user_id
 
         # Obtain list of organisations that the user is an owner of and add the user's user ID to the list
-        organisations = terrareg.github.Github.get_user_organisations(access_token)
-        organisations.append(user_id)
+        organisations = {
+            org: terrareg.namespace_type.NamespaceType.GITHUB_ORGANISATION.value
+            for org in terrareg.github.Github.get_user_organisations(access_token)
+        }
+        organisations[user_id] = terrareg.namespace_type.NamespaceType.GITHUB_USER.value
         session['organisations'] = organisations
         session['is_admin_authenticated'] = True
         session['authentication_type'] = terrareg.auth.AuthenticationType.SESSION_GITHUB.value

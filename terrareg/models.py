@@ -23,6 +23,7 @@ from terrareg.database import Database
 import terrareg.config
 import terrareg.audit
 import terrareg.audit_action
+from terrareg.namespace_type import NamespaceType
 import terrareg.result_data
 from terrareg.errors import (
     DuplicateGpgKeyError, DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, InvalidGpgKeyError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
@@ -806,22 +807,26 @@ class Namespace(object):
         return None
 
     @classmethod
-    def insert_into_database(cls, name, display_name):
+    def insert_into_database(cls, name, display_name, type_):
         """Insert new namespace into database"""
         db = Database.get()
         module_provider_insert = db.namespace.insert().values(
             namespace=name,
-            display_name=display_name if display_name else None
+            display_name=display_name if display_name else None,
+            type=type_
         )
         with db.get_connection() as conn:
             conn.execute(module_provider_insert)
 
     @classmethod
-    def create(cls, name, display_name=None):
+    def create(cls, name, display_name=None, type_=None):
         """Create instance of object in database."""
         # Validate name
         cls._validate_name(name)
         cls._validate_display_name(display_name)
+
+        if type_ is None:
+            type_ = NamespaceType.NONE
 
         if cls.get_by_case_insensitive_name(name, include_redirect=False):
             raise NamespaceAlreadyExistsError("A namespace already exists with this name")
@@ -830,7 +835,7 @@ class Namespace(object):
             raise DuplicateNamespaceDisplayNameError("A namespace already has this display name")
 
         # Create namespace
-        cls.insert_into_database(name=name, display_name=display_name)
+        cls.insert_into_database(name=name, display_name=display_name, type_=type_)
 
         obj = cls(name=name)
 
@@ -963,6 +968,11 @@ class Namespace(object):
     def trusted(self):
         """Whether namespace is trusted."""
         return self.name in terrareg.config.Config().TRUSTED_NAMESPACES
+
+    @property
+    def namespace_type(self):
+        """Return type of namespace"""
+        return self._get_db_row()['type']
 
     @staticmethod
     def _validate_name(name):

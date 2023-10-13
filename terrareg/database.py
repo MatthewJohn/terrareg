@@ -11,6 +11,7 @@ import terrareg.config
 from terrareg.errors import DatabaseMustBeIniistalisedError
 from terrareg.provider_tier import ProviderTier
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
+from terrareg.namespace_type import NamespaceType
 
 
 class Database():
@@ -333,7 +334,8 @@ class Database():
             'namespace', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
             sqlalchemy.Column('namespace', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
-            sqlalchemy.Column('display_name', sqlalchemy.String(GENERAL_COLUMN_SIZE))
+            sqlalchemy.Column('display_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('type', sqlalchemy.Enum(NamespaceType), nullable=False, default=NamespaceType.NONE)
         )
 
         self._namespace_redirect = sqlalchemy.Table(
