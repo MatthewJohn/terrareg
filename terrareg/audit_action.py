@@ -40,3 +40,8 @@ class AuditAction(Enum):
 
     GPG_KEY_CREATE = "gpg_key_create"
     GPG_KEY_DELETE = "gpg_key_delete"
+
+    PROVIDER_CREATE = "provider_create"
+    PROVIDER_DELETE = "provider_delete"
+    PROVIDER_VERSION_INDEX = "provider_version_index"
+    PROVIDER_VERSION_DELETE = "provider_version_delete"

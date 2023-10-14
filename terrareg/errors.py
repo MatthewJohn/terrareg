@@ -274,3 +274,10 @@ class DuplicateGpgKeyError(TerraregError):
     """"Duplicate GPG key exists"""
 
     pass
+
+
+class DuplicateProviderError(TerraregError):
+    """A provider already exists with the same name"""
+
+    pass
+
