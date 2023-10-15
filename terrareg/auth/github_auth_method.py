@@ -78,7 +78,7 @@ class GithubAuthMethod(BaseSsoAuthMethod):
                     else:
                         # If the namespace does exist, ensure the mapping of namespace type is correct
                         if namespace_obj.namespace_type is not memberships[namespace_name]:
-                            namespace_obj.update_attributes(type=memberships[namespace_name])
+                            namespace_obj.update_attributes(namespace_type=memberships[namespace_name])
 
                     namespace_permissions[namespace_obj] = terrareg.user_group_namespace_permission_type.UserGroupNamespacePermissionType.FULL
 

@@ -908,6 +908,35 @@ class Config:
         return int(os.environ.get("TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS", 10))
 
     @property
+    def PROVIDER_SOURCES(self):
+        """
+        Git provider config for terraform Providers, as a JSON list.
+
+        These are used for authenticating to the provider, obtain repository information and provide integration for creating Terraform providers.
+
+        Each item in the list must contain the following attributes:
+         - name - Name of the git provider (e.g. 'Github')
+         - type - The type of SCM tool (supported: `github`)
+         - login_button_text - Login button text for authenticating to Github
+         - auto_generate_namespaces - Whether to automatically generate namespaces for the user and the organisations that the user is an admin of
+
+        Github-specific attributes:
+         - base_url - Base public URL, e.g. `https://github.com`
+         - api_url - API URL, e.g. `https://api.github.com`
+         - client_id - Github app client ID for Github authentication. See USER_GUIDE for setting up Github app. 
+         - client_secret - Github App client secret for Github authentication.
+
+        An example for public repositories, using SSH for cloning, might be:
+        ```
+        [{"name": "Github", "type": "github",
+          "base_url": "https://github.com", "api_url": "https://api.github.com",
+          "client_id": "some-client-id", "client_secret": "some-secret",
+          "auto_generate_namespaces": true}]
+        ```
+        """
+        return os.environ.get('PROVIDER_SOURCES', '[]')
+
+    @property
     def GITHUB_URL(self):
         """
         URL to Github for using Github authentication.

@@ -13,6 +13,7 @@ import terrareg.database
 import terrareg.models
 import terrareg.errors
 import terrareg.auth
+import terrareg.provider_source.factory
 from terrareg.server.api.terrareg_module_providers import ApiTerraregModuleProviders
 from .base_handler import BaseHandler
 from terrareg.server.api import *
@@ -130,6 +131,7 @@ class Server(BaseHandler):
         # Initialise database
         terrareg.database.Database.get().initialise()
         terrareg.models.GitProvider.initialise_from_config()
+        terrareg.provider_source.factory.ProviderSourceFactory.get().initialise_from_config()
 
         self._register_routes()
 

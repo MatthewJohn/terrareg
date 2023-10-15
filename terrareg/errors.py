@@ -281,3 +281,8 @@ class DuplicateProviderError(TerraregError):
 
     pass
 
+
+class InvalidProviderSourceConfigError(TerraregError):
+    """An invalid provider source config is present"""
+
+    pass

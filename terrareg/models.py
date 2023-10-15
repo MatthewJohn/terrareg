@@ -43,6 +43,7 @@ from terrareg.utils import convert_markdown_to_html, get_public_url_details, saf
 from terrareg.validators import GitUrlValidator
 from terrareg.constants import EXTRACTION_VERSION
 from terrareg.presigned_url import TerraformSourcePresignedUrl
+import terrareg.provider_model
 
 
 class Session:
@@ -813,7 +814,7 @@ class Namespace(object):
         module_provider_insert = db.namespace.insert().values(
             namespace=name,
             display_name=display_name if display_name else None,
-            type=type_
+            namespace_type=type_
         )
         with db.get_connection() as conn:
             conn.execute(module_provider_insert)
@@ -972,7 +973,7 @@ class Namespace(object):
     @property
     def namespace_type(self):
         """Return type of namespace"""
-        return self._get_db_row()['type']
+        return self._get_db_row()['namespace_type']
 
     @property
     def can_publish_providers(self):

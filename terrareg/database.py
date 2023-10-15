@@ -12,6 +12,7 @@ from terrareg.errors import DatabaseMustBeIniistalisedError
 from terrareg.provider_tier import ProviderTier
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from terrareg.namespace_type import NamespaceType
+from terrareg.provider_source_type import ProviderSourceType
 
 
 class Database():
@@ -64,6 +65,7 @@ class Database():
         self._sub_module = None
         self._gpg_key = None
         self._provider_source = None
+        self._repository = None
         self._provider = None
         self._analytics = None
         self._example_file = None
@@ -204,6 +206,13 @@ class Database():
         return self._provider_source
 
     @property
+    def repository(self):
+        """Return provider_source table."""
+        if self._repository is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._repository
+
+    @property
     def provider(self):
         """Return provider table."""
         if self._provider is None:
@@ -335,7 +344,7 @@ class Database():
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
             sqlalchemy.Column('namespace', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
             sqlalchemy.Column('display_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('type', sqlalchemy.Enum(NamespaceType), nullable=False, default=NamespaceType.NONE)
+            sqlalchemy.Column('namespace_type', sqlalchemy.Enum(NamespaceType), nullable=False, default=NamespaceType.NONE)
         )
 
         self._namespace_redirect = sqlalchemy.Table(
@@ -571,10 +580,27 @@ class Database():
 
         self._provider_source = sqlalchemy.Table(
             'provider_source', meta,
-            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
-            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), unique=True),
-            sqlalchemy.Column('base_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
-            sqlalchemy.Column('source_url_template', sqlalchemy.String(URL_COLUMN_SIZE))
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), primary_key=True),
+            sqlalchemy.Column('api_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('provider_source_type', sqlalchemy.Enum(ProviderSourceType)),
+            sqlalchemy.Column('config', Database.medium_blob()),
+        )
+
+        self._repository = sqlalchemy.Table(
+            'repository', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('owner', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column(
+                'provider_source_name',
+                sqlalchemy.ForeignKey(
+                    'provider_source.name',
+                    name='fk_repository_provider_source_name_provider_source_name',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'
+                ),
+                nullable=False
+            ),
         )
 
         self._provider = sqlalchemy.Table(
@@ -586,19 +612,21 @@ class Database():
                     'namespace.id',
                     name='fk_provider_namespace_id_namespace_id',
                     onupdate='CASCADE',
-                    ondelete='CASCADE'),
+                    ondelete='CASCADE'
+                ),
                 nullable=False
             ),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('description', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('tier', sqlalchemy.Enum(ProviderTier)),
             sqlalchemy.Column(
-                'provider_source_id',
+                'repository_id',
                 sqlalchemy.ForeignKey(
-                    'git_provider.id',
-                    name='fk_provider_provider_source_id_provider_source_id',
+                    'repository.id',
+                    name='fk_provider_repository_id_repository_id',
                     onupdate='CASCADE',
-                    ondelete='SET NULL'),
+                    ondelete='CASCADE'
+                ),
                 nullable=True
             ),
             # sqlalchemy.Column(
