@@ -3,15 +3,22 @@ from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.auth
 import terrareg.models
 import terrareg.namespace_type
+import terrareg.provider_source.factory
 
 
 class GithubOrganisations(ErrorCatchingResource):
     """Interface to provide details about current Github organisations for the logged in user"""
 
-    def _get(self):
+    def _get(self, provider_source):
         """Provide organisation details."""
+        # Obtain provider source
+        provider_source_factory = terrareg.provider_source.factory.ProviderSourceFactory.get()
+        provider_source_obj = provider_source_factory.get_provider_source_by_api_name(provider_source)
+        if not provider_source_obj:
+            return self._get_404_response()
+
         organisations = []
-        if terrareg.auth.GithubAuthMethod.is_enabled() and (auth_method := terrareg.auth.GithubAuthMethod.get_current_instance()):
+        if auth_method := terrareg.auth.GithubAuthMethod.get_current_instance():
 
             for namespace_name in auth_method.get_github_organisations():
                 if (namespace := terrareg.models.Namespace.get(name=namespace_name, include_redirect=False)):

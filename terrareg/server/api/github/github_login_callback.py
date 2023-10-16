@@ -2,6 +2,7 @@
 from flask import request, redirect, make_response, render_template, session
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
+import terrareg.provider_source.factory
 import terrareg.github
 import terrareg.auth
 import terrareg.audit
@@ -21,20 +22,26 @@ class GithubLoginCallback(ErrorCatchingResource):
             error_description=error
         ))
 
-    def _get(self):
+    def _get(self, provider_source):
         """Handle callback from Github auth."""
         code = request.args.get("code")
 
-        if not terrareg.github.Github.is_enabled():
+        # Obtain provider source
+        provider_source_factory = terrareg.provider_source.factory.ProviderSourceFactory.get()
+        provider_source_obj = provider_source_factory.get_provider_source_by_api_name(provider_source)
+        if not provider_source_obj:
+            return self._get_404_response()
+
+        if not provider_source_obj.is_enabled():
             return self._github_login_error('Github authentication is not enabled')
 
         # Obtain access token, purely to ensure that the code is valid
-        access_token = terrareg.github.Github.get_access_token(code)
+        access_token = provider_source_obj.get_access_token(code)
         if access_token is None:
             return self._github_login_error("Invalid code returned from Github")
 
         # If user is authenticated, update session
-        user_id = terrareg.github.Github.get_username(access_token)
+        user_id = provider_source_obj.get_username(access_token)
         if user_id is None:
             return self._github_login_error("Invalid user data returned from Github")
         session['github_username'] = user_id
@@ -42,7 +49,7 @@ class GithubLoginCallback(ErrorCatchingResource):
         # Obtain list of organisations that the user is an owner of and add the user's user ID to the list
         organisations = {
             org: terrareg.namespace_type.NamespaceType.GITHUB_ORGANISATION.value
-            for org in terrareg.github.Github.get_user_organisations(access_token)
+            for org in provider_source_obj.get_user_organisations(access_token)
         }
         organisations[user_id] = terrareg.namespace_type.NamespaceType.GITHUB_USER.value
         session['organisations'] = organisations

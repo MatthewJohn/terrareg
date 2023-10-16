@@ -1,6 +1,6 @@
 
 import json
-from typing import Dict, Union, Type
+from typing import Dict, Union, Type, List
 
 import sqlalchemy
 
@@ -93,6 +93,23 @@ class ProviderSourceFactory:
 
         # Return instance of provider source class
         return class_(name=res['name'])
+
+    def get_all_provider_sources(self) -> List[terrareg.provider_source.BaseProviderSource]:
+        """Return all provider sources"""
+        database = terrareg.database.Database.get()
+        select = sqlalchemy.select(
+            database.provider_source.c.name,
+            database.provider_source.c.provider_source_type
+        ).select_from(
+            database.provider_source
+        )
+        with database.get_connection() as conn:
+            res = conn.execute(select).all()
+        print(res)
+        return [
+            self.get_provider_source_class_by_type(row['provider_source_type'])(name=row['name'])
+            for row in res
+        ]
 
     def initialise_from_config(self) -> None:
         """Load provider sources from config into database."""

@@ -90,3 +90,7 @@ builtin
 submodulename
 myexample
 md
+ascii
+gpg
+armor
+SCM

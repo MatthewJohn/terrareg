@@ -8,6 +8,8 @@ import terrareg.user_group_namespace_permission_type
 import terrareg.namespace_type
 from .base_sso_auth_method import BaseSsoAuthMethod
 from .authentication_type import AuthenticationType
+import terrareg.provider_source.factory
+import terrareg.provider_source_type
 
 
 class GithubAuthMethod(BaseSsoAuthMethod):
@@ -18,11 +20,29 @@ class GithubAuthMethod(BaseSsoAuthMethod):
     @classmethod
     def check_session(cls):
         """Check session is valid"""
-        return bool(flask.session.get('github_username'))
+        # Ensure current provider source matches valid provider source
+        provider_source = cls._get_provider_source()
+
+        return bool(
+            provider_source and
+            flask.session.get('github_username')
+        )
 
     @classmethod
     def is_enabled(cls):
-        return terrareg.github.Github.is_enabled()
+        """Always enabled, as the endpoints can only be accessed with a valid provider source"""
+        return True
+
+    @classmethod
+    def _get_provider_source(self):
+        """Return provider source for current request."""
+        provider_source_name = flask.session.get('provider_source')
+        provider_source = terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(provider_source_name)
+
+        # If provider source is valid and matches the correct type, return it
+        if provider_source and provider_source.TYPE is terrareg.provider_source_type.ProviderSourceType.GITHUB:
+            return provider_source
+        return None
 
     def _get_organisation_memeberships(self):
         """Return map of organisations that the user is an owner of with the namespace type"""
@@ -52,7 +72,7 @@ class GithubAuthMethod(BaseSsoAuthMethod):
         """Check access level to a given namespace."""
         # If github automatic namespace generation is enabled,
         # allow access to these namespaces
-        if terrareg.config.Config().AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES:
+        if (provider_source := self._get_provider_source()) and provider_source.auto_generate_github_organisation_namespaces:
             if namespace.lower() in self._get_organisation_memeberships():
                 return True
 
@@ -66,7 +86,7 @@ class GithubAuthMethod(BaseSsoAuthMethod):
 
         # If Github auto-generated namespaces is enabled,
         # add additional permissions for the namespaces
-        if terrareg.config.Config().AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES:
+        if (provider_source := self._get_provider_source()) and provider_source.auto_generate_github_organisation_namespaces:
             memberships = self._get_organisation_memeberships()
             for namespace_name in memberships:
                 if namespace_name not in namespace_permissions:

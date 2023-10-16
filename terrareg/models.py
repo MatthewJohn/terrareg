@@ -1195,7 +1195,7 @@ class GpgKey:
 
     @classmethod
     def _get_gpg_object_from_ascii_armor(cls, ascii_armor):
-        """Validate ascii armor and generate gpg object"""
+        """Validate ASCII armor and generate GPG object"""
         with tempfile.TemporaryDirectory() as temp_dir:
             gpg = gnupg.GPG(gnupghome=temp_dir, keyring=None, use_agent=False)
             return gpg.import_keys(key_data=ascii_armor)
