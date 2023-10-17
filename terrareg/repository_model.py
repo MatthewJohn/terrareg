@@ -1,10 +1,11 @@
 
-from typing import Union
+from typing import Union, List
 
 import terrareg.provider_source
 import terrareg.audit
 import terrareg.audit_action
 import terrareg.database
+import terrareg.repository_kind
 
 
 class Repository:
@@ -49,10 +50,23 @@ class Repository:
             return res.lastrowid
 
     @classmethod
+    def get_repositories_by_owner_list(cls, owners: List[str]) -> List['Repository']:
+        """Return list of repositories matching a list of owners"""
+        db = terrareg.database.Database.get()
+        select = db.repository.select().where(
+            db.repository.c.owner.in_(owners)
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(select).all()
+            return [
+                cls(pk=row['id'])
+                for row in res
+            ]
+
+    @classmethod
     def get_by_provider_source_and_provider_id(cls, provider_source: 'terrareg.provider_source.BaseProviderSource', provider_id: str) -> Union[None, 'Repository']:
         """Get repository by provider source and provider ID"""
         db = terrareg.database.Database.get()
-        # Obtain row from user group table.
         select = db.repository.select().where(
             db.repository.c.provider_source_name==provider_source.name,
             db.repository.c.provider_id==provider_id
@@ -83,6 +97,19 @@ class Repository:
         """Return name of repository"""
         return self._get_db_row()['name']
 
+    @property
+    def provider_id(self) -> str:
+        """Return provider ID of repository"""
+        return self._get_db_row()['provider_id']
+
+    @property
+    def kind(self) -> Union[None, terrareg.repository_kind.RepositoryKind]:
+        """Return repository kind"""
+        if self.name.startswith("terraform-provider-"):
+            return terrareg.repository_kind.RepositoryKind.PROVIDER
+        elif self.name.startswith("terraform-"):
+            return terrareg.repository_kind.RepositoryKind.MODULE
+        return None
 
     def __init__(self, pk: int):
         """Store member variables"""

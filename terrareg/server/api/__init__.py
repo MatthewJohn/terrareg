@@ -66,5 +66,6 @@ from .github.github_login_initiate import GithubLoginInitiate
 from .github.github_login_callback import GithubLoginCallback
 from .github.github_auth_status import GithubAuthStatus
 from .github.github_organisations import GithubOrganisations
+from .github.github_repositories import GithubRepositories
 from .gpg_keys import ApiGpgKeys
 from .gpg_key import ApiGpgKey

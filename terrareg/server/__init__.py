@@ -331,6 +331,10 @@ class Server(BaseHandler):
             GithubOrganisations,
             '/<string:provider_source>/organizations'
         )
+        self._api.add_resource(
+            GithubRepositories,
+            '/<string:provider_source>/repositories'
+        )
 
         # Terrareg APIs
         ## Config endpoint
