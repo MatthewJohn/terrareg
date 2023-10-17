@@ -271,7 +271,8 @@ class Database():
         self._session = sqlalchemy.Table(
             'session', meta,
             sqlalchemy.Column('id', sqlalchemy.String(128), primary_key=True),
-            sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
+            sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False),
+            sqlalchemy.Column('provider_source_auth', Database.medium_blob())
         )
 
         self._terraform_idp_authorization_code = sqlalchemy.Table(
@@ -589,6 +590,7 @@ class Database():
         self._repository = sqlalchemy.Table(
             'repository', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('provider_id', sqlalchemy.String),
             sqlalchemy.Column('owner', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column(

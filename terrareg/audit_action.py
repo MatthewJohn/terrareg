@@ -45,3 +45,7 @@ class AuditAction(Enum):
     PROVIDER_DELETE = "provider_delete"
     PROVIDER_VERSION_INDEX = "provider_version_index"
     PROVIDER_VERSION_DELETE = "provider_version_delete"
+
+    REPOSITORY_CREATE = "repository_create"
+    REPOSITORY_UPDATE = "repository_update"
+    REPOSITORY_DELETE = "repository_delete"

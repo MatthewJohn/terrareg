@@ -1,4 +1,8 @@
 
+import flask
+
+import terrareg.models
+
 
 class BaseAuthMethod:
     """Base auth method"""

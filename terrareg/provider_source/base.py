@@ -51,3 +51,7 @@ class BaseProviderSource:
                 self._cache_db_row = res.fetchone()
 
         return self._cache_db_row
+
+    def update_repositories(self, access_token: str) -> None:
+        """Refresh list of repositories"""
+        raise NotImplementedError

@@ -99,6 +99,32 @@ class Session:
         """Return ID of session"""
         return self._session_id
 
+    @property
+    def provider_source_auth(self):
+        """Return provider source authentication details"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(db.session.select().where(
+                db.session.c.id==self._session_id,
+                db.session.c.expiry >= datetime.datetime.now()
+            ))
+            row = res.fetchone()
+        if not row:
+            return None
+
+        return json.loads(Database.decode_blob((row['provider_source_auth'] or b'{}')))
+
+    @provider_source_auth.setter
+    def provider_source_auth(self, new):
+        """Update provider source authentication details in session"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.session.update().where(
+                db.session.c.id==self._session_id
+            ).values(
+                provider_source_auth=Database.encode_blob(json.dumps(new))
+            ))
+
     def __init__(self, session_id):
         """Store current session ID."""
         self._session_id = session_id

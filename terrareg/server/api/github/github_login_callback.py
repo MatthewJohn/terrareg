@@ -29,7 +29,7 @@ class GithubLoginCallback(ErrorCatchingResource):
         # Obtain provider source
         provider_source_factory = terrareg.provider_source.factory.ProviderSourceFactory.get()
         provider_source_obj = provider_source_factory.get_provider_source_by_api_name(provider_source)
-        if not provider_source_obj:
+        if provider_source_obj is None:
             return self._get_404_response()
 
         if not provider_source_obj.is_enabled():
@@ -39,6 +39,15 @@ class GithubLoginCallback(ErrorCatchingResource):
         access_token = provider_source_obj.get_access_token(code)
         if access_token is None:
             return self._github_login_error("Invalid code returned from Github")
+
+        # Store access token in server-side session
+        current_session = terrareg.auth.AuthFactory.get_current_session()
+        if current_session:
+            current_session.provider_source_auth = {
+                "github_access_token": access_token
+            }
+
+        provider_source_obj.update_repositories(access_token)
 
         # If user is authenticated, update session
         user_id = provider_source_obj.get_username(access_token)

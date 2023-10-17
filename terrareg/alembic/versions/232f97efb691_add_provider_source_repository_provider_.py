@@ -40,6 +40,7 @@ def upgrade():
     )
     op.create_table('repository',
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('provider_id', sa.String(length=128), nullable=True),
     sa.Column('owner', sa.String(length=128), nullable=True),
     sa.Column('name', sa.String(length=128), nullable=True),
     sa.Column('provider_source_name', sa.String(length=128), nullable=False),

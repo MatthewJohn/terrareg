@@ -7,6 +7,7 @@ import requests
 from terrareg.errors import InvalidProviderSourceConfigError
 from .base import BaseProviderSource
 import terrareg.provider_source_type
+import terrareg.repository_model
 
 
 class GithubProviderSource(BaseProviderSource):
@@ -130,3 +131,47 @@ class GithubProviderSource(BaseProviderSource):
                 )
             ]
         return []
+
+    def update_repositories(self, access_token: str) -> None:
+        """Refresh list of repositories"""
+        page = 1
+        while True:
+            res = requests.get(
+                f"{self._api_url}/user/repos",
+                params={
+                    "visibility": "public",
+                    "affiliation": "owner,organization_member",
+                    "sort": "created",
+                    "direction": "desc",
+                    "per_page": "100",
+                    "page": str(page)
+                },
+                headers={
+                    "X-GitHub-Api-Version": "2022-11-28",
+                    "Accept": "application/vnd.github+json",
+                    "Authorization": f"Bearer {access_token}"
+                }
+            )
+            if res.status_code != 200:
+                print(f"Invalid response code from github: {res.status_code}")
+                return
+
+            results = res.json()
+
+            for repository in results:
+                if (not (repo_id := repository.get("id")) or
+                        not (repo_name := repository.get("name")) or
+                        not (owner_name := repository.get("owner", {}).get("login"))):
+                    continue
+
+                terrareg.repository_model.Repository.create(
+                    provider_source=self,
+                    provider_id=repo_id,
+                    name=repo_name,
+                    owner=owner_name
+                )
+
+            if len(results) < 100:
+                break
+
+            page += 1
