@@ -2,6 +2,7 @@
 from typing import Union, List
 
 import terrareg.provider_source
+import terrareg.provider_source.factory
 import terrareg.audit
 import terrareg.audit_action
 import terrareg.database
@@ -103,7 +104,14 @@ class Repository:
         return self._get_db_row()['provider_id']
 
     @property
-    def kind(self) -> Union[None, terrareg.repository_kind.RepositoryKind]:
+    def provider_source(self) -> 'terrareg.provider_source.BaseProviderSource':
+        """Return provider source for repository"""
+        return terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(
+            self._get_db_row()["provider_source_name"]
+        )
+
+    @property
+    def kind(self) -> Union[None, 'terrareg.repository_kind.RepositoryKind']:
         """Return repository kind"""
         if self.name.startswith("terraform-provider-"):
             return terrareg.repository_kind.RepositoryKind.PROVIDER

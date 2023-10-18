@@ -14,7 +14,7 @@ import terrareg.provider_source
 class ProviderSourceFactory:
     """Factory class for generating and getting provider sources"""
 
-    _CLASS_MAPPING: Union[None, Dict[terrareg.provider_source_type.ProviderSourceType, Type[terrareg.provider_source.BaseProviderSource]]] = None
+    _CLASS_MAPPING: Union[None, Dict['terrareg.provider_source_type.ProviderSourceType', Type['terrareg.provider_source.BaseProviderSource']]] = None
     _INSTANCE: Union[None, 'ProviderSourceFactory'] = None
 
     @classmethod
@@ -24,7 +24,7 @@ class ProviderSourceFactory:
             cls._INSTANCE = cls()
         return cls._INSTANCE
 
-    def get_provider_classes(self) -> Dict[str, Type[terrareg.provider_source.BaseProviderSource]]:
+    def get_provider_classes(self) -> Dict[str, Type['terrareg.provider_source.BaseProviderSource']]:
         """Return all provider classes"""
         if self._CLASS_MAPPING is None:
             self._CLASS_MAPPING = {
@@ -33,14 +33,14 @@ class ProviderSourceFactory:
             }
         return self._CLASS_MAPPING
 
-    def get_provider_source_class_by_type(self, type_: terrareg.provider_source_type.ProviderSourceType) -> Union[Type[terrareg.provider_source.BaseProviderSource], None]:
+    def get_provider_source_class_by_type(self, type_: 'terrareg.provider_source_type.ProviderSourceType') -> Union[Type['terrareg.provider_source.BaseProviderSource'], None]:
         """Obtain provider source class by name"""
         # Ensure type if valid
         if not type_:
             return None
         return self.get_provider_classes().get(type_)
 
-    def get_provider_source_by_name(self, name: str) -> Union[terrareg.provider_source.BaseProviderSource, None]:
+    def get_provider_source_by_name(self, name: str) -> Union['terrareg.provider_source.BaseProviderSource', None]:
         """Obtain instance of provider source by name"""
         # Obtain row from DB, to determine provider source type
         database = terrareg.database.Database.get()
@@ -67,7 +67,7 @@ class ProviderSourceFactory:
         # Return instance of provider source class
         return class_(name=res['name'])
 
-    def get_provider_source_by_api_name(self, api_name: str) -> Union[terrareg.provider_source.BaseProviderSource, None]:
+    def get_provider_source_by_api_name(self, api_name: str) -> Union['terrareg.provider_source.BaseProviderSource', None]:
         """Obtain instance of provider source by API name"""
         # Obtain row from DB, to determine provider source type
         database = terrareg.database.Database.get()
@@ -94,7 +94,7 @@ class ProviderSourceFactory:
         # Return instance of provider source class
         return class_(name=res['name'])
 
-    def get_all_provider_sources(self) -> List[terrareg.provider_source.BaseProviderSource]:
+    def get_all_provider_sources(self) -> List['terrareg.provider_source.BaseProviderSource']:
         """Return all provider sources"""
         database = terrareg.database.Database.get()
         select = sqlalchemy.select(

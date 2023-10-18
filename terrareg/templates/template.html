@@ -82,6 +82,8 @@
                 $('#navbarCreateDropdown').css('display', 'flex');
                 // Show create module button
                 $('#navbarCreateModuleButton').css('display', 'block');
+                // Show create provider button
+                $('#navbarCreateProviderButton').css('display', 'block');
               }
 
             } else if (!loggedIn.read_access && window.location.pathname !== '/login') {
@@ -138,6 +140,7 @@
                   <div class="navbar-dropdown is-boxed">
                     <a id="navbarCreateNamespaceButton" style="display: none;" class="navbar-item" href="/create-namespace">Namespace</a>
                     <a id="navbarCreateModuleButton" style="display: none;" class="navbar-item" href="/create-module">Module</a>
+                    <a id="navbarCreateProviderButton" style="display: none;" class="navbar-item" href="/create-provider">Provider</a>
                   </div>
                 </div>
 

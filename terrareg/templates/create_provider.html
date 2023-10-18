@@ -1,0 +1,175 @@
+{% extends 'template.html' %}
+
+{% block title %}Create Module{% endblock %}
+
+{% block header %}
+<script>
+    let repositories = [];
+
+    function createProvider() {
+        if (! $('#create-provider-form')[0].reportValidity()) {
+            return;
+        }
+        $.post({
+            url: `/${$('#create-provider-provider-source').val()}/repositories/${$('#create-provider-repo').val()}/publish-provider`,
+            data: {
+                category_id: parseInt($('#create-provider-category').val()),
+                csrf_token: '{{ csrf_token }}'
+            },
+        }).done((res) => {
+            // Obtain get parameters from URL
+            const urlParams = getUrlParams();
+            // If parameter from initial setup page is present,
+            // redirect user back to initial setup
+            if (urlParams.initial_setup) {
+                window.location.href = '/initial-setup';
+            } else {
+                window.location.href = `/providers/${res.namespace}/${res.name}`;
+            }
+        }).fail((res) => {
+            $('#create-error').html(failedResponseToErrorString(res));
+            $('#create-error').css('display', 'block');
+            $(window).scrollTop($('#create-error').offset().top);
+        });
+    }
+
+    /* Obtain list of repositories for provider source */
+    function loadRepositories(providerSourceApiName) {
+        $.get(`/${providerSourceApiName}/repositories`).then((data) => {
+            repositories = data;
+        });
+
+        onNamespaceOrRepositoryLoad();
+    }
+
+    /* Filter list of repositories and display in input */
+    function onNamespaceOrRepositoryLoad() {
+        let repositorySelect = $('#create-provider-repo');
+        repositorySelect.html('');
+
+        // Ensure namespace has been selected
+        let namespaceInput = $('#create-provider-namespace')[0];
+        if (! namespaceInput.value) {
+            return;
+        }
+
+        // Filter repositories and add to list
+        repositories.filter(
+            (repository) => (
+                repository.kind == "provider" &&
+                repository.owner_login.toLowerCase() == namespaceInput.value.toLowerCase()
+        
+            )
+        ).forEach((repository) => {
+            repositorySelect.append(`<option value="${repository.id}">${repository.full_name}</option>`);
+        })
+    }
+
+    /* Load list of provider sources */
+    async function loadProviderSources() {
+        let config = await getConfig();
+        let providerSourceSelect = $('#create-provider-provider-source');
+        config.PROVIDER_SOURCES.forEach((providerSource) => {
+            // Check if user is authenticated to the provider source
+            $.get(`/${providerSource.api_name}/auth/status`).then((authStatus) => {
+                providerSourceSelect.append(`<option value="${providerSource.api_name}" ${authStatus.auth == false ? 'disabled' : ''}>${providerSource.name}${authStatus.auth == false ? ' (Not Authenticated)' : ''}</option>`);
+            })
+        });
+        // Handle warning about no provider sources
+        if (config.PROVIDER_SOURCES.length == 0) {
+            $('#create-errror').html("There are no provider sources configured. This must be performed before a provider can be created.")
+            return;
+        }
+        loadRepositories(config.PROVIDER_SOURCES[0].api_name);
+    }
+
+    /* Populate categories from API */
+    function loadCategories() {
+        $.get('/v2/categories').then((data) => {
+            let categorySelect = $('#create-provider-category');
+
+            data.data.forEach((category) => {
+                categorySelect.append(`<option value="${category.id}">${category.attributes.name}</option>`)
+            });
+        })
+    }
+
+    loadProviderSources();
+
+    loadCategories();
+
+    // Obtain list of module providers
+    isLoggedIn().then((auth) => {
+        $.get('/v1/terrareg/namespaces').then((data) => {
+            data.forEach((namespace) => {
+                if (auth.site_admin || auth.namespace_permissions[namespace.name] == 'FULL') {
+                    $('#create-provider-namespace').append($(`<option value="${namespace.name}">${namespace.display_name || namespace.name}</option>`))
+                }
+            });
+            if (data.length) {
+                onNamespaceOrRepositoryLoad();
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li class="is-active"><a href="/create-provider">Create Provider</a></li>
+    </ul>
+</nav>
+
+<div class="columns">
+    <div class="column is-one-third is-offset-one-third">
+
+        <div class="field is-vertical">
+            <div id="create-error" style="display: none" class="notification is-danger">
+            </div>
+            <form id="create-provider-form" onsubmit="event.preventDefault(); createProvider();">
+                <div class="field">
+                    <label class="label">Provider Source</label>
+                    <div class="control select">
+                        <select id="create-provider-provider-source" onchange="loadRepositories(event.target.value);">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Namespace</label>
+                    <div class="control select">
+                        <select id="create-provider-namespace" onchange="onNamespaceOrRepositoryLoad();">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Provider</label>
+                    <div class="control select">
+                        <select id="create-provider-repo">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Category</label>
+                    <div class="control select">
+                        <select id="create-provider-category">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <div class="control">
+                    <button class="button is-link">Create</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</nav>
+
+{% endblock %}

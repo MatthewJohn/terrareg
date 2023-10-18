@@ -231,6 +231,9 @@ class Server(BaseHandler):
             '/create-module'
         )(self._view_serve_create_module)
         self._app.route(
+            '/create-provider'
+        )(self._view_serve_create_provider)
+        self._app.route(
             '/initial-setup'
         )(self._view_serve_initial_setup)
         self._app.route(
@@ -340,6 +343,10 @@ class Server(BaseHandler):
         self._api.add_resource(
             GithubRepositories,
             '/<string:provider_source>/repositories'
+        )
+        self._api.add_resource(
+            GithubRepositoryPublishProvider,
+            '/<string:provider_source>/repositories/<int:repository_id>/publish-provider'
         )
 
         # Terrareg APIs
@@ -634,6 +641,12 @@ class Server(BaseHandler):
             git_providers=terrareg.models.GitProvider.get_all(),
             ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER,
             ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
+        )
+
+    def _view_serve_create_provider(self):
+        """Provide view to create provider."""
+        return self._render_template(
+            'create_provider.html'
         )
 
     def _view_serve_create_namespace(self):

@@ -736,7 +736,7 @@ class NamespaceRedirect(object):
 class Namespace(object):
 
     @classmethod
-    def get(cls, name, create=False, include_redirect=True):
+    def get(cls, name, create=False, include_redirect=True, case_insensitive=False):
         """Create object and ensure the object exists."""
         obj = cls(name=name)
 
@@ -744,7 +744,7 @@ class Namespace(object):
         if obj._get_db_row() is None:
 
             # Check for redirect
-            if include_redirect and (redirect_namespace := NamespaceRedirect.get_namespace_by_name(name=name, case_insensitive=False)):
+            if include_redirect and (redirect_namespace := NamespaceRedirect.get_namespace_by_name(name=name, case_insensitive=case_insensitive)):
                 return redirect_namespace
 
             # If set to create and auto module-provider creation
