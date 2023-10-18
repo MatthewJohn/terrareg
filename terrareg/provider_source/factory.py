@@ -105,7 +105,6 @@ class ProviderSourceFactory:
         )
         with database.get_connection() as conn:
             res = conn.execute(select).all()
-        print(res)
         return [
             self.get_provider_source_class_by_type(row['provider_source_type'])(name=row['name'])
             for row in res

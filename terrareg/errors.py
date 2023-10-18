@@ -286,3 +286,9 @@ class InvalidProviderSourceConfigError(TerraregError):
     """An invalid provider source config is present"""
 
     pass
+
+
+class InvalidProviderCategoryConfigError(TerraregError):
+    """An invalid provider category config is present"""
+
+    pass

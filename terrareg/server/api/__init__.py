@@ -69,3 +69,4 @@ from .github.github_organisations import GithubOrganisations
 from .github.github_repositories import GithubRepositories
 from .gpg_keys import ApiGpgKeys
 from .gpg_key import ApiGpgKey
+from .provider_categories import ApiProviderCategories

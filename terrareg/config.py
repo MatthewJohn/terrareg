@@ -937,6 +937,19 @@ class Config:
         return os.environ.get('PROVIDER_SOURCES', '[]')
 
     @property
+    def PROVIDER_CATEGORIES(self):
+        """
+        JSON list of provider categories.
+
+        Must be a list of objects, with the following attributes:
+         - `id` - Category ID. Must be a unique integer.
+         - `name` - Name of category.
+         - `slug` - A unique API-friendly name of the category, using lower-case letters and hyphens. Defaults to converted name with lower case letters, dashes for spaces and other characters removed.
+         - `user-selectable` (optional, defaults to `true`) - boolean based on whether it is selectable by the user. Non-user selectable categories can only currently be assigned in the database.
+        """
+        return os.environ.get("PROVIDER_CATEGORIES", '[{"id": 1, "name": "Example Category", "slug": "example-category", "user-selectable": true}]')
+
+    @property
     def GITHUB_URL(self):
         """
         URL to Github for using Github authentication.

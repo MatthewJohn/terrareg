@@ -14,6 +14,7 @@ import terrareg.models
 import terrareg.errors
 import terrareg.auth
 import terrareg.provider_source.factory
+import terrareg.provider_category_model
 from terrareg.server.api.terrareg_module_providers import ApiTerraregModuleProviders
 from .base_handler import BaseHandler
 from terrareg.server.api import *
@@ -132,6 +133,7 @@ class Server(BaseHandler):
         terrareg.database.Database.get().initialise()
         terrareg.models.GitProvider.initialise_from_config()
         terrareg.provider_source.factory.ProviderSourceFactory.get().initialise_from_config()
+        terrareg.provider_category_model.ProviderCategoryFactory.get().initialise_from_config()
 
         self._register_routes()
 
@@ -205,6 +207,10 @@ class Server(BaseHandler):
         self._api.add_resource(
             ApiGpgKey,
             '/v2/gpg-keys/<string:namespace>/<string:key_id>'
+        )
+        self._api.add_resource(
+            ApiProviderCategories,
+            '/v2/categories'
         )
 
         # Views

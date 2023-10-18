@@ -64,6 +64,7 @@ class Database():
         self._module_version = None
         self._sub_module = None
         self._gpg_key = None
+        self._provider_category = None
         self._provider_source = None
         self._repository = None
         self._provider = None
@@ -197,6 +198,13 @@ class Database():
         if self._gpg_key is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._gpg_key
+
+    @property
+    def provider_category(self):
+        """Return provider_category table."""
+        if self._provider_category is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._provider_category
 
     @property
     def provider_source(self):
@@ -587,6 +595,14 @@ class Database():
             sqlalchemy.Column('config', Database.medium_blob()),
         )
 
+        self._provider_category = sqlalchemy.Table(
+            'provider_category', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('slug', sqlalchemy.String(GENERAL_COLUMN_SIZE), unique=True),
+            sqlalchemy.Column('user_selectable', sqlalchemy.Boolean, default=True),
+        )
+
         self._repository = sqlalchemy.Table(
             'repository', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
@@ -621,6 +637,15 @@ class Database():
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('description', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('tier', sqlalchemy.Enum(ProviderTier)),
+            sqlalchemy.Column(
+                'provider_category_id',
+                sqlalchemy.ForeignKey(
+                    'provider_category.id',
+                    name="fk_provider_provider_category_id_provider_category_id",
+                    onupdate="CASCADE",
+                    ondelete="SET NULL"
+                )
+            ),
             sqlalchemy.Column(
                 'repository_id',
                 sqlalchemy.ForeignKey(
