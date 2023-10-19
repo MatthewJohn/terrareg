@@ -292,3 +292,9 @@ class InvalidProviderCategoryConfigError(TerraregError):
     """An invalid provider category config is present"""
 
     pass
+
+
+class ReindexingExistingProviderVersionsIsProhibitedError(TerraregError):
+    """Cannot reindex a module provider"""
+
+    pass

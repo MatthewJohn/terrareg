@@ -68,6 +68,7 @@ class Database():
         self._provider_source = None
         self._repository = None
         self._provider = None
+        self._provider_version = None
         self._analytics = None
         self._example_file = None
         self._module_version_file = None
@@ -226,6 +227,13 @@ class Database():
         if self._provider is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._provider
+
+    @property
+    def provider_version(self):
+        """Return provider_version table."""
+        if self._provider_version is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._provider_version
 
     @property
     def audit_history(self):
@@ -656,17 +664,46 @@ class Database():
                 ),
                 nullable=True
             ),
-            # sqlalchemy.Column(
-            #     'latest_version_id',
-            #     sqlalchemy.ForeignKey(
-            #         'module_version.id',
-            #         name='fk_module_provider_latest_version_id_module_version_id',
-            #         onupdate='CASCADE',
-            #         ondelete='SET NULL',
-            #         use_alter=True
-            #     ),
-            #     nullable=True
-            # )
+            sqlalchemy.Column(
+                'latest_version_id',
+                sqlalchemy.ForeignKey(
+                    'provider_version.id',
+                    name='fk_provider_latest_version_id_provider_version_id',
+                    onupdate='CASCADE',
+                    ondelete='SET NULL',
+                    use_alter=True
+                ),
+                nullable=True
+            )
+        )
+
+        self._provider_version = sqlalchemy.Table(
+            'provider_version', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column(
+                'provider_id',
+                sqlalchemy.ForeignKey(
+                    'provider.id',
+                    name='fk_provider_version_provider_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'
+                ),
+                nullable=False
+            ),
+            sqlalchemy.Column(
+                'gpg_key_id',
+                sqlalchemy.ForeignKey(
+                    'gpg_key.id',
+                    name='fk_provider_version_gpg_key_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'
+                ),
+                nullable=False
+            ),
+            sqlalchemy.Column('version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('beta', sqlalchemy.BOOLEAN, nullable=False),
+            sqlalchemy.Column('published_at', sqlalchemy.DateTime),
+            sqlalchemy.Column('extraction_version', sqlalchemy.Integer),
         )
 
         self._audit_history = sqlalchemy.Table(

@@ -9,6 +9,7 @@ import terrareg.provider_source.factory
 import terrareg.repository_model
 import terrareg.provider_category_model
 import terrareg.provider_model
+import terrareg.database
 
 
 class GithubRepositoryPublishProvider(ErrorCatchingResource):
@@ -57,9 +58,17 @@ class GithubRepositoryPublishProvider(ErrorCatchingResource):
         if not repository:
             return {'errors': ['Repository does not exist']}, 404
 
-        provider = terrareg.provider_model.Provider.create(repository=repository, provider_category=provider_category)
-        if not provider:
-            return {'errors': ['An error occurred whilst creating provider']}
+
+        with terrareg.database.Database.start_transaction():
+            provider = terrareg.provider_model.Provider.create(repository=repository, provider_category=provider_category)
+            if not provider:
+                return {'errors': ['An error occurred whilst creating provider']}
+
+            current_session = terrareg.auth.AuthFactory.get_current_session()
+            if not current_session:
+                return {'errors': ['An internal error accessing token occurred']}
+
+            provider.refresh_versions(access_token=current_session.provider_source_auth.get("github_access_token"))
 
         return {
             "name": provider.name,

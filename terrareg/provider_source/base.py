@@ -1,8 +1,10 @@
 
-from typing import Dict, Union
+from typing import Dict, Union, List
 import json
 
 import terrareg.database
+import terrareg.provider_source.repository_release_metadata
+
 
 class BaseProviderSource:
 
@@ -54,4 +56,8 @@ class BaseProviderSource:
 
     def update_repositories(self, access_token: str) -> None:
         """Refresh list of repositories"""
+        raise NotImplementedError
+
+    def get_new_releases(self, provider: 'terrareg.provider_model.Provider', access_token: str) -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:
+        """Obtain all repository releases that aren't associated with a pre-existing release"""
         raise NotImplementedError

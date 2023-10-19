@@ -78,6 +78,19 @@ class Repository:
         if row:
             return cls(pk=row['id'])
 
+    @classmethod
+    def get_by_pk(cls, pk: int) -> Union[None, 'Repository']:
+        """Get repository by ID"""
+        db = terrareg.database.Database.get()
+        select = db.repository.select().where(
+            db.repository.c.id==pk
+        )
+        with db.get_connection() as conn:
+            row = conn.execute(select).fetchone()
+
+        if row:
+            return cls(pk=row['id'])
+
     @property
     def pk(self) -> int:
         """Return DB ID"""

@@ -982,6 +982,11 @@ class Namespace(object):
         return safe_join_paths(terrareg.config.Config().DATA_DIRECTORY, 'modules', self._name)
 
     @property
+    def base_provider_directory(self):
+        """Return base directory for providers"""
+        return safe_join_paths(terrareg.config.Config().DATA_DIRECTORY, 'providers', self._name)
+
+    @property
     def name(self):
         """Return name."""
         return self._name
@@ -1207,6 +1212,12 @@ class Namespace(object):
         # Check if data directory exists
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
+
+    def create_provider_data_directory(self):
+        """Create data directory for providers"""
+        # Check if directory exists
+        if not os.path.isdir(self.base_provider_directory):
+            os.mkdir(self.base_provider_directory)
 
     def get_module_custom_links(self):
         """Obtain module links that are applicable to namespace"""

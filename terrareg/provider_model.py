@@ -4,8 +4,10 @@ Module for Provider model.
 @TODO Split models from models.py into seperate modules in new package.
 """
 
+from distutils.version import LooseVersion
+import os
 import re
-from typing import Union
+from typing import Union, List
 
 import sqlalchemy
 
@@ -19,6 +21,9 @@ import terrareg.models
 import terrareg.provider_source
 import terrareg.repository_model
 import terrareg.provider_category_model
+import terrareg.provider_version_model
+import terrareg.provider_extractor
+import terrareg.utils
 
 
 class Provider:
@@ -106,6 +111,21 @@ class Provider:
         """Return provider name"""
         return self._name
 
+    @property
+    def pk(self) -> int:
+        """Return DB pk for provider"""
+        return self._get_db_row()["id"]
+
+    @property
+    def base_directory(self) -> str:
+        """Return base directory."""
+        return terrareg.utils.safe_join_paths(self._namespace.base_provider_directory, self._name)
+
+    @property
+    def repository(self) -> 'terrareg.repository_model.Repository':
+        """Return repository for provider"""
+        return terrareg.repository_model.Repository.get_by_pk(self._get_db_row()["repository_id"])
+
     def __init__(self, namespace: 'terrareg.models.Namespace', name: str):
         """Validate name and store member variables."""
         self._namespace = namespace
@@ -129,3 +149,67 @@ class Provider:
                 self._cache_db_row = res.fetchone()
 
         return self._cache_db_row
+
+    def create_data_directory(self):
+        """Create data directory and data directories of parents."""
+        # Check if parent exists
+        if not os.path.isdir(self._namespace.base_provider_directory):
+            self._namespace.create_provider_data_directory()
+        # Check if data directory exists
+        if not os.path.isdir(self.base_directory):
+            os.mkdir(self.base_directory)
+
+    def calculate_latest_version(self):
+        """Obtain all versions of provider and sort by semantic version numbers to obtain latest version."""
+        db = terrareg.database.Database.get()
+        select = sqlalchemy.select(
+            db.provider_version.c.version
+        ).join(
+            db.provider,
+            db.provider_version.c.provider_id==db.provider.c.id
+        ).where(
+            db.provider.c.id==self.pk,
+            db.provider_version.c.beta==False
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(select)
+
+            # Convert to list
+            rows = [r for r in res]
+
+        # Sort rows by semantic versioning
+        rows.sort(key=lambda x: LooseVersion(x['version']), reverse=True)
+
+        # Ensure at least one row
+        if not rows:
+            return None
+
+        # Obtain latest row
+        return terrareg.provider_version_model.ProviderVersion(provider=self, version=rows[0]['version'])
+
+    def refresh_versions(self, access_token: str) -> List['terrareg.provider_version_model.ProviderVersion']:
+        """Refresh versions from provider source and create new provider versions"""
+        provider_source = self.repository.provider_source
+
+        releases_metadata = provider_source.get_new_releases(provider=self, access_token=access_token)
+
+        for release_metadata in releases_metadata:
+            version = terrareg.provider_version_model.ProviderVersion.tag_to_version(tag=release_metadata.tag)
+            provider_version = terrareg.provider_version_model.ProviderVersion(provider=self, version=version)
+
+
+            with provider_version.create_extraction_wrapper():
+                with terrareg.provider_extractor.ProviderExtractor(provider_version=provider_version) as pe:
+                    pe.process_version()
+
+    def update_attributes(self, **kwargs: dict) -> None:
+        """Update DB row."""
+        db = terrareg.database.Database.get()
+        update = self.get_db_where(
+            db=db, statement=db.module_provider.update()
+        ).values(**kwargs)
+        with db.get_connection() as conn:
+            conn.execute(update)
+
+        # Remove cached DB row
+        self._cache_db_row = None

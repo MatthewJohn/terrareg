@@ -8,6 +8,9 @@ from terrareg.errors import InvalidProviderSourceConfigError
 from .base import BaseProviderSource
 import terrareg.provider_source_type
 import terrareg.repository_model
+import terrareg.provider_version_model
+import terrareg.provider_model
+import terrareg.provider_source.repository_release_metadata
 
 
 class GithubProviderSource(BaseProviderSource):
@@ -175,3 +178,56 @@ class GithubProviderSource(BaseProviderSource):
                 break
 
             page += 1
+
+    def get_new_releases(self, provider: 'terrareg.provider_model.Provider', access_token: str) -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:
+        """Obtain all repository releases that aren't associated with a pre-existing release"""
+        repository = provider.repository
+        page = 1
+        releases = []
+        obtain_results = True
+
+        while obtain_results:
+            res = requests.get(
+                f"{self._api_url}/repos/{repository.owner}/{repository.name}/releases",
+                params={
+                    "per_page": "100",
+                    "page": str(page)
+                },
+                headers={
+                    "X-GitHub-Api-Version": "2022-11-28",
+                    "Accept": "application/vnd.github+json",
+                    "Authorization": f"Bearer {access_token}"
+                }
+            )
+
+            if res.status_code != 200:
+                print(f"Invalid response code from github: {res.status_code}")
+                return []
+
+            results = res.json()
+
+            for release in results:
+                if (not (release_name := release.get("name")) or
+                        not (tag_name := release.get("tag_name"))):
+                    continue
+
+                # Obtain version from tag and skip if it's invalid
+                version = terrareg.provider_version_model.ProviderVersion.tag_to_version(tag_name)
+                if not version:
+                    continue
+
+                # If a provider version exists for the release,
+                # exit early
+                pre_existing_provider_version = terrareg.provider_version_model.ProviderVersion(provider=provider, version=version)
+                if pre_existing_provider_version.exists:
+                    obtain_results = False
+                    break
+
+                releases.append(
+                    terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(name=release_name, tag=tag_name)
+                )
+
+            if len(results) < 100:
+                obtain_results = False
+            
+        return releases
