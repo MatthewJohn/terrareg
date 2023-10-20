@@ -1,9 +1,16 @@
 
+import subprocess
+import contextlib
+from io import BytesIO
+import os
+import tempfile
+import tarfile
+
 import terrareg.provider_version_model
 import terrareg.repository_model
 import terrareg.provider_source.repository_release_metadata
 import terrareg.models
-from terrareg.errors import MissingSignureArtifactError
+from terrareg.errors import MissingSignureArtifactError, UnableToObtainReleaseSourceError
 
 
 class ProviderExtractor:
@@ -59,10 +66,58 @@ class ProviderExtractor:
         """Generate artifact file name"""
         return f"{repository.name}_{release_metadata.version}_{file_suffix}"
 
-    def __init__(self, provider_version: 'terrareg.provider_version_model.ProviderVersion'):
+    def __init__(self, provider_version: 'terrareg.provider_version_model.ProviderVersion',
+                       release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata'):
         """Store member variables"""
         self._provider_version = provider_version
+        self._release_metadata = release_metadata
 
     def process_version(self):
         """Perform extraction"""
+        self.extract_documentation()
         raise Exception('adg')
+
+    @contextlib.contextmanager
+    def _obtain_source_code(self):
+        """Obtain source code and extract into temporary location"""
+        with tempfile.TemporaryDirectory() as temp_directory:
+            # Create child directory for the provider name
+            provider_name = self._provider_version.provider.name
+            source_dir = os.path.join(temp_directory, provider_name)
+            os.mkdir(source_dir)
+
+            # Obtain archive of release
+            archive_data, extract_subdirectory = self._provider_version.provider.repository.get_release_archive(
+                release_metadata=self._release_metadata
+            )
+
+            if not archive_data:
+                raise UnableToObtainReleaseSourceError("Unable to obtain release source for provider release")
+
+            # Extract archive
+            archive_fh = BytesIO(archive_data)
+            with tarfile.open(fileobj=archive_fh, mode="r:gz") as tar:
+                tar.extractall(path=source_dir)
+
+            # If the repository provider uses a sub-directory for the source,
+            # obtain this
+            if extract_subdirectory:
+                source_dir = os.path.join(source_dir, extract_subdirectory)
+
+            # Check if source directory is named after then provider
+            # (apparently this is important for tfplugindocs)
+            # and if not, rename it
+            if os.path.dirname(source_dir) != provider_name:
+                new_source_dir = os.path.abspath(os.path.join(source_dir, "..", provider_name))
+                os.rename(
+                    source_dir,
+                    new_source_dir
+                )
+                source_dir = new_source_dir
+
+            yield source_dir
+
+    def extract_documentation(self):
+        """Extract documentation from release"""
+        with self._obtain_source_code() as source_dir:
+            pass

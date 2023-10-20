@@ -1,5 +1,5 @@
 
-from typing import Dict, Union, List
+from typing import Dict, Union, List, Tuple
 from urllib.parse import parse_qs
 
 import requests
@@ -183,6 +183,24 @@ class GithubProviderSource(BaseProviderSource):
 
             page += 1
 
+    def _get_commit_hash_by_release(self,
+                             repository: 'terrareg.repository_model.Repository',
+                             tag_name: str,
+                             access_token: str):
+        """Return commit hash for tag name"""
+        res = requests.get(
+            f"{self._api_url}/repos/{repository.owner}/{repository.name}/git/ref/tags/{tag_name}",
+            headers={
+                "X-GitHub-Api-Version": "2022-11-28",
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"Bearer {access_token}"
+            }
+        )
+        if res.status_code != 200:
+            return None
+
+        return res.json().get("object", {}).get("sha")
+
     def get_new_releases(self, provider: 'terrareg.provider_model.Provider', access_token: str) -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:
         """Obtain all repository releases that aren't associated with a pre-existing release"""
         repository = provider.repository
@@ -213,7 +231,14 @@ class GithubProviderSource(BaseProviderSource):
             for release in results:
                 if (not (release_id := release.get("id")) or
                         not (release_name := release.get("name")) or
-                        not (tag_name := release.get("tag_name"))):
+                        not (tag_name := release.get("tag_name")) or
+                        not (archive_url := release.get("tarball_url")) or
+                        not (commit_hash := self._get_commit_hash_by_release(
+                            repository=repository,
+                            tag_name=tag_name,
+                            access_token=access_token))):
+                    raise Exception("blah")
+                    print("Could not obtain one of: release name, tag name, archive url or commit hash for release")
                     continue
 
                 # Obtain version from tag and skip if it's invalid
@@ -233,8 +258,12 @@ class GithubProviderSource(BaseProviderSource):
 
                 releases.append(
                     terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
-                        name=release_name, tag=tag_name, provider_id=release_id,
-                        release_artifacts=release_artifacts
+                        name=release_name,
+                        tag=tag_name,
+                        provider_id=release_id,
+                        commit_hash=commit_hash,
+                        archive_url=archive_url,
+                        release_artifacts=release_artifacts,
                     )
                 )
 
@@ -291,3 +320,26 @@ class GithubProviderSource(BaseProviderSource):
             print("get_release_artifact returned 404")
             return None
         return res.content
+
+    def get_release_archive(self,
+                            repository: 'terrareg.repository_model.Repository',
+                            release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
+                            access_token: str) -> Tuple[bytes, Union[None, str]]:
+        """Obtain release archive, returning bytes of archive"""
+        print(f"{self._api_url}/repos/{repository.owner}/{repository.name}/tarball/{release_metadata.tag}")
+        res = requests.get(
+            f"{self._api_url}/repos/{repository.owner}/{repository.name}/tarball/{release_metadata.tag}",
+            headers={
+                "X-GitHub-Api-Version": "2022-11-28",
+                "Accept": "application/json",
+                "Authorization": f"Bearer {access_token}"
+            },
+            allow_redirects=True
+        )
+        content = None
+        if res.status_code == 404:
+            print("get_release_artifact returned 404")
+        else:
+            content = res.content
+
+        return content, f"{repository.owner}-{repository.name}-{release_metadata.commit_hash[0:7]}"

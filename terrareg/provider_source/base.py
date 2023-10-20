@@ -1,5 +1,5 @@
 
-from typing import Dict, Union, List
+from typing import Dict, Union, List, Tuple
 import json
 
 import terrareg.database
@@ -70,4 +70,11 @@ class BaseProviderSource:
                              repository: 'terrareg.repository_model.Repository',
                              access_token: str):
         """Return release artifact file content"""
+        raise NotImplementedError
+
+    def get_release_archive(self,
+                            repository: 'terrareg.repository_model.Repository',
+                            release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
+                            access_token: str) -> Tuple[bytes, Union[None, str]]:
+        """Obtain release archive"""
         raise NotImplementedError

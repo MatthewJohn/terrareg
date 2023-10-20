@@ -1,6 +1,8 @@
 
-from os import access
-from typing import Union, List
+import re
+from typing import Union, List, Tuple
+
+import sqlalchemy
 
 import terrareg.provider_source
 import terrareg.provider_source.factory
@@ -183,9 +185,18 @@ class Repository:
 
     def get_release_artifact(self, artifact_metadata: 'terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata',
                              release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata'):
-        """Return release artifact file content"""
+        """Return release artifact file content from provider source, injecting access token"""
         return self.provider_source.get_release_artifact(
             repository=self, artifact_metadata=artifact_metadata,
+            release_metadata=release_metadata,
+            access_token=self._authentication_key
+        )
+
+    def get_release_archive(self,
+                            release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata') -> Tuple[bytes, Union[None, str]]:
+        """Obtain release archive using provider source, injecting access token, returning bytes of archive and the sub-directory used for extraction"""
+        return self.provider_source.get_release_archive(
+            repository=self,
             release_metadata=release_metadata,
             access_token=self._authentication_key
         )

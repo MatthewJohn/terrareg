@@ -9,12 +9,15 @@ class RepositoryReleaseMetadata:
 
     _TAG_REGEX = re.compile(r'^v([0-9]+\.[0-9]+\.[0-9]+(:?-[a-z0-9]+)?)$')
 
-    def __init__(self, name: str, tag: str, provider_id: Union[str, int], release_artifacts: List['ReleaseArtifactMetadata']):
+    def __init__(self, name: str, tag: str, archive_url: str, commit_hash: str,
+                 provider_id: Union[str, int], release_artifacts: List['ReleaseArtifactMetadata']):
         """Store member variables"""
         self.name = name
         self.tag = tag
         self.provider_id = provider_id
         self.release_artifacts = release_artifacts
+        self.archive_url = archive_url
+        self.commit_hash = commit_hash
 
     @classmethod
     def tag_to_version(cls, tag: str) -> Union[None, str]:

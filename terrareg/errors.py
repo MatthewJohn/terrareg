@@ -316,3 +316,9 @@ class InvalidRepositoryNameError(TerraregError):
     """Repository name is invalid for a the given type of object"""
 
     pass
+
+
+class UnableToObtainReleaseSourceError(TerraregError):
+    """Unable to obtain release source for provider version"""
+
+    pass

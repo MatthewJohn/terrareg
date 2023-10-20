@@ -215,7 +215,10 @@ class Provider:
                 raise CouldNotFindGpgKeyForProviderVersionError(f"Could not find a valid GPG key to verify the signature of the release: {release_metadata.name}")
 
             with provider_version.create_extraction_wrapper(gpg_key):
-                provider_extractor = terrareg.provider_extractor.ProviderExtractor(provider_version=provider_version)
+                provider_extractor = terrareg.provider_extractor.ProviderExtractor(
+                    provider_version=provider_version,
+                    release_metadata=release_metadata
+                )
                 provider_extractor.process_version()
 
     def update_attributes(self, **kwargs: dict) -> None:

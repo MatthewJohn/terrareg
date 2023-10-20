@@ -60,7 +60,10 @@ class GithubRepositoryPublishProvider(ErrorCatchingResource):
 
 
         with terrareg.database.Database.start_transaction():
-            provider = terrareg.provider_model.Provider.create(repository=repository, provider_category=provider_category)
+            provider = terrareg.provider_model.Provider.create(
+                repository=repository,
+                provider_category=provider_category
+            )
             if not provider:
                 return {'errors': ['An error occurred whilst creating provider']}
 
