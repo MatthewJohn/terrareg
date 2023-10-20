@@ -71,7 +71,9 @@ class GithubRepositoryPublishProvider(ErrorCatchingResource):
             if not current_session:
                 return {'errors': ['An internal error accessing token occurred']}
 
-            provider.refresh_versions()
+            versions = provider.refresh_versions()
+            if not versions:
+                raise Exception("Unable to find a valid release")
 
         return {
             "name": provider.name,

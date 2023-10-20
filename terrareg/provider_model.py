@@ -200,9 +200,10 @@ class Provider:
     def refresh_versions(self) -> List['terrareg.provider_version_model.ProviderVersion']:
         """Refresh versions from provider source and create new provider versions"""
         repository = self.repository
-        provider_source = repository.provider_source
 
         releases_metadata = repository.get_new_releases(provider=self)
+
+        provider_versions = []
 
         for release_metadata in releases_metadata:
             provider_version = terrareg.provider_version_model.ProviderVersion(provider=self, version=release_metadata.version)
@@ -220,6 +221,10 @@ class Provider:
                     release_metadata=release_metadata
                 )
                 provider_extractor.process_version()
+
+            provider_versions.append(provider_version)
+
+        return provider_versions
 
     def update_attributes(self, **kwargs: dict) -> None:
         """Update DB row."""
