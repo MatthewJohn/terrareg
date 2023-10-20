@@ -14,23 +14,39 @@ class ProviderExtractor:
                        namespace: 'terrareg.models.Namespace',
                        release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata') -> 'terrareg.models.GpgKey':
         """"Obtain GPG key for signature of release"""
-        signature_file_name = cls.generate_artifact_name(repository=repository, release_metadata=release_metadata, file_suffix="SHA256SUMS.sig")
+        shasum_file_name = cls.generate_artifact_name(repository=repository, release_metadata=release_metadata, file_suffix="SHA256SUMS")
+        shasum_signature_file_name = cls.generate_artifact_name(repository=repository, release_metadata=release_metadata, file_suffix="SHA256SUMS.sig")
+
+        shasum_signature_artifact = None
+        shasum_artifact = None
         for release_artifact in release_metadata.release_artifacts:
-            if release_artifact.name == signature_file_name:
-                signature_artifact = release_artifact
+            if release_artifact.name == shasum_file_name:
+                shasum_artifact = release_artifact
+            elif release_artifact.name == shasum_signature_file_name:
+                shasum_signature_artifact = release_artifact
+
+            # Once the shasum and signature file have been found, exit
+            if shasum_signature_artifact and shasum_artifact:
                 break
         else:
-            raise MissingSignureArtifactError("There is no release artifact for signature file")
+            raise MissingSignureArtifactError("Could not find SHA or SHA signature file for release")
 
-        release_signature = repository.get_release_artifact(
-            artifact_metadata=signature_artifact,
+        shasums = repository.get_release_artifact(
+            artifact_metadata=shasum_artifact,
             release_metadata=release_metadata
         )
-        if not release_signature:
-            raise MissingSignureArtifactError("Failed to download signature artifact file")
+        if not shasums:
+            raise MissingSignureArtifactError("Failed to download SHASUMS artifact file")
+
+        shasums_signature = repository.get_release_artifact(
+            artifact_metadata=shasum_signature_artifact,
+            release_metadata=release_metadata
+        )
+        if not shasums_signature:
+            raise MissingSignureArtifactError("Failed to download SHASUMS signature artifact file")
 
         for gpg_key in terrareg.models.GpgKey.get_by_namespace(namespace=namespace):
-            if gpg_key.match_signure(release_signature):
+            if gpg_key.verify_data_signature(signature=shasums_signature, data=shasums):
                 return gpg_key
 
         return None

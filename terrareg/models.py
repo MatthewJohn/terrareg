@@ -1397,11 +1397,14 @@ class GpgKey:
 
         return self._cache_db_row
 
-    def match_signure(self, signature):
+    def verify_data_signature(self, signature: bytes, data: bytes):
         """Check if GPG key matches signature"""
         with self._get_gpg_object(ascii_armor=self.ascii_armor) as (gpg_object, _):
-            res = gpg_object.verify(data=signature)
-            return res.valid
+            with tempfile.NamedTemporaryFile() as sig_fh:
+                sig_fh.write(signature)
+                sig_fh.flush()
+                res = gpg_object.verify_data(sig_filename=sig_fh.name, data=data)
+                return res.valid
 
     def delete(self):
         """Delete GPG key"""
