@@ -68,7 +68,7 @@ class GithubRepositoryPublishProvider(ErrorCatchingResource):
             if not current_session:
                 return {'errors': ['An internal error accessing token occurred']}
 
-            provider.refresh_versions(access_token=current_session.provider_source_auth.get("github_access_token"))
+            provider.refresh_versions()
 
         return {
             "name": provider.name,

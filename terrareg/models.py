@@ -1228,14 +1228,22 @@ class Namespace(object):
 
 
 class GpgKey:
-
+    """Creates and manages GPG Keys"""
 
     @classmethod
-    def _get_gpg_object_from_ascii_armor(cls, ascii_armor):
-        """Validate ASCII armor and generate GPG object"""
+    @contextlib.contextmanager
+    def _get_gpg_object(cls, ascii_armor: str):
+        """Obtain ascii object"""
         with tempfile.TemporaryDirectory() as temp_dir:
             gpg = gnupg.GPG(gnupghome=temp_dir, keyring=None, use_agent=False)
-            return gpg.import_keys(key_data=ascii_armor)
+            imported_key = gpg.import_keys(key_data=ascii_armor)
+            yield (gpg, imported_key)
+
+    @classmethod
+    def _get_gpg_object_from_ascii_armor(cls, ascii_armor: str):
+        """Validate ASCII armor and generate GPG object"""
+        with cls._get_gpg_object(ascii_armor=ascii_armor) as (_, imported_key):
+            return imported_key
 
     @classmethod
     def get_by_namespace(cls, namespace):
@@ -1388,6 +1396,12 @@ class GpgKey:
                 self._cache_db_row = res.fetchone()
 
         return self._cache_db_row
+
+    def match_signure(self, signature):
+        """Check if GPG key matches signature"""
+        with self._get_gpg_object(ascii_armor=self.ascii_armor) as (gpg_object, _):
+            res = gpg_object.verify(data=signature)
+            return res.valid
 
     def delete(self):
         """Delete GPG key"""

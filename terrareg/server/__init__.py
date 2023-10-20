@@ -126,6 +126,8 @@ class Server(BaseHandler):
             os.mkdir(self._get_upload_directory())
         if not os.path.isdir(os.path.join(terrareg.config.Config().DATA_DIRECTORY, 'modules')):
             os.mkdir(os.path.join(terrareg.config.Config().DATA_DIRECTORY, 'modules'))
+        if not os.path.isdir(os.path.join(terrareg.config.Config().DATA_DIRECTORY, 'providers')):
+            os.mkdir(os.path.join(terrareg.config.Config().DATA_DIRECTORY, 'providers'))
 
         self._app.config['UPLOAD_FOLDER'] = self._get_upload_directory()
 

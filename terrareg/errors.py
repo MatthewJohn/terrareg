@@ -298,3 +298,15 @@ class ReindexingExistingProviderVersionsIsProhibitedError(TerraregError):
     """Cannot reindex a module provider"""
 
     pass
+
+
+class MissingSignureArtifactError(TerraregError):
+    """Missing signature error for artifacts"""
+
+    pass
+
+
+class CouldNotFindGpgKeyForProviderVersionError(TerraregError):
+    """Could not find valid GPG key for release"""
+
+    pass

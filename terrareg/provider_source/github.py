@@ -171,7 +171,8 @@ class GithubProviderSource(BaseProviderSource):
                     provider_source=self,
                     provider_id=repo_id,
                     name=repo_name,
-                    owner=owner_name
+                    owner=owner_name,
+                    authentication_key=access_token
                 )
 
             if len(results) < 100:
@@ -207,12 +208,13 @@ class GithubProviderSource(BaseProviderSource):
             results = res.json()
 
             for release in results:
-                if (not (release_name := release.get("name")) or
+                if (not (release_id := release.get("id")) or
+                        not (release_name := release.get("name")) or
                         not (tag_name := release.get("tag_name"))):
                     continue
 
                 # Obtain version from tag and skip if it's invalid
-                version = terrareg.provider_version_model.ProviderVersion.tag_to_version(tag_name)
+                version = terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata.tag_to_version(tag_name)
                 if not version:
                     continue
 
@@ -223,11 +225,66 @@ class GithubProviderSource(BaseProviderSource):
                     obtain_results = False
                     break
 
+                # Obtain release artifacts
+                release_artifacts = self._get_release_artifacts_metadata(release_id=release_id, repository=repository, access_token=access_token)
+
                 releases.append(
-                    terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(name=release_name, tag=tag_name)
+                    terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
+                        name=release_name, tag=tag_name, provider_id=release_id,
+                        release_artifacts=release_artifacts
+                    )
                 )
 
             if len(results) < 100:
                 obtain_results = False
             
         return releases
+
+    def _get_release_artifacts_metadata(self, repository: 'terrareg.repository_model.Repository',
+                                        release_id: int, access_token: str) -> List['terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata']:
+        """Obtain list of release artifact metdata for a given release"""
+        res = requests.get(
+            f"{self._api_url}/repos/{repository.owner}/{repository.name}/releases/{release_id}/assets",
+            params={
+                "per_page": "100",
+                "page": "1"
+            },
+            headers={
+                "X-GitHub-Api-Version": "2022-11-28",
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"Bearer {access_token}"
+            }
+        )
+
+        if res.status_code != 200:
+            print(f"_get_release_artifacts_metadata: Invalid response code from github assets list: {res.status_code}")
+            return []
+
+        return [
+            terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(
+                name=asset.get("name"),
+                provider_id=asset.get("id")
+            )
+            for asset in res.json()
+            if asset.get("name") and asset.get("id")
+        ]
+
+    def get_release_artifact(self,
+                             artifact_metadata: 'terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata',
+                             release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
+                             repository: 'terrareg.repository_model.Repository',
+                             access_token: str):
+        """Return release artifact file content"""
+        res = requests.get(
+            f"{self._api_url}/repos/{repository.owner}/{repository.name}/releases/assets/{artifact_metadata.provider_id}",
+            headers={
+                "X-GitHub-Api-Version": "2022-11-28",
+                "Accept": "application/octet-stream",
+                "Authorization": f"Bearer {access_token}"
+            },
+            allow_redirects=True
+        )
+        if res.status_code == 404:
+            print("get_release_artifact returned 404")
+            return None
+        return res.content

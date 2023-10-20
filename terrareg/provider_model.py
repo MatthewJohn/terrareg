@@ -12,7 +12,7 @@ from typing import Union, List
 import sqlalchemy
 
 import terrareg.database
-from terrareg.errors import DuplicateProviderError, InvalidModuleProviderNameError, ProviderNameNotPermittedError
+from terrareg.errors import CouldNotFindGpgKeyForProviderVersionError, DuplicateProviderError, InvalidModuleProviderNameError, ProviderNameNotPermittedError
 import terrareg.config
 import terrareg.provider_tier
 import terrareg.audit
@@ -187,20 +187,26 @@ class Provider:
         # Obtain latest row
         return terrareg.provider_version_model.ProviderVersion(provider=self, version=rows[0]['version'])
 
-    def refresh_versions(self, access_token: str) -> List['terrareg.provider_version_model.ProviderVersion']:
+    def refresh_versions(self) -> List['terrareg.provider_version_model.ProviderVersion']:
         """Refresh versions from provider source and create new provider versions"""
-        provider_source = self.repository.provider_source
+        repository = self.repository
+        provider_source = repository.provider_source
 
-        releases_metadata = provider_source.get_new_releases(provider=self, access_token=access_token)
+        releases_metadata = repository.get_new_releases(provider=self)
 
         for release_metadata in releases_metadata:
-            version = terrareg.provider_version_model.ProviderVersion.tag_to_version(tag=release_metadata.tag)
-            provider_version = terrareg.provider_version_model.ProviderVersion(provider=self, version=version)
+            provider_version = terrareg.provider_version_model.ProviderVersion(provider=self, version=release_metadata.version)
 
+            gpg_key = terrareg.provider_extractor.ProviderExtractor.obtain_gpg_key(
+                repository=repository, release_metadata=release_metadata,
+                namespace=self.namespace
+            )
+            if not gpg_key:
+                raise CouldNotFindGpgKeyForProviderVersionError(f"Could not find a valid GPG key to verify the signature of the release: {release_metadata.name}")
 
-            with provider_version.create_extraction_wrapper():
-                with terrareg.provider_extractor.ProviderExtractor(provider_version=provider_version) as pe:
-                    pe.process_version()
+            with provider_version.create_extraction_wrapper(gpg_key):
+                provider_extractor = terrareg.provider_extractor.ProviderExtractor(provider_version=provider_version)
+                provider_extractor.process_version()
 
     def update_attributes(self, **kwargs: dict) -> None:
         """Update DB row."""

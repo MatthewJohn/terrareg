@@ -617,6 +617,7 @@ class Database():
             sqlalchemy.Column('provider_id', sqlalchemy.String),
             sqlalchemy.Column('owner', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('authentication_key', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column(
                 'provider_source_name',
                 sqlalchemy.ForeignKey(

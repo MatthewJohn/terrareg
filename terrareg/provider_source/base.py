@@ -4,6 +4,8 @@ import json
 
 import terrareg.database
 import terrareg.provider_source.repository_release_metadata
+import terrareg.repository_model
+import terrareg.provider_model
 
 
 class BaseProviderSource:
@@ -60,4 +62,12 @@ class BaseProviderSource:
 
     def get_new_releases(self, provider: 'terrareg.provider_model.Provider', access_token: str) -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:
         """Obtain all repository releases that aren't associated with a pre-existing release"""
+        raise NotImplementedError
+
+    def get_release_artifact(self,
+                             artifact_metadata: 'terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata',
+                             release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
+                             repository: 'terrareg.repository_model.Repository',
+                             access_token: str):
+        """Return release artifact file content"""
         raise NotImplementedError

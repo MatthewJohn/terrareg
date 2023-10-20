@@ -13,19 +13,10 @@ import terrareg.provider_model
 import terrareg.database
 import terrareg.audit
 import terrareg.audit_action
+import terrareg.models
 
 
 class ProviderVersion:
-
-    _TAG_REGEX = re.compile(r'^v([0-9]+\.[0-9]+\.[0-9]+(:?-[a-z0-9]+)?)$')
-
-    @staticmethod
-    def tag_to_version(tag: str) -> Union[None, str]:
-        """Convert tag to version"""
-        # Since we currently support the original tagging strategy 'v{version}', simply strip off the v
-        if (match := ProviderVersion._TAG_REGEX.match(tag)):
-            return match.group(1)
-        return None
 
     @staticmethod
     def _validate_version(version):
@@ -160,9 +151,9 @@ class ProviderVersion:
             os.mkdir(self.base_directory)
 
     @contextlib.contextmanager
-    def create_extraction_wrapper(self):
+    def create_extraction_wrapper(self, gpg_key: 'terrareg.models.GpgKey'):
         """Handle module creation with yield for extraction"""
-        self.prepare_module()
+        self.prepare_version(gpg_key=gpg_key)
 
         yield
 

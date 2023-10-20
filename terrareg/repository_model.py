@@ -1,4 +1,5 @@
 
+from os import access
 from typing import Union, List
 
 import terrareg.provider_source
@@ -7,13 +8,16 @@ import terrareg.audit
 import terrareg.audit_action
 import terrareg.database
 import terrareg.repository_kind
+import terrareg.provider_source.repository_release_metadata
+import terrareg.provider_model
 
 
 class Repository:
 
     @classmethod
     def create(cls, provider_source: 'terrareg.provider_source.BaseProviderSource',
-               provider_id: str, name: str, owner: str) -> Union[None, 'Repository']:
+               provider_id: str, name: str, owner: str,
+               authentication_key: str) -> Union[None, 'Repository']:
         """Create user group"""
         # Check if repository exists by provider source and ID
         if cls.get_by_provider_source_and_provider_id(provider_source=provider_source, provider_id=provider_id):
@@ -22,7 +26,8 @@ class Repository:
         pk = cls._insert_into_database(
             provider_source=provider_source,
             provider_id=provider_id,
-            name=name, owner=owner
+            name=name, owner=owner,
+            authentication_key=authentication_key,
         )
 
         obj = cls(pk=pk)
@@ -38,7 +43,8 @@ class Repository:
 
     @classmethod
     def _insert_into_database(cls, provider_source: 'terrareg.provider_source.BaseProviderSource',
-                              provider_id: str, name: str, owner: str) -> int:
+                              provider_id: str, name: str, owner: str,
+                              authentication_key: str) -> int:
         """Insert new user group into database."""
         db = terrareg.database.Database.get()
         with db.get_connection() as conn:
@@ -46,7 +52,8 @@ class Repository:
                 provider_source_name=provider_source.name,
                 provider_id=provider_id,
                 name=name,
-                owner=owner
+                owner=owner,
+                authentication_key=authentication_key
             ))
             return res.lastrowid
 
@@ -132,6 +139,11 @@ class Repository:
             return terrareg.repository_kind.RepositoryKind.MODULE
         return None
 
+    @property
+    def _authentication_key(self):
+        """Return authentication key"""
+        return self._get_db_row()["authentication_key"]
+
     def __init__(self, pk: int):
         """Store member variables"""
         self._pk = pk
@@ -149,3 +161,19 @@ class Repository:
                 res = conn.execute(select)
                 self._row_cache = res.fetchone()
         return self._row_cache
+
+    def get_new_releases(self, provider: 'terrareg.provider_model.Provider') -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:
+        """Obtain all repository releases that aren't associated with a pre-existing release"""
+        return self.provider_source.get_new_releases(
+            provider=provider,
+            access_token=self._authentication_key
+        )
+
+    def get_release_artifact(self, artifact_metadata: 'terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata',
+                             release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata'):
+        """Return release artifact file content"""
+        return self.provider_source.get_release_artifact(
+            repository=self, artifact_metadata=artifact_metadata,
+            release_metadata=release_metadata,
+            access_token=self._authentication_key
+        )
