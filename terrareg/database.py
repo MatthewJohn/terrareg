@@ -617,7 +617,9 @@ class Database():
             sqlalchemy.Column('provider_id', sqlalchemy.String),
             sqlalchemy.Column('owner', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('description', Database.medium_blob()),
             sqlalchemy.Column('authentication_key', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('clone_url', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column(
                 'provider_source_name',
                 sqlalchemy.ForeignKey(
@@ -644,7 +646,7 @@ class Database():
                 nullable=False
             ),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('description', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('description', Database.medium_blob()),
             sqlalchemy.Column('tier', sqlalchemy.Enum(ProviderTier)),
             sqlalchemy.Column(
                 'provider_category_id',

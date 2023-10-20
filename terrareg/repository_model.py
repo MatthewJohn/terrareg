@@ -16,8 +16,8 @@ class Repository:
 
     @classmethod
     def create(cls, provider_source: 'terrareg.provider_source.BaseProviderSource',
-               provider_id: str, name: str, owner: str,
-               authentication_key: str) -> Union[None, 'Repository']:
+               provider_id: str, name: str, description: str, owner: str,
+               clone_url: str, authentication_key: str) -> Union[None, 'Repository']:
         """Create user group"""
         # Check if repository exists by provider source and ID
         if cls.get_by_provider_source_and_provider_id(provider_source=provider_source, provider_id=provider_id):
@@ -26,7 +26,10 @@ class Repository:
         pk = cls._insert_into_database(
             provider_source=provider_source,
             provider_id=provider_id,
-            name=name, owner=owner,
+            name=name,
+            description=description,
+            owner=owner,
+            clone_url=clone_url,
             authentication_key=authentication_key,
         )
 
@@ -43,8 +46,8 @@ class Repository:
 
     @classmethod
     def _insert_into_database(cls, provider_source: 'terrareg.provider_source.BaseProviderSource',
-                              provider_id: str, name: str, owner: str,
-                              authentication_key: str) -> int:
+                              provider_id: str, name: str, description: str, owner: str,
+                              clone_url: str, authentication_key: str) -> int:
         """Insert new user group into database."""
         db = terrareg.database.Database.get()
         with db.get_connection() as conn:
@@ -52,7 +55,9 @@ class Repository:
                 provider_source_name=provider_source.name,
                 provider_id=provider_id,
                 name=name,
+                description=terrareg.database.Database.encode_blob(description),
                 owner=owner,
+                clone_url=clone_url,
                 authentication_key=authentication_key
             ))
             return res.lastrowid
@@ -137,6 +142,13 @@ class Repository:
             return terrareg.repository_kind.RepositoryKind.PROVIDER
         elif self.name.startswith("terraform-"):
             return terrareg.repository_kind.RepositoryKind.MODULE
+        return None
+
+    @property
+    def description(self) -> Union[None, str]:
+        """Return description"""
+        if description_blob := self._get_db_row()["description"]:
+            return terrareg.database.Database.decode_blob(description_blob)
         return None
 
     @property

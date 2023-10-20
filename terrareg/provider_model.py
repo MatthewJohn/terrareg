@@ -46,7 +46,7 @@ class Provider:
         insert = db.provider.insert().values(
             namespace_id=namespace.pk,
             name=repository.name,
-            description=None,
+            description=db.encode_blob(repository.description),
             tier=terrareg.provider_tier.ProviderTier.COMMUNITY,
             repository_id=repository.pk,
             provider_category_id=provider_category.pk

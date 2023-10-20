@@ -164,14 +164,17 @@ class GithubProviderSource(BaseProviderSource):
             for repository in results:
                 if (not (repo_id := repository.get("id")) or
                         not (repo_name := repository.get("name")) or
-                        not (owner_name := repository.get("owner", {}).get("login"))):
+                        not (owner_name := repository.get("owner", {}).get("login")) or
+                        not (clone_url := repository.get("clone_url"))):
                     continue
 
                 terrareg.repository_model.Repository.create(
                     provider_source=self,
                     provider_id=repo_id,
                     name=repo_name,
+                    description=repository.get("description"),
                     owner=owner_name,
+                    clone_url=clone_url,
                     authentication_key=access_token
                 )
 
