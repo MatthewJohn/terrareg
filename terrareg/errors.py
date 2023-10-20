@@ -310,3 +310,9 @@ class CouldNotFindGpgKeyForProviderVersionError(TerraregError):
     """Could not find valid GPG key for release"""
 
     pass
+
+
+class InvalidRepositoryNameError(TerraregError):
+    """Repository name is invalid for a the given type of object"""
+
+    pass

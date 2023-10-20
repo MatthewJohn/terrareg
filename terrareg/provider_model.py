@@ -12,7 +12,7 @@ from typing import Union, List
 import sqlalchemy
 
 import terrareg.database
-from terrareg.errors import CouldNotFindGpgKeyForProviderVersionError, DuplicateProviderError, InvalidModuleProviderNameError, ProviderNameNotPermittedError
+from terrareg.errors import CouldNotFindGpgKeyForProviderVersionError, DuplicateProviderError, InvalidModuleProviderNameError, InvalidRepositoryNameError, ProviderNameNotPermittedError
 import terrareg.config
 import terrareg.provider_tier
 import terrareg.audit
@@ -29,6 +29,13 @@ import terrareg.utils
 class Provider:
 
     @classmethod
+    def repository_name_to_provider_name(cls, repository_name: str) -> Union[None, str]:
+        """Convert repository name to provider name"""
+        if repository_name and repository_name.startswith("terraform-provider-"):
+            return re.sub(r"^terraform-provider-", "", repository_name)
+        return None
+
+    @classmethod
     def create(cls, repository: 'terrareg.repository_model.Repository',
                provider_category: 'terrareg.provider_category_model.ProviderCategory') -> 'Provider':
         """Create instance of object in database."""
@@ -43,9 +50,12 @@ class Provider:
         # Create provider
         db = terrareg.database.Database.get()
 
+        if not (provider_name := cls.repository_name_to_provider_name(repository_name=repository.name)):
+            raise InvalidRepositoryNameError("Invalid repository name")
+
         insert = db.provider.insert().values(
             namespace_id=namespace.pk,
-            name=repository.name,
+            name=provider_name,
             description=db.encode_blob(repository.description),
             tier=terrareg.provider_tier.ProviderTier.COMMUNITY,
             repository_id=repository.pk,
@@ -54,7 +64,7 @@ class Provider:
         with db.get_connection() as conn:
             conn.execute(insert)
 
-        obj = cls(namespace=namespace, name=repository.name)
+        obj = cls(namespace=namespace, name=provider_name)
 
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.PROVIDER_CREATE,
