@@ -42,6 +42,21 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
 # Download tfswitch
 RUN bash -c 'curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/release/install.sh | bash'
 
+# Install go
+RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
+    then \
+      arch=arm64; \
+    else \
+      arch=amd64; \
+    fi; \
+    wget https://go.dev/dl/go1.20.10.linux-${arch}.tar.gz -O /tmp/go.tar.gz && \
+    tar -zxvf /tmp/go.tar.gz /usr/local && \
+    rm /tmp/go.tar.gz'
+ENV PATH=$PATH:/usr/local/go/bin
+
+# Install github.com/hashicorp/terraform-plugin-docs
+RUN go get github.com/hashicorp/terraform-plugin-docs@0.16.0
+
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt

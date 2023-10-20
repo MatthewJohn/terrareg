@@ -176,6 +176,25 @@ class Repository:
                 self._row_cache = res.fetchone()
         return self._row_cache
 
+    def update_attributes(self, **kwargs):
+        """Update DB row."""
+        # Check for any blob and encode the values
+        for kwarg in kwargs:
+            if kwarg in ['description']:
+                kwargs[kwarg] = terrareg.database.Database.encode_blob(kwargs[kwarg])
+
+        db = terrareg.database.Database.get()
+        update = sqlalchemy.update(
+            db.repository
+        ).where(
+            db.repository.c.id==self.pk
+        ).values(**kwargs)
+        with db.get_connection() as conn:
+            conn.execute(update)
+
+        # Remove cached DB row
+        self._cache_db_row = None
+
     def get_new_releases(self, provider: 'terrareg.provider_model.Provider') -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:
         """Obtain all repository releases that aren't associated with a pre-existing release"""
         return self.provider_source.get_new_releases(

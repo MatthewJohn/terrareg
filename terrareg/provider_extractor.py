@@ -10,6 +10,7 @@ import terrareg.provider_version_model
 import terrareg.repository_model
 import terrareg.provider_source.repository_release_metadata
 import terrareg.models
+import terrareg.config
 from terrareg.errors import MissingSignureArtifactError, UnableToObtainReleaseSourceError
 
 
@@ -120,4 +121,48 @@ class ProviderExtractor:
     def extract_documentation(self):
         """Extract documentation from release"""
         with self._obtain_source_code() as source_dir:
-            pass
+            with tempfile.TemporaryDirectory() as go_path:
+                go_env = os.environ.copy()
+                go_env["GOROOT"] = "/usr/local/go"
+                go_env["GOPATH"] = go_path
+                # Run get get to initialise repository
+                try:
+                    subprocess.check_output(
+                        ['go', 'get'],
+                        cwd=source_dir,
+                        env=go_env,
+                    )
+                except subprocess.CalledProcessError as exc:
+                    print(
+                        "An error occurred whilst getting 'go get': " +
+                        (f": {str(exc)}: {exc.output.decode('utf-8')}" if terrareg.config.Config().DEBUG else "")
+                    )
+                    return
+
+                # Run go module for extractings docs
+                try:
+                    subprocess.check_output(
+                        ['go', 'get', 'github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs'],
+                        cwd=source_dir,
+                        env=go_env,
+                    )
+                except subprocess.CalledProcessError as exc:
+                    print(
+                        "An error occurred whilst getting tfplugindocs: " +
+                        (f": {str(exc)}: {exc.output.decode('utf-8')}" if terrareg.config.Config().DEBUG else "")
+                    )
+                    return
+
+                # Run go module for extractings docs
+                try:
+                    subprocess.check_output(
+                        ['go', 'run', 'github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs'],
+                        cwd=source_dir,
+                        env=go_env,
+                    )
+                except subprocess.CalledProcessError as exc:
+                    print(
+                        "An error occurred whilst extracting terraform provider docs: " +
+                        (f": {str(exc)}: {exc.output.decode('utf-8')}" if terrareg.config.Config().DEBUG else "")
+                    )
+                    return
