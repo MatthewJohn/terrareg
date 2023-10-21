@@ -154,6 +154,11 @@ class Repository:
         return None
 
     @property
+    def clone_url(self) -> str:
+        """Return clone URL"""
+        return self._get_db_row()["clone_url"]
+
+    @property
     def _authentication_key(self):
         """Return authentication key"""
         return self._get_db_row()["authentication_key"]

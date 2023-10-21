@@ -13,6 +13,7 @@ from terrareg.provider_tier import ProviderTier
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from terrareg.namespace_type import NamespaceType
 from terrareg.provider_source_type import ProviderSourceType
+import terrareg.provider_documentation_type
 
 
 class Database():
@@ -69,6 +70,7 @@ class Database():
         self._repository = None
         self._provider = None
         self._provider_version = None
+        self._provider_version_documentation = None
         self._analytics = None
         self._example_file = None
         self._module_version_file = None
@@ -234,6 +236,13 @@ class Database():
         if self._provider_version is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._provider_version
+
+    @property
+    def provider_version_documentation(self):
+        """Return provider_version_documentation table."""
+        if self._provider_version_documentation is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._provider_version_documentation
 
     @property
     def audit_history(self):
@@ -707,6 +716,29 @@ class Database():
             sqlalchemy.Column('beta', sqlalchemy.BOOLEAN, nullable=False),
             sqlalchemy.Column('published_at', sqlalchemy.DateTime),
             sqlalchemy.Column('extraction_version', sqlalchemy.Integer),
+        )
+
+        self._provider_version_documentation = sqlalchemy.Table(
+            'provider_version_documentation', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column(
+                'provider_version_id',
+                sqlalchemy.ForeignKey(
+                    'provider_version.id',
+                    name='fk_provider_version_documentation_provider_version_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'
+                ),
+                nullable=False
+            ),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('filename', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column(
+                'documentation_type',
+                sqlalchemy.Enum(terrareg.provider_documentation_type.ProviderDocumentationType),
+                nullable=False
+            ),
+            sqlalchemy.Column('content', Database.medium_blob())
         )
 
         self._audit_history = sqlalchemy.Table(

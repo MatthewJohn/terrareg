@@ -154,7 +154,7 @@ Provide download summary for module provider.
 Return list of download counts for module provider.
 
 
-## ApiGpgKey
+## ApiGpgKeys
 
 `/v2/gpg-keys`
 
@@ -192,6 +192,41 @@ POST Body must be JSON, in the format:
 }
 ```
 
+
+
+## ApiGpgKey
+
+`/v2/gpg-keys/<string:namespace>/<string:key_id>`
+
+Provide interface to create GPG Keys.
+
+
+#### GET
+
+Get details for a given GPG key for a namespace
+#### DELETE
+
+
+Perform deletion of GPG key
+
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| csrf_token | json | str | False | `None` | CSRF token |
+
+
+
+## ApiProviderCategories
+
+`/v2/categories`
+
+Interface to obtain list of provider categories.
+
+
+#### GET
+
+Return list of all provider categories
 
 
 ## ApiTerraregGraphData
@@ -263,7 +298,7 @@ Return SAML SP metadata.
 
 ## GithubLoginInitiate
 
-`/github/login`
+`/<string:provider_source>/login`
 
 Interface to initiate authentication via Github
 
@@ -275,7 +310,7 @@ Redirect to github login.
 
 ## GithubLoginCallback
 
-`/github/callback`
+`/<string:provider_source>/callback`
 
 Interface to handle call-back from Github login
 
@@ -283,6 +318,61 @@ Interface to handle call-back from Github login
 #### GET
 
 Handle callback from Github auth.
+
+
+## GithubAuthStatus
+
+`/<string:provider_source>/auth/status`
+
+Interface to provide details about current authentication status with Github
+
+
+#### GET
+
+Provide authentication status.
+
+
+## GithubOrganisations
+
+`/<string:provider_source>/organizations`
+
+Interface to provide details about current Github organisations for the logged in user
+
+
+#### GET
+
+Provide organisation details.
+
+
+## GithubRepositories
+
+`/<string:provider_source>/repositories`
+
+Interface to provide details about current Github repositories for the logged in user
+
+
+#### GET
+
+Provide organisation details.
+
+
+## GithubRepositoryPublishProvider
+
+`/<string:provider_source>/repositories/<int:repository_id>/publish-provider`
+
+Interface publish a repository as a provider
+
+
+#### POST
+
+Publish repository provider.
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| category_id | form | int | True | `None` | Provider category ID for provider |
+| csrf_token | form | str | False | `None` | CSRF Token |
+
 
 
 ## ApiTerraregConfig

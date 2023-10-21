@@ -1,4 +1,7 @@
 
+from distutils.dir_util import copy_tree
+from glob import glob
+import shutil
 import subprocess
 import contextlib
 from io import BytesIO
@@ -11,6 +14,8 @@ import terrareg.repository_model
 import terrareg.provider_source.repository_release_metadata
 import terrareg.models
 import terrareg.config
+import terrareg.provider_documentation_type
+import terrareg.provider_version_documentation_model
 from terrareg.errors import MissingSignureArtifactError, UnableToObtainReleaseSourceError
 
 
@@ -108,7 +113,7 @@ class ProviderExtractor:
             # Check if source directory is named after then provider
             # (apparently this is important for tfplugindocs)
             # and if not, rename it
-            if os.path.dirname(source_dir) != provider_name:
+            if os.path.basename(source_dir) != provider_name:
                 new_source_dir = os.path.abspath(os.path.join(source_dir, "..", provider_name))
                 os.rename(
                     source_dir,
@@ -132,13 +137,50 @@ class ProviderExtractor:
     def extract_documentation(self):
         """Extract documentation from release"""
         with self._obtain_source_code() as source_dir:
-            with tempfile.TemporaryDirectory() as go_path:
+            with tempfile.TemporaryDirectory() as temp_go_package_cache:
                 go_env = os.environ.copy()
                 go_env["GOROOT"] = "/usr/local/go"
-                go_env["GOPATH"] = go_path
-                # go_env["GO111MODULE"] = "off"
+                # Using a single directory for caching, even with
+                # multiple processes performing "go get" was
+                # considered, and whether a global lock was needed.
+                # But this has been discussed: https://github.com/golang/go/issues/26677
+                global_cache = terrareg.config.Config().GO_PACKAGE_CACHE_DIRECTORY
+                go_env["GOPATH"] = global_cache
 
-                # Run go module for extractings docs
+                if not os.path.isdir(global_cache):
+                    go_env["GO111MODULE"] = "off"
+                    # Populate global cache by getting module for extractings docs
+                    try:
+                        subprocess.check_output(
+                            ['go', 'get', 'github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs'],
+                            env=go_env,
+                        )
+                    except subprocess.CalledProcessError as exc:
+                        print(
+                            "An error occurred whilst getting tfplugindocs: " +
+                            (f": {str(exc)}: {exc.output.decode('utf-8')}" if terrareg.config.Config().DEBUG else "")
+                        )
+                        return
+
+                    del go_env["GO111MODULE"]
+
+                # Copy go package cache into temporary directory and update environment
+                copy_tree(terrareg.config.Config().GO_PACKAGE_CACHE_DIRECTORY, temp_go_package_cache)
+                go_env["GOPATH"] = temp_go_package_cache
+
+                try:
+                    subprocess.check_output(
+                        ['go', 'get'],
+                        cwd=source_dir,
+                        env=go_env,
+                    )
+                except subprocess.CalledProcessError as exc:
+                    print(
+                        "An error occurred whilst running go get: " +
+                        (f": {str(exc)}: {exc.output.decode('utf-8')}" if terrareg.config.Config().DEBUG else "")
+                    )
+                    return
+
                 try:
                     subprocess.check_output(
                         ['go', 'get', 'github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs'],
@@ -165,3 +207,44 @@ class ProviderExtractor:
                         (f": {str(exc)}: {exc.output.decode('utf-8')}" if terrareg.config.Config().DEBUG else "")
                     )
                     return
+
+                documentation_directory = os.path.join(source_dir, "docs")
+                self._collect_markdown_documentation(
+                    source_directory=source_dir,
+                    documentation_directory=documentation_directory,
+                    documentation_type=terrareg.provider_documentation_type.ProviderDocumentationType.OVERVIEW,
+                    file_filter="index.md"
+                )
+                self._collect_markdown_documentation(
+                    source_directory=source_dir,
+                    documentation_directory=os.path.join(documentation_directory, "resources"),
+                    documentation_type=terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE
+                )
+                self._collect_markdown_documentation(
+                    source_directory=source_dir,
+                    documentation_directory=os.path.join(documentation_directory, "data-sources"),
+                    documentation_type=terrareg.provider_documentation_type.ProviderDocumentationType.DATA_SOURCE
+                )
+
+    def _collect_markdown_documentation(self, source_directory: str, documentation_directory: str, documentation_type: terrareg.provider_documentation_type.ProviderDocumentationType, file_filter=None):
+        """Collect markdown documentation from directory and store in database"""
+        # If a file filter has not been provided, use all markdown files
+        if file_filter is None:
+            file_filter = "*.md"
+
+        for file_path in glob(os.path.join(documentation_directory, file_filter), recursive=False):
+            with open(file_path, "r") as document_fh:
+                content = document_fh.read()
+
+            # Remove source directory from start of file path
+            # so the path is relative to the root of the repository.
+            # Add 1 to length of source directory to handle the trailing slash
+            filename = file_path[(len(source_directory) + 1):]
+
+            terrareg.provider_version_documentation_model.ProviderVersionDocumentation.create(
+                provider_version=self._provider_version,
+                documentation_type=documentation_type,
+                name=os.path.basename(filename),
+                filename=filename,
+                content=content
+            )

@@ -502,6 +502,13 @@ An example for public repositories, using SSH for cloning, might be:
 Default: `[]`
 
 
+### GO_PACKAGE_CACHE_DIRECTORY
+
+Directory to cache go packages
+
+Default: `/tmp/terrareg-go-package-cache`
+
+
 ### IGNORE_ANALYTICS_TOKEN_AUTH_KEYS
 
 
@@ -725,6 +732,52 @@ A common configuration may require a 'groups' scope to be added to the list of s
 
 
 Default: `['openid', 'profile']`
+
+
+### PROVIDER_CATEGORIES
+
+
+JSON list of provider categories.
+
+Must be a list of objects, with the following attributes:
+ - `id` - Category ID. Must be a unique integer.
+ - `name` - Name of category.
+ - `slug` - A unique API-friendly name of the category, using lower-case letters and hyphens. Defaults to converted name with lower case letters, dashes for spaces and other characters removed.
+ - `user-selectable` (optional, defaults to `true`) - boolean based on whether it is selectable by the user. Non-user selectable categories can only currently be assigned in the database.
+
+
+Default: `[{"id": 1, "name": "Example Category", "slug": "example-category", "user-selectable": true}]`
+
+
+### PROVIDER_SOURCES
+
+
+Git provider config for terraform Providers, as a JSON list.
+
+These are used for authenticating to the provider, obtain repository information and provide integration for creating Terraform providers.
+
+Each item in the list must contain the following attributes:
+ - name - Name of the git provider (e.g. 'Github')
+ - type - The type of SCM tool (supported: `github`)
+ - login_button_text - Login button text for authenticating to Github
+ - auto_generate_namespaces - Whether to automatically generate namespaces for the user and the organisations that the user is an admin of
+
+Github-specific attributes:
+ - base_url - Base public URL, e.g. `https://github.com`
+ - api_url - API URL, e.g. `https://api.github.com`
+ - client_id - Github app client ID for Github authentication. See USER_GUIDE for setting up Github app. 
+ - client_secret - Github App client secret for Github authentication.
+
+An example for public repositories, using SSH for cloning, might be:
+```
+[{"name": "Github", "type": "github",
+  "base_url": "https://github.com", "api_url": "https://api.github.com",
+  "client_id": "some-client-id", "client_secret": "some-secret",
+  "auto_generate_namespaces": true}]
+```
+
+
+Default: `[]`
 
 
 ### PUBLIC_URL

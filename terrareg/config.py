@@ -1,6 +1,7 @@
 
 from enum import Enum
 import os
+import tempfile
 
 from terrareg.errors import InvalidBooleanConfigurationError
 
@@ -1002,6 +1003,11 @@ class Config:
         The user will have full permissions over these namespaces.
         """
         return self.convert_boolean(os.environ.get("AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES", "False"))
+
+    @property
+    def GO_PACKAGE_CACHE_DIRECTORY(self):
+        """Directory to cache go packages"""
+        return os.environ.get("GO_PACKAGE_CACHE_DIRECTORY", os.path.join(tempfile.gettempdir(), "terrareg-go-package-cache"))
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""
