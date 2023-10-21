@@ -1,7 +1,7 @@
 
 from distutils.dir_util import copy_tree
 from glob import glob
-import shutil
+import re
 import subprocess
 import contextlib
 from io import BytesIO
@@ -16,6 +16,7 @@ import terrareg.models
 import terrareg.config
 import terrareg.provider_documentation_type
 import terrareg.provider_version_documentation_model
+import terrareg.module_extractor
 from terrareg.errors import MissingSignureArtifactError, UnableToObtainReleaseSourceError
 
 
@@ -88,7 +89,9 @@ class ProviderExtractor:
         """Obtain source code and extract into temporary location"""
         with tempfile.TemporaryDirectory() as temp_directory:
             # Create child directory for the provider name
-            provider_name = self._provider_version.provider.name
+            provider = self._provider_version.provider
+            repository = provider.repository
+            provider_name = provider.name
             source_dir = os.path.join(temp_directory, provider_name)
             os.mkdir(source_dir)
 
@@ -113,8 +116,8 @@ class ProviderExtractor:
             # Check if source directory is named after then provider
             # (apparently this is important for tfplugindocs)
             # and if not, rename it
-            if os.path.basename(source_dir) != provider_name:
-                new_source_dir = os.path.abspath(os.path.join(source_dir, "..", provider_name))
+            if os.path.basename(source_dir) != repository.name:
+                new_source_dir = os.path.abspath(os.path.join(source_dir, "..", repository.name))
                 os.rename(
                     source_dir,
                     new_source_dir
@@ -130,7 +133,10 @@ class ProviderExtractor:
             subprocess.check_output(["git", "config", "user.name", "Terrareg"], cwd=source_dir, env=git_env)
             subprocess.check_output(["git", "add", "*"], cwd=source_dir, env=git_env)
             subprocess.check_output(["git", "commit", "-m", "Initial commit"], cwd=source_dir, env=git_env)
-            subprocess.check_output(["git", "remote", "add", "origin", self._provider_version.provider.repository.clone_url], cwd=source_dir, env=git_env)
+            clone_url = self._provider_version.provider.repository.clone_url
+            if clone_url.endswith(".git"):
+                clone_url = re.sub(r"\.git$", "", clone_url)
+            subprocess.check_output(["git", "remote", "add", "origin", clone_url], cwd=source_dir, env=git_env)
 
             yield source_dir
 
@@ -138,21 +144,15 @@ class ProviderExtractor:
         """Extract documentation from release"""
         with self._obtain_source_code() as source_dir:
             with tempfile.TemporaryDirectory() as temp_go_package_cache:
-                go_env = os.environ.copy()
-                go_env["GOROOT"] = "/usr/local/go"
-                # Using a single directory for caching, even with
-                # multiple processes performing "go get" was
-                # considered, and whether a global lock was needed.
-                # But this has been discussed: https://github.com/golang/go/issues/26677
-                global_cache = terrareg.config.Config().GO_PACKAGE_CACHE_DIRECTORY
-                go_env["GOPATH"] = global_cache
+                with terrareg.module_extractor.ModuleExtractor._switch_terraform_versions(source_dir):
+                    go_env = os.environ.copy()
+                    go_env["GOROOT"] = "/usr/local/go"
+                    go_env["GOPATH"] = temp_go_package_cache
 
-                if not os.path.isdir(global_cache):
-                    go_env["GO111MODULE"] = "off"
-                    # Populate global cache by getting module for extractings docs
                     try:
-                        subprocess.check_output(
+                        subprocess.call(
                             ['go', 'get', 'github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs'],
+                            cwd=source_dir,
                             env=go_env,
                         )
                     except subprocess.CalledProcessError as exc:
@@ -162,51 +162,19 @@ class ProviderExtractor:
                         )
                         return
 
-                    del go_env["GO111MODULE"]
-
-                # Copy go package cache into temporary directory and update environment
-                copy_tree(terrareg.config.Config().GO_PACKAGE_CACHE_DIRECTORY, temp_go_package_cache)
-                go_env["GOPATH"] = temp_go_package_cache
-
-                try:
-                    subprocess.check_output(
-                        ['go', 'get'],
-                        cwd=source_dir,
-                        env=go_env,
-                    )
-                except subprocess.CalledProcessError as exc:
-                    print(
-                        "An error occurred whilst running go get: " +
-                        (f": {str(exc)}: {exc.output.decode('utf-8')}" if terrareg.config.Config().DEBUG else "")
-                    )
-                    return
-
-                try:
-                    subprocess.check_output(
-                        ['go', 'get', 'github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs'],
-                        cwd=source_dir,
-                        env=go_env,
-                    )
-                except subprocess.CalledProcessError as exc:
-                    print(
-                        "An error occurred whilst getting tfplugindocs: " +
-                        (f": {str(exc)}: {exc.output.decode('utf-8')}" if terrareg.config.Config().DEBUG else "")
-                    )
-                    return
-
-                # Run go module for extractings docs
-                try:
-                    subprocess.check_output(
-                        ['go', 'run', 'github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs', 'generate'],
-                        cwd=source_dir,
-                        env=go_env,
-                    )
-                except subprocess.CalledProcessError as exc:
-                    print(
-                        "An error occurred whilst extracting terraform provider docs: " +
-                        (f": {str(exc)}: {exc.output.decode('utf-8')}" if terrareg.config.Config().DEBUG else "")
-                    )
-                    return
+                    # Run go module for extractings docs
+                    try:
+                        subprocess.call(
+                            ['go', 'run', 'github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs'],
+                            cwd=source_dir,
+                            env=go_env,
+                        )
+                    except subprocess.CalledProcessError as exc:
+                        print(
+                            "An error occurred whilst extracting terraform provider docs: " +
+                            (f": {str(exc)}: {exc.output.decode('utf-8')}" if terrareg.config.Config().DEBUG else "")
+                        )
+                        return
 
                 documentation_directory = os.path.join(source_dir, "docs")
                 self._collect_markdown_documentation(

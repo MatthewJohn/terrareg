@@ -229,8 +229,9 @@ class Provider:
     def update_attributes(self, **kwargs: dict) -> None:
         """Update DB row."""
         db = terrareg.database.Database.get()
-        update = self.get_db_where(
-            db=db, statement=db.module_provider.update()
+        update = sqlalchemy.update(db.provider).where(
+            db.provider.c.namespace_id==self.namespace.id,
+            db.provider.c.name==self.name
         ).values(**kwargs)
         with db.get_connection() as conn:
             conn.execute(update)
