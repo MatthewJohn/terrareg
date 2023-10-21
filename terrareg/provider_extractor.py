@@ -116,6 +116,17 @@ class ProviderExtractor:
                 )
                 source_dir = new_source_dir
 
+            # Setup git repository inside directory
+            git_env = os.environ.copy()
+            git_env["HOME"] = temp_directory
+            subprocess.check_output(["git", "init"], cwd=source_dir, env=git_env)
+            # Setup fake git user to avoid errors when committing
+            subprocess.check_output(["git", "config", "user.email", "terrareg@localhost"], cwd=source_dir, env=git_env)
+            subprocess.check_output(["git", "config", "user.name", "Terrareg"], cwd=source_dir, env=git_env)
+            subprocess.check_output(["git", "add", "*"], cwd=source_dir, env=git_env)
+            subprocess.check_output(["git", "commit", "-m", "Initial commit"], cwd=source_dir, env=git_env)
+            subprocess.check_output(["git", "remote", "add", "origin", self._provider_version.provider.repository.clone_url], cwd=source_dir, env=git_env)
+
             yield source_dir
 
     def extract_documentation(self):
@@ -125,19 +136,7 @@ class ProviderExtractor:
                 go_env = os.environ.copy()
                 go_env["GOROOT"] = "/usr/local/go"
                 go_env["GOPATH"] = go_path
-                # Run get get to initialise repository
-                try:
-                    subprocess.check_output(
-                        ['go', 'get'],
-                        cwd=source_dir,
-                        env=go_env,
-                    )
-                except subprocess.CalledProcessError as exc:
-                    print(
-                        "An error occurred whilst getting 'go get': " +
-                        (f": {str(exc)}: {exc.output.decode('utf-8')}" if terrareg.config.Config().DEBUG else "")
-                    )
-                    return
+                # go_env["GO111MODULE"] = "off"
 
                 # Run go module for extractings docs
                 try:
@@ -156,7 +155,7 @@ class ProviderExtractor:
                 # Run go module for extractings docs
                 try:
                     subprocess.check_output(
-                        ['go', 'run', 'github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs'],
+                        ['go', 'run', 'github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs', 'generate'],
                         cwd=source_dir,
                         env=go_env,
                     )
