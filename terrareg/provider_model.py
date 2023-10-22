@@ -266,7 +266,7 @@ class Provider:
             if not gpg_key:
                 raise CouldNotFindGpgKeyForProviderVersionError(f"Could not find a valid GPG key to verify the signature of the release: {release_metadata.name}")
 
-            with provider_version.create_extraction_wrapper(gpg_key):
+            with provider_version.create_extraction_wrapper(git_tag=release_metadata.tag, gpg_key=gpg_key):
                 provider_extractor = terrareg.provider_extractor.ProviderExtractor(
                     provider_version=provider_version,
                     release_metadata=release_metadata

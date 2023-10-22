@@ -183,20 +183,20 @@ class ProviderVersion:
             os.mkdir(self.base_directory)
 
     @contextlib.contextmanager
-    def create_extraction_wrapper(self, gpg_key: 'terrareg.models.GpgKey'):
+    def create_extraction_wrapper(self, git_tag: str, gpg_key: 'terrareg.models.GpgKey'):
         """Handle module creation with yield for extraction"""
-        self.prepare_version(gpg_key=gpg_key)
+        self.prepare_version(gpg_key=gpg_key, git_tag=git_tag)
 
         yield
 
         self.publish()
 
-    def prepare_version(self, gpg_key: 'terrareg.models.GpgKey'):
+    def prepare_version(self, git_tag: str, gpg_key: 'terrareg.models.GpgKey'):
         """
         Handle file upload of provider version.
         """
         self.create_data_directory()
-        self._create_db_row(gpg_key=gpg_key)
+        self._create_db_row(gpg_key=gpg_key, git_tag=git_tag)
 
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.PROVIDER_VERSION_INDEX,
@@ -279,7 +279,7 @@ class ProviderVersion:
             db.module_version.c.version == self.version
         )
 
-    def _create_db_row(self, gpg_key: 'terrareg.models.GpgKey') -> None:
+    def _create_db_row(self, git_tag: str, gpg_key: 'terrareg.models.GpgKey') -> None:
         """
         Insert into database, removing any existing duplicate versions.
 
@@ -298,6 +298,7 @@ class ProviderVersion:
             insert_statement = db.provider_version.insert().values(
                 provider_id=self._provider.pk,
                 version=self.version,
+                git_tag=git_tag,
                 beta=self._extracted_beta_flag,
                 gpg_key_id=gpg_key.pk
             )

@@ -713,6 +713,7 @@ class Database():
                 nullable=False
             ),
             sqlalchemy.Column('version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('git_tag', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('beta', sqlalchemy.BOOLEAN, nullable=False),
             sqlalchemy.Column('published_at', sqlalchemy.DateTime),
             sqlalchemy.Column('extraction_version', sqlalchemy.Integer),
