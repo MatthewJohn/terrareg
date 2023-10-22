@@ -215,29 +215,6 @@ class ProviderVersion:
                 self._provider.calculate_latest_version().version == self.version):
             self._provider.update_attributes(latest_version_id=self.pk)
 
-    def get_api_outline(self, target_terraform_version=None):
-        """Return dict of basic version details for API response."""
-        raise NotImplementedError
-        row = self._get_db_row()
-        api_outline = self._module_provider.get_api_outline()
-        api_outline.update({
-            "id": self.id,
-            "owner": row['owner'],
-            "version": self.version,
-            "description": row['description'],
-            "source": self.get_source_base_url(),
-            "published_at": row['published_at'].isoformat() if row['published_at'] else None,
-            "downloads": self.get_total_downloads(),
-            "internal": self._get_db_row()['internal']
-        })
-
-        if target_terraform_version is not None:
-            api_outline['version_compatibility'] = terrareg.version_constraint.VersionConstraint.is_compatible(
-                constraint=self.get_terraform_version_constraints(),
-                target_version=target_terraform_version
-            ).value
-        return api_outline
-
     def get_total_downloads(self):
         """Obtain total number of downloads for module version."""
         raise NotImplementedError
@@ -247,6 +224,7 @@ class ProviderVersion:
 
     def get_api_details(self) -> dict:
         """Return dict of version details for API response."""
+        db_row = self._get_db_row()
         return {
             "id": self.id,
             "owner": self._provider.repository.owner,
@@ -254,10 +232,10 @@ class ProviderVersion:
             "name": self._provider.name,
             "alias": None,
             "version": self.version,
-            "tag": None,
+            "tag": db_row["git_tag"],
             "description": self.provider.repository.description,
             "source": None,
-            "published_at": (self._get_db_row()["published_at"].toisoformat() if self._get_db_row()["published_at"] else None),
+            "published_at": (db_row["published_at"].toisoformat() if db_row["published_at"] else None),
             "downloads": 0,
             "tier": self.provider.tier.value,
             "logo_url": None,
@@ -270,14 +248,6 @@ class ProviderVersion:
                 for doc in terrareg.provider_version_documentation_model.ProviderVersionDocumentation.get_by_provider_version(self)
             ]
         }
-
-    def get_db_where(self, db, statement):
-        """Filter DB query by where for current object."""
-        raise NotImplementedError
-        return statement.where(
-            db.module_version.c.module_provider_id == self._module_provider.pk,
-            db.module_version.c.version == self.version
-        )
 
     def _create_db_row(self, git_tag: str, gpg_key: 'terrareg.models.GpgKey') -> None:
         """
