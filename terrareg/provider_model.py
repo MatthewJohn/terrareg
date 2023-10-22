@@ -76,6 +76,30 @@ class Provider:
         return obj
 
     @classmethod
+    def get_by_pk(cls, pk: int) -> Union[None, 'Provider']:
+        """Obtain provider by primary key"""
+        db = terrareg.database.Database.get()
+        select = sqlalchemy.select(
+            db.provider.c.namespace_id,
+            db.provider.c.name
+        ).select_from(
+            db.provider
+        ).where(
+            db.provider.c.id==pk
+        )
+
+        with db.get_connection() as conn:
+            row = conn.execute(select).first()
+        if not row:
+            return None
+
+        namespace = terrareg.models.Namespace.get_by_pk(pk=row["namespace_id"])
+        if namespace is None:
+            return None
+
+        return cls(namespace=namespace, name=row["name"])
+
+    @classmethod
     def get_by_repository(cls, repository: 'terrareg.repository_model.Repository') -> Union[None, 'Provider']:
         """Obtain provider by repository"""
         db = terrareg.database.Database.get()
@@ -127,6 +151,11 @@ class Provider:
         return self._get_db_row()["id"]
 
     @property
+    def tier(self) -> 'terrareg.provider_tier.ProviderTier':
+        """Return provider tier"""
+        return self._get_db_row()["tier"]
+
+    @property
     def base_directory(self) -> str:
         """Return base directory."""
         return terrareg.utils.safe_join_paths(self._namespace.base_provider_directory, self._name)
@@ -168,6 +197,28 @@ class Provider:
         # Check if data directory exists
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
+
+    def get_latest_version(self) -> Union[None, 'terrareg.provider_version_model.ProviderVersion']:
+        """Return latest version of module provider"""
+        if provider_version_pk := self._get_db_row()["latest_version_id"]:
+            return terrareg.provider_version_model.ProviderVersion.get_by_pk(provider_version_pk)
+        return None
+
+    def get_all_versions(self) -> List['terrareg.provider_version_model.ProviderVersion']:
+        """Return list of all provider versions"""
+        db = terrareg.database.Database.get()
+        select = db.provider_version.select(
+            db.provider_version.c.version
+        ).where(
+            db.provider_version.c.provider_id==self.pk
+        )
+        with db.get_connection() as conn:
+            rows = conn.execute(select).all()
+        return [
+            terrareg.provider_version_model.ProviderVersion(provider=self, version=row["version"])
+            for row in rows
+        ]
+
 
     def calculate_latest_version(self):
         """Obtain all versions of provider and sort by semantic version numbers to obtain latest version."""

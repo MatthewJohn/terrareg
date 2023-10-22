@@ -82,7 +82,7 @@ class ProviderExtractor:
     def process_version(self):
         """Perform extraction"""
         self.extract_documentation()
-        raise Exception('adg')
+        # raise Exception('adg')
 
     @contextlib.contextmanager
     def _obtain_source_code(self):

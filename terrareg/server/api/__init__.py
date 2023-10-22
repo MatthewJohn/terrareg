@@ -71,3 +71,4 @@ from .github.github_repository_publish_provider import GithubRepositoryPublishPr
 from .gpg_keys import ApiGpgKeys
 from .gpg_key import ApiGpgKey
 from .provider_categories import ApiProviderCategories
+from .provider import ApiProvider

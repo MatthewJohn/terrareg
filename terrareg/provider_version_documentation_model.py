@@ -1,5 +1,5 @@
 
-from typing import Union
+from typing import Union, List
 
 import sqlalchemy
 
@@ -77,6 +77,51 @@ class ProviderVersionDocumentation:
             return cls(pk=row["id"])
         return None
 
+    @classmethod
+    def get_by_provider_version(cls, provider_version: 'terrareg.provider_version_model.ProviderVersion') -> List['ProviderVersionDocumentation']:
+        """Obtain all provider documentation for provider version"""
+        db = terrareg.database.Database.get()
+        select = sqlalchemy.select(
+            db.provider_version_documentation.c.id
+        ).select_from(
+            db.provider_version_documentation
+        ).where(
+            db.provider_version_documentation.c.provider_version_id==provider_version.pk,
+        )
+        with db.get_connection() as conn:
+            rows = conn.execute(select).all()
+        return [
+            cls(pk=row["id"])
+            for row in rows
+        ]
+
     def __init__(self, pk):
         """Store member variables"""
         self._pk = pk
+        self._cache_db_row = None
+
+    def _get_db_row(self):
+        """Get object from database"""
+        if self._cache_db_row is None:
+            db = terrareg.database.Database.get()
+            select = db.provider_version_documentation.select().where(
+                db.provider_version_documentation.c.id == self._pk
+            )
+            with db.get_connection() as conn:
+                res = conn.execute(select)
+                self._cache_db_row = res.fetchone()
+        return self._cache_db_row
+
+    def get_api_outline(self) -> dict:
+        """Return API details"""
+        db_row = self._get_db_row()
+        return {
+            "id": str(self._pk),
+            "title": db_row["name"],
+            "path": db_row["filename"],
+            # @TODO Generate Slug in extraction
+            "slug": db_row["name"],
+            "category": db_row["documentation_type"].value,
+            "subcategory": "",
+            "language": "hcl"
+        }

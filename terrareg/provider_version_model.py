@@ -4,6 +4,7 @@ from typing import Union
 import os
 import re
 
+import sqlalchemy
 import semantic_version
 from terrareg.constants import PROVIDER_EXTRACTION_VERSION
 
@@ -14,6 +15,7 @@ import terrareg.database
 import terrareg.audit
 import terrareg.audit_action
 import terrareg.models
+import terrareg.provider_version_documentation_model
 
 
 class ProviderVersion:
@@ -25,6 +27,36 @@ class ProviderVersion:
         if not match:
             raise InvalidVersionError('Version is invalid')
         return bool(match.group(1))
+
+    @classmethod
+    def get(cls, provider: 'terrareg.provider_model.Provider', version: str) -> Union[None, 'ProviderVersion']:
+        """Get provider version"""
+        obj = cls(provider=provider, version=version)
+        if obj._get_db_row():
+            return obj
+        return None
+
+    @classmethod
+    def get_by_pk(cls, pk: int) -> Union[None, 'ProviderVersion']:
+        """Obtain provider version by primary key"""
+        db = terrareg.database.Database.get()
+        select = sqlalchemy.select(
+            db.provider_version.c.provider_id,
+            db.provider_version.c.version
+        ).select_from(
+            db.provider_version
+        ).where(
+            db.provider_version.c.id==pk
+        )
+        with db.get_connection() as conn:
+            row = conn.execute(select).first()
+        if not row:
+            return None
+        provider = terrareg.provider_model.Provider.get_by_pk(pk=row["provider_id"])
+        if provider is None:
+            return None
+
+        return cls(provider=provider, version=row["version"])
 
     @property
     def publish_date_display(self):
@@ -213,17 +245,31 @@ class ProviderVersion:
             module_version=self
         )
 
-    def get_api_details(self, target_terraform_version=None):
+    def get_api_details(self) -> dict:
         """Return dict of version details for API response."""
-        raise NotImplementedError
-        api_details = self._module_provider.get_api_details()
-        api_details.update(self.get_api_outline(target_terraform_version=target_terraform_version))
-        api_details.update({
-            "root": self.get_api_module_specs(),
-            "submodules": [sm.get_api_module_specs() for sm in self.get_submodules()],
-            "providers": [p.name for p in self._module_provider._module.get_providers()]
-        })
-        return api_details
+        return {
+            "id": self.id,
+            "owner": self._provider.repository.owner,
+            "namespace": self._provider.namespace.name,
+            "name": self._provider.name,
+            "alias": None,
+            "version": self.version,
+            "tag": None,
+            "description": self.provider.repository.description,
+            "source": None,
+            "published_at": (self._get_db_row()["published_at"].toisoformat() if self._get_db_row()["published_at"] else None),
+            "downloads": 0,
+            "tier": self.provider.tier.value,
+            "logo_url": None,
+            "versions": [
+                version.version
+                for version in self.provider.get_all_versions()
+            ],
+            "docs": [
+                doc.get_api_outline()
+                for doc in terrareg.provider_version_documentation_model.ProviderVersionDocumentation.get_by_provider_version(self)
+            ]
+        }
 
     def get_db_where(self, db, statement):
         """Filter DB query by where for current object."""

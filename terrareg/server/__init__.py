@@ -201,6 +201,13 @@ class Server(BaseHandler):
             '/v1/modules/<string:namespace>/<string:name>/<string:provider>/downloads/summary'
         )
 
+        self._api.add_resource(
+            ApiProvider,
+            '/v1/providers/<string:namespace>/<string:provider>',
+            '/v1/providers/<string:namespace>/<string:provider>/latest',
+            '/v1/providers/<string:namespace>/<string:provider>/<string:version>'
+        )
+
         # Terraform cloud/registry APIs for GPG key
         self._api.add_resource(
             ApiGpgKeys,
