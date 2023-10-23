@@ -6,6 +6,7 @@ import terrareg.database
 import terrareg.provider_source.repository_release_metadata
 import terrareg.repository_model
 import terrareg.provider_model
+import terrareg.provider_version_model
 
 
 class BaseProviderSource:
@@ -77,4 +78,14 @@ class BaseProviderSource:
                             release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
                             access_token: str) -> Tuple[bytes, Union[None, str]]:
         """Obtain release archive"""
+        raise NotImplementedError
+
+    def get_public_source_url(self, repository: 'terrareg.repository_model.Repository'):
+        """Return public URL for source"""
+        raise NotImplementedError
+
+    def get_public_artifact_download_url(self,
+                                         provider_version: 'terrareg.provider_version_model.ProviderVersion',
+                                         artifact_name: str):
+        """Return public URL for source"""
         raise NotImplementedError

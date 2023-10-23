@@ -77,28 +77,9 @@ class ProviderVersion:
         return self._version
 
     @property
-    def source_git_tag(self):
-        """Return git tag used for extraction clone"""
-        tag = semantic_version.Version(version_string=self._version)
-        return self._module_provider.git_tag_format.format(
-            version=self._version,
-            major=tag.major,
-            minor=tag.minor,
-            patch=tag.patch,
-            build=tag.build
-        )
-
-    @property
-    def git_tag_ref(self):
-        """Return git tag ref for extraction."""
-        tag = semantic_version.Version(version_string=self._version)
-        return self._module_provider.git_ref_format.format(
-            version=self._version,
-            major=tag.major,
-            minor=tag.minor,
-            patch=tag.patch,
-            build=tag.build
-        )
+    def git_tag(self):
+        """Return git tag."""
+        return self._get_db_row()["git_tag"]
 
     @property
     def base_directory(self) -> str:
@@ -124,7 +105,7 @@ class ProviderVersion:
         )
 
     @property
-    def exists(self):
+    def exists(self) -> bool:
         """Determine if provider version exists"""
         return bool(self._get_db_row())
 
@@ -134,14 +115,32 @@ class ProviderVersion:
         return self._provider
 
     @property
-    def provider_extraction_up_to_date(self):
+    def provider_extraction_up_to_date(self) -> bool:
         """Whether the extracted version data is up-to-date"""
         return self._get_db_row()["extraction_version"] == PROVIDER_EXTRACTION_VERSION
 
     @property
-    def is_latest_version(self):
+    def is_latest_version(self) -> bool:
         """Return whether the version is the latest version for the provider"""
         return self._provider.get_latest_version() == self
+
+    @property
+    def gpg_key(self) -> 'terrareg.models.GpgKey':
+        """Return GPG"""
+        return terrareg.models.GpgKey.get_by_id_and_namespace(
+            id_=self._get_db_row()["gpg_key_id"],
+            namespace=self.provider.namespace
+        )
+
+    @property
+    def checksum_file_name(self) -> str:
+        """Return checksum file name"""
+        return self.generate_file_name_from_suffix(suffix="SHA256SUMS")
+    
+    @property
+    def checksum_signature_file_name(self) -> str:
+        """Return checksum signature file name"""
+        return self.generate_file_name_from_suffix(suffix="SHA256SUMS.sig")
 
     def __init__(self, provider: 'terrareg.provider_model.Provider', version: str):
         """Setup member variables."""
@@ -171,6 +170,10 @@ class ProviderVersion:
                 res = conn.execute(select)
                 self._cache_db_row = res.fetchone()
         return self._cache_db_row
+
+    def generate_file_name_from_suffix(self, suffix: str) -> str:
+        """Return artifact filename from suffix"""
+        return f"{self.provider.repository.name}_{self.version}_{suffix}"
 
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
@@ -232,7 +235,7 @@ class ProviderVersion:
             "name": self._provider.name,
             "alias": None,
             "version": self.version,
-            "tag": db_row["git_tag"],
+            "tag": self.git_tag,
             "description": self.provider.repository.description,
             "source": None,
             "published_at": (db_row["published_at"].toisoformat() if db_row["published_at"] else None),

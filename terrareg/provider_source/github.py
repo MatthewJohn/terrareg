@@ -343,3 +343,13 @@ class GithubProviderSource(BaseProviderSource):
             content = res.content
 
         return content, f"{repository.owner}-{repository.name}-{release_metadata.commit_hash[0:7]}"
+
+    def get_public_source_url(self, repository: 'terrareg.repository_model.Repository'):
+        """Return public URL for source"""
+        return f"{self._base_url}/{repository.owner}/{repository.name}"
+
+    def get_public_artifact_download_url(self,
+                                         provider_version: 'terrareg.provider_version_model.ProviderVersion',
+                                         artifact_name: str):
+        """Return public URL for source"""
+        return f"{self.get_public_source_url(provider_version.provider.repository)}/releases/{provider_version.git_tag}/{artifact_name}"

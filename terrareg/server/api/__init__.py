@@ -72,3 +72,4 @@ from .gpg_keys import ApiGpgKeys
 from .gpg_key import ApiGpgKey
 from .provider_categories import ApiProviderCategories
 from .provider import ApiProvider
+from .provider_version_download import ApiProviderVersionDownload
