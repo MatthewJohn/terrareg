@@ -149,6 +149,12 @@ class ProviderExtractor:
                     go_env["GOROOT"] = "/usr/local/go"
                     go_env["GOPATH"] = temp_go_package_cache
 
+                    documentation_directory = os.path.join(source_dir, "docs")
+
+                    # Create documentation directory, if it does not exist
+                    if not os.path.isdir(documentation_directory):
+                        os.mkdir(documentation_directory)
+
                     try:
                         subprocess.call(
                             ['go', 'get', 'github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs'],
