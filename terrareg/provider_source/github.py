@@ -227,7 +227,6 @@ class GithubProviderSource(BaseProviderSource):
                 return []
 
             results = res.json()
-
             for release in results:
                 if (not (release_id := release.get("id")) or
                         not (release_name := release.get("name")) or
@@ -237,7 +236,6 @@ class GithubProviderSource(BaseProviderSource):
                             repository=repository,
                             tag_name=tag_name,
                             access_token=access_token))):
-                    raise Exception("blah")
                     print("Could not obtain one of: release name, tag name, archive url or commit hash for release")
                     continue
 
@@ -269,6 +267,8 @@ class GithubProviderSource(BaseProviderSource):
 
             if len(results) < 100:
                 obtain_results = False
+            else:
+                page += 1
             
         return releases
 

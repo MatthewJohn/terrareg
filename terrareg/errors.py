@@ -322,3 +322,33 @@ class UnableToObtainReleaseSourceError(TerraregError):
     """Unable to obtain release source for provider version"""
 
     pass
+
+
+class MissingReleaseArtifactError(TerraregError):
+    """Artifact is missing from release"""
+
+    pass
+
+
+class InvalidChecksumFileError(TerraregError):
+    """Invalid line found in checksum file"""
+
+    pass
+
+
+class InvalidProviderBinaryNameError(TerraregError):
+    """Invalid binary file name"""
+
+    pass
+
+
+class InvalidProviderBinaryOperatingSystemError(TerraregError):
+    """Invalid operating system in provider binary name"""
+
+    pass
+
+
+class InvalidProviderBinaryArchitectureError(TerraregError):
+    """Invalid architecture in provider binary name"""
+
+    pass

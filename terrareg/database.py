@@ -14,6 +14,7 @@ from terrareg.user_group_namespace_permission_type import UserGroupNamespacePerm
 from terrareg.namespace_type import NamespaceType
 from terrareg.provider_source_type import ProviderSourceType
 import terrareg.provider_documentation_type
+import terrareg.provider_binary_types
 
 
 class Database():
@@ -71,6 +72,7 @@ class Database():
         self._provider = None
         self._provider_version = None
         self._provider_version_documentation = None
+        self._provider_version_binary = None
         self._analytics = None
         self._example_file = None
         self._module_version_file = None
@@ -243,6 +245,13 @@ class Database():
         if self._provider_version_documentation is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._provider_version_documentation
+
+    @property
+    def provider_version_binary(self):
+        """Return provider_version_binary table."""
+        if self._provider_version_binary is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._provider_version_binary
 
     @property
     def audit_history(self):
@@ -740,6 +749,25 @@ class Database():
                 nullable=False
             ),
             sqlalchemy.Column('content', Database.medium_blob())
+        )
+
+        self._provider_version_binary = sqlalchemy.Table(
+            "provider_version_binary", meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column(
+                'provider_version_id',
+                sqlalchemy.ForeignKey(
+                    'provider_version.id',
+                    name='fk_provider_version_documentation_provider_version_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'
+                ),
+                nullable=False
+            ),
+            sqlalchemy.Column("name", sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column("operating_system", sqlalchemy.Enum(terrareg.provider_binary_types.ProviderBinaryOperatingSystemType), nullable=False),
+            sqlalchemy.Column("architecture", sqlalchemy.Enum(terrareg.provider_binary_types.ProviderBinaryArchitectureType), nullable=False),
+            sqlalchemy.Column("checksum", sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
         )
 
         self._audit_history = sqlalchemy.Table(

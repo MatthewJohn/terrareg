@@ -146,6 +146,11 @@ class Provider:
         return self._name
 
     @property
+    def full_name(self) -> str:
+        """Return full name, i.e. terraform-provider-name"""
+        return f"terraform-provider-{self.name}"
+
+    @property
     def pk(self) -> int:
         """Return DB pk for provider"""
         return self._get_db_row()["id"]

@@ -17,7 +17,11 @@ import terrareg.config
 import terrareg.provider_documentation_type
 import terrareg.provider_version_documentation_model
 import terrareg.module_extractor
-from terrareg.errors import MissingSignureArtifactError, UnableToObtainReleaseSourceError
+import terrareg.provider_version_binary_model
+from terrareg.errors import (
+    InvalidChecksumFileError, MissingReleaseArtifactError, MissingSignureArtifactError,
+    UnableToObtainReleaseSourceError
+)
 
 
 class ProviderExtractor:
@@ -28,42 +32,55 @@ class ProviderExtractor:
                        namespace: 'terrareg.models.Namespace',
                        release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata') -> 'terrareg.models.GpgKey':
         """"Obtain GPG key for signature of release"""
-        shasum_file_name = cls.generate_artifact_name(repository=repository, release_metadata=release_metadata, file_suffix="SHA256SUMS")
-        shasum_signature_file_name = cls.generate_artifact_name(repository=repository, release_metadata=release_metadata, file_suffix="SHA256SUMS.sig")
-
-        shasum_signature_artifact = None
-        shasum_artifact = None
-        for release_artifact in release_metadata.release_artifacts:
-            if release_artifact.name == shasum_file_name:
-                shasum_artifact = release_artifact
-            elif release_artifact.name == shasum_signature_file_name:
-                shasum_signature_artifact = release_artifact
-
-            # Once the shasum and signature file have been found, exit
-            if shasum_signature_artifact and shasum_artifact:
-                break
-        else:
-            raise MissingSignureArtifactError("Could not find SHA or SHA signature file for release")
-
-        shasums = repository.get_release_artifact(
-            artifact_metadata=shasum_artifact,
-            release_metadata=release_metadata
-        )
-        if not shasums:
-            raise MissingSignureArtifactError("Failed to download SHASUMS artifact file")
-
-        shasums_signature = repository.get_release_artifact(
-            artifact_metadata=shasum_signature_artifact,
-            release_metadata=release_metadata
-        )
-        if not shasums_signature:
-            raise MissingSignureArtifactError("Failed to download SHASUMS signature artifact file")
+        try:
+            shasums = cls._download_artifact(
+                repository=repository,
+                release_metadata=release_metadata,
+                file_name=cls.generate_artifact_name(repository=repository, release_metadata=release_metadata, file_suffix="SHA256SUMS")
+            )
+        except MissingReleaseArtifactError as exc:
+            raise MissingSignureArtifactError(f"Could not obtain shasums file: {exc}")
+        try:
+            shasums_signature = cls._download_artifact(
+                repository=repository,
+                release_metadata=release_metadata,
+                file_name=cls.generate_artifact_name(
+                    repository=repository,
+                    release_metadata=release_metadata,
+                    file_suffix="SHA256SUMS.sig")
+            )
+        except MissingReleaseArtifactError as exc:
+            raise MissingSignureArtifactError(f"Could not obtain shasums signature file: {exc}")
 
         for gpg_key in terrareg.models.GpgKey.get_by_namespace(namespace=namespace):
             if gpg_key.verify_data_signature(signature=shasums_signature, data=shasums):
                 return gpg_key
 
         return None
+
+    @classmethod
+    def _download_artifact(cls,
+                           repository: 'terrareg.repository_model.Repository',
+                           release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
+                           file_name: str) -> bytes:
+        """Obtain sha file content"""
+        artifact = None
+        for release_artifact in release_metadata.release_artifacts:
+            if release_artifact.name == file_name:
+                artifact = release_artifact
+                break
+
+        else:
+            raise MissingReleaseArtifactError(f"Could not find artifact in metadata: {file_name}")
+
+        content = repository.get_release_artifact(
+            artifact_metadata=artifact,
+            release_metadata=release_metadata
+        )
+        if not content:
+            raise MissingReleaseArtifactError(f"Failed to download artifact file: {file_name}")
+
+        return content
 
     @classmethod
     def generate_artifact_name(cls,
@@ -77,10 +94,13 @@ class ProviderExtractor:
                        release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata'):
         """Store member variables"""
         self._provider_version = provider_version
+        self._provider = self._provider_version.provider
+        self._repository = self._provider.repository
         self._release_metadata = release_metadata
 
     def process_version(self):
         """Perform extraction"""
+        self.extract_binaries()
         self.extract_documentation()
         # raise Exception('adg')
 
@@ -89,9 +109,7 @@ class ProviderExtractor:
         """Obtain source code and extract into temporary location"""
         with tempfile.TemporaryDirectory() as temp_directory:
             # Create child directory for the provider name
-            provider = self._provider_version.provider
-            repository = provider.repository
-            provider_name = provider.name
+            provider_name = self._provider.name
             source_dir = os.path.join(temp_directory, provider_name)
             os.mkdir(source_dir)
 
@@ -116,8 +134,8 @@ class ProviderExtractor:
             # Check if source directory is named after then provider
             # (apparently this is important for tfplugindocs)
             # and if not, rename it
-            if os.path.basename(source_dir) != repository.name:
-                new_source_dir = os.path.abspath(os.path.join(source_dir, "..", repository.name))
+            if os.path.basename(source_dir) != self._repository.name:
+                new_source_dir = os.path.abspath(os.path.join(source_dir, "..", self._repository.name))
                 os.rename(
                     source_dir,
                     new_source_dir
@@ -182,7 +200,6 @@ class ProviderExtractor:
                         )
                         return
 
-                documentation_directory = os.path.join(source_dir, "docs")
                 self._collect_markdown_documentation(
                     source_directory=source_dir,
                     documentation_directory=documentation_directory,
@@ -222,3 +239,56 @@ class ProviderExtractor:
                 filename=filename,
                 content=content
             )
+
+    def _process_release_file(self, checksum: str, file_name: str):
+        """Process file in release"""
+        # Download file
+        content = self._download_artifact(
+            repository=self._repository,
+            release_metadata=self._release_metadata,
+            file_name=file_name
+        )
+        if not content:
+            raise MissingReleaseArtifactError("Invalid artifact file")
+
+        # Verify content against checksum
+        # @TODO This
+
+        # Create binary object
+        terrareg.provider_version_binary_model.ProviderVersionBinary.create(
+            provider_version=self._provider_version,
+            name=file_name,
+            checksum=checksum,
+            content=content
+        )
+
+    def extract_binaries(self):
+        """Obtain checksum file and download/validate/process each binary"""
+        shasums = self._download_artifact(
+            repository=self._repository,
+            release_metadata=self._release_metadata,
+            file_name=self.generate_artifact_name(
+                repository=self._repository,
+                release_metadata=self._release_metadata,
+                file_suffix="SHA256SUMS"
+            )
+        )
+
+        shasum_line_re = re.compile(r"^([a-z0-9]{64})[\t ]+(.*)$")
+
+        manifest_file_name = f"{self._provider.full_name}_{self._provider_version.version}_manifest.json"
+        for line in shasums.decode('utf-8').split("\n"):
+            line = line.strip()
+
+            # Ignore empty lines
+            if not line:
+                continue
+
+            if not (match := shasum_line_re.match(line)):
+                raise InvalidChecksumFileError("Invalid checksum file found")
+            
+            checksum = match.group(1)
+            file_name = match.group(2)
+
+            if file_name != manifest_file_name:
+                self._process_release_file(checksum=checksum, file_name=file_name)
