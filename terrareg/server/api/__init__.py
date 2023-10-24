@@ -68,9 +68,10 @@ from .github.github_auth_status import GithubAuthStatus
 from .github.github_organisations import GithubOrganisations
 from .github.github_repositories import GithubRepositories
 from .github.github_repository_publish_provider import GithubRepositoryPublishProvider
-from .gpg_keys import ApiGpgKeys
-from .gpg_key import ApiGpgKey
-from .provider_categories import ApiProviderCategories
 from .provider import ApiProvider
 from .provider_version_download import ApiProviderVersionDownload
 from .provider_versions import ApiProviderVersions
+
+from .terraform.v2.gpg_keys import ApiGpgKeys
+from .terraform.v2.gpg_key import ApiGpgKey
+from .terraform.v2.provider_categories import ApiProviderCategories

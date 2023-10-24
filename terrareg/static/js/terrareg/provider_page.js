@@ -289,7 +289,7 @@ async function populateTerraformUsageExample(providerDetails) {
  * @param providerDetails Terrareg provider details
  */
 function populateDownloadSummary(providerDetails) {
-    $.get(`/v1/providers/${providerDetails.module_provider_id}/downloads/summary`, function (data, status) {
+    $.get(`/v2/providers/${providerDetails.module_provider_id}/downloads/summary`, function (data, status) {
         Object.keys(data.data.attributes).forEach((key) => {
             $(`#downloads-${key}`).html(data.data.attributes[key]);
         });
