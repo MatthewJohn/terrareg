@@ -16,19 +16,21 @@ class ApiProvider(ErrorCatchingResource):
         namespace, _ = terrareg.models.Namespace.extract_analytics_token(namespace)
 
         namespace_obj = terrareg.models.Namespace.get(name=namespace)
+        if namespace_obj is None:
+            return self._get_404_response()
 
-        provider = terrareg.provider_model.Provider.get(namespace=namespace_obj, name=provider)
-        if provider is None:
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name=provider)
+        if provider_obj is None:
             return self._get_404_response()
 
         provider_version = None
         if version is not None:
             provider_version = terrareg.provider_version_model.ProviderVersion.get(
-                provider=provider,
+                provider=provider_obj,
                 version=version
             )
         else:
-            provider_version = provider.get_latest_version()
+            provider_version = provider_obj.get_latest_version()
 
         if provider_version is None:
             return self._get_404_response()
