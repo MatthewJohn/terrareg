@@ -1,6 +1,7 @@
 
 import contextlib
-from typing import Union
+import json
+from typing import Union, List
 import os
 import re
 
@@ -142,6 +143,11 @@ class ProviderVersion:
         """Return checksum signature file name"""
         return self.generate_file_name_from_suffix(suffix="SHA256SUMS.sig")
 
+    @property
+    def manifest_file_name(self) -> str:
+        """Return checksum file name"""
+        return self.generate_file_name_from_suffix(suffix="manifest.json")
+
     def __init__(self, provider: 'terrareg.provider_model.Provider', version: str):
         """Setup member variables."""
         self._extracted_beta_flag = self._validate_version(version)
@@ -224,6 +230,31 @@ class ProviderVersion:
         return terrareg.analytics.AnalyticsEngine.get_module_version_total_downloads(
             module_version=self
         )
+
+    @property
+    def protocols(self) -> List[str]:
+        """Return list of supported protocols"""
+        return json.loads(
+            terrareg.database.Database.decode_blob(
+                self._get_db_row()["protocol_versions"]
+            )
+        )
+
+    def update_attributes(self, **kwargs):
+        """Update attributes of provider version"""
+        db = terrareg.database.Database.get()
+
+        for kwarg in kwargs:
+            if kwarg in ["protocol_versions"]:
+                kwargs[kwarg] = db.encode_blob(kwargs[kwarg])
+
+        update = sqlalchemy.update(
+            db.provider_version
+        ).where(
+            db.provider_version.c.id==self.pk
+        ).values(**kwargs)
+        with db.get_connection() as conn:
+            conn.execute(update)
 
     def get_api_details(self) -> dict:
         """Return dict of version details for API response."""

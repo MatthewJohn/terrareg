@@ -186,7 +186,7 @@ class ProviderVersionBinary:
         """Return API details"""
         gpg_key = self.provider_version.gpg_key
         return {
-            "protocols": ["4.0", "5.1"],
+            "protocols": self.provider_version.protocols,
             "os": self.operating_system.value,
             "arch": self.architecture.value,
             "filename": self.name,

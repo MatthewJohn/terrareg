@@ -726,6 +726,7 @@ class Database():
             sqlalchemy.Column('beta', sqlalchemy.BOOLEAN, nullable=False),
             sqlalchemy.Column('published_at', sqlalchemy.DateTime),
             sqlalchemy.Column('extraction_version', sqlalchemy.Integer),
+            sqlalchemy.Column('protocol_versions', self.medium_blob()),
         )
 
         self._provider_version_documentation = sqlalchemy.Table(

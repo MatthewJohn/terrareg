@@ -1,6 +1,7 @@
 
 from distutils.dir_util import copy_tree
 from glob import glob
+import json
 import re
 import subprocess
 import contextlib
@@ -19,7 +20,7 @@ import terrareg.provider_version_documentation_model
 import terrareg.module_extractor
 import terrareg.provider_version_binary_model
 from terrareg.errors import (
-    InvalidChecksumFileError, MissingReleaseArtifactError, MissingSignureArtifactError,
+    InvalidChecksumFileError, InvalidProviderManifestFileError, MissingReleaseArtifactError, MissingSignureArtifactError,
     UnableToObtainReleaseSourceError
 )
 
@@ -100,6 +101,7 @@ class ProviderExtractor:
 
     def process_version(self):
         """Perform extraction"""
+        self.extract_manifest_file()
         self.extract_binaries()
         self.extract_documentation()
         # raise Exception('adg')
@@ -292,3 +294,43 @@ class ProviderExtractor:
 
             if file_name != manifest_file_name:
                 self._process_release_file(checksum=checksum, file_name=file_name)
+
+    def extract_manifest_file(self):
+        """Extract manifest file"""
+        manifest_file_content = self._download_artifact(
+            repository=self._repository,
+            release_metadata=self._release_metadata,
+            file_name=self._provider_version.manifest_file_name
+        )
+
+        if not manifest_file_content:
+            raise InvalidProviderManifestFileError("Could nto find manifest file")
+        
+        try:
+            manifest_content = json.loads(manifest_file_content)
+        except Exception as exc:
+            print(str(exc))
+            raise InvalidProviderManifestFileError("Could not read manifests file")
+
+        if not isinstance(manifest_content, dict):
+            raise InvalidProviderManifestFileError("Manifest file did not contain valid object")
+
+        # Ensure version is 1
+        if manifest_content.get("version") != 1:
+            raise InvalidProviderManifestFileError("Invalid manifest version. Only version 1 is supported")
+        
+        if (not (metadata := manifest_content.get("metadata", {})) or
+                not isinstance(metadata, dict) or
+                not (protocol_versions := metadata.get("protocol_versions", [])) or
+                not isinstance(protocol_versions, list)):
+            raise InvalidProviderManifestFileError("metadata.procotol_versions is not valid in manifest")
+
+        # Ensure protocol versions is valid
+        for protocol_version in protocol_versions:
+            try:
+                float(protocol_version)
+            except ValueError:
+                raise InvalidProviderManifestFileError("Invalid protocol version found")
+
+        # Update provider version protocol versions
+        self._provider_version.update_attributes(protocol_versions=json.dumps(protocol_versions))

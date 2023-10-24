@@ -352,3 +352,9 @@ class InvalidProviderBinaryArchitectureError(TerraregError):
     """Invalid architecture in provider binary name"""
 
     pass
+
+
+class InvalidProviderManifestFileError(TerraregError):
+    """Invalid manifests file found"""
+
+    pass
