@@ -1,13 +1,16 @@
 
 import re
 import datetime
-
+from typing import Union, List
 
 import sqlalchemy
 
 from terrareg.database import Database
 from terrareg.config import Config
 import terrareg.models
+import terrareg.provider_version_model
+import terrareg.provider_model
+import terrareg.database
 
 
 class AnalyticsEngine:
@@ -520,6 +523,109 @@ class AnalyticsEngine:
         prometheus_generator.add_metric(module_provider_usage_metric)
 
         return prometheus_generator.generate()
+
+
+class ProviderAnalytics:
+    """Interface to record and obtain information about provider downloads"""
+
+    @staticmethod
+    def _join_filter_analytics_table_by_provider(db: 'terrareg.database.Database', query, provider: 'terrareg.provider_model.Provider'):
+        """Join query to provider table and filter by provider_version."""
+        return query.join(
+            db.provider_version,
+            db.provider_version.c.id == db.provider_analytics.c.provider_version_id
+        ).join(
+            db.provider,
+            db.provider_version.c.provider_id == db.provider.c.id
+        ).join(
+            db.namespace,
+            db.provider.c.namespace_id == db.namespace.c.id
+        ).where(
+            db.provider.c.id == provider.pk
+        )
+
+    @staticmethod
+    def record_provider_version_download(
+        namespace_name: str,
+        provider_name: str,
+        provider_version: 'terrareg.provider_version_model.ProviderVersion',
+        terraform_version: str,
+        user_agent: str):
+        """Store information about provider version download in database."""
+
+        # If Terraform version not present from header,
+        # attempt to determine from user agent
+        if not terraform_version:
+            user_agent_match = re.match(r'^Terraform/(\d+\.\d+\.\d+)$', user_agent)
+            if user_agent_match:
+                terraform_version = user_agent_match.group(1)
+
+        # Insert analytics details into DB
+        db = Database.get()
+        insert_statement = db.provider_analytics.insert().values(
+            provider_version_id=provider_version.pk,
+            timestamp=AnalyticsEngine.get_datetime_now(),
+            terraform_version=terraform_version,
+            namespace_name=namespace_name,
+            provider_name=provider_name
+        )
+        with db.get_connection() as conn:
+            conn.execute(insert_statement)
+
+    @staticmethod
+    def get_provider_version_total_downloads(provider_version: 'terrareg.provider_version_model.ProviderVersion'):
+        """Return number of downloads for a given provider version."""
+        db = Database.get()
+        select = sqlalchemy.select(
+            [sqlalchemy.func.count()]
+        ).select_from(
+            db.provider_analytics
+        ).join(
+            db.provider_version,
+            db.provider_version.c.id == db.provider_analytics.c.provider_version_id
+        ).where(
+            db.provider_version.c.id == provider_version.pk
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(select)
+            return res.scalar()
+
+    @staticmethod
+    def get_provider_total_downloads(provider: 'terrareg.provider_model.Provider'):
+        """Return total downloads for provider"""
+        return ProviderAnalytics.get_provider_download_stats(provider=provider, stat_types=[(None, 'total')]).get("total")
+
+    @staticmethod
+    def get_provider_download_stats(provider: 'terrareg.provider_model.Provider', stat_types: Union[None, List[Union[int, str]]]=None):
+        """Return number of downloads for intervals."""
+        db = Database.get()
+        stats = {}
+        if stat_types is None:
+            stat_types = [(7, 'week'), (31, 'month'), (365, 'year'), (None, 'total')]
+
+        for i in stat_types:
+
+            select = sqlalchemy.select(
+                [sqlalchemy.func.count()]
+            ).select_from(
+                db.provider_analytics
+            )
+            select = ProviderAnalytics._join_filter_analytics_table_by_provider(
+                db=db, query=select, provider=provider
+            )
+
+            # If a checking a given time frame, limit by number of days
+            if i[0]:
+                from_timestamp = AnalyticsEngine.get_datetime_now() - datetime.timedelta(days=i[0])
+                select = select.where(
+                    db.provider_analytics.c.timestamp >= from_timestamp
+                )
+
+            with db.get_connection() as conn:
+                res = conn.execute(select)
+                stats[i[1]] = res.scalar()
+
+        return stats
 
 
 class PrometheusMetric:

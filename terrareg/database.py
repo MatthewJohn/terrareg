@@ -74,6 +74,7 @@ class Database():
         self._provider_version_documentation = None
         self._provider_version_binary = None
         self._analytics = None
+        self._provider_analytics = None
         self._example_file = None
         self._module_version_file = None
         self.transaction_connection = None
@@ -184,15 +185,22 @@ class Database():
         return self._analytics
 
     @property
+    def provider_analytics(self):
+        """Return provider_analytics table."""
+        if self._provider_analytics is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._provider_analytics
+
+    @property
     def example_file(self):
-        """Return analytics table."""
+        """Return example_file table."""
         if self._example_file is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._example_file
 
     @property
     def module_version_file(self):
-        """Return analytics table."""
+        """Return module_version_file table."""
         if self._module_version_file is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._module_version_file
@@ -556,6 +564,18 @@ class Database():
             # Columns for providing redirect deletion protection
             sqlalchemy.Column('namespace_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('module_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('provider_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+        )
+
+        self._provider_analytics = sqlalchemy.Table(
+            'provider_analytics', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column('provider_version_id', sqlalchemy.Integer, index=True, nullable=False),
+            sqlalchemy.Column('timestamp', sqlalchemy.DateTime),
+            sqlalchemy.Column('terraform_version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+
+            # Columns for providing redirect deletion protection
+            sqlalchemy.Column('namespace_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('provider_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
         )
 
