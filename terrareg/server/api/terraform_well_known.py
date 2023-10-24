@@ -12,6 +12,7 @@ class ApiTerraformWellKnown(Resource):
         """Return well-known JSON"""
         data = {
             "modules.v1": "/v1/modules/",
+            "providers.v1": "/v1/providers/"
         }
         if terrareg.terraform_idp.TerraformIdp.get().is_enabled:
             data["login.v1"] = {

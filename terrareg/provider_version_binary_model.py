@@ -113,7 +113,7 @@ class ProviderVersionBinary:
         return None
 
     @classmethod
-    def get_by_provider_version(cls, provider_version: 'terrareg.provider_version_model.ProviderVersion') -> List['ProviderVersionDocumentation']:
+    def get_by_provider_version(cls, provider_version: 'terrareg.provider_version_model.ProviderVersion') -> List['ProviderVersionBinary']:
         """Obtain all binaries for provider version"""
         db = terrareg.database.Database.get()
         select = sqlalchemy.select(

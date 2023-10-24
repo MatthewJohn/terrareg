@@ -296,3 +296,14 @@ class Provider:
 
         # Remove cached DB row
         self._cache_db_row = None
+
+    def get_versions_api_details(self) -> dict:
+        """Return API details for versions endpoint"""
+        return {
+            "id": self.id,
+            "versions": [
+                version.get_api_outline()
+                for version in self.get_all_versions()
+            ],
+            "warnings": None
+        }

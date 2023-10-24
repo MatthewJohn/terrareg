@@ -73,3 +73,4 @@ from .gpg_key import ApiGpgKey
 from .provider_categories import ApiProviderCategories
 from .provider import ApiProvider
 from .provider_version_download import ApiProviderVersionDownload
+from .provider_versions import ApiProviderVersions

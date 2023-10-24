@@ -17,6 +17,7 @@ import terrareg.audit
 import terrareg.audit_action
 import terrareg.models
 import terrareg.provider_version_documentation_model
+import terrareg.provider_version_binary_model
 
 
 class ProviderVersion:
@@ -255,6 +256,20 @@ class ProviderVersion:
         ).values(**kwargs)
         with db.get_connection() as conn:
             conn.execute(update)
+
+    def get_api_outline(self) -> dict:
+        """Return dict of outline for versions endpoint"""
+        return {
+            "version": self.version,
+            "protocols": self.protocols,
+            "platforms": [
+                {
+                    "os": version_binary.operating_system.value,
+                    "arch": version_binary.architecture.value
+                }
+                for version_binary in terrareg.provider_version_binary_model.ProviderVersionBinary.get_by_provider_version(self)
+            ]
+        }
 
     def get_api_details(self) -> dict:
         """Return dict of version details for API response."""

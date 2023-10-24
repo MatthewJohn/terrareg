@@ -207,6 +207,10 @@ class Server(BaseHandler):
             '/v1/providers/<string:namespace>/<string:provider>/<string:version>'
         )
         self._api.add_resource(
+            ApiProviderVersions,
+            '/v1/providers/<string:namespace>/<string:provider>/versions'
+        )
+        self._api.add_resource(
             ApiProviderVersionDownload,
             '/v1/providers/<string:namespace>/<string:provider>/<string:version>/download/<string:os>/<string:arch>'
         )
