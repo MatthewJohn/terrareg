@@ -272,10 +272,10 @@ class Provider:
         )
         with db.get_connection() as conn:
             rows = conn.execute(select).all()
-        return [
+        return sorted([
             terrareg.provider_version_model.ProviderVersion(provider=self, version=row["version"])
             for row in rows
-        ]
+        ])
 
 
     def calculate_latest_version(self):
