@@ -326,7 +326,6 @@ class GithubProviderSource(BaseProviderSource):
                             release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
                             access_token: str) -> Tuple[bytes, Union[None, str]]:
         """Obtain release archive, returning bytes of archive"""
-        print(f"{self._api_url}/repos/{repository.owner}/{repository.name}/tarball/{release_metadata.tag}")
         res = requests.get(
             f"{self._api_url}/repos/{repository.owner}/{repository.name}/tarball/{release_metadata.tag}",
             headers={
@@ -352,4 +351,4 @@ class GithubProviderSource(BaseProviderSource):
                                          provider_version: 'terrareg.provider_version_model.ProviderVersion',
                                          artifact_name: str):
         """Return public URL for source"""
-        return f"{self.get_public_source_url(provider_version.provider.repository)}/releases/{provider_version.git_tag}/{artifact_name}"
+        return f"{self.get_public_source_url(provider_version.provider.repository)}/releases/download/{provider_version.git_tag}/{artifact_name}"
