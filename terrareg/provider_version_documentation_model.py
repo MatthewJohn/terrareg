@@ -95,6 +95,13 @@ class ProviderVersionDocumentation:
             for row in rows
         ]
 
+    @property
+    def title(self) -> str:
+        """Return title"""
+        name = self._get_db_row()["name"]
+        if name.endswith(".md"):
+            return name[:-3]
+
     def __init__(self, pk):
         """Store member variables"""
         self._pk = pk
@@ -117,7 +124,7 @@ class ProviderVersionDocumentation:
         db_row = self._get_db_row()
         return {
             "id": str(self._pk),
-            "title": db_row["name"],
+            "title": self.title,
             "path": db_row["filename"],
             # @TODO Generate Slug in extraction
             "slug": db_row["name"],
