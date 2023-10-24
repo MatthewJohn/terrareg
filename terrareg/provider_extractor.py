@@ -175,23 +175,10 @@ class ProviderExtractor:
                     if not os.path.isdir(documentation_directory):
                         os.mkdir(documentation_directory)
 
-                    try:
-                        subprocess.call(
-                            ['go', 'get', 'github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs'],
-                            cwd=source_dir,
-                            env=go_env,
-                        )
-                    except subprocess.CalledProcessError as exc:
-                        print(
-                            "An error occurred whilst getting tfplugindocs: " +
-                            (f": {str(exc)}: {exc.output.decode('utf-8')}" if terrareg.config.Config().DEBUG else "")
-                        )
-                        return
-
                     # Run go module for extractings docs
                     try:
                         subprocess.call(
-                            ['go', 'run', 'github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs'],
+                            ['tfplugindocs', 'generate'],
                             cwd=source_dir,
                             env=go_env,
                         )

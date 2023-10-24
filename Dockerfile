@@ -50,12 +50,22 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
       arch=amd64; \
     fi; \
     wget https://go.dev/dl/go1.20.10.linux-${arch}.tar.gz -O /tmp/go.tar.gz && \
-    tar -zxvf /tmp/go.tar.gz /usr/local && \
+    tar -zxvf /tmp/go.tar.gz -C /usr/local && \
     rm /tmp/go.tar.gz'
 ENV PATH=$PATH:/usr/local/go/bin
 
 # Install github.com/hashicorp/terraform-plugin-docs
-RUN go get github.com/hashicorp/terraform-plugin-docs@0.16.0
+RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
+    then \
+      arch=arm64; \
+    else \
+      arch=amd64; \
+    fi; \
+    wget https://github.com/hashicorp/terraform-plugin-docs/releases/download/v0.16.0/tfplugindocs_0.16.0_linux_${arch}.zip -O /tmp/tfplugindocs.zip && \
+    unzip /tmp/tfplugindocs.zip tfplugindocs && \
+    mv tfplugindocs /usr/local/bin/ && \
+    chmod +x /usr/local/bin/tfplugindocs && \
+    rm /tmp/tfplugindocs.tar.gz'
 
 WORKDIR /app
 COPY requirements.txt .
