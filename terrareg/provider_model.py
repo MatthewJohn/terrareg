@@ -172,6 +172,57 @@ class Provider:
         """Return repository for provider"""
         return terrareg.repository_model.Repository.get_by_pk(self._get_db_row()["repository_id"])
 
+    @property
+    def source_url(self):
+        """Return source URL"""
+        repository = self.repository
+        return repository.provider_source.get_public_source_url(repository)
+
+    @property
+    def description(self) -> str:
+        """Return provider description"""
+        return self.repository.description
+
+    @property
+    def alias(self) -> Union[str, None]:
+        """Return alias for provider"""
+        return None
+    
+    @property
+    def featured(self) -> bool:
+        """Return whether provider is featured"""
+        return False
+
+    @property
+    def logo_url(self) -> Union[str, None]:
+        """Return logo URL of provider"""
+        return None
+
+    @property
+    def owner_name(self) -> str:
+        """Return owner name of provider"""
+        return self.repository.owner
+    
+    @property
+    def repository_id(self) -> int:
+        """Return repository ID of provider"""
+        return self.repository.pk
+    
+    @property
+    def robots_noindex(self) -> bool:
+        """Return robots noindex status of provider"""
+        return False
+
+    @property
+    def unlisted(self) -> bool:
+        """Return whether provider is unlisted"""
+        return False
+
+    @property
+    def warning(self) -> str:
+        """Return warning for provider"""
+        return ""
+
     def __init__(self, namespace: 'terrareg.models.Namespace', name: str):
         """Validate name and store member variables."""
         self._namespace = namespace

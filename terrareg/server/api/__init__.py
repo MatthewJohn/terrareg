@@ -75,3 +75,4 @@ from .provider_versions import ApiProviderVersions
 from .terraform.v2.gpg_keys import ApiGpgKeys
 from .terraform.v2.gpg_key import ApiGpgKey
 from .terraform.v2.provider_categories import ApiProviderCategories
+from .terraform.v2.provider import ApiV2Provider

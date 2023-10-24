@@ -297,7 +297,7 @@ class ProviderVersion:
             "version": self.version,
             "tag": self.git_tag,
             "description": self.provider.repository.description,
-            "source": None,
+            "source": self.provider.source_url,
             "published_at": (db_row["published_at"].toisoformat() if db_row["published_at"] else None),
             "downloads": 0,
             "tier": self.provider.tier.value,
