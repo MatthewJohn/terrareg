@@ -1,5 +1,6 @@
 
 import contextlib
+from datetime import datetime
 import json
 from typing import Union, List
 import os
@@ -62,7 +63,7 @@ class ProviderVersion:
 
     @property
     def publish_date_display(self):
-        """Return display view of date of module published."""
+        """Return display view of date of provider published."""
         published_at = self._get_db_row()['published_at']
         if published_at:
             return published_at.strftime('%B %d, %Y')
@@ -70,7 +71,7 @@ class ProviderVersion:
 
     @property
     def published(self):
-        """Return whether module is published"""
+        """Return whether provider is published"""
         return bool(self._get_db_row()['published'])
 
     @property
@@ -90,7 +91,7 @@ class ProviderVersion:
 
     @property
     def beta(self) -> bool:
-        """Return whether module version is a beta version."""
+        """Return whether provider version is a beta version."""
         return self._get_db_row()['beta']
 
     @property
@@ -157,10 +158,22 @@ class ProviderVersion:
         self._cache_db_row = None
 
     def __eq__(self, __o):
-        """Check if two module versions are the same"""
+        """Check if two provider versions are the same"""
         if isinstance(__o, self.__class__):
             return self.pk == __o.pk
         return super(ProviderVersion, self).__eq__(__o)
+
+    def __gt__(self, __o):
+        """Check if version is higher than another"""
+        if isinstance(__o, self.__class__):
+            return semantic_version(self.version) > semantic_version(__o.version)
+        return super(ProviderVersion, self).__gt__(__o)
+
+    def __lt__(self, __o):
+        """Check if version is lower than another"""
+        if isinstance(__o, self.__class__):
+            return semantic_version(self.version) < semantic_version(__o.version)
+        return super(ProviderVersion, self).__lt__(__o)
 
     def _get_db_row(self):
         """Get object from database"""
@@ -194,7 +207,7 @@ class ProviderVersion:
 
     @contextlib.contextmanager
     def create_extraction_wrapper(self, git_tag: str, gpg_key: 'terrareg.models.GpgKey'):
-        """Handle module creation with yield for extraction"""
+        """Handle provider creation with yield for extraction"""
         self.prepare_version(gpg_key=gpg_key, git_tag=git_tag)
 
         yield
@@ -217,19 +230,20 @@ class ProviderVersion:
         )
 
     def publish(self):
-        """Publish module version."""
+        """Publish provider version."""
         # Calculate latest version will take beta flag into account and will only match
         # the current version if the current version is latest and is capable of being the
         # latest version.
         if (self._provider.calculate_latest_version() is not None and
                 self._provider.calculate_latest_version().version == self.version):
             self._provider.update_attributes(latest_version_id=self.pk)
+            self.update_attributes(published_at=datetime.now())
 
     def get_total_downloads(self):
-        """Obtain total number of downloads for module version."""
+        """Obtain total number of downloads for provider version."""
         raise NotImplementedError
-        return terrareg.analytics.AnalyticsEngine.get_module_version_total_downloads(
-            module_version=self
+        return terrareg.analytics.AnalyticsEngine.get_provider_version_total_downloads(
+            provider_version=self
         )
 
     @property
@@ -310,10 +324,10 @@ class ProviderVersion:
         # Check if a pre-existing version is present in database
         if self._get_db_row():
             raise ReindexingExistingProviderVersionsIsProhibitedError(
-                "The provider version already exists and re-indexing modules is disabled")
+                "The provider version already exists and re-indexing providers is disabled")
 
         with db.get_connection() as conn:
-            # Insert new module into table
+            # Insert new provider into table
             insert_statement = db.provider_version.insert().values(
                 provider_id=self._provider.pk,
                 version=self.version,

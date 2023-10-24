@@ -15,6 +15,7 @@ import terrareg.errors
 import terrareg.auth
 import terrareg.provider_source.factory
 import terrareg.provider_category_model
+import terrareg.provider_model
 from terrareg.server.api.terrareg_module_providers import ApiTerraregModuleProviders
 from .base_handler import BaseHandler
 from terrareg.server.api import *
@@ -318,6 +319,16 @@ class Server(BaseHandler):
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data/example/<path:example_path>'
         )
 
+        # Routes for provider
+        self._app.route(
+            '/providers/<string:namespace>/<string:provider>'
+        )(self._view_serve_provider)
+        self._app.route(
+            '/providers/<string:namespace>/<string:provider>/latest'
+        )(self._view_serve_provider)
+        self._app.route(
+            '/providers/<string:namespace>/<string:provider>/<string:version>'
+        )(self._view_serve_provider)
 
         # OpenID connect endpoints
         self._api.add_resource(
@@ -855,6 +866,33 @@ class Server(BaseHandler):
         submodule = terrareg.models.Example(module_version=module_version, module_path=submodule_path)
 
         return self._render_template('module_provider.html')
+
+    @catch_name_exceptions
+    def _view_serve_provider(self, namespace, provider, version=None):
+        """Render view for provider"""
+        namespace_obj = terrareg.models.Namespace.get(namespace)
+        if namespace_obj is None:
+            return self._namespace_404(
+                namespace_name=namespace
+            )
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name=provider)
+        if provider_obj is None:
+            return self._render_template(
+                'error.html',
+                error_title='Provider does not exist',
+                error_description='The provider {namespace}/{provider} does not exist'.format(
+                    namespace=namespace,
+                    provider=provider
+                ),
+                namespace=namespace,
+                provider=provider
+            ), 404
+
+        return self._render_template(
+            'provider.html',
+            namespace=namespace_obj,
+            provider=provider_obj
+        )
 
     def _view_serve_module_search(self):
         """Search modules based on input."""
