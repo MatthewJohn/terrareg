@@ -19,6 +19,9 @@ class ApiProviderVersionDownload(ErrorCatchingResource):
 
         namespace_obj = terrareg.models.Namespace.get(name=namespace)
 
+        if namespace_obj is None:
+            return self._get_404_response()
+
         provider = terrareg.provider_model.Provider.get(namespace=namespace_obj, name=provider)
         if provider is None:
             return self._get_404_response()
