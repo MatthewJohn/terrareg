@@ -10,7 +10,7 @@ import terrareg.provider_version_binary_model
 
 class ApiProviderVersionDownload(ErrorCatchingResource):
 
-    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_terraform_api')]
 
     def _get(self, namespace, provider, version, os, arch):
         """Return provider details."""

@@ -8,7 +8,7 @@ import terrareg.provider_version_model
 
 class ApiProvider(ErrorCatchingResource):
 
-    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
+    method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_terraform_api')]
 
     def _get(self, namespace, provider, version=None):
         """Return provider details."""
