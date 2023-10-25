@@ -1,4 +1,6 @@
 
+from flask import request
+
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.models
 import terrareg.auth_wrapper
@@ -6,6 +8,7 @@ import terrareg.provider_model
 import terrareg.provider_version_model
 import terrareg.provider_binary_types
 import terrareg.provider_version_binary_model
+import terrareg.analytics
 
 
 class ApiProviderVersionDownload(ErrorCatchingResource):
@@ -22,12 +25,12 @@ class ApiProviderVersionDownload(ErrorCatchingResource):
         if namespace_obj is None:
             return self._get_404_response()
 
-        provider = terrareg.provider_model.Provider.get(namespace=namespace_obj, name=provider)
-        if provider is None:
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name=provider)
+        if provider_obj is None:
             return self._get_404_response()
 
         provider_version = terrareg.provider_version_model.ProviderVersion.get(
-            provider=provider,
+            provider=provider_obj,
             version=version
         )
 
@@ -51,6 +54,15 @@ class ApiProviderVersionDownload(ErrorCatchingResource):
         )
         if not binary:
             return self._get_404_response()
+
+        # Record provider download
+        terrareg.analytics.ProviderAnalytics.record_provider_version_download(
+            namespace_name=namespace,
+            provider_name=provider,
+            provider_version=provider_version,
+            terraform_version=request.headers.get('X-Terraform-Version', None),
+            user_agent=request.headers.get('User-Agent', None)
+        )
 
         return binary.get_api_outline()
 

@@ -560,6 +560,11 @@ class ProviderAnalytics:
             if user_agent_match:
                 terraform_version = user_agent_match.group(1)
 
+        # If terraform version is not available, do not record
+        # the download
+        if not terraform_version:
+            return
+
         # Insert analytics details into DB
         db = Database.get()
         insert_statement = db.provider_analytics.insert().values(
