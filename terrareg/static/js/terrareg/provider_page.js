@@ -218,7 +218,9 @@ function setPublishedAt(providerDetails) {
     namespaceLinkDiv.attr("href", `/modules/${providerDetails.namespace}`);
     namespaceLinkDiv.text(providerDetails.namespace);
 
-    publishedAtDiv.append(`Published ${providerDetails.published_at_display} by `);
+    var options = {weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'};
+    let date = new Date(providerDetails.published_at);
+    publishedAtDiv.append(`Published ${date.toLocaleDateString("en-GB", options)} by `);
     publishedAtDiv.append(namespaceLinkDiv);
 }
 

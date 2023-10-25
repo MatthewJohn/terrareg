@@ -42,8 +42,6 @@ class Provider:
         # Ensure that there is not already a provider that exists
         duplicate_provider = Provider.get_by_repository(repository=repository)
         if duplicate_provider:
-            # @TODO TEMP
-            return duplicate_provider
             raise DuplicateProviderError("A duplicate provider exists with the same name in the namespace")
 
         # Obtain namespace based on repository owner
