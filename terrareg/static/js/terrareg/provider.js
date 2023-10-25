@@ -105,44 +105,66 @@ async function getProviderDetails(providerId) {
     return terraregProviderDetailsPromiseSingleton[providerId];
 }
 
-// async function addProviderLabels(provider, parentDiv) {
-//     let terrareg_config = await getConfig();
-//     if (provider.trusted) {
-//         parentDiv.append($(`
-//             <span class="tag is-info is-light result-card-label result-card-label-trusted">
-//                 <span class="panel-icon">
-//                     <i class="fas fa-check-circle" aria-hidden="true"></i>
-//                 </span>
-//                 ${terrareg_config.TRUSTED_NAMESPACE_LABEL}
-//             </span>
-//         `));
-//     } else {
-//         parentDiv.append($(`
-//             <span class="tag is-warning is-light result-card-label result-card-label-contributed">
-//                 ${terrareg_config.CONTRIBUTED_NAMESPACE_LABEL}
-//             </span>
-//         `));
-//     }
+terraregProviderDetailsV2PromiseSingleton = [];
+async function getV2ProviderDetails(providerId) {
+    // Create promise if it hasn't already been defined
+    if (terraregProviderDetailsV2PromiseSingleton[providerId] === undefined) {
+        terraregProviderDetailsV2PromiseSingleton[providerId] = new Promise((resolve, reject) => {
+            // Perform request to obtain module details
+            $.ajax({
+                type: "GET",
+                url: `/v2/providers/${providerId}`,
+                success: function (data) {
+                    console.log(data);
+                    resolve(data);
+                },
+                error: function () {
+                    resolve(null);
+                }
+            });
+        });
+    }
+    return terraregProviderDetailsV2PromiseSingleton[providerId];
+}
 
-//     if (provider.verified) {
-//         parentDiv.append($(`
-//             <span class="tag is-link is-light result-card-label result-card-label-verified">
-//                 <span class="panel-icon">
-//                     <i class="fas fa-thumbs-up" aria-hidden="true"></i>
-//                 </span>
-//                 ${terrareg_config.VERIFIED_MODULE_LABEL}
-//             </span>
-//         `));
-//     }
+async function addProviderLabels(provider, parentDiv) {
+    let terrareg_config = await getConfig();
+    if (provider.tier == "official") {
+        parentDiv.append($(`
+            <span class="tag is-info is-light result-card-label result-card-label-trusted">
+                <span class="panel-icon">
+                    <i class="fas fa-check-circle" aria-hidden="true"></i>
+                </span>
+                Official
+            </span>
+        `));
+    } else {
+        parentDiv.append($(`
+            <span class="tag is-warning is-light result-card-label result-card-label-contributed">
+                Community
+            </span>
+        `));
+    }
 
-//     if (provider.internal) {
-//         parentDiv.append($(`
-//             <span class="tag is-warning is-light result-card-label result-card-label-internal">
-//                 <span class="panel-icon">
-//                     <i class="fa fa-eye-slash" aria-hidden="true"></i>
-//                 </span>
-//                 Internal
-//             </span>
-//         `));
-//     }
-// }
+    if (provider.verified) {
+        parentDiv.append($(`
+            <span class="tag is-link is-light result-card-label result-card-label-verified">
+                <span class="panel-icon">
+                    <i class="fas fa-thumbs-up" aria-hidden="true"></i>
+                </span>
+                ${terrareg_config.VERIFIED_MODULE_LABEL}
+            </span>
+        `));
+    }
+
+    if (provider.internal) {
+        parentDiv.append($(`
+            <span class="tag is-warning is-light result-card-label result-card-label-internal">
+                <span class="panel-icon">
+                    <i class="fa fa-eye-slash" aria-hidden="true"></i>
+                </span>
+                Internal
+            </span>
+        `));
+    }
+}

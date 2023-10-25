@@ -274,7 +274,18 @@ function populateCustomLinks(providerDetails) {
  */
 async function populateTerraformUsageExample(providerDetails) {
     // Add example Terraform call to source section
-    $("#usage-example-terraform").text(providerDetails.usage_example);
+    $("#usage-example-terraform").text(`terraform {
+  required_providers {
+    ${providerDetails.name} = {
+      source = "${window.location.host}/${providerDetails.namespace}/${providerDetails.name}"
+      version = "${providerDetails.version}"
+    }
+  }
+}
+
+provider "${providerDetails.name}" {
+  # Add provider configuration here
+}`);
 
     // Perform syntax highlighting
     window.Prism.highlightElement(document.getElementById("usage-example-terraform"));
@@ -288,8 +299,8 @@ async function populateTerraformUsageExample(providerDetails) {
  *
  * @param providerDetails Terrareg provider details
  */
-function populateDownloadSummary(providerDetails) {
-    $.get(`/v2/providers/${providerDetails.module_provider_id}/downloads/summary`, function (data, status) {
+function populateDownloadSummary(providerV2Details) {
+    $.get(`/v2/providers/${providerV2Details.data.id}/downloads/summary`, function (data, status) {
         Object.keys(data.data.attributes).forEach((key) => {
             $(`#downloads-${key}`).html(data.data.attributes[key]);
         });
@@ -376,7 +387,7 @@ async function setupBasePage(data) {
     let id = getCurrentObjectId(data);
 
     let providerDetails = await getProviderDetails(id);
-    console.log(providerDetails);
+    let providerV2Details = await getV2ProviderDetails(id);
 
     let redirectUrl = getRedirectUrl(data, providerDetails);
     if (redirectUrl) {
@@ -400,19 +411,18 @@ async function setupBasePage(data) {
     }
 
     showProviderDetailsBody();
-    enableTerraregExclusiveTags();
+    // enableTerraregExclusiveTags();
     setProviderLogo(providerDetails);
 
     setProviderTitle(providerDetails);
 
-    // addProviderLabels(providerDetails, $("#provider-labels"));
+    addProviderLabels(providerDetails, $("#provider-labels"));
 
     // showOutdatedExtractionDataWarning(providerDetails);
     populateVersionSelect(providerDetails);
-    setupProviderVersionDeletionSetting(providerDetails);
     populateTerraformUsageExample(providerDetails);
-    populateDownloadSummary(providerDetails);
-    setSourceUrl(providerDetails.display_source_url);
+    populateDownloadSummary(providerV2Details);
+    setSourceUrl(providerDetails.source);
     // populateCustomLinks(providerDetails);
 }
 
