@@ -297,6 +297,26 @@ provider "${providerDetails.name}" {
 }
 
 /*
+ * Handle clicking icon for expanding/collapsing the example
+ */
+function onProviderUsageExampleClick() {
+    let usageExampleBody = $('#usage-example-body');
+    let newIcon = '';
+    let oldIcon = '';
+    if (usageExampleBody.attr('class').split(/\s+/).indexOf("default-hidden") !== -1) {
+        // Handle clicking expand
+        usageExampleBody.removeClass('default-hidden');
+        oldIcon = 'fa-angle-left'
+        newIcon = 'fa-angle-down';
+    } else {
+        usageExampleBody.addClass('default-hidden');
+        oldIcon = 'fa-angle-down'
+        newIcon = 'fa-angle-left';
+    }
+    $('#usage-example-expand-icon').removeClass(oldIcon).addClass(newIcon);
+}
+
+/*
  * Populate downloads summary
  *
  * @param providerDetails Terrareg provider details

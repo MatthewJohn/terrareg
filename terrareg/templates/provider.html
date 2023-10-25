@@ -124,16 +124,28 @@
                 </table>
             </div>
 
-            <div id="usage-example-container" class="box default-hidden">
-                <h5 class="title is-5">Usage</h5>
-                <div class="content">
-                    To use this provider:
-                    <ol>
-                        <li>Add the following example to your Terraform:</li>
-                    </ol>
-                </div>
+            <div id="usage-example-container" class="card default-hidden">
+                <header class="card-header" onclick="onProviderUsageExampleClick();">
+                    <p class="card-header-title">
+                    Use this Provider
+                    </p>
+                    <button onclick="onProviderUsageExampleClick();" class="card-header-icon" aria-label="more options">
+                        <span class="icon">
+                            <i id="usage-example-expand-icon" class="fas fa-angle-left" aria-hidden="true"></i>
+                        </span>
+                    </button>
+                </header>
 
-                <pre><code id="usage-example-terraform" class="language-hcl"></code></pre>
+                <div id="usage-example-body" class="card-content default-hidden">
+                    <div class="content">
+                        To use this provider:
+                        <ol>
+                            <li>Add the following example to your Terraform:</li>
+                        </ol>
+                    </div>
+    
+                    <pre><code id="usage-example-terraform" class="language-hcl"></code></pre>
+                </div>
             </div>
         </div>
     </div>
