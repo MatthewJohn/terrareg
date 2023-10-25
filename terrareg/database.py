@@ -763,6 +763,9 @@ class Database():
                 nullable=False
             ),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('slug', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('language', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('subcategory', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=True),
             sqlalchemy.Column('filename', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
             sqlalchemy.Column(
                 'documentation_type',

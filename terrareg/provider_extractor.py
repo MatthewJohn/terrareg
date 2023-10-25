@@ -225,6 +225,8 @@ class ProviderExtractor:
                 provider_version=self._provider_version,
                 documentation_type=documentation_type,
                 name=os.path.basename(filename),
+                language="hcl",
+                subcategory=None,
                 filename=filename,
                 content=content
             )

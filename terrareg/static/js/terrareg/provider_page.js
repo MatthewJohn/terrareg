@@ -26,6 +26,24 @@ function renderPage() {
         }
     });
 
+    // Documentation urls
+    router.on({
+        [`${baseRoute}/:version/docs`]: {
+            as: "docsOverview",
+            uses: function({data}) {
+                setupBasePage(data);
+            }
+        }
+    })
+    router.on({
+        [`${baseRoute}/:version/docs/:documentationCategory/:documentationSlug`]: {
+            as: "docsPage",
+            uses: function({data}) {
+                setupBasePage(data);
+            }
+        }
+    })
+
     router.resolve();
 }
 
@@ -59,6 +77,24 @@ function getCurrentObjectId(data, stopAt = undefined) {
     }
 
     return id;
+}
+
+/*
+ * Generate dictionary of selected documentation from router data
+ */
+function getSelectedDocumentationDetails(data) {
+    // If documentation type is not present,
+    // return overview
+    if (! data.documentationCategory && ! data.documentationSlug) {
+        return {
+            slug: 'index',
+            category: 'overview'
+        }
+    }
+    return {
+        slug: data.documentationSlug,
+        category: data.documentationCategory
+    }
 }
 
 /*
@@ -353,8 +389,13 @@ function setPageTitle(id) {
 /*
  * Redirect user to document page
  */
-function redirectDocumentPage(docPath) {
-
+function redirectDocumentPage(providerDetails, slug, category) {
+    window.location = router.generate(
+        'docsPage',
+        {namespace: providerDetails.namespace, provider: providerDetails.name, version: providerDetails.version,
+         documentationCategory: category, documentationSlug: slug},
+        {includeRoot: true, replaceRegexGroups: false}
+    )
 }
 
 /*
@@ -372,7 +413,7 @@ function populateDocumentationMenu(providerDetails) {
             <a class="navbar-item">
                 ${doc.title}
             </a>`);
-            linkDiv.bind('click', () => {redirectDocumentPage(doc.path)});
+            linkDiv.bind('click', () => {redirectDocumentPage(providerDetails, doc.slug, doc.category)});
             docCountByCategory[doc.category][doc.title] = linkDiv;
         }
     });
@@ -391,7 +432,61 @@ function populateDocumentationMenu(providerDetails) {
 
     addDocLinksToPage($('#provider-docs-menu-resources-header'), docCountByCategory.resources);
     addDocLinksToPage($('#provider-docs-menu-data-sources-header'), docCountByCategory["data-sources"]);
+}
 
+/*
+ * Obtain the currently selected documentation
+ * and display to the user
+ */
+function showSelectedDocument(providerV2Details, selectedDocumentation) {
+    if (! selectedDocumentation.slug || ! selectedDocumentation.category) {
+        console.log("Invalid selected documentation");
+        return;
+    }
+    // Query for documentation
+    $.ajax({
+        url: '/v2/provider-docs',
+        type: "get",
+        data: {
+            'filter[provider-version]': providerV2Details.data.id,
+            'filter[category]': selectedDocumentation.category,
+            'filter[slug]': selectedDocumentation.slug,
+            'filter[language]': 'hcl',
+            'page[size]': 1
+        },
+
+        success: (response) => {
+            if (response.data && response.data.length) {
+                obtainDocumentation(response.data[0].id)
+            } else {
+                showDocumentationError();
+            }
+        },
+        failure: (xhr) => {
+            showDocumentationError();
+        }
+    });
+}
+
+/*
+ * Show warning that documentation page does not exist
+ */
+function showDocumentationError() {
+    console.log("doc 404!")
+}
+
+/*
+ * Obtain documentation by ID and populate documentation view
+ */
+function obtainDocumentation(documentationId) {
+    let contentDiv = $('#provider-doc-content');
+    contentDiv.html('');
+    $.get(`/v2/provider-docs/${documentationId}?output=html`).then((data) => {
+        if (data.data.attributes.content) {
+            contentDiv.html(data.data.attributes.content);
+            convertImportedHtml(contentDiv);
+        }
+    })
 }
 
 /*
@@ -453,7 +548,7 @@ async function setupBasePage(data) {
     let id = getCurrentObjectId(data);
 
     let providerDetails = await getProviderDetails(id);
-    let providerV2Details = await getV2ProviderDetails(id);
+    let providerV2Details = await getV2ProviderDetails(`${providerDetails.namespace}/${providerDetails.name}`);
 
     let redirectUrl = getRedirectUrl(data, providerDetails);
     if (redirectUrl) {
@@ -492,6 +587,9 @@ async function setupBasePage(data) {
     // populateCustomLinks(providerDetails);
 
     populateDocumentationMenu(providerDetails);
+
+    let selectedDocumentation = getSelectedDocumentationDetails(data);
+    showSelectedDocument(providerV2Details, selectedDocumentation);
 }
 
 async function createBreadcrumbs(data, subpath = undefined) {

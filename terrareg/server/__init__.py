@@ -226,6 +226,15 @@ class Server(BaseHandler):
             '/v2/providers/<int:provider_id>/downloads/summary'
         )
 
+        self._api.add_resource(
+            ApiV2ProviderDocs,
+            '/v2/provider-docs'
+        )
+        self._api.add_resource(
+            ApiV2ProviderDoc,
+            '/v2/provider-docs/<int:doc_id>'
+        )
+
         # Terraform cloud/registry APIs for GPG key
         self._api.add_resource(
             ApiGpgKeys,
@@ -338,6 +347,12 @@ class Server(BaseHandler):
         )(self._view_serve_provider)
         self._app.route(
             '/providers/<string:namespace>/<string:provider>/<string:version>'
+        )(self._view_serve_provider)
+        self._app.route(
+            '/providers/<string:namespace>/<string:provider>/<string:version>/docs'
+        )(self._view_serve_provider)
+        self._app.route(
+            '/providers/<string:namespace>/<string:provider>/<string:version>/docs/<string:doc_category>/<string:doc_slug>'
         )(self._view_serve_provider)
 
         # OpenID connect endpoints
@@ -878,7 +893,7 @@ class Server(BaseHandler):
         return self._render_template('module_provider.html')
 
     @catch_name_exceptions
-    def _view_serve_provider(self, namespace, provider, version=None):
+    def _view_serve_provider(self, namespace, provider, version=None, doc_category=None, doc_slug=None):
         """Render view for provider"""
         namespace_obj = terrareg.models.Namespace.get(namespace)
         if namespace_obj is None:
