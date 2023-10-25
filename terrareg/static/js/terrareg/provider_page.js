@@ -351,6 +351,50 @@ function setPageTitle(id) {
 }
 
 /*
+ * Redirect user to document page
+ */
+function redirectDocumentPage(docPath) {
+
+}
+
+/*
+ * Populate documentation menu with each available doc
+ */
+function populateDocumentationMenu(providerDetails) {
+    let docCountByCategory = {
+        resources: {},
+        "data-sources": {},
+        overview: {}
+    }
+    providerDetails.docs.forEach((doc) => {
+        if (docCountByCategory[doc.category] !== undefined) {
+            let linkDiv = $(`
+            <a class="navbar-item">
+                ${doc.title}
+            </a>`);
+            linkDiv.bind('click', () => {redirectDocumentPage(doc.path)});
+            docCountByCategory[doc.category][doc.title] = linkDiv;
+        }
+    });
+
+    function addDocLinksToPage(parent, docs) {
+        // Sort all keys by name and iterate over them, adding to list
+        Object.keys(docs).sort((a, b) => {a > b}).forEach((docName) => {
+            docs[docName].insertAfter(parent);
+        });
+
+        // If there are any docs, show the header
+        if (Object.keys(docs).length) {
+            parent.removeClass("default-hidden");
+        }
+    }
+
+    addDocLinksToPage($('#provider-docs-menu-resources-header'), docCountByCategory.resources);
+    addDocLinksToPage($('#provider-docs-menu-data-sources-header'), docCountByCategory["data-sources"]);
+
+}
+
+/*
  * Get redirect URL if URL does not match actual
  * provider details, meaning it's
  * obtained details for a redirected provider
@@ -446,6 +490,8 @@ async function setupBasePage(data) {
     populateDownloadSummary(providerV2Details);
     setSourceUrl(providerDetails.source);
     // populateCustomLinks(providerDetails);
+
+    populateDocumentationMenu(providerDetails);
 }
 
 async function createBreadcrumbs(data, subpath = undefined) {
