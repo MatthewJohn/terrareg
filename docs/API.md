@@ -154,6 +154,115 @@ Provide download summary for module provider.
 Return list of download counts for module provider.
 
 
+## ApiProvider
+
+`/v1/providers/<string:namespace>/<string:provider>`
+
+`/v1/providers/<string:namespace>/<string:provider>/<string:version>`
+
+
+
+
+#### GET
+
+Return provider details.
+
+
+## ApiProviderVersions
+
+`/v1/providers/<string:namespace>/<string:provider>/versions`
+
+
+
+
+#### GET
+
+Return provider version details.
+
+
+## ApiProviderVersionDownload
+
+`/v1/providers/<string:namespace>/<string:provider>/<string:version>/download/<string:os>/<string:arch>`
+
+
+
+
+#### GET
+
+Return provider details.
+
+
+## ApiV2Provider
+
+`/v2/providers/<string:namespace>/<string:provider>`
+
+Interface for providing provider details
+
+
+#### GET
+
+Return provider details.
+
+
+## ApiProviderProviderDownloadSummary
+
+`/v2/providers/<int:provider_id>/downloads/summary`
+
+Interface for providing download summary for providers
+
+
+#### GET
+
+Return download summary.
+
+
+## ApiV2ProviderDocs
+
+`/v2/provider-docs`
+
+Interface for querying provider docs
+
+
+#### GET
+
+
+Query provider version documentation.
+
+This API is very static and requires all arguments to be passed.
+Page size, is effectively unused, as the query filters will result in 0 or 1 result.
+
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| filter[provider-version] | args | int | True | `None` | Provider version ID to query documenation from |
+| filter[category] | args | str | True | `None` | Provider documentation category |
+| filter[slug] | args | str | True | `None` | Slug of documentation to query for |
+| filter[language] | args | str | True | `None` | Documentation language to filter results |
+| page[size] | args | int | True | `None` | Result page size |
+
+
+
+## ApiV2ProviderDoc
+
+`/v2/provider-docs/<int:doc_id>`
+
+Interface for obtain provider doc details
+
+
+#### GET
+
+
+Obtain details about provider document
+
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| output | args | str | False | `md` | Content output type, either "html" or "md" |
+
+
+
 ## ApiGpgKeys
 
 `/v2/gpg-keys`
