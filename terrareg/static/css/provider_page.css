@@ -23,3 +23,17 @@
 .provider-docs {
     margin-top: 30px;
 }
+
+/* Style ul and ol in documentation */
+#provider-doc-content > ul {
+    list-style: disc;
+    margin-bottom: 20px;
+    padding-left: 40px;
+}
+#provider-doc-content > ul > li {
+    padding-top: 5px;
+}
+
+#provider-doc-content > h2 {
+    margin-top: 3rem;
+}
