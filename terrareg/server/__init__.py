@@ -226,6 +226,10 @@ class Server(BaseHandler):
             ApiProviderVersionDownload,
             '/v1/providers/<string:namespace>/<string:provider>/<string:version>/download/<string:os>/<string:arch>'
         )
+        self._api.add_resource(
+            ApiProviderSearch,
+            '/v1/providers/search'
+        )
 
         # V2 resources for provider
         self._api.add_resource(
@@ -295,12 +299,28 @@ class Server(BaseHandler):
         self._app.route(
             '/modules/'
         )(self._view_serve_namespace_list)
+        # Legacy module search URL
         self._app.route(
             '/modules/search'
         )(self._view_serve_module_search)
         self._app.route(
             '/modules/search/'
         )(self._view_serve_module_search)
+
+        self._app.route(
+            '/search'
+        )(self._view_serve_search)
+        self._app.route(
+            '/search/'
+        )(self._view_serve_search)
+
+        self._app.route(
+            '/search/modules'
+        )(self._view_serve_module_search)
+        self._app.route(
+            '/modules/modules/'
+        )(self._view_serve_module_search)
+
         self._app.route(
             '/modules/<string:namespace>'
         )(self._view_serve_namespace)
@@ -933,6 +953,10 @@ class Server(BaseHandler):
     def _view_serve_module_search(self):
         """Search modules based on input."""
         return self._render_template('module_search.html')
+
+    def _view_serve_search(self):
+        """Search based on input."""
+        return self._render_template('search.html')
 
     def _view_serve_user_groups(self):
         """Page to view/modify user groups and permissions."""

@@ -73,6 +73,7 @@ from .namespace_providers import ApiNamespaceProviders
 from .provider import ApiProvider
 from .provider_version_download import ApiProviderVersionDownload
 from .provider_versions import ApiProviderVersions
+from .provider_search import ApiProviderSearch
 
 from .terraform.v2.gpg_keys import ApiGpgKeys
 from .terraform.v2.gpg_key import ApiGpgKey

@@ -28,9 +28,9 @@ class ProviderSearch:
                     sqlalchemy.case(
                             (db.provider.c.name.like(query_part), 20),
                             (db.namespace.c.namespace.like(query_part), 18),
-                            (db.provider.c.description.like(query_part), 13),
+                            (db.provider.c.description.like(Database.encode_blob(query_part)), 13),
                             (db.provider.c.name.like(wildcarded_query_part), 5),
-                            (db.provider.c.description.like(wildcarded_query_part), 4),
+                            (db.provider.c.description.like(Database.encode_blob(wildcarded_query_part)), 4),
                             (db.namespace.c.namespace.like(wildcarded_query_part), 2),
                         else_=0
                     ),
@@ -42,8 +42,8 @@ class ProviderSearch:
                     point_sum += point_value
                 wheres.append(
                     sqlalchemy.or_(
-                        db.provider.c.name.like(query_part),
-                        db.provider.c.description.like(wildcarded_query_part),
+                        db.provider.c.name.like(wildcarded_query_part),
+                        db.provider.c.description.like(Database.encode_blob(wildcarded_query_part)),
                         db.namespace.c.namespace.like(wildcarded_query_part)
                     )
                 )
