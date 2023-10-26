@@ -351,7 +351,7 @@ class Provider:
         return {
             "id": self.id,
             "versions": [
-                version.get_api_outline()
+                version.get_api_binaries_outline()
                 for version in self.get_all_versions()
             ],
             "warnings": None

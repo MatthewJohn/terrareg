@@ -202,6 +202,17 @@ class Server(BaseHandler):
             '/v1/modules/<string:namespace>/<string:name>/<string:provider>/downloads/summary'
         )
 
+        # Providers APIs
+        self._api.add_resource(
+            ApiProviderList,
+            '/v1/providers',
+            '/v1/providers/'
+        )
+        self._api.add_resource(
+            ApiNamespaceProviders,
+            '/v1/providers/<string:namespace>',
+            '/v1/providers/<string:namespace>/'
+        )
         self._api.add_resource(
             ApiProvider,
             '/v1/providers/<string:namespace>/<string:provider>',

@@ -829,6 +829,16 @@ class Database():
             self.namespace, self.module_provider.c.namespace_id==self.namespace.c.id
         )
 
+    def select_provider_joined_latest_module_version(self, *select_args):
+        """Perform select on provider, joined to latest version from provider_version table"""
+        return sqlalchemy.select(
+            *select_args
+        ).select_from(self.module_provider).join(
+            self.provider_version, self.provider.c.latest_version_id==self.provider_version.c.id
+        ).join(
+            self.namespace, self.provider.c.namespace_id==self.namespace.c.id
+        )
+
     @classmethod
     def get_current_transaction(cls):
         """Check if currently in transaction."""

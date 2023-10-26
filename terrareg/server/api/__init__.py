@@ -68,6 +68,8 @@ from .github.github_auth_status import GithubAuthStatus
 from .github.github_organisations import GithubOrganisations
 from .github.github_repositories import GithubRepositories
 from .github.github_repository_publish_provider import GithubRepositoryPublishProvider
+from .provider_list import ApiProviderList
+from .namespace_providers import ApiNamespaceProviders
 from .provider import ApiProvider
 from .provider_version_download import ApiProviderVersionDownload
 from .provider_versions import ApiProviderVersions

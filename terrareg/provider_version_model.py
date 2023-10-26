@@ -19,6 +19,7 @@ import terrareg.audit_action
 import terrareg.models
 import terrareg.provider_version_documentation_model
 import terrareg.provider_version_binary_model
+import terrareg.analytics
 
 
 class ProviderVersion:
@@ -240,10 +241,9 @@ class ProviderVersion:
             self.update_attributes(published_at=datetime.now())
 
     def get_total_downloads(self):
-        """Obtain total number of downloads for provider version."""
-        raise NotImplementedError
-        return terrareg.analytics.AnalyticsEngine.get_provider_version_total_downloads(
-            provider_version=self
+        """Obtain total number of downloads for provider."""
+        return terrareg.analytics.ProviderAnalytics.get_provider_total_downloads(
+            provider=self.provider
         )
 
     @property
@@ -271,7 +271,7 @@ class ProviderVersion:
         with db.get_connection() as conn:
             conn.execute(update)
 
-    def get_api_outline(self) -> dict:
+    def get_api_binaries_outline(self) -> dict:
         """Return dict of outline for versions endpoint"""
         return {
             "version": self.version,
@@ -285,8 +285,8 @@ class ProviderVersion:
             ]
         }
 
-    def get_api_details(self) -> dict:
-        """Return dict of version details for API response."""
+    def get_api_outline(self) -> dict:
+        """Return API outline"""
         db_row = self._get_db_row()
         return {
             "id": self.id,
@@ -299,18 +299,23 @@ class ProviderVersion:
             "description": self.provider.repository.description,
             "source": self.provider.source_url,
             "published_at": (db_row["published_at"].isoformat() if db_row["published_at"] else None),
-            "downloads": 0,
+            "downloads": self.get_total_downloads(),
             "tier": self.provider.tier.value,
             "logo_url": None,
-            "versions": [
-                version.version
-                for version in self.provider.get_all_versions()
-            ],
-            "docs": [
-                doc.get_api_outline()
-                for doc in terrareg.provider_version_documentation_model.ProviderVersionDocumentation.get_by_provider_version(self)
-            ]
         }
+
+    def get_api_details(self) -> dict:
+        """Return dict of version details for API response."""
+        api_outline = self.get_api_outline()
+        api_outline["versions"] = [
+            version.version
+            for version in self.provider.get_all_versions()
+        ]
+        api_outline["docs"] = [
+            doc.get_api_outline()
+            for doc in terrareg.provider_version_documentation_model.ProviderVersionDocumentation.get_by_provider_version(self)
+        ]
+        return api_outline
 
     def _create_db_row(self, git_tag: str, gpg_key: 'terrareg.models.GpgKey') -> None:
         """

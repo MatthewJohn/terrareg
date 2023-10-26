@@ -154,6 +154,34 @@ Provide download summary for module provider.
 Return list of download counts for module provider.
 
 
+## ApiProviderList
+
+`/v1/providers`
+
+`/v1/providers/`
+
+Interface to list all providers
+
+
+#### GET
+
+Return list of modules.
+
+
+## ApiNamespaceProviders
+
+`/v1/providers/<string:namespace>`
+
+`/v1/providers/<string:namespace>/`
+
+Interface to obtain list of providers in namespace.
+
+
+#### GET
+
+Return list of providers in namespace
+
+
 ## ApiProvider
 
 `/v1/providers/<string:namespace>/<string:provider>`
