@@ -1,4 +1,5 @@
 
+from typing import Union, Tuple
 from distutils.dir_util import copy_tree
 from glob import glob
 import json
@@ -9,6 +10,8 @@ from io import BytesIO
 import os
 import tempfile
 import tarfile
+
+import frontmatter
 
 import terrareg.provider_version_model
 import terrareg.repository_model
@@ -206,6 +209,25 @@ class ProviderExtractor:
                     documentation_type=terrareg.provider_documentation_type.ProviderDocumentationType.DATA_SOURCE
                 )
 
+    @classmethod
+    def _extract_markdown_metadata(cls, content: str) -> Union[Tuple[str, str, str, str], Tuple[None, None, None, str]]:
+        """
+        Extract metadata from markdown content.
+        Returns: title, subcategory, description and content (stripped of metadata)"""
+        try:
+            front_matter_obj = frontmatter.loads(content)
+        except:
+            # Handle failure to load and return original content
+            return None, None, None, content
+
+        metadata = front_matter_obj.metadata
+        return (
+            metadata.get("page_title", None),
+            metadata.get("subcategory", None),
+            metadata.get("description", None),
+            front_matter_obj.content
+        )
+
     def _collect_markdown_documentation(self, source_directory: str, documentation_directory: str, documentation_type: terrareg.provider_documentation_type.ProviderDocumentationType, file_filter=None):
         """Collect markdown documentation from directory and store in database"""
         # If a file filter has not been provided, use all markdown files
@@ -216,6 +238,8 @@ class ProviderExtractor:
             with open(file_path, "r") as document_fh:
                 content = document_fh.read()
 
+            title, subcategory, description, content = self._extract_markdown_metadata(content)
+
             # Remove source directory from start of file path
             # so the path is relative to the root of the repository.
             # Add 1 to length of source directory to handle the trailing slash
@@ -225,13 +249,15 @@ class ProviderExtractor:
                 provider_version=self._provider_version,
                 documentation_type=documentation_type,
                 name=os.path.basename(filename),
+                title=title,
+                description=description,
                 language="hcl",
-                subcategory=None,
+                subcategory=subcategory,
                 filename=filename,
                 content=content
             )
 
-    def _process_release_file(self, checksum: str, file_name: str):
+    def _process_release_file(self, checksum: str, file_name: str) -> None:
         """Process file in release"""
         # Download file
         content = self._download_artifact(
@@ -253,7 +279,7 @@ class ProviderExtractor:
             content=content
         )
 
-    def extract_binaries(self):
+    def extract_binaries(self) -> None:
         """Obtain checksum file and download/validate/process each binary"""
         shasums = self._download_artifact(
             repository=self._repository,
