@@ -142,7 +142,7 @@ function getUrlParams() {
 /*
  * Convert contents of HtML entity that has been imported from external HTML (i.e. converted markdown)
  */
-function convertImportedHtml(element) {
+function convertImportedHtml(element, forceHcl=false) {
     // Add 'table' class to all tables in README
     element.find("table").addClass("table");
 
@@ -153,6 +153,9 @@ function convertImportedHtml(element) {
     element.find("h4").addClass("subtitle").addClass("is-6");
 
     for (let codeDiv of element.find("code")) {
+        if (forceHcl) {
+            $(codeDiv).addClass("language-hcl");
+        }
         // If code is within pre block, perform syntax highlighting.
         if (codeDiv.parentElement.nodeName.toLowerCase() == "pre") {
             window.Prism.highlightElement(codeDiv);

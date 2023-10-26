@@ -484,7 +484,7 @@ function obtainDocumentation(documentationId) {
     $.get(`/v2/provider-docs/${documentationId}?output=html`).then((data) => {
         if (data.data.attributes.content) {
             contentDiv.html(data.data.attributes.content);
-            convertImportedHtml(contentDiv);
+            convertImportedHtml(contentDiv, true);
         }
     })
 }
