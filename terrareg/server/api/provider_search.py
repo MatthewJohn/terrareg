@@ -29,16 +29,21 @@ class ApiProviderSearch(ErrorCatchingResource):
         )
         parser.add_argument(
             'namespace', type=str, location='args',
-            default=None, help='Limits modules to a specific namespace.',
+            default=None, help='Limits providers to a specific namespace.',
             action='append', dest='namespaces'
         )
         parser.add_argument(
+            'category', type=str, location='args',
+            default=None, help='Limits providers to a specific categories.',
+            action='append', dest='categories'
+        )
+        parser.add_argument(
             'trusted_namespaces', type=inputs.boolean, location='args',
-            default=None, help='Limits modules to include trusted namespaces.'
+            default=None, help='Limits providers to include trusted namespaces.'
         )
         parser.add_argument(
             'contributed', type=inputs.boolean, location='args',
-            default=None, help='Limits modules to include contributed modules.'
+            default=None, help='Limits providers to include contributed providers.'
         )
         parser.add_argument(
             'include_count', type=inputs.boolean, location='args', default=False,
@@ -63,6 +68,7 @@ class ApiProviderSearch(ErrorCatchingResource):
             query=args.q,
             namespaces=args.namespaces,
             namespace_trust_filters=namespace_trust_filters,
+            categories=args.categories,
             offset=args.offset,
             limit=args.limit
         )

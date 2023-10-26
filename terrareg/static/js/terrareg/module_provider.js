@@ -117,7 +117,7 @@ function getTerraformCompatibilityResultObject(compatibilityResult) {
     return undefined;
 }
 
-async function createSearchResultCard(parent_id, module) {
+async function createSearchResultCard(parent_id, type, module) {
 
     let provider_logos = await getProviderLogos();
 
@@ -147,7 +147,7 @@ async function createSearchResultCard(parent_id, module) {
 
     let version_compatibility_content = '';
 
-    if (module.version_compatibility) {
+    if (type == "module" && module.version_compatibility) {
         let compatibility_result = getTerraformCompatibilityResultObject(module.version_compatibility);
         if (compatibility_result) {
             version_compatibility_content = `
@@ -170,11 +170,13 @@ async function createSearchResultCard(parent_id, module) {
                     ${provider_logo_html}
                     <a class="module-card-title" href="${link}">${namespaceDisplayName} / ${module.name}</a>
                 </p>
+                ${type == "module" ? `
                 <a class="module-provider-card-provider-text" href="${link}">
                     <button class="card-header-icon" aria-label="more options">
                         Provider: ${module.provider}
                     </button>
                 </a>
+                ` : ''}
             </header>
             <a href="${link}">
                 <div class="card-content">

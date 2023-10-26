@@ -38,7 +38,7 @@
 
             // Add each of the modules to the page
             $.each(data.modules, (itx, module_data) => {
-                createSearchResultCard('module-list-table', module_data);
+                createSearchResultCard('module-list-table', 'module', module_data);
             });
         }).fail(() => {
             // Check for non-existent namespace

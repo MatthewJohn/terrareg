@@ -293,12 +293,7 @@ class Server(BaseHandler):
         self._app.route(
             '/audit-history'
         )(self._view_serve_audit_history)
-        self._app.route(
-            '/modules'
-        )(self._view_serve_namespace_list)
-        self._app.route(
-            '/modules/'
-        )(self._view_serve_namespace_list)
+
         # Legacy module search URL
         self._app.route(
             '/modules/search'
@@ -307,6 +302,7 @@ class Server(BaseHandler):
             '/modules/search/'
         )(self._view_serve_module_search)
 
+        # Search routes
         self._app.route(
             '/search'
         )(self._view_serve_search)
@@ -318,8 +314,24 @@ class Server(BaseHandler):
             '/search/modules'
         )(self._view_serve_module_search)
         self._app.route(
-            '/modules/modules/'
+            '/search/modules/'
         )(self._view_serve_module_search)
+
+        self._app.route(
+            '/search/providers'
+        )(self._view_serve_provider_search)
+        self._app.route(
+            '/search/providers/'
+        )(self._view_serve_provider_search)
+
+
+        # Module routes
+        self._app.route(
+            '/modules'
+        )(self._view_serve_namespace_list)
+        self._app.route(
+            '/modules/'
+        )(self._view_serve_namespace_list)
 
         self._app.route(
             '/modules/<string:namespace>'
@@ -609,7 +621,12 @@ class Server(BaseHandler):
 
         self._api.add_resource(
             ApiTerraregModuleSearchFilters,
-            '/v1/terrareg/search_filters'
+            '/v1/terrareg/search_filters',
+            '/v1/terrareg/modules/search/filters'
+        )
+        self._api.add_resource(
+            ApiTerraregProviderSearchFilters,
+            '/v1/terrareg/providers/search/filters'
         )
         self._api.add_resource(
             ApiTerraregAuditHistory,
@@ -950,13 +967,17 @@ class Server(BaseHandler):
             provider=provider_obj
         )
 
+    def _view_serve_search(self):
+        """Search based on input."""
+        return self._render_template('search.html')
+
     def _view_serve_module_search(self):
         """Search modules based on input."""
         return self._render_template('module_search.html')
 
-    def _view_serve_search(self):
-        """Search based on input."""
-        return self._render_template('search.html')
+    def _view_serve_provider_search(self):
+        """Serve provider search page"""
+        return self._render_template("provider_search.html")
 
     def _view_serve_user_groups(self):
         """Page to view/modify user groups and permissions."""

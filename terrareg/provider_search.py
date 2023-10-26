@@ -54,6 +54,7 @@ class ProviderSearch:
             db.provider_version,
             db.namespace,
             db.provider.c.name.label('provider_name'),
+            db.provider_category.c.slug.label('provider_category_slug'),
             relevance
         )
         for where_ in wheres:
@@ -76,6 +77,7 @@ class ProviderSearch:
         query: str=None,
         namespaces: list=None,
         providers: list=None,
+        categories: list=None,
         namespace_trust_filters: list=NamespaceTrustFilter.UNSPECIFIED) -> terrareg.result_data.ResultData:
 
         # Limit the limits
@@ -97,6 +99,11 @@ class ProviderSearch:
         if namespaces:
             select = select.where(
                 db.namespace.c.namespace.in_(namespaces)
+            )
+
+        if categories:
+            select = select.where(
+                db.provider_category.c.slug.in_(categories)
             )
 
         if namespace_trust_filters is not NamespaceTrustFilter.UNSPECIFIED:
@@ -134,3 +141,65 @@ class ProviderSearch:
             rows=module_providers,
             count=count
         )
+
+
+    @classmethod
+    def get_search_filters(cls, query):
+        """Get list of search filters and filter counts."""
+        db = Database.get()
+        main_select = cls._get_search_query_filter(query)
+
+        with db.get_connection() as conn:
+            trusted_count = conn.execute(
+                sqlalchemy.select(
+                    [sqlalchemy.func.count().label('count')]
+                ).select_from(
+                    main_select.where(
+                        db.namespace.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES))
+                    ).subquery()
+                )
+            ).fetchone()['count']
+
+            contributed_count = conn.execute(
+                sqlalchemy.select(
+                    [sqlalchemy.func.count().label('count')]
+                ).select_from(
+                    main_select.where(
+                        ~db.namespace.c.namespace.in_(tuple(Config().TRUSTED_NAMESPACES))
+                    ).subquery()
+                )
+            ).fetchone()['count']
+
+            category_res = conn.execute(
+                sqlalchemy.select(
+                    [sqlalchemy.func.count().label('count'), main_select.c.provider_category_slug]
+                ).select_from(
+                    main_select
+                ).group_by(main_select.c.provider_category_slug)
+            )
+
+            namespace_subquery = main_select.group_by(
+                db.namespace.c.namespace,
+                db.provider.c.name
+            ).subquery()
+            namespace_res = conn.execute(
+                sqlalchemy.select(
+                    [sqlalchemy.func.count().label('count'), namespace_subquery.c.namespace]
+                ).select_from(
+                    namespace_subquery
+                ).group_by(namespace_subquery.c.namespace)
+            )
+
+            return {
+                'trusted_namespaces': trusted_count,
+                'contributed': contributed_count,
+                'provider_categories': {
+                    r['provider_category_slug']: r['count']
+                    for r in category_res
+                },
+                'namespaces': {
+                    r['namespace']: r['count']
+                    for r in namespace_res
+                }
+            }
+

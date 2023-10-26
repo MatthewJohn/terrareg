@@ -833,7 +833,12 @@ class Database():
         """Perform select on provider, joined to latest version from provider_version table"""
         return sqlalchemy.select(
             *select_args
-        ).select_from(self.module_provider).join(
+        ).select_from(
+            self.provider
+        ).join(
+            self.provider_category,
+            self.provider.c.provider_category_id==self.provider_category.c.id
+        ).join(
             self.provider_version, self.provider.c.latest_version_id==self.provider_version.c.id
         ).join(
             self.namespace, self.provider.c.namespace_id==self.namespace.c.id

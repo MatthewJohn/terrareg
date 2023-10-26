@@ -220,6 +220,18 @@ Return provider version details.
 Return provider details.
 
 
+## ApiProviderSearch
+
+`/v1/providers/search`
+
+
+
+
+#### GET
+
+Search for modules, given query string, namespace or provider.
+
+
 ## ApiV2Provider
 
 `/v2/providers/<string:namespace>/<string:provider>`
@@ -1058,7 +1070,29 @@ Return all details about provider logos.
 
 `/v1/terrareg/search_filters`
 
+`/v1/terrareg/modules/search/filters`
+
+
 Return list of filters available for search.
+
+*Deprepcation*: The `/v1/terrareg/search_filters` endpoint has been deprecated in favor of `/v1/terrareg/modules/search/filters`
+
+The previous endpoint will be removed in a future major release.
+
+
+
+#### GET
+
+Return list of available filters and filter counts for search query.
+
+
+## ApiTerraregProviderSearchFilters
+
+`/v1/terrareg/providers/search/filters`
+
+
+Return list of filters available for provider search.
+
 
 
 #### GET

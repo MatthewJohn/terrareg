@@ -1,6 +1,6 @@
 {% extends 'template.html' %}
 
-{% block title %}Module Search{% endblock %}
+{% block title %}Provider Search{% endblock %}
 
 {% block header %}
 
@@ -26,14 +26,14 @@
         }
     }
 
-    function getFilterProviders() {
+    function getFilterCategories() {
         let providers = [];
         // Iterate over provider filter checkboxes and generate
         // query string
-        $('#provider-filters').find('input').each((index, element) => {
+        $('#category-filters').find('input').each((index, element) => {
             let j_element = $(element);
             if (j_element.is(':checked')) {
-                providers.push(j_element.data('providerName'));
+                providers.push(j_element.data('categorySlug'));
             }
         });
         return providers;
@@ -64,7 +64,7 @@
         $('#searchQueryBreadcrumbParent')[0].style.display = 'flex';
 
         // Update link and text in search query breadcrumb
-        document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/modules/search?q=' + encodeURIComponent(searchQuery));
+        document.getElementById('searchQueryBreadcrumb').setAttribute('href', '/search/providers?q=' + encodeURIComponent(searchQuery));
         document.getElementById('searchQueryBreadcrumb').innerHTML = searchQuery;
 
         if (new_offset === undefined) {
@@ -80,23 +80,18 @@
         }
 
         let query_string = '';
-        getFilterProviders().forEach((provider) => {
-            query_string += `&provider=${provider}`;
+        getFilterCategories().forEach((provider) => {
+            query_string += `&category=${provider}`;
         });
 
         getFilterNamespaces().forEach((namespace) => {
             query_string += `&namespace=${namespace}`;
         });
 
-        if ($('#search-terraform-version').val()) {
-            query_string += `&target_terraform_version=${$('#search-terraform-version').val()}`;
-        }
-
         // Perform AJAX query to obtain results
-        $.get(`/v1/modules/search?` +
+        $.get(`/v1/providers/search?` +
                 `q=${encodeURIComponent(searchQuery)}&` +
                 `offset=${new_offset}&` +
-                `verified=${$('#search-verified').is(':checked')}&` +
                 `trusted_namespaces=${$('#search-trusted-namespaces').is(':checked')}&` +
                 `contributed=${$('#search-contributed').is(':checked')}&` +
                 'include_count=true' +
@@ -106,9 +101,9 @@
             // Update result count
             $('#result-count').text(`Showing results ${Math.min(data.meta.current_offset + 1, data.count)} - ${Math.min(data.meta.current_offset + data.meta.limit, data.count)} of ${data.count}`);
 
-            if (data.modules.length == 0) {
+            if (data.providers.length == 0) {
                 $('#results').html(`
-                    No modules match your search criteria.
+                    No providers match your search criteria.
                     <br />
                     Please check for spelling errors and try again.
                 `);
@@ -126,8 +121,8 @@
                 currentSearchMeta = data.meta;
 
                 // Iterate through modules
-                data.modules.forEach((module) => {
-                    createSearchResultCard('results', 'module', module);
+                data.providers.forEach((provider) => {
+                    createSearchResultCard('results', 'provider', provider);
                 });
             }
         });
@@ -135,26 +130,25 @@
         if (searchQuery != previousSearchString) {
 
             // Update list of search filters
-            $.get(`/v1/terrareg/modules/search/filters?q=${encodeURIComponent(searchQuery)}`, (data, status) => {
-                $('#search-verified-count').html(data.verified);
+            $.get(`/v1/terrareg/providers/search/filters?q=${encodeURIComponent(searchQuery)}`, (data, status) => {
                 $('#search-trusted-namespaces-count').html(data.trusted_namespaces);
                 $('#search-contributed-count').html(data.contributed);
 
-                let current_filtered_provider = getFilterProviders();
+                let current_filtered_provider = getFilterCategories();
 
                 // Clear all providers
-                $('#provider-filters').find('a').remove();
-                Object.keys(data.providers).forEach((provider_name) => {
+                $('#category-filters').find('a').remove();
+                Object.keys(data.provider_categories).forEach((provider_category_slug) => {
 
                     // Check if provider already exists and is checked
-                    let checked = current_filtered_provider.indexOf(provider_name) !== -1;
+                    let checked = current_filtered_provider.indexOf(provider_category_slug) !== -1;
 
                     // Add providers to provider filter
-                    $('#provider-filters').append(`
+                    $('#category-filters').append(`
                     <a class="panel-block" onclick="toggleChildCheckbox(event);">
-                        <input data-provider-name="${provider_name}" id="provider-filter-${provider_name}" onchange="performSearch();" ${checked ? 'checked' : ''} type="checkbox" />
-                            ${provider_name}
-                        <span class="tag">${data.providers[provider_name]}</span>
+                        <input data-category-slug="${provider_category_slug}" id="category-filter-${provider_category_slug}" onchange="performSearch();" ${checked ? 'checked' : ''} type="checkbox" />
+                            ${provider_category_slug}
+                        <span class="tag">${data.provider_categories[provider_category_slug]}</span>
                     </a>
                     `);
                 });
@@ -194,14 +188,6 @@
         $('#search-terraform-version').val(userPreferences['terraform-compatibility-version']);
     }
 
-    function updateTerraformCompatibility() {
-        // Store new terraform compatibility in user preferences
-        userPreferencesUpdateTerraformCompatibilityVersion($('#search-terraform-version').val());
-
-        // Perform search, using current offset
-        performSearch(currentSearchMeta?.current_offset);
-    }
-
     navbar_search_modules = performSearch;
 
     $(document).ready(function () {
@@ -223,7 +209,7 @@
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
-        <li id="searchBreadcrumb"><a href="/modules/search">Search</a></li>
+        <li id="searchBreadcrumb"><a href="/search/providers">Provider Search</a></li>
         <li id="searchQueryBreadcrumbParent"><a id="searchQueryBreadcrumb" href=""></a></li>
     </ul>
 </nav>
@@ -236,14 +222,6 @@
               Filters
             </p>
 
-            <a class="panel-block is-active" onclick="toggleChildCheckbox(event);">
-                <input id="search-verified" onchange="performSearch();" type="checkbox" />
-                <span class="panel-icon">
-                    <i class="fas fa-thumbs-up" aria-hidden="true"></i>
-                </span>
-                {{ VERIFIED_MODULE_LABEL }}
-                <span id="search-verified-count" class="tag"></span>
-            </a>
             <a class="panel-block is-active" onclick="toggleChildCheckbox(event);">
                 <input id="search-trusted-namespaces" onchange="performSearch();" type="checkbox" checked="checked" />
                 <span class="panel-icon">
@@ -259,33 +237,16 @@
             </a>
         </nav>
 
-        <nav id="provider-filters" class="panel">
-            <p class="panel-heading">
-              Providers
-            </p>
-        </nav>
-
         <nav id="namespace-filters" class="panel">
             <p class="panel-heading">
               Namespaces
             </p>
         </nav>
 
-        <nav id="terraform-version-filters" class="panel">
+        <nav id="category-filters" class="panel">
             <p class="panel-heading">
-              Terraform Compatibility
+              Categories
             </p>
-            <span class="panel-block">
-                <p class="control has-icons-left">
-                    <input class="input" type="text" id="search-terraform-version" placeholder="Terraform Version">
-                    <span class="icon is-left">
-                        <i class="fas fa-filter" aria-hidden="true"></i>
-                    </span>
-                </p>
-            </span>
-            <span class="panel-block">
-                <button id="search-options-update-button" class="button" onclick="updateTerraformCompatibility();">Update</button>
-            </span>
         </nav>
     </div>
     <div class="column is-three-fifths">
