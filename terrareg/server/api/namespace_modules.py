@@ -31,7 +31,7 @@ class ApiNamespaceModules(ErrorCatchingResource):
             include_internal=True
         )
 
-        if not search_results.module_providers:
+        if not search_results.rows:
             return self._get_404_response()
 
         return {
