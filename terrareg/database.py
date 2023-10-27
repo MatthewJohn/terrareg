@@ -652,7 +652,7 @@ class Database():
         self._repository = sqlalchemy.Table(
             'repository', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
-            sqlalchemy.Column('provider_id', sqlalchemy.String),
+            sqlalchemy.Column('provider_id', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('owner', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('description', Database.medium_blob()),
