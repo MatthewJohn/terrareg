@@ -964,6 +964,15 @@ Set the server application used for running the application. Set the `SERVER` en
 Default: `builtin`
 
 
+### SITE_WARNING
+
+
+Warning to be displayed as top banner of website.
+
+
+Default: ``
+
+
 ### SSL_CERT_PRIVATE_KEY
 
 

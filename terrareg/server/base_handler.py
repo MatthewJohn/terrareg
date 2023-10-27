@@ -33,6 +33,7 @@ class BaseHandler:
             TRUSTED_NAMESPACE_LABEL=terrareg.config.Config().TRUSTED_NAMESPACE_LABEL,
             CONTRIBUTED_NAMESPACE_LABEL=terrareg.config.Config().CONTRIBUTED_NAMESPACE_LABEL,
             VERIFIED_MODULE_LABEL=terrareg.config.Config().VERIFIED_MODULE_LABEL,
+            SITE_WARNING=terrareg.config.Config().SITE_WARNING,
             csrf_token=terrareg.csrf.get_csrf_token(),
             theme_path=self._get_theme_path()
         )

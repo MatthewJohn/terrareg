@@ -22,6 +22,13 @@ class ServerType(Enum):
 class Config:
 
     @property
+    def SITE_WARNING(self):
+        """
+        Warning to be displayed as top banner of website.
+        """
+        return os.environ.get("SITE_WARNING")
+
+    @property
     def INTERNAL_EXTRACTION_ANALYTICS_TOKEN(self):
         """
         Analytics token used by Terraform initialised by the registry.

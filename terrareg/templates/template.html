@@ -113,6 +113,11 @@
 
 
     <body>
+        {% if SITE_WARNING %}
+        <div id="site-warning">
+          {{SITE_WARNING}}
+        </div>
+        {% endif %}
         <nav class="navbar is-transparent">
             <div class="navbar-brand">
               <a class="navbar-item" href="/">
