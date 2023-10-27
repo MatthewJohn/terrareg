@@ -73,7 +73,8 @@ class GithubAuthMethod(BaseSsoAuthMethod):
         # If github automatic namespace generation is enabled,
         # allow access to these namespaces
         if (provider_source := self._get_provider_source()) and provider_source.auto_generate_github_organisation_namespaces:
-            if namespace.lower() in self._get_organisation_memeberships():
+            # Perform check for name using case-insensitive match
+            if namespace.lower() in [org.lower() for org in self._get_organisation_memeberships()]:
                 return True
 
         # If not enabled, or namespace does not match,
