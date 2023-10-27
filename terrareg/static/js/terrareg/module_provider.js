@@ -130,7 +130,14 @@ async function createSearchResultCard(parent_id, type, module) {
         namespaceDisplayName = namespaceDetails.display_name;
     }
 
-    if (provider_logos[module.provider] !== undefined) {
+    let link = '';
+    if (type == 'module') {
+        link = `/modules/${module.namespace}/${module.name}/${module.provider}`;
+    } else {
+        link = `/providers/${module.namespace}/${module.name}`;
+    }
+
+    if (type == "module" && provider_logos[module.provider] !== undefined) {
         let provider_logo_details = provider_logos[module.provider];
         provider_logo_html = `
             <a href="${provider_logo_details.link}">
@@ -138,12 +145,16 @@ async function createSearchResultCard(parent_id, type, module) {
             </a>
         `;
         addProviderLogoTos(module.provider);
+    } else if (type == "provider" && module.logo_url) {
+        provider_logo_html = `
+        <a href="${link}">
+            <img style="margin: 5px" height="40" width="40" alt="${module.name}" src="${module.logo_url}" />
+        </a>
+        `;
     }
 
     // Replace slashes in ID with full stops
     let card_id = module.id.replace(/\//g, '.');
-
-    let link = `/modules/${module.namespace}/${module.name}/${module.provider}`;
 
     let version_compatibility_content = '';
 

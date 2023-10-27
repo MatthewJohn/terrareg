@@ -301,7 +301,7 @@ class ProviderVersion:
             "published_at": (db_row["published_at"].isoformat() if db_row["published_at"] else None),
             "downloads": self.get_total_downloads(),
             "tier": self.provider.tier.value,
-            "logo_url": None,
+            "logo_url": self.provider.logo_url,
         }
 
     def get_api_details(self) -> dict:

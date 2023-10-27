@@ -658,6 +658,7 @@ class Database():
             sqlalchemy.Column('description', Database.medium_blob()),
             sqlalchemy.Column('authentication_key', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('clone_url', sqlalchemy.String(URL_COLUMN_SIZE)),
+            sqlalchemy.Column('logo_url', sqlalchemy.String(URL_COLUMN_SIZE), nullable=True),
             sqlalchemy.Column(
                 'provider_source_name',
                 sqlalchemy.ForeignKey(

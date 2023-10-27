@@ -34,20 +34,6 @@
             namespaceDisplayName = namespaceDetails.display_name;
         }
 
-        let providerName = type == "module" ? details.provider : details.name;
-        if (providerName && provider_logos[providerName] !== undefined) {
-            let provider_logo_details = provider_logos[details.provider];
-            provider_logo_html = `
-                <a href="${provider_logo_details.link}">
-                    <img style="margin: 5px" height="25" width="25" alt="${provider_logo_details.alt}" src="${provider_logo_details.source}" />
-                </a>
-            `;
-            addProviderLogoTos(providerName);
-        }
-
-        // Replace slashes in ID with full stops
-        let card_id = details.id.replace(/\//g, '.');
-
         let linkBase = type == 'module' ? 'modules' : 'providers'
         let link = null;
         if (type == 'module') {
@@ -55,6 +41,26 @@
         } else {
             link = `/providers/${details.namespace}/${details.name}`;
         }
+
+        let providerName = type == "module" ? details.provider : details.name;
+        if (type == "module" && provider_logos[details.provider] !== undefined) {
+            let provider_logo_details = provider_logos[details.provider];
+            provider_logo_html = `
+                <a href="${provider_logo_details.link}">
+                    <img style="margin-right: 5px" height="25" width="25" alt="${provider_logo_details.alt}" src="${provider_logo_details.source}" />
+                </a>
+            `;
+            addProviderLogoTos(providerName);
+        } else if (type == "provider" && details.logo_url) {
+            provider_logo_html = `
+                <a href="${link}">
+                    <img style="margin-right: 5px" height="25" width="25" alt="${details.name}" src="${details.logo_url}" />
+                </a>
+            `;
+        }
+
+        // Replace slashes in ID with full stops
+        let card_id = details.id.replace(/\//g, '.');
 
         // Add module to search results
         let result_card = $(

@@ -183,19 +183,12 @@
         }
     }
 
-    function loadSearchUserPreferences() {
-        let userPreferences = getUserPreferences();
-        $('#search-terraform-version').val(userPreferences['terraform-compatibility-version']);
-    }
-
     navbar_search_modules = performSearch;
 
     $(document).ready(function () {
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
         const searchQuery = urlParams.get('q');
-
-        loadSearchUserPreferences();
 
         if (searchQuery) {
             $('#navBarSearchInput').val(searchQuery);

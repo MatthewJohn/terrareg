@@ -175,6 +175,7 @@ class GithubProviderSource(BaseProviderSource):
                     description=repository.get("description"),
                     owner=owner_name,
                     clone_url=clone_url,
+                    logo_url=repository.get("owner", {}).get("avatar_url"),
                     authentication_key=access_token
                 )
 

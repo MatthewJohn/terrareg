@@ -194,7 +194,7 @@ class Provider:
     @property
     def logo_url(self) -> Union[str, None]:
         """Return logo URL of provider"""
-        return None
+        return self.repository.logo_url
 
     @property
     def owner_name(self) -> str:

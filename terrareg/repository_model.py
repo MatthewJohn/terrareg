@@ -19,7 +19,7 @@ class Repository:
     @classmethod
     def create(cls, provider_source: 'terrareg.provider_source.BaseProviderSource',
                provider_id: str, name: str, description: str, owner: str,
-               clone_url: str, authentication_key: str) -> Union[None, 'Repository']:
+               clone_url: str, logo_url: Union[str, None], authentication_key: str) -> Union[None, 'Repository']:
         """Create user group"""
         # Check if repository exists by provider source and ID
         if cls.get_by_provider_source_and_provider_id(provider_source=provider_source, provider_id=provider_id):
@@ -32,6 +32,7 @@ class Repository:
             description=description,
             owner=owner,
             clone_url=clone_url,
+            logo_url=logo_url,
             authentication_key=authentication_key,
         )
 
@@ -49,7 +50,7 @@ class Repository:
     @classmethod
     def _insert_into_database(cls, provider_source: 'terrareg.provider_source.BaseProviderSource',
                               provider_id: str, name: str, description: str, owner: str,
-                              clone_url: str, authentication_key: str) -> int:
+                              clone_url: str, logo_url: Union[str, None], authentication_key: str) -> int:
         """Insert new user group into database."""
         db = terrareg.database.Database.get()
         with db.get_connection() as conn:
@@ -60,6 +61,7 @@ class Repository:
                 description=terrareg.database.Database.encode_blob(description),
                 owner=owner,
                 clone_url=clone_url,
+                logo_url=logo_url,
                 authentication_key=authentication_key
             ))
             return res.lastrowid
@@ -152,6 +154,11 @@ class Repository:
         if description_blob := self._get_db_row()["description"]:
             return terrareg.database.Database.decode_blob(description_blob)
         return None
+
+    @property
+    def logo_url(self) -> Union[str, None]:
+        """Return logo URL"""
+        return self._get_db_row()["logo_url"]
 
     @property
     def clone_url(self) -> str:
