@@ -37,9 +37,8 @@
     function loadRepositories(providerSourceApiName) {
         $.get(`/${providerSourceApiName}/repositories`).then((data) => {
             repositories = data;
+            onNamespaceOrRepositoryLoad();
         });
-
-        onNamespaceOrRepositoryLoad();
     }
 
     /* Filter list of repositories and display in input */
