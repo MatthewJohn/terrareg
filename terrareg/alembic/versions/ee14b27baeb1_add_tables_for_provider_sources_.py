@@ -123,7 +123,12 @@ def upgrade():
     sa.ForeignKeyConstraint(['provider_version_id'], ['provider_version.id'], name='fk_provider_version_documentation_provider_version_id', onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
-    op.add_column('namespace', sa.Column('namespace_type', sa.Enum('NONE', 'GITHUB_USER', 'GITHUB_ORGANISATION', name='namespacetype'), nullable=False))
+    op.add_column('namespace', sa.Column('namespace_type', sa.Enum('NONE', 'GITHUB_USER', 'GITHUB_ORGANISATION', name='namespacetype'), nullable=True))
+    bind = op.get_bind()
+    bind.execute("UPDATE namespace SET namespace_type='NONE'")
+    with op.batch_alter_table("namespace") as batch_op:
+        batch_op.alter_column("namespace_type", nullable=False)
+
     op.add_column('session', sa.Column('provider_source_auth', sa.LargeBinary(length=16777215).with_variant(mysql.MEDIUMBLOB(), 'mysql'), nullable=True))
 
     if op.get_bind().engine.name == 'mysql':
