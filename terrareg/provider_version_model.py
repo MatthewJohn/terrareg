@@ -167,13 +167,13 @@ class ProviderVersion:
     def __gt__(self, __o):
         """Check if version is higher than another"""
         if isinstance(__o, self.__class__):
-            return semantic_version(self.version) > semantic_version(__o.version)
+            return semantic_version.Version(self.version) > semantic_version.Version(__o.version)
         return super(ProviderVersion, self).__gt__(__o)
 
     def __lt__(self, __o):
         """Check if version is lower than another"""
         if isinstance(__o, self.__class__):
-            return semantic_version(self.version) < semantic_version(__o.version)
+            return semantic_version.Version(self.version) < semantic_version.Version(__o.version)
         return super(ProviderVersion, self).__lt__(__o)
 
     def _get_db_row(self):
