@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.81.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.81.0...v2.81.1) (2023-10-27)
+
+
+### Bug Fixes
+
+* Fix namespace modules endpoint to valid correct attribute of result metadata to avoid errors ([fdae4c6](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fdae4c680d897f53996bb81acc0fec6ceba563f1)), closes [#452](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/452)
+
 # [2.81.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.5...v2.81.0) (2023-10-12)
 
 
