@@ -211,7 +211,10 @@ class Server(BaseHandler):
         self._api.add_resource(
             ApiNamespaceProviders,
             '/v1/providers/<string:namespace>',
-            '/v1/providers/<string:namespace>/'
+            '/v1/providers/<string:namespace>/',
+
+            # Use as terrareg endpoint, until customisations are required
+            '/v1/terrareg/providers/<string:namespace>'
         )
         self._api.add_resource(
             ApiProvider,
@@ -388,6 +391,12 @@ class Server(BaseHandler):
         self._app.route(
             '/providers/'
         )(self._view_serve_provider_namespace_list)
+        self._app.route(
+            '/providers/<string:namespace>'
+        )(self._view_serve_namespace)
+        self._app.route(
+            '/providers/<string:namespace>/'
+        )(self._view_serve_namespace)
         self._app.route(
             '/providers/<string:namespace>/<string:provider>'
         )(self._view_serve_provider)

@@ -174,6 +174,8 @@ Return list of modules.
 
 `/v1/providers/<string:namespace>/`
 
+`/v1/terrareg/providers/<string:namespace>`
+
 Interface to obtain list of providers in namespace.
 
 

@@ -6,18 +6,18 @@
 <script>
     let currentSearchMeta = undefined;
 
-    function prevResults() {
+    function prevResults(type, namespace) {
         if (currentSearchMeta && currentSearchMeta.prev_offset !== undefined) {
-            getResults(currentSearchMeta.prev_offset);
+            getResults(type, namespace, currentSearchMeta.prev_offset);
         }
     }
-    function nextResults() {
+    function nextResults(type, namespace) {
         if (currentSearchMeta && currentSearchMeta.next_offset !== undefined) {
-            getResults(currentSearchMeta.next_offset);
+            getResults(type, namespace, currentSearchMeta.next_offset);
         }
     }
-    function getResults(offset) {
-        $.get(`/v1/terrareg/modules/{{ namespace }}?offset=${offset}`, function(data) {
+    function getResults(type, namespace, offset) {
+        $.get(`/v1/terrareg/${type}/${namespace}?offset=${offset}`, function(data) {
 
             // Update current meta data
             currentSearchMeta = data.meta;
@@ -31,14 +31,20 @@
 
             // If there are no results, hide the list table and show error about
             // no modules
-            if (data.modules.length== 0) {
+            let rows = [];
+            if (type == "module") {
+                rows = data.modules;
+            } else {
+                rows = data.providers;
+            }
+            if (rows.length == 0) {
                 $('#result-list').addClass('default-hidden')
                 $('#no-results').removeClass('default-hidden');
             }
 
             // Add each of the modules to the page
-            $.each(data.modules, (itx, module_data) => {
-                createSearchResultCard('module-list-table', 'module', module_data);
+            $.each(rows, (itx, row) => {
+                createSearchResultCard('module-list-table', type == 'providers' ? 'provider' : 'module', row);
             });
         }).fail(() => {
             // Check for non-existent namespace
@@ -62,24 +68,51 @@
         }
     }
 
-    function renderPage() {
+    function bindButtons(type, namespace) {
+        $('#prevButton').on('click', () => {prevResults(type, namespace)});
+        $('#nextButton').on('click', () => {nextResults(type, namespace)})
+    }
+
+    function setupBreadcrumbs(type, namespace) {
+        let urlFragment = '';
+        let typeName = '';
+        if (type == 'modules') {
+            typeName = 'Modules'
+        } else if (type == 'providers') {
+            typeName = 'Providers'
+        }
+        const breadcrumbUl = $('#breadcrumbUl');
+        const rootBreadcrumb = $(`<li><a href="/${type}">${typeName}</a></li>`);
+        breadcrumbUl.append(rootBreadcrumb);
+        const namespaceBreadcrumb = $(`<li class="is-active"><a href="/${type}/${namespace}">${namespace}</a></li>`);
+        breadcrumbUl.append(namespaceBreadcrumb);
+    }
+
+    function setupNoResultsText(type) {
+        $('#no-results').text(`There are no ${type}s in this namespace`);
+    }
+
+    $(document).ready(function() {
         const router = new Navigo("/");
 
         const baseRoute = "/modules/:namespace";
 
         // Handle namespace route
-        router.on(baseRoute, function ({ data }) {
+        router.on("/:type/:namespace", function ({ data }) {
+            if (["modules", "providers"].indexOf(data.type) === -1) {
+                // Invalid type
+                return;
+            }
             let namespace = data.namespace;
+            let type = data.type;
             showEditbutton(namespace);
+            bindButtons(type, namespace);
+            setupBreadcrumbs(type, namespace);
+            setupNoResultsText(type);
+            getResults(type, namespace, 0);
         });
 
         router.resolve();
-    }
-
-    $(document).ready(function() {
-        getResults(0);
-
-        renderPage();
     });
 </script>
 {% endblock %}
@@ -87,9 +120,7 @@
 {% block content %}
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
-    <ul>
-        <li><a href="/modules">Modules</a></li>
-        <li class="is-active"><a href="/modules/{{ namespace }}">{{ namespace }}</a></li>
+    <ul id="breadcrumbUl">
     </ul>
 </nav>
 
@@ -104,15 +135,14 @@
         This namespace does not exist
     </div>
     <div id="no-results" class="column is-three-fifths is-offset-one-fifth default-hidden">
-        There are no modules in this namespace
     </div>
     <div id="result-list" class="column is-three-fifths is-offset-one-fifth">
 
         <section id="module-list-table">
         </section>
         <section>
-            <button class="button" id="prevButton" onclick="prevResults();">Prev</button>
-            <button class="button" id="nextButton" onclick="nextResults();">Next</button>
+            <button class="button" id="prevButton">Prev</button>
+            <button class="button" id="nextButton">Next</button>
         </section>
 
     </div>
