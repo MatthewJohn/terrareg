@@ -59,21 +59,24 @@ class GithubRepositoryPublishProvider(ErrorCatchingResource):
             return {'errors': ['Repository does not exist']}, 404
 
 
-        with terrareg.database.Database.start_transaction():
+        with terrareg.database.Database.start_transaction() as transaction:
             provider = terrareg.provider_model.Provider.create(
                 repository=repository,
                 provider_category=provider_category
             )
             if not provider:
-                return {'errors': ['An error occurred whilst creating provider']}
+                transaction.transaction.rollback()
+                return {'errors': ['An error occurred whilst creating provider']}, 500
 
             current_session = terrareg.auth.AuthFactory.get_current_session()
             if not current_session:
-                return {'errors': ['An internal error accessing token occurred']}
+                transaction.transaction.rollback()
+                return {'errors': ['An internal error accessing token occurred']}, 500
 
             versions = provider.refresh_versions()
             if not versions:
-                raise Exception("Unable to find a valid release")
+                transaction.transaction.rollback()
+                return {'errors': ['No valid releases found for provider']}, 400
 
         return {
             "name": provider.name,
