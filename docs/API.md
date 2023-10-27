@@ -644,7 +644,8 @@ Providing these values will return an object with a meta object and a list of na
 
 | Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
 |----------|----------------------------------------------------|------|----------|---------|------|
-| only_published | args | boolean | False | `False` | Whether to only show namespaces with published modules |
+| only_published | args | boolean | False | `False` | Whether to only show namespaces with published modules or providers |
+| type | args | str | False | `module` | Type of namespace to show results for. Either "provider" or "module" |
 | offset | args | int | False | `0` | Pagination offset |
 | limit | args | int | False | `None` | Pagination limit |
 

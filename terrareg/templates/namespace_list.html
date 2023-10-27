@@ -7,20 +7,22 @@
 <script>
     let currentSearchMeta = undefined;
 
-    function prevResults() {
+    const router = new Navigo("/");
+
+    function prevResults(type) {
         if (currentSearchMeta && currentSearchMeta.prev_offset !== undefined) {
-            getResults(currentSearchMeta.prev_offset);
+            getResults(type, currentSearchMeta.prev_offset);
         }
     }
-    function nextResults() {
+    function nextResults(type) {
         if (currentSearchMeta && currentSearchMeta.next_offset !== undefined) {
-            getResults(currentSearchMeta.next_offset);
+            getResults(type, currentSearchMeta.next_offset);
         }
     }
-    function getResults(offset) {
+    function getResults(type, offset) {
         // Obtain whether unpublished should be shown
         let onlyPublished = !$('#show-unpublished').is(':checked');
-        $.get(`/v1/terrareg/namespaces?only_published=${onlyPublished}&offset=${offset}&limit=10`, function(data) {
+        $.get(`/v1/terrareg/namespaces?type=${type}&only_published=${onlyPublished}&offset=${offset}&limit=10`, function(data) {
 
             // Update current meta data
             currentSearchMeta = data.meta;
@@ -48,7 +50,7 @@
         });
     }
 
-    async function loadNamespaces() {
+    async function loadNamespaces(type) {
         let namespaces = await getNamespaces();
 
         // If no namespaces exist, display message
@@ -61,10 +63,47 @@
             window.location.href = namespaces[0].view_href;
         }
 
-        getResults(0);
+        getResults(type, 0);
     }
+
+    // Setup breadcrumbs using context of page route
+    function configureBreadcrumbs(type) {
+        let name = '';
+        let url = '';
+        if (type == "module") {
+            name = 'Modules';
+            url = 'modules';
+        } else {
+            name = 'Providers';
+            url = 'providers';
+        }
+        let breadcrumb = $('#root-breadcrumb');
+        breadcrumb.text(name);
+        breadcrumb.attr('href', `/${url}`);
+    }
+
+    // Bind buttons on page to callbacks using namespace type
+    function bindButtons(type) {
+        $('#show-unpublished').bind('change', () => {getResults(type, 0)});
+        $('#prevButton').bind('click', () => {prevResults(type)});
+        $('#nextButton').bind('click', () => {nextResults(type)});
+    }
+
+    function configurePage(type) {
+        configureBreadcrumbs(type);
+        bindButtons(type);
+        loadNamespaces(type);
+    }
+
+    router.on('/modules', function ({ data }) {
+        configurePage('module');
+    });
+    router.on('/providers', function ({ data }) {
+        configurePage('provider');
+    });
+
     $(document).ready(function() {
-        loadNamespaces();
+        router.resolve();
     });
 </script>
 {% endblock %}
@@ -73,7 +112,7 @@
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
-        <li class="is-active"><a href="/modules">Modules</a></li>
+        <li class="is-active"><a id="root-breadcrumb" href="#"></a></li>
     </ul>
 </nav>
 
@@ -88,10 +127,10 @@
             </tbody>
         </table>
         <section>
-            <button class="button" id="prevButton" onclick="prevResults();">Prev</button>
-            <button class="button" id="nextButton" onclick="nextResults();">Next</button>
+            <button class="button" id="prevButton">Prev</button>
+            <button class="button" id="nextButton">Next</button>
             <br /><br />
-            <input onchange="getResults(0)" class="checkbox" id="show-unpublished" type="checkbox"> Show empty namespaces</input>
+            <input class="checkbox" id="show-unpublished" type="checkbox"> Show empty namespaces</input>
         </section>
     </div>
 </div>

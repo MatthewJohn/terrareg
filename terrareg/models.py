@@ -11,6 +11,7 @@ from tempfile import mkdtemp
 import tempfile
 import urllib.parse
 import gnupg
+from typing import List
 
 import sqlalchemy
 import semantic_version
@@ -44,6 +45,7 @@ from terrareg.validators import GitUrlValidator
 from terrareg.constants import EXTRACTION_VERSION
 from terrareg.presigned_url import TerraformSourcePresignedUrl
 import terrareg.provider_model
+import terrareg.registry_resource_type
 
 
 class Session:
@@ -914,11 +916,12 @@ class Namespace(object):
         return namespace, None
 
     @staticmethod
-    def get_all(only_published=False, limit=None, offset=0):
+    def get_all(only_published=False, limit=None, offset=0,
+                resource_type: 'terrareg.registry_resource_type.RegistryResourceType'=None) -> List['terrareg.result_data.ResultData']:
         """Return all namespaces."""
         db = Database.get()
 
-        if only_published:
+        if only_published and resource_type is terrareg.registry_resource_type.RegistryResourceType.MODULE:
             # If only getting namespaces, with published/visible versions,
             # query module provider, joining to latest module version
             modules_query = db.select_module_provider_joined_latest_module_version(
@@ -939,6 +942,23 @@ class Namespace(object):
             ).join(
                 db.namespace,
                 db.namespace.c.id==modules_query.c.namespace_id
+            ).group_by(
+                db.namespace.c.namespace
+            ).order_by(
+                db.namespace.c.namespace
+            )
+        elif only_published and resource_type is terrareg.registry_resource_type.RegistryResourceType.PROVIDER:
+            providers_query = db.select_provider_joined_latest_module_version(
+                db.provider
+            ).subquery()
+
+            namespace_query = sqlalchemy.select(
+                db.namespace.c.namespace
+            ).select_from(
+                providers_query
+            ).join(
+                db.namespace,
+                db.namespace.c.id==providers_query.c.namespace_id
             ).group_by(
                 db.namespace.c.namespace
             ).order_by(
@@ -1148,9 +1168,13 @@ class Namespace(object):
         # Remove cached DB row
         self._cache_db_row = None
 
-    def get_view_url(self):
+    def get_view_url(self, resource_type: 'terrareg.registry_resource_type.RegistryResourceType'):
         """Return view URL"""
-        return '/modules/{namespace}'.format(namespace=self.name)
+        if resource_type is terrareg.registry_resource_type.RegistryResourceType.MODULE:
+            url_part = "modules"
+        elif resource_type is terrareg.registry_resource_type.RegistryResourceType.PROVIDER:
+            url_part = "providers"
+        return f"/{url_part}/{self.name}"
 
     def get_details(self):
         """Return custom terrareg details about namespace."""
@@ -1470,7 +1494,7 @@ class Module(object):
     def get_view_url(self):
         """Return view URL"""
         return '{namespace_url}/{module}'.format(
-            namespace_url=self._namespace.get_view_url(),
+            namespace_url=self._namespace.get_view_url(resource_type=terrareg.registry_resource_type.RegistryResourceType.MODULE),
             module=self.name
         )
 

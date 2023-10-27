@@ -328,10 +328,10 @@ class Server(BaseHandler):
         # Module routes
         self._app.route(
             '/modules'
-        )(self._view_serve_namespace_list)
+        )(self._view_serve_module_namespace_list)
         self._app.route(
             '/modules/'
-        )(self._view_serve_namespace_list)
+        )(self._view_serve_module_namespace_list)
 
         self._app.route(
             '/modules/<string:namespace>'
@@ -382,6 +382,12 @@ class Server(BaseHandler):
         )
 
         # Routes for provider
+        self._app.route(
+            '/providers'
+        )(self._view_serve_provider_namespace_list)
+        self._app.route(
+            '/providers/'
+        )(self._view_serve_provider_namespace_list)
         self._app.route(
             '/providers/<string:namespace>/<string:provider>'
         )(self._view_serve_provider)
@@ -811,10 +817,18 @@ class Server(BaseHandler):
 
         return self._render_template("graph.html", current_module=current_module)
 
-    def _view_serve_namespace_list(self):
+    def _view_serve_module_namespace_list(self):
         """Render view for display module."""
         return self._render_template(
-            'namespace_list.html'
+            'namespace_list.html',
+            selected_type="module"
+        )
+
+    def _view_serve_provider_namespace_list(self):
+        """Render view for display module."""
+        return self._render_template(
+            'namespace_list.html',
+            selected_type="provider"
         )
 
     @catch_name_exceptions
