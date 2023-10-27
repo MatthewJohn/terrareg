@@ -68,7 +68,7 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     unzip /tmp/tfplugindocs.zip tfplugindocs && \
     mv tfplugindocs /usr/local/bin/ && \
     chmod +x /usr/local/bin/tfplugindocs && \
-    rm /tmp/tfplugindocs.tar.gz'
+    rm /tmp/tfplugindocs.zip'
 
 WORKDIR /app
 COPY requirements.txt .
