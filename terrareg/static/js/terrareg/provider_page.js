@@ -104,24 +104,19 @@ function getSelectedDocumentationDetails(data) {
  * @param providerDetails Terrareg provider details
  */
 async function setProviderLogo(providerDetails) {
-    let providerLogos = await getProviderLogos();
 
     // Check if namespace has a logo
-    if (providerLogos[providerDetails.provider] !== undefined) {
-        let logoDetails = providerLogos[providerDetails.provider];
-
-        let logoLink = $("#provider-logo-link");
-        logoLink.attr("href", logoDetails.link);
+    if (providerDetails.logo_url) {
 
         let logoImg = $("#provider-logo-img");
-        logoImg.attr("src", logoDetails.source);
-        logoImg.attr("alt", logoDetails.alt);
+        logoImg.attr("src", providerDetails.logo_url);
+        logoImg.attr("alt", providerDetails.name);
 
-        addProviderLogoTos(providerDetails.provider);
-
+        let logoLink = $("#provider-logo-link");
         logoLink.removeClass('default-hidden');
         logoImg.removeClass('default-hidden');
     }
+    addProviderLogoTos(providerDetails.name);
 }
 
 /*
