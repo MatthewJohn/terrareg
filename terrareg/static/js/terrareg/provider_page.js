@@ -405,7 +405,7 @@ function populateDocumentationMenu(providerDetails) {
     providerDetails.docs.forEach((doc) => {
         if (docCountByCategory[doc.category] !== undefined) {
             let linkDiv = $(`
-            <a class="navbar-item">
+            <a id="doclink-${doc.category}-${doc.slug}" class="navbar-item">
                 ${doc.title}
             </a>`);
             linkDiv.bind('click', () => {redirectDocumentPage(providerDetails, doc.slug, doc.category)});
@@ -461,6 +461,12 @@ function showSelectedDocument(providerV2Details, selectedDocumentation) {
             showDocumentationError();
         }
     });
+
+    // Highlight link to documentation
+    let linkElement = $(`#doclink-${selectedDocumentation.category}-${selectedDocumentation.slug}`);
+    if (linkElement) {
+        linkElement.addClass("is-active");
+    }
 }
 
 /*
