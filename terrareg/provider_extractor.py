@@ -21,6 +21,7 @@ import terrareg.config
 import terrareg.provider_documentation_type
 import terrareg.provider_version_documentation_model
 import terrareg.module_extractor
+import terrareg.provider_model
 import terrareg.provider_version_binary_model
 from terrareg.errors import (
     InvalidChecksumFileError, InvalidProviderManifestFileError, MissingReleaseArtifactError, MissingSignureArtifactError,
@@ -32,13 +33,16 @@ class ProviderExtractor:
     """Handle extracting data for provider version"""
 
     @classmethod
-    def obtain_gpg_key(cls, repository: 'terrareg.repository_model.Repository',
+    def obtain_gpg_key(cls,
+                       provider: 'terrareg.provider_model.Provider',
                        namespace: 'terrareg.models.Namespace',
                        release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata') -> 'terrareg.models.GpgKey':
         """"Obtain GPG key for signature of release"""
+        repository = provider.repository
+
         try:
             shasums = cls._download_artifact(
-                repository=repository,
+                provider=provider,
                 release_metadata=release_metadata,
                 file_name=cls.generate_artifact_name(repository=repository, release_metadata=release_metadata, file_suffix="SHA256SUMS")
             )
@@ -46,7 +50,7 @@ class ProviderExtractor:
             raise MissingSignureArtifactError(f"Could not obtain shasums file: {exc}")
         try:
             shasums_signature = cls._download_artifact(
-                repository=repository,
+                provider=provider,
                 release_metadata=release_metadata,
                 file_name=cls.generate_artifact_name(
                     repository=repository,
@@ -64,7 +68,7 @@ class ProviderExtractor:
 
     @classmethod
     def _download_artifact(cls,
-                           repository: 'terrareg.repository_model.Repository',
+                           provider: 'terrareg.provider_model.Provider',
                            release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
                            file_name: str) -> bytes:
         """Obtain sha file content"""
@@ -77,7 +81,8 @@ class ProviderExtractor:
         else:
             raise MissingReleaseArtifactError(f"Could not find artifact in metadata: {file_name}")
 
-        content = repository.get_release_artifact(
+        content = provider.repository.get_release_artifact(
+            provider=provider,
             artifact_metadata=artifact,
             release_metadata=release_metadata
         )
@@ -119,6 +124,7 @@ class ProviderExtractor:
 
             # Obtain archive of release
             archive_data, extract_subdirectory = self._provider_version.provider.repository.get_release_archive(
+                provider=self._provider,
                 release_metadata=self._release_metadata
             )
 
@@ -260,7 +266,7 @@ class ProviderExtractor:
         """Process file in release"""
         # Download file
         content = self._download_artifact(
-            repository=self._repository,
+            provider=self._provider,
             release_metadata=self._release_metadata,
             file_name=file_name
         )
@@ -281,7 +287,7 @@ class ProviderExtractor:
     def extract_binaries(self) -> None:
         """Obtain checksum file and download/validate/process each binary"""
         shasums = self._download_artifact(
-            repository=self._repository,
+            provider=self._provider,
             release_metadata=self._release_metadata,
             file_name=self.generate_artifact_name(
                 repository=self._repository,
@@ -312,7 +318,7 @@ class ProviderExtractor:
     def extract_manifest_file(self):
         """Extract manifest file"""
         manifest_file_content = self._download_artifact(
-            repository=self._repository,
+            provider=self._provider,
             release_metadata=self._release_metadata,
             file_name=self._provider_version.manifest_file_name
         )

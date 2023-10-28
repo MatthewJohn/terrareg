@@ -10,6 +10,7 @@ import terrareg.repository_model
 import terrareg.provider_category_model
 import terrareg.provider_model
 import terrareg.database
+from terrareg.errors import NoGithubAppInstallationError
 
 
 class GithubRepositoryPublishProvider(ErrorCatchingResource):
@@ -52,31 +53,37 @@ class GithubRepositoryPublishProvider(ErrorCatchingResource):
 
         provider_category = terrareg.provider_category_model.ProviderCategoryFactory.get().get_provider_category_by_pk(pk=args.category_id)
         if not provider_category:
-            return {'errors': ['Provider Category does not exist']}, 400
+            return {'status': 'Error', 'message': 'Provider Category does not exist'}, 400
 
         repository = terrareg.repository_model.Repository.get_by_provider_source_and_provider_id(provider_source=provider_source_obj, provider_id=repository_id)
         if not repository:
-            return {'errors': ['Repository does not exist']}, 404
-
+            return {'status': 'Error', 'message': 'Repository does not exist'}, 404
 
         with terrareg.database.Database.start_transaction() as transaction:
-            provider = terrareg.provider_model.Provider.create(
-                repository=repository,
-                provider_category=provider_category
-            )
+            try:
+                provider = terrareg.provider_model.Provider.create(
+                    repository=repository,
+                    provider_category=provider_category
+                )
+            except NoGithubAppInstallationError:
+                # Obtain installation URL before database transaction is rolled back
+                app_installation_url = provider_source_obj.get_app_installation_url()
+                transaction.transaction.rollback()
+                return {'status': 'Error', 'message': 'no-app-installed', 'link': app_installation_url}, 400
+
             if not provider:
                 transaction.transaction.rollback()
-                return {'errors': ['An error occurred whilst creating provider']}, 500
+                return {'status': 'Error', 'message': 'An error occurred whilst creating provider'}, 500
 
             current_session = terrareg.auth.AuthFactory.get_current_session()
             if not current_session:
                 transaction.transaction.rollback()
-                return {'errors': ['An internal error accessing token occurred']}, 500
+                return {'status': 'Error', 'message': 'An internal error accessing token occurred'}, 500
 
             versions = provider.refresh_versions()
             if not versions:
                 transaction.transaction.rollback()
-                return {'errors': ['No valid releases found for provider']}, 400
+                return {'status': 'Error', 'message': 'No valid releases found for provider'}, 400
 
         return {
             "name": provider.name,

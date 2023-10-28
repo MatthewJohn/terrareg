@@ -1,6 +1,12 @@
 
+import os
+import time
 from typing import Dict, Union, List, Tuple
 from urllib.parse import parse_qs
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
+import jwt
 
 import requests
 
@@ -11,17 +17,23 @@ import terrareg.repository_model
 import terrareg.provider_version_model
 import terrareg.provider_model
 import terrareg.provider_source.repository_release_metadata
+import terrareg.models
+import terrareg.namespace_type
 
 
 class GithubProviderSource(BaseProviderSource):
 
     TYPE = terrareg.provider_source_type.ProviderSourceType.GITHUB
 
+    # TEMPORARY CACHE FOR INSTALLATION ACCESS TOKENS
+    # @TODO REMOVE
+    INSTALLATION_ID_TOKENS = {}
+
     @classmethod
     def generate_db_config_from_source_config(cls, config: Dict[str, str]) -> Dict[str, Union[str, bool]]:
         """Generate DB config from config"""
         db_config = {}
-        for required_attr in ["base_url", "api_url", "client_id", "client_secret", "login_button_text"]:
+        for required_attr in ["base_url", "api_url", "client_id", "client_secret", "login_button_text", "private_key_path", "app_id"]:
             if not (val := config.get(required_attr)) or not isinstance(val, str):
                 raise InvalidProviderSourceConfigError(f"Missing required Github provider source config: {required_attr}")
 
@@ -34,6 +46,11 @@ class GithubProviderSource(BaseProviderSource):
             db_config[bool_attr] = val
 
         return db_config
+
+    def __init__(self, *args, **kwargs):
+        """Store member variables"""
+        super().__init__(*args, **kwargs)
+        self._private_key_content = None
 
     @property
     def _client_id(self) -> Union[None, str]:
@@ -63,7 +80,29 @@ class GithubProviderSource(BaseProviderSource):
     @property
     def login_button_text(self) -> str:
         """Return login buton text"""
-        return self._config["login_button_text"]
+        return self._config.get("login_button_text")
+
+    @property
+    def _private_key_path(self) -> str:
+        """Return github app private key path"""
+        return self._config.get("private_key_path")
+
+    @property
+    def _private_key(self) -> bytes:
+        """Return content of private key"""
+        if self._private_key_content is None:
+            if not self._private_key_path or not os.path.isfile(self._private_key_path):
+                return None
+
+            with open(self._private_key_path, "r") as pem_file:
+                self._private_key_content = pem_file.read().encode('utf-8')
+
+        return self._private_key_content
+
+    @property
+    def github_app_id(self) -> int:
+        """Return github app ID"""
+        return self._config.get("app_id")
 
     def is_enabled(self) -> bool:
         """Whether github authentication is enabled"""
@@ -73,7 +112,7 @@ class GithubProviderSource(BaseProviderSource):
         """Generate login redirect URL"""
         return f"{self._base_url}/login/oauth/authorize?client_id={self._client_id}"
 
-    def get_access_token(self, code: str) -> Union[None, str]:
+    def get_user_access_token(self, code: str) -> Union[None, str]:
         """Obtain access token from code"""
         if not code:
             return None
@@ -176,7 +215,6 @@ class GithubProviderSource(BaseProviderSource):
                     owner=owner_name,
                     clone_url=clone_url,
                     logo_url=repository.get("owner", {}).get("avatar_url"),
-                    authentication_key=access_token
                 )
 
             if len(results) < 100:
@@ -202,12 +240,15 @@ class GithubProviderSource(BaseProviderSource):
 
         return res.json().get("object", {}).get("sha")
 
-    def get_new_releases(self, provider: 'terrareg.provider_model.Provider', access_token: str) -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:
+    def get_new_releases(self, provider: 'terrareg.provider_model.Provider') -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:
         """Obtain all repository releases that aren't associated with a pre-existing release"""
         repository = provider.repository
         page = 1
         releases = []
         obtain_results = True
+
+        installation_id = self.get_github_app_installation_id(namespace=provider.namespace)
+        access_token = self.generate_app_installation_token(installation_id=installation_id)
 
         while obtain_results:
             res = requests.get(
@@ -303,11 +344,15 @@ class GithubProviderSource(BaseProviderSource):
         ]
 
     def get_release_artifact(self,
+                             provider: 'terrareg.provider_model.Provider',
                              artifact_metadata: 'terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata',
-                             release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
-                             repository: 'terrareg.repository_model.Repository',
-                             access_token: str):
+                             release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata') -> str:
         """Return release artifact file content"""
+        repository = provider.repository
+
+        installation_id = self.get_github_app_installation_id(namespace=provider.namespace)
+        access_token = self.generate_app_installation_token(installation_id=installation_id)
+
         res = requests.get(
             f"{self._api_url}/repos/{repository.owner}/{repository.name}/releases/assets/{artifact_metadata.provider_id}",
             headers={
@@ -323,10 +368,14 @@ class GithubProviderSource(BaseProviderSource):
         return res.content
 
     def get_release_archive(self,
-                            repository: 'terrareg.repository_model.Repository',
-                            release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
-                            access_token: str) -> Tuple[bytes, Union[None, str]]:
+                            provider: 'terrareg.provider_model.Provider',
+                            release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata') -> Tuple[bytes, Union[None, str]]:
         """Obtain release archive, returning bytes of archive"""
+        repository = provider.repository
+
+        installation_id = self.get_github_app_installation_id(namespace=provider.namespace)
+        access_token = self.generate_app_installation_token(installation_id=installation_id)
+
         res = requests.get(
             f"{self._api_url}/repos/{repository.owner}/{repository.name}/tarball/{release_metadata.tag}",
             headers={
@@ -353,3 +402,91 @@ class GithubProviderSource(BaseProviderSource):
                                          artifact_name: str):
         """Return public URL for source"""
         return f"{self.get_public_source_url(provider_version.provider.repository)}/releases/download/{provider_version.git_tag}/{artifact_name}"
+
+    def generate_app_installation_token(self, installation_id: str):
+        """Generate app access token"""
+        if installation_id is None:
+            return None
+
+        if installation_id not in self.__class__.INSTALLATION_ID_TOKENS:
+
+            res = requests.post(
+                f"{self._api_url}/app/installations/{installation_id}/access_tokens",
+                headers={
+                    "X-GitHub-Api-Version": "2022-11-28",
+                    "Accept": "application/vnd.github+json",
+                    "Authorization": f"Bearer {self._generate_jwt()}"
+                }
+            )
+            if res.status_code != 201:
+                raise Exception(f"Unable to generate app installation token: {res.status_code}: {res.content}")
+            self.__class__.INSTALLATION_ID_TOKENS[installation_id] = res.json().get("token")
+
+        return self.__class__.INSTALLATION_ID_TOKENS[installation_id]
+
+    def _generate_jwt(self):
+        """Generate app installation JWT"""
+        pem = self._private_key
+        if not pem:
+            return None
+
+        payload = {
+            # Issued at time
+            'iat': int(time.time()),
+            # JWT expiration time (10 minutes maximum)
+            'exp': int(time.time()) + 600,
+            # GitHub App's identifier
+            'iss': self.github_app_id
+        }
+
+        private_key = serialization.load_pem_private_key(
+            pem, password=None, backend=default_backend()
+        )
+        return jwt.encode(payload, private_key, algorithm="RS256")
+
+    def _get_app_metadata(self) -> dict:
+        """Return app metadata"""
+        res = requests.get(
+            f"{self._api_url}/app",
+            headers={
+                "X-GitHub-Api-Version": "2022-11-28",
+                "Accept": "application/json",
+                "Authorization": f"Bearer {self._generate_jwt()}"
+            }
+        )
+        if res.status_code == 200:
+            return res.json()
+        raise Exception(f"Could not obtain app metadata: {res.status_code}: {res.content}")
+
+    def get_app_installation_url(self):
+        """Generate app installation URL"""
+        metadata = self._get_app_metadata()
+        return f"{metadata.get('html_url')}/installations/new"
+
+    def get_github_app_installation_id(self, namespace: 'terrareg.models.Namespace') -> Union[int, None]:
+        """Obtain a github org/user's app installation status"""
+        # Determine URL of installation based on namespace type
+        url = self._api_url
+        if namespace.namespace_type is terrareg.namespace_type.NamespaceType.GITHUB_ORGANISATION:
+            url += f"/orgs/{namespace.name}/installation"
+        elif namespace.namespace_type is terrareg.namespace_type.NamespaceType.GITHUB_USER:
+            url += f"/users/{namespace.name}/installation"
+        else:
+            # Otherwise is namespace is not based on a github user/org, return None
+            return None
+
+        res = requests.get(
+            url,
+            headers={
+                "X-GitHub-Api-Version": "2022-11-28",
+                "Accept": "application/json",
+                "Authorization": f"Bearer {self._generate_jwt()}"
+            }
+        )
+
+        if res.status_code == 404:
+            return None
+        elif res.status_code == 200:
+            return res.json().get("id")
+        else:
+            raise Exception(f"Unrecognised response code from github installation check: {res.status_code}")

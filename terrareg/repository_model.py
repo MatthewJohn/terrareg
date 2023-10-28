@@ -19,7 +19,7 @@ class Repository:
     @classmethod
     def create(cls, provider_source: 'terrareg.provider_source.BaseProviderSource',
                provider_id: str, name: str, description: str, owner: str,
-               clone_url: str, logo_url: Union[str, None], authentication_key: str) -> Union[None, 'Repository']:
+               clone_url: str, logo_url: Union[str, None]) -> Union[None, 'Repository']:
         """Create user group"""
         # Check if repository exists by provider source and ID
         if cls.get_by_provider_source_and_provider_id(provider_source=provider_source, provider_id=provider_id):
@@ -33,7 +33,6 @@ class Repository:
             owner=owner,
             clone_url=clone_url,
             logo_url=logo_url,
-            authentication_key=authentication_key,
         )
 
         obj = cls(pk=pk)
@@ -50,7 +49,7 @@ class Repository:
     @classmethod
     def _insert_into_database(cls, provider_source: 'terrareg.provider_source.BaseProviderSource',
                               provider_id: str, name: str, description: str, owner: str,
-                              clone_url: str, logo_url: Union[str, None], authentication_key: str) -> int:
+                              clone_url: str, logo_url: Union[str, None]) -> int:
         """Insert new user group into database."""
         db = terrareg.database.Database.get()
         with db.get_connection() as conn:
@@ -61,8 +60,7 @@ class Repository:
                 description=terrareg.database.Database.encode_blob(description),
                 owner=owner,
                 clone_url=clone_url,
-                logo_url=logo_url,
-                authentication_key=authentication_key
+                logo_url=logo_url
             ))
             return res.lastrowid
 
@@ -165,11 +163,6 @@ class Repository:
         """Return clone URL"""
         return self._get_db_row()["clone_url"]
 
-    @property
-    def _authentication_key(self):
-        """Return authentication key"""
-        return self._get_db_row()["authentication_key"]
-
     def __init__(self, pk: int):
         """Store member variables"""
         self._pk = pk
@@ -210,24 +203,25 @@ class Repository:
     def get_new_releases(self, provider: 'terrareg.provider_model.Provider') -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:
         """Obtain all repository releases that aren't associated with a pre-existing release"""
         return self.provider_source.get_new_releases(
-            provider=provider,
-            access_token=self._authentication_key
+            provider=provider
         )
 
-    def get_release_artifact(self, artifact_metadata: 'terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata',
+    def get_release_artifact(self,
+                             provider: 'terrareg.provider_model.Provider',
+                             artifact_metadata: 'terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata',
                              release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata'):
         """Return release artifact file content from provider source, injecting access token"""
         return self.provider_source.get_release_artifact(
-            repository=self, artifact_metadata=artifact_metadata,
-            release_metadata=release_metadata,
-            access_token=self._authentication_key
+            provider=provider,
+            artifact_metadata=artifact_metadata,
+            release_metadata=release_metadata
         )
 
     def get_release_archive(self,
+                            provider: 'terrareg.provider_model.Provider',
                             release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata') -> Tuple[bytes, Union[None, str]]:
         """Obtain release archive using provider source, injecting access token, returning bytes of archive and the sub-directory used for extraction"""
         return self.provider_source.get_release_archive(
-            repository=self,
+            provider=provider,
             release_metadata=release_metadata,
-            access_token=self._authentication_key
         )

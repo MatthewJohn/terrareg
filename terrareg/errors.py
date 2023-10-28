@@ -358,3 +358,9 @@ class InvalidProviderManifestFileError(TerraregError):
     """Invalid manifests file found"""
 
     pass
+
+
+class NoGithubAppInstallationError(TerraregError):
+    """Github app is not installed in target org/user"""
+
+    pass

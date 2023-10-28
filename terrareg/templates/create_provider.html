@@ -27,9 +27,17 @@
                 window.location.href = `/providers/${res.namespace}/${res.name}`;
             }
         }).fail((res) => {
-            $('#create-error').html(failedResponseToErrorString(res));
-            $('#create-error').css('display', 'block');
-            $(window).scrollTop($('#create-error').offset().top);
+            let errorString = failedResponseToErrorString(res);
+
+            if (errorString == 'no-app-installed') {
+                $('#create-installation-message-link').attr('href', res.responseJSON.link);
+                $('#create-installation-message-link').text(res.responseJSON.link);
+                $('#create-installation-message').removeClass('default-hidden');
+            } else {
+                $('#create-error').html(errorString);
+                $('#create-error').css('display', 'block');
+                $(window).scrollTop($('#create-error').offset().top);
+            }
         });
     }
 
@@ -158,6 +166,11 @@
                         <select id="create-provider-category">
                         </select>
                     </div>
+                </div>
+
+                <div id="create-installation-message" class="notification is-link default-hidden">
+                    The Terrareg Github app has not yet been installed in the repositories owner.<br />
+                    Please install the app using by following: <a href="#" target="blank" id="create-installation-message-link"></a>
                 </div>
 
                 <div class="field">

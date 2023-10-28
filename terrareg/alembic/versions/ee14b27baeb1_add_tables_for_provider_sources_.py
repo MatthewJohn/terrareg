@@ -62,7 +62,6 @@ def upgrade():
     sa.Column('owner', sa.String(length=128), nullable=True),
     sa.Column('name', sa.String(length=128), nullable=True),
     sa.Column('description', sa.LargeBinary(length=16777215).with_variant(mysql.MEDIUMBLOB(), 'mysql'), nullable=True),
-    sa.Column('authentication_key', sa.String(length=128), nullable=True),
     sa.Column('clone_url', sa.String(length=1024), nullable=True),
     sa.Column('logo_url', sa.String(length=1024), nullable=True),
     sa.Column('provider_source_name', sa.String(length=128), nullable=False),

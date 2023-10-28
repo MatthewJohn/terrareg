@@ -36,7 +36,7 @@ class GithubLoginCallback(ErrorCatchingResource):
             return self._github_login_error('Github authentication is not enabled')
 
         # Obtain access token, purely to ensure that the code is valid
-        access_token = provider_source_obj.get_access_token(code)
+        access_token = provider_source_obj.get_user_access_token(code)
         if access_token is None:
             return self._github_login_error("Invalid code returned from Github")
 

@@ -57,26 +57,28 @@ class BaseProviderSource:
 
         return self._cache_db_row
 
+    def get_user_access_token(self, code: str) -> Union[None, str]:
+        """Obtain user access token from code"""
+        raise NotImplementedError
+
     def update_repositories(self, access_token: str) -> None:
         """Refresh list of repositories"""
         raise NotImplementedError
 
-    def get_new_releases(self, provider: 'terrareg.provider_model.Provider', access_token: str) -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:
+    def get_new_releases(self, provider: 'terrareg.provider_model.Provider') -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:
         """Obtain all repository releases that aren't associated with a pre-existing release"""
         raise NotImplementedError
 
     def get_release_artifact(self,
+                             provider: 'terrareg.provider_model.Provider',
                              artifact_metadata: 'terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata',
-                             release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
-                             repository: 'terrareg.repository_model.Repository',
-                             access_token: str):
+                             release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata'):
         """Return release artifact file content"""
         raise NotImplementedError
 
     def get_release_archive(self,
-                            repository: 'terrareg.repository_model.Repository',
-                            release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
-                            access_token: str) -> Tuple[bytes, Union[None, str]]:
+                            provider: 'terrareg.provider_model.Provider',
+                            release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata') -> Tuple[bytes, Union[None, str]]:
         """Obtain release archive"""
         raise NotImplementedError
 

@@ -12,7 +12,7 @@ from typing import Union, List
 import sqlalchemy
 
 import terrareg.database
-from terrareg.errors import CouldNotFindGpgKeyForProviderVersionError, DuplicateProviderError, InvalidModuleProviderNameError, InvalidRepositoryNameError, ProviderNameNotPermittedError
+from terrareg.errors import CouldNotFindGpgKeyForProviderVersionError, DuplicateProviderError, InvalidModuleProviderNameError, InvalidRepositoryNameError, NoGithubAppInstallationError, ProviderNameNotPermittedError
 import terrareg.config
 import terrareg.provider_tier
 import terrareg.audit
@@ -46,6 +46,11 @@ class Provider:
 
         # Obtain namespace based on repository owner
         namespace = terrareg.models.Namespace.get(name=repository.owner, create=False, include_redirect=False, case_insensitive=True)
+
+        # Check namespace app installation status
+        installation_id = repository.provider_source.get_github_app_installation_id(namespace=namespace)
+        if not installation_id:
+            raise NoGithubAppInstallationError("Github app is not installed in target org/user")
 
         # Create provider
         db = terrareg.database.Database.get()
@@ -316,7 +321,8 @@ class Provider:
             provider_version = terrareg.provider_version_model.ProviderVersion(provider=self, version=release_metadata.version)
 
             gpg_key = terrareg.provider_extractor.ProviderExtractor.obtain_gpg_key(
-                repository=repository, release_metadata=release_metadata,
+                provider=self,
+                release_metadata=release_metadata,
                 namespace=self.namespace
             )
             if not gpg_key:
