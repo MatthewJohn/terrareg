@@ -107,7 +107,6 @@ class ProviderExtractor:
         self.extract_manifest_file()
         self.extract_binaries()
         self.extract_documentation()
-        # raise Exception('adg')
 
     @contextlib.contextmanager
     def _obtain_source_code(self):

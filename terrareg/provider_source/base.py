@@ -39,7 +39,7 @@ class BaseProviderSource:
         return json.loads(terrareg.database.Database.decode_blob(self._get_db_row()['config']))
 
     def __init__(self, name: str):
-        """Inialise member variables"""
+        """Initialise member variables"""
         self._name = name
         self._cache_db_row: Union[None, Dict[str, Union[str, bool]]] = None
 

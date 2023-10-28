@@ -39,7 +39,7 @@ class ProviderCategory:
         return self._get_db_row()["user_selectable"]
 
     def __init__(self, pk: int):
-        """Inialise member variables"""
+        """Initialise member variables"""
         self._pk = pk
         self._cache_db_row: Union[None, Dict[str, Union[str, bool]]] = None
 

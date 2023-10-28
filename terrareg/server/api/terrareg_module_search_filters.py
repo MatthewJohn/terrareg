@@ -10,7 +10,7 @@ class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
     """
     Return list of filters available for search.
     
-    *Deprepcation*: The `/v1/terrareg/search_filters` endpoint has been deprecated in favor of `/v1/terrareg/modules/search/filters`
+    *Deprecation*: The `/v1/terrareg/search_filters` endpoint has been deprecated in favor of `/v1/terrareg/modules/search/filters`
 
     The previous endpoint will be removed in a future major release.
     """
