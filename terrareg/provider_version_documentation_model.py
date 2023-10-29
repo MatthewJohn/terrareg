@@ -16,7 +16,8 @@ class ProviderVersionDocumentation:
     def generate_slug_from_name(cls, name: str) -> str:
         """Generate slug from name"""
         for extension_to_remove in ['.md', '.markdown', '.html']:
-            name = name.strip(extension_to_remove)
+            if name.endswith(extension_to_remove):
+                name = name[:(0-len(extension_to_remove))]
         
         return name
 
