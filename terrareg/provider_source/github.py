@@ -274,6 +274,8 @@ class GithubProviderSource(BaseProviderSource):
 
     def get_new_releases(self, provider: 'terrareg.provider_model.Provider') -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:
         """Obtain all repository releases that aren't associated with a pre-existing release"""
+        # @TODO Support refreshing all versions, ignore skipping when
+        # a pre-existing release is found
         repository = provider.repository
         page = 1
         releases = []
