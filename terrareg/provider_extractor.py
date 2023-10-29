@@ -173,30 +173,35 @@ class ProviderExtractor:
         """Extract documentation from release"""
         with self._obtain_source_code() as source_dir:
             with tempfile.TemporaryDirectory() as temp_go_package_cache:
-                with terrareg.module_extractor.ModuleExtractor._switch_terraform_versions(source_dir):
-                    go_env = os.environ.copy()
-                    go_env["GOROOT"] = "/usr/local/go"
-                    go_env["GOPATH"] = temp_go_package_cache
+                documentation_directory = os.path.join(source_dir, "docs")
 
-                    documentation_directory = os.path.join(source_dir, "docs")
+                # If documentation directory does not exist,
+                # create it and use tfplugindocs to generate documentation
+                if not os.path.isdir(documentation_directory):
+                    os.mkdir(documentation_directory)
 
-                    # Create documentation directory, if it does not exist
-                    if not os.path.isdir(documentation_directory):
-                        os.mkdir(documentation_directory)
+                    with terrareg.module_extractor.ModuleExtractor._switch_terraform_versions(source_dir):
+                        go_env = os.environ.copy()
+                        go_env["GOROOT"] = "/usr/local/go"
+                        go_env["GOPATH"] = temp_go_package_cache
 
-                    # Run go module for extractings docs
-                    try:
-                        subprocess.call(
-                            ['tfplugindocs', 'generate'],
-                            cwd=source_dir,
-                            env=go_env,
-                        )
-                    except subprocess.CalledProcessError as exc:
-                        print(
-                            "An error occurred whilst extracting terraform provider docs: " +
-                            (f": {str(exc)}: {exc.output.decode('utf-8')}" if terrareg.config.Config().DEBUG else "")
-                        )
-                        return
+                        # Create documentation directory, if it does not exist
+                        if not os.path.isdir(documentation_directory):
+                            os.mkdir(documentation_directory)
+
+                        # Run go module for extractings docs
+                        try:
+                            subprocess.call(
+                                ['tfplugindocs', 'generate'],
+                                cwd=source_dir,
+                                env=go_env,
+                            )
+                        except subprocess.CalledProcessError as exc:
+                            print(
+                                "An error occurred whilst extracting terraform provider docs: " +
+                                (f": {str(exc)}: {exc.output.decode('utf-8')}" if terrareg.config.Config().DEBUG else "")
+                            )
+                            return
 
                 self._collect_markdown_documentation(
                     source_directory=source_dir,
