@@ -10,6 +10,7 @@ from io import BytesIO
 import os
 import tempfile
 import tarfile
+import hashlib
 
 import frontmatter
 
@@ -24,7 +25,7 @@ import terrareg.module_extractor
 import terrareg.provider_model
 import terrareg.provider_version_binary_model
 from terrareg.errors import (
-    InvalidChecksumFileError, InvalidProviderManifestFileError, MissingReleaseArtifactError, MissingSignureArtifactError,
+    InvalidChecksumFileError, InvalidProviderManifestFileError, InvalidReleaseArtifactChecksumError, MissingReleaseArtifactError, MissingSignureArtifactError,
     UnableToObtainReleaseSourceError
 )
 
@@ -274,7 +275,8 @@ class ProviderExtractor:
             raise MissingReleaseArtifactError("Invalid artifact file")
 
         # Verify content against checksum
-        # @TODO This
+        if hashlib.sha256(content).hexdigest() != checksum:
+            raise InvalidReleaseArtifactChecksumError(f"Invalid checksum for {file_name}")
 
         # Create binary object
         terrareg.provider_version_binary_model.ProviderVersionBinary.create(

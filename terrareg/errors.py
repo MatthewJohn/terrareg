@@ -376,3 +376,9 @@ class UnableToGenerateGithubInstallationAccessTokenError(TerraregError):
     """Unable to obtain access token for app installation"""
 
     pass
+
+
+class InvalidReleaseArtifactChecksumError(TerraregError):
+    """Invalid checksum for release artifact"""
+
+    pass
