@@ -402,7 +402,7 @@ function populateDocumentationMenu(providerDetails) {
         "guides": {},
         overview: {}
     }
-    providerDetails.docs.forEach((doc) => {
+    providerDetails.docs.sort((a, b) => a.slug < b.slug).forEach((doc) => {
         if (docCountByCategory[doc.category] !== undefined) {
             let linkName = doc.title;
             if (["resources", "data-sources"].indexOf(doc.category) !== -1) {
