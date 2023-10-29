@@ -432,6 +432,15 @@ function populateDocumentationMenu(providerDetails) {
     addDocLinksToPage($('#provider-docs-menu-guides-header'), docCountByCategory.guides);
     addDocLinksToPage($('#provider-docs-menu-resources-header'), docCountByCategory.resources);
     addDocLinksToPage($('#provider-docs-menu-data-sources-header'), docCountByCategory["data-sources"]);
+
+    // Bind overview button to link to overview page
+    $('#doclink-overview-index').on('click', () => {
+        window.location = router.generate('docsOverview', {
+            namespace: providerDetails.namespace,
+            provider: providerDetails.name,
+            version: providerDetails.version
+        });
+    });
 }
 
 /*
