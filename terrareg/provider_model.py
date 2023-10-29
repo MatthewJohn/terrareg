@@ -317,8 +317,12 @@ class Provider:
         # Obtain latest row
         return terrareg.provider_version_model.ProviderVersion(provider=self, version=rows[0]['version'])
 
-    def refresh_versions(self) -> List['terrareg.provider_version_model.ProviderVersion']:
-        """Refresh versions from provider source and create new provider versions"""
+    def refresh_versions(self, limit: Union[int, None]=None) -> List['terrareg.provider_version_model.ProviderVersion']:
+        """
+        Refresh versions from provider source and create new provider versions
+
+        Optional limit to determine the maximum number of releases to attempt to index
+        """
         repository = self.repository
 
         releases_metadata = repository.get_new_releases(provider=self)
@@ -344,6 +348,8 @@ class Provider:
                 provider_extractor.process_version()
 
             provider_versions.append(provider_version)
+            if limit and len(provider_versions) >= limit:
+                break
 
         return provider_versions
 

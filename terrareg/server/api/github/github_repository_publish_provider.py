@@ -80,12 +80,8 @@ class GithubRepositoryPublishProvider(ErrorCatchingResource):
                 transaction.transaction.rollback()
                 return {'status': 'Error', 'message': 'An error occurred whilst creating provider'}, 500
 
-            current_session = terrareg.auth.AuthFactory.get_current_session()
-            if not current_session:
-                transaction.transaction.rollback()
-                return {'status': 'Error', 'message': 'An internal error accessing token occurred'}, 500
-
-            versions = provider.refresh_versions()
+            # Attempt to obtain 1 valid version
+            versions = provider.refresh_versions(limit=1)
             if not versions:
                 transaction.transaction.rollback()
                 return {'status': 'Error', 'message': 'No valid releases found for provider'}, 400
