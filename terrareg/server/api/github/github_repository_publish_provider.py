@@ -47,9 +47,13 @@ class GithubRepositoryPublishProvider(ErrorCatchingResource):
         if not provider_source_obj:
             return self._get_404_response()
 
-        if not (auth_method := terrareg.auth.GithubAuthMethod.get_current_instance()):
+        # Ensure user is authenticated via Github OR is a site admin
+        if not (github_auth_method := terrareg.auth.GithubAuthMethod.get_current_instance()) and not terrareg.auth.AuthFactory().get_current_auth_method().is_admin:
             return self._get_401_response()
 
+        use_default_provider_source_auth = False
+        if not github_auth_method and terrareg.auth.AuthFactory().get_current_auth_method().is_admin:
+            use_default_provider_source_auth = True
 
         provider_category = terrareg.provider_category_model.ProviderCategoryFactory.get().get_provider_category_by_pk(pk=args.category_id)
         if not provider_category:
@@ -63,7 +67,8 @@ class GithubRepositoryPublishProvider(ErrorCatchingResource):
             try:
                 provider = terrareg.provider_model.Provider.create(
                     repository=repository,
-                    provider_category=provider_category
+                    provider_category=provider_category,
+                    use_default_provider_source_auth=use_default_provider_source_auth
                 )
             except NoGithubAppInstallationError:
                 # Obtain installation URL before database transaction is rolled back

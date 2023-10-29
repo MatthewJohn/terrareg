@@ -11,7 +11,7 @@ import jwt
 
 import requests
 
-from terrareg.errors import InvalidProviderSourceConfigError
+from terrareg.errors import InvalidProviderSourceConfigError, ProviderSourceDefaultAccessTokenNotConfiguredError, UnableToGenerateGithubInstallationAccessTokenError
 from .base import BaseProviderSource
 import terrareg.provider_source_type
 import terrareg.repository_model
@@ -258,6 +258,20 @@ class GithubProviderSource(BaseProviderSource):
 
         return res.json().get("object", {}).get("sha")
 
+    def _get_access_token_for_provider(self, provider: 'terrareg.provider_model.Provider') -> str:
+        """Obtain access token for given provider"""
+        installation_id = self.get_github_app_installation_id(namespace=provider.namespace)
+        if installation_id:
+            return self.generate_app_installation_token(installation_id=installation_id)
+
+        elif provider.use_default_provider_source_auth:
+            access_token = self._get_default_access_token()
+            if not access_token:
+                raise ProviderSourceDefaultAccessTokenNotConfiguredError(
+                    "Provider source default access token/installation has not been configured"
+                )
+            return access_token
+
     def get_new_releases(self, provider: 'terrareg.provider_model.Provider') -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:
         """Obtain all repository releases that aren't associated with a pre-existing release"""
         repository = provider.repository
@@ -265,8 +279,7 @@ class GithubProviderSource(BaseProviderSource):
         releases = []
         obtain_results = True
 
-        installation_id = self.get_github_app_installation_id(namespace=provider.namespace)
-        access_token = self.generate_app_installation_token(installation_id=installation_id)
+        access_token = self._get_access_token_for_provider(provider=provider)
 
         while obtain_results:
             res = requests.get(
@@ -368,8 +381,7 @@ class GithubProviderSource(BaseProviderSource):
         """Return release artifact file content"""
         repository = provider.repository
 
-        installation_id = self.get_github_app_installation_id(namespace=provider.namespace)
-        access_token = self.generate_app_installation_token(installation_id=installation_id)
+        access_token = self._get_access_token_for_provider(provider=provider)
 
         res = requests.get(
             f"{self._api_url}/repos/{repository.owner}/{repository.name}/releases/assets/{artifact_metadata.provider_id}",
@@ -391,8 +403,7 @@ class GithubProviderSource(BaseProviderSource):
         """Obtain release archive, returning bytes of archive"""
         repository = provider.repository
 
-        installation_id = self.get_github_app_installation_id(namespace=provider.namespace)
-        access_token = self.generate_app_installation_token(installation_id=installation_id)
+        access_token = self._get_access_token_for_provider(provider=provider)
 
         res = requests.get(
             f"{self._api_url}/repos/{repository.owner}/{repository.name}/tarball/{release_metadata.tag}",
@@ -437,7 +448,10 @@ class GithubProviderSource(BaseProviderSource):
                 }
             )
             if res.status_code != 201:
-                raise Exception(f"Unable to generate app installation token: {res.status_code}: {res.content}")
+                print(f"UnableToGenerateGithubInstallationAccessTokenError: {res.status_code}, {res.status_code}")
+                raise UnableToGenerateGithubInstallationAccessTokenError(
+                    "Unable to authenticate to Github using app installation"
+                )
             self.__class__.INSTALLATION_ID_TOKENS[installation_id] = res.json().get("token")
 
         return self.__class__.INSTALLATION_ID_TOKENS[installation_id]
@@ -531,7 +545,9 @@ class GithubProviderSource(BaseProviderSource):
         """Refresh list of repositories for namespace using default installation"""
         access_token = self._get_default_access_token()
         if not access_token:
-            raise Exception("Provider source default access token/installation has not been configured")
+            raise ProviderSourceDefaultAccessTokenNotConfiguredError(
+                "Provider source default access token/installation has not been configured"
+            )
 
         type_ = self._is_entity_org_or_user(namespace.name, access_token=access_token)
         if not type_:

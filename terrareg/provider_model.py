@@ -12,7 +12,7 @@ from typing import Union, List
 import sqlalchemy
 
 import terrareg.database
-from terrareg.errors import CouldNotFindGpgKeyForProviderVersionError, DuplicateProviderError, InvalidModuleProviderNameError, InvalidRepositoryNameError, NoGithubAppInstallationError, ProviderNameNotPermittedError
+from terrareg.errors import CouldNotFindGpgKeyForProviderVersionError, DuplicateProviderError, InvalidModuleProviderNameError, InvalidRepositoryNameError, MissingSignureArtifactError, NoGithubAppInstallationError, ProviderNameNotPermittedError, TerraregError
 import terrareg.config
 import terrareg.provider_tier
 import terrareg.audit
@@ -37,7 +37,8 @@ class Provider:
 
     @classmethod
     def create(cls, repository: 'terrareg.repository_model.Repository',
-               provider_category: 'terrareg.provider_category_model.ProviderCategory') -> 'Provider':
+               provider_category: 'terrareg.provider_category_model.ProviderCategory',
+               use_default_provider_source_auth: bool) -> 'Provider':
         """Create instance of object in database."""
         # Ensure that there is not already a provider that exists
         duplicate_provider = Provider.get_by_repository(repository=repository)
@@ -48,9 +49,10 @@ class Provider:
         namespace = terrareg.models.Namespace.get(name=repository.owner, create=False, include_redirect=False, case_insensitive=True)
 
         # Check namespace app installation status
-        installation_id = repository.provider_source.get_github_app_installation_id(namespace=namespace)
-        if not installation_id:
-            raise NoGithubAppInstallationError("Github app is not installed in target org/user")
+        if not use_default_provider_source_auth:
+            installation_id = repository.provider_source.get_github_app_installation_id(namespace=namespace)
+            if not installation_id:
+                raise NoGithubAppInstallationError("Github app is not installed in target org/user")
 
         # Create provider
         db = terrareg.database.Database.get()
@@ -64,7 +66,8 @@ class Provider:
             description=db.encode_blob(repository.description),
             tier=terrareg.provider_tier.ProviderTier.COMMUNITY,
             repository_id=repository.pk,
-            provider_category_id=provider_category.pk
+            provider_category_id=provider_category.pk,
+            default_provider_source_auth=use_default_provider_source_auth,
         )
         with db.get_connection() as conn:
             conn.execute(insert)
@@ -225,6 +228,11 @@ class Provider:
     def warning(self) -> str:
         """Return warning for provider"""
         return ""
+
+    @property
+    def use_default_provider_source_auth(self) -> bool:
+        """Whether the provider should use default provider source auth"""
+        return self._get_db_row()["default_provider_source_auth"]
 
     def __init__(self, namespace: 'terrareg.models.Namespace', name: str):
         """Validate name and store member variables."""

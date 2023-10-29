@@ -364,3 +364,15 @@ class NoGithubAppInstallationError(TerraregError):
     """Github app is not installed in target org/user"""
 
     pass
+
+
+class ProviderSourceDefaultAccessTokenNotConfiguredError(TerraregError):
+    """Default access token for provider source has not been configured"""
+
+    pass
+
+
+class UnableToGenerateGithubInstallationAccessTokenError(TerraregError):
+    """Unable to obtain access token for app installation"""
+
+    pass

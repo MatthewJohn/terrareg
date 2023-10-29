@@ -74,6 +74,7 @@ def upgrade():
     sa.Column('name', sa.String(length=128), nullable=True),
     sa.Column('description', sa.LargeBinary(length=16777215).with_variant(mysql.MEDIUMBLOB(), 'mysql'), nullable=True),
     sa.Column('tier', sa.Enum('OFFICIAL', 'COMMUNITY', name='providertier'), nullable=True),
+    sa.Column('default_provider_source_auth', sa.Boolean(), nullable=True),
     sa.Column('provider_category_id', sa.Integer(), nullable=True),
     sa.Column('repository_id', sa.Integer(), nullable=True),
     sa.Column('latest_version_id', sa.Integer(), nullable=True),
