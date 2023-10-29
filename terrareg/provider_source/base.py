@@ -7,6 +7,7 @@ import terrareg.provider_source.repository_release_metadata
 import terrareg.repository_model
 import terrareg.provider_model
 import terrareg.provider_version_model
+import terrareg.models
 
 
 class BaseProviderSource:
@@ -63,6 +64,10 @@ class BaseProviderSource:
 
     def update_repositories(self, access_token: str) -> None:
         """Refresh list of repositories"""
+        raise NotImplementedError
+
+    def refresh_namespace_repositories(self, namespace: 'terrareg.models.Namespace') -> None:
+        """Refresh list of repositories for namespace"""
         raise NotImplementedError
 
     def get_new_releases(self, provider: 'terrareg.provider_model.Provider') -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:

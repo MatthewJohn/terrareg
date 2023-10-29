@@ -1,5 +1,6 @@
 
 import os
+from re import A
 import time
 from typing import Dict, Union, List, Tuple
 from urllib.parse import parse_qs
@@ -38,6 +39,10 @@ class GithubProviderSource(BaseProviderSource):
                 raise InvalidProviderSourceConfigError(f"Missing required Github provider source config: {required_attr}")
 
             db_config[required_attr] = val
+
+        for optional_attr in ["default_access_token", "default_installation_id"]:
+            if optional_attr in config:
+                db_config[optional_attr] = config[optional_attr]
 
         for bool_attr in ["auto_generate_github_organisation_namespaces"]:
             val = config.get(bool_attr)
@@ -112,6 +117,13 @@ class GithubProviderSource(BaseProviderSource):
         """Generate login redirect URL"""
         return f"{self._base_url}/login/oauth/authorize?client_id={self._client_id}"
 
+    def _get_default_access_token(self):
+        """Return default access token, when communicating with Github outside the context of an authenticated user"""
+        if installation_id := self._config.get("default_installation_id"):
+            return self.generate_app_installation_token(installation_id)
+        else:
+            return self._config.get("default_access_token")
+
     def get_user_access_token(self, code: str) -> Union[None, str]:
         """Obtain access token from code"""
         if not code:
@@ -174,6 +186,26 @@ class GithubProviderSource(BaseProviderSource):
             ]
         return []
 
+    def _add_repository(self, repository_metadat: dict) -> None:
+        """Create repository using metadata from github"""
+        # @TODO Indicate if repo already exists to stop processing additional repos
+        if (not (repo_id := repository_metadat.get("id")) or
+                not (repo_name := repository_metadat.get("name")) or
+                not (owner_name := repository_metadat.get("owner", {}).get("login")) or
+                not (clone_url := repository_metadat.get("clone_url"))):
+            return None
+
+        terrareg.repository_model.Repository.create(
+            provider_source=self,
+            provider_id=repo_id,
+            name=repo_name,
+            description=repository_metadat.get("description"),
+            owner=owner_name,
+            clone_url=clone_url,
+            logo_url=repository_metadat.get("owner", {}).get("avatar_url"),
+        )
+
+
     def update_repositories(self, access_token: str) -> None:
         """Refresh list of repositories"""
         page = 1
@@ -201,21 +233,7 @@ class GithubProviderSource(BaseProviderSource):
             results = res.json()
 
             for repository in results:
-                if (not (repo_id := repository.get("id")) or
-                        not (repo_name := repository.get("name")) or
-                        not (owner_name := repository.get("owner", {}).get("login")) or
-                        not (clone_url := repository.get("clone_url"))):
-                    continue
-
-                terrareg.repository_model.Repository.create(
-                    provider_source=self,
-                    provider_id=repo_id,
-                    name=repo_name,
-                    description=repository.get("description"),
-                    owner=owner_name,
-                    clone_url=clone_url,
-                    logo_url=repository.get("owner", {}).get("avatar_url"),
-                )
+                self._add_repository(repository_metadat=repository)
 
             if len(results) < 100:
                 break
@@ -490,3 +508,63 @@ class GithubProviderSource(BaseProviderSource):
             return res.json().get("id")
         else:
             raise Exception(f"Unrecognised response code from github installation check: {res.status_code}")
+
+    def _is_entity_org_or_user(self, identity: str, access_token: str):
+        """Determine if an entity is a user or organisation"""
+        res = requests.get(
+            f"{self._api_url}/users/{identity}",
+            headers={
+                "X-GitHub-Api-Version": "2022-11-28",
+                "Accept": "application/json",
+                "Authorization": f"Bearer {access_token}"
+            }
+        )
+        if res.status_code != 200:
+            return None
+        if type_ := res.json().get("type"):
+            if type_ == "User":
+                return terrareg.namespace_type.NamespaceType.GITHUB_USER
+            elif type_ == "Organization":
+                return terrareg.namespace_type.NamespaceType.GITHUB_ORGANISATION
+
+    def refresh_namespace_repositories(self, namespace: 'terrareg.models.Namespace') -> None:
+        """Refresh list of repositories for namespace using default installation"""
+        access_token = self._get_default_access_token()
+        if not access_token:
+            raise Exception("Provider source default access token/installation has not been configured")
+
+        type_ = self._is_entity_org_or_user(namespace.name, access_token=access_token)
+        if not type_:
+            raise Exception("Could not find namespace entity in provider")
+
+        url = f"{self._api_url}/{'orgs' if type_ is terrareg.namespace_type.NamespaceType.GITHUB_ORGANISATION else 'users'}/{namespace.name}/repos"
+
+        page = 1
+        while True:
+            res = requests.get(
+                url,
+                params={
+                    "sort": "created",
+                    "direction": "desc",
+                    "per_page": "100",
+                    "page": str(page)
+                },
+                headers={
+                    "X-GitHub-Api-Version": "2022-11-28",
+                    "Accept": "application/vnd.github+json",
+                    "Authorization": f"Bearer {access_token}"
+                }
+            )
+            if res.status_code != 200:
+                print(f"Invalid response code from github: {res.status_code}")
+                return
+
+            results = res.json()
+
+            for repository in results:
+                self._add_repository(repository_metadat=repository)
+
+            if len(results) < 100:
+                break
+
+            page += 1

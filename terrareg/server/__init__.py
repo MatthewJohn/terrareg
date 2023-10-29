@@ -455,6 +455,10 @@ class Server(BaseHandler):
             '/<string:provider_source>/repositories'
         )
         self._api.add_resource(
+            GithubRefreshNamespace,
+            '/<string:provider_source>/refresh-namespace'
+        )
+        self._api.add_resource(
             GithubRepositoryPublishProvider,
             '/<string:provider_source>/repositories/<int:repository_id>/publish-provider'
         )

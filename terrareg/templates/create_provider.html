@@ -42,11 +42,21 @@
     }
 
     /* Obtain list of repositories for provider source */
-    function loadRepositories(providerSourceApiName) {
+    async function handleProviderSourceSelect(providerSourceApiName) {
         $.get(`/${providerSourceApiName}/repositories`).then((data) => {
             repositories = data;
             onNamespaceOrRepositoryLoad();
         });
+
+        let auth = await isLoggedIn();
+        let refreshNamespaceDiv = $('#refresh-namespace');
+        if (auth.site_admin) {
+            // Display refresh button
+            refreshNamespaceDiv.removeClass('default-hidden');
+        } else {
+            // Otherwise, ensure it's hidden
+            refreshNamespaceDiv.addClass('default-hidden');
+        }
     }
 
     /* Filter list of repositories and display in input */
@@ -75,11 +85,18 @@
     /* Load list of provider sources */
     async function loadProviderSources() {
         let config = await getConfig();
+        let globalAuth = await isLoggedIn();
         let providerSourceSelect = $('#create-provider-provider-source');
         config.PROVIDER_SOURCES.forEach((providerSource) => {
             // Check if user is authenticated to the provider source
             $.get(`/${providerSource.api_name}/auth/status`).then((authStatus) => {
-                providerSourceSelect.append(`<option value="${providerSource.api_name}" ${authStatus.auth == false ? 'disabled' : ''}>${providerSource.name}${authStatus.auth == false ? ' (Not Authenticated)' : ''}</option>`);
+                let disabled = authStatus.auth == false && globalAuth.site_admin == false;
+
+                providerSourceSelect.append(`
+                    <option data-is-authenticated="${authStatus.auth}" value="${providerSource.api_name}" ${disabled ? 'disabled' : ''}>
+                        ${providerSource.name}${disabled ? ' (Not Authenticated)' : ''}
+                    </option>
+                `);
             })
         });
         // Handle warning about no provider sources
@@ -87,7 +104,7 @@
             $('#create-errror').html("There are no provider sources configured. This must be performed before a provider can be created.")
             return;
         }
-        loadRepositories(config.PROVIDER_SOURCES[0].api_name);
+        handleProviderSourceSelect(config.PROVIDER_SOURCES[0].api_name);
     }
 
     /* Populate categories from API */
@@ -99,6 +116,28 @@
                 categorySelect.append(`<option value="${category.id}">${category.attributes.name}</option>`)
             });
         })
+    }
+
+    function refreshNamespace() {
+        let providerSource = $('#create-provider-provider-source')[0].value;
+        let namespaceName = $('#create-provider-namespace')[0].value;
+
+        if (providerSource && namespaceName) {
+            $.post({
+                url: `/${providerSource}/refresh-namespace`,
+                data: JSON.stringify({
+                    namespace: namespaceName,
+                    csrf_token: '{{ csrf_token }}'
+                }),
+                contentType: 'application/json'
+            }).done((res) => {
+                handleProviderSourceSelect(providerSource);
+            }).fail((res) => {
+                $('#create-error').html(failedResponseToErrorString(res));
+                $('#create-error').css('display', 'block');
+                $(window).scrollTop($('#create-error').offset().top);
+            });
+        }
     }
 
     loadProviderSources();
@@ -139,7 +178,7 @@
                 <div class="field">
                     <label class="label">Provider Source</label>
                     <div class="control select">
-                        <select id="create-provider-provider-source" onchange="loadRepositories(event.target.value);">
+                        <select id="create-provider-provider-source" onchange="handleProviderSourceSelect(event.target.value);">
                         </select>
                     </div>
                 </div>
@@ -149,6 +188,13 @@
                     <div class="control select">
                         <select id="create-provider-namespace" onchange="onNamespaceOrRepositoryLoad();">
                         </select>
+                    </div>
+                </div>
+
+                <div id="refresh-namespace" class="field default-hidden">
+                    Refresh the selected namespace's repository from the provider source
+                    <div class="control">
+                        <button id="refresh-namespace-button" class="button" onclick="event.preventDefault(); refreshNamespace();">Refresh Namespace</button>
                     </div>
                 </div>
 

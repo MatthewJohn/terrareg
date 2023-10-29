@@ -240,65 +240,110 @@ In the IdP:
 * ensure at least one attribute is assigned.
 
 
-### Github Authentication
+### Provider sources
 
-Terrareg can be configured to authenticate users via Github.
+Provider sources are a method of integrating with a Git provider for creating providers.
 
-This makes several changes to the workflow for users:
+Provider sources allow users to authenticate to Terrareg.
+Information about their associated projects/organisations and repositories are used to allow providers to be created.
+
+Currently, only Github is supported as a provider source.
+
+NOTE: These may eventually be used for modules and eventually replace GIT_PROVIDERS.
+
+
+#### 
+
+#### Confguring provider sources
+
+Provider sources are configured using [PROVIDER_SOURCES](./CONFIG.md#provider_sources) configuration.
+
+Each provider source must be configured with:
+ * `name` - The name of the provider source, shown the users when selecting the source for creating a provider.
+ * `type` - Must be one of the supported platforms. (See the configuration for a list of supported values)
+ * `login_button_text` - The text displayed in the login button on the login page for the provider
+ * `auto_generate_namespaces` - Determines if the namespaces are created for each of the organisations that the user is an owner of, when authenticating.
+   * If this is disabled, namespaces must be created by a site admin.
+
+##### Github
 
 The following configurations must be configured (see CONFIG.md for details about how to generate them):
- * GITHUB_APP_CLIENT_ID
- * GITHUB_APP_CLIENT_SECRET
- * GITHUB_APP_WEBHOOK_SECRET
- * GITHUB_APP_PRIVATE_KEY_PATH
+ - `base_url` - Base public URL, e.g. `https://github.com`
+ - `api_url` - API URL, e.g. `https://api.github.com`
+ - `app_id` - Github app ID
+ - `client_id` - Github app client ID for Github authentication.
+ - `client_secret` - Github App client secret for Github authentication.
+ - `private_key_path` - Path to private key generated for Github app.
+ - `webhook_secret` (optional) - Web hook secret that Github will provide to Terrareg when calling the webhook endpoint. This cannot be used for non-publicly accessible Terrareg installations.
+ - `default_access_key` (optional) - Github access token, used for perform Github API requests for providers that are not authenticated via Github App.
+ - `default_installation_id` (optional) - A default installation that provides access to Github APIs for providers that are not authenticated via Github App.
 
-For self-hosted Github Enterprise installations, `GITHUB_URL` and `GITHUB_API_URL` can be set
+For self-hosted Github Enterprise installations, `base_url` and `api_url` can be set to match the github installation.
 
 Github users are automatically mapped to any groups in Terrareg that are named after organisations that they are named after.
 E.g. User `testuser`, who is a member of the `testorg` organisation would be mapped to the groups `testuser` and `testorg` Terrareg group, if they exist.
 
 
-#### Setup Github app
+###### Setup Github app
 
 To setup the application for Github, goto `https://github.com/settings/apps/new` (or `https://github.com/organizations/<organisation>/settings/apps`)
 
 Configure the following:
 
+In this example, the "provider source" "name" will be "github-terra-example", be sure to replace this with the chosen provider source name.
+
  * Homepage URL: https://my-terrareg-installation.example.com
  * Identifying and authorizing users
-   * Callback URL: https://my-terrareg-installation.example.com/github/callback
+   * Callback URL: https://my-terrareg-installation.example.com/github-terra-example/callback
    * Expire user authorization tokens: Check
    * Request user authorization (OAuth) during installation: Check
    * Enable Device Flow: Uncheck
  * Post installation
    * Setup URL: `Not set`
    * Redirect on update: Uncheck
- * Webhook
+ * Webhook (only select if your Terrareg installation is accessible from the internet, meaning Github can call it's APIs)
    * Active: Check
-   * Webhook URL: https://my-terrareg-installation.example.com/github/webhook
-   * Webhook secret: `Value from GITHUB_APP_WEBHOOK_SECRET`
+   * Webhook URL: https://my-terrareg-installation.example.com/github-terra-example/webhook
+   * Webhook secret: `Value from webhook_secret`
  * Permissions:
    * None
  * Where can this GitHub App be installed?
    * Select based on whether you with to limit who can authenticate to Terrareg (publicly or members of the organisation)
 
-Generate client ID and client secret:
+From the created app landing page, obtain the App ID and Client ID from the "about" section of the page to populate the `app_id` and `client_id` configurations.
 
- * On the same page, obtain the client ID from the "about" section of the page. Use this to populate `GITHUB_APP_CLIENT_ID`
+Generate a client secret:
+
  * Click "Generate a new client secret"
- * Copy the value from the client secret to populate `GITHUB_APP_CLIENT_SECRET`
+ * Copy the value from the client secret to populate `client_secret`
 
 
 Once created, generate a private key (this is not currently used, but will be in future):
 
  * On the same page, find `Private keys` and click "Generate a private key"
- * Download the file and make the file accessible to the Terrareg installation, set in `GITHUB_APP_PRIVATE_KEY_PATH`
+ * Download the file and make the file accessible to the Terrareg installation, set in `private_key_path`
 
-#### Github namespace mapping
+###### Github namespace mapping
 
-If `AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES` is enabled, namespaces are automatically created for the logged in Github user and all organisations that they are an owner of.
+If `auto_generate_namespaces` is enabled, namespaces are automatically created for the logged in Github user and all organisations that they are an owner of.
 
-The user has full permissions to each of these namespaces, allowing them to create modules in them.
+The user has full permissions to each of these namespaces, allowing them to create modules/providers in them.
+
+###### Default Github authentication
+
+Terrareg can be used in two use cases for using Github as a provider source:
+ 1. Owners of Terraform providers authenticate to Terrareg.
+   * These users add their own providers to Terrareg and manage them.
+ 2. Terrareg administrators add providers from Github that they do not maintain.
+
+Both of these can be used simulatiously and Terrareg will authenticate using the Github App authentication, when a user authenticates via Github and uses the default authentication for the second use case.
+
+For the second case, authenticating to Terrareg via Github will not provide the necessary permissions to create providers and index versions.
+To achive this, Terrareg must be provided with a means to authenticate to Github to query the APIs.
+
+This can be performed by setting one of the two provider source configurations:
+ * `default_installation_id` - The created Github app for Terrareg can be 'installed' to a user/organisations profile. Once this has been performed, the "installation ID" can be provided to Terrareg.
+ * `default_access_token` - A personal access token can be provided to Terrareg, which will be used.
 
 
 ## Disable Unauthenticated Access

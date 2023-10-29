@@ -507,6 +507,25 @@ Interface to provide details about current Github repositories for the logged in
 Provide organisation details.
 
 
+## GithubRefreshNamespace
+
+`/<string:provider_source>/refresh-namespace`
+
+Interface to refresh repositories for a namespaces from a provider source
+
+
+#### POST
+
+Refresh repositories for given namespace.
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| namespace | json | str | True | `None` | Namespace to refresh repositories for |
+| csrf_token | json | str | True | `None` | CSRF token |
+
+
+
 ## GithubRepositoryPublishProvider
 
 `/<string:provider_source>/repositories/<int:repository_id>/publish-provider`
@@ -1078,7 +1097,7 @@ Return all details about provider logos.
 
 Return list of filters available for search.
 
-*Deprepcation*: The `/v1/terrareg/search_filters` endpoint has been deprecated in favor of `/v1/terrareg/modules/search/filters`
+*Deprecation*: The `/v1/terrareg/search_filters` endpoint has been deprecated in favor of `/v1/terrareg/modules/search/filters`
 
 The previous endpoint will be removed in a future major release.
 

@@ -757,23 +757,29 @@ Git provider config for terraform Providers, as a JSON list.
 These are used for authenticating to the provider, obtain repository information and provide integration for creating Terraform providers.
 
 Each item in the list must contain the following attributes:
- - name - Name of the git provider (e.g. 'Github')
- - type - The type of SCM tool (supported: `github`)
- - login_button_text - Login button text for authenticating to Github
- - auto_generate_namespaces - Whether to automatically generate namespaces for the user and the organisations that the user is an admin of
+ - `name` - Name of the git provider (e.g. 'Github')
+ - `type` - The type of SCM tool (supported: `github`)
+ - `login_button_text` - Login button text for authenticating to Github
+ - `auto_generate_namespaces` - Whether to automatically generate namespaces for the user and the organisations that the user is an admin of
 
-Github-specific attributes:
- - base_url - Base public URL, e.g. `https://github.com`
- - api_url - API URL, e.g. `https://api.github.com`
- - client_id - Github app client ID for Github authentication. See USER_GUIDE for setting up Github app. 
- - client_secret - Github App client secret for Github authentication.
+Github-specific attributes (See USER_GUIDE for configuring this):
+ - `base_url` - Base public URL, e.g. `https://github.com`
+ - `api_url` - API URL, e.g. `https://api.github.com`
+ - `app_id` - Github app ID
+ - `client_id` - Github app client ID for Github authentication.
+ - `client_secret` - Github App client secret for Github authentication.
+ - `private_key_path` - Path to private key generated for Github app.
+ - `default_access_token` (optional) - Github access token, used for perform Github API requests for providers that are not authenticated via Github App.
+ - `default_installation_id` (optional) - A default installation that provides access to Github APIs for providers that are not authenticated via Github App.
 
 An example for public repositories, using SSH for cloning, might be:
 ```
 [{"name": "Github", "type": "github",
   "base_url": "https://github.com", "api_url": "https://api.github.com",
   "client_id": "some-client-id", "client_secret": "some-secret",
-  "auto_generate_namespaces": true}]
+  "app_id": "123456", "private_key_path": "./supersecretkey.pem",
+  "access_token": "abcdefg", "auto_generate_namespaces": true
+}]
 ```
 
 

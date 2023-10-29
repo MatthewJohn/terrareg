@@ -67,6 +67,7 @@ from .github.github_login_callback import GithubLoginCallback
 from .github.github_auth_status import GithubAuthStatus
 from .github.github_organisations import GithubOrganisations
 from .github.github_repositories import GithubRepositories
+from .github.github_refresh_namespace import GithubRefreshNamespace
 from .github.github_repository_publish_provider import GithubRepositoryPublishProvider
 from .provider_list import ApiProviderList
 from .namespace_providers import ApiNamespaceProviders
