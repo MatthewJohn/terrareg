@@ -39,7 +39,7 @@ class ProviderExtractor:
                        release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata') -> 'terrareg.models.GpgKey':
         """"Obtain GPG key for signature of release"""
         repository = provider.repository
-
+        # @TODO How to handle providers that do not publish signed SHA files
         try:
             shasums = cls._download_artifact(
                 provider=provider,
@@ -317,15 +317,26 @@ class ProviderExtractor:
 
     def extract_manifest_file(self):
         """Extract manifest file"""
-        manifest_file_content = self._download_artifact(
-            provider=self._provider,
-            release_metadata=self._release_metadata,
-            file_name=self._provider_version.manifest_file_name
-        )
+        try:
+            manifest_file_content = self._download_artifact(
+                provider=self._provider,
+                release_metadata=self._release_metadata,
+                file_name=self._provider_version.manifest_file_name
+            )
+        except MissingReleaseArtifactError:
+            manifest_file_content = None
 
+        # Handle empty file
         if not manifest_file_content:
-            raise InvalidProviderManifestFileError("Could nto find manifest file")
-        
+            # If artifact cannot be found, return default manifests file,
+            # as per https://developer.hashicorp.com/terraform/registry/providers/publishing#terraform-registry-manifest-file
+            return {
+                "metadata": {
+                    "protocol_versions": ["5.0"]
+                },
+                "version": 1
+            }
+
         try:
             manifest_content = json.loads(manifest_file_content)
         except Exception as exc:
