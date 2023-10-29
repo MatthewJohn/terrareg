@@ -116,7 +116,6 @@ async function setProviderLogo(providerDetails) {
         logoLink.removeClass('default-hidden');
         logoImg.removeClass('default-hidden');
     }
-    addProviderLogoTos(providerDetails.name);
 }
 
 /*
