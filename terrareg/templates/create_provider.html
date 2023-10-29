@@ -10,6 +10,11 @@
         if (! $('#create-provider-form')[0].reportValidity()) {
             return;
         }
+        let createStatus = $('#create-status');
+        let createError = $('#create-error');
+        createStatus.html("Provider creation in progress");
+        createStatus.removeClass("default-hidden");
+        createError.addClass("default-hidden");
         $.post({
             url: `/${$('#create-provider-provider-source').val()}/repositories/${$('#create-provider-repo').val()}/publish-provider`,
             data: {
@@ -27,6 +32,7 @@
                 window.location.href = `/providers/${res.namespace}/${res.name}`;
             }
         }).fail((res) => {
+            createStatus.addClass("default-hidden");
             let errorString = failedResponseToErrorString(res);
 
             if (errorString == 'no-app-installed') {
@@ -34,9 +40,9 @@
                 $('#create-installation-message-link').text(res.responseJSON.link);
                 $('#create-installation-message').removeClass('default-hidden');
             } else {
-                $('#create-error').html(errorString);
-                $('#create-error').css('display', 'block');
-                $(window).scrollTop($('#create-error').offset().top);
+                createError.html(errorString);
+                createError.removeClass("default-hidden");
+                $(window).scrollTop(createError.offset().top);
             }
         });
     }
@@ -122,7 +128,13 @@
         let providerSource = $('#create-provider-provider-source')[0].value;
         let namespaceName = $('#create-provider-namespace')[0].value;
 
+        let createStatus = $('#create-status');
+        let createError = $('#create-error');
+
         if (providerSource && namespaceName) {
+            createError.addClass("default-hidden");
+            createStatus.html("Refreshing namespace");
+            createStatus.removeClass("default-hidden");
             $.post({
                 url: `/${providerSource}/refresh-namespace`,
                 data: JSON.stringify({
@@ -132,10 +144,12 @@
                 contentType: 'application/json'
             }).done((res) => {
                 handleProviderSourceSelect(providerSource);
+                createStatus.addClass("default-hidden");
             }).fail((res) => {
-                $('#create-error').html(failedResponseToErrorString(res));
-                $('#create-error').css('display', 'block');
+                createError.html(failedResponseToErrorString(res));
+                createError.removeClass("default-hidden");
                 $(window).scrollTop($('#create-error').offset().top);
+                createStatus.addClass("default-hidden");
             });
         }
     }
@@ -172,7 +186,9 @@
     <div class="column is-one-third is-offset-one-third">
 
         <div class="field is-vertical">
-            <div id="create-error" style="display: none" class="notification is-danger">
+            <div id="create-error" class="notification is-danger default-hidden">
+            </div>
+            <div id="create-status" class="notification is-info default-hidden">
             </div>
             <form id="create-provider-form" onsubmit="event.preventDefault(); createProvider();">
                 <div class="field">
