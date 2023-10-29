@@ -219,6 +219,11 @@ class ProviderExtractor:
                     documentation_directory=os.path.join(documentation_directory, "data-sources"),
                     documentation_type=terrareg.provider_documentation_type.ProviderDocumentationType.DATA_SOURCE
                 )
+                self._collect_markdown_documentation(
+                    source_directory=source_dir,
+                    documentation_directory=os.path.join(documentation_directory, "guides"),
+                    documentation_type=terrareg.provider_documentation_type.ProviderDocumentationType.GUIDE
+                )
 
     @classmethod
     def _extract_markdown_metadata(cls, content: str) -> Union[Tuple[str, str, str, str], Tuple[None, None, None, str]]:

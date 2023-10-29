@@ -400,13 +400,18 @@ function populateDocumentationMenu(providerDetails) {
     let docCountByCategory = {
         resources: {},
         "data-sources": {},
+        "guides": {},
         overview: {}
     }
     providerDetails.docs.forEach((doc) => {
         if (docCountByCategory[doc.category] !== undefined) {
+            let linkName = doc.title;
+            if (["resources", "data-sources"].indexOf(doc.category) !== -1) {
+                linkName = `${providerDetails.name}_${doc.title}`;
+            }
             let linkDiv = $(`
             <a id="doclink-${doc.category}-${doc.slug}" class="navbar-item">
-                ${providerDetails.name}_${doc.title}
+                ${linkName}
             </a>`);
             linkDiv.bind('click', () => {redirectDocumentPage(providerDetails, doc.slug, doc.category)});
             docCountByCategory[doc.category][doc.title] = linkDiv;
@@ -425,6 +430,7 @@ function populateDocumentationMenu(providerDetails) {
         }
     }
 
+    addDocLinksToPage($('#provider-docs-menu-guides-header'), docCountByCategory.guides);
     addDocLinksToPage($('#provider-docs-menu-resources-header'), docCountByCategory.resources);
     addDocLinksToPage($('#provider-docs-menu-data-sources-header'), docCountByCategory["data-sources"]);
 }
