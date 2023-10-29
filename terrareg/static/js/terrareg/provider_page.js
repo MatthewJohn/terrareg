@@ -406,7 +406,7 @@ function populateDocumentationMenu(providerDetails) {
         if (docCountByCategory[doc.category] !== undefined) {
             let linkDiv = $(`
             <a id="doclink-${doc.category}-${doc.slug}" class="navbar-item">
-                ${doc.title}
+                ${providerDetails.name}_${doc.title}
             </a>`);
             linkDiv.bind('click', () => {redirectDocumentPage(providerDetails, doc.slug, doc.category)});
             docCountByCategory[doc.category][doc.title] = linkDiv;
