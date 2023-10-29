@@ -473,7 +473,7 @@ function showSelectedDocument(providerV2Details, selectedDocumentation) {
  * Show warning that documentation page does not exist
  */
 function showDocumentationError() {
-    console.log("doc 404!")
+    $('#provider-doc-content').html("<h3 class='subtitle is-3'>Error</h3>This documentation page does not exist")
 }
 
 /*
