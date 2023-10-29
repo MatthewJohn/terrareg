@@ -332,20 +332,37 @@ class Provider:
         for release_metadata in releases_metadata:
             provider_version = terrareg.provider_version_model.ProviderVersion(provider=self, version=release_metadata.version)
 
-            gpg_key = terrareg.provider_extractor.ProviderExtractor.obtain_gpg_key(
-                provider=self,
-                release_metadata=release_metadata,
-                namespace=self.namespace
-            )
+            try:
+                gpg_key = terrareg.provider_extractor.ProviderExtractor.obtain_gpg_key(
+                    provider=self,
+                    release_metadata=release_metadata,
+                    namespace=self.namespace
+                )
+            except MissingSignureArtifactError:
+                # Handle missing signature, and ignore release
+                continue
+
+            # However, if a signature was found, but the GPG key
+            # could not be found, raise an exception, as the key is probably missing
             if not gpg_key:
                 raise CouldNotFindGpgKeyForProviderVersionError(f"Could not find a valid GPG key to verify the signature of the release: {release_metadata.name}")
 
-            with provider_version.create_extraction_wrapper(git_tag=release_metadata.tag, gpg_key=gpg_key):
-                provider_extractor = terrareg.provider_extractor.ProviderExtractor(
-                    provider_version=provider_version,
-                    release_metadata=release_metadata
-                )
-                provider_extractor.process_version()
+            current_transaction = terrareg.database.Database.get_current_transaction()
+            nested_transaction = None
+            if current_transaction:
+                nested_transaction = current_transaction.begin_nested()
+            try:
+                with provider_version.create_extraction_wrapper(git_tag=release_metadata.tag, gpg_key=gpg_key):
+                    provider_extractor = terrareg.provider_extractor.ProviderExtractor(
+                        provider_version=provider_version,
+                        release_metadata=release_metadata
+                    )
+                    provider_extractor.process_version()
+            except TerraregError:
+                # If an error occurs with the version, rollback nested transaction,
+                # and try next version
+                if nested_transaction:
+                    nested_transaction.rollback()
 
             provider_versions.append(provider_version)
             if limit and len(provider_versions) >= limit:
