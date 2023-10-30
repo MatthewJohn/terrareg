@@ -106,14 +106,18 @@ async function getProviderDetails(providerId) {
 }
 
 terraregProviderDetailsV2PromiseSingleton = [];
-async function getV2ProviderDetails(providerId) {
+async function getV2ProviderDetails(providerId, includes = "") {
     // Create promise if it hasn't already been defined
-    if (terraregProviderDetailsV2PromiseSingleton[providerId] === undefined) {
-        terraregProviderDetailsV2PromiseSingleton[providerId] = new Promise((resolve, reject) => {
+    if (terraregProviderDetailsV2PromiseSingleton[providerId + includes] === undefined) {
+        terraregProviderDetailsV2PromiseSingleton[providerId + includes] = new Promise((resolve, reject) => {
             // Perform request to obtain module details
+            let queryString = '';
+            if (includes) {
+                queryString = `?include=${includes}`;
+            }
             $.ajax({
                 type: "GET",
-                url: `/v2/providers/${providerId}`,
+                url: `/v2/providers/${providerId}${queryString}`,
                 success: function (data) {
                     console.log(data);
                     resolve(data);
@@ -124,7 +128,7 @@ async function getV2ProviderDetails(providerId) {
             });
         });
     }
-    return terraregProviderDetailsV2PromiseSingleton[providerId];
+    return terraregProviderDetailsV2PromiseSingleton[providerId + includes];
 }
 
 async function addProviderLabels(provider, parentDiv) {

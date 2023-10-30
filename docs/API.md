@@ -244,6 +244,12 @@ Interface for providing provider details
 #### GET
 
 Return provider details.
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| include | args | str | False | `` | List of linked resources to include in response. Currently supports: provider-versions, categories |
+
 
 
 ## ApiProviderProviderDownloadSummary

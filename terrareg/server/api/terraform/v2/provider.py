@@ -1,4 +1,6 @@
 
+from flask_restful import reqparse
+
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.models
 import terrareg.auth_wrapper
@@ -12,8 +14,23 @@ class ApiV2Provider(ErrorCatchingResource):
 
     method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 
+    def _get_arg_parser(self):
+        """Get arg parser for get endpoint"""
+        parser = reqparse.RequestParser()
+        parser.add_argument(
+            "include",
+            type=str,
+            help="List of linked resources to include in response. Currently supports: provider-versions, categories",
+            default="",
+            required=False,
+            location="args",
+        )
+        return parser
+
     def _get(self, namespace: str, provider: str):
         """Return provider details."""
+
+        args = self._get_arg_parser().parse_args()
 
         namespace, _ = terrareg.models.Namespace.extract_analytics_token(namespace)
 
@@ -27,7 +44,15 @@ class ApiV2Provider(ErrorCatchingResource):
 
         downloads = terrareg.analytics.ProviderAnalytics.get_provider_total_downloads(provider=provider_obj)
 
-        return {
+        includes = []
+        include_names = args.include.split(",")
+        if "provider-versions" in include_names:
+            for provider_version in provider_obj.get_all_versions():
+                includes.append(provider_version.get_v2_include())
+        if "categories" in include_names:
+            includes.append(provider_obj.category.get_v2_include())
+
+        data = {
             "data": {
                 "type": "providers",
                 "id": provider_obj.pk,
@@ -53,3 +78,8 @@ class ApiV2Provider(ErrorCatchingResource):
                 }
             }
         }
+
+        if args.include:
+            data["included"] = includes
+
+        return data

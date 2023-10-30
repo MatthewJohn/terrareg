@@ -179,6 +179,11 @@ class Provider:
         return terrareg.repository_model.Repository.get_by_pk(self._get_db_row()["repository_id"])
 
     @property
+    def category(self) -> 'terrareg.provider_category_model.ProviderCategory':
+        """Return category for provider"""
+        return terrareg.provider_category_model.ProviderCategory.get_by_pk(self._get_db_row()["provider_category_id"])
+
+    @property
     def source_url(self):
         """Return source URL"""
         repository = self.repository

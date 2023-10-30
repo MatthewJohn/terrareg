@@ -246,6 +246,12 @@ class ProviderVersion:
             provider=self.provider
         )
 
+    def get_downloads(self):
+        """Obtain total number of downloads for provider version."""
+        return terrareg.analytics.ProviderAnalytics.get_provider_version_total_downloads(
+            provider_version=self
+        )
+
     @property
     def protocols(self) -> List[str]:
         """Return list of supported protocols"""
@@ -302,6 +308,24 @@ class ProviderVersion:
             "downloads": self.get_total_downloads(),
             "tier": self.provider.tier.value,
             "logo_url": self.provider.logo_url,
+        }
+
+    def get_v2_include(self) -> dict:
+        """Get API respones for v2 includes"""
+        db_row = self._get_db_row()
+        return {
+            "type": "provider-versions",
+            "id": str(self.pk),
+            "attributes": {
+                "description": self.provider.description,
+                "downloads": self.get_downloads(),
+                "published-at": (db_row["published_at"].isoformat() if db_row["published_at"] else None),
+                "tag": self.git_tag,
+                "version": self.version
+            },
+            "links": {
+                "self": f"/v2/provider-versions/{self.pk}"
+            }
         }
 
     def get_api_details(self) -> dict:

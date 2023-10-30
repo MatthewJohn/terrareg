@@ -12,6 +12,15 @@ from terrareg.errors import InvalidProviderCategoryConfigError
 
 
 class ProviderCategory:
+    """Model for provider category"""
+
+    @classmethod
+    def get_by_pk(cls, pk: int) -> Union[None, 'ProviderCategory']:
+        """Return provider category by pk"""
+        obj = cls(pk=pk)
+        if obj.exists:
+            return obj
+        return None
 
     @property
     def name(self) -> str:
@@ -56,6 +65,21 @@ class ProviderCategory:
                 self._cache_db_row = res.fetchone()
 
         return self._cache_db_row
+
+    def get_v2_include(self):
+        """Return API repsonse from v2 include"""
+        return {
+            "type": "categories",
+            "id": str(self.pk),
+            "attributes": {
+                "name": self.name,
+                "slug": self.slug,
+                "user-selectable": self.user_selectable,
+            },
+            "links": {
+                "self": f"/v2/categories/{self.pk}"
+            }
+        }
 
 
 class ProviderCategoryFactory:

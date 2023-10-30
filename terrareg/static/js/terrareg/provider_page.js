@@ -447,7 +447,7 @@ function populateDocumentationMenu(providerDetails) {
  * Obtain the currently selected documentation
  * and display to the user
  */
-function showSelectedDocument(providerV2Details, selectedDocumentation) {
+function showSelectedDocument(providerVersionV2Details, selectedDocumentation) {
     if (! selectedDocumentation.slug || ! selectedDocumentation.category) {
         console.log("Invalid selected documentation");
         return;
@@ -457,7 +457,7 @@ function showSelectedDocument(providerV2Details, selectedDocumentation) {
         url: '/v2/provider-docs',
         type: "get",
         data: {
-            'filter[provider-version]': providerV2Details.data.id,
+            'filter[provider-version]': providerVersionV2Details.id,
             'filter[category]': selectedDocumentation.category,
             'filter[slug]': selectedDocumentation.slug,
             'filter[language]': 'hcl',
@@ -563,7 +563,7 @@ async function setupBasePage(data) {
     let id = getCurrentObjectId(data);
 
     let providerDetails = await getProviderDetails(id);
-    let providerV2Details = await getV2ProviderDetails(`${providerDetails.namespace}/${providerDetails.name}`);
+    let providerV2Details = await getV2ProviderDetails(`${providerDetails.namespace}/${providerDetails.name}`, "provider-versions");
 
     let redirectUrl = getRedirectUrl(data, providerDetails);
     if (redirectUrl) {
@@ -586,6 +586,13 @@ async function setupBasePage(data) {
         return;
     }
 
+    let providerVersionV2Details = providerV2Details.included.filter((a) => a.type === "provider-versions" && a.attributes.version == providerDetails.version);
+    if (! providerVersionV2Details.length) {
+        showNoAvailableVersions();
+        return;
+    }
+    providerVersionV2Details = providerVersionV2Details[0];
+
     showProviderDetailsBody();
     // enableTerraregExclusiveTags();
     setProviderLogo(providerDetails);
@@ -604,7 +611,7 @@ async function setupBasePage(data) {
     populateDocumentationMenu(providerDetails);
 
     let selectedDocumentation = getSelectedDocumentationDetails(data);
-    showSelectedDocument(providerV2Details, selectedDocumentation);
+    showSelectedDocument(providerVersionV2Details, selectedDocumentation);
 }
 
 async function createBreadcrumbs(data, subpath = undefined) {
