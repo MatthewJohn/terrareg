@@ -127,7 +127,7 @@ def upgrade():
     bind = op.get_bind()
     bind.execute("UPDATE namespace SET namespace_type='NONE'")
     with op.batch_alter_table("namespace") as batch_op:
-        batch_op.alter_column("namespace_type", nullable=False)
+        batch_op.alter_column("namespace_type", nullable=False, existing_type=sa.Enum('NONE', 'GITHUB_USER', 'GITHUB_ORGANISATION', name='namespacetype'))
 
     op.add_column('session', sa.Column('provider_source_auth', sa.LargeBinary(length=16777215).with_variant(mysql.MEDIUMBLOB(), 'mysql'), nullable=True))
 
