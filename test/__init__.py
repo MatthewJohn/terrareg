@@ -73,11 +73,14 @@ class BaseTest:
         if os.path.isfile(cls._get_database_path()):
             os.unlink(cls._get_database_path())
 
-        Database.reset()
-        cls.SERVER = Server()
+        Database.get().initialise()
 
         # Create DB tables
         Database.get().get_meta().create_all(Database.get().get_engine())
+
+        Database.reset()
+
+        cls.SERVER = Server()
 
         cls._setup_test_data()
 
