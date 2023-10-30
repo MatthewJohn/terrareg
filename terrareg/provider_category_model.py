@@ -112,7 +112,7 @@ class ProviderCategoryFactory:
             return None
 
         # Return instance of provider category class
-        return ProviderCategory(name=res['id'])
+        return ProviderCategory(pk=res['id'])
 
     def get_provider_category_by_pk(self, pk: int) -> Union[None, ProviderCategory]:
         """Return instance of provider category by pk"""
