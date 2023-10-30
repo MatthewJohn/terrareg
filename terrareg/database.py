@@ -786,7 +786,7 @@ class Database():
                 'provider_version_id',
                 sqlalchemy.ForeignKey(
                     'provider_version.id',
-                    name='fk_provider_version_documentation_provider_version_id',
+                    name='fk_provider_version_binary_provider_version_id',
                     onupdate='CASCADE',
                     ondelete='CASCADE'
                 ),

@@ -105,7 +105,7 @@ def upgrade():
     sa.Column('operating_system', sa.Enum('FREEBSD', 'DARWIN', 'WINDOWS', 'LINUX', name='providerbinaryoperatingsystemtype'), nullable=False),
     sa.Column('architecture', sa.Enum('AMD64', 'ARM', 'ARM64', 'I386', name='providerbinaryarchitecturetype'), nullable=False),
     sa.Column('checksum', sa.String(length=128), nullable=False),
-    sa.ForeignKeyConstraint(['provider_version_id'], ['provider_version.id'], name='fk_provider_version_documentation_provider_version_id', onupdate='CASCADE', ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['provider_version_id'], ['provider_version.id'], name='fk_provider_version_binary_provider_version_id', onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('provider_version_documentation',
