@@ -78,7 +78,6 @@ class ImageSourceCheck(Treeprocessor):
                 # Removing the 'src' attribute will show white space,
                 # rather than a broken image icon
                 if (not src.startswith('http://')) and (not src.startswith('https://')):
-                    print(f'Removing source: {link.attrib["src"]}')
                     del link.attrib['src']
 
 
@@ -96,8 +95,9 @@ class HTMLExtractorWithAttribs(HTMLExtractor):
         converted_attribute = False
         for itx, attr in enumerate(attrs):
             if attr[0] == 'name' or attr[0] == 'id':
-                attrs[itx] = (attr[0], _convert_id(self.md.terrareg_file_name, attr[1]))
-                converted_attribute = True
+                if result_id := _convert_id(self.md.terrareg_file_name, attr[1]):
+                    attrs[itx] = (attr[0], result_id)
+                    converted_attribute = True
             if attr[0] == 'href':
                 attrs[itx] = (attr[0], _get_anchor_from_href(file_name=self.md.terrareg_file_name, href=attr[1]))
                 converted_attribute = True
