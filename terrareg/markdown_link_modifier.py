@@ -14,6 +14,10 @@ HYPHEN_REPLACEMENT_RE = re.compile(r"[\s\-]+")
 
 def _convert_id(file_name, id):
     file_name = NON_ALPHANUMERIC_REPLACEMENT_RE.sub("", HYPHEN_REPLACEMENT_RE.sub("-", file_name))
+    # If 'id' provided is not a string, return the original value
+    if not isinstance(id, str):
+        return None
+
     id = NON_ALPHANUMERIC_REPLACEMENT_RE.sub("", HYPHEN_REPLACEMENT_RE.sub("-", id))
     return f"terrareg-anchor-{file_name}-{id}"
 
