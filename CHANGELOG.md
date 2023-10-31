@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.81.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.81.1...v2.81.2) (2023-10-31)
+
+
+### Bug Fixes
+
+* Avoid re-writing HTML elements in markdown that contain invalid name arguments. ([8b623e9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8b623e9146af38eac54948505581ef90d9194ed9)), closes [#456](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/456)
+* Handle exception thrown when a HTML element is present in markdown that contains an attribute without a value ([7e1a77f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7e1a77fd9e926718197c3788a49e810f93964da3)), closes [#456](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/456)
+
 ## [2.81.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.81.0...v2.81.1) (2023-10-27)
 
 
