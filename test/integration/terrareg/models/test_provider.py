@@ -1,42 +1,76 @@
 
+from enum import Enum
 import json
+from typing import Dict, Union
 import unittest.mock
 
 import pytest
+from terrareg.audit_action import AuditAction
 
 from test.integration.terrareg import TerraregIntegrationTest
 import terrareg.provider_model
 import terrareg.repository_model
 import terrareg.provider_category_model
 import terrareg.provider_source.factory
+import terrareg.provider_source
+import terrareg.provider_source_type
 import terrareg.database
+import terrareg.provider_tier
 import terrareg.models
+import terrareg.errors
+
+
+class MockProviderSource(terrareg.provider_source.BaseProviderSource):
+    TYPE = "github"
+    HAS_INSTALLATION_ID = True
+
+    @classmethod
+    def generate_db_config_from_source_config(cls, config: Dict[str, str]) -> Dict[str, Union[str, bool]]:
+        """Mocked generate_db_config_from_source_config method"""
+        return {}
+
+    def get_github_app_installation_id(self, namespace):
+        """"""
+        return "12345-installation-id" if MockProviderSource.HAS_INSTALLATION_ID else None
 
 
 @pytest.fixture
-def test_provider_source():
-    with unittest.mock.patch('terrareg.config.Config.PROVIDER_SOURCES', json.dumps(
-        [{"name": "unittest-provider-source", "type": "github", "app_id": "12345",
-          "client_id": "unittest-client-id", "client_secret": "unittest-client-secret",
-          "default_access_token": "phb-unittest-default-access-token",
-          "base_url": "http://github.localhost", "api_url": "http://api.github.localhost",
-          "login_button_text": "Unit test Gitub login", "private_key_path": "./unittest-test.pem",
-          "auto_generate_github_organisation_namespaces": False}]
-    )):
-        terrareg.provider_source.factory.ProviderSourceFactory().initialise_from_config()
-    provider_source = terrareg.provider_source.factory.ProviderSourceFactory().get_provider_source_by_name("unittest-provider-source")
-    provider_source_name = provider_source.name
-    yield provider_source
+def mock_provider_source():
+
+    with unittest.mock.patch(
+            'terrareg.provider_source.factory.ProviderSourceFactory._CLASS_MAPPING',
+            {terrareg.provider_source_type.ProviderSourceType.GITHUB: MockProviderSource}):
+
+        with unittest.mock.patch('terrareg.config.Config.PROVIDER_SOURCES', json.dumps(
+            [{"name": "unittest-provider-source", "type": "github",
+            "login_button_text": "Unit test login",
+            "auto_generate_github_organisation_namespaces": False}]
+        )):
+            terrareg.provider_source.factory.ProviderSourceFactory.get().initialise_from_config()
+        provider_source = terrareg.provider_source.factory.ProviderSourceFactory().get_provider_source_by_name("unittest-provider-source")
+        provider_source_name = provider_source.name
+
+        yield provider_source
+
+    # Delete provider source
     db = terrareg.database.Database.get()
     with terrareg.database.Database.get_connection() as conn:
         conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
 
 
 @pytest.fixture
-def test_repository(test_provider_source):
+def test_namespace():
+    """Create test repository"""
+    namespace = terrareg.models.Namespace.create("some-organisation", None, type_=None)
+    yield namespace
+    namespace.delete()
+
+
+@pytest.fixture
+def test_repository(test_namespace, mock_provider_source):
     """Create test repository"""
     repository = terrareg.repository_model.Repository.create(
-        provider_source=test_provider_source,
+        provider_source=mock_provider_source,
         provider_id="unittest-pid-123456",
         name="terraform-provider-unittest-create",
         description="Unit test repo for Terraform Provider",
@@ -45,12 +79,10 @@ def test_repository(test_provider_source):
         logo_url="https://github.localhost/logos/some-organisation.png"
     )
     repository_pk = repository.pk
-    namespace = terrareg.models.Namespace.create("some-organisation", None, type_=None)
     yield repository
     db = terrareg.database.Database.get()
     with db.get_connection() as conn:
         conn.execute(db.repository.delete(db.repository.c.id==repository_pk))
-    namespace.delete()
 
 
 @pytest.fixture
@@ -60,7 +92,7 @@ def test_provider_category():
         [{"id": "1", "name": "Example Category", "slug": "example-category", "user-selectable": True}]
     )):
         terrareg.provider_category_model.ProviderCategoryFactory().initialise_from_config()
-    
+
     provider_category = terrareg.provider_category_model.ProviderCategoryFactory().get_provider_category_by_slug("example-category")
     provider_category_pk = provider_category.pk
     yield provider_category
@@ -88,10 +120,8 @@ class TestProvider(TerraregIntegrationTest):
         True,
         False,
     ])
-    def test_create(cls, use_default_provider_source_auth, test_provider_source, test_repository, test_provider_category):
+    def test_create(cls, use_default_provider_source_auth, test_namespace, mock_provider_source, test_repository, test_provider_category):
         """Test create method."""
-
-        # provider_category = terrareg
 
         try:
             provider = terrareg.provider_model.Provider.create(
@@ -101,53 +131,151 @@ class TestProvider(TerraregIntegrationTest):
             )
             assert isinstance(provider, terrareg.provider_model.Provider)
             assert provider.pk
+
+            db = terrareg.database.Database.get()
+            with db.get_connection() as conn:
+                res = conn.execute(db.provider.select(db.provider.c.repository_id==test_repository.pk)).all()
+
+            assert len(res) == 1
+            row = dict(res[0])
+            # Since we don't care what the ID is, set the result ID to a known value
+            row['id'] = 1
+            assert row == {
+                'default_provider_source_auth': use_default_provider_source_auth,
+                'description': b'Unit test repo for Terraform Provider',
+                'id': 1,
+                'latest_version_id': None,
+                'name': 'unittest-create',
+                'namespace_id': test_namespace.pk,
+                'provider_category_id': test_provider_category.pk,
+                'repository_id': test_repository.pk,
+                'tier': terrareg.provider_tier.ProviderTier.COMMUNITY,
+            }
+            
+            # Ensure audit event was created correct
+            with db.get_connection() as conn:
+                res = conn.execute(db.audit_history.select().order_by(db.audit_history.c.timestamp.desc()).limit(1)).all()
+
+            assert len(res) == 1
+            audit_event = dict(res[0])
+            assert audit_event['action'] == AuditAction.PROVIDER_CREATE
+            assert audit_event['object_type'] == "Provider"
+            assert audit_event['object_id'] == "some-organisation/unittest-create"
+            assert audit_event['old_value'] == None
+            assert audit_event['new_value'] == None
+
         finally:
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
                 conn.execute(db.provider.delete(db.provider.c.repository_id==test_repository.pk))
 
-    #     # Ensure that there is not already a provider that exists
-    #     duplicate_provider = Provider.get_by_repository(repository=repository)
-    #     if duplicate_provider:
-    #         raise DuplicateProviderError("A duplicate provider exists with the same name in the namespace")
+    def test_create_duplicate(cls, test_namespace, mock_provider_source, test_repository, test_provider_category):
+        """Test attempting to create with duplicate provider"""
+        try:
+            provider = terrareg.provider_model.Provider.create(
+                repository=test_repository,
+                provider_category=test_provider_category,
+                use_default_provider_source_auth=True
+            )
+            assert isinstance(provider, terrareg.provider_model.Provider)
 
-    #     # Obtain namespace based on repository owner
-    #     namespace = terrareg.models.Namespace.get(name=repository.owner, create=False, include_redirect=False, case_insensitive=True)
+            with pytest.raises(terrareg.errors.DuplicateProviderError):
+                terrareg.provider_model.Provider.create(
+                    repository=test_repository,
+                    provider_category=test_provider_category,
+                    use_default_provider_source_auth=True
+                )
 
-    #     # Check namespace app installation status
-    #     if not use_default_provider_source_auth:
-    #         installation_id = repository.provider_source.get_github_app_installation_id(namespace=namespace)
-    #         if not installation_id:
-    #             raise NoGithubAppInstallationError("Github app is not installed in target org/user")
+        finally:
+            db = terrareg.database.Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.provider.delete(db.provider.c.repository_id==test_repository.pk))
 
-    #     # Create provider
-    #     db = terrareg.database.Database.get()
+    def test_create_without_namespace(cls, test_namespace, mock_provider_source, test_repository, test_provider_category):
+        """Test attempting to create without a namespace present for repository"""
+        try:
+            test_namespace.delete()
 
-    #     if not (provider_name := cls.repository_name_to_provider_name(repository_name=repository.name)):
-    #         raise InvalidRepositoryNameError("Invalid repository name")
+            with pytest.raises(terrareg.errors.NonExistentNamespaceError):
+                terrareg.provider_model.Provider.create(
+                    repository=test_repository,
+                    provider_category=test_provider_category,
+                    use_default_provider_source_auth=True
+                )
 
-    #     insert = db.provider.insert().values(
-    #         namespace_id=namespace.pk,
-    #         name=provider_name,
-    #         description=db.encode_blob(repository.description),
-    #         tier=terrareg.provider_tier.ProviderTier.COMMUNITY,
-    #         repository_id=repository.pk,
-    #         provider_category_id=provider_category.pk,
-    #         default_provider_source_auth=use_default_provider_source_auth,
-    #     )
-    #     with db.get_connection() as conn:
-    #         conn.execute(insert)
+        finally:
+            db = terrareg.database.Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.provider.delete(db.provider.c.repository_id==test_repository.pk))
 
-    #     obj = cls(namespace=namespace, name=provider_name)
+    def test_create_without_github_installation(cls, test_namespace, mock_provider_source, test_repository, test_provider_category):
+        """Test provider creation without valid github installation and without using default authentication"""
 
-    #     terrareg.audit.AuditEvent.create_audit_event(
-    #         action=terrareg.audit_action.AuditAction.PROVIDER_CREATE,
-    #         object_type=obj.__class__.__name__,
-    #         object_id=obj.id,
-    #         old_value=None, new_value=None
-    #     )
+        try:
+            MockProviderSource.HAS_INSTALLATION_ID = False
+            with pytest.raises(terrareg.errors.NoGithubAppInstallationError):
+                terrareg.provider_model.Provider.create(
+                    repository=test_repository,
+                    provider_category=test_provider_category,
+                    use_default_provider_source_auth=False
+                )
 
-    #     return obj
+        finally:
+            MockProviderSource.HAS_INSTALLATION_ID = True
+            db = terrareg.database.Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.provider.delete(db.provider.c.repository_id==test_repository.pk))
+
+    def test_create_without_github_installation(cls, test_namespace, mock_provider_source, test_repository, test_provider_category):
+        """Test provider creation without valid github installation and without using default authentication"""
+
+        try:
+            MockProviderSource.HAS_INSTALLATION_ID = False
+            with pytest.raises(terrareg.errors.NoGithubAppInstallationError):
+                terrareg.provider_model.Provider.create(
+                    repository=test_repository,
+                    provider_category=test_provider_category,
+                    use_default_provider_source_auth=False
+                )
+
+        finally:
+            MockProviderSource.HAS_INSTALLATION_ID = True
+            db = terrareg.database.Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.provider.delete(db.provider.c.repository_id==test_repository.pk))
+
+    @pytest.mark.parametrize('repository_name', [
+        'invalidname',
+        'terraform-invalidname',
+        'terraform-module-invalidname',
+    ])
+    def test_create_with_invalid_repository(cls, repository_name, test_namespace, mock_provider_source, test_provider_category):
+        """Test provider creation with an invalid repository name"""
+
+        repository = terrareg.repository_model.Repository.create(
+            provider_source=mock_provider_source,
+            provider_id="unittest-pid-123456",
+            name=repository_name,
+            description="Unit test repo for Terraform Provider",
+            owner="some-organisation",
+            clone_url="https://github.localhost/some-organisation/terraform-provider-unittest-create.git",
+            logo_url="https://github.localhost/logos/some-organisation.png"
+        )
+        repository_pk = repository.pk
+
+        try:
+            with pytest.raises(terrareg.errors.InvalidRepositoryNameError):
+                terrareg.provider_model.Provider.create(
+                    repository=repository,
+                    provider_category=test_provider_category,
+                    use_default_provider_source_auth=False
+                )
+
+        finally:
+            db = terrareg.database.Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.provider.delete(db.provider.c.repository_id==repository.pk))
+                conn.execute(db.repository.delete(db.repository.c.id==repository_pk))
 
     # @classmethod
     # def get_by_pk(cls, pk: int) -> Union[None, 'Provider']:
