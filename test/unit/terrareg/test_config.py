@@ -93,6 +93,10 @@ class TestConfig:
         ('GITHUB_APP_CLIENT_ID', None),
         ('GITHUB_APP_CLIENT_SECRET', None),
         ('GITHUB_LOGIN_TEXT', None),
+        ('GO_PACKAGE_CACHE_DIRECTORY', None),
+        ('PROVIDER_CATEGORIES', None),
+        ('PROVIDER_SOURCES', None),
+        ('SITE_WARNING', None),
     ])
     def test_string_configs(self, config_name, override_expected_value):
         """Test string configs to ensure they are overridden with environment variables."""
