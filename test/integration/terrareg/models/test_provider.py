@@ -1,11 +1,11 @@
 
 from enum import Enum
 import json
+import os
 from typing import Dict, Union
 import unittest.mock
 
 import pytest
-from terrareg.audit_action import AuditAction
 
 from test.integration.terrareg import TerraregIntegrationTest
 import terrareg.provider_model
@@ -18,6 +18,7 @@ import terrareg.database
 import terrareg.provider_tier
 import terrareg.models
 import terrareg.errors
+import terrareg.audit_action
 
 
 class MockProviderSource(terrareg.provider_source.BaseProviderSource):
@@ -32,6 +33,10 @@ class MockProviderSource(terrareg.provider_source.BaseProviderSource):
     def get_github_app_installation_id(self, namespace):
         """"""
         return "12345-installation-id" if MockProviderSource.HAS_INSTALLATION_ID else None
+
+    def get_public_source_url(self, repository):
+        """Return mock public source URL"""
+        return f"https://git.example.com/get_public_source_url/{repository.owner}/{repository.name}"
 
 
 @pytest.fixture
@@ -101,6 +106,36 @@ def test_provider_category():
         conn.execute(db.provider_category.delete(db.provider_category.c.id==provider_category_pk))
 
 
+@pytest.fixture
+def test_provider(test_repository, test_namespace, test_provider_category):
+    """Create test provider"""
+    provider = terrareg.provider_model.Provider.create(
+        repository=test_repository,
+        provider_category=test_provider_category,
+        use_default_provider_source_auth=True,
+        tier=terrareg.provider_tier.ProviderTier.COMMUNITY,
+    )
+    provider_id = provider.pk
+
+    # Set provider name/description to unique names
+    # that do not match the repository to ensure
+    # defails are being obtained from the provider row,
+    # where applicable
+    db = terrareg.database.Database.get()
+    with db.get_connection() as conn:
+        conn.execute(db.provider.update(db.provider.c.id==provider_id).values(
+            name="unittest-create-provider-name",
+            description=db.encode_blob("Unittest provider description")
+        ))
+    provider._name = "unittest-create-provider-name"
+    provider._cache_db_row = None
+
+    yield provider
+
+    with db.get_connection() as conn:
+        conn.execute(db.provider.delete(db.provider.c.id==provider_id))
+
+
 class TestProvider(TerraregIntegrationTest):
     """Test provider model"""
 
@@ -127,7 +162,8 @@ class TestProvider(TerraregIntegrationTest):
             provider = terrareg.provider_model.Provider.create(
                 repository=test_repository,
                 provider_category=test_provider_category,
-                use_default_provider_source_auth=use_default_provider_source_auth
+                use_default_provider_source_auth=use_default_provider_source_auth,
+                tier=terrareg.provider_tier.ProviderTier.COMMUNITY,
             )
             assert isinstance(provider, terrareg.provider_model.Provider)
             assert provider.pk
@@ -158,7 +194,7 @@ class TestProvider(TerraregIntegrationTest):
 
             assert len(res) == 1
             audit_event = dict(res[0])
-            assert audit_event['action'] == AuditAction.PROVIDER_CREATE
+            assert audit_event['action'] == terrareg.audit_action.AuditAction.PROVIDER_CREATE
             assert audit_event['object_type'] == "Provider"
             assert audit_event['object_id'] == "some-organisation/unittest-create"
             assert audit_event['old_value'] == None
@@ -175,7 +211,8 @@ class TestProvider(TerraregIntegrationTest):
             provider = terrareg.provider_model.Provider.create(
                 repository=test_repository,
                 provider_category=test_provider_category,
-                use_default_provider_source_auth=True
+                use_default_provider_source_auth=True,
+                tier=terrareg.provider_tier.ProviderTier.COMMUNITY,
             )
             assert isinstance(provider, terrareg.provider_model.Provider)
 
@@ -183,7 +220,8 @@ class TestProvider(TerraregIntegrationTest):
                 terrareg.provider_model.Provider.create(
                     repository=test_repository,
                     provider_category=test_provider_category,
-                    use_default_provider_source_auth=True
+                    use_default_provider_source_auth=True,
+                    tier=terrareg.provider_tier.ProviderTier.COMMUNITY,
                 )
 
         finally:
@@ -200,7 +238,8 @@ class TestProvider(TerraregIntegrationTest):
                 terrareg.provider_model.Provider.create(
                     repository=test_repository,
                     provider_category=test_provider_category,
-                    use_default_provider_source_auth=True
+                    use_default_provider_source_auth=True,
+                    tier=terrareg.provider_tier.ProviderTier.COMMUNITY,
                 )
 
         finally:
@@ -217,7 +256,8 @@ class TestProvider(TerraregIntegrationTest):
                 terrareg.provider_model.Provider.create(
                     repository=test_repository,
                     provider_category=test_provider_category,
-                    use_default_provider_source_auth=False
+                    use_default_provider_source_auth=False,
+                    tier=terrareg.provider_tier.ProviderTier.COMMUNITY,
                 )
 
         finally:
@@ -235,7 +275,8 @@ class TestProvider(TerraregIntegrationTest):
                 terrareg.provider_model.Provider.create(
                     repository=test_repository,
                     provider_category=test_provider_category,
-                    use_default_provider_source_auth=False
+                    use_default_provider_source_auth=False,
+                    tier=terrareg.provider_tier.ProviderTier.COMMUNITY,
                 )
 
         finally:
@@ -268,7 +309,8 @@ class TestProvider(TerraregIntegrationTest):
                 terrareg.provider_model.Provider.create(
                     repository=repository,
                     provider_category=test_provider_category,
-                    use_default_provider_source_auth=False
+                    use_default_provider_source_auth=False,
+                    tier=terrareg.provider_tier.ProviderTier.COMMUNITY,
                 )
 
         finally:
@@ -277,185 +319,163 @@ class TestProvider(TerraregIntegrationTest):
                 conn.execute(db.provider.delete(db.provider.c.repository_id==repository.pk))
                 conn.execute(db.repository.delete(db.repository.c.id==repository_pk))
 
-    # @classmethod
-    # def get_by_pk(cls, pk: int) -> Union[None, 'Provider']:
-    #     """Obtain provider by primary key"""
-    #     db = terrareg.database.Database.get()
-    #     select = sqlalchemy.select(
-    #         db.provider.c.namespace_id,
-    #         db.provider.c.name
-    #     ).select_from(
-    #         db.provider
-    #     ).where(
-    #         db.provider.c.id==pk
-    #     )
+    def test_get_by_pk(cls, test_provider):
+        """Test get_by_pk method of provider"""
+        test_pk = test_provider.pk
 
-    #     with db.get_connection() as conn:
-    #         row = conn.execute(select).first()
-    #     if not row:
-    #         return None
+        # Test with valid PK
+        result = terrareg.provider_model.Provider.get_by_pk(pk=test_pk)
+        assert result is not None
+        assert isinstance(result, terrareg.provider_model.Provider)
 
-    #     namespace = terrareg.models.Namespace.get_by_pk(pk=row["namespace_id"])
-    #     if namespace is None:
-    #         return None
+        assert result.pk == test_pk
+        assert result._get_db_row() == test_provider._get_db_row()
 
-    #     return cls(namespace=namespace, name=row["name"])
+    def test_get_by_pk_non_existent(cls, test_provider):
+        """Test get_by_pk method of provider with non-existent PK"""
+        invalid_result = terrareg.provider_model.Provider.get_by_pk(pk=9999999)
+        assert invalid_result is None
 
-    # @classmethod
-    # def get_by_repository(cls, repository: 'terrareg.repository_model.Repository') -> Union[None, 'Provider']:
-    #     """Obtain provider by repository"""
-    #     db = terrareg.database.Database.get()
-    #     select = sqlalchemy.select(
-    #         db.provider.c.namespace_id,
-    #         db.provider.c.name
-    #     ).select_from(
-    #         db.provider
-    #     ).where(
-    #         db.provider.c.repository_id==repository.pk
-    #     )
-    #     with db.get_connection() as conn:
-    #         row = conn.execute(select).fetchone()
-    #     if not row:
-    #         return None
+    def test_get_by_repository(cls, test_provider, test_repository):
+        """Test get_by_repository with repository that is associated with a provider"""
+        result = terrareg.provider_model.Provider.get_by_repository(repository=test_repository)
+        assert result is not None
+        assert isinstance(result, terrareg.provider_model.Provider)
 
-    #     return cls(namespace=terrareg.models.Namespace.get_by_pk(row["namespace_id"]), name=row["name"])
+        assert result.pk == test_provider.pk
+        assert result._get_db_row() == test_provider._get_db_row()
 
-    # @classmethod
-    # def get(cls, namespace: 'terrareg.models.Namespace', name: str) -> Union['Provider', None]:
-    #     """Create object and ensure the object exists."""
-    #     obj = cls(namespace=namespace, name=name)
+    def test_get_by_repository_non_existent(cls, test_repository):
+        """Test get_by_repository with non-existent provider"""
+        result = terrareg.provider_model.Provider.get_by_repository(repository=test_repository)
+        assert result is None
 
-    #     # If there is no row, the module provider does not exist
-    #     if obj._get_db_row() is None:
-    #         return None
+    def test_get(self, test_provider, test_namespace):
+        """Test get method with valid namespace and name combination."""
+        res = terrareg.provider_model.Provider.get(namespace=test_namespace, name='unittest-create-provider-name')
 
-    #     # Otherwise, return object
-    #     return obj
+        assert res is not None
+        assert isinstance(res, terrareg.provider_model.Provider)
+        assert res.pk == test_provider.pk
 
-    # @property
-    # def id(self) -> int:
-    #     """Obtain id"""
-    #     return f"{self.namespace.name}/{self.name}"
+    def test_get_non_existent(self, test_namespace):
+        """Test get method with invalid namespace and name combination."""
+        res = terrareg.provider_model.Provider.get(namespace=test_namespace, name='does-not-exist')
+        assert res is None
 
-    # @property
-    # def namespace(self) -> 'terrareg.models.Namespace':
-    #     """Return namespace for provider"""
-    #     return terrareg.models.Namespace.get_by_pk(pk=self._get_db_row()["namespace_id"])
+    def test_id(self, test_provider):
+        """Test ID property of provider"""
+        assert test_provider.id == "some-organisation/unittest-create-provider-name"
 
-    # @property
-    # def name(self) -> str:
-    #     """Return provider name"""
-    #     return self._name
+    def test_namespace(self, test_provider, test_namespace):
+        """Test namespace property of provider"""
+        namespace = test_provider.namespace
+        assert isinstance(namespace, terrareg.models.Namespace)
+        assert namespace.pk == test_namespace.pk
+        assert namespace._get_db_row() == test_namespace._get_db_row()
 
-    # @property
-    # def full_name(self) -> str:
-    #     """Return full name, i.e. terraform-provider-name"""
-    #     return f"terraform-provider-{self.name}"
+    def test_name(self, test_provider):
+        """Test name property of provider"""
+        assert test_provider.name == "unittest-create-provider-name"
 
-    # @property
-    # def pk(self) -> int:
-    #     """Return DB pk for provider"""
-    #     return self._get_db_row()["id"]
+    def test_full_name(self, test_provider):
+        """Test full_name property of Provider"""
+        assert test_provider.full_name == "terraform-provider-unittest-create-provider-name"
 
-    # @property
-    # def tier(self) -> 'terrareg.provider_tier.ProviderTier':
-    #     """Return provider tier"""
-    #     return self._get_db_row()["tier"]
+    def test_pk(self, test_provider):
+        """Test pk property of Provider"""
+        assert isinstance(test_provider.pk, int)
+        test_provider._cache_db_row = {"id": "newid"}
+        assert test_provider.pk == "newid"
 
-    # @property
-    # def base_directory(self) -> str:
-    #     """Return base directory."""
-    #     return terrareg.utils.safe_join_paths(self._namespace.base_provider_directory, self._name)
+    @pytest.mark.parametrize('provider_tier', [
+        terrareg.provider_tier.ProviderTier.COMMUNITY,
+        terrareg.provider_tier.ProviderTier.OFFICIAL
+    ])
+    def test_tier(self, provider_tier, test_repository, test_provider_category):
+        """Test tier property of Provider"""
+        provider = terrareg.provider_model.Provider.create(
+            repository=test_repository,
+            provider_category=test_provider_category,
+            use_default_provider_source_auth=False,
+            tier=provider_tier
+        )
+        try:
+            assert isinstance(provider, terrareg.provider_model.Provider)
+            assert provider.tier is provider_tier
 
-    # @property
-    # def repository(self) -> 'terrareg.repository_model.Repository':
-    #     """Return repository for provider"""
-    #     return terrareg.repository_model.Repository.get_by_pk(self._get_db_row()["repository_id"])
+            # Ensure tier is correctly loaded for new instance
+            new_provider = terrareg.provider_model.Provider.get_by_pk(provider.pk)
+            assert new_provider.tier is provider_tier
+        finally:
+            db = terrareg.database.Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.provider.delete(db.provider.c.id==provider.pk))
 
-    # @property
-    # def category(self) -> 'terrareg.provider_category_model.ProviderCategory':
-    #     """Return category for provider"""
-    #     return terrareg.provider_category_model.ProviderCategory.get_by_pk(self._get_db_row()["provider_category_id"])
+    def test_base_directory(self, test_provider):
+        """Test base_directory property of Provider."""
+        assert test_provider.base_directory == f"{os.getcwd()}/data/providers/some-organisation/unittest-create-provider-name"
 
-    # @property
-    # def source_url(self):
-    #     """Return source URL"""
-    #     repository = self.repository
-    #     return repository.provider_source.get_public_source_url(repository)
+    def test_repository(self, test_provider, test_repository):
+        """Test repository property of provider"""
+        res = test_provider.repository
+        assert isinstance(res, terrareg.repository_model.Repository)
+        assert res.pk == test_repository.pk
 
-    # @property
-    # def description(self) -> str:
-    #     """Return provider description"""
-    #     return self.repository.description
+    def test_category(self, test_provider, test_provider_category):
+        """Test category property of Provider"""
+        res = test_provider.category
+        assert isinstance(res, terrareg.provider_category_model.ProviderCategory)
+        assert res.pk == test_provider_category.pk
 
-    # @property
-    # def alias(self) -> Union[str, None]:
-    #     """Return alias for provider"""
-    #     return None
+    def test_source_url(self, test_provider):
+        """Test source_url property"""
+        assert test_provider.source_url == "https://git.example.com/get_public_source_url/some-organisation/terraform-provider-unittest-create"
+
+    def test_description(self, test_provider):
+        """Test description property"""
+        assert test_provider.description == "Unit test repo for Terraform Provider"
+
+    def test_alias(self, test_provider):
+        """Test alias property"""
+        assert test_provider.alias is None
+
+    def test_featured(self, test_provider):
+        """Test featured property"""
+        assert test_provider.featured is False
+
+    def test_logo_url(self, test_provider):
+        """Test logo_url property"""
+        assert test_provider.logo_url == "https://github.localhost/logos/some-organisation.png"
+
+    def test_owner_name(self, test_provider):
+        """Test owner_name property"""
+        assert test_provider.owner_name == "some-organisation"
     
-    # @property
-    # def featured(self) -> bool:
-    #     """Return whether provider is featured"""
-    #     return False
-
-    # @property
-    # def logo_url(self) -> Union[str, None]:
-    #     """Return logo URL of provider"""
-    #     return self.repository.logo_url
-
-    # @property
-    # def owner_name(self) -> str:
-    #     """Return owner name of provider"""
-    #     return self.repository.owner
+    def test_repository_id(self, test_provider, test_repository) -> int:
+        """Test repository_id property"""
+        assert test_provider.repository_id == test_repository.pk
     
-    # @property
-    # def repository_id(self) -> int:
-    #     """Return repository ID of provider"""
-    #     return self.repository.pk
-    
-    # @property
-    # def robots_noindex(self) -> bool:
-    #     """Return robots noindex status of provider"""
-    #     return False
+    def test_robots_noindex(self, test_provider):
+        """Test robots_noindex property"""
+        assert test_provider.robots_noindex is False
 
-    # @property
-    # def unlisted(self) -> bool:
-    #     """Return whether provider is unlisted"""
-    #     return False
+    def unlisted(self, test_provider):
+        """Test unlisted property"""
+        assert test_provider.unlisted is False
 
-    # @property
-    # def warning(self) -> str:
-    #     """Return warning for provider"""
-    #     return ""
+    def test_warning(self, test_provider):
+        """Test warning property"""
+        assert test_provider.warning == ""
 
-    # @property
-    # def use_default_provider_source_auth(self) -> bool:
-    #     """Whether the provider should use default provider source auth"""
-    #     return self._get_db_row()["default_provider_source_auth"]
-
-    # def __init__(self, namespace: 'terrareg.models.Namespace', name: str):
-    #     """Validate name and store member variables."""
-    #     self._namespace = namespace
-    #     self._name = name
-    #     self._cache_db_row = None
-
-    # def _get_db_row(self) -> Union[dict, None]:
-    #     """Return database row for module provider."""
-    #     if self._cache_db_row is None:
-    #         db = terrareg.database.Database.get()
-    #         select = db.provider.select(
-    #         ).join(
-    #             db.namespace,
-    #             db.provider.c.namespace_id==db.namespace.c.id
-    #         ).where(
-    #             db.namespace.c.id == self._namespace.pk,
-    #             db.provider.c.name == self.name
-    #         )
-    #         with db.get_connection() as conn:
-    #             res = conn.execute(select)
-    #             self._cache_db_row = res.fetchone()
-
-    #     return self._cache_db_row
+    @pytest.mark.parametrize('default_provider_source_auth', [
+        True,
+        False
+    ])
+    def test_use_default_provider_source_auth(self, default_provider_source_auth, test_provider):
+        """Test use_default_provider_source_auth property"""
+        test_provider._cache_db_row = {"default_provider_source_auth": default_provider_source_auth}
+        assert test_provider.use_default_provider_source_auth is default_provider_source_auth
 
     # def create_data_directory(self):
     #     """Create data directory and data directories of parents."""
