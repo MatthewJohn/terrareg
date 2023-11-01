@@ -38,7 +38,8 @@ class Provider:
     @classmethod
     def create(cls, repository: 'terrareg.repository_model.Repository',
                provider_category: 'terrareg.provider_category_model.ProviderCategory',
-               use_default_provider_source_auth: bool) -> 'Provider':
+               use_default_provider_source_auth: bool,
+               tier: 'terrareg.provider_tier.ProviderTier') -> 'Provider':
         """Create instance of object in database."""
         # Ensure that there is not already a provider that exists
         duplicate_provider = Provider.get_by_repository(repository=repository)
@@ -66,7 +67,7 @@ class Provider:
             namespace_id=namespace.pk,
             name=provider_name,
             description=db.encode_blob(repository.description),
-            tier=terrareg.provider_tier.ProviderTier.COMMUNITY,
+            tier=tier,
             repository_id=repository.pk,
             provider_category_id=provider_category.pk,
             default_provider_source_auth=use_default_provider_source_auth,

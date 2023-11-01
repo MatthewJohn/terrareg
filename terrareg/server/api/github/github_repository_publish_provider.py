@@ -9,6 +9,7 @@ import terrareg.provider_source.factory
 import terrareg.repository_model
 import terrareg.provider_category_model
 import terrareg.provider_model
+import terrareg.provider_tier
 import terrareg.database
 from terrareg.errors import NoGithubAppInstallationError
 
@@ -68,7 +69,8 @@ class GithubRepositoryPublishProvider(ErrorCatchingResource):
                 provider = terrareg.provider_model.Provider.create(
                     repository=repository,
                     provider_category=provider_category,
-                    use_default_provider_source_auth=use_default_provider_source_auth
+                    use_default_provider_source_auth=use_default_provider_source_auth,
+                    tier=terrareg.provider_tier.ProviderTier.COMMUNITY,
                 )
             except NoGithubAppInstallationError:
                 # Obtain installation URL before database transaction is rolled back
