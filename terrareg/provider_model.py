@@ -381,6 +381,12 @@ class Provider:
     def update_attributes(self, **kwargs: dict) -> None:
         """Update DB row."""
         db = terrareg.database.Database.get()
+
+        # Encode any blob columns
+        for kwarg in kwargs:
+            if kwarg in ["description"]:
+                kwargs[kwarg] = db.encode_blob(kwargs[kwarg])
+
         update = sqlalchemy.update(db.provider).where(
             db.provider.c.namespace_id==self.namespace.pk,
             db.provider.c.name==self.name
