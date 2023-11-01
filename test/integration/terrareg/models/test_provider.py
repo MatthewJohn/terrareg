@@ -22,6 +22,8 @@ import terrareg.errors
 import terrareg.audit_action
 import terrareg.config
 import terrareg.provider_version_model
+import terrareg.provider_version_binary_model
+import terrareg.provider_binary_types
 
 
 class MockProviderSource(terrareg.provider_source.BaseProviderSource):
@@ -556,33 +558,39 @@ class TestProvider(TerraregIntegrationTest):
                 for provider_version_id in created_version_mapping.values():
                     conn.execute(db.provider_version.delete(db.provider_version.c.id==provider_version_id))
 
-    # def calculate_latest_version(self):
-    #     """Obtain all versions of provider and sort by semantic version numbers to obtain latest version."""
-    #     db = terrareg.database.Database.get()
-    #     select = sqlalchemy.select(
-    #         db.provider_version.c.version
-    #     ).join(
-    #         db.provider,
-    #         db.provider_version.c.provider_id==db.provider.c.id
-    #     ).where(
-    #         db.provider.c.id==self.pk,
-    #         db.provider_version.c.beta==False
-    #     )
-    #     with db.get_connection() as conn:
-    #         res = conn.execute(select)
+    @pytest.mark.parametrize('provider_versions, expected_latest_version', [
+        ([], None),
+        (['1.0.0'], '1.0.0'),
+        (['1.0.0', '3.0.0', '1.5.2', '2.1.0'], '3.0.0'),
+    ])
+    def test_calculate_latest_version(self, test_provider, test_gpg_key, provider_versions, expected_latest_version):
+        """Test calculate_latest_version method."""
+        created_version_mapping = {}
+        try:
+            for version_ in provider_versions:
+                provider_version = terrareg.provider_version_model.ProviderVersion(provider=test_provider, version=version_)
+                provider_version._create_db_row(git_tag=f"v{version_}", gpg_key=test_gpg_key)
+                created_version_mapping[version_] = provider_version.pk
 
-    #         # Convert to list
-    #         rows = [r for r in res]
+            test_provider._cache_db_row = None
+            assert test_provider._get_db_row()['latest_version_id'] is None
 
-    #     # Sort rows by semantic versioning
-    #     rows.sort(key=lambda x: LooseVersion(x['version']), reverse=True)
+            returned_version = test_provider.calculate_latest_version()
 
-    #     # Ensure at least one row
-    #     if not rows:
-    #         return None
+            # If no versions were created, expect None
+            if expected_latest_version is None:
+                assert returned_version is None
+            else:
+                # Otherwise, ensure the version and PK match
+                assert isinstance(returned_version, terrareg.provider_version_model.ProviderVersion)
+                assert returned_version.version == expected_latest_version
+                assert returned_version.pk == created_version_mapping[expected_latest_version]
 
-    #     # Obtain latest row
-    #     return terrareg.provider_version_model.ProviderVersion(provider=self, version=rows[0]['version'])
+        finally:
+            db = terrareg.database.Database.get()
+            with db.get_connection() as conn:
+                for provider_version_id in created_version_mapping.values():
+                    conn.execute(db.provider_version.delete(db.provider_version.c.id==provider_version_id))
 
     # def refresh_versions(self, limit: Union[int, None]=None) -> List['terrareg.provider_version_model.ProviderVersion']:
     #     """
@@ -637,26 +645,75 @@ class TestProvider(TerraregIntegrationTest):
 
     #     return provider_versions
 
-    # def update_attributes(self, **kwargs: dict) -> None:
-    #     """Update DB row."""
-    #     db = terrareg.database.Database.get()
-    #     update = sqlalchemy.update(db.provider).where(
-    #         db.provider.c.namespace_id==self.namespace.pk,
-    #         db.provider.c.name==self.name
-    #     ).values(**kwargs)
-    #     with db.get_connection() as conn:
-    #         conn.execute(update)
+    def test_update_attributes(self, test_provider):
+        """Test update_attributes method"""
+        test_provider._cache_db_row = None
+        db_row = test_provider._get_db_row()
+        assert db_row["description"] == terrareg.database.Database.encode_blob("Unittest provider description")
+        assert db_row["tier"] is terrareg.provider_tier.ProviderTier.COMMUNITY
+        assert db_row["default_provider_source_auth"] is True
 
-    #     # Remove cached DB row
-    #     self._cache_db_row = None
+        test_provider.update_attributes(
+            description="New Description",
+            tier=terrareg.provider_tier.ProviderTier.OFFICIAL,
+            default_provider_source_auth=False
+        )
 
-    # def get_versions_api_details(self) -> dict:
-    #     """Return API details for versions endpoint"""
-    #     return {
-    #         "id": self.id,
-    #         "versions": [
-    #             version.get_api_binaries_outline()
-    #             for version in self.get_all_versions()
-    #         ],
-    #         "warnings": None
-    #     }
+        # Ensure cached DB row is flushed and get_db_row immediately returns new data
+        assert test_provider._cache_db_row is None
+        new_db_row = test_provider._get_db_row()
+        assert new_db_row["description"] == terrareg.database.Database.encode_blob("New Description")
+        assert new_db_row["tier"] is terrareg.provider_tier.ProviderTier.OFFICIAL
+        assert new_db_row["default_provider_source_auth"] is False
+
+    def test_get_versions_api_details(self, test_provider, test_gpg_key):
+        """Test get_versions_api_details method"""
+        created_version_mapping = {}
+        try:
+            for version_ in ["1.5.0", "1.0.0"]:
+                provider_version = terrareg.provider_version_model.ProviderVersion(provider=test_provider, version=version_)
+                provider_version._create_db_row(git_tag=f"v{version_}", gpg_key=test_gpg_key)
+                created_version_mapping[version_] = provider_version.pk
+
+                for os_, platform_ in [
+                        (terrareg.provider_binary_types.ProviderBinaryOperatingSystemType.LINUX, terrareg.provider_binary_types.ProviderBinaryArchitectureType.AMD64),
+                        (terrareg.provider_binary_types.ProviderBinaryOperatingSystemType.LINUX, terrareg.provider_binary_types.ProviderBinaryArchitectureType.ARM64),
+                        (terrareg.provider_binary_types.ProviderBinaryOperatingSystemType.WINDOWS, terrareg.provider_binary_types.ProviderBinaryArchitectureType.AMD64)]:
+                    terrareg.provider_version_binary_model.ProviderVersionBinary.create(
+                        provider_version=provider_version,
+                        name=f"{test_provider.full_name}_{provider_version.version}_{os_.value}_{platform_.value}.zip",
+                        checksum=f"abcefg{provider_version.version}{os_.value}{platform_.value}",
+                        content=b"sometestcontent"
+                    )
+
+            assert test_provider.get_versions_api_details() == {
+                'id': 'some-organisation/unittest-create-provider-name',
+                'versions': [
+                    {
+                        'platforms': [
+                            {'arch': 'amd64', 'os': 'linux'},
+                            {'arch': 'arm64', 'os': 'linux'},
+                            {'arch': 'amd64', 'os': 'windows'}
+                        ],
+                        'protocols': ['5.0'],
+                        'version': '1.5.0'
+                    },
+                    {
+                        'platforms': [
+                            {'arch': 'amd64', 'os': 'linux'},
+                            {'arch': 'arm64', 'os': 'linux'},
+                            {'arch': 'amd64', 'os': 'windows'}
+                        ],
+                        'protocols': ['5.0'],
+                        'version': '1.0.0'
+                    }
+                ],
+                'warnings': None,
+            }
+
+        finally:
+            db = terrareg.database.Database.get()
+            with db.get_connection() as conn:
+                for provider_version_id in created_version_mapping.values():
+                    conn.execute(db.provider_version_binary.delete(db.provider_version_binary.c.provider_version_id==provider_version_id))
+                    conn.execute(db.provider_version.delete(db.provider_version.c.id==provider_version_id))
