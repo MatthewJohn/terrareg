@@ -255,11 +255,12 @@ class ProviderVersion:
     @property
     def protocols(self) -> List[str]:
         """Return list of supported protocols"""
-        return json.loads(
-            terrareg.database.Database.decode_blob(
-                self._get_db_row()["protocol_versions"]
-            )
+        protocol_json = terrareg.database.Database.decode_blob(
+            self._get_db_row()["protocol_versions"]
         )
+        if protocol_json:
+            return json.loads(protocol_json)
+        return ["5.0"]
 
     def update_attributes(self, **kwargs):
         """Update attributes of provider version"""
