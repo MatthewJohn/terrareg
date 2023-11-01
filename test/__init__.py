@@ -73,6 +73,8 @@ class BaseTest:
         if os.path.isfile(cls._get_database_path()):
             os.unlink(cls._get_database_path())
 
+        Database.reset()
+
         Database.get().initialise()
 
         # Create DB tables
