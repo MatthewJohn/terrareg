@@ -382,3 +382,9 @@ class InvalidReleaseArtifactChecksumError(TerraregError):
     """Invalid checksum for release artifact"""
 
     pass
+
+
+class NonExistentNamespaceError(TerraregError):
+    """A namespace cannot be found for a given provider owner"""
+
+    pass

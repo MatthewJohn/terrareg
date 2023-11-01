@@ -12,7 +12,7 @@ from typing import Union, List
 import sqlalchemy
 
 import terrareg.database
-from terrareg.errors import CouldNotFindGpgKeyForProviderVersionError, DuplicateProviderError, InvalidModuleProviderNameError, InvalidRepositoryNameError, MissingSignureArtifactError, NoGithubAppInstallationError, ProviderNameNotPermittedError, TerraregError
+from terrareg.errors import CouldNotFindGpgKeyForProviderVersionError, DuplicateProviderError, InvalidModuleProviderNameError, InvalidRepositoryNameError, MissingSignureArtifactError, NoGithubAppInstallationError, NonExistentNamespaceError, ProviderNameNotPermittedError, TerraregError
 import terrareg.config
 import terrareg.provider_tier
 import terrareg.audit
@@ -47,6 +47,8 @@ class Provider:
 
         # Obtain namespace based on repository owner
         namespace = terrareg.models.Namespace.get(name=repository.owner, create=False, include_redirect=False, case_insensitive=True)
+        if namespace is None:
+            raise NonExistentNamespaceError("A namespace does not exist for the given repository")
 
         # Check namespace app installation status
         if not use_default_provider_source_auth:
