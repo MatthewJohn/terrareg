@@ -11,7 +11,7 @@ from tempfile import mkdtemp
 import tempfile
 import urllib.parse
 import gnupg
-from typing import List
+from typing import List, Union
 
 import sqlalchemy
 import semantic_version
@@ -1270,7 +1270,7 @@ class GpgKey:
             return imported_key
 
     @classmethod
-    def get_by_namespace(cls, namespace):
+    def get_by_namespace(cls, namespace) -> List['GpgKey']:
         """Obtain GPG Keys for given namespace"""
         db = Database.get()
         select = sqlalchemy.select(
@@ -1290,7 +1290,7 @@ class GpgKey:
         ]
 
     @classmethod
-    def get_by_id_and_namespace(cls, id_, namespace):
+    def get_by_id_and_namespace(cls, id_, namespace) -> Union[None, 'GpgKey']:
         """Get GPG key by key id"""
         db = Database.get()
         select = sqlalchemy.select(
@@ -1310,7 +1310,7 @@ class GpgKey:
         return None
 
     @classmethod
-    def get_by_fingerprint(cls, fingerprint):
+    def get_by_fingerprint(cls, fingerprint) -> Union['GpgKey', None]:
         """Get GPG key by fingerprint"""
         db = Database.get()
         select = sqlalchemy.select(
@@ -1329,7 +1329,7 @@ class GpgKey:
         return None
 
     @classmethod
-    def create(cls, namespace, ascii_armor):
+    def create(cls, namespace, ascii_armor) -> 'GpgKey':
         """Create GPG key"""
         ascii_armor = ascii_armor.strip()
 
@@ -1367,7 +1367,7 @@ class GpgKey:
         return obj
 
     @classmethod
-    def create_db_row(cls, namespace, ascii_armor, fingerprint, key_id):
+    def create_db_row(cls, namespace, ascii_armor, fingerprint, key_id) -> int:
         """Create intsance of GPG key in database"""
         db = Database.get()
         gpg_key_insert = db.gpg_key.insert().values(

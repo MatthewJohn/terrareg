@@ -1,12 +1,13 @@
 
-from enum import Enum
 import json
 import os
 from typing import Dict, Union
 import unittest.mock
+import tempfile
 
 import pytest
 
+from test.test_gpg_key import public_ascii_armor
 from test.integration.terrareg import TerraregIntegrationTest
 import terrareg.provider_model
 import terrareg.repository_model
@@ -19,6 +20,8 @@ import terrareg.provider_tier
 import terrareg.models
 import terrareg.errors
 import terrareg.audit_action
+import terrareg.config
+import terrareg.provider_version_model
 
 
 class MockProviderSource(terrareg.provider_source.BaseProviderSource):
@@ -69,6 +72,14 @@ def test_namespace():
     namespace = terrareg.models.Namespace.create("some-organisation", None, type_=None)
     yield namespace
     namespace.delete()
+
+
+@pytest.fixture
+def test_gpg_key(test_namespace):
+    """Create test GPG key"""
+    gpg_key = terrareg.models.GpgKey.create(namespace=test_namespace, ascii_armor=public_ascii_armor)
+    yield gpg_key
+    gpg_key.delete()
 
 
 @pytest.fixture
@@ -477,36 +488,73 @@ class TestProvider(TerraregIntegrationTest):
         test_provider._cache_db_row = {"default_provider_source_auth": default_provider_source_auth}
         assert test_provider.use_default_provider_source_auth is default_provider_source_auth
 
-    # def create_data_directory(self):
-    #     """Create data directory and data directories of parents."""
-    #     # Check if parent exists
-    #     if not os.path.isdir(self._namespace.base_provider_directory):
-    #         self._namespace.create_provider_data_directory()
-    #     # Check if data directory exists
-    #     if not os.path.isdir(self.base_directory):
-    #         os.mkdir(self.base_directory)
+    def test_create_data_directory(self, test_provider):
+        """"Test create_data_directory method"""
+        with tempfile.TemporaryDirectory() as tempdir, \
+                unittest.mock.patch("terrareg.config.Config.DATA_DIRECTORY", tempdir):
+            os.mkdir(os.path.join(tempdir, "providers"))
 
-    # def get_latest_version(self) -> Union[None, 'terrareg.provider_version_model.ProviderVersion']:
-    #     """Return latest version of module provider"""
-    #     if provider_version_pk := self._get_db_row()["latest_version_id"]:
-    #         return terrareg.provider_version_model.ProviderVersion.get_by_pk(provider_version_pk)
-    #     return None
+            test_provider.create_data_directory()
 
-    # def get_all_versions(self) -> List['terrareg.provider_version_model.ProviderVersion']:
-    #     """Return list of all provider versions"""
-    #     db = terrareg.database.Database.get()
-    #     select = db.provider_version.select(
-    #         db.provider_version.c.version
-    #     ).where(
-    #         db.provider_version.c.provider_id==self.pk
-    #     )
-    #     with db.get_connection() as conn:
-    #         rows = conn.execute(select).all()
-    #     return sorted([
-    #         terrareg.provider_version_model.ProviderVersion(provider=self, version=row["version"])
-    #         for row in rows
-    #     ])
+            assert os.path.isdir(os.path.join(tempdir, "providers", "some-organisation", "unittest-create-provider-name"))
 
+    @pytest.mark.parametrize('provider_versions, expected_latest_version', [
+        ([], None),
+        (['1.0.0'], '1.0.0'),
+        (['1.0.0', '3.0.0', '1.5.2', '2.1.0'], '3.0.0'),
+    ])
+    def test_get_latest_version(self, test_provider, test_gpg_key, provider_versions, expected_latest_version):
+        """Test get_latest_version method"""
+        created_version_mapping = {}
+        try:
+            for version_ in provider_versions:
+                provider_version = terrareg.provider_version_model.ProviderVersion(provider=test_provider, version=version_)
+                provider_version._create_db_row(git_tag=f"v{version_}", gpg_key=test_gpg_key)
+                provider_version.publish()
+                created_version_mapping[version_] = provider_version.pk
+
+            returned_version = test_provider.get_latest_version()
+            # If no versions were created, expect None
+            if expected_latest_version is None:
+                assert returned_version is None
+            else:
+                # Otherwise, ensure the version and PK match
+                assert isinstance(returned_version, terrareg.provider_version_model.ProviderVersion)
+                assert returned_version.version == expected_latest_version
+                assert returned_version.pk == created_version_mapping[expected_latest_version]
+
+        finally:
+            db = terrareg.database.Database.get()
+            with db.get_connection() as conn:
+                for provider_version_id in created_version_mapping.values():
+                    conn.execute(db.provider_version.delete(db.provider_version.c.id==provider_version_id))
+
+    @pytest.mark.parametrize('provider_versions, expected_return_order', [
+        ([], []),
+        (['1.0.0'], ['1.0.0']),
+        (['1.0.0', '3.0.0', '1.5.2', '2.1.0', '2.0.5', '2.0.0'], ['3.0.0', '2.1.0', '2.0.5', '2.0.0', '1.5.2', '1.0.0']),
+    ])
+    def test_get_all_versions(self, test_provider, test_gpg_key, provider_versions, expected_return_order):
+        """Test get_all_versions method"""
+        created_version_mapping = {}
+        try:
+            for version_ in provider_versions:
+                provider_version = terrareg.provider_version_model.ProviderVersion(provider=test_provider, version=version_)
+                provider_version._create_db_row(git_tag=f"v{version_}", gpg_key=test_gpg_key)
+                provider_version.publish()
+                created_version_mapping[version_] = provider_version.pk
+
+            versions_response = test_provider.get_all_versions()
+            assert [
+                version_.version
+                for version_ in versions_response
+            ] == expected_return_order
+
+        finally:
+            db = terrareg.database.Database.get()
+            with db.get_connection() as conn:
+                for provider_version_id in created_version_mapping.values():
+                    conn.execute(db.provider_version.delete(db.provider_version.c.id==provider_version_id))
 
     # def calculate_latest_version(self):
     #     """Obtain all versions of provider and sort by semantic version numbers to obtain latest version."""
