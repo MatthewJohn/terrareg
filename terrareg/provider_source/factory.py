@@ -121,7 +121,7 @@ class ProviderSourceFactory:
             for attr in ['name', 'type']:
                 if attr not in provider_source_config:
                     raise InvalidProviderSourceConfigError(
-                        'Git provider config does not contain required attribute: {}'.format(attr))
+                        'Provider source config does not contain required attribute: {}'.format(attr))
 
             # Check name validity
             name: str = provider_source_config.get("name")
