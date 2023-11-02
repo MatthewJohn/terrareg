@@ -129,11 +129,20 @@ class ProviderSourceFactory:
 
     def initialise_from_config(self) -> None:
         """Load provider sources from config into database."""
-        provider_source_configs = json.loads(terrareg.config.Config().PROVIDER_SOURCES)
+        try:
+            provider_source_configs = json.loads(terrareg.config.Config().PROVIDER_SOURCES)
+        except:
+            raise InvalidProviderSourceConfigError("Provider source config is not a valid JSON list of objects")
         db = terrareg.database.Database.get()
+
+        if not isinstance(provider_source_configs, list):
+            raise InvalidProviderSourceConfigError("Provider source config is not a valid JSON list of objects")
 
         names = []
         for provider_source_config in provider_source_configs:
+            if not isinstance(provider_source_config, dict):
+                raise InvalidProviderSourceConfigError("Provider source config is not a valid JSON list of objects")
+
             # Validate provider config
             for attr in ['name', 'type']:
                 if attr not in provider_source_config:
