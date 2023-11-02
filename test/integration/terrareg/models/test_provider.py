@@ -26,9 +26,9 @@ import terrareg.provider_version_binary_model
 import terrareg.provider_binary_types
 import terrareg.provider_source.repository_release_metadata
 
-
 @pytest.fixture
-def mock_provider_source():
+def mock_provider_source_class():
+
     class MockProviderSource(terrareg.provider_source.BaseProviderSource):
         TYPE = "github"
         HAS_INSTALLATION_ID = True
@@ -68,9 +68,15 @@ def mock_provider_source():
             """Return mocked method to obtain new releases"""
             return MockProviderSource.NEW_RELEASES
 
+    yield MockProviderSource
+    del MockProviderSource
+
+
+@pytest.fixture
+def mock_provider_source(mock_provider_source_class):
     with unittest.mock.patch(
             'terrareg.provider_source.factory.ProviderSourceFactory._CLASS_MAPPING',
-            {terrareg.provider_source_type.ProviderSourceType.GITHUB: MockProviderSource}):
+            {terrareg.provider_source_type.ProviderSourceType.GITHUB: mock_provider_source_class}):
 
         with unittest.mock.patch('terrareg.config.Config.PROVIDER_SOURCES', json.dumps(
             [{"name": "unittest-provider-source", "type": "github",
@@ -281,11 +287,11 @@ class TestProvider(TerraregIntegrationTest):
             with db.get_connection() as conn:
                 conn.execute(db.provider.delete(db.provider.c.repository_id==test_repository.pk))
 
-    def test_create_without_github_installation(cls, test_namespace, mock_provider_source, test_repository, test_provider_category):
+    def test_create_without_github_installation(cls, test_namespace, mock_provider_source_class, mock_provider_source, test_repository, test_provider_category):
         """Test provider creation without valid github installation and without using default authentication"""
 
         try:
-            MockProviderSource.HAS_INSTALLATION_ID = False
+            mock_provider_source_class.HAS_INSTALLATION_ID = False
             with pytest.raises(terrareg.errors.NoGithubAppInstallationError):
                 terrareg.provider_model.Provider.create(
                     repository=test_repository,
@@ -295,16 +301,16 @@ class TestProvider(TerraregIntegrationTest):
                 )
 
         finally:
-            MockProviderSource.HAS_INSTALLATION_ID = True
+            mock_provider_source_class.HAS_INSTALLATION_ID = True
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
                 conn.execute(db.provider.delete(db.provider.c.repository_id==test_repository.pk))
 
-    def test_create_without_github_installation(cls, test_namespace, mock_provider_source, test_repository, test_provider_category):
+    def test_create_without_github_installation(cls, test_namespace, mock_provider_source_class, mock_provider_source, test_repository, test_provider_category):
         """Test provider creation without valid github installation and without using default authentication"""
 
         try:
-            MockProviderSource.HAS_INSTALLATION_ID = False
+            mock_provider_source_class.HAS_INSTALLATION_ID = False
             with pytest.raises(terrareg.errors.NoGithubAppInstallationError):
                 terrareg.provider_model.Provider.create(
                     repository=test_repository,
@@ -314,7 +320,7 @@ class TestProvider(TerraregIntegrationTest):
                 )
 
         finally:
-            MockProviderSource.HAS_INSTALLATION_ID = True
+            mock_provider_source_class.HAS_INSTALLATION_ID = True
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:
                 conn.execute(db.provider.delete(db.provider.c.repository_id==test_repository.pk))
@@ -613,7 +619,7 @@ class TestProvider(TerraregIntegrationTest):
                 for provider_version_id in created_version_mapping.values():
                     conn.execute(db.provider_version.delete(db.provider_version.c.id==provider_version_id))
 
-    def test_refresh_versions(self, test_provider, test_gpg_key, test_namespace):
+    def test_refresh_versions(self, mock_provider_source_class, test_provider, test_gpg_key, test_namespace):
         """Test refresh_versions method"""
 
         try:
@@ -625,8 +631,8 @@ class TestProvider(TerraregIntegrationTest):
                 created_versions = test_provider.refresh_versions()
 
                 mock_obtain_gpg_key.assert_has_calls(calls=[
-                        unittest.mock.call(provider=test_provider, release_metadata=MockProviderSource.NEW_RELEASES[0], namespace=test_namespace),
-                        unittest.mock.call(provider=test_provider, release_metadata=MockProviderSource.NEW_RELEASES[1], namespace=test_namespace),
+                        unittest.mock.call(provider=test_provider, release_metadata=mock_provider_source_class.NEW_RELEASES[0], namespace=test_namespace),
+                        unittest.mock.call(provider=test_provider, release_metadata=mock_provider_source_class.NEW_RELEASES[1], namespace=test_namespace),
                     ]
                 )
                 mock_process_version.assert_has_calls(calls=[
@@ -643,7 +649,7 @@ class TestProvider(TerraregIntegrationTest):
             with db.get_connection() as conn:
                 conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
 
-    def test_refresh_versions_no_gpg_key(self, test_provider, test_namespace):
+    def test_refresh_versions_no_gpg_key(self, mock_provider_source_class, test_provider, test_namespace):
         """Test refresh_versions method with no GPG key found for release"""
 
         try:
@@ -656,7 +662,7 @@ class TestProvider(TerraregIntegrationTest):
                     created_versions = test_provider.refresh_versions()
 
                 mock_obtain_gpg_key.assert_has_calls(calls=[
-                        unittest.mock.call(provider=test_provider, release_metadata=MockProviderSource.NEW_RELEASES[0], namespace=test_namespace),
+                        unittest.mock.call(provider=test_provider, release_metadata=mock_provider_source_class.NEW_RELEASES[0], namespace=test_namespace),
                     ]
                 )
                 mock_process_version.assert_not_called()
@@ -666,7 +672,7 @@ class TestProvider(TerraregIntegrationTest):
             with db.get_connection() as conn:
                 conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
 
-    def test_refresh_versions_get_gpg_key_exception(self, test_provider, test_namespace):
+    def test_refresh_versions_get_gpg_key_exception(self, mock_provider_source_class, test_provider, test_namespace):
         """Test refresh_versions method with exception raised when attempting to obtain GPG key"""
 
         def raise_obtain_gpg_key_error(*args, **kwargs):
@@ -683,8 +689,8 @@ class TestProvider(TerraregIntegrationTest):
                 assert len(created_versions) == 0
 
                 mock_obtain_gpg_key.assert_has_calls(calls=[
-                        unittest.mock.call(provider=test_provider, release_metadata=MockProviderSource.NEW_RELEASES[0], namespace=test_namespace),
-                        unittest.mock.call(provider=test_provider, release_metadata=MockProviderSource.NEW_RELEASES[1], namespace=test_namespace),
+                        unittest.mock.call(provider=test_provider, release_metadata=mock_provider_source_class.NEW_RELEASES[0], namespace=test_namespace),
+                        unittest.mock.call(provider=test_provider, release_metadata=mock_provider_source_class.NEW_RELEASES[1], namespace=test_namespace),
                     ]
                 )
                 mock_process_version.assert_not_called()
@@ -700,7 +706,7 @@ class TestProvider(TerraregIntegrationTest):
             with db.get_connection() as conn:
                 conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
 
-    def test_refresh_versions_get_gpg_key_generic_exception(self, test_provider, test_namespace):
+    def test_refresh_versions_get_gpg_key_generic_exception(self, mock_provider_source_class, test_provider, test_namespace):
         """Test refresh_versions method with generic exception raised when attempting to obtain GPG key"""
 
         class UnittestGpgException(Exception):
@@ -721,7 +727,7 @@ class TestProvider(TerraregIntegrationTest):
                     test_provider.refresh_versions()
     
                 mock_obtain_gpg_key.assert_has_calls(calls=[
-                        unittest.mock.call(provider=test_provider, release_metadata=MockProviderSource.NEW_RELEASES[0], namespace=test_namespace)
+                        unittest.mock.call(provider=test_provider, release_metadata=mock_provider_source_class.NEW_RELEASES[0], namespace=test_namespace)
                     ]
                 )
                 mock_process_version.assert_not_called()
@@ -737,7 +743,7 @@ class TestProvider(TerraregIntegrationTest):
             with db.get_connection() as conn:
                 conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
 
-    def test_refresh_versions_extraction_terrareg_exception(self, test_provider, test_gpg_key, test_namespace):
+    def test_refresh_versions_extraction_terrareg_exception(self, mock_provider_source_class, test_provider, test_gpg_key, test_namespace):
         """Test refresh_versions method with Terrareg exception raised when extracting version"""
 
         class UnittestExtractionException(terrareg.errors.TerraregError):
@@ -759,8 +765,8 @@ class TestProvider(TerraregIntegrationTest):
                 assert len(created_versions) == 0
     
                 mock_obtain_gpg_key.assert_has_calls(calls=[
-                        unittest.mock.call(provider=test_provider, release_metadata=MockProviderSource.NEW_RELEASES[0], namespace=test_namespace),
-                        unittest.mock.call(provider=test_provider, release_metadata=MockProviderSource.NEW_RELEASES[1], namespace=test_namespace)
+                        unittest.mock.call(provider=test_provider, release_metadata=mock_provider_source_class.NEW_RELEASES[0], namespace=test_namespace),
+                        unittest.mock.call(provider=test_provider, release_metadata=mock_provider_source_class.NEW_RELEASES[1], namespace=test_namespace)
                     ]
                 )
                 mock_process_version.assert_has_calls(calls=[
@@ -779,7 +785,7 @@ class TestProvider(TerraregIntegrationTest):
             with db.get_connection() as conn:
                 conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
 
-    def test_refresh_versions_extraction_generic_exception(self, test_provider, test_gpg_key, test_namespace):
+    def test_refresh_versions_extraction_generic_exception(self, mock_provider_source_class, test_provider, test_gpg_key, test_namespace):
         """Test refresh_versions method with generic exception raised when extracting version"""
 
         class UnittestExtractionException(Exception):
@@ -800,7 +806,7 @@ class TestProvider(TerraregIntegrationTest):
                     test_provider.refresh_versions()
     
                 mock_obtain_gpg_key.assert_has_calls(calls=[
-                        unittest.mock.call(provider=test_provider, release_metadata=MockProviderSource.NEW_RELEASES[0], namespace=test_namespace)
+                        unittest.mock.call(provider=test_provider, release_metadata=mock_provider_source_class.NEW_RELEASES[0], namespace=test_namespace)
                     ]
                 )
                 mock_process_version.assert_called_once_with()

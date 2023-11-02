@@ -1,10 +1,7 @@
 
 import json
-from re import L
-from typing import Dict, Union, Type, List
 import unittest.mock
 import pytest
-
 
 from test.integration.terrareg import TerraregIntegrationTest
 import terrareg.config
@@ -28,7 +25,7 @@ class TestProviderSourceFactory(TerraregIntegrationTest):
         # Ensure subsequent calls returns cached version
         assert terrareg.provider_source.factory.ProviderSourceFactory.get() is instance
 
-    def test_get_provider_classes(self) -> Dict[str, Type['terrareg.provider_source.BaseProviderSource']]:
+    def test_get_provider_classes(self):
         """Return all provider classes"""
         factory = terrareg.provider_source.factory.ProviderSourceFactory.get()
         factory._CLASS_MAPPING = None
