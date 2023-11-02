@@ -1,5 +1,6 @@
 
 import json
+import re
 from typing import Dict, Union, Type, List
 
 import sqlalchemy
@@ -110,6 +111,22 @@ class ProviderSourceFactory:
             for row in res
         ]
 
+    def _name_to_api_name(self, name: str) -> str:
+        """Convert name to API name"""
+        if not name:
+            return
+        # Convert to lower case
+        name = name.lower()
+        # Replace spaces with dashes
+        name = name.replace(" ", "-")
+        # Remove any non alphanumeric/dashes
+        name = re.sub(r"[^a-z0-9-]", "", name)
+
+        # Remove any leading dashes
+        name = name.strip('-')
+
+        return name
+
     def initialise_from_config(self) -> None:
         """Load provider sources from config into database."""
         provider_source_configs = json.loads(terrareg.config.Config().PROVIDER_SOURCES)
@@ -130,6 +147,10 @@ class ProviderSourceFactory:
             if name.lower() in names:
                 raise InvalidProviderSourceConfigError(f"Duplicate Provider Source name found: {name}")
             names.append(name.lower())
+
+            api_name = self._name_to_api_name(name)
+            if not api_name:
+                raise InvalidProviderSourceConfigError("Invalid provider source config: Name must contain some alphanumeric characters")
 
             # Obtain type of provider source
             type_name = provider_source_config.get("type")
@@ -164,7 +185,7 @@ class ProviderSourceFactory:
             else:
                 upsert = db.provider_source.insert().values(
                     name=name,
-                    api_name=name.lower(),
+                    api_name=api_name,
                     **fields
                 )
             with db.get_connection() as conn:
