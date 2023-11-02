@@ -27,48 +27,46 @@ import terrareg.provider_binary_types
 import terrareg.provider_source.repository_release_metadata
 
 
-class MockProviderSource(terrareg.provider_source.BaseProviderSource):
-    TYPE = "github"
-    HAS_INSTALLATION_ID = True
-    NEW_RELEASES = [
-        terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
-            name="v1.0.0",
-            tag="v1.0.0",
-            archive_url=f"https://git.example.com/some-organisation/terraform-provider-unittest-create/1.0.0-source.tgz",
-            commit_hash="abcefg123100",
-            provider_id="provider-123-id",
-            release_artifacts=[]
-        ),
-        terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
-            name="v1.5.0",
-            tag="v1.5.0",
-            archive_url=f"https://git.example.com/some-organisation/terraform-provider-unittest-create/1.5.0-source.tgz",
-            commit_hash="abcefg123150",
-            provider_id="provider-456-id",
-            release_artifacts=[]
-        )
-    ]
-
-    @classmethod
-    def generate_db_config_from_source_config(cls, config: Dict[str, str]) -> Dict[str, Union[str, bool]]:
-        """Mocked generate_db_config_from_source_config method"""
-        return {}
-
-    def get_github_app_installation_id(self, namespace):
-        """"""
-        return "12345-installation-id" if MockProviderSource.HAS_INSTALLATION_ID else None
-
-    def get_public_source_url(self, repository):
-        """Return mock public source URL"""
-        return f"https://git.example.com/get_public_source_url/{repository.owner}/{repository.name}"
-
-    def get_new_releases(self, provider):
-        """Return mocked method to obtain new releases"""
-        return MockProviderSource.NEW_RELEASES
-
-
 @pytest.fixture
 def mock_provider_source():
+    class MockProviderSource(terrareg.provider_source.BaseProviderSource):
+        TYPE = "github"
+        HAS_INSTALLATION_ID = True
+        NEW_RELEASES = [
+            terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
+                name="v1.0.0",
+                tag="v1.0.0",
+                archive_url=f"https://git.example.com/some-organisation/terraform-provider-unittest-create/1.0.0-source.tgz",
+                commit_hash="abcefg123100",
+                provider_id="provider-123-id",
+                release_artifacts=[]
+            ),
+            terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
+                name="v1.5.0",
+                tag="v1.5.0",
+                archive_url=f"https://git.example.com/some-organisation/terraform-provider-unittest-create/1.5.0-source.tgz",
+                commit_hash="abcefg123150",
+                provider_id="provider-456-id",
+                release_artifacts=[]
+            )
+        ]
+
+        @classmethod
+        def generate_db_config_from_source_config(cls, config: Dict[str, str]) -> Dict[str, Union[str, bool]]:
+            """Mocked generate_db_config_from_source_config method"""
+            return {}
+
+        def get_github_app_installation_id(self, namespace):
+            """"""
+            return "12345-installation-id" if MockProviderSource.HAS_INSTALLATION_ID else None
+
+        def get_public_source_url(self, repository):
+            """Return mock public source URL"""
+            return f"https://git.example.com/get_public_source_url/{repository.owner}/{repository.name}"
+
+        def get_new_releases(self, provider):
+            """Return mocked method to obtain new releases"""
+            return MockProviderSource.NEW_RELEASES
 
     with unittest.mock.patch(
             'terrareg.provider_source.factory.ProviderSourceFactory._CLASS_MAPPING',
