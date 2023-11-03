@@ -388,3 +388,9 @@ class NonExistentNamespaceError(TerraregError):
     """A namespace cannot be found for a given provider owner"""
 
     pass
+
+
+class GithubEntityDoesNotExistError(TerraregError):
+    """Could not determine github entity type"""
+
+    pass
