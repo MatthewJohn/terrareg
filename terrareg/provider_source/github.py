@@ -186,23 +186,23 @@ class GithubProviderSource(BaseProviderSource):
             ]
         return []
 
-    def _add_repository(self, repository_metadat: dict) -> None:
+    def _add_repository(self, repository_metadata: dict) -> None:
         """Create repository using metadata from github"""
         # @TODO Indicate if repo already exists to stop processing additional repos
-        if (not (repo_id := repository_metadat.get("id")) or
-                not (repo_name := repository_metadat.get("name")) or
-                not (owner_name := repository_metadat.get("owner", {}).get("login")) or
-                not (clone_url := repository_metadat.get("clone_url"))):
+        if (not (repo_id := repository_metadata.get("id")) or
+                not (repo_name := repository_metadata.get("name")) or
+                not (owner_name := repository_metadata.get("owner", {}).get("login")) or
+                not (clone_url := repository_metadata.get("clone_url"))):
             return None
 
         terrareg.repository_model.Repository.create(
             provider_source=self,
             provider_id=repo_id,
             name=repo_name,
-            description=repository_metadat.get("description"),
+            description=repository_metadata.get("description"),
             owner=owner_name,
             clone_url=clone_url,
-            logo_url=repository_metadat.get("owner", {}).get("avatar_url"),
+            logo_url=repository_metadata.get("owner", {}).get("avatar_url"),
         )
 
 
@@ -233,7 +233,7 @@ class GithubProviderSource(BaseProviderSource):
             results = res.json()
 
             for repository in results:
-                self._add_repository(repository_metadat=repository)
+                self._add_repository(repository_metadata=repository)
 
             if len(results) < 100:
                 break
@@ -580,7 +580,7 @@ class GithubProviderSource(BaseProviderSource):
             results = res.json()
 
             for repository in results:
-                self._add_repository(repository_metadat=repository)
+                self._add_repository(repository_metadata=repository)
 
             if len(results) < 100:
                 break
