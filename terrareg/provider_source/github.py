@@ -11,7 +11,7 @@ import jwt
 
 import requests
 
-from terrareg.errors import InvalidProviderSourceConfigError, ProviderSourceDefaultAccessTokenNotConfiguredError, UnableToGenerateGithubInstallationAccessTokenError
+from terrareg.errors import GithubEntityDoesNotExistError, InvalidProviderSourceConfigError, ProviderSourceDefaultAccessTokenNotConfiguredError, UnableToGenerateGithubInstallationAccessTokenError
 from .base import BaseProviderSource
 import terrareg.provider_source_type
 import terrareg.repository_model
@@ -553,7 +553,7 @@ class GithubProviderSource(BaseProviderSource):
 
         type_ = self._is_entity_org_or_user(namespace.name, access_token=access_token)
         if not type_:
-            raise Exception("Could not find namespace entity in provider")
+            raise GithubEntityDoesNotExistError("Could not find namespace entity in provider")
 
         url = f"{self._api_url}/{'orgs' if type_ is terrareg.namespace_type.NamespaceType.GITHUB_ORGANISATION else 'users'}/{namespace.name}/repos"
 
