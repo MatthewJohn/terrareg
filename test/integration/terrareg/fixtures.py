@@ -84,6 +84,38 @@ def mock_provider_source(mock_provider_source_class):
 
 
 @pytest.fixture
+def test_github_provider_source():
+    """Return test github provider source instance"""
+    db = terrareg.database.Database.get()
+    name = "Test Github Provider"
+    with terrareg.database.Database.get_connection() as conn:
+        conn.execute(db.provider_source.insert().values(
+            name=name,
+            api_name="test-github-provider",
+            provider_source_type=terrareg.provider_source_type.ProviderSourceType.GITHUB,
+            config=db.encode_blob(json.dumps({
+                "base_url": "https://github.example.com",
+                "api_url": "https://api.github.example.com",
+                "client_id": "unittest-client-id",
+                "client_secret": "unittest-client-secret",
+                "login_button_text": "Login via Github using this unit test",
+                "private_key_path": "./path/to/key.pem",
+                "app_id": "1234appid",
+                "default_access_token": "pa-test-personal-access-token",
+                "default_installation_id": "ut-default-installation-id-here",
+                "auto_generate_github_organisation_namespaces": False
+            }))
+        ))
+
+    yield terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(name)
+
+    # Delete provider source
+    db = terrareg.database.Database.get()
+    with terrareg.database.Database.get_connection() as conn:
+        conn.execute(db.provider_source.delete(db.provider_source.c.name==name))
+
+
+@pytest.fixture
 def test_namespace():
     """Create test repository"""
     namespace = terrareg.models.Namespace.create("some-organisation", None, type_=None)
