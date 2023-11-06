@@ -385,6 +385,8 @@ class GithubProviderSource(BaseProviderSource):
         repository = provider.repository
 
         access_token = self._get_access_token_for_provider(provider=provider)
+        if not access_token:
+            return None
 
         res = requests.get(
             f"{self._api_url}/repos/{repository.owner}/{repository.name}/releases/assets/{artifact_metadata.provider_id}",
