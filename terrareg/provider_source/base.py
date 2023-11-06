@@ -83,7 +83,7 @@ class BaseProviderSource:
 
     def get_release_archive(self,
                             provider: 'terrareg.provider_model.Provider',
-                            release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata') -> Tuple[bytes, Union[None, str]]:
+                            release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata') -> Tuple[Union[bytes, None], Union[None, str]]:
         """Obtain release archive"""
         raise NotImplementedError
 

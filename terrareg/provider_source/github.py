@@ -402,11 +402,15 @@ class GithubProviderSource(BaseProviderSource):
 
     def get_release_archive(self,
                             provider: 'terrareg.provider_model.Provider',
-                            release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata') -> Tuple[bytes, Union[None, str]]:
+                            release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata') -> Tuple[Union[bytes, None], Union[None, str]]:
         """Obtain release archive, returning bytes of archive"""
         repository = provider.repository
+        content = None
+        archive_id = f"{repository.owner}-{repository.name}-{release_metadata.commit_hash[0:7]}"
 
         access_token = self._get_access_token_for_provider(provider=provider)
+        if not access_token:
+            return None, archive_id
 
         res = requests.get(
             f"{self._api_url}/repos/{repository.owner}/{repository.name}/tarball/{release_metadata.tag}",
@@ -417,13 +421,12 @@ class GithubProviderSource(BaseProviderSource):
             },
             allow_redirects=True
         )
-        content = None
         if res.status_code == 404:
             print("get_release_artifact returned 404")
         else:
             content = res.content
 
-        return content, f"{repository.owner}-{repository.name}-{release_metadata.commit_hash[0:7]}"
+        return content, archive_id
 
     def get_public_source_url(self, repository: 'terrareg.repository_model.Repository'):
         """Return public URL for source"""
