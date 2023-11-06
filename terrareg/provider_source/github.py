@@ -11,7 +11,7 @@ import jwt
 
 import requests
 
-from terrareg.errors import GithubEntityDoesNotExistError, InvalidProviderSourceConfigError, ProviderSourceDefaultAccessTokenNotConfiguredError, UnableToGenerateGithubInstallationAccessTokenError
+from terrareg.errors import GithubEntityDoesNotExistError, InvalidGithubAppMetadataError, InvalidProviderSourceConfigError, ProviderSourceDefaultAccessTokenNotConfiguredError, UnableToGenerateGithubInstallationAccessTokenError
 from .base import BaseProviderSource
 import terrareg.provider_source_type
 import terrareg.repository_model
@@ -491,7 +491,7 @@ class GithubProviderSource(BaseProviderSource):
         )
         if res.status_code == 200:
             return res.json()
-        raise Exception(f"Could not obtain app metadata: {res.status_code}: {res.content}")
+        raise InvalidGithubAppMetadataError(f"Could not obtain app metadata: {res.status_code}: {res.content}")
 
     def get_app_installation_url(self):
         """Generate app installation URL"""

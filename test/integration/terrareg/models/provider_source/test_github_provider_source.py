@@ -17,9 +17,31 @@ import terrareg.database
 import terrareg.repository_model
 import terrareg.repository_kind
 import terrareg.provider_model
+import terrareg.provider_source.repository_release_metadata
+import terrareg.provider_version_model
 from test.integration.terrareg.fixtures import (
-    test_namespace, test_provider_category
+    test_namespace, test_provider_category, test_gpg_key
 )
+
+
+TEST_GITHUB_PRIVATE_KEY = """
+-----BEGIN RSA PRIVATE KEY-----
+MIICXQIBAAKBgQDfUVYMRr22c+KwSt8PFxP+uDbe5thCcfPV+IxtTf/F2LAoCcNd
+XdqFJ+hpokKYx6KjKDlGUIA+kf9a+CODcXs6OLqiom+ml/k47MD4eYmaoW7Sw+7Q
+IzLiCwEDkOhmt/MIFDOxjSHC34jGSVleQeT8xuaIWgpiTzSv+1dMQb+V+wIDAQAB
+AoGBAKx2z0J524etpbNKj0vDIfEE6XNpyjg+cvabli/QHij4eMrjB1ry4ZEWSfpS
+kqYU/ziMFveDshcgf5oMqriXinbxhNX5AmdpgsxS/9Qk7vwHWSjqT/2fsAyFTT5B
+fyv6/f/wLVW49lHpsr/2OT2fv7gQTb2MLPfD5I65SXxQ0t9ZAkEA/CzhpKV3Xuk1
+qOhlik8UfFHnp0/cyWj3592LqCAcZRPUbL/9idF9MaVBQOYssXiScakwPhWtzB6J
+ru9ce8h0hQJBAOK0aNtQCCpgzgpzxHvXDcSpRW4PX/UfCNE3Kpv//IqHtDeZJJZM
+aytB/UwExLN71o8DUdZ03WBSQrw6GmaFKH8CQDko1zChzO/3fpE9tB5olGUlj5Ou
+F4aTw3WMEybVuHn0x7aqwgZmNLF3GtZiFglYIiGfTu8TrORSm7TKTrVEF50CQQCl
+joKUxplv+Un+sBRpK9/OIp+lhGzbIVLbFqJzUjonIHsnrxrc9+m7qXFFNqY/PMyv
+nAkDyExyryA1PWlSPSQZAkB8JBd321fxU6uJegsyWHQalfadzALKuQeVoQ9603Eu
+2KZ2AFT0zXVdkE0D7VlcxXWMIUn9fUkzUQFxjbHqf9SG
+-----END RSA PRIVATE KEY-----
+""".strip()
+
 
 
 class TestGithubProviderSource(BaseProviderSourceTests):
@@ -370,6 +392,110 @@ class TestGithubProviderSource(BaseProviderSourceTests):
                 'Authorization': 'Bearer abcdef-test-access-token'
             }
         )
+
+    @pytest.mark.parametrize('response_code, content, get_access_token_for_provider_response, expected_result', [
+        (200, b'test-content\nhere', 'unittest-access-token', b'test-content\nhere'),
+        (200, None, 'unittest-access-token', None),
+        (404, b'test-content\nhere', 'unittest-access-token', None),
+
+        # No access token
+        (200, b'test-content\nhere', None, None),
+    ])
+    def test_get_release_artifact(self, response_code, content, get_access_token_for_provider_response, expected_result, test_provider_source, test_provider):
+        """Test get_release_artifact"""
+
+        mock_response = unittest.mock.MagicMock()
+        mock_response.status_code = response_code
+        mock_response.content = content
+
+        artifact_metadata = terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(
+            name='unittest-artifact-name', provider_id='unittest-artifact-id-12345')
+        release_metadata = terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
+            name='v5.2.3', tag='v5.2.3', archive_url='https://git.example.com/release/v5.2.3.tgz',
+            commit_hash='1235abcdef', provider_id='unittest-5.2.3-release-id',
+            release_artifacts=[artifact_metadata]
+        )
+
+        with unittest.mock.patch(
+                    'terrareg.provider_source.github.GithubProviderSource._get_access_token_for_provider',
+                    unittest.mock.MagicMock(return_value=get_access_token_for_provider_response)) as mock_get_access_token_for_provider, \
+                unittest.mock.patch(
+                    'terrareg.provider_source.github.requests.get', unittest.mock.MagicMock(return_value=mock_response)) as mock_requests_get:
+
+            assert test_provider_source.get_release_artifact(
+                provider=test_provider,
+                release_metadata=release_metadata,
+                artifact_metadata=artifact_metadata
+            ) == expected_result
+
+            mock_get_access_token_for_provider.assert_called_once_with(provider=test_provider)
+            if get_access_token_for_provider_response:
+                mock_requests_get.assert_called_once_with(
+                    'https://api.github.example-test.com/repos/some-organisation/terraform-provider-unittest-create/releases/assets/unittest-artifact-id-12345',
+                    headers={'X-GitHub-Api-Version': '2022-11-28', 'Accept': 'application/octet-stream', 'Authorization': 'Bearer unittest-access-token'},
+                    allow_redirects=True
+                )
+            else:
+                mock_requests_get.assert_not_called()
+
+    @pytest.mark.parametrize('response_code, content, get_access_token_for_provider_response, expected_result', [
+        (200, b'test-content\nhere', 'unittest-access-token', (b'test-content\nhere', 'some-organisation-terraform-provider-unittest-create-1235abc')),
+        (200, None, 'unittest-access-token', (None, 'some-organisation-terraform-provider-unittest-create-1235abc')),
+        (404, b'test-content\nhere', 'unittest-access-token', (None, 'some-organisation-terraform-provider-unittest-create-1235abc')),
+
+        # No access token
+        (200, b'test-content\nhere', None, (None, 'some-organisation-terraform-provider-unittest-create-1235abc')),
+    ])
+    def test_get_release_archive(self, response_code, content, get_access_token_for_provider_response, expected_result, test_provider_source, test_provider):
+        """Test get_release_archive"""
+
+        mock_response = unittest.mock.MagicMock()
+        mock_response.status_code = response_code
+        mock_response.content = content
+
+        artifact_metadata = terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(
+            name='unittest-artifact-name', provider_id='unittest-artifact-id-12345')
+        release_metadata = terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
+            name='v5.2.3', tag='v5.2.3', archive_url='https://git.example.com/release/v5.2.3.tgz',
+            commit_hash='1235abcdef', provider_id='unittest-5.2.3-release-id',
+            release_artifacts=[artifact_metadata]
+        )
+
+        with unittest.mock.patch(
+                    'terrareg.provider_source.github.GithubProviderSource._get_access_token_for_provider',
+                    unittest.mock.MagicMock(return_value=get_access_token_for_provider_response)) as mock_get_access_token_for_provider, \
+                unittest.mock.patch(
+                    'terrareg.provider_source.github.requests.get', unittest.mock.MagicMock(return_value=mock_response)) as mock_requests_get:
+
+            assert test_provider_source.get_release_archive(
+                provider=test_provider,
+                release_metadata=release_metadata
+            ) == expected_result
+
+            mock_get_access_token_for_provider.assert_called_once_with(provider=test_provider)
+            if get_access_token_for_provider_response:
+                mock_requests_get.assert_called_once_with(
+                    'https://api.github.example-test.com/repos/some-organisation/terraform-provider-unittest-create/tarball/v5.2.3',
+                    headers={'X-GitHub-Api-Version': '2022-11-28', 'Accept': 'application/json', 'Authorization': 'Bearer unittest-access-token'},
+                    allow_redirects=True
+                )
+            else:
+                mock_requests_get.assert_not_called()
+
+    def test_get_public_source_url(self, test_provider_source, test_repository):
+        """Test get_public_source_url"""
+        assert test_provider_source.get_public_source_url(repository=test_repository) == "https://github.example-test.com/some-organisation/terraform-provider-unittest-create"
+
+    def test_get_public_artifact_download_url(self, test_provider_source, test_provider, test_gpg_key):
+        """Test get_public_artifact_download_url"""
+        provider_version = terrareg.provider_version_model.ProviderVersion(provider=test_provider, version="2.3.1")
+        provider_version._create_db_row(git_tag=f"v2.3.1", gpg_key=test_gpg_key)
+        provider_version.publish()
+        assert test_provider_source.get_public_artifact_download_url(
+            provider_version=provider_version,
+            artifact_name="unittest-artifact-v2.3.1.tar.gz"
+        ) == "https://github.example-test.com/some-organisation/terraform-provider-unittest-create/releases/download/v2.3.1/unittest-artifact-v2.3.1.tar.gz"
+
 
     # Test Custom properties/methods
 
@@ -791,3 +917,126 @@ class TestGithubProviderSource(BaseProviderSourceTests):
             mock_get_default_access_token.assert_called_once_with()
         else:
             mock_get_default_access_token.assert_not_called()
+
+    @pytest.mark.parametrize('status_code, response_data, expected_response', [
+        # Invalid response code
+        (500, [{"name": "test-artifact", "id": "test-artifact-id"}], []),
+        # No releases
+        (200, [], []),
+        # Single artifact
+        (200, [{"name": "test-artifact", "id": "test-artifact-id"}], [
+            terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(name="test-artifact", provider_id="test-artifact-id")
+        ]),
+        # Multiple artifacts
+        (200, [{"name": "test-artifact1", "id": "test-artifact-id1"}, {"name": "test-artifact2", "id": "test-artifact-id2"}], [
+            terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(name="test-artifact1", provider_id="test-artifact-id1"),
+            terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(name="test-artifact2", provider_id="test-artifact-id2")
+        ]),
+
+        # Artifacts missing properties
+        (200, [{"name": "test-artifact"}, {"id": "test-artifact-id"}, {"name": None, "id": None}], []),
+    ])
+    def test__get_release_artifacts_metadata(self, status_code, response_data, expected_response, test_provider_source, test_repository):
+        """Test _get_release_artifacts_metadata"""
+        mock_response = unittest.mock.MagicMock()
+        mock_response.status_code = status_code
+        mock_response.json.return_value = response_data
+
+        with unittest.mock.patch('terrareg.provider_source.github.requests.get', unittest.mock.MagicMock(return_value=mock_response)) as mock_requests_get:
+            res = test_provider_source._get_release_artifacts_metadata(
+                repository=test_repository,
+                release_id=173729,
+                access_token='unit-test-acccess-token-get_release_artifacts'
+            )
+
+            assert isinstance(res, list)
+            assert len(res) == len(expected_response)
+            for itx, res_itx in enumerate(res):
+                assert isinstance(res_itx, terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata)
+                assert res_itx.name == expected_response[itx].name
+                assert res_itx.provider_id == expected_response[itx].provider_id
+
+        mock_requests_get.assert_called_once_with(
+            'https://api.github.example-test.com/repos/some-organisation/terraform-provider-unittest-create/releases/173729/assets',
+            params={'per_page': '100', 'page': '1'},
+            headers={'X-GitHub-Api-Version': '2022-11-28', 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer unit-test-acccess-token-get_release_artifacts'}
+        )
+
+    @pytest.mark.parametrize('installation_id, status_code, json_res, should_raise, expected_repsonse', [
+        ('unittest-installation-id1', 201, {'token': 'unittest-access-token'}, False, 'unittest-access-token'),
+
+        # No access token
+        ('unittest-installation-id2', 201, {'token': None}, False, None),
+        ('unittest-installation-id3', 201, {}, False, None),
+        # Invalid response code
+        ('unittest-installation-id4', 403, {}, True, None),
+
+        # No installation ID
+        (None, 201, {'token': 'unittest-access-token'}, False, None),
+    ])
+    def test_generate_app_installation_token(self, installation_id, status_code, json_res, should_raise, expected_repsonse, test_provider_source):
+        """Test generate_app_installation_token"""
+        mock_response = unittest.mock.MagicMock()
+        mock_response.status_code = status_code
+        mock_response.json.return_value = json_res
+
+        with unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource._generate_jwt', unittest.mock.MagicMock(return_value='unittest JWT Auth')), \
+                unittest.mock.patch('terrareg.provider_source.github.requests.post', unittest.mock.MagicMock(return_value=mock_response)) as mock_requests_post:
+
+            if should_raise:
+                with pytest.raises(terrareg.errors.UnableToGenerateGithubInstallationAccessTokenError):
+                    test_provider_source.generate_app_installation_token(installation_id=installation_id)
+            else:
+                assert test_provider_source.generate_app_installation_token(installation_id=installation_id) == expected_repsonse
+        
+        if installation_id:
+            mock_requests_post.assert_called_once_with(
+                f'https://api.github.example-test.com/app/installations/{installation_id}/access_tokens',
+                headers={'X-GitHub-Api-Version': '2022-11-28', 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer unittest JWT Auth'}
+            )
+        else:
+            mock_requests_post.assert_not_called()
+
+    @pytest.mark.parametrize('private_key, expected_result', {
+        (None, None),
+        (TEST_GITHUB_PRIVATE_KEY.encode('utf-8'),
+         ("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2OTkyNTU4OTEsImV4cCI6MTY5OTI1NjQ5MSwiaXNzIjo5NTQ5NTZ9."
+          "C2SGwXuObOpi-4jE59fjkFSIAXkCK0tm68JQgi6mbU_SILlYksvb5E106X2B3qrJIQZNmndTYo2fGT_2RwY_kqKHl0xYw0p0Pdqqny"
+          "T8jetEK6IiQggyEm-DxlzGE7t3oyuFjq25zbrEjnmlIwnJapboU9V7amyH8WE7dl3MNo4"))
+    })
+    def test__generate_jwt(self, private_key, expected_result, test_provider_source):
+        """Test _generate_jwt"""
+        with unittest.mock.patch("terrareg.provider_source.github.GithubProviderSource._private_key", private_key), \
+            unittest.mock.patch('terrareg.provider_source.github.time.time', unittest.mock.MagicMock(return_value=1699255891.0833983)):
+
+            assert test_provider_source._generate_jwt() == expected_result
+
+    @pytest.mark.parametrize('status_code, response_data, expected_response, should_raise', [
+        (200, {'id': 'abcd-1234', 'name': 'test-org'}, {'id': 'abcd-1234', 'name': 'test-org'}, False),
+        (403, {'id': 'abcd-1234', 'name': 'test-org'}, None, True),
+    ])
+    def test__get_app_metadata(self, status_code, response_data, expected_response, should_raise, test_provider_source):
+        """Test _get_app_metadata"""
+        mock_response = unittest.mock.MagicMock()
+        mock_response.status_code = status_code
+        mock_response.json.return_value = response_data
+
+        with unittest.mock.patch('terrareg.provider_source.github.requests.get', unittest.mock.MagicMock(return_value=mock_response)) as mock_requests_get, \
+                unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource._generate_jwt', unittest.mock.MagicMock(return_value='unittest-mock-jwt')):
+
+            if should_raise:
+                with pytest.raises(terrareg.errors.InvalidGithubAppMetadataError):
+                    test_provider_source._get_app_metadata()
+            else:
+                assert test_provider_source._get_app_metadata() == expected_response
+
+        mock_requests_get.assert_called_once_with(
+            'https://api.github.example-test.com/app',
+            headers={'X-GitHub-Api-Version': '2022-11-28', 'Accept': 'application/json', 'Authorization': 'Bearer unittest-mock-jwt'}
+        )
+
+    def test_get_app_installation_url(self, test_provider_source):
+        """Test get_app_installation_url"""
+        with unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource._get_app_metadata',
+                    unittest.mock.MagicMock(return_value={'html_url': 'https://example.github.com/apps/my-special-app'})):
+            assert test_provider_source.get_app_installation_url() == "https://example.github.com/apps/my-special-app/installations/new"

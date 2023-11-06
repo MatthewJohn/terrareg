@@ -394,3 +394,9 @@ class GithubEntityDoesNotExistError(TerraregError):
     """Could not determine github entity type"""
 
     pass
+
+
+class InvalidGithubAppMetadataError(TerraregError):
+    """Unable to obtain github app metadata"""
+
+    pass
