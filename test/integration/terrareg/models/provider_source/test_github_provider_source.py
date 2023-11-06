@@ -1,5 +1,7 @@
 
 # Temp import
+import json
+import tempfile
 from typing import Union, List
 
 import unittest.mock
@@ -7,12 +9,16 @@ import unittest.mock
 import pytest
 
 from .base_provider_source_tests import BaseProviderSourceTests
-from . import test_provider_source
+from . import test_provider_source, test_repository, test_provider
 import terrareg.provider_source
 import terrareg.errors
 import terrareg.namespace_type
+import terrareg.database
+import terrareg.repository_model
+import terrareg.repository_kind
+import terrareg.provider_model
 from test.integration.terrareg.fixtures import (
-    test_namespace
+    test_namespace, test_provider_category
 )
 
 
@@ -24,7 +30,9 @@ class TestGithubProviderSource(BaseProviderSourceTests):
         "base_url": "https://github.example-test.com",
         "api_url": "https://api.github.example-test.com",
         "client_id": "unittest-github-client-id",
-        "client_secret": "unittest-github-client-secret"
+        "client_secret": "unittest-github-client-secret",
+        "private_key_path": "./unittest-path-to-private-key.pem",
+        "app_id": 954956
     }
 
     def test_generate_db_config_from_source_config(self):
@@ -362,3 +370,424 @@ class TestGithubProviderSource(BaseProviderSourceTests):
                 'Authorization': 'Bearer abcdef-test-access-token'
             }
         )
+
+    # Test Custom properties/methods
+
+    def test_github__init__(self, test_provider_source):
+        """Test github __init__ method"""
+        assert test_provider_source._private_key_content is None
+
+    def test__client_id(self, test_provider_source):
+        """Test _client_id property"""
+        assert test_provider_source._client_id == "unittest-github-client-id"
+
+    def test__client_secret(self, test_provider_source):
+        """Test _client_secret property"""
+        assert test_provider_source._client_secret == "unittest-github-client-secret"
+
+    def test__base_url(self, test_provider_source):
+        """Test _base_url property"""
+        assert test_provider_source._base_url == "https://github.example-test.com"
+
+    def test__api_url(self, test_provider_source):
+        """Test _api_url property"""
+        assert test_provider_source._api_url == "https://api.github.example-test.com"
+
+    @pytest.mark.parametrize('value, expected_result', [
+        (None, False),
+        (False, False),
+        (True, True),
+    ])
+    def test_auto_generate_github_organisation_namespaces(self, value, expected_result, test_provider_source):
+        """Test auto_generate_github_organisation_namespaces property"""
+        test_provider_source._cache_db_row = {
+            "config": terrareg.database.Database.encode_blob(json.dumps({
+                "auto_generate_github_organisation_namespaces": value
+            } if value else {}))
+        }
+
+        assert test_provider_source.auto_generate_github_organisation_namespaces == expected_result
+
+    def test__private_key_path(self, test_provider_source):
+        """Test _private_key_path property"""
+        assert test_provider_source._private_key_path == "./unittest-path-to-private-key.pem"
+
+    @pytest.mark.parametrize('file_exists', [
+        True,
+        False
+    ])
+    def test__private_key(self, file_exists, test_provider_source):
+        """Test _private_key property"""
+        with tempfile.NamedTemporaryFile(delete=True) as pem_file:
+            pem_file.write("test\nprivate-key\nContent".encode('utf-8'))
+            pem_file.flush()
+
+            if file_exists:
+                test_provider_source._cache_db_row = {
+                    "config": terrareg.database.Database.encode_blob(json.dumps({
+                        "private_key_path": pem_file.name
+                    }))
+                }
+
+            if file_exists:
+                assert test_provider_source._private_key == "test\nprivate-key\nContent".encode('utf-8')
+                test_provider_source._private_key_content == "test\nprivate-key\nContent".encode('utf-8')
+            else:
+                assert test_provider_source._private_key is None
+                assert test_provider_source._private_key_content is None
+        
+        # Ensure cached value is used
+        test_provider_source._private_key_content = "cached\ntest\nprivate-key\nContent".encode('utf-8')
+        assert test_provider_source._private_key == "cached\ntest\nprivate-key\nContent".encode('utf-8')
+
+    def test_github_app_id(self, test_provider_source):
+        """Test github_app_id property"""
+        assert test_provider_source.github_app_id == 954956
+
+    @pytest.mark.parametrize('client_id, client_secret, base_url, api_url, expected_result', [
+        (None, None, None, None, False),
+        ('test client id', 'test client secret', None, 'https://api.github.com', False),
+        ('test client id', 'test client secret', 'https://github.com', None, False),
+        (None, 'test client secret', 'https://github.com', 'https://api.github.com', False),
+        ('test client id', None, 'https://github.com', 'https://api.github.com', False),
+        ('test client id', 'test client secret', 'https://github.com', 'https://api.github.com', True),
+    ])
+    def test_is_enabled(self, client_id, client_secret, base_url, api_url, expected_result, test_provider_source):
+        """Test is_enabled property"""
+        with unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource._client_id', client_id), \
+                unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource._client_secret', client_secret), \
+                unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource._base_url', base_url), \
+                unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource._api_url', api_url):
+            assert test_provider_source.is_enabled == expected_result
+
+    def test_get_login_redirect_url(self, test_provider_source):
+        """Test get_login_redirect_url"""
+        assert test_provider_source.get_login_redirect_url() == "https://github.example-test.com/login/oauth/authorize?client_id=unittest-github-client-id"
+
+    @pytest.mark.parametrize('default_installation_id, default_access_token, generate_app_installation_token_response, expected_response', [
+        # no tokens
+        (None, None, None, None),
+
+        # Default installation token, but no access token returned
+        ("unittest-installation-token", None, None, None),
+
+        # Default installation token returns value
+        ("unittest-installation-token", None, "unitttest-installation-access-key", "unitttest-installation-access-key"),
+
+        # Default installation token preferred over default access token
+        ("unittest-installation-token", "unittest-default-access-token", "unitttest-installation-access-key", "unitttest-installation-access-key"),
+        ("unittest-installation-token", "unittest-default-access-token", None, None),
+        # Fallback to default access token
+        (None, "unittest-default-access-token", None, "unittest-default-access-token"),
+
+    ])
+    def test__get_default_access_token(self, default_installation_id, default_access_token, generate_app_installation_token_response, expected_response, test_provider_source):
+        """Test _get_default_access_token method"""
+        test_provider_source._cache_db_row = {
+            "config": terrareg.database.Database.encode_blob(json.dumps({
+                "default_installation_id": default_installation_id,
+                "default_access_token": default_access_token
+            }))
+        }
+        with unittest.mock.patch(
+                'terrareg.provider_source.GithubProviderSource.generate_app_installation_token',
+                unittest.mock.MagicMock(return_value=generate_app_installation_token_response)) as mock_generate_app_installation_token:
+            assert test_provider_source._get_default_access_token() == expected_response
+
+        if default_installation_id:
+            mock_generate_app_installation_token.assert_called_once_with(default_installation_id)
+        else:
+            mock_generate_app_installation_token.assert_not_called()
+
+    @pytest.mark.parametrize('access_token, expect_call, response_code, response_data, expected_response', [
+        ('abcdefg', True, 200, {'login': 'testusername'}, 'testusername'),
+        ('abcdefg', True, 200, {'somethingelse': 'sometingelse'}, None),
+        ('abcdefg', True, 400, {}, None),
+        (None, False, 200, {'login': 'testusername'}, None)
+    ])
+    def test_get_username(self, access_token, expect_call, response_code, response_data, expected_response, test_provider_source):
+        """Test get_username method"""
+        mock_response = unittest.mock.MagicMock()
+        mock_response.status_code = response_code
+        mock_response.json = unittest.mock.MagicMock(return_value=response_data)
+        mock_request_get = unittest.mock.MagicMock(return_value=mock_response)
+        with unittest.mock.patch("terrareg.provider_source.github.requests.get", mock_request_get):
+            assert test_provider_source.get_username(access_token) == expected_response
+
+        if expect_call:
+            mock_request_get.assert_called_once_with(
+                'https://api.github.example-test.com/user',
+                headers={
+                    "X-GitHub-Api-Version": "2022-11-28",
+                    "Accept": "application/vnd.github+json",
+                    "Authorization": f"Bearer {access_token}"
+                }
+            )
+        else:
+            mock_request_get.assert_not_called()
+
+    @pytest.mark.parametrize('access_token, expect_call, response_code, response_data, expected_response', [
+        ('abcdefg', True, 200, [], []),
+        ('abcdefg', True, 200, [
+            {
+                "organization": {"login": "valid1"},
+                "state": "active",
+                "role": "admin"
+            },
+            {
+                "organization": {"login": "invalid"},
+            },
+            {
+                "organization": {"login": "multiplematch"},
+                "state": "active",
+                "role": "admin"
+            }
+        ], ["valid1", "multiplematch"]),
+        ('abcdefg', True, 200, [
+            {
+                "organization": {"login": "invalidstate"},
+                "state": "bad",
+                "role": "admin"
+            }
+        ], []),
+        ('abcdefg', True, 200, [
+            {
+                "organization": {"login": "invalidstate"},
+                "role": "admin"
+            }
+        ], []),
+        ('abcdefg', True, 200, [
+            {
+                "organization": {"login": "invalidstate"},
+                "state": "active",
+                "role": "badrole"
+            }
+        ], []),
+        ('abcdefg', True, 200, [
+            {
+                "organization": {"login": "invalidstate"},
+                "state": "bad"
+            }
+        ], []),
+        ('abcdefg', True, 200, [
+            {
+                "state": "bad",
+                "role": "admin"
+            }
+        ], []),
+        ('abcdefg', True, 400, {}, []),
+        (None, False, 200, None, [])
+    ])
+    def test_get_user_organisations(self, access_token, expect_call, response_code, response_data, expected_response, test_provider_source):
+        """Test get_user_organisations"""
+        mock_response = unittest.mock.MagicMock()
+        mock_response.status_code = response_code
+        mock_response.json = unittest.mock.MagicMock(return_value=response_data)
+        mock_request_get = unittest.mock.MagicMock(return_value=mock_response)
+        with unittest.mock.patch("terrareg.provider_source.github.requests.get", mock_request_get):
+            assert test_provider_source.get_user_organisations(access_token) == expected_response
+
+        if expect_call:
+            mock_request_get.assert_called_once_with(
+                'https://api.github.example-test.com/user/memberships/orgs',
+                headers={
+                    "X-GitHub-Api-Version": "2022-11-28",
+                    "Accept": "application/vnd.github+json",
+                    "Authorization": f"Bearer {access_token}"
+                }
+            )
+        else:
+            mock_request_get.assert_not_called()
+
+    @pytest.mark.parametrize('repository_metadata, expect_create, expected_row', [
+        # Working example
+        ({"id": "unittest-github-repo-id-001",
+          "name": "terraform-provider-laptop",
+          "owner": {"login": "MatthewJohn", "avatar_url": "https://cdn.example.com/MatthewJohn.png"},
+          "description": "Terraform Provider to create a laptop. Don't ask how!",
+          "clone_url": "https://example.github.com/clone/MatthewJohn/terraform-provider-laptop.git"},
+         True,
+         {"provider_id": "unittest-github-repo-id-001", "name": "terraform-provider-laptop",
+          "description": terrareg.database.Database.encode_blob("Terraform Provider to create a laptop. Don't ask how!"),
+          "owner": "MatthewJohn",
+          "clone_url": "https://example.github.com/clone/MatthewJohn/terraform-provider-laptop.git",
+          "logo_url": "https://cdn.example.com/MatthewJohn.png"}),
+
+        # Missing optional arguments
+        ({"id": "unittest-github-repo-id-001",
+          "name": "terraform-provider-laptop",
+          "owner": {"login": "MatthewJohn", "avatar_url": "https://cdn.example.com/MatthewJohn.png"},
+          "clone_url": "https://example.github.com/clone/MatthewJohn/terraform-provider-laptop.git"},
+         True,
+         {"provider_id": "unittest-github-repo-id-001", "name": "terraform-provider-laptop",
+          "description": terrareg.database.Database.encode_blob(""),
+          "owner": "MatthewJohn",
+          "clone_url": "https://example.github.com/clone/MatthewJohn/terraform-provider-laptop.git",
+          "logo_url": "https://cdn.example.com/MatthewJohn.png"}),
+        ({"id": "unittest-github-repo-id-001",
+          "name": "terraform-provider-laptop",
+          "owner": {"login": "MatthewJohn"},
+          "description": "Terraform Provider to create a laptop. Don't ask how!",
+          "clone_url": "https://example.github.com/clone/MatthewJohn/terraform-provider-laptop.git"},
+         True,
+         {"provider_id": "unittest-github-repo-id-001", "name": "terraform-provider-laptop",
+          "description": terrareg.database.Database.encode_blob("Terraform Provider to create a laptop. Don't ask how!"),
+          "owner": "MatthewJohn",
+          "clone_url": "https://example.github.com/clone/MatthewJohn/terraform-provider-laptop.git",
+          "logo_url": None}),
+
+        # Missing required attributes
+        ## Missing ID
+        ({"name": "terraform-provider-laptop",
+          "owner": {"login": "MatthewJohn", "avatar_url": "https://cdn.example.com/MatthewJohn.png"},
+          "description": "Terraform Provider to create a laptop. Don't ask how!",
+          "clone_url": "https://example.github.com/clone/MatthewJohn/terraform-provider-laptop.git"},
+         False, {}),
+        ## Missing name
+        ({"id": "unittest-github-repo-id-001",
+          "owner": {"login": "MatthewJohn", "avatar_url": "https://cdn.example.com/MatthewJohn.png"},
+          "description": "Terraform Provider to create a laptop. Don't ask how!",
+          "clone_url": "https://example.github.com/clone/MatthewJohn/terraform-provider-laptop.git"},
+         False, {}),
+         ## Missing owner
+        ({"id": "unittest-github-repo-id-001",
+          "name": "terraform-provider-laptop",
+          "owner": {},
+          "description": "Terraform Provider to create a laptop. Don't ask how!",
+          "clone_url": "https://example.github.com/clone/MatthewJohn/terraform-provider-laptop.git"},
+         False, {}),
+        ({"id": "unittest-github-repo-id-001",
+          "name": "terraform-provider-laptop",
+          "description": "Terraform Provider to create a laptop. Don't ask how!",
+          "clone_url": "https://example.github.com/clone/MatthewJohn/terraform-provider-laptop.git"},
+         False, {}),
+        ## Missing clone URL
+        ({"id": "unittest-github-repo-id-001",
+          "name": "terraform-provider-laptop",
+          "owner": {"login": "MatthewJohn", "avatar_url": "https://cdn.example.com/MatthewJohn.png"},
+          "description": "Terraform Provider to create a laptop. Don't ask how!"},
+         False, {}),
+    ])
+    def test__add_repository(self, repository_metadata, expect_create, expected_row, test_provider_source) -> None:
+        """Test _add_repository method"""
+        # Delete any pre-existing repositories
+        db = terrareg.database.Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.repository.delete())
+
+        test_provider_source._add_repository(repository_metadata=repository_metadata)
+
+        with db.get_connection() as conn:
+            row = conn.execute(db.repository.select()).first()
+
+            if expect_create:
+                assert row is not None
+                row = dict(row)
+                del row["id"]
+
+                assert row["provider_source_name"] == test_provider_source.name
+                del row["provider_source_name"]
+
+                assert row == expected_row
+            else:
+                assert row is None
+
+    @pytest.mark.parametrize('status_code, response_json, expected_response', [
+        # Valid response
+        (200, {"object": {"sha": "abcdefunittestsha"}}, "abcdefunittestsha"),
+        # Missing sha/object
+        (200, {"object": {}}, None),
+        (200, {}, None),
+        # Invalid response code
+        (404, {"object": {"sha": "abcdefunittestsha"}}, None)
+    ])
+    def test__get_commit_hash_by_release(self, status_code, response_json, expected_response, test_provider_source):
+        """Test _get_commit_hash_by_release method"""
+        mock_response = unittest.mock.MagicMock()
+        mock_response.status_code = status_code
+        mock_response.json = unittest.mock.MagicMock(return_value=response_json)
+
+        # Delete any pre-existing repositories
+        db = terrareg.database.Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.repository.delete())
+
+        repository = terrareg.repository_model.Repository.create(
+            provider_source=test_provider_source,
+            provider_id="unittest-repository-id-001",
+            name="terraform-provider-unittest",
+            description="Test",
+            owner="MatthewJohn",
+            clone_url="https://git.example.com/MatthewJohn/terraform-provider-unittest",
+            logo_url="https://example.com/logo.png"
+        )
+
+        with unittest.mock.patch('terrareg.provider_source.github.requests.get', unittest.mock.MagicMock(return_value=mock_response)) as mock_requests_get:
+            assert test_provider_source._get_commit_hash_by_release(
+                repository=repository,
+                tag_name="v5.2.1",
+                access_token="unittest-access-token"
+            ) == expected_response
+
+        mock_requests_get.assert_called_once_with(
+            'https://api.github.example-test.com/repos/MatthewJohn/terraform-provider-unittest/git/ref/tags/v5.2.1',
+            headers={'X-GitHub-Api-Version': '2022-11-28', 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer unittest-access-token'}
+        )
+
+    @pytest.mark.parametrize(('get_github_app_installation_id_response, generate_app_installation_token_response, '
+                              'generate_app_installation_token_should_be_called, get_default_access_token_response, '
+                              'get_default_access_token_should_be_called, use_default_provider_source_auth, '
+                              'should_raise_exception, expected_response'), [
+        # Obtains installation ID from namespace and able to obtain access token
+        ('1234-namespace-installation-id', 'unittest-namespace-installation-access-token', True,
+         None, False, False, False, 'unittest-namespace-installation-access-token'),
+        # Obtains installation ID from namespace and returns None access token
+        ('1234-namespace-installation-id', None, True,
+         None, False, False, False, None),
+        # No namespace installation ID and use_default_provider_source_auth is disabled
+        (None, 'abcdefg', False,
+         None, False, False, False, None),
+        # No namespace installation ID and use_default_provider_source_auth is enabled, returning valid default access token
+        (None, 'abcdefg', False,
+         "default-auth-access-token-unittest-123", True, True, False, "default-auth-access-token-unittest-123"),
+        # No namespace installation ID and use_default_provider_source_auth is enabled, and no default access token,
+        # raising an exception
+        (None, 'abcdefg', False,
+         None, True, True, True, None),
+    ])
+    def test__get_access_token_for_provider(self, get_github_app_installation_id_response, generate_app_installation_token_response,
+                                            generate_app_installation_token_should_be_called, get_default_access_token_response,
+                                            get_default_access_token_should_be_called, use_default_provider_source_auth, should_raise_exception,
+                                            expected_response,
+                                            test_provider_source, test_provider, test_namespace):
+        """Test _get_access_token_for_provider"""
+
+        with unittest.mock.patch(
+                    'terrareg.provider_source.github.GithubProviderSource.get_github_app_installation_id',
+                    unittest.mock.MagicMock(return_value=get_github_app_installation_id_response)) as mock_get_github_app_installation_id, \
+                unittest.mock.patch(
+                    'terrareg.provider_source.github.GithubProviderSource.generate_app_installation_token',
+                    unittest.mock.MagicMock(return_value=generate_app_installation_token_response)) as mock_generate_app_installation_token, \
+                unittest.mock.patch(
+                    'terrareg.provider_source.github.GithubProviderSource._get_default_access_token',
+                    unittest.mock.MagicMock(return_value=get_default_access_token_response)) as mock_get_default_access_token, \
+                unittest.mock.patch(
+                    'terrareg.provider_model.Provider.use_default_provider_source_auth', use_default_provider_source_auth):
+
+            if should_raise_exception:
+                with pytest.raises(terrareg.errors.ProviderSourceDefaultAccessTokenNotConfiguredError):
+                    test_provider_source._get_access_token_for_provider(provider=test_provider)
+            else:
+                assert test_provider_source._get_access_token_for_provider(provider=test_provider) == expected_response
+
+        mock_get_github_app_installation_id.assert_called_once_with(namespace=test_namespace)
+
+        if generate_app_installation_token_should_be_called:
+            mock_generate_app_installation_token.assert_called_once_with(installation_id='1234-namespace-installation-id')
+        else:
+            mock_generate_app_installation_token.assert_not_called()
+
+        if get_default_access_token_should_be_called:
+            mock_get_default_access_token.assert_called_once_with()
+        else:
+            mock_get_default_access_token.assert_not_called()
