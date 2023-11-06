@@ -109,6 +109,7 @@ class GithubProviderSource(BaseProviderSource):
         """Return github app ID"""
         return self._config.get("app_id")
 
+    @property
     def is_enabled(self) -> bool:
         """Whether github authentication is enabled"""
         return bool(self._client_id and self._client_secret and self._base_url and self._api_url)
