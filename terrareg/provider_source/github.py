@@ -273,6 +273,48 @@ class GithubProviderSource(BaseProviderSource):
                 )
             return access_token
 
+    def _process_release(self,
+                         provider: 'terrareg.provider_model.Provider',
+                         repository: 'terrareg.repository_model.Repository',
+                         access_token: str,
+                         github_release_metadata: dict) -> Union['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
+                                                                 'terrareg.provider_version_model.ProviderVersion',
+                                                                 None]:
+        """Generate repository provider release metadata. Returns ProviderVersion if the release already exists and returns None if it's invalid"""
+        if (not (release_id := github_release_metadata.get("id")) or
+                not (release_name := github_release_metadata.get("name")) or
+                not (tag_name := github_release_metadata.get("tag_name")) or
+                not (archive_url := github_release_metadata.get("tarball_url")) or
+                not (commit_hash := self._get_commit_hash_by_release(
+                    repository=repository,
+                    tag_name=tag_name,
+                    access_token=access_token))):
+            print("Could not obtain one of: release name, tag name, archive url or commit hash for release")
+            return None
+
+        # Obtain version from tag and skip if it's invalid
+        version = terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata.tag_to_version(tag_name)
+        if not version:
+            return None
+
+        # If a provider version exists for the release,
+        # exit early
+        pre_existing_provider_version = terrareg.provider_version_model.ProviderVersion(provider=provider, version=version)
+        if pre_existing_provider_version.exists:
+            return pre_existing_provider_version
+
+        # Obtain release artifacts
+        release_artifacts = self._get_release_artifacts_metadata(release_id=release_id, repository=repository, access_token=access_token)
+
+        return terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
+            name=release_name,
+            tag=tag_name,
+            provider_id=release_id,
+            commit_hash=commit_hash,
+            archive_url=archive_url,
+            release_artifacts=release_artifacts,
+        )
+
     def get_new_releases(self, provider: 'terrareg.provider_model.Provider') -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:
         """Obtain all repository releases that aren't associated with a pre-existing release"""
         # @TODO Support refreshing all versions, ignore skipping when
@@ -304,42 +346,19 @@ class GithubProviderSource(BaseProviderSource):
 
             results = res.json()
             for release in results:
-                if (not (release_id := release.get("id")) or
-                        not (release_name := release.get("name")) or
-                        not (tag_name := release.get("tag_name")) or
-                        not (archive_url := release.get("tarball_url")) or
-                        not (commit_hash := self._get_commit_hash_by_release(
-                            repository=repository,
-                            tag_name=tag_name,
-                            access_token=access_token))):
-                    print("Could not obtain one of: release name, tag name, archive url or commit hash for release")
+                res = self._process_release(
+                    provider=provider,
+                    repository=repository,
+                    access_token=access_token,
+                    github_release_metadata=release
+                )
+                if res is None:
                     continue
-
-                # Obtain version from tag and skip if it's invalid
-                version = terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata.tag_to_version(tag_name)
-                if not version:
-                    continue
-
-                # If a provider version exists for the release,
-                # exit early
-                pre_existing_provider_version = terrareg.provider_version_model.ProviderVersion(provider=provider, version=version)
-                if pre_existing_provider_version.exists:
+                elif isinstance(res, terrareg.provider_version_model.ProviderVersion):
                     obtain_results = False
                     break
-
-                # Obtain release artifacts
-                release_artifacts = self._get_release_artifacts_metadata(release_id=release_id, repository=repository, access_token=access_token)
-
-                releases.append(
-                    terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
-                        name=release_name,
-                        tag=tag_name,
-                        provider_id=release_id,
-                        commit_hash=commit_hash,
-                        archive_url=archive_url,
-                        release_artifacts=release_artifacts,
-                    )
-                )
+                else:
+                    releases.append(res)
 
             if len(results) < 100:
                 obtain_results = False
