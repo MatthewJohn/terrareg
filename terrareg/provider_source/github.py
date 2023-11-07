@@ -548,7 +548,8 @@ class GithubProviderSource(BaseProviderSource):
         elif res.status_code == 200:
             return res.json().get("id")
         else:
-            raise Exception(f"Unrecognised response code from github installation check: {res.status_code}")
+            print(f"Unrecognised response code from github installation check: {res.status_code}")
+            return None
 
     def _is_entity_org_or_user(self, identity: str, access_token: str):
         """Determine if an entity is a user or organisation"""
