@@ -177,7 +177,8 @@ class TestGithubProviderSource(BaseProviderSourceTests):
     @pytest.mark.parametrize('result_count, expected_pages', [
         # No results
         (0, 1),
-        # # Some results
+        # Some results
+        (1, 1),
         (50, 1),
         # Page count boundary tests
         (99, 1),
@@ -292,6 +293,7 @@ class TestGithubProviderSource(BaseProviderSourceTests):
         # No results
         (0, 1),
         # # Some results
+        (1, 1),
         (50, 1),
         # Page count boundary tests
         (99, 1),
@@ -383,6 +385,388 @@ class TestGithubProviderSource(BaseProviderSourceTests):
             params={
                 "sort": "created",
                 "direction": "desc",
+                "per_page": "100",
+                'page': "1"
+            },
+            headers={
+                'X-GitHub-Api-Version': '2022-11-28',
+                'Accept': 'application/vnd.github+json',
+                'Authorization': 'Bearer abcdef-test-access-token'
+            }
+        )
+
+    @pytest.mark.parametrize('release_version, git_tag, release_id, github_release_metadata, get_commit_hash_result, should_call_get_commit_hash, already_exists, get_release_artifacts_metadata, get_release_artifacts_metadata_should_be_called, expected_response', [
+        # Example returning valid metadata
+        ("5.2.3", "v5.2.3", "unittest-release-id",
+         # Metadata
+         {"id": "unittest-release-id", "name": "Unit Test Release v5.2.3", "tag_name": "v5.2.3", "tarball_url": "https://example.com/release/v5.2.3.zip"},
+         # Commit hash, should commit hash be called, does release already exist
+         "abcefg12345", True, False,
+         # Release artifacts
+         [terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(name="release-artifact1", provider_id="relase-artifact-provider-id")],
+         # Release artifacts should be called
+         True,
+         # Expected response
+         terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
+             name="Unit Test Release v5.2.3", tag="v5.2.3", archive_url="https://example.com/release/v5.2.3.zip",
+             commit_hash="abcefg12345", provider_id="unittest-release-id", release_artifacts=[
+                 terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(name="release-artifact1", provider_id="relase-artifact-provider-id")
+             ])
+        ),
+
+        # Already exists
+        ("5.2.3", "v5.2.3", "unittest-release-id",
+         # Metadata
+         {"id": "unittest-release-id", "name": "Unit Test Release v5.2.3", "tag_name": "v5.2.3", "tarball_url": "https://example.com/release/v5.2.3.zip"},
+         # Commit hash, should commit hash be called, does release already exist
+         "abcefg12345", True, True,
+         # Release artifacts
+         [terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(name="release-artifact1", provider_id="relase-artifact-provider-id")],
+         # Release artifacts should be called
+         False,
+         # Expected response
+         terrareg.provider_version_model.ProviderVersion
+        ),
+
+        # Missing required metadata from
+        ("5.2.3", "v5.2.3", "unittest-release-id",
+         # Metadata
+         {"name": "Unit Test Release v5.2.3", "tag_name": "v5.2.3", "tarball_url": "https://example.com/release/v5.2.3.zip"},
+         # Commit hash, commit hash should not be called, does release already exist
+         "abcefg12345", False, False,
+         # Release artifacts
+         [terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(name="release-artifact1", provider_id="relase-artifact-provider-id")],
+         # Release artifacts should not be called
+         False,
+         # Expected response
+         None,
+        ),
+        ("5.2.3", "v5.2.3", "unittest-release-id",
+         # Metadata
+         {"id": "unittest-release-id", "tag_name": "v5.2.3", "tarball_url": "https://example.com/release/v5.2.3.zip"},
+         # Commit hash, commit hash should not be called, does release already exist
+         "abcefg12345", False, False,
+         # Release artifacts
+         [terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(name="release-artifact1", provider_id="relase-artifact-provider-id")],
+         # Release artifacts should not be called
+         False,
+         # Expected response
+         None,
+        ),
+        ("5.2.3", "v5.2.3", "unittest-release-id",
+         # Metadata
+         {"id": "unittest-release-id", "name": "Unit Test Release v5.2.3", "tarball_url": "https://example.com/release/v5.2.3.zip"},
+         # Commit hash, commit hash should not be called, does release already exist
+         "abcefg12345", False, False,
+         # Release artifacts
+         [terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(name="release-artifact1", provider_id="relase-artifact-provider-id")],
+         # Release artifacts should not be called
+         False,
+         # Expected response
+         None,
+        ),
+        ("5.2.3", "v5.2.3", "unittest-release-id",
+         # Metadata
+         {"id": "unittest-release-id", "name": "Unit Test Release v5.2.3", "tag_name": "v5.2.3"},
+         # Commit hash, commit hash should not be called, does release already exist
+         "abcefg12345", False, False,
+         # Release artifacts
+         [terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(name="release-artifact1", provider_id="relase-artifact-provider-id")],
+         # Release artifacts should not be called
+         False,
+         # Expected response
+         None,
+        ),
+
+        # No commit hash found
+        ("5.2.3", "v5.2.3", "unittest-release-id",
+         # Metadata
+         {"id": "unittest-release-id", "name": "Unit Test Release v5.2.3", "tag_name": "v5.2.3", "tarball_url": "https://example.com/release/v5.2.3.zip"},
+         # Commit hash, commit hash should not be called, does release already exist
+         None, True, False,
+         # Release artifacts
+         [terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(name="release-artifact1", provider_id="relase-artifact-provider-id")],
+         # Release artifacts should not be called
+         False,
+         # Expected response
+         None,
+        ),
+    ])
+    def test__process_release(self, release_version, git_tag, release_id, github_release_metadata,
+                              get_commit_hash_result, should_call_get_commit_hash, already_exists,
+                              get_release_artifacts_metadata, get_release_artifacts_metadata_should_be_called, expected_response,
+                              test_provider_source, test_provider, test_repository, test_gpg_key):
+        """Test _process_release method"""
+
+        # If expected response data is ProviderVersion class, convert to
+        # instance of provider version, using fixtures
+        if expected_response is terrareg.provider_version_model.ProviderVersion:
+            expected_response = terrareg.provider_version_model.ProviderVersion(provider=test_provider, version=release_version)
+
+        pre_existing_provider_version = None
+        if already_exists:
+            pre_existing_provider_version = terrareg.provider_version_model.ProviderVersion(provider=test_provider, version=release_version)
+            pre_existing_provider_version._create_db_row(git_tag=git_tag, gpg_key=test_gpg_key)
+
+        try:
+
+            with unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource._get_release_artifacts_metadata',
+                                     unittest.mock.MagicMock(return_value=get_release_artifacts_metadata)) as mock__get_release_artifacts_metadata, \
+                    unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource._get_commit_hash_by_release',
+                                        unittest.mock.MagicMock(return_value=get_commit_hash_result)) as mock__get_commit_hash_by_release:
+                assert test_provider_source._process_release(
+                    provider=test_provider,
+                    repository=test_repository,
+                    access_token="unittest-access-token",
+                    github_release_metadata=github_release_metadata
+                ) == expected_response
+
+                if should_call_get_commit_hash:
+                    mock__get_commit_hash_by_release.assert_called_once_with(
+                        repository=test_repository,
+                        tag_name=git_tag,
+                        access_token="unittest-access-token"
+                    )
+                else:
+                    mock__get_commit_hash_by_release.assert_not_called()
+
+                if get_release_artifacts_metadata_should_be_called:    
+                    mock__get_release_artifacts_metadata.assert_called_once_with(
+                        release_id=release_id,
+                        repository=test_repository,
+                        access_token="unittest-access-token"
+                    )
+                else:
+                    mock__get_release_artifacts_metadata.assert_not_called()
+        finally:
+            if pre_existing_provider_version:
+                db = terrareg.database.Database.get()
+                with db.get_connection() as conn:
+                    conn.execute(db.provider_version.delete(
+                        db.provider_version.c.provider_id==test_provider.pk
+                    ))
+
+    @pytest.mark.parametrize('result_count, expected_pages', [
+        # No results
+        (0, 1),
+        # # Some results
+        (1, 1),
+        (50, 1),
+        # Page count boundary tests
+        (99, 1),
+        (100, 2),
+        (101, 2),
+        (250, 3),
+    ])
+    def test_get_new_releases(self, result_count, expected_pages, test_provider_source, test_provider):
+        """Test get_new_releases with pagination"""
+        response_data_values = [
+            [
+                {"test_repository_itx": row_itx + (page_itx * 100)}
+                for row_itx in range(0, min((result_count - (page_itx * 100)), 100))
+            ]
+            for page_itx in range(0, expected_pages)
+        ]
+
+        mock_response = unittest.mock.MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.side_effect = response_data_values
+
+        mock_release_metadata = [
+            terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
+                name=f"Release v{itx}", tag="v{itx}", archive_url=f"https://example.com/release/{itx}.zip",
+                commit_hash=f"abcef{itx}", provider_id=f"test-provider-id-{itx}",
+                release_artifacts=[]
+            )
+            for itx in range(result_count)
+        ]
+        mock__process_release = unittest.mock.MagicMock(side_effect=mock_release_metadata)
+
+        with unittest.mock.patch(
+                    'terrareg.provider_source.github.GithubProviderSource._get_access_token_for_provider',
+                    unittest.mock.MagicMock(return_value='abcdef-test-access-token')) as mock__get_access_token_for_provider, \
+                unittest.mock.patch('terrareg.provider_source.github.requests.get', unittest.mock.MagicMock(return_value=mock_response)) as mock_requests_get, \
+                unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource._process_release', mock__process_release):
+
+            assert test_provider_source.get_new_releases(provider=test_provider) == mock_release_metadata
+
+        mock__get_access_token_for_provider.assert_called_once_with(provider=test_provider)
+
+        expected_process_release_calls = [
+            unittest.mock.call(
+                provider=test_provider,
+                repository=test_provider.repository,
+                access_token="abcdef-test-access-token",
+                github_release_metadata={"test_repository_itx": itx}
+            )
+            for itx in range(result_count)
+        ]
+        mock__process_release.assert_has_calls(
+            calls=expected_process_release_calls
+        )
+
+        expected_request_get_calls = [
+            unittest.mock.call(
+                f'https://api.github.example-test.com/repos/some-organisation/terraform-provider-unittest-create/releases',
+                params={
+                    "per_page": "100",
+                    'page': str(page_itx + 1)
+                },
+                headers={
+                    'X-GitHub-Api-Version': '2022-11-28',
+                    'Accept': 'application/vnd.github+json',
+                    'Authorization': 'Bearer abcdef-test-access-token'
+                }
+            )
+            for page_itx in range(expected_pages)
+        ]
+        mock_requests_get.assert_has_calls(expected_request_get_calls)
+
+    def test_get_new_releases_break_if_already_exists(self, test_provider_source, test_provider):
+        """Test get_new_releases with breaking from processing new releases one is found that already exists"""
+        mock_response = unittest.mock.MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = [
+            {"already_exists": True},
+            {"new_release": True}
+        ]
+
+        mock_release_metadata = [
+            # Return ProviderVersion for pre-existing release
+            terrareg.provider_version_model.ProviderVersion(provider=test_provider, version="1.5.2"),
+            # Return metadata for new valid release
+            terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
+                name=f"Release v2.0.0", tag="v2.0.0", archive_url=f"https://example.com/release/2.0.0.zip",
+                commit_hash=f"abcef200", provider_id=f"test-provider-id-2.0.0",
+                release_artifacts=[]
+            )
+        ]
+        mock__process_release = unittest.mock.MagicMock(side_effect=mock_release_metadata)
+
+        with unittest.mock.patch(
+                    'terrareg.provider_source.github.GithubProviderSource._get_access_token_for_provider',
+                    unittest.mock.MagicMock(return_value='abcdef-test-access-token')) as mock__get_access_token_for_provider, \
+                unittest.mock.patch('terrareg.provider_source.github.requests.get', unittest.mock.MagicMock(return_value=mock_response)) as mock_requests_get, \
+                unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource._process_release', mock__process_release):
+
+            assert test_provider_source.get_new_releases(provider=test_provider) == []
+
+        mock__get_access_token_for_provider.assert_called_once_with(provider=test_provider)
+
+        mock__process_release.assert_called_once_with(
+            provider=test_provider,
+            repository=test_provider.repository,
+            access_token="abcdef-test-access-token",
+            github_release_metadata={"already_exists": True}
+        )
+
+        mock_requests_get.assert_called_once_with(
+            'https://api.github.example-test.com/repos/some-organisation/terraform-provider-unittest-create/releases',
+            params={
+                "per_page": "100",
+                'page': "1"
+            },
+            headers={
+                'X-GitHub-Api-Version': '2022-11-28',
+                'Accept': 'application/vnd.github+json',
+                'Authorization': 'Bearer abcdef-test-access-token'
+            }
+        )
+
+    def test_get_new_releases_skip_invalid_releases(self, test_provider_source, test_provider):
+        """Test get_new_releases with skipping invalid releases and continuing with remaining releases"""
+        mock_response = unittest.mock.MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = [
+            {"already_exists": True},
+            {"new_release": True}
+        ]
+
+        mock_release_metadata = [
+            # Return None for invalid release
+            None,
+            # Return valid release
+            terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
+                name=f"Release v2.0.0", tag="v2.0.0", archive_url=f"https://example.com/release/2.0.0.zip",
+                commit_hash=f"abcef200", provider_id=f"test-provider-id-2.0.0",
+                release_artifacts=[]
+            )
+        ]
+        mock__process_release = unittest.mock.MagicMock(side_effect=mock_release_metadata)
+
+        with unittest.mock.patch(
+                    'terrareg.provider_source.github.GithubProviderSource._get_access_token_for_provider',
+                    unittest.mock.MagicMock(return_value='abcdef-test-access-token')) as mock__get_access_token_for_provider, \
+                unittest.mock.patch('terrareg.provider_source.github.requests.get', unittest.mock.MagicMock(return_value=mock_response)) as mock_requests_get, \
+                unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource._process_release', mock__process_release):
+
+            # Ensure only the release metadata is returned
+            assert test_provider_source.get_new_releases(provider=test_provider) == mock_release_metadata[1:]
+
+        mock__get_access_token_for_provider.assert_called_once_with(provider=test_provider)
+
+        mock__process_release.assert_has_calls(calls=[
+            unittest.mock.call(
+                provider=test_provider,
+                repository=test_provider.repository,
+                access_token="abcdef-test-access-token",
+                github_release_metadata={"already_exists": True}
+            ),
+            unittest.mock.call(
+                provider=test_provider,
+                repository=test_provider.repository,
+                access_token="abcdef-test-access-token",
+                github_release_metadata={"new_release": True}
+            ),
+        ])
+
+        mock_requests_get.assert_called_once_with(
+            'https://api.github.example-test.com/repos/some-organisation/terraform-provider-unittest-create/releases',
+            params={
+                "per_page": "100",
+                'page': "1"
+            },
+            headers={
+                'X-GitHub-Api-Version': '2022-11-28',
+                'Accept': 'application/vnd.github+json',
+                'Authorization': 'Bearer abcdef-test-access-token'
+            }
+        )
+
+    def test_get_new_releases_invalid_response(self, test_provider_source, test_provider):
+        """Test get_new_releases with skipping invalid releases and continuing with remaining releases"""
+        mock_response = unittest.mock.MagicMock()
+        mock_response.status_code = 404
+        mock_response.json.return_value = [
+            {"new_release": True}
+        ]
+
+        mock_release_metadata = [
+            # Return valid release
+            terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
+                name=f"Release v2.0.0", tag="v2.0.0", archive_url=f"https://example.com/release/2.0.0.zip",
+                commit_hash=f"abcef200", provider_id=f"test-provider-id-2.0.0",
+                release_artifacts=[]
+            )
+        ]
+        mock__process_release = unittest.mock.MagicMock(side_effect=mock_release_metadata)
+
+        with unittest.mock.patch(
+                    'terrareg.provider_source.github.GithubProviderSource._get_access_token_for_provider',
+                    unittest.mock.MagicMock(return_value='abcdef-test-access-token')) as mock__get_access_token_for_provider, \
+                unittest.mock.patch('terrareg.provider_source.github.requests.get', unittest.mock.MagicMock(return_value=mock_response)) as mock_requests_get, \
+                unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource._process_release', mock__process_release):
+
+            # Ensure no metadata is returned
+            assert test_provider_source.get_new_releases(provider=test_provider) == []
+
+        mock__get_access_token_for_provider.assert_called_once_with(provider=test_provider)
+
+        mock__process_release.assert_not_called()
+
+        mock_requests_get.assert_called_once_with(
+            'https://api.github.example-test.com/repos/some-organisation/terraform-provider-unittest-create/releases',
+            params={
                 "per_page": "100",
                 'page': "1"
             },
@@ -1040,3 +1424,77 @@ class TestGithubProviderSource(BaseProviderSourceTests):
         with unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource._get_app_metadata',
                     unittest.mock.MagicMock(return_value={'html_url': 'https://example.github.com/apps/my-special-app'})):
             assert test_provider_source.get_app_installation_url() == "https://example.github.com/apps/my-special-app/installations/new"
+
+    @pytest.mark.parametrize('namespace_type, expected_url, status_code, response_data, expected_return_value', [
+        # Valid responses
+        (terrareg.namespace_type.NamespaceType.GITHUB_ORGANISATION, 'https://api.github.example-test.com/orgs/some-organisation/installation',
+         200, {"id": "unit-test-installation-id"}, "unit-test-installation-id"),
+        (terrareg.namespace_type.NamespaceType.GITHUB_USER, 'https://api.github.example-test.com/users/some-organisation/installation',
+         200, {"id": "unit-test-installation-id"}, "unit-test-installation-id"),
+
+        # Invalid status codes
+        (terrareg.namespace_type.NamespaceType.GITHUB_USER, 'https://api.github.example-test.com/users/some-organisation/installation',
+         404, {"id": "unit-test-installation-id"}, None),
+        (terrareg.namespace_type.NamespaceType.GITHUB_USER, 'https://api.github.example-test.com/users/some-organisation/installation',
+         500, {"id": "unit-test-installation-id"}, None),
+
+        # Invalid response data
+        (terrareg.namespace_type.NamespaceType.GITHUB_USER, 'https://api.github.example-test.com/users/some-organisation/installation',
+         200, {"id": None}, None),
+        (terrareg.namespace_type.NamespaceType.GITHUB_USER, 'https://api.github.example-test.com/users/some-organisation/installation',
+         200, {}, None),
+
+        # Invalid namespace type
+        (terrareg.namespace_type.NamespaceType.NONE, None,
+         200, {}, None),
+    ])
+    def test_get_github_app_installation_id(self, namespace_type, expected_url, status_code, response_data, expected_return_value, test_namespace, test_provider_source):
+        """Test get_github_app_installation_id"""
+        mock_response = unittest.mock.MagicMock()
+        mock_response.status_code = status_code
+        mock_response.json.return_value = response_data
+
+        test_namespace.update_attributes(namespace_type=namespace_type)
+
+        with unittest.mock.patch('terrareg.provider_source.github.requests.get', unittest.mock.MagicMock(return_value=mock_response)) as mock_requests_get, \
+                unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource._generate_jwt', unittest.mock.MagicMock(return_value='unittest-mock-jwt')):
+            assert test_provider_source.get_github_app_installation_id(
+                namespace=test_namespace
+            ) == expected_return_value
+
+        if namespace_type is not terrareg.namespace_type.NamespaceType.NONE:
+            mock_requests_get.assert_called_once_with(
+                expected_url,
+                headers={'X-GitHub-Api-Version': '2022-11-28', 'Accept': 'application/json', 'Authorization': 'Bearer unittest-mock-jwt'}
+            )
+        else:
+            mock_requests_get.assert_not_called()
+
+    @pytest.mark.parametrize('status_code, response_data, expected_value', [
+        (200, {"type": "User"}, terrareg.namespace_type.NamespaceType.GITHUB_USER),
+        (200, {"type": "Organization"}, terrareg.namespace_type.NamespaceType.GITHUB_ORGANISATION),
+
+        # Invalid response code
+        (404, {"type": "Organization"}, None),
+        # Invalid type
+        (200, {"type": "SomethingElse"}, None),
+        # No type
+        (200, {"type": None}, None),
+        (200, {}, None),
+    ])
+    def test__is_entity_org_or_user(self, status_code, response_data, expected_value, test_provider_source):
+        """Test _is_entity_org_or_user"""
+        mock_response = unittest.mock.MagicMock()
+        mock_response.status_code = status_code
+        mock_response.json.return_value = response_data
+
+        with unittest.mock.patch('terrareg.provider_source.github.requests.get', unittest.mock.MagicMock(return_value=mock_response)) as mock_requests_get:
+            assert test_provider_source._is_entity_org_or_user(
+                identity="unit-test-identity-name",
+                access_token="unittest-access-token"
+            ) == expected_value
+
+        mock_requests_get.assert_called_once_with(
+            'https://api.github.example-test.com/users/unit-test-identity-name',
+            headers={'X-GitHub-Api-Version': '2022-11-28', 'Accept': 'application/json', 'Authorization': 'Bearer unittest-access-token'}
+        )
