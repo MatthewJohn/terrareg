@@ -163,6 +163,12 @@ class Repository:
         """Return clone URL"""
         return self._get_db_row()["clone_url"]
 
+    def __eq__(self, __o):
+        """Check if two repositories are the same"""
+        if isinstance(__o, self.__class__):
+            return self.pk == __o.pk
+        return super(Repository, self).__eq__(__o)
+
     def __init__(self, pk: int):
         """Store member variables"""
         self._pk = pk
