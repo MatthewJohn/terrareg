@@ -15,10 +15,11 @@ class GithubLoginInitiate(ErrorCatchingResource):
         provider_source_factory = terrareg.provider_source.factory.ProviderSourceFactory.get()
         provider_source_obj = provider_source_factory.get_provider_source_by_api_name(provider_source)
         if not provider_source_obj:
-            return make_response(render_template(
+            return make_response(self._render_template(
                 'error.html',
                 error_title='Login error',
-                error_description=f'{provider_source} authentication is not enabled'
+                error_description=f'{provider_source} authentication is not enabled',
+                root_bread_brumb='Login'
             ))
 
 

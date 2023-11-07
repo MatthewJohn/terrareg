@@ -27,6 +27,7 @@ class BaseHandler:
         """Override render_template, passing in base variables."""
         return render_template(
             *args, **kwargs,
+            TEMPLATE_NAME=args[0],
             terrareg_application_name=terrareg.config.Config().APPLICATION_NAME,
             terrareg_logo_url=terrareg.config.Config().LOGO_URL,
             ALLOW_MODULE_HOSTING=terrareg.config.Config().ALLOW_MODULE_HOSTING,

@@ -87,11 +87,11 @@
                 $('#navbarCreateProviderButton').css('display', 'block');
               }
 
-            } else if (!loggedIn.read_access && window.location.pathname !== '/login') {
+            }{% if TEMPLATE_NAME != "error.html" %} else if (!loggedIn.read_access && window.location.pathname !== '/login') {
               // If not logged in and read access is not allowed,
               // and not currently redirect to login page
               window.location.href = '/login';
-            }
+            }{% endif %}
           }
 
           $(document).ready(() => {

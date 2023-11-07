@@ -16,10 +16,11 @@ class GithubLoginCallback(ErrorCatchingResource):
 
     def _github_login_error(self, error):
         """Return github login error"""
-        return make_response(render_template(
+        return make_response(self._render_template(
             'error.html',
             error_title='Login error',
-            error_description=error
+            error_description=error,
+            root_bread_brumb='Login'
         ))
 
     def _get(self, provider_source):
