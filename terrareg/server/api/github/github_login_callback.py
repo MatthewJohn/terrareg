@@ -39,7 +39,7 @@ class GithubLoginCallback(ErrorCatchingResource):
         # Obtain access token, purely to ensure that the code is valid
         access_token = provider_source_obj.get_user_access_token(code)
         if access_token is None:
-            return self._github_login_error("Invalid code returned from Github")
+            return self._github_login_error(f"Invalid code returned from {provider_source}")
 
         # Store access token in server-side session
         current_session = terrareg.auth.AuthFactory.get_current_session()
@@ -53,7 +53,7 @@ class GithubLoginCallback(ErrorCatchingResource):
         # If user is authenticated, update session
         user_id = provider_source_obj.get_username(access_token)
         if user_id is None:
-            return self._github_login_error("Invalid user data returned from Github")
+            return self._github_login_error(f"Invalid user data returned from {provider_source}")
         session['github_username'] = user_id
 
         # Obtain list of organisations that the user is an owner of and add the user's user ID to the list
