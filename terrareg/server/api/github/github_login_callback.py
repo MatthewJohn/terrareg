@@ -33,9 +33,6 @@ class GithubLoginCallback(ErrorCatchingResource):
         if provider_source_obj is None:
             return self._get_404_response()
 
-        if not provider_source_obj.is_enabled():
-            return self._github_login_error('Github authentication is not enabled')
-
         # Obtain access token, purely to ensure that the code is valid
         access_token = provider_source_obj.get_user_access_token(code)
         if access_token is None:
