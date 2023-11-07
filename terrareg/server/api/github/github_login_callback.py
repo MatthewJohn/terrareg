@@ -48,8 +48,6 @@ class GithubLoginCallback(ErrorCatchingResource):
                 "github_access_token": access_token
             }
 
-        provider_source_obj.update_repositories(access_token)
-
         # If user is authenticated, update session
         user_id = provider_source_obj.get_username(access_token)
         if user_id is None:
@@ -73,6 +71,8 @@ class GithubLoginCallback(ErrorCatchingResource):
             object_type=None, object_id=None,
             old_value=None, new_value=None
         )
+
+        provider_source_obj.update_repositories(access_token)
 
         # Redirect to homepage
         return redirect("/", code=302)
