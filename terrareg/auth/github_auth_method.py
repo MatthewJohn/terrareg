@@ -1,4 +1,6 @@
 
+from typing import Optional
+
 import flask
 
 import terrareg.github
@@ -10,6 +12,7 @@ from .base_sso_auth_method import BaseSsoAuthMethod
 from .authentication_type import AuthenticationType
 import terrareg.provider_source.factory
 import terrareg.provider_source_type
+import terrareg.provider_source
 
 
 class GithubAuthMethod(BaseSsoAuthMethod):
@@ -34,7 +37,7 @@ class GithubAuthMethod(BaseSsoAuthMethod):
         return True
 
     @classmethod
-    def _get_provider_source(self):
+    def _get_provider_source(self) -> Optional['terrareg.provider_source.GithubProviderSource']:
         """Return provider source for current request."""
         provider_source_name = flask.session.get('provider_source')
         provider_source = terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(provider_source_name)
@@ -70,9 +73,13 @@ class GithubAuthMethod(BaseSsoAuthMethod):
 
     def check_namespace_access(self, permission_type, namespace):
         """Check access level to a given namespace."""
+        # Check if provider source is available and exit early if not
+        if not (provider_source := self._get_provider_source()):
+            return False
+
         # If github automatic namespace generation is enabled,
         # allow access to these namespaces
-        if (provider_source := self._get_provider_source()) and provider_source.auto_generate_github_organisation_namespaces:
+        if provider_source.auto_generate_github_organisation_namespaces:
             # Perform check for name using case-insensitive match
             if namespace.lower() in [org.lower() for org in self._get_organisation_memeberships()]:
                 return True
@@ -83,6 +90,10 @@ class GithubAuthMethod(BaseSsoAuthMethod):
 
     def get_all_namespace_permissions(self):
         """Get all namespace permissions for authenticated user"""
+        # Check if provider source is available and exit early if not
+        if not (provider_source := self._get_provider_source()):
+            return {}
+
         namespace_permissions = super().get_all_namespace_permissions()
 
         # If Github auto-generated namespaces is enabled,
