@@ -3,7 +3,6 @@ from flask import request, redirect, make_response, render_template, session
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.provider_source.factory
-import terrareg.github
 import terrareg.auth
 import terrareg.audit
 import terrareg.audit_action

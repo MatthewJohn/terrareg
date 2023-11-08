@@ -2,7 +2,6 @@
 import terrareg.config
 import terrareg.openid_connect
 import terrareg.saml
-import terrareg.github
 import terrareg.auth
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.auth_wrapper

@@ -2,7 +2,6 @@
 from flask import session, make_response, render_template, redirect
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
-import terrareg.github
 import terrareg.provider_source.factory
 
 

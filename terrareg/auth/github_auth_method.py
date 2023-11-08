@@ -3,7 +3,6 @@ from typing import Optional
 
 import flask
 
-import terrareg.github
 import terrareg.config
 import terrareg.models
 import terrareg.user_group_namespace_permission_type
