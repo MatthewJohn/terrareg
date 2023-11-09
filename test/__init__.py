@@ -1,11 +1,13 @@
 
 from datetime import datetime
 import functools
+import json
 import os
 import unittest.mock
 
 import pytest
 
+import terrareg.models
 from terrareg.models import (
     Example, ExampleFile, ModuleDetails, ModuleVersionFile, Namespace, Module, ModuleProvider,
     ModuleVersion, GitProvider, Submodule, UserGroup, UserGroupNamespacePermission
@@ -15,6 +17,12 @@ from terrareg.server import Server
 import terrareg.config
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from terrareg.constants import EXTRACTION_VERSION
+import terrareg.provider_category_model
+import terrareg.provider_source.factory
+import terrareg.repository_model
+import terrareg.provider_model
+import terrareg.provider_version_model
+import terrareg.provider_tier
 
 
 @pytest.fixture
@@ -45,6 +53,8 @@ class BaseTest:
     _TEST_DATA = None
     _GIT_PROVIDER_DATA = None
     _USER_GROUP_DATA = None
+    _PROVIDER_SOURCES = []
+    _PROVIDER_CATEGORIES = []
 
     INSTANCE_ = None
 
@@ -145,9 +155,14 @@ class BaseTest:
                 with Database.get_engine().connect() as conn:
                     conn.execute(insert)
 
+            with unittest.mock.patch('terrareg.config.Config.PROVIDER_CATEGORIES', json.dumps(cls._PROVIDER_CATEGORIES)):
+                terrareg.provider_category_model.ProviderCategoryFactory.get().initialise_from_config()
+
+            with unittest.mock.patch('terrareg.config.Config.PROVIDER_SOURCES', json.dumps(cls._PROVIDER_SOURCES)):
+                terrareg.provider_source.factory.ProviderSourceFactory.get().initialise_from_config()
+
             # Setup test Namespaces, Modules, ModuleProvider and ModuleVersion
             import_data = cls._TEST_DATA if test_data is None else test_data
-            namespace_attributes = ["display_name"]
 
             # Iterate through namespaces
             for namespace_name in import_data:
@@ -156,16 +171,11 @@ class BaseTest:
                 namespace = Namespace.create(name=namespace_name, display_name=display_name)
 
                 # Iterate through modules
-                for module_name in namespace_data:
-                    # Ignore any module names that are namespace attributes
-                    if module_name in namespace_attributes:
-                        continue
-
-                    module_data = namespace_data[module_name]
+                for module_name, module_data in namespace_data.get("modules", {}).items():
                     module = Module(namespace=namespace, name=module_name)
 
                     # Iterate through providers
-                    for provider_name in import_data[namespace_name][module_name]:
+                    for provider_name in module_data:
                         module_provider_test_data = module_data[provider_name]
                         module_provider = ModuleProvider(module=module, name=provider_name)
 
@@ -289,6 +299,39 @@ class BaseTest:
                                 for example_file_path in example_config.get('example_files', {}):
                                     example_file = ExampleFile.create(example=example, path=example_file_path)
                                     example_file.update_attributes(content=example_config['example_files'][example_file_path])
+
+                # Iterate through GPG keys
+                for gpg_key in namespace_data.get("gpg_keys", []):
+                    terrareg.models.GpgKey.create(namespace=namespace, ascii_armor=gpg_key.get("ascii_armor"))
+
+                # Iterate through providers
+                for provider_name, provider_data in namespace_data.get("providers", {}).items():
+                    repository_data = provider_data.get("repository")
+                    repository = terrareg.repository_model.Repository.create(
+                        provider_source=terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(repository_data["provider_source"]),
+                        provider_id=repository_data.get("provider_id"),
+                        name=repository_data.get("name"),
+                        description=repository_data.get("description"),
+                        owner=repository_data.get("owner"),
+                        clone_url=repository_data.get("clone_url"),
+                        logo_url=repository_data.get("logo_url"),
+                    )
+
+                    provider = terrareg.provider_model.Provider.create(
+                        repository=repository,
+                        provider_category=terrareg.provider_category_model.ProviderCategoryFactory.get().get_provider_category_by_slug(provider_data.get("category_slug")),
+                        use_default_provider_source_auth=provider_data.get("use_default_provider_source_auth", True),
+                        tier=terrareg.provider_tier.ProviderTier(provider_data.get("tier", "community"))
+                    )
+
+                    for version, version_data in provider_data.get("versions").items():
+                        version_obj = terrareg.provider_version_model.ProviderVersion(provider=provider, version=version)
+                        with version_obj.create_extraction_wrapper(
+                                git_tag=version_data.get("git_tag"),
+                                gpg_key=terrareg.models.GpgKey.get_by_fingerprint(fingerprint=version_data.get("gpg_key_fingerprint"))):
+                            pass
+
+                        # @TODO Import documentation and binaries
 
             if cls._USER_GROUP_DATA:
                 for group_name in cls._USER_GROUP_DATA:
