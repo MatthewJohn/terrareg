@@ -702,7 +702,7 @@ MK0hMLszB/mfN0Q2DW4U0tWslehdEA+aaccwA5PVFKdkA12ImK500TY=
             }
         ],
         "providers": {
-            "testprovider": {
+            "test-initial": {
                 "repository": {
                     "provider_source": "Test Github Autogenerate",
                     "provider_id": "initial-providers/terraform-provider-test-initial",
@@ -721,6 +721,26 @@ MK0hMLszB/mfN0Q2DW4U0tWslehdEA+aaccwA5PVFKdkA12ImK500TY=
                         "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB"
                     }
                 },
+            },
+            "to-delete": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "initial-providers/terraform-provider-to-delete",
+                    "name": "terraform-provider-to-delete",
+                    "description": "Test Multiple Versions",
+                    "owner": "initial-providers",
+                    "clone_url": "https://git.example.com/initalproviders/terraform-provider-to-delete.git",
+                    "logo_url": "https://git.example.com/initalproviders/terraform-provider-test-initial.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "community",
+                "versions": {
+                    "1.0.0": {
+                        "git_tag": "v1.0.0",
+                        "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB"
+                    }
+                }
             },
             "multiple-versions": {
                 "repository": {
@@ -742,6 +762,10 @@ MK0hMLszB/mfN0Q2DW4U0tWslehdEA+aaccwA5PVFKdkA12ImK500TY=
                     },
                     "1.1.0": {
                         "git_tag": "v1.1.0",
+                        "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB"
+                    },
+                    "1.1.0-beta": {
+                        "git_tag": "v1.1.0-beta",
                         "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB"
                     },
                     "2.0.0": {
