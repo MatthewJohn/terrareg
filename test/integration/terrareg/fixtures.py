@@ -11,6 +11,7 @@ import terrareg.provider_source.factory
 import terrareg.database
 import terrareg.models
 import terrareg.provider_tier
+import terrareg.repository_model
 from test.test_gpg_key import public_ascii_armor
 
 
@@ -67,9 +68,19 @@ def mock_provider_source(mock_provider_source_class):
             {terrareg.provider_source_type.ProviderSourceType.GITHUB: mock_provider_source_class}):
 
         with unittest.mock.patch('terrareg.config.Config.PROVIDER_SOURCES', json.dumps(
-            [{"name": "unittest-provider-source", "type": "github",
-             "login_button_text": "Unit test login",
-             "auto_generate_github_organisation_namespaces": False}]
+            [{"name": "unittest-provider-source",
+              "type": "github",
+              "login_button_text": "Unit test login",
+              "auto_generate_github_organisation_namespaces": False,
+              "base_url": "https://github.example.com",
+              "api_url": "https://api.github.example.com",
+              "client_id": "unittest-client-id",
+              "client_secret": "unittest-client-secret",
+              "private_key_path": "./path/to/key.pem",
+              "app_id": "1234appid",
+              "default_access_token": "pa-test-personal-access-token",
+              "default_installation_id": "ut-default-installation-id-here",
+            }]
         )):
             terrareg.provider_source.factory.ProviderSourceFactory.get().initialise_from_config()
         provider_source = terrareg.provider_source.factory.ProviderSourceFactory().get_provider_source_by_name("unittest-provider-source")

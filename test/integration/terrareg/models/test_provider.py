@@ -38,6 +38,9 @@ from test.integration.terrareg.fixtures import (
 class TestProvider(TerraregIntegrationTest):
     """Test provider model"""
 
+    _PROVIDER_SOURCES = []
+    _TEST_DATA = {}
+
     @pytest.mark.parametrize("repository_name, expected_result", [
         ('terraform-provider-jmon', 'jmon'),
         ('terraform-provider-some-service', 'some-service'),

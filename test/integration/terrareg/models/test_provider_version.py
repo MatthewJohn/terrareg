@@ -196,3 +196,66 @@ class TestProviderVersion(TerraregIntegrationTest):
         provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
         version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
         assert version_obj.provider is provider_obj
+
+    @pytest.mark.parametrize('extraction_version, up_to_date', [
+        (PROVIDER_EXTRACTION_VERSION, True),
+        (PROVIDER_EXTRACTION_VERSION - 1, False),
+        (PROVIDER_EXTRACTION_VERSION + 1, False)
+    ])
+    def test_provider_extraction_up_to_date(self, extraction_version, up_to_date):
+        """Test provider_extraction_up_to_date"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+        version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
+
+        version_obj._cache_db_row = {
+            "extraction_version": extraction_version
+        }
+        assert version_obj.provider_extraction_up_to_date is up_to_date
+
+
+    @pytest.mark.parametrize('version, expected_latest_version', [
+        ('2.0.1', True),
+        ('2.0.0', False),
+        ('1.1.0', False),
+    ])
+    def test_is_latest_version(self, version, expected_latest_version):
+        """Test is_latest_version property"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="multiple-versions")
+        version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version=version)
+        assert version_obj.is_latest_version is expected_latest_version
+
+    @pytest.mark.parametrize('version, expected_gpg_key_fingerprint', [
+        ('2.0.0', '21A74E4E3FDFE438532BD58434DE374AC3640CDB'),
+        ('2.0.1', '94CA72B7A2F4606A6C18211AE94A4F2AD628D926'),
+    ])
+    def test_gpg_key(self, version, expected_gpg_key_fingerprint):
+        """Test gpg_key property"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="multiple-versions")
+        version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version=version)
+        gpg_key = version_obj.gpg_key
+        assert isinstance(gpg_key, terrareg.models.GpgKey)
+        assert gpg_key.fingerprint == expected_gpg_key_fingerprint
+
+    def test_checksum_file_name(self):
+        """Test checksum_file_name property"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+        version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
+        assert version_obj.checksum_file_name == "terraform-provider-test-initial_1.5.0_SHA256SUMS"
+    
+    def test_checksum_signature_file_name(self):
+        """Test checksum_signature_file_name property"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+        version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
+        assert version_obj.checksum_signature_file_name == "terraform-provider-test-initial_1.5.0_SHA256SUMS.sig"
+
+    def test_manifest_file_name(self):
+        """Test manifest_file_name property"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+        version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
+        assert version_obj.manifest_file_name == "terraform-provider-test-initial_1.5.0_manifest.json"
