@@ -71,11 +71,6 @@ class ProviderVersion:
         return None
 
     @property
-    def published(self):
-        """Return whether provider is published"""
-        return bool(self._get_db_row()['published'])
-
-    @property
     def version(self):
         """Return version."""
         return self._version
@@ -96,7 +91,7 @@ class ProviderVersion:
         return self._get_db_row()['beta']
 
     @property
-    def pk(self) -> bool:
+    def pk(self) -> int:
         """Return DB ID of provider version."""
         return self._get_db_row()['id']
 
