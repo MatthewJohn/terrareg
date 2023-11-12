@@ -1402,6 +1402,11 @@ class GpgKey:
         """Return Key ID for GPG key"""
         return self._get_db_row()['key_id']
 
+    @property
+    def fingerprint(self):
+        """Return Key ID for GPG key"""
+        return self._get_db_row()['fingerprint']
+
     def __init__(self, pk):
         """Store member variables"""
         self._pk = pk
