@@ -66,6 +66,7 @@ def mock_provider_source(mock_provider_source_class):
     with unittest.mock.patch(
             'terrareg.provider_source.factory.ProviderSourceFactory._CLASS_MAPPING',
             {terrareg.provider_source_type.ProviderSourceType.GITHUB: mock_provider_source_class}):
+        terrareg.provider_source.factory.ProviderSourceFactory._INSTANCE = None
 
         with unittest.mock.patch('terrareg.config.Config.PROVIDER_SOURCES', json.dumps(
             [{"name": "unittest-provider-source",
@@ -87,6 +88,8 @@ def mock_provider_source(mock_provider_source_class):
         provider_source_name = provider_source.name
 
         yield provider_source
+
+    terrareg.provider_source.factory.ProviderSourceFactory._INSTANCE = None
 
     # Delete provider source
     db = terrareg.database.Database.get()
