@@ -524,3 +524,85 @@ class TestProviderVersion(TerraregIntegrationTest):
             'protocols': ['5.0'],
             'version': '1.5.0',
         }
+
+    def test_get_api_outline(self):
+        """Test get_api_outline"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+        version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
+        db_row = dict(version_obj._get_db_row())
+        db_row["published_at"] = datetime(year=2023, month=10, day=12, hour=2, minute=42, second=12)
+        version_obj._cache_db_row = db_row
+
+        assert version_obj.get_api_outline() == {
+            'alias': None,
+            'description': 'Test Initial Provider',
+            'downloads': 0,
+            'id': 'initial-providers/test-initial/1.5.0',
+            'logo_url': 'https://git.example.com/initalproviders/terraform-provider-test-initial.png',
+            'name': 'test-initial',
+            'namespace': 'initial-providers',
+            'owner': 'initial-providers',
+            'published_at': '2023-10-12T02:42:12',
+            'source': 'https://github.example.com/initial-providers/terraform-provider-test-initial',
+            'tag': 'v1.5.0',
+            'tier': 'community',
+            'version': '1.5.0'
+        }
+
+    def test_get_v2_include(self):
+        """Test get_v2_include"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+        version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
+        db_row = dict(version_obj._get_db_row())
+        db_row["published_at"] = datetime(year=2023, month=10, day=12, hour=2, minute=42, second=12)
+        db_row["id"] = 23
+        version_obj._cache_db_row = db_row
+
+        assert version_obj.get_v2_include() == {
+            'type': 'provider-versions',
+            'id': '23',
+            'attributes': {
+                'description': 'Test Initial Provider',
+                'downloads': 0,
+                'published-at': '2023-10-12T02:42:12',
+                'tag': 'v1.5.0',
+                'version': '1.5.0'
+            },
+            'links': {'self': '/v2/provider-versions/23'}
+        }
+
+    def test__create_db_row(self):
+        """Test _create_db_row"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="to-delete")
+        version_obj = terrareg.provider_version_model.ProviderVersion(provider=provider_obj, version="10.20.30")
+        gpg_key = terrareg.models.GpgKey.get_by_fingerprint("94CA72B7A2F4606A6C18211AE94A4F2AD628D926")
+
+        assert version_obj._get_db_row() is None
+
+        # Ensure row doesn't exist in DB
+        db = terrareg.database.Database.get()
+        with db.get_connection() as conn:
+            assert conn.execute(db.provider_version.select().where(db.provider_version.c.version=="10.20.30")).first() is None
+
+        version_obj._create_db_row(gpg_key=gpg_key, git_tag="v2.3.4-unittest")
+
+        with db.get_connection() as conn:
+            row = conn.execute(db.provider_version.select().where(db.provider_version.c.version=="10.20.30")).first()
+
+        assert row is not None
+        row = dict(row)
+        row["id"] = 55
+        assert row == {
+            'beta': False,
+            'extraction_version': None,
+            'git_tag': 'v2.3.4-unittest',
+            'gpg_key_id': gpg_key.pk,
+            'id': 55,
+            'protocol_versions': None,
+            'provider_id': provider_obj.pk,
+            'published_at': None,
+            'version': '10.20.30',
+        }
