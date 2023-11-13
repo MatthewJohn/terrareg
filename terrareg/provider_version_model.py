@@ -273,6 +273,9 @@ class ProviderVersion:
         with db.get_connection() as conn:
             conn.execute(update)
 
+        # Remove cached DB row
+        self._cache_db_row = None
+
     def get_api_binaries_outline(self) -> dict:
         """Return dict of outline for versions endpoint"""
         return {
