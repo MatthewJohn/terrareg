@@ -602,7 +602,7 @@ class TestProviderVersion(TerraregIntegrationTest):
                     'language': 'hcl',
                     'path': 'data-sources/thing.md',
                     'slug': 'some-resource',
-                    'subcategory': None,
+                    'subcategory': 'some-subcategory',
                     'title': None
                 }
             ],

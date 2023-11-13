@@ -867,7 +867,7 @@ Olm9bg==
                                 "description": "Inital thing for multiple versions provider",
                                 "filename": "data-sources/thing.md",
                                 "language": "hcl",
-                                "subcategory": None,
+                                "subcategory": "some-subcategory",
                                 "content": "Documentation for generating a thing!",
                                 "id": 6345
                             },
