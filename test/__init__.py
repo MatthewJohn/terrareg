@@ -20,6 +20,7 @@ from terrareg.constants import EXTRACTION_VERSION
 import terrareg.provider_category_model
 import terrareg.provider_source.factory
 import terrareg.repository_model
+import terrareg.provider_version_binary_model
 import terrareg.provider_model
 import terrareg.provider_version_model
 import terrareg.provider_tier
@@ -331,7 +332,16 @@ class BaseTest:
                                 gpg_key=terrareg.models.GpgKey.get_by_fingerprint(fingerprint=version_data.get("gpg_key_fingerprint"))):
                             pass
 
-                        # @TODO Import documentation and binaries
+                        # Import binaries
+                        for binary_name, binary_data in version_data.get("binaries", {}).items():
+                            terrareg.provider_version_binary_model.ProviderVersionBinary.create(
+                                provider_version=version_obj,
+                                name=binary_name,
+                                checksum=binary_data.get("checksum"),
+                                content=binary_data.get("content")
+                            )
+
+                        # @TODO Import documentation
 
             if cls._USER_GROUP_DATA:
                 for group_name in cls._USER_GROUP_DATA:

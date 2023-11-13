@@ -507,3 +507,20 @@ class TestProviderVersion(TerraregIntegrationTest):
             'published_at': datetime(2023, 2, 3, 23, 0, 6),
             'version': '1.0.0',
         }
+
+    def test_get_api_binaries_outline(self):
+        """Test get_api_binaries_outline"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+        version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
+
+        assert version_obj.get_api_binaries_outline() == {
+            'platforms': [
+                {'arch': 'amd64', 'os': 'linux'},
+                {'arch': 'arm64', 'os': 'linux'},
+                {'arch': 'amd64', 'os': 'windows'},
+                {'arch': 'amd64', 'os': 'darwin'}
+            ],
+            'protocols': ['5.0'],
+            'version': '1.5.0',
+        }
