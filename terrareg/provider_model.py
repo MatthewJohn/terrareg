@@ -294,7 +294,7 @@ class Provider:
         return sorted([
             terrareg.provider_version_model.ProviderVersion(provider=self, version=row["version"])
             for row in rows
-        ])
+        ], reverse=True)
 
 
     def calculate_latest_version(self):
