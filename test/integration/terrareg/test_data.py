@@ -3,6 +3,7 @@ from datetime import datetime
 import json
 
 import terrareg.provider_source_type
+import terrareg.provider_documentation_type
 
 
 integration_git_providers = {
@@ -742,25 +743,7 @@ Olm9bg==
                 "versions": {
                     "1.5.0": {
                         "git_tag": "v1.5.0",
-                        "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB",
-                        "binaries": {
-                            "terraform-provider-test-initial_1.5.0_linux_amd64.zip": {
-                                "content": b"Some test linux content",
-                                "checksum": "a26d0401981bf2749c129ab23b3037e82bd200582ff7489e0da2a967b50daa98"
-                            },
-                            "terraform-provider-test-initial_1.5.0_linux_arm64.zip": {
-                                "content": b"Test linux ARM content",
-                                "checksum": "bda5d57cf68ab142f5d0c9a5a0739577e24444d4e8fe4a096ab9f4935bec9e9a"
-                            },
-                            "terraform-provider-test-initial_1.5.0_windows_amd64.zip": {
-                                "content": b"Windows AMD64",
-                                "checksum": "c2d859efacc3fbe1662bef92c80ce32c966834597625914592891eaf564af4bf"
-                            },
-                            "terraform-provider-test-initial_1.5.0_darwin_amd64.zip": {
-                                "content": b"Darwin AMD64",
-                                "checksum": "e8bc51e741c45feed8d9d7eb1133ac0107152cab3c1db12e74495d4b4ec75a0c"
-                            }
-                        }
+                        "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB"
                     }
                 },
             },
@@ -848,7 +831,47 @@ Olm9bg==
                     },
                     "1.5.0": {
                         "git_tag": "v1.5.0",
-                        "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB"
+                        "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB",
+                        "binaries": {
+                            "terraform-provider-multiple-versions_1.5.0_linux_amd64.zip": {
+                                "content": b"Some test linux content",
+                                "checksum": "a26d0401981bf2749c129ab23b3037e82bd200582ff7489e0da2a967b50daa98"
+                            },
+                            "terraform-provider-multiple-versions_1.5.0_linux_arm64.zip": {
+                                "content": b"Test linux ARM content",
+                                "checksum": "bda5d57cf68ab142f5d0c9a5a0739577e24444d4e8fe4a096ab9f4935bec9e9a"
+                            },
+                            "terraform-provider-multiple-versions_1.5.0_windows_amd64.zip": {
+                                "content": b"Windows AMD64",
+                                "checksum": "c2d859efacc3fbe1662bef92c80ce32c966834597625914592891eaf564af4bf"
+                            },
+                            "terraform-provider-multiple-versions_1.5.0_darwin_amd64.zip": {
+                                "content": b"Darwin AMD64",
+                                "checksum": "e8bc51e741c45feed8d9d7eb1133ac0107152cab3c1db12e74495d4b4ec75a0c"
+                            }
+                        },
+                        "documentation": {
+                            "overview": {
+                                "type": terrareg.provider_documentation_type.ProviderDocumentationType.OVERVIEW,
+                                "title": "Overview",
+                                "description": "Overview of provider",
+                                "filename": "index.md",
+                                "language": "hcl",
+                                "subcategory": None,
+                                "content": "This is an overview of the module!",
+                                "id": 6344
+                            },
+                            "some-resource": {
+                                "type": terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
+                                "title": "multiple_versions_thing",
+                                "description": "Inital thing for multiple versions provider",
+                                "filename": "data-sources/thing.md",
+                                "language": "hcl",
+                                "subcategory": None,
+                                "content": "Documentation for generating a thing!",
+                                "id": 6345
+                            },
+                        }
                     },
                     "2.0.0": {
                         "git_tag": "v2.0.0",

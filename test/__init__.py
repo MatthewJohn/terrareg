@@ -21,6 +21,7 @@ import terrareg.provider_category_model
 import terrareg.provider_source.factory
 import terrareg.repository_model
 import terrareg.provider_version_binary_model
+import terrareg.provider_version_documentation_model
 import terrareg.provider_model
 import terrareg.provider_version_model
 import terrareg.provider_tier
@@ -341,7 +342,28 @@ class BaseTest:
                                 content=binary_data.get("content")
                             )
 
-                        # @TODO Import documentation
+                        # Import documentation
+                        for documentation_name, documentation_data in version_data.get("documentation", {}).items():
+                            provider_documentation = terrareg.provider_version_documentation_model.ProviderVersionDocumentation.create(
+                                provider_version=version_obj,
+                                documentation_type=documentation_data.get("type"),
+                                name=documentation_name,
+                                title=documentation_data.get("title", ""),
+                                description=documentation_data.get("description", ""),
+                                filename=documentation_data.get("filename"),
+                                language=documentation_data.get("language", "hcl"),
+                                subcategory=documentation_data.get("subcategory"),
+                                content=documentation_data.get("content")
+                            )
+                            attributes_to_update = {
+                                k: v
+                                for k, v in documentation_data.items()
+                                if k in ["id"]
+                            }
+                            if attributes_to_update:
+                                with db.get_connection() as conn:
+                                    conn.execute(db.provider_version_documentation.update().where(db.provider_version_documentation.c.id==provider_documentation.pk).values(**attributes_to_update))
+
 
             if cls._USER_GROUP_DATA:
                 for group_name in cls._USER_GROUP_DATA:

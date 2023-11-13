@@ -511,7 +511,7 @@ class TestProviderVersion(TerraregIntegrationTest):
     def test_get_api_binaries_outline(self):
         """Test get_api_binaries_outline"""
         namespace_obj = terrareg.models.Namespace.get("initial-providers")
-        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="multiple-versions")
         version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
 
         assert version_obj.get_api_binaries_outline() == {
@@ -553,7 +553,7 @@ class TestProviderVersion(TerraregIntegrationTest):
     def test_get_v2_include(self):
         """Test get_v2_include"""
         namespace_obj = terrareg.models.Namespace.get("initial-providers")
-        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="multiple-versions")
         version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
         db_row = dict(version_obj._get_db_row())
         db_row["published_at"] = datetime(year=2023, month=10, day=12, hour=2, minute=42, second=12)
@@ -564,13 +564,67 @@ class TestProviderVersion(TerraregIntegrationTest):
             'type': 'provider-versions',
             'id': '23',
             'attributes': {
-                'description': 'Test Initial Provider',
+                'description': 'Test Multiple Versions',
                 'downloads': 0,
                 'published-at': '2023-10-12T02:42:12',
                 'tag': 'v1.5.0',
                 'version': '1.5.0'
             },
             'links': {'self': '/v2/provider-versions/23'}
+        }
+
+    def test_get_api_details(self) -> dict:
+        """Test get_api_details."""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="multiple-versions")
+        version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
+
+        db_row = dict(version_obj._get_db_row())
+        db_row["published_at"] = datetime(year=2023, month=10, day=12, hour=2, minute=42, second=12)
+        version_obj._cache_db_row = db_row
+
+        assert version_obj.get_api_details() == {
+            'alias': None,
+            'description': 'Test Multiple Versions',
+            'docs': [
+                {
+                    'category': 'overview',
+                    'id': '6344',
+                    'language': 'hcl',
+                    'path': 'index.md',
+                    'slug': 'overview',
+                    'subcategory': None,
+                    'title': None
+                },
+                {
+                    'category': 'resources',
+                    'id': '6345',
+                    'language': 'hcl',
+                    'path': 'data-sources/thing.md',
+                    'slug': 'some-resource',
+                    'subcategory': None,
+                    'title': None
+                }
+            ],
+            'downloads': 0,
+            'id': 'initial-providers/multiple-versions/1.5.0',
+            'logo_url': 'https://git.example.com/initalproviders/terraform-provider-test-initial.png',
+            'name': 'multiple-versions',
+            'namespace': 'initial-providers',
+            'owner': 'initial-providers',
+            'published_at': '2023-10-12T02:42:12',
+            'source': 'https://github.example.com/initial-providers/terraform-provider-multiple-versions',
+            'tag': 'v1.5.0',
+            'tier': 'community',
+            'version': '1.5.0',
+            'versions': [
+                '2.0.1',
+                '2.0.0',
+                '1.5.0',
+                '1.1.0',
+                '1.1.0-beta',
+                '1.0.0'
+            ]
         }
 
     def test__create_db_row(self):
