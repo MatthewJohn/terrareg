@@ -766,6 +766,42 @@ Olm9bg==
                     }
                 }
             },
+            "update-attributes": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "initial-providers/terraform-provider-update-attributes",
+                    "name": "terraform-provider-update-attributes",
+                    "description": "Empty Provider Publish",
+                    "owner": "initial-providers",
+                    "clone_url": "https://git.example.com/initalproviders/terraform-provider-update-attributes.git",
+                    "logo_url": "https://git.example.com/initalproviders/terraform-provider-test-initial.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "community",
+                "versions": {
+                    "1.0.0": {
+                        "git_tag": "v1.0.0",
+                        "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB"
+                    }
+                }
+            },
+            "empty-provider-publish": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "initial-providers/terraform-provider-empty-provider-publish",
+                    "name": "terraform-provider-empty-provider-publish",
+                    "description": "Empty Provider Publish",
+                    "owner": "initial-providers",
+                    "clone_url": "https://git.example.com/initalproviders/terraform-provider-empty-provider-publish.git",
+                    "logo_url": "https://git.example.com/initalproviders/terraform-provider-test-initial.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "community",
+                "versions": {
+                }
+            },
             "multiple-versions": {
                 "repository": {
                     "provider_source": "Test Github Autogenerate",
@@ -790,6 +826,10 @@ Olm9bg==
                     },
                     "1.1.0-beta": {
                         "git_tag": "v1.1.0-beta",
+                        "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB"
+                    },
+                    "1.5.0": {
+                        "git_tag": "v1.5.0",
                         "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB"
                     },
                     "2.0.0": {

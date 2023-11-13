@@ -2,6 +2,7 @@
 import contextlib
 from datetime import datetime
 import json
+from tempfile import TemporaryDirectory
 from typing import Union, List
 import os
 import re
@@ -11,6 +12,7 @@ import pytest
 import sqlalchemy
 import semantic_version
 from terrareg.constants import PROVIDER_EXTRACTION_VERSION
+from test import mock_create_audit_event
 
 from test.integration.terrareg import TerraregIntegrationTest
 import terrareg.errors
@@ -259,3 +261,249 @@ class TestProviderVersion(TerraregIntegrationTest):
         provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
         version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
         assert version_obj.manifest_file_name == "terraform-provider-test-initial_1.5.0_manifest.json"
+
+    def test___init__(self):
+        """Test __init__ method."""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+        version_obj = terrareg.provider_version_model.ProviderVersion(provider=provider_obj, version="1.5.0")
+
+        assert version_obj._extracted_beta_flag == False
+        assert version_obj._provider is provider_obj
+        assert version_obj._version == "1.5.0"
+        assert version_obj._cache_db_row is None
+
+        beta_version_obj = terrareg.provider_version_model.ProviderVersion(provider=provider_obj, version="1.5.0-beta")
+        assert beta_version_obj._extracted_beta_flag is True
+
+    def test___eq__(self):
+        """Test __eq__ method"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="multiple-versions")
+        first_version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
+        second_version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="2.0.1")
+        second_provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+        different_provider_version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=second_provider_obj, version="1.5.0")
+
+        assert first_version_obj == terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
+
+        assert first_version_obj != second_version_obj
+        assert first_version_obj != different_provider_version_obj
+
+    def test___gt__(self):
+        """Test __gt__ method"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="multiple-versions")
+        lower = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="2.0.0")
+        upper = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="2.0.1")
+
+        assert upper > lower
+        assert not (lower > upper)
+
+    def test___lt__(self):
+        """Test __lt__ method"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="multiple-versions")
+        lower = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="2.0.0")
+        upper = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="2.0.1")
+
+        assert lower < upper
+        assert not (upper < lower)
+
+    def test__get_db_row(self):
+        """Test _get_db_row method"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+        version_obj = terrareg.provider_version_model.ProviderVersion(provider=provider_obj, version="1.5.0")
+
+        assert version_obj._cache_db_row is None
+
+        db_row = version_obj._get_db_row()
+        assert version_obj._cache_db_row is db_row
+
+        db_row = dict(db_row)
+        assert isinstance(db_row["id"], int)
+        assert isinstance(db_row["gpg_key_id"], int)
+        assert isinstance(db_row["provider_id"], int)
+        assert isinstance(db_row["published_at"], datetime)
+
+        db_row["id"] = 55
+        db_row["gpg_key_id"] = 1
+        db_row["provider_id"] = 1
+        db_row["published_at"] = datetime(2023, 11, 13, 5, 43, 30, 897287)
+        assert db_row == {
+            'beta': False,
+            'extraction_version': None,
+            'git_tag': 'v1.5.0',
+            'gpg_key_id': 1,
+            'id': 55,
+            'protocol_versions': None,
+            'provider_id': 1,
+            'published_at': datetime(2023, 11, 13, 5, 43, 30, 897287),
+            'version': '1.5.0',
+        }
+
+    def test_generate_file_name_from_suffix(self):
+        """Test generate_file_name_from_suffix method"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+        version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
+
+        assert version_obj.generate_file_name_from_suffix("test_file_suffix") == "terraform-provider-test-initial_1.5.0_test_file_suffix"
+
+    def test_create_data_directory(self):
+        """Test create_data_directory."""
+        with TemporaryDirectory() as temp_data_dir, \
+                unittest.mock.patch('terrareg.config.Config.DATA_DIRECTORY', temp_data_dir):
+
+            os.mkdir(os.path.join(temp_data_dir, "providers"))
+            
+            namespace_obj = terrareg.models.Namespace.get("initial-providers")
+            provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+            version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
+            version_obj.create_data_directory()
+
+            assert os.path.isdir(os.path.join(temp_data_dir, "providers", "initial-providers", "test-initial", "1.5.0"))
+
+    def test_create_extraction_wrapper(self):
+        """Test create_extraction_wrapper"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="to-delete")
+        version_obj = terrareg.provider_version_model.ProviderVersion(provider=provider_obj, version="300.6.3")
+        gpg_key = terrareg.models.GpgKey.get_by_fingerprint("21A74E4E3FDFE438532BD58434DE374AC3640CDB")
+
+        assert version_obj._get_db_row() is None
+
+        with version_obj.create_extraction_wrapper(git_tag="v3.6.3", gpg_key=gpg_key):
+
+            db_row = version_obj._get_db_row()
+            assert db_row is not None
+            assert db_row["git_tag"] == "v3.6.3"
+            assert db_row["gpg_key_id"] == gpg_key.pk
+            assert db_row["published_at"] is None
+
+            # Force refresh of provider data and ensure the new version is not marked as a new versino
+            provider_obj._cache_db_row = None
+            assert provider_obj._get_db_row()["latest_version_id"] != db_row["id"]
+
+        # Ensure that once outside of context, the new version has published_at and latest_version_id
+        # has been updated
+        version_obj._cache_db_row = None
+        assert isinstance(version_obj._get_db_row()["published_at"], datetime)
+        provider_obj._cache_db_row = None
+        assert provider_obj._get_db_row()["latest_version_id"] == db_row["id"]
+
+    def test_prepare_version(self):
+        """Test prepare_version"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="to-delete")
+        gpg_key = terrareg.models.GpgKey.get_by_fingerprint("21A74E4E3FDFE438532BD58434DE374AC3640CDB")
+
+        with unittest.mock.patch("terrareg.provider_version_model.ProviderVersion.create_data_directory", unittest.mock.MagicMock()) as mock_create_data_directory, \
+                unittest.mock.patch("terrareg.provider_version_model.ProviderVersion._create_db_row", unittest.mock.MagicMock()) as mock_create_db_row:
+            
+            version_obj = terrareg.provider_version_model.ProviderVersion(provider=provider_obj, version="1.21.3")
+            version_obj.prepare_version(git_tag="vunittest-git-tag", gpg_key=gpg_key)
+
+            mock_create_data_directory.assert_called_once_with()
+            mock_create_db_row.assert_called_once_with(git_tag="vunittest-git-tag", gpg_key=gpg_key)
+
+        db = terrareg.database.Database.get()
+        with db.get_connection() as conn:
+            audit_row = dict(conn.execute(db.audit_history.select().order_by(db.audit_history.c.timestamp.desc()).limit(1)).first())
+            assert audit_row["action"] == terrareg.audit_action.AuditAction.PROVIDER_VERSION_INDEX
+            assert audit_row["object_id"] == "initial-providers/to-delete/1.21.3"
+            assert audit_row["object_type"] == "ProviderVersion"
+
+    @pytest.mark.parametrize('provider, version, latest', [
+        ('to-delete', '523.2.1', True),
+        ('to-delete', '5.2.0', False),
+        ('empty-provider-publish', '5.2.0', True),
+    ])
+    def test_publish(self, provider, version, latest):
+        """Test publish."""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name=provider)
+        version_obj = terrareg.provider_version_model.ProviderVersion(provider=provider_obj, version=version)
+        gpg_key = terrareg.models.GpgKey.get_by_fingerprint("21A74E4E3FDFE438532BD58434DE374AC3640CDB")
+
+        version_obj.prepare_version(git_tag=f"v{version}", gpg_key=gpg_key)
+
+        # Obtain previous latest version from provider
+        previous_latest_version_id = provider_obj._get_db_row()["latest_version_id"]
+
+        version_obj.publish()
+
+        provider_obj._cache_db_row = None
+        new_latest_version_id = provider_obj._get_db_row()["latest_version_id"]
+
+        if latest:
+            assert new_latest_version_id != previous_latest_version_id
+            assert new_latest_version_id == version_obj.pk
+        else:
+            assert new_latest_version_id == previous_latest_version_id
+            assert new_latest_version_id != version_obj.pk
+
+    def test_get_total_downloads(self):
+        """Test get_total_downloads"""
+        with unittest.mock.patch("terrareg.analytics.ProviderAnalytics.get_provider_total_downloads", unittest.mock.MagicMock(return_value=12345)) as mock_get_provider_total_downloads:
+            namespace_obj = terrareg.models.Namespace.get("initial-providers")
+            provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+            version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
+
+            assert version_obj.get_total_downloads() == 12345
+            mock_get_provider_total_downloads.assert_called_once_with(provider=provider_obj)
+
+    def test_get_downloads(self):
+        """Test get_downloads."""
+        with unittest.mock.patch("terrareg.analytics.ProviderAnalytics.get_provider_version_total_downloads", unittest.mock.MagicMock(return_value=12345)) as mock_get_provider_version_total_downloads:
+            namespace_obj = terrareg.models.Namespace.get("initial-providers")
+            provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+            version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
+
+            assert version_obj.get_downloads() == 12345
+            mock_get_provider_version_total_downloads.assert_called_once_with(provider_version=version_obj)
+
+    @pytest.mark.parametrize("db_row_value, expected_value", [
+        (None, ["5.0"]),
+        ('["5.0", "6.0"]', ["5.0", "6.0"]),
+    ])
+    def test_protocols(self, db_row_value, expected_value):
+        """Test protocols property"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
+        version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
+        version_obj._cache_db_row = {
+            "protocol_versions": terrareg.database.Database.encode_blob(db_row_value)
+        }
+
+        assert version_obj.protocols == expected_value
+
+    def test_update_attributes(self):
+        """Test update_attributes"""
+        namespace_obj = terrareg.models.Namespace.get("initial-providers")
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="update-attributes")
+        version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.0.0")
+
+        new_gpg_key = terrareg.models.GpgKey.get_by_fingerprint("94CA72B7A2F4606A6C18211AE94A4F2AD628D926")
+
+        version_obj.update_attributes(
+            protocol_versions=json.dumps(["5.2.1", "1.2.3"]),
+            gpg_key_id=new_gpg_key.pk,
+            extraction_version=23,
+            published_at=datetime(year=2023, month=2, day=3, hour=23, minute=0, second=6),
+            git_tag="v5.4.3",
+            beta=True
+        )
+
+        assert dict(version_obj._get_db_row()) == {
+            'beta': True,
+            'extraction_version': 23,
+            'git_tag': 'v5.4.3',
+            'gpg_key_id': new_gpg_key.pk,
+            'id': version_obj.pk,
+            'protocol_versions': b'["5.2.1", "1.2.3"]',
+            'provider_id': provider_obj.pk,
+            'published_at': datetime(2023, 2, 3, 23, 0, 6),
+            'version': '1.0.0',
+        }
