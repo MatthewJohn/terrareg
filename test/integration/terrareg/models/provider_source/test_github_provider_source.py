@@ -56,6 +56,7 @@ class TestGithubProviderSource(BaseProviderSourceTests):
         "private_key_path": "./unittest-path-to-private-key.pem",
         "app_id": 954956
     }
+    _TEST_DATA = {}
 
     def test_generate_db_config_from_source_config(self):
         """Test generate_db_config_from_source_config"""
