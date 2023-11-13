@@ -12,6 +12,7 @@ import terrareg.database
 import terrareg.models
 import terrareg.provider_tier
 import terrareg.repository_model
+import terrareg.provider_model
 from test.test_gpg_key import public_ascii_armor
 
 
