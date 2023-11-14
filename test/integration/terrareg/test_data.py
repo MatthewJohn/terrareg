@@ -29,28 +29,33 @@ integration_git_providers = {
 
 integration_provider_categories = [
     {
-        "id": 1,
+        "id": 523,
         "name": "Visible Monitoring",
         "slug": "visible-monitoring",
         "user-selectable": True
     },
     {
-        "id": 2,
+        "id": 54,
         "name": "Second Visible Cloud",
         "slug": "second-visible-cloud",
         "user-selectable": True
     },
     {
-        "id": 3,
+        "id": 55,
         "name": "Default Visible Test",
         "slug": "default-visible-test"
     },
     {
-        "id": 4,
+        "id": 99,
         "name": "Hidden Database",
         "slug": "hidden-database",
         "user-selectable": False
-    }
+    },
+    {
+        "id": 100,
+        "name": "No Slug Provided!",
+        "user-selectable": True
+    },
 ]
 
 integration_provider_sources = [

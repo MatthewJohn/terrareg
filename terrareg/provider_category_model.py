@@ -184,5 +184,3 @@ class ProviderCategoryFactory:
                 )
             with db.get_connection() as conn:
                 conn.execute(upsert)
-
-
