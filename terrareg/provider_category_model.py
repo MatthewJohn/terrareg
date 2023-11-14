@@ -149,43 +149,57 @@ class ProviderCategoryFactory:
 
     def initialise_from_config(self) -> None:
         """Load provider categories from config into database."""
-        provider_category_configs = json.loads(terrareg.config.Config().PROVIDER_CATEGORIES)
+        try:
+            provider_category_configs = json.loads(terrareg.config.Config().PROVIDER_CATEGORIES)
+        except:
+            raise InvalidProviderCategoryConfigError("Provider categories configuration is not valid JSON")
         db = terrareg.database.Database.get()
 
-        for provider_category_config in provider_category_configs:
-            # Validate provider config
-            for attr in ['name', 'id']:
-                if attr not in provider_category_config:
-                    raise InvalidProviderCategoryConfigError(
-                        'Provider Category config does not contain required attribute: {}'.format(attr))
+        with db.start_transaction():
 
-            pk = provider_category_config.get("id")
-            name = provider_category_config.get("name")
+            for provider_category_config in provider_category_configs:
+                # Validate provider config
+                for attr in ['name', 'id']:
+                    if attr not in provider_category_config:
+                        raise InvalidProviderCategoryConfigError(
+                            'Provider Category config does not contain required attribute: {}'.format(attr))
 
-            user_selectable = provider_category_config.get("user-selectable", True)
-            if not isinstance(user_selectable, bool):
-                raise InvalidProviderCategoryConfigError("Provider Category config 'user-selectable' field must be a boolean value")
+                pk = provider_category_config.get("id")
+                try:
+                    pk = int(pk)
+                except ValueError:
+                    raise InvalidProviderCategoryConfigError("ID for provider is invalid - must be a valid integer")
 
-            slug = self.name_to_slug(provider_category_config.get("slug", name))
+                name = provider_category_config.get("name")
+                if not isinstance(name, str):
+                    raise InvalidProviderCategoryConfigError("Provider category name is invalid - must be a valid string")
 
-            # Check if git provider exists in DB
-            existing_provider_category = self.get_provider_category_by_pk(pk=pk)
-            fields = {
-                'name': name,
-                'slug': slug,
-                'user_selectable': user_selectable
-            }
-            if existing_provider_category:
-                # Update existing row
-                upsert = db.provider_category.update().where(
-                    db.provider_category.c.id==pk
-                ).values(
-                    **fields
-                )
-            else:
-                upsert = db.provider_category.insert().values(
-                    id=pk,
-                    **fields
-                )
-            with db.get_connection() as conn:
-                conn.execute(upsert)
+                user_selectable = provider_category_config.get("user-selectable", True)
+                if not isinstance(user_selectable, bool):
+                    raise InvalidProviderCategoryConfigError("Provider Category config 'user-selectable' field must be a boolean value")
+
+                slug = self.name_to_slug(provider_category_config.get("slug", name))
+                if not isinstance(slug, str):
+                    raise InvalidProviderCategoryConfigError("Provider category slug is invalid - must be a valid string")
+
+                # Check if git provider exists in DB
+                existing_provider_category = self.get_provider_category_by_pk(pk=pk)
+                fields = {
+                    'name': name,
+                    'slug': slug,
+                    'user_selectable': user_selectable
+                }
+                if existing_provider_category:
+                    # Update existing row
+                    upsert = db.provider_category.update().where(
+                        db.provider_category.c.id==pk
+                    ).values(
+                        **fields
+                    )
+                else:
+                    upsert = db.provider_category.insert().values(
+                        id=pk,
+                        **fields
+                    )
+                with db.get_connection() as conn:
+                    conn.execute(upsert)
