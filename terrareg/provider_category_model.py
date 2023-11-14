@@ -139,8 +139,13 @@ class ProviderCategoryFactory:
     def name_to_slug(self, name: str):
         """Convert name to slug"""
         name = name.lower()
-        name = name.replace(' ', '-')
-        return re.sub(r'[^a-z0-9\-]', '', name)
+        name = re.sub(r'[^a-z0-9\-]', '-', name)
+        name = re.sub(r'--+', '-', name)
+        if name.startswith('-'):
+            name = name[1:]
+        if name.endswith('-'):
+            name = name[:-1]
+        return name
 
     def initialise_from_config(self) -> None:
         """Load provider categories from config into database."""
@@ -161,7 +166,7 @@ class ProviderCategoryFactory:
             if not isinstance(user_selectable, bool):
                 raise InvalidProviderCategoryConfigError("Provider Category config 'user-selectable' field must be a boolean value")
 
-            slug = provider_category_config.get("slug", self.name_to_slug(name))
+            slug = self.name_to_slug(provider_category_config.get("slug", name))
 
             # Check if git provider exists in DB
             existing_provider_category = self.get_provider_category_by_pk(pk=pk)
