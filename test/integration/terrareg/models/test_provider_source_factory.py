@@ -15,6 +15,8 @@ import terrareg.provider_source.factory
 class TestProviderSourceFactory(TerraregIntegrationTest):
     """Test ProviderSourceFactory class"""
 
+    _TEST_DATA = {}
+
     def test_get(self):
         """Test get method"""
         terrareg.provider_source.factory.ProviderSourceFactory._INSTANCE = None
@@ -110,6 +112,7 @@ class TestProviderSourceFactory(TerraregIntegrationTest):
         db = terrareg.database.Database.get()
         # Create two test providers
         with db.get_connection() as conn:
+            conn.execute(db.provider_source.delete())
             conn.execute(db.provider_source.insert().values(
                 name="Test Provider 1",
                 api_name="prov-1",
