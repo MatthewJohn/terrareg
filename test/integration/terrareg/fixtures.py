@@ -12,6 +12,7 @@ import terrareg.database
 import terrareg.models
 import terrareg.provider_tier
 import terrareg.repository_model
+import terrareg.provider_category_model
 import terrareg.provider_model
 from test.test_gpg_key import public_ascii_armor
 
@@ -19,8 +20,8 @@ from test.test_gpg_key import public_ascii_armor
 @pytest.fixture
 def mock_provider_source_class():
 
-    class MockProviderSource(terrareg.provider_source.BaseProviderSource):
-        TYPE = "github"
+    class MockProviderSource:
+        TYPE = terrareg.provider_source_type.ProviderSourceType.GITHUB
         HAS_INSTALLATION_ID = True
         NEW_RELEASES = [
             terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
@@ -41,6 +42,45 @@ def mock_provider_source_class():
             )
         ]
 
+        @property
+        def name(self) -> str:
+            """Return name"""
+            return self._name
+
+        @property
+        def api_name(self) -> str:
+            """Return API name"""
+            return self._get_db_row()["api_name"]
+
+        @property
+        def login_button_text(self):
+            """Return login button text"""
+            raise NotImplementedError
+
+        @property
+        def _config(self) -> Dict[str, Union[str, bool]]:
+            """Return config for provider source"""
+            return json.loads(terrareg.database.Database.decode_blob(self._get_db_row()['config']))
+
+        def __init__(self, name: str):
+            """Initialise member variables"""
+            self._name = name
+            self._cache_db_row: Union[None, Dict[str, Union[str, bool]]] = None
+
+        def _get_db_row(self):
+            """Return database row for module details."""
+            if self._cache_db_row is None:
+                db = terrareg.database.Database.get()
+                select = db.provider_source.select(
+                ).where(
+                    db.provider_source.c.name == self.name
+                )
+                with db.get_connection() as conn:
+                    res = conn.execute(select)
+                    self._cache_db_row = res.fetchone()
+
+            return self._cache_db_row
+
         @classmethod
         def generate_db_config_from_source_config(cls, config: Dict[str, str]) -> Dict[str, Union[str, bool]]:
             """Mocked generate_db_config_from_source_config method"""
@@ -58,44 +98,48 @@ def mock_provider_source_class():
             """Return mocked method to obtain new releases"""
             return MockProviderSource.NEW_RELEASES
 
-    yield MockProviderSource
-    del MockProviderSource
+    try:
+        yield MockProviderSource
+    finally:
+        del MockProviderSource
 
 
 @pytest.fixture
 def mock_provider_source(mock_provider_source_class):
-    with unittest.mock.patch(
-            'terrareg.provider_source.factory.ProviderSourceFactory._CLASS_MAPPING',
-            {terrareg.provider_source_type.ProviderSourceType.GITHUB: mock_provider_source_class}):
+    provider_source_name = "unittest-provider-source"
+    try:
+        with unittest.mock.patch(
+                'terrareg.provider_source.factory.ProviderSourceFactory._CLASS_MAPPING',
+                {terrareg.provider_source_type.ProviderSourceType.GITHUB: mock_provider_source_class}):
+                
+            terrareg.provider_source.factory.ProviderSourceFactory._INSTANCE = None
+            with unittest.mock.patch('terrareg.config.Config.PROVIDER_SOURCES', json.dumps(
+                    [{"name": provider_source_name,
+                    "type": "github",
+                    "login_button_text": "Unit test login",
+                    "auto_generate_github_organisation_namespaces": False,
+                    "base_url": "https://github.example.com",
+                    "api_url": "https://api.github.example.com",
+                    "client_id": "unittest-client-id",
+                    "client_secret": "unittest-client-secret",
+                    "private_key_path": "./path/to/key.pem",
+                    "app_id": "1234appid",
+                    "default_access_token": "pa-test-personal-access-token",
+                    "default_installation_id": "ut-default-installation-id-here",
+                    }]
+                )):
+                    terrareg.provider_source.factory.ProviderSourceFactory.get().initialise_from_config()
+            provider_source = terrareg.provider_source.factory.ProviderSourceFactory().get_provider_source_by_name("unittest-provider-source")
+            provider_source_name = provider_source.name
+
+            yield provider_source
+    finally:
         terrareg.provider_source.factory.ProviderSourceFactory._INSTANCE = None
 
-        with unittest.mock.patch('terrareg.config.Config.PROVIDER_SOURCES', json.dumps(
-            [{"name": "unittest-provider-source",
-              "type": "github",
-              "login_button_text": "Unit test login",
-              "auto_generate_github_organisation_namespaces": False,
-              "base_url": "https://github.example.com",
-              "api_url": "https://api.github.example.com",
-              "client_id": "unittest-client-id",
-              "client_secret": "unittest-client-secret",
-              "private_key_path": "./path/to/key.pem",
-              "app_id": "1234appid",
-              "default_access_token": "pa-test-personal-access-token",
-              "default_installation_id": "ut-default-installation-id-here",
-            }]
-        )):
-            terrareg.provider_source.factory.ProviderSourceFactory.get().initialise_from_config()
-        provider_source = terrareg.provider_source.factory.ProviderSourceFactory().get_provider_source_by_name("unittest-provider-source")
-        provider_source_name = provider_source.name
-
-        yield provider_source
-
-    terrareg.provider_source.factory.ProviderSourceFactory._INSTANCE = None
-
-    # Delete provider source
-    db = terrareg.database.Database.get()
-    with terrareg.database.Database.get_connection() as conn:
-        conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
+        # Delete provider source
+        db = terrareg.database.Database.get()
+        with terrareg.database.Database.get_connection() as conn:
+            conn.execute(db.provider_source.delete(db.provider_source.c.name==provider_source_name))
 
 
 @pytest.fixture
