@@ -15,7 +15,7 @@ Markdown==3.4.3
 markdown2==2.4.8
 MarkupSafe==2.1.2
 pycparser==2.21
-pyOpenSSL==23.1.1
+pyOpenSSL==23.2.0
 python-magic==0.4.27
 pytz==2023.3
 six==1.16.0

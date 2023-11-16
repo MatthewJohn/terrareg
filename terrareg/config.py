@@ -50,7 +50,7 @@ class Config:
 
         No analytics of the module usage are captured when this auth key is used.
 
-        The value should be a comma-seperated list of auth keys.
+        The value should be a comma-separated list of auth keys.
 
         The auth key can be used by placing in a "credential" block in the user's .terraformrc file.
         """
@@ -83,7 +83,7 @@ class Config:
         """
         Domain name that the system is hosted on.
 
-        This should be setup for all installations, but is required for infracost and OpenID authentication.
+        This should be setup for all installations, but is required for Infracost and OpenID authentication.
 
         Note: The configuration is deprecated, please set the `PUBLIC_URL` configuration instead.
         """
@@ -102,9 +102,9 @@ class Config:
     def DATABASE_URL(self):
         """
         URL for database.
-        Defaults to local sqlite database.
+        Defaults to local SQLite database.
 
-        To setup SQLite database, use `sqlite:///<path to sqlite DB>`
+        To setup SQLite database, use `sqlite:///<path to SQLite DB>`
 
         To setup MySQL, use `mysql+mysqlconnector://<user>:<password>@<host>[:<port>]/<database>`
         """
@@ -191,20 +191,20 @@ class Config:
         For example, if set to 1, if a Terraform module was accessed via a redirect in the past 1 day, it will require
         forceful deletion to delete (unless a more recent download of the module by the same analytics token no longer uses the redirect).
 
-        Value of `0` disables the lookback and redirects can always be removed without force
+        Value of `0` disables the look-back and redirects can always be removed without force
 
-        Value of `-1` will not limit the lookback period and all analytics will be used.
+        Value of `-1` will not limit the look-back period and all analytics will be used.
         """
         return int(os.environ.get('REDIRECT_DELETION_LOOKBACK_DAYS', "-1"))
 
     @property
     def DEBUG(self):
-        """Whether flask and sqlalchemy is setup in debug mode."""
+        """Whether Flask and SQLalchemy is setup in debug mode."""
         return self.convert_boolean(os.environ.get('DEBUG', 'False'))
 
     @property
     def THREADED(self):
-        """Whether flask is configured to enable threading"""
+        """Whether Flask is configured to enable threading"""
         return self.convert_boolean(os.environ.get('THREADED', 'True'))
 
     @property
@@ -232,7 +232,7 @@ class Config:
     @property
     def ALLOWED_PROVIDERS(self):
         """
-        Comma-seperated list of allowed providers.
+        Comma-separated list of allowed providers.
 
         Leave empty to disable allow-list and allow all providers.
         """
@@ -300,7 +300,7 @@ class Config:
     @property
     def REQUIRED_MODULE_METADATA_ATTRIBUTES(self):
         """
-        Comma-seperated list of metadata attributes that each uploaded module _must_ contain, otherwise the upload is aborted.
+        Comma-separated list of metadata attributes that each uploaded module _must_ contain, otherwise the upload is aborted.
         """
         return [
             attr for attr in os.environ.get('REQUIRED_MODULE_METADATA_ATTRIBUTES', '').split(',') if attr
@@ -340,7 +340,7 @@ class Config:
         """
         List of comma-separated list of API keys to upload/import new module versions.
 
-        For bitbucket hooks, one of these keys must be provided as the 'secret' to the webhook.
+        For Bitbucket hooks, one of these keys must be provided as the 'secret' to the web-hook.
 
         To disable authentication for upload endpoint, leave empty.
         """
@@ -483,7 +483,7 @@ class Config:
                         or 'https://github.com/{namespace}/{module}-{provider}.git')
                     Note: Do not include '{version}' placeholder in the URL -
                     the git tag will be automatically provided.
-                    If using SSH, the domain must be seperated by the path using a forward slash. Use a colon to specify a port (e.g. `ssh://gitlab.corp.com:7999/namespace/name.git`)
+                    If using SSH, the domain must be separated by the path using a forward slash. Use a colon to specify a port (e.g. `ssh://gitlab.corp.com:7999/namespace/name.git`)
 
         - browse_url - Formatted URL for user-viewable source code
                         (e.g. 'https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}'
@@ -575,9 +575,9 @@ class Config:
     @property
     def INFRACOST_PRICING_API_ENDPOINT(self):
         """
-        Self-hosted infracost pricing API endpoint.
+        Self-hosted Infracost pricing API endpoint.
 
-        For information on self-hosting the infracost pricing API, see https://www.infracost.io/docs/cloud_pricing_api/self_hosted/
+        For information on self-hosting the Infracost pricing API, see https://www.infracost.io/docs/cloud_pricing_api/self_hosted/
         """
         return os.environ.get('INFRACOST_PRICING_API_ENDPOINT', None)
 
@@ -689,7 +689,7 @@ class Config:
     @property
     def OPENID_CONNECT_SCOPES(self):
         """
-        Comma-seperated list of scopes to be included in OpenID authentication request.
+        Comma-separated list of scopes to be included in OpenID authentication request.
 
         The OpenID profile should provide a 'groups' attribute, containing a list of groups
         that the user is a member of.
@@ -833,7 +833,7 @@ class Config:
 
         Supported languages for syntax highlighting:
          * HCL
-         * Javascript/JSON
+         * JavaScript/JSON
          * Bash
          * Batch
          * PL/SQL
@@ -888,7 +888,7 @@ class Config:
     @property
     def TERRAFORM_PRESIGNED_URL_SECRET(self):
         """
-        Secret value for encrypting tokens used in presigned URLs to authenticate module source downloads.
+        Secret value for encrypting tokens used in pre-signed URLs to authenticate module source downloads.
 
         This is required when requiring authentication in Terrareg and modules do not use git.
         """
@@ -907,6 +907,59 @@ class Config:
         """
         return int(os.environ.get("TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS", 10))
 
+    @property
+    def GITHUB_URL(self):
+        """
+        URL to Github for using Github authentication.
+
+        Defaults to public Github.
+        Change to use self-hosted hosted Github.
+        """
+        return os.environ.get("GITHUB_URL", "https://github.com")
+
+    @property
+    def GITHUB_API_URL(self):
+        """
+        Github API URL for using Github authentication.
+
+        Defaults to public Github.
+        Change to use self-hosted hosted Github, e.g. https://github-ent.example.com/api
+        """
+        return os.environ.get("GITHUB_API_URL", "https://api.github.com")
+
+    @property
+    def GITHUB_APP_CLIENT_ID(self):
+        """
+        Github app client ID for Github authentication.
+
+        See USER_GUIDE for setting up Github app.
+        """
+        return os.environ.get("GITHUB_APP_CLIENT_ID")
+
+    @property
+    def GITHUB_APP_CLIENT_SECRET(self):
+        """
+        Github App client secret for Github authentication.
+
+        See USER_GUIDE for setting up Github app.
+        """
+        return os.environ.get("GITHUB_APP_CLIENT_SECRET")
+
+    @property
+    def GITHUB_LOGIN_TEXT(self):
+        """
+        Login button text for authenticating to Github
+        """
+        return os.environ.get("GITHUB_LOGIN_TEXT", "Login with Github")
+
+    @property
+    def AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES(self):
+        """
+        Whether to automatically generated namespaces for each user (and all related organisations) that authenticate to Terrareg.
+
+        The user will have full permissions over these namespaces.
+        """
+        return self.convert_boolean(os.environ.get("AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES", "False"))
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""

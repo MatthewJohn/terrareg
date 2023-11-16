@@ -7,57 +7,14 @@ from terrareg.config import Config
 from terrareg.database import Database
 import terrareg.models
 from terrareg.filters import NamespaceTrustFilter
-
-
-class ModuleSearchResults(object):
-    """Object containing search results."""
-
-    @property
-    def module_providers(self):
-        """Return module providers."""
-        return self._module_providers
-
-    @property
-    def count(self):
-        """Return count."""
-        return self._count
-
-    @property
-    def meta(self):
-        """Return API meta for limit/offsets."""
-        # Setup base metadata with current offset and limit
-        meta_data = {
-            "limit": self._limit,
-            "current_offset": self._offset,
-        }
-
-        # If current offset is not 0,
-        # Set previous offset as current offset minus the current limit,
-        # or 0, depending on whichever is higher.
-        if self._offset > 0:
-            meta_data['prev_offset'] = (self._offset - self._limit) if (self._offset >= self._limit) else 0
-
-        # If the current count of results is greater than the next offset,
-        # provide the next offset in the metadata
-        next_offset = (self._offset + self._limit)
-        if self.count > next_offset:
-            meta_data['next_offset'] = next_offset
-
-        return meta_data
-
-    def __init__(self, offset: int, limit: int, module_providers: list, count: str):
-        """Store member variables"""
-        self._offset = offset
-        self._limit = limit
-        self._module_providers = module_providers
-        self._count = count
+import terrareg.result_data
 
 
 class ModuleSearch(object):
 
     @classmethod
     def _get_search_query_filter(cls, query: str):
-        """Filter query based on wildcarded match of fields."""
+        """Filter query based on wild-carded match of fields."""
 
         db = Database.get()
         wheres = []
@@ -202,10 +159,10 @@ class ModuleSearch(object):
                 module = terrareg.models.Module(namespace=namespace, name=r['module'])
                 module_providers.append(terrareg.models.ModuleProvider(module=module, name=r['provider']))
 
-        return ModuleSearchResults(
+        return terrareg.result_data.ResultData(
             offset=offset,
             limit=limit,
-            module_providers=module_providers,
+            rows=module_providers,
             count=count
         )
 

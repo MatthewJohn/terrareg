@@ -7,7 +7,7 @@ import terrareg.auth_wrapper
 
 
 class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
-    """Return list of filters availabe for search."""
+    """Return list of filters available for search."""
 
     method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 

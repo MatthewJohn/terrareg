@@ -2,6 +2,7 @@
 import terrareg.config
 import terrareg.openid_connect
 import terrareg.saml
+import terrareg.github
 import terrareg.auth
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.auth_wrapper
@@ -31,6 +32,8 @@ class ApiTerraregConfig(ErrorCatchingResource):
             'ADDITIONAL_MODULE_TABS': config.ADDITIONAL_MODULE_TABS,
             'OPENID_CONNECT_ENABLED': terrareg.openid_connect.OpenidConnect.is_enabled(),
             'OPENID_CONNECT_LOGIN_TEXT': config.OPENID_CONNECT_LOGIN_TEXT,
+            'GITHUB_ENABLED': terrareg.github.Github.is_enabled(),
+            'GITHUB_LOGIN_TEXT': config.GITHUB_LOGIN_TEXT,
             'SAML_ENABLED': terrareg.saml.Saml2.is_enabled(),
             'SAML_LOGIN_TEXT': config.SAML2_LOGIN_TEXT,
             'ADMIN_LOGIN_ENABLED': terrareg.auth.AdminApiKeyAuthMethod.is_enabled(),

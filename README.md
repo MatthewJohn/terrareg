@@ -61,7 +61,7 @@ For information about running with docker-compose, SSL certificate generation or
   * Provide a name for the namespace and create.
 * Goto 'Create' -> 'Modules' (http://localhost:5000/create-module)
 * Fill in the details for your module and 'Create'
-* Use the 'Manually index version' form of your module, filling out the verison and select 'Publish' and then press 'Index Version'
+* Use the 'Manually index version' form of your module, filling out the version and select 'Publish' and then press 'Index Version'
 
 ### From source
 
@@ -81,7 +81,7 @@ For information about running with docker-compose, SSL certificate generation or
   Navigate to http://localhost:5000 to get started, or http://localhost/modules/helloworld/my-tf-module to see the uploaded example!
 
 
-**NOTE:** To use modules from the registry in Terraform, a valid SSL certificate must be used. Terraform will not work if you supply `http://` as a protocol for the module URL, as it will treat this as a direct HTTP download, rather than treating it as a registry.
+**NOTE:** To use modules from the registry in Terraform, a valid SSL certificate is incredibly highly recommended. Terraform will not work if you supply `http://` as a protocol for the module URL, as it will treat this as a direct HTTP download, rather than treating it as a registry. Whilst Terrareg does handle these types of requests, you will not be able to the module version ranges that Terraform provides.
 
 
 ## Additional configuration

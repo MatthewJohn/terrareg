@@ -88,9 +88,14 @@ class TestConfig:
         ('TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH', None),
         ('TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT', None),
         ('TERRAFORM_PRESIGNED_URL_SECRET', None),
+        ('GITHUB_URL', None),
+        ('GITHUB_API_URL', None),
+        ('GITHUB_APP_CLIENT_ID', None),
+        ('GITHUB_APP_CLIENT_SECRET', None),
+        ('GITHUB_LOGIN_TEXT', None),
     ])
     def test_string_configs(self, config_name, override_expected_value):
-        """Test string configs to ensure they are overriden with environment variables."""
+        """Test string configs to ensure they are overridden with environment variables."""
         self.register_checked_config(config_name)
         with unittest.mock.patch('os.environ', {config_name: 'unittest-value'}):
             assert getattr(terrareg.config.Config(), config_name) == (override_expected_value if override_expected_value is not None else 'unittest-value')
@@ -99,7 +104,7 @@ class TestConfig:
         ('SENTRY_TRACES_SAMPLE_RATE', '1.523', 1.523)
     ])
     def test_custom_string_configs(self, config_name, test_value, test_expected):
-        """Test string configs with custom values to ensure they are overriden with environment variables."""
+        """Test string configs with custom values to ensure they are overridden with environment variables."""
         self.register_checked_config(config_name)
         with unittest.mock.patch('os.environ', {config_name: test_value}):
             assert getattr(terrareg.config.Config(), config_name) == test_expected
@@ -113,7 +118,7 @@ class TestConfig:
         'TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS',
     ])
     def test_integer_configs(self, config_name):
-        """Test integer configs to ensure they are overriden with environment variables."""
+        """Test integer configs to ensure they are overridden with environment variables."""
         self.register_checked_config(config_name)
         with unittest.mock.patch('os.environ', {config_name: '582612'}):
             assert getattr(terrareg.config.Config(), config_name) == 582612
@@ -143,7 +148,7 @@ class TestConfig:
         ('EXAMPLE_FILE_EXTENSIONS'),
     ])
     def test_list_configs(self, config_name, test_value, expected_value):
-        """Test list configs to ensure they are overriden with environment variables."""
+        """Test list configs to ensure they are overridden with environment variables."""
         self.register_checked_config(config_name)
         # Check that input value produces expected list value
         with unittest.mock.patch('os.environ', {config_name: test_value}):
@@ -154,7 +159,7 @@ class TestConfig:
         ('SERVER', terrareg.config.ServerType, terrareg.config.ServerType.BUILTIN),
     ])
     def test_enum_configs(self, config_name, enum, expected_default):
-        """Test enum configs to ensure they are overriden with environment variables."""
+        """Test enum configs to ensure they are overridden with environment variables."""
         self.register_checked_config(config_name)
         check_dict = {None: expected_default}
         check_dict.update({
@@ -202,9 +207,10 @@ class TestConfig:
         'DISABLE_ANALYTICS',
         'ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION',
         'ALLOW_UNAUTHENTICATED_ACCESS',
+        'AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES',
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
-        """Test boolean configs to ensure they are overriden with environment variables."""
+        """Test boolean configs to ensure they are overridden with environment variables."""
         self.register_checked_config(config_name)
         # Check that input value generates the expected boolean value
         with unittest.mock.patch('os.environ', {config_name: test_value}):

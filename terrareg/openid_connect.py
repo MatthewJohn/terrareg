@@ -48,7 +48,7 @@ class OpenidConnect:
 
     @classmethod
     def obtain_issuer_metadata(cls):
-        """Obtain wellknown metadata from issuer"""
+        """Obtain well-known metadata from issuer"""
         # Obtain meta data from well-known URL, if not previously cached
         if not cls.is_enabled():
             return None
@@ -131,7 +131,7 @@ class OpenidConnect:
 
     @classmethod
     def get_user_info(cls, access_token):
-        """Get user infor"""
+        """Get user info"""
         user_info_endpoint = cls.obtain_issuer_metadata().get('userinfo_endpoint')
         if not user_info_endpoint:
             return None

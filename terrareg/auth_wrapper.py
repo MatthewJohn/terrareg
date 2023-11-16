@@ -28,7 +28,7 @@ def auth_wrapper(auth_check_method, *wrapper_args, request_kwarg_map={}, **wrapp
 
             # Call authentication method.
             if (status := getattr(auth_method, auth_check_method)(*wrapper_args, **auth_kwargs)) == False:
-                # Return 403 and 401 based on whether user is authenticaticated
+                # Return 403 and 401 based on whether user is authenticated
                 if auth_method.is_authenticated():
                     abort(403)
                 else:

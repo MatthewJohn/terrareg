@@ -28,7 +28,7 @@ class ApiOpenIdCallback(ErrorCatchingResource):
             if access_token is None:
                 raise Exception('Error getting access token')
         except Exception as exc:
-            # In dev, reraise exception
+            # In dev, re-raise exception
             if terrareg.config.Config().DEBUG:
                 raise
 
@@ -70,7 +70,7 @@ Username:
 {session['openid_username']}
 """)
 
-        # Manually calcualte expires at, to avoid timezone issues
+        # Manually calculate expires at, to avoid time-zone issues
         session['openid_connect_expires_at'] = datetime.datetime.now().timestamp() + access_token['expires_in']
         session.modified = True
 

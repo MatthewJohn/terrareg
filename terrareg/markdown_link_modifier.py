@@ -14,6 +14,10 @@ HYPHEN_REPLACEMENT_RE = re.compile(r"[\s\-]+")
 
 def _convert_id(file_name, id):
     file_name = NON_ALPHANUMERIC_REPLACEMENT_RE.sub("", HYPHEN_REPLACEMENT_RE.sub("-", file_name))
+    # If 'id' provided is not a string, return the original value
+    if not isinstance(id, str):
+        return None
+
     id = NON_ALPHANUMERIC_REPLACEMENT_RE.sub("", HYPHEN_REPLACEMENT_RE.sub("-", id))
     return f"terrareg-anchor-{file_name}-{id}"
 
@@ -44,7 +48,7 @@ class LinkAnchorReplacement(Treeprocessor):
     """Add IDs to headings and convert links to current filename"""
 
     def run(self, root):
-        """Replace IDs of anchorable elements and replace anchor links with correct ID"""
+        """Replace IDs of anchor-able elements and replace anchor links with correct ID"""
 
         # Iterate over links, replacing href with Terrareg links
         for link in root.findall('.//a'):
@@ -68,13 +72,12 @@ class ImageSourceCheck(Treeprocessor):
             if src := link.attrib.get('src', ''):
                 # Delete src attribute, if it does not
                 # start with http:// or https://.
-                # Relative URLs wthin a repository will not work
+                # Relative URLs within a repository will not work
                 # and will be displayed as broken images, which
                 # does not look nice.
                 # Removing the 'src' attribute will show white space,
                 # rather than a broken image icon
                 if (not src.startswith('http://')) and (not src.startswith('https://')):
-                    print(f'Removing source: {link.attrib["src"]}')
                     del link.attrib['src']
 
 
@@ -82,7 +85,7 @@ class HTMLExtractorWithAttribs(HTMLExtractor):
     """Custom HTMLExtractor override, replacing name attributes of embedded HTML"""
 
     def reset(self):
-        """Reset/setup member varibales."""
+        """Reset/setup member variables."""
         self.__starttag_text = None
         return super().reset()
 
@@ -92,8 +95,9 @@ class HTMLExtractorWithAttribs(HTMLExtractor):
         converted_attribute = False
         for itx, attr in enumerate(attrs):
             if attr[0] == 'name' or attr[0] == 'id':
-                attrs[itx] = (attr[0], _convert_id(self.md.terrareg_file_name, attr[1]))
-                converted_attribute = True
+                if result_id := _convert_id(self.md.terrareg_file_name, attr[1]):
+                    attrs[itx] = (attr[0], result_id)
+                    converted_attribute = True
             if attr[0] == 'href':
                 attrs[itx] = (attr[0], _get_anchor_from_href(file_name=self.md.terrareg_file_name, href=attr[1]))
                 converted_attribute = True

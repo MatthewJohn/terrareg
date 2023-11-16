@@ -7,7 +7,7 @@ class TerraregError(Exception):
 
 
 class UnknownFiletypeError(TerraregError):
-    """Uploaded filetype is unknown."""
+    """Uploaded file-type is unknown."""
 
     pass
 
@@ -73,7 +73,7 @@ class InvalidModuleNameError(TerraregError):
 
 
 class InvalidModuleProviderNameError(TerraregError):
-    """Invalid module provder name."""
+    """Invalid module provider name."""
 
     pass
 
@@ -187,7 +187,7 @@ class InvalidUserGroupNameError(TerraregError):
 
 
 class UnableToGetGlobalTerraformLockError(TerraregError):
-    """Unable to aquire thread lock whilst switching Terraform"""
+    """Unable to acquire thread lock whilst switching Terraform"""
 
     pass
 
@@ -259,6 +259,6 @@ class InvalidPresignedUrlKeyError(TerraregError):
 
 
 class PresignedUrlsNotConfiguredError(TerraregError):
-    """Missing configurations for presigned URLs"""
+    """Missing configurations for pre-signed URLs"""
 
     pass

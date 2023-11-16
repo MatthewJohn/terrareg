@@ -1,5 +1,56 @@
 # Changelog
 
+## [2.81.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.81.1...v2.81.2) (2023-10-31)
+
+
+### Bug Fixes
+
+* Avoid re-writing HTML elements in markdown that contain invalid name arguments. ([8b623e9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8b623e9146af38eac54948505581ef90d9194ed9)), closes [#456](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/456)
+* Handle exception thrown when a HTML element is present in markdown that contains an attribute without a value ([7e1a77f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7e1a77fd9e926718197c3788a49e810f93964da3)), closes [#456](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/456)
+
+## [2.81.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.81.0...v2.81.1) (2023-10-27)
+
+
+### Bug Fixes
+
+* Fix namespace modules endpoint to valid correct attribute of result metadata to avoid errors ([fdae4c6](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fdae4c680d897f53996bb81acc0fec6ceba563f1)), closes [#452](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/452)
+
+# [2.81.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.5...v2.81.0) (2023-10-12)
+
+
+### Bug Fixes
+
+* Update terrareg namespaces endpoint to return original data format if limit is not provided. ([f288de0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f288de0fa7e22a58d96de081fdc2faa427ea14d7)), closes [#445](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/445)
+
+
+### Features
+
+* Add auth method for github authentication ([8fe9924](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8fe99241f258abc636b0a536234edb86cc11860d)), closes [#445](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/445)
+* Add login button and API endpoint to initiate Github login ([f25b1d8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f25b1d82fa4e05b02f6382a68bba00addde0374a)), closes [#445](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/445)
+* Add methods to obtain current github usernamd and organisation memeberships ([1978112](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/197811258e251ff8e82a3d53b93a96afc3af532f)), closes [#445](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/445)
+* Add pagination to namespace list page and terrareg namespace API ([30ca450](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/30ca4500852fe55fc113e2666c6ab66b1cb945cd)), closes [#445](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/445)
+* Add support for automatically creating namespaces for Github users and their associated organisations ([27eab29](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/27eab29a8c36a788f31c0525a6dce01e364c0bca)), closes [#445](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/445)
+* Add support for showing empty namespaces in namespace list page ([744ad99](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/744ad99ebb5eb71b6413e954f0cc40374a62269c)), closes [#445](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/445)
+* Implement Github authentication callback, handling validating auth code and setting up session ([96a2586](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/96a258699f2facd0d39e9cea0b04e8d740f49a09)), closes [#445](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/445)
+
+## [2.80.5](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.4...v2.80.5) (2023-10-11)
+
+
+### Bug Fixes
+
+* Correct typos in code base and API/CONFIG documentation ([805ee5c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/805ee5c2b5b8721ad412fde583686f8004467212))
+
+## [2.80.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.3...v2.80.4) (2023-10-10)
+
+
+### Bug Fixes
+
+* requirements-dev.txt to reduce vulnerabilities ([7ce0ea8](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7ce0ea80b6495a5cf7d0cf1bdd12c07a9ff9e094))
+* requirements-dev.txt to reduce vulnerabilities ([f1e1f32](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f1e1f32d17eac7b39834d3309d6329f80d839cf8))
+* requirements-dev.txt to reduce vulnerabilities ([c777375](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c777375a497fa152a4db9c578ee7028fdd91a0cc))
+* requirements.txt to reduce vulnerabilities ([7d15835](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7d158356f5840e81c62fceac19829a0236b7556b))
+* Upgrade pyopenssl package to fix compatibility issues with newer versions of cryptography package ([2a5529e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2a5529e576d368d4b5218e2385814b822503be73))
+
 ## [2.80.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.80.2...v2.80.3) (2023-10-05)
 
 
