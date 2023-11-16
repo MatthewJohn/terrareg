@@ -834,6 +834,24 @@ Olm9bg==
                                 "content": b"Some old linux content",
                                 "checksum": "a268d9b6def5fc8f85e158b5dd8436fe2f9eba023190f9dfab9df6e6208360b3"
                             },
+                        },
+                        "documentation": {
+                            ("overview", "hcl"): {
+                                "type": terrareg.provider_documentation_type.ProviderDocumentationType.OVERVIEW,
+                                "title": "Overview",
+                                "description": "Overview of provider old version",
+                                "filename": "index.md",
+                                "subcategory": None,
+                                "content": "This is an old overview of the module!",
+                            },
+                            ("some-old-resource", "hcl"): {
+                                "type": terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
+                                "title": "multiple_versions_thing",
+                                "description": "Inital thing for multiple versions provider",
+                                "filename": "data-sources/thing.md",
+                                "subcategory": "some-subcategory",
+                                "content": "Documentation for generating a thing!",
+                            },
                         }
                     },
                     "1.1.0-beta": {
@@ -862,25 +880,41 @@ Olm9bg==
                             }
                         },
                         "documentation": {
-                            "overview": {
+                            ("overview", "hcl"): {
                                 "type": terrareg.provider_documentation_type.ProviderDocumentationType.OVERVIEW,
                                 "title": "Overview",
                                 "description": "Overview of provider",
                                 "filename": "index.md",
-                                "language": "hcl",
                                 "subcategory": None,
                                 "content": "This is an overview of the module!",
                                 "id": 6344
                             },
-                            "some-resource": {
+                            ("some-resource", "hcl"): {
                                 "type": terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
                                 "title": "multiple_versions_thing",
                                 "description": "Inital thing for multiple versions provider",
                                 "filename": "data-sources/thing.md",
-                                "language": "hcl",
                                 "subcategory": "some-subcategory",
                                 "content": "Documentation for generating a thing!",
                                 "id": 6345
+                            },
+                            ("some-resource", "python"): {
+                                "type": terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
+                                "title": "multiple_versions_thing",
+                                "description": "Inital thing for multiple versions provider written for python",
+                                "filename": "data-sources/thing.md",
+                                "subcategory": "some-subcategory",
+                                "content": "Documentation for generating a thing in python!",
+                                "id": 6346
+                            },
+                            ("some-new-resource", "hcl"): {
+                                "type": terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
+                                "title": "multiple_versions_thing_new",
+                                "description": "Description for new resource",
+                                "filename": "data-sources/new-thing.md",
+                                "subcategory": "some-subcategory",
+                                "content": "Documentation for generating a thing!",
+                                "id": 6347
                             },
                         }
                     },

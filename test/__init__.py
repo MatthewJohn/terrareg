@@ -343,15 +343,15 @@ class BaseTest:
                             )
 
                         # Import documentation
-                        for documentation_name, documentation_data in version_data.get("documentation", {}).items():
+                        for documentation_id, documentation_data in version_data.get("documentation", {}).items():
                             provider_documentation = terrareg.provider_version_documentation_model.ProviderVersionDocumentation.create(
                                 provider_version=version_obj,
                                 documentation_type=documentation_data.get("type"),
-                                name=documentation_name,
+                                name=documentation_id[0],
                                 title=documentation_data.get("title", ""),
                                 description=documentation_data.get("description", ""),
                                 filename=documentation_data.get("filename"),
-                                language=documentation_data.get("language", "hcl"),
+                                language=documentation_id[1],
                                 subcategory=documentation_data.get("subcategory"),
                                 content=documentation_data.get("content")
                             )
