@@ -37,7 +37,7 @@ class ProviderVersionDocumentation:
         slug = cls.generate_slug_from_name(name=name)
 
         # Check if document already exists
-        if cls.get(provider_version=provider_version, documentation_type=documentation_type, slug=slug):
+        if cls.get(provider_version=provider_version, language=language, documentation_type=documentation_type, slug=slug):
             return None
 
         pk = cls._insert_db_row(
@@ -97,7 +97,8 @@ class ProviderVersionDocumentation:
     def get(cls,
             provider_version: 'terrareg.provider_version_model.ProviderVersion',
             documentation_type: 'terrareg.provider_documentation_type.ProviderDocumentationType',
-            slug: str) -> Union[None, 'ProviderVersionDocumentation']:
+            slug: str,
+            language: str) -> Union[None, 'ProviderVersionDocumentation']:
         """Obtain document by provider version, type and slug"""
         db = terrareg.database.Database.get()
         select = sqlalchemy.select(
@@ -107,6 +108,7 @@ class ProviderVersionDocumentation:
         ).where(
             db.provider_version_documentation.c.provider_version_id==provider_version.pk,
             db.provider_version_documentation.c.documentation_type==documentation_type,
+            db.provider_version_documentation.c.language==language,
             db.provider_version_documentation.c.slug==slug
         )
 
