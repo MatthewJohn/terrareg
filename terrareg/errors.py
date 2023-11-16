@@ -400,3 +400,9 @@ class InvalidGithubAppMetadataError(TerraregError):
     """Unable to obtain github app metadata"""
 
     pass
+
+
+class ProviderVersionBinaryAlreadyExistsError(TerraregError):
+    """Provider version binary already exists"""
+
+    pass

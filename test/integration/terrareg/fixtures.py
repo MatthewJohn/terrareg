@@ -14,6 +14,7 @@ import terrareg.provider_tier
 import terrareg.repository_model
 import terrareg.provider_category_model
 import terrareg.provider_model
+import terrareg.provider_version_model
 from test.test_gpg_key import public_ascii_armor
 
 
@@ -254,3 +255,19 @@ def test_provider(test_repository, test_namespace, test_provider_category):
     with db.get_connection() as conn:
         conn.execute(db.provider.delete(db.provider.c.id==provider_id))
 
+
+@pytest.fixture
+def test_provider_version(test_provider, test_gpg_key):
+    """Create test provider version"""
+    provider_version = terrareg.provider_version_model.ProviderVersion(provider=test_provider, version="6.4.1")
+    with provider_version.create_extraction_wrapper(git_tag="v6.4.1-unittest", gpg_key=test_gpg_key):
+        pass
+    provider_version_id = provider_version.pk
+    try:
+        yield provider_version
+    finally:
+        db = terrareg.database.Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.provider_version_binary.delete(db.provider_version_binary.c.provider_version_id==provider_version_id))
+            conn.execute(db.provider_version_documentation.delete(db.provider_version_documentation.c.provider_version_id==provider_version_id))
+            conn.execute(db.provider_version.delete(db.provider_version.c.id==provider_version_id))

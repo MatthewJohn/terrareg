@@ -828,11 +828,17 @@ Olm9bg==
                     },
                     "1.1.0": {
                         "git_tag": "v1.1.0",
-                        "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB"
+                        "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB",
+                        "binaries": {
+                            "terraform-provider-multiple-versions_1.1.0_linux_amd64.zip": {
+                                "content": b"Some old linux content",
+                                "checksum": "a268d9b6def5fc8f85e158b5dd8436fe2f9eba023190f9dfab9df6e6208360b3"
+                            },
+                        }
                     },
                     "1.1.0-beta": {
                         "git_tag": "v1.1.0-beta",
-                        "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB"
+                        "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB",
                     },
                     "1.5.0": {
                         "git_tag": "v1.5.0",

@@ -5,7 +5,7 @@ import re
 from typing import Union, List
 
 import sqlalchemy
-from terrareg.errors import InvalidProviderBinaryArchitectureError, InvalidProviderBinaryNameError, InvalidProviderBinaryOperatingSystemError
+from terrareg.errors import InvalidProviderBinaryArchitectureError, InvalidProviderBinaryNameError, InvalidProviderBinaryOperatingSystemError, ProviderVersionBinaryAlreadyExistsError
 
 import terrareg.provider_version_model
 import terrareg.provider_documentation_type
@@ -51,7 +51,7 @@ class ProviderVersionBinary:
                 provider_version=provider_version,
                 operating_system_type=os_type,
                 architecture_type=arch_type):
-            return None
+            raise ProviderVersionBinaryAlreadyExistsError("Provider binary already exists")
 
         pk = cls._insert_db_row(
             provider_version=provider_version,
