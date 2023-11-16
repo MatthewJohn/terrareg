@@ -14,16 +14,7 @@ import terrareg.provider_binary_types
 import terrareg.errors
 import terrareg.models
 import terrareg.provider_model
-
-from glob import escape
-import re
-from typing import Union, List
-
-import sqlalchemy
-from terrareg.errors import InvalidProviderBinaryArchitectureError, InvalidProviderBinaryNameError, InvalidProviderBinaryOperatingSystemError
-
 import terrareg.provider_version_model
-import terrareg.provider_documentation_type
 import terrareg.database
 import terrareg.provider_binary_types
 from test.integration.terrareg import TerraregIntegrationTest
