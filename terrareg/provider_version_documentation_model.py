@@ -170,9 +170,15 @@ class ProviderVersionDocumentation:
     @property
     def title(self) -> str:
         """Return title"""
+        # Attempt to return title
+        if title := self._get_db_row()["title"]:
+            return title
+
+        # Fallback to returning name
         name = self._get_db_row()["name"]
         if name.endswith(".md"):
-            return name[:-3]
+            name = name[:-3]
+        return name
 
     @property
     def pk(self) -> int:
