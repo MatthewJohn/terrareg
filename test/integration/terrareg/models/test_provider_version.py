@@ -594,16 +594,34 @@ class TestProviderVersion(TerraregIntegrationTest):
                     'path': 'index.md',
                     'slug': 'overview',
                     'subcategory': None,
-                    'title': None
+                    'title': 'Overview'
                 },
                 {
                     'category': 'resources',
                     'id': '6345',
                     'language': 'hcl',
                     'path': 'data-sources/thing.md',
-                    'slug': 'some-resource',
+                    'slug': 'some_resource',
                     'subcategory': 'some-subcategory',
-                    'title': None
+                    'title': 'multiple_versions_thing'
+                },
+                {
+                    'category': 'resources',
+                    'id': '6346',
+                    'language': 'python',
+                    'path': 'data-sources/thing.md',
+                    'slug': 'some_resource',
+                    'subcategory': 'some-subcategory',
+                    'title': 'multiple_versions_thing'
+                },
+                {
+                    'category': 'resources',
+                    'id': '6347',
+                    'language': 'hcl',
+                    'path': 'resources/new-thing.md',
+                    'slug': 'some_new_resource',
+                    'subcategory': 'some-second-subcategory',
+                    'title': 'multiple_versions_thing_new'
                 }
             ],
             'downloads': 0,
