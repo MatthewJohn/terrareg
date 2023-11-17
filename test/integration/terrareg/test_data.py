@@ -844,13 +844,21 @@ Olm9bg==
                                 "subcategory": None,
                                 "content": "This is an old overview of the module!",
                             },
-                            ("some-old-resource", "hcl"): {
+                            ("some_old_resource", "hcl"): {
                                 "type": terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
                                 "title": "multiple_versions_thing",
                                 "description": "Inital thing for multiple versions provider",
                                 "filename": "data-sources/thing.md",
                                 "subcategory": "some-subcategory",
-                                "content": "Documentation for generating a thing!",
+                                "content": "Documentation for generating an old thing!",
+                            },
+                            ("some_resource", "hcl"): {
+                                "type": terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
+                                "title": "multiple_versions_thing",
+                                "description": "Inital thing for multiple versions provider",
+                                "filename": "data-sources/thing.md",
+                                "subcategory": "some-subcategory",
+                                "content": "Documentation for generating an old version of thing!",
                             },
                         }
                     },
@@ -889,7 +897,7 @@ Olm9bg==
                                 "content": "This is an overview of the module!",
                                 "id": 6344
                             },
-                            ("some-resource", "hcl"): {
+                            ("some_resource", "hcl"): {
                                 "type": terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
                                 "title": "multiple_versions_thing",
                                 "description": "Inital thing for multiple versions provider",
@@ -898,7 +906,7 @@ Olm9bg==
                                 "content": "Documentation for generating a thing!",
                                 "id": 6345
                             },
-                            ("some-resource", "python"): {
+                            ("some_resource", "python"): {
                                 "type": terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
                                 "title": "multiple_versions_thing",
                                 "description": "Inital thing for multiple versions provider written for python",
@@ -907,13 +915,24 @@ Olm9bg==
                                 "content": "Documentation for generating a thing in python!",
                                 "id": 6346
                             },
-                            ("some-new-resource", "hcl"): {
+                            ("some_new_resource", "hcl"): {
                                 "type": terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
                                 "title": "multiple_versions_thing_new",
                                 "description": "Description for new resource",
-                                "filename": "data-sources/new-thing.md",
-                                "subcategory": "some-subcategory",
-                                "content": "Documentation for generating a thing!",
+                                "filename": "resources/new-thing.md",
+                                "subcategory": "some-second-subcategory",
+                                "content": """
+# Some Title!
+
+## Second title
+
+This module:
+
+ * Creates something
+ * Does something else
+
+and it _really_ *does* work!
+""",
                                 "id": 6347
                             },
                         }
