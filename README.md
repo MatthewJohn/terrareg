@@ -20,6 +20,12 @@ If you like and use this project and are happy to let us know, please raise a Gi
 
 For a full list of issues and pull requests, please see [https://gitlab.dockstudios.co.uk/pub/terrareg](https://gitlab.dockstudios.co.uk/pub/terrareg)
 
+## Coming soon!
+
+Support for Terraform Providers is in progress!
+
+An initial implementation is expected Dec 2023/Jan 2024
+
 ## Screenshots
 
 ![Homepage](./docs/screenshots/homepage.png)
