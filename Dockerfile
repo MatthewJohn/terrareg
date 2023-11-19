@@ -5,7 +5,7 @@ WORKDIR /
 RUN apt-get update && \
     apt-get install --assume-yes \
         curl wget zip unzip git \
-        pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 libgraphviz-dev \
+        pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 libgraphviz-dev libmagic1 \
         gcc g++ libffi-dev && \
     apt-get clean all
 
