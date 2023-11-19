@@ -90,3 +90,9 @@ builtin
 submodulename
 myexample
 md
+Terraform
+terraform
+namespace
+auth
+namespaces
+dev
