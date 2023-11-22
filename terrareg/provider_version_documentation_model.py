@@ -1,4 +1,5 @@
 
+import re
 from typing import Union, List
 
 import sqlalchemy
@@ -19,6 +20,15 @@ class ProviderVersionDocumentation:
             if name.endswith(extension_to_remove):
                 name = name[:(0-len(extension_to_remove))]
         
+        # Replace any non-standard characters with dashes
+        name = name.lower()
+        name = re.sub(r'[^a-z0-9_\-]', '_', name)
+        name = re.sub(r'--+', '_', name)
+        if name.startswith('-') or name.startswith('_'):
+            name = name[1:]
+        if name.endswith('-') or name.endswith('_'):
+            name = name[:-1]
+
         return name
 
     @classmethod
