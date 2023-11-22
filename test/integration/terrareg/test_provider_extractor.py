@@ -1,6 +1,7 @@
 
 from asyncio import subprocess
 from io import BytesIO
+import json
 import os
 from re import L
 from subprocess import check_output
@@ -55,7 +56,8 @@ def test_provider_version_wrapper():
                 commit_hash="abcdefg123455",
                 provider_id="unittest-release-id",
                 release_artifacts=[
-                    terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(name="terraform-provider-multiple-versions_1.9.4_windows_arm64.zip", provider_id="previous-provider-id-"),
+                    terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(name="terraform-provider-multiple-versions_1.9.4_windows_arm64.zip", provider_id="previous-provider-id"),
+                    terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(name="terraform-provider-multiple-versions_1.9.4_manifest.json", provider_id="metadata-provider-id"),
                     terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(name="terraform-provider-multiple-versions_1.9.4_linux_amd64.zip", provider_id="another-provider-id-"),
                 ]
             )
@@ -309,7 +311,6 @@ aec01bca39c7f614bc263e299a1fcdd09da3073369756efa6bced80531a45657  ./requirements
                 release_metadata=release_metadata
             )
 
-
     def test__download_artifact_unable_to_download(self):
         """Test _download_artifact with being unable to download file"""
         mock_get_release_artifact = unittest.mock.MagicMock(return_value=None)
@@ -345,8 +346,6 @@ aec01bca39c7f614bc263e299a1fcdd09da3073369756efa6bced80531a45657  ./requirements
                 artifact_metadata=artifact_metadata,
                 release_metadata=release_metadata
             )
-
-
 
     def test__download_artifact_non_existent_release_artifact(self):
         """Test _download_artifact with a file that doesn't exist in the release"""
@@ -536,6 +535,84 @@ aec01bca39c7f614bc263e299a1fcdd09da3073369756efa6bced80531a45657  ./requirements
             # Ensure directory is deleted afterwards
             assert not os.path.isdir(source_code_dir)
 
+    @pytest.mark.parametrize('pre_create_docs_dir', [
+        True,
+        False
+    ])
+    def test_extract_documentation(self, pre_create_docs_dir, test_provider_version_wrapper):
+        """Test extract_documentation"""
+
+        with TemporaryDirectory() as source_dir:
+
+            @contextlib.contextmanager
+            def mock_obtain_source_code_side_effect():
+                yield source_dir
+
+            mock_obtain_source_code = unittest.mock.MagicMock(side_effect=mock_obtain_source_code_side_effect)
+
+            mock_switch_terraform_versions = unittest.mock.MagicMock()
+
+            mock_subprocess = unittest.mock.MagicMock()
+            mock_collect_markdown_documentation = unittest.mock.MagicMock()
+
+            # Optionally pre-create docs directory
+            if pre_create_docs_dir:
+                os.mkdir(os.path.join(source_dir, "docs"))
+
+            with unittest.mock.patch('terrareg.provider_extractor.ProviderExtractor._obtain_source_code', mock_obtain_source_code), \
+                    unittest.mock.patch('terrareg.module_extractor.ModuleExtractor._switch_terraform_versions', mock_switch_terraform_versions), \
+                    unittest.mock.patch('terrareg.provider_extractor.subprocess', mock_subprocess), \
+                    unittest.mock.patch('terrareg.provider_extractor.ProviderExtractor._collect_markdown_documentation', mock_collect_markdown_documentation), \
+                    test_provider_version_wrapper() as provider_extractor:
+
+                provider_extractor.extract_documentation()
+
+                mock_obtain_source_code.assert_called_once_with()
+                assert os.path.isdir(os.path.join(source_dir, "docs"))
+
+                if not pre_create_docs_dir:
+                    mock_subprocess.call.assert_called_once_with(
+                        ['tfplugindocs', 'generate'],
+                        cwd=source_dir,
+                        env=unittest.mock.ANY
+                    )
+                    # Get env and ensure the required variables are there
+                    env_vars = mock_subprocess.call.call_args_list[0].kwargs["env"]
+                    # Ensure parent env variables are passed
+                    assert "PATH" in env_vars
+                    # Ensure GO env vars are injected
+                    assert "GOROOT" in env_vars
+                    assert env_vars["GOROOT"] == "/usr/local/go"
+                    assert "GOPATH" in env_vars
+                    assert env_vars["GOPATH"].startswith("/tmp/")
+
+                else:
+                    mock_subprocess.assert_not_called()
+
+                mock_collect_markdown_documentation.assert_has_calls(calls=[
+                    unittest.mock.call(
+                        source_directory=source_dir,
+                        documentation_directory=os.path.join(source_dir, "docs"),
+                        documentation_type=terrareg.provider_documentation_type.ProviderDocumentationType.OVERVIEW,
+                        file_filter='index.md'
+                    ),
+                    unittest.mock.call(
+                        source_directory=source_dir,
+                        documentation_directory=os.path.join(source_dir, "docs", "resources"),
+                        documentation_type=terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
+                    ),
+                    unittest.mock.call(
+                        source_directory=source_dir,
+                        documentation_directory=os.path.join(source_dir, "docs", "data-sources"),
+                        documentation_type=terrareg.provider_documentation_type.ProviderDocumentationType.DATA_SOURCE,
+                    ),
+                    unittest.mock.call(
+                        source_directory=source_dir,
+                        documentation_directory=os.path.join(source_dir, "docs", "guides"),
+                        documentation_type=terrareg.provider_documentation_type.ProviderDocumentationType.GUIDE,
+                    )
+                ], any_order=False)
+
     @pytest.mark.parametrize('content, expected_title, expected_subcategory, expected_description, expected_content', [
         # Test without content
         ("", None, None, None, ""),
@@ -611,6 +688,84 @@ Bottom
         with test_provider_version_wrapper() as provider_extractor:
             assert provider_extractor._extract_markdown_metadata(content) == (expected_title, expected_subcategory, expected_description, expected_content)
 
+    @pytest.mark.parametrize('documentation_type', [
+        terrareg.provider_documentation_type.ProviderDocumentationType.DATA_SOURCE,
+        terrareg.provider_documentation_type.ProviderDocumentationType.GUIDE,
+        terrareg.provider_documentation_type.ProviderDocumentationType.OVERVIEW,
+        terrareg.provider_documentation_type.ProviderDocumentationType.PROVIDER,
+        terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
+    ])
+    @pytest.mark.parametrize('directory, file_filter, expected_files', [
+        ('', 'overview.md', {'docs/overview.md': {"file_id": "overview.md", "slug": "overview", "name": "overview.md"}}),
+        ('guides', None, {'docs/guides/guide-1.md': {"file_id": "guides/guide-1.md", "slug": "guide-1", "name": "guide-1.md"},
+                          'docs/guides/test_guide 2.md': {"file_id": "guides/test_guide 2.md", "slug": "test_guide_2", "name": "test_guide 2.md"}}),
+        ('empty-dir', None, {}),
+        ('recursive', None, {'docs/recursive/test-recursive-base.md': {
+            "file_id": "recursive/test-recursive-base.md", "slug": "test-recursive-base", "name": "test-recursive-base.md"}}),
+
+    ])
+    def test__collect_markdown_documentation(self, documentation_type, directory, file_filter, expected_files,
+                                             test_provider_version_wrapper):
+        """Test _collect_markdown_documentation"""
+
+        # Copy expected files dict, to avoid manipulations breaking
+        # parameterised tests
+        expected_files = dict(expected_files)
+
+        with TemporaryDirectory() as temp_dir:
+            os.mkdir(os.path.join(temp_dir, 'docs'))
+            for dir in ['guides', 'empty-dir', 'recursive', os.path.join('recursive', 'subdir')]:
+                os.mkdir(os.path.join(temp_dir, 'docs', dir))
+
+            for file_ in ['overview.md', os.path.join('guides', 'guide-1.md'), os.path.join('guides', 'test_guide 2.md'),
+                        os.path.join('recursive', 'test-recursive-base.md'),
+                        os.path.join('recursive', 'subdir', 'test-recursive-sub.md')]:
+                with open(os.path.join(temp_dir, 'docs', file_), "w") as fh:
+                    fh.write(f"""
+---
+subcategory: "{documentation_type.value}/{file_}"
+page_title: "Test Provider: a_random_resource_{file_}"
+description: |-
+  This is a test description for {file_}
+---
+
+Test Markdown content: {file_}""")
+
+            with test_provider_version_wrapper() as provider_extractor:
+                provider_extractor._collect_markdown_documentation(
+                    source_directory=temp_dir,
+                    documentation_directory=os.path.join(temp_dir, 'docs', directory),
+                    documentation_type=documentation_type,
+                    file_filter=file_filter
+                )
+
+                db = terrareg.database.Database.get()
+                with db.get_connection() as conn:
+                    res = conn.execute(db.provider_version_documentation.select().where(
+                        db.provider_version_documentation.c.provider_version_id==provider_extractor._provider_version.pk
+                    )).all()
+                    assert len(res) == len(expected_files)
+
+                    for row in res:
+                        assert row['filename'] in expected_files
+                        expected_file_content = expected_files[row['filename']]
+                        del expected_files[row['filename']]
+
+                        assert dict(row) == {
+                            'id': row["id"],
+                            'content': f'Test Markdown content: {expected_file_content["file_id"]}'.encode('utf-8'),
+                            'description': f'This is a test description for {expected_file_content["file_id"]}'.encode('utf-8'),
+                            'documentation_type': documentation_type,
+                            'filename': f'docs/{expected_file_content["file_id"]}',
+                            'language': 'hcl',
+                            'name': expected_file_content["name"],
+                            'provider_version_id': provider_extractor._provider_version.pk,
+                            'slug': expected_file_content["slug"],
+                            'subcategory': f'{documentation_type.value}/{expected_file_content["file_id"]}',
+                            'title': f'Test Provider: a_random_resource_{expected_file_content["file_id"]}',
+                        }
+
+
     def test__process_release_file(self, test_provider_version_wrapper):
         """Test _process_release_file"""
 
@@ -680,3 +835,120 @@ Bottom
                     db.provider_version_binary.c.provider_version_id==provider_extractor._provider_version.pk
                 )).all()
                 assert len(res) == 0
+
+    def test_extract_binaries(self, test_provider_version_wrapper):
+        """Test extract_binaries"""
+
+        # Return checksum file, including manifest file and some empty lines
+        mock_download_artifact = unittest.mock.MagicMock(return_value=b"""
+
+aec01bca39c7f614bc263e299a1fcdd09da3073369756efa6bced80531a45657  terraform-provider-multiple-versions_1.9.4_linux_arm64.zip
+       
+
+5bf710f5427bafae2a01103ebb48271fedd0ab784e04d11ef95bc057dce8cf7f  terraform-provider-multiple-versions_1.9.4_windows_arm64.zip
+8720fafebf4e5ab4affc7426d78b23ce2f2b54a8dfbda4d45abf8051b4558b51  terraform-provider-multiple-versions_1.9.4_manifest.json
+0671886887347330e64e584e2e7f02d96b705ff5aad8341a05c9881ecd3ea58d  terraform-provider-multiple-versions_1.9.4_windows_amd64.zip
+""")
+        mock_process_release_file = unittest.mock.MagicMock()
+
+        with unittest.mock.patch('terrareg.provider_extractor.ProviderExtractor._download_artifact', mock_download_artifact), \
+                unittest.mock.patch('terrareg.provider_extractor.ProviderExtractor._process_release_file', mock_process_release_file), \
+                test_provider_version_wrapper() as provider_extractor:
+
+            provider_extractor.extract_binaries()
+
+            mock_download_artifact.assert_called_once_with(
+                provider=provider_extractor._provider,
+                release_metadata=provider_extractor._release_metadata,
+                file_name="terraform-provider-multiple-versions_1.9.4_SHA256SUMS"
+            )
+
+            mock_process_release_file.assert_has_calls(calls=[
+                unittest.mock.call(checksum='aec01bca39c7f614bc263e299a1fcdd09da3073369756efa6bced80531a45657', file_name='terraform-provider-multiple-versions_1.9.4_linux_arm64.zip'),
+                unittest.mock.call(checksum='5bf710f5427bafae2a01103ebb48271fedd0ab784e04d11ef95bc057dce8cf7f', file_name='terraform-provider-multiple-versions_1.9.4_windows_arm64.zip'),
+                unittest.mock.call(checksum='0671886887347330e64e584e2e7f02d96b705ff5aad8341a05c9881ecd3ea58d', file_name='terraform-provider-multiple-versions_1.9.4_windows_amd64.zip')
+            ], any_order=False)
+
+    def test_extract_binaries_invalid_checksum(self, test_provider_version_wrapper):
+        """Test extract_binaries with invalid checksum file"""
+
+        mock_download_artifact = unittest.mock.MagicMock(return_value=b"""
+aec01bca39c7f614bc263e299a1fcdd09da3073369756efa6bced80531a45657  terraform-provider-multiple-versions_1.9.4_linux_arm64.zip
+5bf710f5427bafae2a01103ebb48271fedd0ab784e04d11ef95bc057dce8cf7f  terraform-provider-multiple-versions_1.9.4_windows_arm64.zip
+this is a random line
+0671886887347330e64e584e2e7f02d96b705ff5aad8341a05c9881ecd3ea58d  terraform-provider-multiple-versions_1.9.4_windows_amd64.zip
+""".strip())
+        mock_process_release_file = unittest.mock.MagicMock()
+
+        with unittest.mock.patch('terrareg.provider_extractor.ProviderExtractor._download_artifact', mock_download_artifact), \
+                unittest.mock.patch('terrareg.provider_extractor.ProviderExtractor._process_release_file', mock_process_release_file), \
+                test_provider_version_wrapper() as provider_extractor:
+
+            with pytest.raises(terrareg.errors.InvalidChecksumFileError):
+                provider_extractor.extract_binaries()
+
+    @pytest.mark.parametrize('file_content, expected_value, expected_property, expected_error', [
+        # Handle default value, ensuring None is stored in database
+        (None, None, ["5.0"], None),
+
+        # handle custom value
+        ('{"metadata": {"protocol_versions": ["6.0"]}, "version": 1}', ["6.0"], ["6.0"], None),
+        ('{"metadata": {"protocol_versions": ["6.0", "23.1"]}, "version": 1}', ["6.0", "23.1"], ["6.0", "23.1"], None),
+
+        # Handle Invalid JSON
+        ('{"invalid JSON', None, None, "Could not read manifests file"),
+        # Not a dict
+        ('["hi"]', None, None, "Manifest file did not contain valid object"),
+
+        # Without version
+        ('{}', None, None, "Invalid manifest version. Only version 1 is supported"),
+        # Invalid version
+        ('{"version": 2}', None, None, "Invalid manifest version. Only version 1 is supported"),
+        ('{"version": 0}', None, None, "Invalid manifest version. Only version 1 is supported"),
+
+        # Protocol versions undefined
+        ('{"version": 1, "metadata": null}', None, None, "metadata.procotol_versions is not valid in manifest"),
+        ('{"version": 1, "metadata": []}', None, None, "metadata.procotol_versions is not valid in manifest"),
+        ('{"version": 1, "metadata": {}}', None, None, "metadata.procotol_versions is not valid in manifest"),
+        ('{"version": 1, "metadata": {"protocol_versions": {}}}', None, None, "metadata.procotol_versions is not valid in manifest"),
+        ('{"version": 1, "metadata": {"protocol_versions": "adg"}}', None, None, "metadata.procotol_versions is not valid in manifest"),
+        # Wrong protocol version type
+        ('{"version": 1, "metadata": {"protocol_versions": ["adg"]}}', None, None, "Invalid protocol version found"),
+    ])
+    def test_extract_manifest_file(self, file_content, expected_value, expected_property, expected_error, test_provider_version_wrapper):
+        """Test extract_manifest_file"""
+
+        mock_get_release_artifact = unittest.mock.MagicMock(return_value=file_content.encode('utf-8') if file_content else file_content)
+
+        with unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource.get_release_artifact', mock_get_release_artifact):
+            with test_provider_version_wrapper() as provider_extractor:
+
+                if expected_error:
+                    with pytest.raises(terrareg.errors.InvalidProviderManifestFileError) as err:
+                        provider_extractor.extract_manifest_file()
+                    print(dir(err))
+                    assert str(err.value) == expected_error
+                else:
+                    provider_extractor.extract_manifest_file()
+
+                    # Ensure value stored in database matches the value from the file
+                    db = terrareg.database.Database.get()
+                    with db.get_connection() as conn:
+                        res = conn.execute(db.provider_version.select().where(db.provider_version.c.id==provider_extractor._provider_version.pk)).all()
+                        if expected_value:
+                            assert res[0]["protocol_versions"] is not None
+                            assert json.loads(res[0]["protocol_versions"]) == expected_value
+                        else:
+                            assert res[0]["protocol_versions"] is None
+
+                    # Ensure property matches expected value
+                    assert provider_extractor._provider_version.protocols == expected_property
+
+                mock_get_release_artifact.assert_called_once_with(
+                    provider=provider_extractor._provider,
+                    artifact_metadata=terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata(
+                        name="terraform-provider-multiple-versions_1.9.4_manifest.json",
+                        provider_id="metadata-provider-id"
+                    ),
+                    release_metadata=provider_extractor._release_metadata
+                )
