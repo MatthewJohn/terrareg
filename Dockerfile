@@ -4,9 +4,11 @@ WORKDIR /
 
 RUN apt-get update && \
     apt-get install --assume-yes \
-        curl zip unzip git \
-        pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 libgraphviz-dev && \
+        curl wget zip unzip git \
+        pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 libgraphviz-dev libmagic1 \
+        gcc g++ libffi-dev && \
     apt-get clean all
+
 
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     then \
