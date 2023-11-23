@@ -333,6 +333,15 @@ class BaseTest:
                                 gpg_key=terrareg.models.GpgKey.get_by_fingerprint(fingerprint=version_data.get("gpg_key_fingerprint"))):
                             pass
 
+                        # Update any custom attributes from test data
+                        update_kwargs = {
+                            attr: version_data[attr]
+                            for attr in ["published_at"]
+                            if attr in version_data
+                        }
+                        if update_kwargs:
+                            version_obj.update_attributes(**update_kwargs)
+
                         # Import binaries
                         for binary_name, binary_data in version_data.get("binaries", {}).items():
                             terrareg.provider_version_binary_model.ProviderVersionBinary.create(
@@ -374,3 +383,35 @@ class BaseTest:
                             user_group=user_group,
                             namespace=namespace,
                             permission_type=UserGroupNamespacePermissionType(permission_type))
+
+    def _test_unauthenticated_read_api_endpoint_test(self, request_callback):
+        """Check unauthenticated read API endpoint access"""
+        mock_auth_method = unittest.mock.MagicMock()
+        mock_auth_method.can_access_read_api = unittest.mock.MagicMock(return_value=False)
+        mock_auth_method.get_username.return_value = 'unauthenticated user'
+        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
+
+        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+            res = request_callback()
+            assert res.status_code == 403
+            assert res.json == {
+                'message': "You don't have the permission to access the requested resource. It is either read-protected or not readable by the server."
+            }
+
+            mock_auth_method.can_access_read_api.assert_called_once_with()
+
+    def _test_unauthenticated_terraform_api_endpoint_test(self, request_callback):
+        """Check unauthenticated Terraform API endpoint access"""
+        mock_auth_method = unittest.mock.MagicMock()
+        mock_auth_method.can_access_terraform_api = unittest.mock.MagicMock(return_value=False)
+        mock_auth_method.get_username.return_value = 'unauthenticated user'
+        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
+
+        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+            res = request_callback()
+            assert res.status_code == 403
+            assert res.json == {
+                'message': "You don't have the permission to access the requested resource. It is either read-protected or not readable by the server."
+            }
+
+            mock_auth_method.can_access_terraform_api.assert_called_once_with()

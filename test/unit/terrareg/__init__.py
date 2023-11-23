@@ -40,38 +40,6 @@ class TerraregUnitTest(BaseTest):
         # Create DB tables
         Database.get().get_meta().create_all(Database.get().get_engine())
 
-    def _test_unauthenticated_read_api_endpoint_test(self, request_callback):
-        """Check unauthenticated read API endpoint access"""
-        mock_auth_method = unittest.mock.MagicMock()
-        mock_auth_method.can_access_read_api = unittest.mock.MagicMock(return_value=False)
-        mock_auth_method.get_username.return_value = 'unauthenticated user'
-        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
-
-        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
-            res = request_callback()
-            assert res.status_code == 403
-            assert res.json == {
-                'message': "You don't have the permission to access the requested resource. It is either read-protected or not readable by the server."
-            }
-
-            mock_auth_method.can_access_read_api.assert_called_once_with()
-
-    def _test_unauthenticated_terraform_api_endpoint_test(self, request_callback):
-        """Check unauthenticated Terraform API endpoint access"""
-        mock_auth_method = unittest.mock.MagicMock()
-        mock_auth_method.can_access_terraform_api = unittest.mock.MagicMock(return_value=False)
-        mock_auth_method.get_username.return_value = 'unauthenticated user'
-        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
-
-        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
-            res = request_callback()
-            assert res.status_code == 403
-            assert res.json == {
-                'message': "You don't have the permission to access the requested resource. It is either read-protected or not readable by the server."
-            }
-
-            mock_auth_method.can_access_terraform_api.assert_called_once_with()
-
 
 TEST_MODULE_DATA = {}
 TEST_GIT_PROVIDER_DATA = {}
