@@ -176,13 +176,34 @@ Olm9bg==
                         "published_at": datetime(year=2023, month=11, day=1, hour=23, minute=2, second=5),
                     }
                 }
-            }
+            },
+            "test-two": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "second-namespace/terraform-provider-test-two",
+                    "name": "terraform-provider-test-two",
+                    "description": "Test Multiple Versions",
+                    "owner": "second-namespace",
+                    "clone_url": "https://git.example.com/second-namespace/terraform-provider-test-two.git",
+                    "logo_url": "https://git.example.com/second-namespace/terraform-provider-test-initial.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "community",
+                "versions": {
+                    "1.4.2": {
+                        "git_tag": "v1.4.2",
+                        "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB",
+                        "published_at": datetime(year=2021, month=9, day=2, hour=12, minute=10, second=32),
+                    }
+                }
+            },
         }
     }
 }
 
 
-class TestApiNamespaceProviders(TerraregIntegrationTest):
+class TestApiProviderList(TerraregIntegrationTest):
     """Test ApiNamespaceProviders endpoint"""
 
     _PROVIDER_CATEGORIES = provider_categories
@@ -191,12 +212,11 @@ class TestApiNamespaceProviders(TerraregIntegrationTest):
 
     def test_endpoint(self, client):
         """Test endpoint."""
-        res = client.get('/v1/providers/test-namespace')
+        res = client.get('/v1/providers')
         assert res.status_code == 200
         assert res.json == {
             'meta': {
-                'current_offset': 0,
-                'limit': 10
+                'current_offset': 0, 'limit': 10
             },
             'providers': [
                 {
@@ -228,6 +248,36 @@ class TestApiNamespaceProviders(TerraregIntegrationTest):
                     'tag': 'v2.0.1',
                     'tier': 'community',
                     'version': '2.0.1'
+                },
+                {
+                    'alias': None,
+                    'description': 'Empty Provider Publish',
+                    'downloads': 0,
+                    'id': 'second-namespace/test-three/1.6.0',
+                    'logo_url': 'https://git.example.com/initalproviders/terraform-provider-test-initial.png',
+                    'name': 'test-three',
+                    'namespace': 'second-namespace',
+                    'owner': 'second-namespace',
+                    'published_at': '2023-11-01T23:02:05',
+                    'source': 'https://github.example.com/second-namespace/terraform-provider-test-three',
+                    'tag': 'v1.6.0',
+                    'tier': 'community',
+                    'version': '1.6.0'
+                },
+                {
+                    'alias': None,
+                    'description': 'Test Multiple Versions',
+                    'downloads': 0,
+                    'id': 'second-namespace/test-two/1.4.2',
+                    'logo_url': 'https://git.example.com/second-namespace/terraform-provider-test-initial.png',
+                    'name': 'test-two',
+                    'namespace': 'second-namespace',
+                    'owner': 'second-namespace',
+                    'published_at': '2021-09-02T12:10:32',
+                    'source': 'https://github.example.com/second-namespace/terraform-provider-test-two',
+                    'tag': 'v1.4.2',
+                    'tier': 'community',
+                    'version': '1.4.2'
                 }
             ]
         }
@@ -244,7 +294,7 @@ class TestApiNamespaceProviders(TerraregIntegrationTest):
         (150, 150, 50),
     ])
     def test_endpoint_with_params(self, client, offset, expected_call_offset, expected_applied_offset, limit, expected_call_limit, expected_applied_limit):
-        """Test endpoint with parameters"""
+        """Test endpoint with offset/limit parameters"""
         params = ''
         if offset is not None:
             params += f'&offset={offset}'
@@ -254,7 +304,7 @@ class TestApiNamespaceProviders(TerraregIntegrationTest):
         mock_search_providers = unittest.mock.MagicMock(side_effect=terrareg.provider_search.ProviderSearch.search_providers)
 
         with unittest.mock.patch('terrareg.provider_search.ProviderSearch.search_providers', mock_search_providers):
-            res = client.get(f'/v1/providers/test-namespace?{params}')
+            res = client.get(f'/v1/providers?{params}')
 
         assert res.status_code == 200
         assert res.json["meta"]["current_offset"] == expected_applied_offset
@@ -263,17 +313,23 @@ class TestApiNamespaceProviders(TerraregIntegrationTest):
         mock_search_providers.assert_called_once_with(
             offset=expected_call_offset,
             limit=expected_call_limit,
-            namespaces=['test-namespace']
+            providers=None
         )
 
-    def test_endpoint_non_existent_namespace(self, client):
-        """Test endpoint with non-existent namespace."""
-        res = client.get('/v1/providers/does-not-exist')
-        assert res.status_code == 404
+    @pytest.mark.parametrize('provider,expected_providers', [
+        ('test-one', ['test-namespace/test-one/1.6.0']),
+        ('test-two', ['test-namespace/test-two/2.0.1', 'second-namespace/test-two/1.4.2']),
+        ('test', []),
+        ('doesnotexist', []),
+    ])
+    def test_endpoint_non_existent_namespace(self, client, provider, expected_providers):
+        """Test endpoint with provider filter."""
+        res = client.get(f'/v1/providers?provider={provider}')
+        assert [provider["id"] for provider in res.json.get("providers")] == expected_providers
 
     def test_unauthenticated(self, client):
         """Test unauthenticated call to API"""
         def call_endpoint():
-            return client.get('/v1/providers/test-namespace')
+            return client.get('/v1/providers')
 
         self._test_unauthenticated_read_api_endpoint_test(call_endpoint)
