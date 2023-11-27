@@ -1006,10 +1006,101 @@ and it _really_ *does* work!
                     },
                     "2.0.1": {
                         "git_tag": "v2.0.1",
-                        "gpg_key_fingerprint": "94CA72B7A2F4606A6C18211AE94A4F2AD628D926"
+                        "gpg_key_fingerprint": "94CA72B7A2F4606A6C18211AE94A4F2AD628D926",
+                        "published_at": datetime(year=2023, month=10, day=1, hour=12, minute=5, second=56)
                     }
                 }
             },
+        }
+    },
+    "second-provider-namespace": {
+        "gpg_keys": [
+            {
+                # 7F3B2A3E2F9E04AF389D1D67E42600BAB40EE715
+                "ascii_armor": """
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mI0EZWBVKwEEAO0KKgvjovNzA7JzjbM/O4TQ2zICX6fvGOnqpiL3N7oXA+ZLxYSP
+VwrFXYEZ0J4FGQSRhlD8IDXbHWLV7Ntk9kYqwtku00CTOJbYFzYFtscgRvvDnQHP
+Yd6szCenrokQvOrUN0WaNdRm51pk8t3YdB63prgjHJGalJORVnYVDD/NABEBAAG0
+QXNlY29uZC1wcm92aWRlci1uYW1lc3BhY2UgPHNlY29uZC1wcm92aWRlci1uYW1l
+c3BhY2VAZXhhbXBsZS5jb20+iM4EEwEKADgWIQR/Oyo+L54ErzidHWfkJgC6tA7n
+FQUCZWBVKwIbAwULCQgHAgYVCgkICwIEFgIDAQIeAQIXgAAKCRDkJgC6tA7nFRyY
+BADJJ6cohf8f0kQKHc8IVxQ0Nl1JRmBYnulVjiXSCOpUsgmzl/6tpmTFLKpcL1HM
+ZhT8KFtZ6swi3Ml1uiSeIIkV93Uq7RWU8m7BmdL201paCXbnd5+dLHe26gcbFyfg
+ntsjEuZHD/wHP/pUQrFFaEZ83t3sRYsfFDMX1Xwhovpd3LiNBGVgVSsBBACgmrI6
+utBzc8EIpMOKFn5AsrnHg1O5yBnv8Bra+eXJZfoBKHoFUr3S+fzz+NeWwzDirqKG
+uusDK4TG0AXml0QcycmVOkvtYc+JzLE3xcQFEFFRmcmA7r3oncDeo7kCRuuqPe/Q
+LN6UY1S9n+ZIqgGSrVWGGKgoz/aQhg78ZqBZXQARAQABiLYEGAEKACAWIQR/Oyo+
+L54ErzidHWfkJgC6tA7nFQUCZWBVKwIbDAAKCRDkJgC6tA7nFZWBBACfCIZnywLu
+/vv6lCxcQvnx5kvzNE2lrPSkSAkfLdfuD+LPX04k6oRFlk7PsW+q51QKyf8uFR9i
+bX/tkBylZ24IejqlzFrwq41hNoPjPJ78TUL2I4b2c7XCtAoN31cHUdyUU1CCtF6a
+ie3ohe1BAe2Gs2B1zEfTVPTDbEt2CIXshg==
+=lhr/
+-----END PGP PUBLIC KEY BLOCK-----
+""".strip(),
+                "private_key": """
+-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+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
+zEfTVPTDbEt2CIXshg==
+=dWyo
+-----END PGP PRIVATE KEY BLOCK-----
+""",
+                "passphrase": "password"
+            }
+        ],
+        "providers": {
+            "multiple-versions": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "second-provider-namespace/terraform-provider-multiple-versions",
+                    "name": "terraform-provider-multiple-versions",
+                    "description": "Test Multiple Versions",
+                    "owner": "second-provider-namespace",
+                    "clone_url": "https://git.example.com/second-provider-namespace/terraform-provider-multiple-versions.git",
+                    "logo_url": "https://git.example.com/second-provider-namespace/terraform-provider-test-initial.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "official",
+                "versions": {
+                    "5.9.0": {
+                        "git_tag": "v5.9.0",
+                        "gpg_key_fingerprint": "7F3B2A3E2F9E04AF389D1D67E42600BAB40EE715",
+                    }
+                }
+            }
         }
     }
 }
