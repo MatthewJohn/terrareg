@@ -9,8 +9,8 @@ from test import client, app_context, test_request_context
 import terrareg.provider_search
 
 
-class TestApiProviderList(TerraregIntegrationTest):
-    """Test ApiNamespaceProviders endpoint"""
+class TestApiProviderVersions(TerraregIntegrationTest):
+    """Test ApiProviderVersions endpoint"""
 
     def test_endpoint(self, client):
         """Test endpoint."""
