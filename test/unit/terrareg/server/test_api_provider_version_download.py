@@ -4,9 +4,13 @@ import unittest.mock
 
 import pytest
 
+import terrareg.analytics
 from test.integration.terrareg import TerraregIntegrationTest
 from test import client, app_context, test_request_context
+import terrareg.models
 import terrareg.provider_search
+import terrareg.provider_model
+import terrareg.provider_version_model
 
 
 class TestApiProviderVersionDownload(TerraregIntegrationTest):
@@ -14,7 +18,10 @@ class TestApiProviderVersionDownload(TerraregIntegrationTest):
 
     def test_endpoint(self, client):
         """Test endpoint."""
-        res = client.get('/v1/providers/initial-providers/multiple-versions/1.5.0/download/linux/amd64')
+        mock_record_provider_version_download = unittest.mock.MagicMock(side_effect=terrareg.analytics.ProviderAnalytics.record_provider_version_download)
+        with unittest.mock.patch('terrareg.analytics.ProviderAnalytics.record_provider_version_download', mock_record_provider_version_download):
+            res = client.get('/v1/providers/initial-providers/multiple-versions/1.5.0/download/linux/amd64')
+
         assert res.status_code == 200
         assert res.json == {
             'arch': 'amd64',
@@ -58,6 +65,18 @@ class TestApiProviderVersionDownload(TerraregIntegrationTest):
                 ]
             }
         }
+
+        namespace = terrareg.models.Namespace.get(name='initial-providers')
+        provider = terrareg.provider_model.Provider.get(namespace=namespace, name='multiple-versions')
+        provider_version = terrareg.provider_version_model.ProviderVersion.get(provider=provider, version='1.5.0')
+
+        mock_record_provider_version_download.assert_called_once_with(
+            namespace_name='initial-providers',
+            provider_name='multiple-versions',
+            provider_version=provider_version,
+            terraform_version=None,
+            user_agent='werkzeug/2.2.2'
+        )
 
     def test_endpoint_with_provider_invalid_architecture(self, client):
         """Test endpoint with invalid architecture"""
