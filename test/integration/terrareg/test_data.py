@@ -56,6 +56,12 @@ integration_provider_categories = [
         "name": "No Slug Provided!",
         "user-selectable": True
     },
+    {
+        "id": 101,
+        "name": "Unused category",
+        "slug": "unused-category",
+        "user-selectable": True,
+    }
 ]
 
 integration_provider_sources = [
@@ -1102,5 +1108,155 @@ zEfTVPTDbEt2CIXshg==
                 }
             }
         }
+    },
+    "providersearch": {
+        "gpg_keys": [
+            {
+                # D8A89D97BB7526F33C8A2D8C39C57A3D0D24B532
+                "ascii_armor": """
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mI0EZWbwUwEEAL8On2W3k3SD43JGQVrOFO4HXWthU2bJjTng6iAd/2Yz9J8FEtnX
+RUCfwYZGjcVQlnxrmjbPfJ6t+j5FIumcSlAN5GA94SYt1NegIiL5Rd0/w+5CHo+b
+3nz3a1BlztIvvt2hDIAG/OA1H1nIhWLPlfE42/ZTt5WPpzRJCHS565sNABEBAAG0
+JEF1dG9nZW5lcmF0ZWQgS2V5IDxtYXR0aGV3QGxhcHRvcDIxPojOBBMBCgA4FiEE
+2Kidl7t1JvM8ii2MOcV6PQ0ktTIFAmVm8FMCGy8FCwkIBwIGFQoJCAsCBBYCAwEC
+HgECF4AACgkQOcV6PQ0ktTJRbgQAo+XEUd5+BMDAbSLBuMJcPIHoNm0YslgOZMy1
+zlw/VfXDD2nF6kY/R7Sa/yb7JNw0f6NUYZ7TXVY1DVLIPHSI3+XUeChVa5w7PNM/
+SNDw1ahHcC3qx1q/Qe3j9avlIjwBtQhdM2pvXgngTlVcbP6zBuWwrEYCqhnFg3uv
+RUm4msk=
+=WiJ1
+-----END PGP PUBLIC KEY BLOCK-----
+
+""".strip(),
+            }
+        ],
+        "providers": {
+            "contributedprovider-oneversion": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "providersearch-namespace/terraform-provider-contributedprovider-oneversion",
+                    "name": "terraform-provider-contributedprovider-oneversion",
+                    "description": "Test Multiple Versions",
+                    "owner": "providersearch",
+                    "clone_url": "https://git.example.com/providersearch-namespace/terraform-provider-multiple-versions.git",
+                    "logo_url": "https://git.example.com/providersearch-namespace/terraform-provider-test-initial.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "official",
+                "versions": {
+                    "1.2.0": {
+                        "git_tag": "v1.2.0",
+                        "gpg_key_fingerprint": "D8A89D97BB7526F33C8A2D8C39C57A3D0D24B532",
+                    }
+                }
+            },
+            "contributedprovider-multiversion": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "providersearch-namespace/terraform-provider-contributedprovider-multiversion",
+                    "name": "terraform-provider-contributedprovider-multiversion",
+                    "description": "Test Multiple Versions",
+                    "owner": "providersearch",
+                    "clone_url": "https://git.example.com/providersearch-namespace/terraform-provider-multiple-versions.git",
+                    "logo_url": "https://git.example.com/providersearch-namespace/terraform-provider-test-initial.png"
+                },
+                "category_slug": "second-visible-cloud",
+                "use_default_provider_source_auth": True,
+                "tier": "official",
+                "versions": {
+                    "1.2.0": {
+                        "git_tag": "v1.2.0",
+                        "gpg_key_fingerprint": "D8A89D97BB7526F33C8A2D8C39C57A3D0D24B532",
+                    }
+                }
+            }
+        }
+    },
+    "contributed-providersearch": {
+        "gpg_keys": [
+            {
+                # D7AA1BEFF16FA788760E54F5591EF84DC5EDCD68
+                "ascii_armor": """
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mI0EZWmRgAEEANr98cz08+JII54I1yglb3EP2nospvwuyPPHhHiBIF5PN4X01GfX
+7MLbDH4ezsVv9DL1r4zCqauHznJy4845rssrr+bEDK+DoFo8SDHfAy7IsZOjir0c
+kknfpLjxPIWpkdk5thkwKKK3bM4hAQWCYLxQMMiqZ5hmKE85bcHfFIdpABEBAAG0
+JEF1dG9nZW5lcmF0ZWQgS2V5IDxtYXR0aGV3QGxhcHRvcDIxPojOBBMBCgA4FiEE
+16ob7/Fvp4h2DlT1WR74TcXtzWgFAmVpkYACGy8FCwkIBwIGFQoJCAsCBBYCAwEC
+HgECF4AACgkQWR74TcXtzWiD3AP9ErpdQh7d50o4vIozzkJGVw3YwZLUJv+Poa9n
+1+gxVtPm+C6GBllFqkH9VoK+VL94Op06MUVK8nluc9Kqf/FS61THsW0sCazJtVsb
+6UiWIurl8cqkKPsxAiFHGmd+25vWpL+hSdd4MeRxDuKWkQIRlfvJilcnr/u0FKUC
+3a57Pig=
+=E552
+-----END PGP PUBLIC KEY BLOCK-----
+
+""".strip(),
+            }
+        ],
+        "providers": {
+            "mixedsearch-result": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "contributed-providersearch-namespace/terraform-provider-mixedsearch-result",
+                    "name": "terraform-provider-mixedsearch-result",
+                    "description": "Test Multiple Versions",
+                    "owner": "contributed-providersearch",
+                    "clone_url": "https://git.example.com/contributed-providersearch-namespace/terraform-provider-multiple-versions.git",
+                    "logo_url": "https://git.example.com/contributed-providersearch-namespace/terraform-provider-test-initial.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "community",
+                "versions": {
+                    "1.0.0": {
+                        "git_tag": "v1.0.0",
+                        "gpg_key_fingerprint": "D7AA1BEFF16FA788760E54F5591EF84DC5EDCD68",
+                    }
+                }
+            },
+            "mixedsearch-result-multiversion": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "contributed-providersearch-namespace/terraform-provider-mixedsearch-result-multiversion",
+                    "name": "terraform-provider-mixedsearch-result-multiversion",
+                    "description": "Test Multiple Versions",
+                    "owner": "contributed-providersearch",
+                    "clone_url": "https://git.example.com/contributed-providersearch-namespace/terraform-provider-multiple-versions.git",
+                    "logo_url": "https://git.example.com/contributed-providersearch-namespace/terraform-provider-test-initial.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "community",
+                "versions": {
+                    "1.2.3": {
+                        "git_tag": "v1.2.3",
+                        "gpg_key_fingerprint": "D7AA1BEFF16FA788760E54F5591EF84DC5EDCD68",
+                    },
+                    "2.0.0": {
+                        "git_tag": "v2.0.0",
+                        "gpg_key_fingerprint": "D7AA1BEFF16FA788760E54F5591EF84DC5EDCD68",
+                    }
+                }
+            },
+            "mixedsearch-result-no-version": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "contributed-providersearch-namespace/terraform-provider-mixedsearch-result-no-version",
+                    "name": "terraform-provider-mixedsearch-result-no-version",
+                    "description": "Test Multiple Versions",
+                    "owner": "contributed-providersearch",
+                    "clone_url": "https://git.example.com/contributed-providersearch-namespace/terraform-provider-multiple-versions.git",
+                    "logo_url": "https://git.example.com/contributed-providersearch-namespace/terraform-provider-test-initial.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "community",
+                "versions": {
+                }
+            },
+        },
     }
 }
