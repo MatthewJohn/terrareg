@@ -61,3 +61,11 @@ class TestMarkdownLinkModifier(TerraregUnitTest):
 </tbody>
 </table>
 """.strip()
+
+    def test_placeholders_in_markdown(self):
+        """Test use of angular brackets as placeholders in markdown"""
+        assert self._convert_markdown("""
+Convert `<Hi>` or `<Your name>` where <your-name> is replaced with you name.
+        """.strip()) == """
+<p>Convert <code>&lt;Hi&gt;</code> or <code>&lt;Your name&gt;</code> where <your-name> is replaced with you name.</p>
+""".strip()

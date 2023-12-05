@@ -14,6 +14,10 @@ HYPHEN_REPLACEMENT_RE = re.compile(r"[\s\-]+")
 
 def _convert_id(file_name, id):
     file_name = NON_ALPHANUMERIC_REPLACEMENT_RE.sub("", HYPHEN_REPLACEMENT_RE.sub("-", file_name))
+    # If 'id' provided is not a string, return the original value
+    if not isinstance(id, str):
+        return None
+
     id = NON_ALPHANUMERIC_REPLACEMENT_RE.sub("", HYPHEN_REPLACEMENT_RE.sub("-", id))
     return f"terrareg-anchor-{file_name}-{id}"
 
@@ -74,7 +78,6 @@ class ImageSourceCheck(Treeprocessor):
                 # Removing the 'src' attribute will show white space,
                 # rather than a broken image icon
                 if (not src.startswith('http://')) and (not src.startswith('https://')):
-                    print(f'Removing source: {link.attrib["src"]}')
                     del link.attrib['src']
 
 
@@ -92,8 +95,9 @@ class HTMLExtractorWithAttribs(HTMLExtractor):
         converted_attribute = False
         for itx, attr in enumerate(attrs):
             if attr[0] == 'name' or attr[0] == 'id':
-                attrs[itx] = (attr[0], _convert_id(self.md.terrareg_file_name, attr[1]))
-                converted_attribute = True
+                if result_id := _convert_id(self.md.terrareg_file_name, attr[1]):
+                    attrs[itx] = (attr[0], result_id)
+                    converted_attribute = True
             if attr[0] == 'href':
                 attrs[itx] = (attr[0], _get_anchor_from_href(file_name=self.md.terrareg_file_name, href=attr[1]))
                 converted_attribute = True
