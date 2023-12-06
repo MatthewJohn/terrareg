@@ -1,6 +1,7 @@
 
 import contextlib
 import datetime
+from typing import Optional
 from enum import Enum
 import os
 from distutils.version import LooseVersion
@@ -3490,7 +3491,7 @@ class ModuleVersion(TerraformSpecsObject):
 
         return None
 
-    def get_source_download_url(self, path=None):
+    def get_source_download_url(self, request_domain: str, direct_http_request: bool, path: Optional[bool]=None):
         """Return URL to download source file."""
         rendered_url = None
 
@@ -3536,6 +3537,15 @@ class ModuleVersion(TerraformSpecsObject):
             if not config.ALLOW_UNAUTHENTICATED_ACCESS:
                 presign_key = TerraformSourcePresignedUrl.generate_presigned_key(url=url)
                 url = f'{url}?presign={presign_key}'
+
+            # If request is a direct HTTP request,
+            # i.e. Terraform has been configured with a HTTP URL
+            # and not via the registry protocol, provide a full HTTP
+            # URL in redirect rather than a relative URL, as Terraform
+            # cannot handle just a path in this mode.
+            if direct_http_request:
+                protocol, domain, port = get_public_url_details(fallback_domain=request_domain)
+                url = f"{protocol}://{domain}:{port}{url}"
 
             return url
 
@@ -4049,9 +4059,13 @@ class BaseSubmodule(TerraformSpecsObject):
         """Get formatted source browse URL"""
         return self._module_version.get_source_browse_url(path=self.path)
 
-    def get_source_download_url(self):
+    def get_source_download_url(self, request_domain: str, direct_http_request: bool):
         """Get formatted source download URL"""
-        return self._module_version.get_source_download_url(path=self.path)
+        return self._module_version.get_source_download_url(
+            request_domain=request_domain,
+            direct_http_request=direct_http_request,
+            path=self.path
+        )
 
     def get_view_url(self):
         """Return view URL"""
