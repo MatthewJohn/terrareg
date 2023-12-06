@@ -14,7 +14,7 @@ from . import mock_record_module_version_download
 
 
 class TestModuleProviderPageTerraformDownload(TerraregUnitTest):
-    """Test /modules/ web endpoint, testing ApiModuleVersionDownload resource when terraform-get is provided."""
+    """Test /modules/ web endpoint, testing ApiModuleVersionDownload resource when terraform-get is provided, i.e. a direct HTTP download is used."""
 
     @pytest.mark.parametrize('version', ['1.0.0', 'latest', None])
     @setup_test_data()
@@ -38,21 +38,28 @@ class TestModuleProviderPageTerraformDownload(TerraregUnitTest):
         assert res.status_code == 404
 
     @setup_test_data()
-    def test_existing_module_internal_download(self, client, mock_models, mock_record_module_version_download):
+    @pytest.mark.parametrize('public_url, expected_url_prefix', [
+        ('https://localhost.example.com:1234', 'https://localhost.example.com:1234'),
+        ('https://localhost.example.com', 'https://localhost.example.com:443'),
+        ('http://localhost.example.com', 'http://localhost.example.com:80'),
+        (None, 'https://localhost:443')
+    ])
+    def test_existing_module_internal_download(self, public_url, expected_url_prefix, client, mock_models, mock_record_module_version_download):
         """Test endpoint with analytics token"""
 
-        res = client.get(
-            '/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1?terraform-get=1',
-            headers={'X-Terraform-Version': 'TestTerraformVersion',
-                     'User-Agent': 'TestUserAgent'}
-        )
+        with unittest.mock.patch('terrareg.config.Config.PUBLIC_URL', public_url):
+            res = client.get(
+                '/modules/test_token-name__testnamespace/testmodulename/testprovider/2.4.1?terraform-get=1',
+                headers={'X-Terraform-Version': 'TestTerraformVersion',
+                        'User-Agent': 'TestUserAgent'}
+            )
 
         test_namespace = terrareg.models.Namespace(name='testnamespace')
         test_module = terrareg.models.Module(namespace=test_namespace, name='testmodulename')
         test_module_provider = terrareg.models.ModuleProvider(module=test_module, name='testprovider')
         test_module_version = terrareg.models.ModuleVersion(module_provider=test_module_provider, version='2.4.1')
 
-        assert res.headers['X-Terraform-Get'] == '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'
+        assert res.headers['X-Terraform-Get'] == f'{expected_url_prefix}/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'
         assert res.status_code == 204
 
         AnalyticsEngine.record_module_version_download.assert_called_with(
@@ -74,12 +81,12 @@ class TestModuleProviderPageTerraformDownload(TerraregUnitTest):
     @pytest.mark.parametrize('namespace,module,provider,version,expected_version,expected_return_url', [
         ## Archive download
         # Explicit latest version
-        ('testnamespace', 'testmodulename', 'testprovider', '2.4.1', '2.4.1', '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'),
+        ('testnamespace', 'testmodulename', 'testprovider', '2.4.1', '2.4.1', 'https://localhost:443/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'),
         # Non-latest version
-        ('testnamespace', 'testmodulename', 'testprovider', '1.0.0', '1.0.0', '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/1.0.0/source.zip'),
+        ('testnamespace', 'testmodulename', 'testprovider', '1.0.0', '1.0.0', 'https://localhost:443/v1/terrareg/modules/testnamespace/testmodulename/testprovider/1.0.0/source.zip'),
         # Latest endpoint
-        ('testnamespace', 'testmodulename', 'testprovider', 'latest', '2.4.1', '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'),
-        ('testnamespace', 'testmodulename', 'testprovider', None, '2.4.1', '/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'),
+        ('testnamespace', 'testmodulename', 'testprovider', 'latest', '2.4.1', 'https://localhost:443/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'),
+        ('testnamespace', 'testmodulename', 'testprovider', None, '2.4.1', 'https://localhost:443/v1/terrareg/modules/testnamespace/testmodulename/testprovider/2.4.1/source.zip'),
 
         ## Git provider
         ('moduleextraction', 'gitextraction', 'usesgitproviderwithversions', '2.2.2', '2.2.2', 'git::ssh://localhost.com/moduleextraction/gitextraction-usesgitproviderwithversions?ref=v2.2.2'),

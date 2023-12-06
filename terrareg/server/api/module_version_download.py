@@ -1,5 +1,5 @@
 
-import re
+import urllib.parse
 
 from flask import request, make_response
 
@@ -70,7 +70,13 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
                 auth_token=auth_method.get_terraform_auth_token()
             )
 
+        # Obtain GET parameter passed by Terraform when downloading a module directly
+        direct_http_request = request.args.get("terraform-get") == "1"
+
         resp = make_response('', 204)
-        resp.headers['X-Terraform-Get'] = module_version.get_source_download_url()
+        resp.headers['X-Terraform-Get'] = module_version.get_source_download_url(
+            request_domain=urllib.parse.urlparse(request.base_url).hostname,
+            direct_http_request=direct_http_request
+        )
         return resp
 
