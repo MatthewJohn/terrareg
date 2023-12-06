@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.81.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.81.2...v2.81.3) (2023-12-06)
+
+
+### Bug Fixes
+
+* Handle direct HTTP Terraform downloads when using uploaded module source. ([8b6e319](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8b6e319c09fc75a40d2ca4413662cce88258c8bd)), closes [#472](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/472)
+
 ## [2.81.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.81.1...v2.81.2) (2023-10-31)
 
 
