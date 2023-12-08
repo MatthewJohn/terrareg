@@ -22,6 +22,7 @@ class TestApiGithubAuthStatus(TerraregIntegrationTest):
 
     def test_unauthenticated(self, client, test_github_provider_source):
         """Test Endpoint without authentication"""
+        self._get_current_auth_method_mock.stop()
         res = client.get("/test-github-provider/auth/status")
         assert res.status_code == 200
         assert res.json == {'auth': False, 'username': None}
