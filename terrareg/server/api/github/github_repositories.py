@@ -23,7 +23,7 @@ class GithubRepositories(ErrorCatchingResource):
         owners = []
         if (github_auth_method := terrareg.auth.GithubAuthMethod.get_current_instance()):
             owners = github_auth_method.get_github_organisations()
-        elif terrareg.auth.AuthFactory().get_current_auth_method().is_admin:
+        elif terrareg.auth.AuthFactory().get_current_auth_method().is_admin():
             owners = [n.name for n in terrareg.models.Namespace.get_all().rows]
         
         if not owners:
