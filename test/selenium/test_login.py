@@ -473,7 +473,7 @@ class TestLogin(SeleniumTest):
                 self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/ut-github/callback?code=1234'))
                 self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'error-title').text, 'Login error')
                 self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'error-content').text,
-                                'Invalid code returned from Github')
+                                'Invalid code returned from ut-github')
 
                 # Ensure user is not logged in
                 self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'navbar_login_span').text, 'Login')
