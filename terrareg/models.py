@@ -1037,6 +1037,8 @@ class Namespace(object):
         if self.namespace_type not in [NamespaceType.GITHUB_USER, NamespaceType.GITHUB_ORGANISATION]:
             return False
 
+        return True
+
     @staticmethod
     def _validate_name(name):
         """Validate name of namespace"""

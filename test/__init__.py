@@ -170,7 +170,7 @@ class BaseTest:
             for namespace_name in import_data:
                 namespace_data = import_data[namespace_name]
                 display_name = import_data[namespace_name].get("display_name")
-                namespace = Namespace.create(name=namespace_name, display_name=display_name)
+                namespace = Namespace.create(name=namespace_name, display_name=display_name, type_=import_data[namespace_name].get("type"))
 
                 # Iterate through modules
                 for module_name, module_data in namespace_data.get("modules", {}).items():

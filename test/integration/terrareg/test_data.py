@@ -4,6 +4,7 @@ import json
 
 import terrareg.provider_source_type
 import terrareg.provider_documentation_type
+import terrareg.namespace_type
 
 
 integration_git_providers = {
@@ -687,6 +688,7 @@ digraph {
     },
 
     "initial-providers": {
+        "type": terrareg.namespace_type.NamespaceType.GITHUB_ORGANISATION,
         "gpg_keys": [
             {
                 "ascii_armor": """
