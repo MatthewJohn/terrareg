@@ -28,7 +28,7 @@ class TestApiGithubAuthStatus(TerraregIntegrationTest):
 
     def test_authenticated_with_another_auth(self, client, test_github_provider_source):
         """Test Endpoint whilst authenticated with different auth"""
-        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=AdminSessionAuthMethod)
+        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=AdminSessionAuthMethod())
 
         with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
 
@@ -38,7 +38,7 @@ class TestApiGithubAuthStatus(TerraregIntegrationTest):
 
     def test_authenticated(self, client, test_github_provider_source):
         """Test Endpoint whilst authenticated with github"""
-        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=terrareg.auth.github_auth_method.GithubAuthMethod)
+        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=terrareg.auth.github_auth_method.GithubAuthMethod())
 
         with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
                 unittest.mock.patch('terrareg.auth.github_auth_method.GithubAuthMethod.get_username', unittest.mock.MagicMock(return_value='unittestusername')), \
@@ -48,6 +48,3 @@ class TestApiGithubAuthStatus(TerraregIntegrationTest):
             res = client.get("/test-github-provider/auth/status")
             assert res.status_code == 200
             assert res.json == {'auth': True, 'username': "unittestusername"}
-
-
-
