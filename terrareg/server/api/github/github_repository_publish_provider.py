@@ -1,4 +1,5 @@
 from flask_restful import reqparse
+from flask import request
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.csrf
@@ -12,12 +13,32 @@ import terrareg.provider_model
 import terrareg.provider_tier
 import terrareg.database
 from terrareg.errors import NoGithubAppInstallationError
+import terrareg.auth_wrapper
+import terrareg.user_group_namespace_permission_type
 
+
+def get_namespace_from_request_repository_id(provider_source, repository_id):
+    """Return namespace from request repository ID"""
+    provider_source = terrareg.provider_source.factory.ProviderSourceFactory().get_provider_source_by_api_name(api_name=provider_source)
+    if not provider_source:
+        return None
+    repository = terrareg.repository_model.Repository.get_by_provider_source_and_provider_id(provider_source=provider_source, provider_id=repository_id)
+    if not repository:
+        return None
+    return repository.owner
 
 class GithubRepositoryPublishProvider(ErrorCatchingResource):
     """Interface publish a repository as a provider"""
 
-    # @TODO Add permissions
+    method_decorators = {
+        "post": [
+            terrareg.auth_wrapper.auth_wrapper('check_namespace_access',
+                terrareg.user_group_namespace_permission_type.UserGroupNamespacePermissionType.FULL,
+                # Obtain namespace for check from post data
+                kwarg_values={"namespace": lambda provider_source, repository_id: get_namespace_from_request_repository_id(provider_source=provider_source, repository_id=repository_id)}
+            )
+        ],
+    }
 
     def _post_arg_parser(self):
         """Return arg paraser for post method"""
