@@ -47,6 +47,12 @@ class ProviderCategory:
         """Return whether provider category is user selectable"""
         return self._get_db_row()["user_selectable"]
 
+    def __eq__(self, __o):
+        """Check if two provider categories are the same"""
+        if isinstance(__o, self.__class__):
+            return self.pk == __o.pk
+        return super(ProviderCategory, self).__eq__(__o)
+
     def __init__(self, pk: int):
         """Initialise member variables"""
         self._pk = pk
