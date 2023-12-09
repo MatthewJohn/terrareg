@@ -121,6 +121,28 @@ class TestApiGithubRepositoryPublishProvider(TerraregIntegrationTest):
             mock_get_github_app_installation_id.assert_not_called()
             mock_refresh_versions.assert_not_called()
 
+
+    def test_non_user_selectable_category(self, client, test_github_provider_source, test_repository_create, test_request_context):
+        """Test endpoint with non-user-selectable category ID"""
+        self._get_current_auth_method_mock.stop()
+        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=AdminSessionAuthMethod())
+
+        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
+                unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource.get_github_app_installation_id', unittest.mock.MagicMock(return_value='unittestinstallationid')) as mock_get_github_app_installation_id, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', unittest.mock.MagicMock(return_value=True)) as mock_check_csrf, \
+                unittest.mock.patch('terrareg.provider_model.Provider.create', unittest.mock.MagicMock(side_effect=terrareg.provider_model.Provider.create)) as mock_provider_create, \
+                test_repository_create(test_github_provider_source) as test_repository, \
+                unittest.mock.patch('terrareg.provider_model.Provider.refresh_versions', unittest.mock.MagicMock(return_value=[terrareg.provider_version_model.ProviderVersion(provider=None, version="5.2.1")])) as mock_refresh_versions:
+
+            res = client.post(f"/test-github-provider/repositories/125563113/publish-provider", data={"csrf_token": "test", "category_id": 99})
+            assert res.status_code == 400
+            assert res.json == {'message': 'Provider Category does not exist', 'status': 'Error'}
+
+            mock_check_csrf.assert_called_once_with('test')
+            mock_provider_create.assert_not_called()
+            mock_get_github_app_installation_id.assert_not_called()
+            mock_refresh_versions.assert_not_called()
+
     def test_provider_already_published(self, client, test_github_provider_source, test_repository_create, test_request_context):
         """Test endpoint with provider that has already been published"""
         self._get_current_auth_method_mock.stop()
