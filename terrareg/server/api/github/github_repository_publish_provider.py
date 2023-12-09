@@ -78,7 +78,7 @@ class GithubRepositoryPublishProvider(ErrorCatchingResource):
             use_default_provider_source_auth = True
 
         provider_category = terrareg.provider_category_model.ProviderCategoryFactory.get().get_provider_category_by_pk(pk=args.category_id)
-        if not provider_category:
+        if not provider_category or not provider_category.user_selectable:
             return {'status': 'Error', 'message': 'Provider Category does not exist'}, 400
 
         repository = terrareg.repository_model.Repository.get_by_provider_source_and_provider_id(provider_source=provider_source_obj, provider_id=repository_id)
