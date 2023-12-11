@@ -60,6 +60,8 @@ class ApiGpgKey(ErrorCatchingResource):
             return self._get_404_response()
 
         gpg_key = terrareg.models.GpgKey.get_by_id_and_namespace(namespace=namespace_obj, id_=key_id)
+        if not gpg_key:
+            return self._get_404_response()
         gpg_key.delete()
 
         return {}, 201
