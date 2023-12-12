@@ -66,7 +66,7 @@ class Provider:
         insert = db.provider.insert().values(
             namespace_id=namespace.pk,
             name=provider_name,
-            description=db.encode_blob(repository.description),
+            description=repository.description,
             tier=tier,
             repository_id=repository.pk,
             provider_category_id=provider_category.pk,
@@ -195,7 +195,7 @@ class Provider:
     @property
     def description(self) -> str:
         """Return provider description"""
-        return self.repository.description
+        return self._get_db_row()['description']
 
     @property
     def alias(self) -> Union[str, None]:
@@ -384,7 +384,7 @@ class Provider:
 
         # Encode any blob columns
         for kwarg in kwargs:
-            if kwarg in ["description"]:
+            if kwarg in []:
                 kwargs[kwarg] = db.encode_blob(kwargs[kwarg])
 
         update = sqlalchemy.update(db.provider).where(

@@ -684,7 +684,7 @@ class Database():
                 nullable=False
             ),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
-            sqlalchemy.Column('description', Database.medium_blob()),
+            sqlalchemy.Column('description', sqlalchemy.String(LARGE_COLUMN_SIZE)),
             sqlalchemy.Column('tier', sqlalchemy.Enum(ProviderTier)),
             sqlalchemy.Column('default_provider_source_auth', sqlalchemy.Boolean, default=False),
             sqlalchemy.Column(
