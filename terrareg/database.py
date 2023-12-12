@@ -829,7 +829,7 @@ class Database():
             self.namespace, self.module_provider.c.namespace_id==self.namespace.c.id
         )
 
-    def select_provider_joined_latest_module_version(self, *select_args):
+    def select_provider_joined_latest_provider_version(self, *select_args):
         """Perform select on provider, joined to latest version from provider_version table"""
         return sqlalchemy.select(
             *select_args

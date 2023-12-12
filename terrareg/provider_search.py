@@ -42,13 +42,13 @@ class ProviderSearch:
                 wheres.append(
                     sqlalchemy.or_(
                         db.provider.c.name.like(wildcarded_query_part),
-                        db.provider.c.description.like(Database.encode_blob(wildcarded_query_part)),
+                        db.provider.c.description.like(wildcarded_query_part),
                         db.namespace.c.namespace.like(wildcarded_query_part)
                     )
                 )
 
         relevance = sqlalchemy.sql.expression.label('relevance', point_sum)
-        select = db.select_provider_joined_latest_module_version(
+        select = db.select_provider_joined_latest_provider_version(
             db.provider,
             db.provider_version,
             db.namespace,

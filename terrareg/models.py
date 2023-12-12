@@ -948,7 +948,7 @@ class Namespace(object):
                 db.namespace.c.namespace
             )
         elif only_published and resource_type is terrareg.registry_resource_type.RegistryResourceType.PROVIDER:
-            providers_query = db.select_provider_joined_latest_module_version(
+            providers_query = db.select_provider_joined_latest_provider_version(
                 db.provider
             ).subquery()
 
