@@ -1333,14 +1333,14 @@ class GpgKey:
     @classmethod
     def create(cls, namespace, ascii_armor) -> 'GpgKey':
         """Create GPG key"""
-        ascii_armor = ascii_armor.strip()
-
         fingerprint = None
-        if ascii_armor:
-            # Validate ascii armor
-            gpg_key = cls._get_gpg_object_from_ascii_armor(ascii_armor)
-            if gpg_key.returncode == 0 and len(gpg_key.fingerprints) == 1:
-                fingerprint = gpg_key.fingerprints[0]
+        if isinstance(ascii_armor, str):
+            ascii_armor = ascii_armor.strip()
+            if ascii_armor:
+                # Validate ascii armor
+                gpg_key = cls._get_gpg_object_from_ascii_armor(ascii_armor)
+                if gpg_key.returncode == 0 and len(gpg_key.fingerprints) == 1:
+                    fingerprint = gpg_key.fingerprints[0]
 
         if not fingerprint:
             raise InvalidGpgKeyError("GPG key provided is invalid or could not be read")
