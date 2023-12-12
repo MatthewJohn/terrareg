@@ -1339,7 +1339,7 @@ class GpgKey:
         if ascii_armor:
             # Validate ascii armor
             gpg_key = cls._get_gpg_object_from_ascii_armor(ascii_armor)
-            if gpg_key.returncode == 0 or len(gpg_key.fingerprints) != 1:
+            if gpg_key.returncode == 0 and len(gpg_key.fingerprints) == 1:
                 fingerprint = gpg_key.fingerprints[0]
 
         if not fingerprint:
