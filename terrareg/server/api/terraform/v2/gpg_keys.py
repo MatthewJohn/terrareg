@@ -67,9 +67,9 @@ class ApiGpgKeys(ErrorCatchingResource):
                 "attributes": {
                     "namespace": "my-namespace",
                     "ascii-armor": "-----BEGIN PGP PUBLIC KEY BLOCK-----\n...\n-----END PGP PUBLIC KEY BLOCK-----\n"
-                }
-            },
-            "csrf_token": "xxxaaabbccc"
+                },
+                "csrf_token": "xxxaaabbccc"
+            }
         }
         ```
         """
