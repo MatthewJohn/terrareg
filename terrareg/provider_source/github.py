@@ -561,6 +561,8 @@ class GithubProviderSource(BaseProviderSource):
                 "Authorization": f"Bearer {access_token}"
             }
         )
+        if res.status_code == 401:
+            raise ProviderSourceDefaultAccessTokenNotConfiguredError("Unable to authenticate to Github API")
         if res.status_code != 200:
             return None
         if type_ := res.json().get("type"):
