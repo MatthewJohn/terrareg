@@ -70,12 +70,12 @@ class ApiV2ProviderDocs(ErrorCatchingResource):
         # Obtain provider version from ID
         provider_version = terrareg.provider_version_model.ProviderVersion.get_by_pk(args.provider_version_id)
         if not provider_version:
-            return self._get_v2_error("Invalid Provider Version ID")
+            return {"data": []}, 200
 
         try:
             category = terrareg.provider_documentation_type.ProviderDocumentationType(args.category)
         except ValueError:
-            return self._get_v2_error("Invalid category type")
+            return {"errors":["unsupported filter category"]}, 400
 
         documents = terrareg.provider_version_documentation_model.ProviderVersionDocumentation.search(
             provider_version=provider_version,
