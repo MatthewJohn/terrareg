@@ -105,6 +105,8 @@ class SeleniumTest(BaseTest):
         log = logging.getLogger('werkzeug')
         if not cls.RUN_INTERACTIVELY:
             log.disabled = True
+            cls.selenium_instance.set_window_position(0, 0)
+            cls.selenium_instance.set_window_size(1900, 1000)
 
         cls._setup_server()
 
