@@ -6,21 +6,9 @@ import pytest
 
 from test.integration.terrareg import TerraregIntegrationTest
 from test import client, app_context, test_request_context
+from test import AnyDateString
 import terrareg.user_group_namespace_permission_type
 import terrareg.models
-
-
-class AnyDateString:
-
-    def __eq__(self, __o):
-        if isinstance(__o, str):
-            try:
-                datetime.datetime.fromisoformat(__o)
-                return True
-            except:
-                pass
-        return False
-
 
 
 test_data = {

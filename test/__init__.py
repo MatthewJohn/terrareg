@@ -50,6 +50,19 @@ def mock_create_audit_event():
     return unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event')
 
 
+class AnyDateString:
+    """Match any datetime isoformat string"""
+
+    def __eq__(self, __o):
+        if isinstance(__o, str):
+            try:
+                datetime.fromisoformat(__o)
+                return True
+            except:
+                pass
+        return False
+
+
 class BaseTest:
 
     _TEST_DATA = None
