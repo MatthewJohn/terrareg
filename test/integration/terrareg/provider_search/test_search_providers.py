@@ -171,7 +171,6 @@ class TestSearchProviders(TerraregIntegrationTest):
             provider.id
             for provider in result.rows
         ]
-        print(resulting_provider_ids)
 
         assert result.count == len(expected_provider_ids)
 

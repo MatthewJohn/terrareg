@@ -175,7 +175,6 @@ class TestApiGpgKeyGet(TerraregIntegrationTest):
         self._test_unauthenticated_read_api_endpoint_test(call_endpoint)
 
 
-
 class TestApiGpgKeyDelete(TerraregIntegrationTest):
     """Test ApiGpgKey DELETE endpoint"""
 
