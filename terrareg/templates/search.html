@@ -46,7 +46,7 @@
         if (type == "module" && provider_logos[details.provider] !== undefined) {
             let provider_logo_details = provider_logos[details.provider];
             provider_logo_html = `
-                <a href="${provider_logo_details.link}">
+                <a class="provider-logo-link" href="${provider_logo_details.link}">
                     <img style="margin-right: 5px" height="25" width="25" alt="${provider_logo_details.alt}" src="${provider_logo_details.source}" />
                 </a>
             `;

@@ -140,7 +140,7 @@ async function createSearchResultCard(parent_id, type, module) {
     if (type == "module" && provider_logos[module.provider] !== undefined) {
         let provider_logo_details = provider_logos[module.provider];
         provider_logo_html = `
-            <a href="${provider_logo_details.link}">
+            <a class="provider-logo-link" href="${provider_logo_details.link}">
                 <img style="margin: 5px" height="40" width="40" alt="${provider_logo_details.alt}" src="${provider_logo_details.source}" />
             </a>
         `;
