@@ -629,6 +629,17 @@ async function createBreadcrumbs(data, subpath = undefined) {
     if (data.version) {
         breadcrumbs.push([data.version, data.version]);
     }
+    if (data.documentationCategory && data.documentationSlug) {
+        breadcrumbs.push(["Docs", "docs"])
+        breadcrumbs.push([data.documentationCategory.split("-").map(
+            (a) => a[0].toUpperCase() + a.substr(1)
+        ).join(" "), data.documentationCategory]);
+        let slug = data.documentationSlug;
+        if (slug.indexOf(data.provider) !== 0) {
+            slug = `${data.provider}_${slug}`;
+        }
+        breadcrumbs.push([slug, data.documentationSlug]);
+    }
 
     let breadcrumbUl = $("#breadcrumb-ul");
     let currentLink = "";
