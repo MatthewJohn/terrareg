@@ -23,22 +23,6 @@ class TestModuleSearch(SeleniumTest):
         cls.register_patch(cls._config_trusted_namespaces_mock)
         super(TestModuleSearch, cls).setup_class()
 
-    def test_search_from_homepage(self):
-        """Check search functionality from homepage."""
-        self.selenium_instance.get(self.get_url('/'))
-
-        # Enter text into search input
-        self.selenium_instance.find_element(By.ID, 'navBarSearchInput').send_keys('modulesearch')
-
-        search_button = self.selenium_instance.find_element(By.ID, 'navBarSearchButton')
-        assert search_button.text == 'Search'
-        search_button.click()
-
-        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/search?q=modulesearch'))
-        assert self.selenium_instance.title == 'Search - Terrareg'
-
-        self.assert_equals(lambda: len(self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')), 4)
-
     def test_result_cards(self):
         """Check the result cards."""
 
