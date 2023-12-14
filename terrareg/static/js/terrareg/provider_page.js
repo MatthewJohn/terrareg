@@ -374,9 +374,20 @@ function showOutdatedExtractionDataWarning(providerDetails) {
 /*
  * Set HTML page title
  *
- * @param id Provider id
+ * @param data Router data
  */
-function setPageTitle(id) {
+function setPageTitle(data) {
+    let id = data.namespace + '/' + data.provider;
+    if (data.version) {
+        id += `/${data.version}`;
+    }
+    if (data.documentationCategory && data.documentationSlug) {
+        let slug = data.documentationSlug;
+        if (slug.indexOf(data.provider) !== 0) {
+            slug = `${data.provider}_${slug}`;
+        }
+        id = `${slug} - ${documentationcategoryToTitle(data.documentationCategory)} - ${id}`
+    }
     document.title = `${id} - Terrareg`;
 }
 
@@ -574,7 +585,7 @@ async function setupBasePage(data) {
 
     createBreadcrumbs(data);
 
-    setPageTitle(providerDetails.id);
+    setPageTitle(data);
     setProviderDescription(providerDetails);
     setPublishedAt(providerDetails);
     setOwner(providerDetails);
@@ -614,6 +625,12 @@ async function setupBasePage(data) {
     showSelectedDocument(providerVersionV2Details, selectedDocumentation);
 }
 
+function documentationcategoryToTitle(category) {
+    return category.split("-").map(
+        (a) => a[0].toUpperCase() + a.substr(1)
+    ).join(" ");
+}
+
 async function createBreadcrumbs(data, subpath = undefined) {
     let namespaceName = data.namespace;
     let namespaceDetails = await getNamespaceDetails(namespaceName);
@@ -631,9 +648,7 @@ async function createBreadcrumbs(data, subpath = undefined) {
     }
     if (data.documentationCategory && data.documentationSlug) {
         breadcrumbs.push(["Docs", "docs"])
-        breadcrumbs.push([data.documentationCategory.split("-").map(
-            (a) => a[0].toUpperCase() + a.substr(1)
-        ).join(" "), data.documentationCategory]);
+        breadcrumbs.push([documentationcategoryToTitle(data.documentationCategory), data.documentationCategory]);
         let slug = data.documentationSlug;
         if (slug.indexOf(data.provider) !== 0) {
             slug = `${data.provider}_${slug}`;
