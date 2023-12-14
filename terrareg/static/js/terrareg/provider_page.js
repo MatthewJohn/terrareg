@@ -376,10 +376,10 @@ function showOutdatedExtractionDataWarning(providerDetails) {
  *
  * @param data Router data
  */
-function setPageTitle(data) {
+function setPageTitle(data, version) {
     let id = data.namespace + '/' + data.provider;
-    if (data.version) {
-        id += `/${data.version}`;
+    if (version) {
+        id += `/${version}`;
     }
     if (data.documentationCategory && data.documentationSlug) {
         let slug = data.documentationSlug;
@@ -585,7 +585,7 @@ async function setupBasePage(data) {
 
     createBreadcrumbs(data);
 
-    setPageTitle(data);
+    setPageTitle(data, providerDetails.version);
     setProviderDescription(providerDetails);
     setPublishedAt(providerDetails);
     setOwner(providerDetails);
