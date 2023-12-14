@@ -148,7 +148,7 @@ async function createSearchResultCard(parent_id, type, module) {
     } else if (type == "provider" && module.logo_url) {
         provider_logo_html = `
         <a href="${link}">
-            <img style="margin: 5px" height="40" width="40" alt="${module.name}" src="${module.logo_url}" />
+            <img style="margin: 5px" height="40" width="40" src="${module.logo_url}" />
         </a>
         `;
     }
