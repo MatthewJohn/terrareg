@@ -514,6 +514,27 @@ integration_test_data = {
         }
     },
     'relevancysearch': {
+        'gpg_keys': [
+            {
+                # 8C3E79D7AE3E1C9CEFBCAE881EE90C3982E8E36A
+                "ascii_armor": """
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mI0EZXqrXgEEAN+B2Wo05sy+gJcEb+OnD6a8MTjvNLryge3veSZcVKmQxrfIsvz7
+ufl5LnR4RTGyC687b/TbNgaqVO3dG4prNQeE/90/wQMhj3U0Mtd33te2cGFq0H7y
+DiLNUWNlicjFFBaFTY+Dk8jJx/ecuhO//hxz4x7VG65mffUJ/Du3AlMfABEBAAG0
+JEF1dG9nZW5lcmF0ZWQgS2V5IDxtYXR0aGV3QGxhcHRvcDIxPojOBBMBCgA4FiEE
+jD55164+HJzvvK6IHukMOYLo42oFAmV6q14CGy8FCwkIBwIGFQoJCAsCBBYCAwEC
+HgECF4AACgkQHukMOYLo42oXdQP/bpv/xSBt6JJXSNTg5Pq4nZIEw8SAuiCxQHhz
+TWrwqJWLBBAypkx5EPD63DB+N62jhD4/112NbLQp3/9/YuLCkJS5CMjWMO2BQFvq
+dnledFQhywd0bqG+HzbmBB3B4jLAdSDSYfERXW+nWA0oNxv7Zx7GngAtxZ90eqqn
+QpmuOBk=
+=+E1y
+-----END PGP PUBLIC KEY BLOCK-----
+
+""".strip(),
+            }
+        ],
         'modules': {
             'partialmodulenamematch': {
                 'partialprovidernamematch': {
@@ -588,6 +609,88 @@ integration_test_data = {
                     }
                 }
             }},
+        },
+        "providers": {
+            "descriptionmatch": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "relevancysearch/terraform-provider-descriptionmatch",
+                    "name": "terraform-provider-descriptionmatch",
+                    "description": "namematch",
+                    "owner": "relevancysearch",
+                    "clone_url": "https://git.example.com/relevancysearch/terraform-provider-descriptionmatch.git",
+                    "logo_url": "https://git.example.com/relevancysearch/terraform-provider-descriptionmatch.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "official",
+                "versions": {
+                    "1.0.0": {
+                        "git_tag": "v1.0.0",
+                        "gpg_key_fingerprint": "8C3E79D7AE3E1C9CEFBCAE881EE90C3982E8E36A",
+                    }
+                }
+            },
+            "partialdescriptionmatch": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "relevancysearch/terraform-provider-partialdescriptionmatch",
+                    "name": "terraform-provider-partialdescriptionmatch",
+                    "description": "partialnamematch",
+                    "owner": "relevancysearch",
+                    "clone_url": "https://git.example.com/relevancysearch/terraform-provider-partialdescriptionmatch.git",
+                    "logo_url": "https://git.example.com/relevancysearch/terraform-provider-partialdescriptionmatch.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "official",
+                "versions": {
+                    "1.0.0": {
+                        "git_tag": "v1.0.0",
+                        "gpg_key_fingerprint": "8C3E79D7AE3E1C9CEFBCAE881EE90C3982E8E36A",
+                    }
+                }
+            },
+            "namematch": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "relevancysearch/terraform-provider-namematch",
+                    "name": "terraform-provider-namematch",
+                    "description": "",
+                    "owner": "relevancysearch",
+                    "clone_url": "https://git.example.com/relevancysearch/terraform-provider-namematch.git",
+                    "logo_url": "https://git.example.com/relevancysearch/terraform-provider-namematch.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "official",
+                "versions": {
+                    "1.0.0": {
+                        "git_tag": "v1.0.0",
+                        "gpg_key_fingerprint": "8C3E79D7AE3E1C9CEFBCAE881EE90C3982E8E36A",
+                    }
+                }
+            },
+            "partialnamematch": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "relevancysearch/terraform-provider-partialnamematch",
+                    "name": "terraform-provider-partialnamematch",
+                    "description": "",
+                    "owner": "relevancysearch",
+                    "clone_url": "https://git.example.com/relevancysearch/terraform-provider-partialnamematch.git",
+                    "logo_url": "https://git.example.com/relevancysearch/terraform-provider-partialnamematch.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "official",
+                "versions": {
+                    "1.0.0": {
+                        "git_tag": "v1.0.0",
+                        "gpg_key_fingerprint": "8C3E79D7AE3E1C9CEFBCAE881EE90C3982E8E36A",
+                    }
+                }
+            },
         }
     },
     'withdisplayname': {
