@@ -417,7 +417,10 @@ function populateDocumentationMenu(providerDetails) {
         if (docCountByCategory[doc.category] !== undefined) {
             let linkName = doc.title;
             if (["resources", "data-sources"].indexOf(doc.category) !== -1) {
-                linkName = `${providerDetails.name}_${doc.title}`;
+                // If resource/data-source doesn't start with name of provider, prepend it
+                if (linkName.indexOf(providerDetails.name) !== 0) {
+                    linkName = `${providerDetails.name}_${doc.title}`;
+                }
             }
             let linkDiv = $(`
             <a id="doclink-${doc.category}-${doc.slug}" class="navbar-item">
