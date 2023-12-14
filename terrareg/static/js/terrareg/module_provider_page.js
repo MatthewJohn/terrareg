@@ -114,7 +114,7 @@ class ReadmeTab extends BaseTab {
                 // Populate README conrtent
                 readmeContentDiv.append(readmeContent);
 
-                convertImportedHtml(readmeContent);
+                convertImportedHtml(readmeContentDiv);
 
                 // Show README tab button
                 $("#module-tab-link-readme").removeClass('default-hidden');
