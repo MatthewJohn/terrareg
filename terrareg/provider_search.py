@@ -169,12 +169,13 @@ class ProviderSearch:
                 )
             ).fetchone()['count']
 
+            main_select_subquery = main_select.subquery()
             category_res = conn.execute(
                 sqlalchemy.select(
-                    [sqlalchemy.func.count().label('count'), main_select.c.provider_category_slug]
+                    [sqlalchemy.func.count().label('count'), main_select_subquery.c.provider_category_slug]
                 ).select_from(
-                    main_select
-                ).group_by(main_select.c.provider_category_slug)
+                    main_select_subquery
+                ).group_by(main_select_subquery.c.provider_category_slug)
             )
 
             namespace_subquery = main_select.group_by(
