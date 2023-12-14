@@ -3359,14 +3359,14 @@ WoNIERpT
                 "versions": {
                 }
             },
-            "multiple-versions": {
+            "mv": {
                 "repository": {
                     "provider_source": "Test Github Autogenerate",
-                    "provider_id": "initial-providers/terraform-provider-multiple-versions",
-                    "name": "terraform-provider-multiple-versions",
+                    "provider_id": "initial-providers/terraform-provider-mv",
+                    "name": "terraform-provider-mv",
                     "description": "Test Multiple Versions",
                     "owner": "initial-providers",
-                    "clone_url": "https://git.example.com/initalproviders/terraform-provider-multiple-versions.git",
+                    "clone_url": "https://git.example.com/initalproviders/terraform-provider-mv.git",
                     "logo_url": "https://git.example.com/initalproviders/terraform-provider-test-initial.png"
                 },
                 "category_slug": "visible-monitoring",
@@ -3381,7 +3381,7 @@ WoNIERpT
                         "git_tag": "v1.1.0",
                         "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB",
                         "binaries": {
-                            "terraform-provider-multiple-versions_1.1.0_linux_amd64.zip": {
+                            "terraform-provider-mv_1.1.0_linux_amd64.zip": {
                                 "content": b"Some old linux content",
                                 "checksum": "a268d9b6def5fc8f85e158b5dd8436fe2f9eba023190f9dfab9df6e6208360b3"
                             },
@@ -3421,54 +3421,52 @@ WoNIERpT
                         "git_tag": "v1.5.0",
                         "gpg_key_fingerprint": "21A74E4E3FDFE438532BD58434DE374AC3640CDB",
                         "binaries": {
-                            "terraform-provider-multiple-versions_1.5.0_linux_amd64.zip": {
+                            "terraform-provider-mv_1.5.0_linux_amd64.zip": {
                                 "content": b"Some test linux content",
                                 "checksum": "a26d0401981bf2749c129ab23b3037e82bd200582ff7489e0da2a967b50daa98"
                             },
-                            "terraform-provider-multiple-versions_1.5.0_linux_arm64.zip": {
+                            "terraform-provider-mv_1.5.0_linux_arm64.zip": {
                                 "content": b"Test linux ARM content",
                                 "checksum": "bda5d57cf68ab142f5d0c9a5a0739577e24444d4e8fe4a096ab9f4935bec9e9a"
                             },
-                            "terraform-provider-multiple-versions_1.5.0_windows_amd64.zip": {
+                            "terraform-provider-mv_1.5.0_windows_amd64.zip": {
                                 "content": b"Windows AMD64",
                                 "checksum": "c2d859efacc3fbe1662bef92c80ce32c966834597625914592891eaf564af4bf"
                             },
-                            "terraform-provider-multiple-versions_1.5.0_darwin_amd64.zip": {
+                            "terraform-provider-mv_1.5.0_darwin_amd64.zip": {
                                 "content": b"Darwin AMD64",
                                 "checksum": "e8bc51e741c45feed8d9d7eb1133ac0107152cab3c1db12e74495d4b4ec75a0c"
                             }
                         },
+                        "published_at": datetime(year=2023, month=12, day=11, hour=12, minute=51, second=1),
                         "documentation": {
-                            ("overview", "hcl"): {
+                            ("index", "hcl"): {
                                 "type": terrareg.provider_documentation_type.ProviderDocumentationType.OVERVIEW,
                                 "title": "Overview",
                                 "description": "Overview of provider",
                                 "filename": "index.md",
                                 "subcategory": None,
-                                "content": "This is an overview of the module!",
-                                "id": 6344
+                                "content": "This is an overview of the provider!"
                             },
                             ("some_resource", "hcl"): {
                                 "type": terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
-                                "title": "multiple_versions_thing",
+                                "title": "mv_thing",
                                 "description": "Inital thing for multiple versions provider",
                                 "filename": "data-sources/thing.md",
                                 "subcategory": "some-subcategory",
-                                "content": "Documentation for generating a thing!",
-                                "id": 6345
+                                "content": "Documentation for generating a thing!"
                             },
                             ("some_resource", "python"): {
                                 "type": terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
-                                "title": "multiple_versions_thing",
+                                "title": "mv_thing",
                                 "description": "Inital thing for multiple versions provider written for python",
                                 "filename": "data-sources/thing.md",
                                 "subcategory": "some-subcategory",
-                                "content": "Documentation for generating a thing in python!",
-                                "id": 6346
+                                "content": "Documentation for generating a thing in python!"
                             },
                             ("some_new_resource", "hcl"): {
                                 "type": terrareg.provider_documentation_type.ProviderDocumentationType.RESOURCE,
-                                "title": "multiple_versions_thing_new",
+                                "title": "mv_thing_new",
                                 "description": "Description for new resource",
                                 "filename": "resources/new-thing.md",
                                 "subcategory": "some-second-subcategory",
@@ -3483,8 +3481,15 @@ This module:
  * Does something else
 
 and it _really_ *does* work!
-""",
-                                "id": 6347
+"""
+                            },
+                            ("some_thing", "hcl"): {
+                                "type": terrareg.provider_documentation_type.ProviderDocumentationType.DATA_SOURCE,
+                                "title": "mv_some_thing",
+                                "description": "A data source for some_thing",
+                                "filename": "data-sources/some-thing.md",
+                                "subcategory": "some-second-subcategory",
+                                "content": """This is a datasource some_thing"""
                             },
                         }
                     },
@@ -3495,7 +3500,18 @@ and it _really_ *does* work!
                     "2.0.1": {
                         "git_tag": "v2.0.1",
                         "gpg_key_fingerprint": "94CA72B7A2F4606A6C18211AE94A4F2AD628D926",
-                        "published_at": datetime(year=2023, month=10, day=1, hour=12, minute=5, second=56)
+                        "published_at": datetime(year=2023, month=10, day=1, hour=12, minute=5, second=56),
+                        "documentation": {
+                            ("index", "hcl"): {
+                                "type": terrareg.provider_documentation_type.ProviderDocumentationType.OVERVIEW,
+                                "title": "Overview",
+                                "description": "Overview of provider",
+                                "filename": "index.md",
+                                "subcategory": None,
+                                "content": "This is an overview of the latest version",
+                                "id": 6344
+                            },
+                        }
                     }
                 }
             },
@@ -3569,14 +3585,14 @@ zEfTVPTDbEt2CIXshg==
             }
         ],
         "providers": {
-            "multiple-versions": {
+            "mv": {
                 "repository": {
                     "provider_source": "Test Github Autogenerate",
-                    "provider_id": "second-provider-namespace/terraform-provider-multiple-versions",
-                    "name": "terraform-provider-multiple-versions",
+                    "provider_id": "second-provider-namespace/terraform-provider-mv",
+                    "name": "terraform-provider-mv",
                     "description": "Test Multiple Versions",
                     "owner": "second-provider-namespace",
-                    "clone_url": "https://git.example.com/second-provider-namespace/terraform-provider-multiple-versions.git",
+                    "clone_url": "https://git.example.com/second-provider-namespace/terraform-provider-mv.git",
                     "logo_url": "https://git.example.com/second-provider-namespace/terraform-provider-test-initial.png"
                 },
                 "category_slug": "visible-monitoring",
