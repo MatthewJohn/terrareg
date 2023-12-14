@@ -245,7 +245,7 @@ function setPublishedAt(providerDetails) {
     let publishedAtDiv = $("#published-at");
 
     let namespaceLinkDiv = $("<a></a>");
-    namespaceLinkDiv.attr("href", `/modules/${providerDetails.namespace}`);
+    namespaceLinkDiv.attr("href", `/providers/${providerDetails.namespace}`);
     namespaceLinkDiv.text(providerDetails.namespace);
 
     var options = {weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'};
