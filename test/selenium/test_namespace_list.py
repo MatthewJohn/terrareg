@@ -26,10 +26,12 @@ class TestNamespaceList(SeleniumTest):
         assert content.find_element(By.TAG_NAME, 'h1').text == 'Namespaces'
 
         expected_namespaces = [
-            ['javascriptinjection', 'javascriptinjection'], ['moduledetails', 'moduledetails'],
+            ['javascriptinjection', 'javascriptinjection'],
+            ['moduledetails', 'moduledetails'],
             ['modulesearch', 'modulesearch'],
             ['modulesearch-contributed', 'modulesearch-contributed'],
-            ['modulesearch-trusted', 'modulesearch-trusted'], ['mostrecent', 'mostrecent'],
+            ['modulesearch-trusted', 'modulesearch-trusted'],
+            ['mostrecent', 'mostrecent'],
             ['real_providers', 'real_providers'],
             ['relevancysearch', 'relevancysearch'],
             ['searchbynamespace', 'searchbynamespace'],
@@ -89,7 +91,9 @@ class TestNamespaceList(SeleniumTest):
         show_unpublished_checkbox.click()
 
         expected_namespaces = [
+            ['contributed-providersearch', 'contributed-providersearch'],
             ['emptynamespace', 'emptynamespace'],
+            ['initial-providers', 'initial-providers'],
             ['javascriptinjection', 'javascriptinjection'],
             ['moduledetails', 'moduledetails'],
             ['moduleextraction', 'moduleextraction'],
@@ -97,8 +101,6 @@ class TestNamespaceList(SeleniumTest):
             ['modulesearch-contributed', 'modulesearch-contributed'],
             ['modulesearch-trusted', 'modulesearch-trusted'],
             ['mostrecent', 'mostrecent'],
-            ['mostrecentunpublished', 'mostrecentunpublished'],
-            ['onlybeta', 'onlybeta']
         ]
 
         # Check namespaces
@@ -119,16 +121,17 @@ class TestNamespaceList(SeleniumTest):
 
         # Ensure new namespace lists are correct
         expected_namespaces = [
+            ['mostrecentunpublished', 'mostrecentunpublished'],
+            ['onlybeta', 'onlybeta'],
             ['onlyunpublished', 'onlyunpublished'],
+            ['providersearch', 'providersearch'],
+            ['providersearch-trusted', 'providersearch-trusted'],
             ['real_providers', 'real_providers'],
             ['relevancysearch', 'relevancysearch'],
             ['repo_url_tests', 'repo_url_tests'],
             ['scratchnamespace', 'scratchnamespace'],
             ['searchbynamespace', 'searchbynamespace'],
             ['testmodulecreation', 'testmodulecreation'],
-            ['testnamespace', 'testnamespace'],
-            ['trustednamespace', 'trustednamespace'],
-            ['unpublished-beta-version-module-providers', 'unpublished-beta-version-module-providers']
         ]
         # Check namespaces
         table_body = content.find_element(By.ID, 'namespaces-table-data')

@@ -38,6 +38,38 @@ class TestApiGithubRepositories(TerraregIntegrationTest):
             assert res.status_code == 200
             assert res.json == [
                 {
+                    'full_name': 'modulesearch-trusted/terraform-provider-mixedsearch-trusted-result',
+                    'id': 'modulesearch-trusted/terraform-provider-mixedsearch-trusted-result',
+                    'kind': 'provider',
+                    'owner_login': 'modulesearch-trusted',
+                    'owner_type': 'owner',
+                    'published_id': None
+                },
+                {
+                    'full_name': 'modulesearch-trusted/terraform-provider-mixedsearch-trusted-second-result',
+                    'id': 'modulesearch-trusted/terraform-provider-mixedsearch-trusted-second-result',
+                    'kind': 'provider',
+                    'owner_login': 'modulesearch-trusted',
+                    'owner_type': 'owner',
+                    'published_id': None
+                },
+                {
+                    'full_name': 'modulesearch-trusted/terraform-provider-mixedsearch-trusted-result-multiversion',
+                    'id': 'modulesearch-trusted/terraform-provider-mixedsearch-trusted-result-multiversion',
+                    'kind': 'provider',
+                    'owner_login': 'modulesearch-trusted',
+                    'owner_type': 'owner',
+                    'published_id': None
+                },
+                {
+                    'full_name': 'modulesearch-trusted/terraform-provider-mixedsearch-trusted-result-no-versions',
+                    'id': 'modulesearch-trusted/terraform-provider-mixedsearch-trusted-result-no-versions',
+                    'kind': 'provider',
+                    'owner_login': 'modulesearch-trusted',
+                    'owner_type': 'owner',
+                    'published_id': None
+                },
+                {
                     'full_name': 'initial-providers/terraform-provider-test-initial',
                     'id': 'initial-providers/terraform-provider-test-initial',
                     'kind': 'provider',

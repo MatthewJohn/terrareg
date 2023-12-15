@@ -11,6 +11,73 @@ from terrareg.provider_source_type import ProviderSourceType
 from test.selenium import SeleniumTest
 import terrareg.database
 
+
+class TestLoginNoProviderSources(SeleniumTest):
+    """Test login without providers sources."""
+
+    _PROVIDER_SOURCES = []
+    _TEST_DATA = {}
+    _USER_GROUP_DATA = {}
+
+    @classmethod
+    def setup_class(cls):
+        """Setup required mocks."""
+        cls._config_openid_connect_button_text = mock.patch('terrareg.config.Config.OPENID_CONNECT_LOGIN_TEXT', '')
+        cls._config_saml_button_text = mock.patch('terrareg.config.Config.SAML2_LOGIN_TEXT', '')
+        cls._config_admin_authentication_token = mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', '')
+        cls._config_enable_access_controls = mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', False)
+
+        cls._mock_github_get_login_redirect_url = mock.patch("terrareg.provider_source.github.GithubProviderSource.get_login_redirect_url", mock.MagicMock(return_value=None))
+        cls._mock_github_get_access_token = mock.patch('terrareg.provider_source.github.GithubProviderSource.get_user_access_token', mock.MagicMock(return_value=None))
+        cls._mock_github_get_username = mock.patch('terrareg.provider_source.github.GithubProviderSource.get_username', mock.MagicMock(return_value=None))
+        cls._mock_github_get_user_organisations = mock.patch('terrareg.provider_source.github.GithubProviderSource.get_user_organisations', mock.MagicMock(return_value=None))
+        cls._mock_github_update_repositories = mock.patch('terrareg.provider_source.github.GithubProviderSource.update_repositories', mock.MagicMock())
+
+        cls.register_patch(cls._config_openid_connect_button_text)
+        cls.register_patch(cls._config_saml_button_text)
+        cls.register_patch(cls._config_admin_authentication_token)
+        cls.register_patch(cls._config_enable_access_controls)
+        cls.register_patch(cls._mock_github_get_login_redirect_url)
+        cls.register_patch(cls._mock_github_get_access_token)
+        cls.register_patch(cls._mock_github_get_username)
+        cls.register_patch(cls._mock_github_get_user_organisations)
+        cls.register_patch(cls._mock_github_update_repositories)
+        super(TestLoginNoProviderSources, cls).setup_class()
+
+    def teardown_method(self, method):
+        """Clear down any cookes from the trst."""
+        self.selenium_instance.delete_all_cookies()
+        super(TestLoginNoProviderSources, self).teardown_method(method)
+
+    def _wait_for_login_form_ready(self):
+        """Wait for login form to be rendered"""
+        # Wait for login title
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'login-title').is_displayed(), True)
+
+    @pytest.mark.parametrize('admin_token,openid_enabled,saml_enabled,warning_shown', [
+        # Check warning is shown when no methods are available
+        ('', False, False, True),
+        # Cases where authentication method is enabled
+        ('pass', False, False, False),
+        ('', True, False, False),
+        ('', False, True, False)
+    ])
+    def test_no_authentication_methods_warning(self, admin_token, openid_enabled, saml_enabled, warning_shown):
+        """Test warning is shown when no authentication methods are available."""
+        with self.update_multiple_mocks(
+                (self._config_admin_authentication_token, 'new', admin_token),
+                (self._mock_openid_connect_is_enabled, 'return_value', openid_enabled),
+                (self._mock_saml2_is_enabled, 'return_value', saml_enabled)):
+            self.selenium_instance.get(self.get_url('/login'))
+            self._wait_for_login_form_ready()
+
+            # Ensure warning is displayed
+            warning = self.selenium_instance.find_element(By.ID, 'no-authentication-methods-warning')
+            assert warning.is_displayed() == warning_shown
+            if warning_shown:
+                assert warning.text == 'Login is not available as there are no authentication methods configured'
+
+
 class TestLogin(SeleniumTest):
     """Test homepage."""
 
@@ -48,29 +115,6 @@ class TestLogin(SeleniumTest):
         """Wait for login form to be rendered"""
         # Wait for login title
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'login-title').is_displayed(), True)
-
-    @pytest.mark.parametrize('admin_token,openid_enabled,saml_enabled,warning_shown', [
-        # Check warning is shown when no methods are available
-        ('', False, False, True),
-        # Cases where authentication method is enabled
-        ('pass', False, False, False),
-        ('', True, False, False),
-        ('', False, True, False)
-    ])
-    def test_no_authentication_methods_warning(self, admin_token, openid_enabled, saml_enabled, warning_shown):
-        """Test warning is shown when no authentication methods are available."""
-        with self.update_multiple_mocks(
-                (self._config_admin_authentication_token, 'new', admin_token),
-                (self._mock_openid_connect_is_enabled, 'return_value', openid_enabled),
-                (self._mock_saml2_is_enabled, 'return_value', saml_enabled)):
-            self.selenium_instance.get(self.get_url('/login'))
-            self._wait_for_login_form_ready()
-
-            # Ensure warning is displayed
-            warning = self.selenium_instance.find_element(By.ID, 'no-authentication-methods-warning')
-            assert warning.is_displayed() == warning_shown
-            if warning_shown:
-                assert warning.text == 'Login is not available as there are no authentication methods configured'
 
     def test_ensure_admin_authentication_not_shown(self):
         """Ensure admin login form is not shown when admin password is not configured"""
