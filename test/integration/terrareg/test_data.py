@@ -413,6 +413,108 @@ integration_test_data = {
                     '2.0.0': {}
                 }
             }},
+        },
+        "gpg_keys": [
+            {
+                # 2FBB73E62F48A2318973D4DA9DF31895CAF8E903
+                "ascii_armor": """
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mI0EZXgazAEEALMJj8pV4Et87l9V0wXmf/22YL+JURc/6ZwfLvj2J93BSVfq4vHL
+rbRnWcwz43vfMhS0Ev1ehLf2VcuWmTspRKsUlzpGhUec5I7cRSff6hh7qK4hcki4
+i8zaBdux+ZTY4FScUf6Q3Qu4LNKLxDlytxl8K0t6bwgldxd0gaK+kf6jABEBAAG0
+JEF1dG9nZW5lcmF0ZWQgS2V5IDxtYXR0aGV3QGxhcHRvcDIxPojOBBMBCgA4FiEE
+L7tz5i9IojGJc9TanfMYlcr46QMFAmV4GswCGy8FCwkIBwIGFQoJCAsCBBYCAwEC
+HgECF4AACgkQnfMYlcr46QPe7AP/T4VGH0b63eH2PquxFumLTdI0+eB3UP00tv72
+8BkLQJxxEm7MbqEfuiCxKXui9SvJbuCMuuy7epULD6eo0a+wKsPD8Be1jrcZtfPQ
+xdtWA7yWwR7CPFpdkoBlwQRmtt2fIAambJXkOtm3T1txXsBN24hD8AQsrRoCu0Ef
+cNnPcrQ=
+=Bzqm
+-----END PGP PUBLIC KEY BLOCK-----
+""".strip(),
+            }
+        ],
+        'providers': {
+            "mixedsearch-trusted-result": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "modulesearch-trusted/terraform-provider-mixedsearch-trusted-result",
+                    "name": "terraform-provider-mixedsearch-trusted-result",
+                    "description": "Test Multiple Versions",
+                    "owner": "modulesearch-trusted",
+                    "clone_url": "https://git.example.com/modulesearch-trusted/terraform-provider-mixedsearch-trusted-result.git",
+                    "logo_url": "https://git.example.com/modulesearch-trusted/terraform-provider-mixedsearch-trusted-result.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "community",
+                "versions": {
+                    "2.0.0": {
+                        "git_tag": "v2.0.0",
+                        "gpg_key_fingerprint": "2FBB73E62F48A2318973D4DA9DF31895CAF8E903",
+                    }
+                }
+            },
+            "mixedsearch-trusted-second-result": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "modulesearch-trusted/terraform-provider-mixedsearch-trusted-second-result",
+                    "name": "terraform-provider-mixedsearch-trusted-second-result",
+                    "description": "Test Multiple Versions",
+                    "owner": "modulesearch-trusted",
+                    "clone_url": "https://git.example.com/modulesearch-trusted/terraform-provider-mixedsearch-trusted-second-result.git",
+                    "logo_url": "https://git.example.com/modulesearch-trusted/terraform-provider-mixedsearch-trusted-second-result.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "community",
+                "versions": {
+                    "5.2.1": {
+                        "git_tag": "v5.2.1",
+                        "gpg_key_fingerprint": "2FBB73E62F48A2318973D4DA9DF31895CAF8E903",
+                    }
+                }
+            },
+            "mixedsearch-trusted-result-multiversion": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "modulesearch-trusted/terraform-provider-mixedsearch-trusted-result-multiversion",
+                    "name": "terraform-provider-mixedsearch-trusted-result-multiversion",
+                    "description": "Test Multiple Versions",
+                    "owner": "modulesearch-trusted",
+                    "clone_url": "https://git.example.com/modulesearch-trusted/terraform-provider-mixedsearch-trusted-result-multiversion.git",
+                    "logo_url": "https://git.example.com/modulesearch-trusted/terraform-provider-mixedsearch-trusted-result-multiversion.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "community",
+                "versions": {
+                    "1.2.3": {
+                        "git_tag": "v1.2.3",
+                        "gpg_key_fingerprint": "2FBB73E62F48A2318973D4DA9DF31895CAF8E903",
+                    },
+                    "2.0.0": {
+                        "git_tag": "v2.0.0",
+                        "gpg_key_fingerprint": "2FBB73E62F48A2318973D4DA9DF31895CAF8E903",
+                    }
+                }
+            },
+            "mixedsearch-trusted-result-no-versions": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "modulesearch-trusted/terraform-provider-mixedsearch-trusted-result-no-versions",
+                    "name": "terraform-provider-mixedsearch-trusted-result-no-versions",
+                    "description": "Test Multiple Versions",
+                    "owner": "modulesearch-trusted",
+                    "clone_url": "https://git.example.com/modulesearch-trusted/terraform-provider-mixedsearch-trusted-result-no-versions.git",
+                    "logo_url": "https://git.example.com/modulesearch-trusted/terraform-provider-mixedsearch-trusted-result-no-versions.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "community",
+                "versions": {
+                }
+            },
         }
     },
     'searchbynamespace': {
@@ -1260,109 +1362,5 @@ HgECF4AACgkQWR74TcXtzWiD3AP9ErpdQh7d50o4vIozzkJGVw3YwZLUJv+Poa9n
                 }
             },
         },
-    },
-    'modulesearch-trusted': {
-        "gpg_keys": [
-            {
-                # 2FBB73E62F48A2318973D4DA9DF31895CAF8E903
-                "ascii_armor": """
------BEGIN PGP PUBLIC KEY BLOCK-----
-
-mI0EZXgazAEEALMJj8pV4Et87l9V0wXmf/22YL+JURc/6ZwfLvj2J93BSVfq4vHL
-rbRnWcwz43vfMhS0Ev1ehLf2VcuWmTspRKsUlzpGhUec5I7cRSff6hh7qK4hcki4
-i8zaBdux+ZTY4FScUf6Q3Qu4LNKLxDlytxl8K0t6bwgldxd0gaK+kf6jABEBAAG0
-JEF1dG9nZW5lcmF0ZWQgS2V5IDxtYXR0aGV3QGxhcHRvcDIxPojOBBMBCgA4FiEE
-L7tz5i9IojGJc9TanfMYlcr46QMFAmV4GswCGy8FCwkIBwIGFQoJCAsCBBYCAwEC
-HgECF4AACgkQnfMYlcr46QPe7AP/T4VGH0b63eH2PquxFumLTdI0+eB3UP00tv72
-8BkLQJxxEm7MbqEfuiCxKXui9SvJbuCMuuy7epULD6eo0a+wKsPD8Be1jrcZtfPQ
-xdtWA7yWwR7CPFpdkoBlwQRmtt2fIAambJXkOtm3T1txXsBN24hD8AQsrRoCu0Ef
-cNnPcrQ=
-=Bzqm
------END PGP PUBLIC KEY BLOCK-----
-""".strip(),
-            }
-        ],
-        'providers': {
-            "mixedsearch-trusted-result": {
-                "repository": {
-                    "provider_source": "Test Github Autogenerate",
-                    "provider_id": "modulesearch-trusted/terraform-provider-mixedsearch-trusted-result",
-                    "name": "terraform-provider-mixedsearch-trusted-result",
-                    "description": "Test Multiple Versions",
-                    "owner": "modulesearch-trusted",
-                    "clone_url": "https://git.example.com/modulesearch-trusted/terraform-provider-mixedsearch-trusted-result.git",
-                    "logo_url": "https://git.example.com/modulesearch-trusted/terraform-provider-mixedsearch-trusted-result.png"
-                },
-                "category_slug": "visible-monitoring",
-                "use_default_provider_source_auth": True,
-                "tier": "community",
-                "versions": {
-                    "2.0.0": {
-                        "git_tag": "v2.0.0",
-                        "gpg_key_fingerprint": "2FBB73E62F48A2318973D4DA9DF31895CAF8E903",
-                    }
-                }
-            },
-            "mixedsearch-trusted-second-result": {
-                "repository": {
-                    "provider_source": "Test Github Autogenerate",
-                    "provider_id": "modulesearch-trusted/terraform-provider-mixedsearch-trusted-second-result",
-                    "name": "terraform-provider-mixedsearch-trusted-second-result",
-                    "description": "Test Multiple Versions",
-                    "owner": "modulesearch-trusted",
-                    "clone_url": "https://git.example.com/modulesearch-trusted/terraform-provider-mixedsearch-trusted-second-result.git",
-                    "logo_url": "https://git.example.com/modulesearch-trusted/terraform-provider-mixedsearch-trusted-second-result.png"
-                },
-                "category_slug": "visible-monitoring",
-                "use_default_provider_source_auth": True,
-                "tier": "community",
-                "versions": {
-                    "5.2.1": {
-                        "git_tag": "v5.2.1",
-                        "gpg_key_fingerprint": "2FBB73E62F48A2318973D4DA9DF31895CAF8E903",
-                    }
-                }
-            },
-            "mixedsearch-trusted-result-multiversion": {
-                "repository": {
-                    "provider_source": "Test Github Autogenerate",
-                    "provider_id": "modulesearch-trusted/terraform-provider-mixedsearch-trusted-result-multiversion",
-                    "name": "terraform-provider-mixedsearch-trusted-result-multiversion",
-                    "description": "Test Multiple Versions",
-                    "owner": "modulesearch-trusted",
-                    "clone_url": "https://git.example.com/modulesearch-trusted/terraform-provider-mixedsearch-trusted-result-multiversion.git",
-                    "logo_url": "https://git.example.com/modulesearch-trusted/terraform-provider-mixedsearch-trusted-result-multiversion.png"
-                },
-                "category_slug": "visible-monitoring",
-                "use_default_provider_source_auth": True,
-                "tier": "community",
-                "versions": {
-                    "1.2.3": {
-                        "git_tag": "v1.2.3",
-                        "gpg_key_fingerprint": "2FBB73E62F48A2318973D4DA9DF31895CAF8E903",
-                    },
-                    "2.0.0": {
-                        "git_tag": "v2.0.0",
-                        "gpg_key_fingerprint": "2FBB73E62F48A2318973D4DA9DF31895CAF8E903",
-                    }
-                }
-            },
-            "mixedsearch-trusted-result-no-versions": {
-                "repository": {
-                    "provider_source": "Test Github Autogenerate",
-                    "provider_id": "modulesearch-trusted/terraform-provider-mixedsearch-trusted-result-no-versions",
-                    "name": "terraform-provider-mixedsearch-trusted-result-no-versions",
-                    "description": "Test Multiple Versions",
-                    "owner": "modulesearch-trusted",
-                    "clone_url": "https://git.example.com/modulesearch-trusted/terraform-provider-mixedsearch-trusted-result-no-versions.git",
-                    "logo_url": "https://git.example.com/modulesearch-trusted/terraform-provider-mixedsearch-trusted-result-no-versions.png"
-                },
-                "category_slug": "visible-monitoring",
-                "use_default_provider_source_auth": True,
-                "tier": "community",
-                "versions": {
-                }
-            },
-        }
     },
 }
