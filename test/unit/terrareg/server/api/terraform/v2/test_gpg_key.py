@@ -95,9 +95,49 @@ qaXczEQ=
 -----END PGP PUBLIC KEY BLOCK-----
 
 """.strip(),
-            }
+            },
+            {
+                # 4703BD2FD3F62F9EBED9936D91F8403784C7F127
+                "ascii_armor": """
+-----BEGIN PGP PUBLIC KEY BLOCK-----
 
-        ]
+mI0EZXv5UgEEAOXiZ+GWol1SJrokFhwtyyt9xsSvJVWfj7PDRoM4XFyWM6SWpITK
+38wjPKPl5xSRYCaY7eJwLJLuqepMi2hRZCi7tvgYSqu0uVtVuEkGpRXIRlHgLRZ5
+bkKuHo7ClSDDfkMHaNz2KyG8H6OFJCf7W59ktbvkYtk1avgFyAL5+RovABEBAAG0
+JEF1dG9nZW5lcmF0ZWQgS2V5IDxtYXR0aGV3QGxhcHRvcDIxPojOBBMBCgA4FiEE
+RwO9L9P2L56+2ZNtkfhAN4TH8ScFAmV7+VICGy8FCwkIBwIGFQoJCAsCBBYCAwEC
+HgECF4AACgkQkfhAN4TH8SfcowQAsLaG15wW8ZQ2zHh/IgyVku3r8BKI3IV22rkC
+6IhwujdBcUd/FqRmPwCJ+fgbVJjt1HNAFdlQyX1YUJhOeq6sfgDFgu1o53j1R1aZ
+3z1djSJoM5H9MzAOdki/HYVVQu8vqH/r/0HbIjuuG2bhkrbE6RMbAZkCSWN/cwBW
+1/Ht1b0=
+=uFHw
+-----END PGP PUBLIC KEY BLOCK-----
+
+""".strip(),
+            }
+        ],
+        "providers": {
+            "in-use": {
+                "repository": {
+                    "provider_source": "Test Github Autogenerate",
+                    "provider_id": "second-namespace/terraform-provider-in-use",
+                    "name": "terraform-provider-in-use",
+                    "description": "Empty Provider Publish",
+                    "owner": "second-namespace",
+                    "clone_url": "https://git.example.com/initalproviders/terraform-provider-in-use.git",
+                    "logo_url": "https://git.example.com/initalproviders/terraform-provider-test-initial.png"
+                },
+                "category_slug": "visible-monitoring",
+                "use_default_provider_source_auth": True,
+                "tier": "community",
+                "versions": {
+                    "1.0.0": {
+                        "git_tag": "v1.0.0",
+                        "gpg_key_fingerprint": "4703BD2FD3F62F9EBED9936D91F8403784C7F127"
+                    }
+                }
+            },
+        }
     }
 }
 
@@ -191,6 +231,26 @@ class TestApiGpgKeyDelete(TerraregIntegrationTest):
         mock_check_csrf_token.assert_called_once_with('testcsrf')
         assert res.status_code == 201
         assert res.json == {}
+
+        with test_request_context:
+            gpg_key = terrareg.models.GpgKey.get_by_fingerprint("C86CB378D2FE185EF6B129511EA75F18C926FB95")
+            assert gpg_key is None
+
+    def test_delete_in_use_gpg_key(self, client, test_request_context):
+        """Test deleting a GPG key that is in use."""
+        with test_request_context:
+            gpg_key = terrareg.models.GpgKey.get_by_fingerprint("4703BD2FD3F62F9EBED9936D91F8403784C7F127")
+        mock_check_csrf_token = unittest.mock.MagicMock()
+        with unittest.mock.patch('terrareg.csrf.check_csrf_token', mock_check_csrf_token):
+            res = client.delete(f'/v2/gpg-keys/second-namespace/{gpg_key.pk}', json={'csrf_token': 'testcsrf'})
+
+        mock_check_csrf_token.assert_called_once_with('testcsrf')
+        assert res.status_code == 500
+        assert res.json == {"status": "Error", "message": "Cannot delete GPG key as it is used by provider versions"}
+
+        with test_request_context:
+            gpg_key = terrareg.models.GpgKey.get_by_fingerprint("4703BD2FD3F62F9EBED9936D91F8403784C7F127")
+            assert gpg_key is not None
 
     def test_non_matching_key_id_and_namespace(self, client, test_request_context):
         """Test endpoint with non matching key ID and namespace."""

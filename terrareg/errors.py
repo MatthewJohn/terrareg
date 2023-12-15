@@ -406,3 +406,9 @@ class ProviderVersionBinaryAlreadyExistsError(TerraregError):
     """Provider version binary already exists"""
 
     pass
+
+
+class GpgKeyInUseError(TerraregError):
+    """GPG key is in use by provider versions and cannot be deleted"""
+
+    pass

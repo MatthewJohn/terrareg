@@ -27,7 +27,7 @@ import terrareg.audit_action
 from terrareg.namespace_type import NamespaceType
 import terrareg.result_data
 from terrareg.errors import (
-    DuplicateGpgKeyError, DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, InvalidGpgKeyError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
+    DuplicateGpgKeyError, DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, GpgKeyInUseError, InvalidGpgKeyError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
     InvalidVersionError, ModuleProviderRedirectForceDeletionNotAllowedError, ModuleProviderRedirectInUseError, NamespaceAlreadyExistsError, NamespaceNotEmptyError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError, NonExistentModuleProviderRedirectError, NonExistentNamespaceRedirectError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError, RepositoryUrlContainsInvalidTemplateError,
     RepositoryUrlDoesNotContainValidSchemeError,
@@ -45,6 +45,7 @@ from terrareg.validators import GitUrlValidator
 from terrareg.constants import EXTRACTION_VERSION
 from terrareg.presigned_url import TerraformSourcePresignedUrl
 import terrareg.provider_model
+import terrareg.provider_version_model
 import terrareg.registry_resource_type
 
 
@@ -1450,6 +1451,22 @@ class GpgKey:
 
         return self._cache_db_row
 
+    def get_all_provider_versions(self) -> List['terrareg.provider_version_model.ProviderVersion']:
+        """Obtain list of provider versions that reference the GPG key"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(
+                sqlalchemy.select(
+                    db.provider_version.c.id
+                ).select_from(
+                    db.provider_version
+                ).where(db.provider_version.c.gpg_key_id==self.pk)
+            ).all()
+            return [
+                terrareg.provider_version_model.ProviderVersion.get_by_pk(pk=row['id'])
+                for row in res
+            ]
+
     def verify_data_signature(self, signature: bytes, data: bytes):
         """Check if GPG key matches signature"""
         with self._get_gpg_object(ascii_armor=self.ascii_armor) as (gpg_object, _):
@@ -1461,6 +1478,9 @@ class GpgKey:
 
     def delete(self):
         """Delete GPG key"""
+        if self.get_all_provider_versions():
+            raise GpgKeyInUseError('Cannot delete GPG key as it is used by provider versions')
+
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.GPG_KEY_DELETE,
             object_type=self.__class__.__name__,
