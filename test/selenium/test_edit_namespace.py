@@ -11,6 +11,8 @@ from test import mock_create_audit_event
 from terrareg.database import Database
 from test.selenium import SeleniumTest
 from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
+import terrareg.models
+
 
 class TestEditNamespace(SeleniumTest):
     """Test create_module_provider page."""
@@ -71,10 +73,10 @@ class TestEditNamespace(SeleniumTest):
 
             # Ensure namespace is deleted
             assert Namespace.get("test-deletion") is None
-        
+
         finally:
             # Clear up namespace from deletion test
-            with mock_create_audit_event:    
+            with mock_create_audit_event:
                 if namespace := Namespace.get("test-deletion"):
                     namespace.delete()
 
@@ -109,8 +111,64 @@ class TestEditNamespace(SeleniumTest):
 
             # Ensure namespace is not deleted
             assert Namespace.get("test-deletion") is not None
-        
+
         finally:
             with mock_create_audit_event:
                 module_provider.delete()
                 namespace.delete()
+
+    def test_add_delete_gpg_key(self):
+        """Test add and deleting GPG key"""
+        self.perform_admin_authentication(password="unittest-password")
+        self.selenium_instance.get(self.get_url("/edit-namespace/second-provider-namespace"))
+
+        gpg_key_table = self.selenium_instance.find_element(By.ID, "gpg-key-table-data")
+        assert [row.text for row in gpg_key_table.find_elements(By.TAG_NAME, "tr")] == [
+            "E42600BAB40EE715\nDelete"
+        ]
+
+        gpg_input = self.selenium_instance.find_element(By.ID, "create-gpg-key-ascii-armor")
+        assert gpg_input.get_attribute("value") == ""
+        gpg_input.send_keys("""
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mI0EZXvmywEEAL9R5rql33+BP0A1ioqoZuiK9WJqCagtAYqURVlk0OQtw05CSLl3
+GzkGzwa+b8sJu2e0Q1WvHxe05qFZXmWlhql47fKoHdn5rp4UYy+qt0/347stT1GS
+xukGLpVLHutScsZE16jAWxCO00SthMDpRr4n3hkFshb+rSRMARuNLndvABEBAAG0
+JEF1dG9nZW5lcmF0ZWQgS2V5IDxtYXR0aGV3QGxhcHRvcDIxPojOBBMBCgA4FiEE
+R/TsPhFrKYk6/XuAu1qLOJMNyu8FAmV75ssCGy8FCwkIBwIGFQoJCAsCBBYCAwEC
+HgECF4AACgkQu1qLOJMNyu/c9wP/cic9RRl83lyfM+U7GfGmzegQnEU+qoLyB6H4
+ldT5r1sVHeKIYxgKBAPFnasPEqFfXhOS9wsbJZNC1tq+i1TQla0PectWTlBrBjDJ
+n9wkhjrvcVuqfzvFSX6JA+BmRuQdXmDll3gPSzfXUtrIEcIy8S40liVXsnQaoJ6C
+2INHHhk=
+=uOWN
+-----END PGP PUBLIC KEY BLOCK-----
+""")
+        self.selenium_instance.find_element(By.ID, "create-gpg-key-form").find_element(By.XPATH, ".//button[text()='Add GPG Key']").click()
+
+        # 47F4EC3E116B29893AFD7B80BB5A8B38930DCAEF
+        self.assert_equals(lambda: terrareg.models.GpgKey.get_by_fingerprint("47F4EC3E116B29893AFD7B80BB5A8B38930DCAEF") is not None, True)
+
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, "gpg-key-table-data").find_element(By.XPATH, ".//td[text()='BB5A8B38930DCAEF']").is_displayed(), True)
+        gpg_key_row = self.selenium_instance.find_element(By.ID, "gpg-key-table-data").find_element(By.XPATH, ".//td[text()='BB5A8B38930DCAEF']/..")
+        gpg_key_row.find_element(By.XPATH, ".//button[text()='Delete']").click()
+
+        self.assert_equals(lambda: terrareg.models.GpgKey.get_by_fingerprint("47F4EC3E116B29893AFD7B80BB5A8B38930DCAEF") is None, True)
+
+        gpg_key_table = self.selenium_instance.find_element(By.ID, "gpg-key-table-data")
+        assert [row.text for row in gpg_key_table.find_elements(By.TAG_NAME, "tr")] == [
+            "E42600BAB40EE715\nDelete"
+        ]
+
+    def test_add_invalid_gpg_key(self):
+        """Test adding invalid GPG key"""
+        self.perform_admin_authentication(password="unittest-password")
+        self.selenium_instance.get(self.get_url("/edit-namespace/second-provider-namespace"))
+
+        gpg_input = self.selenium_instance.find_element(By.ID, "create-gpg-key-ascii-armor")
+        gpg_input.send_keys("blah blah")
+        self.selenium_instance.find_element(By.ID, "create-gpg-key-form").find_element(By.XPATH, ".//button[text()='Add GPG Key']").click()
+
+        error = self.wait_for_element(By.ID, "create-gpg-key-error")
+        assert error.is_displayed() is True
+        assert error.text == "GPG key provided is invalid or could not be read"
