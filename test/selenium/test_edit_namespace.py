@@ -117,6 +117,31 @@ class TestEditNamespace(SeleniumTest):
                 module_provider.delete()
                 namespace.delete()
 
+    def test_delete_namespace_with_providers(self):
+        """Test attempt to delete namespace with providers present"""
+        self.perform_admin_authentication(password="unittest-password")
+
+        self.selenium_instance.get(self.get_url("/edit-namespace/initial-providers"))
+
+        # Ensure deletion error is not shown
+        assert self.selenium_instance.find_element(By.ID, "delete-error").is_displayed() is False
+
+        delete_button = self.selenium_instance.find_element(By.ID, "deleteNamespaceButton")
+        assert delete_button.is_displayed() is True
+
+        delete_button.click()
+
+        # Ensure user is still on namespace edit page
+        assert self.selenium_instance.current_url == self.get_url("/edit-namespace/initial-providers")
+
+        # Ensure error is correctly shown
+        error = self.selenium_instance.find_element(By.ID, "delete-error")
+        assert error.is_displayed() is True
+        assert error.text == "Namespace cannot be deleted as it contains providers"
+
+        # Ensure namespace is not deleted
+        assert Namespace.get("initial-providers") is not None
+
     def test_add_delete_gpg_key(self):
         """Test add and deleting GPG key"""
         self.perform_admin_authentication(password="unittest-password")

@@ -1186,6 +1186,25 @@ class Namespace(object):
             'display_name': self.display_name
         }
 
+    def get_all_providers(self) -> List['terrareg.provider_model.Provider']:
+        """Return all providers for namespace."""
+        db = Database.get()
+        select = sqlalchemy.select(
+            db.provider.c.name.label('provider_name')
+        ).select_from(db.provider).join(
+            db.namespace, db.provider.c.namespace_id==db.namespace.c.id
+        ).where(
+            db.namespace.c.namespace==self.name
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(select)
+            providers = [r['provider_name'] for r in res]
+
+        return [
+            terrareg.provider_model.Provider(namespace=self, name=provider)
+            for provider in providers
+        ]
+
     def get_all_modules(self):
         """Return all modules for namespace."""
         db = Database.get()
@@ -1212,6 +1231,9 @@ class Namespace(object):
         # Check for any modules in the namespace
         if self.get_all_modules():
             raise NamespaceNotEmptyError("Namespace cannot be deleted as it contains modules")
+
+        if self.get_all_providers():
+            raise NamespaceNotEmptyError("Namespace cannot be deleted as it contains providers")
 
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.NAMESPACE_DELETE,
