@@ -245,7 +245,7 @@ def test_provider(test_repository, test_namespace, test_provider_category):
     with db.get_connection() as conn:
         conn.execute(db.provider.update(db.provider.c.id==provider_id).values(
             name="unittest-create-provider-name",
-            description=db.encode_blob("Unittest provider description")
+            description="Unittest provider description"
         ))
     provider._name = "unittest-create-provider-name"
     provider._cache_db_row = None

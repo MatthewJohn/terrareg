@@ -336,7 +336,7 @@ class TestProvider(TerraregIntegrationTest):
 
     def test_description(self, test_provider):
         """Test description property"""
-        assert test_provider.description == "Unit test repo for Terraform Provider"
+        assert test_provider.description == "Unittest provider description"
 
     def test_alias(self, test_provider):
         """Test alias property"""
