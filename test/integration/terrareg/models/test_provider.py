@@ -80,7 +80,7 @@ class TestProvider(TerraregIntegrationTest):
             row['id'] = 1
             assert row == {
                 'default_provider_source_auth': use_default_provider_source_auth,
-                'description': b'Unit test repo for Terraform Provider',
+                'description': 'Unit test repo for Terraform Provider',
                 'id': 1,
                 'latest_version_id': None,
                 'name': 'unittest-create',
@@ -684,13 +684,11 @@ class TestProvider(TerraregIntegrationTest):
             with db.get_connection() as conn:
                 conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
 
-
-
     def test_update_attributes(self, test_provider):
         """Test update_attributes method"""
         test_provider._cache_db_row = None
         db_row = test_provider._get_db_row()
-        assert db_row["description"] == terrareg.database.Database.encode_blob("Unittest provider description")
+        assert db_row["description"] == "Unittest provider description"
         assert db_row["tier"] is terrareg.provider_tier.ProviderTier.COMMUNITY
         assert db_row["default_provider_source_auth"] is True
 
@@ -703,7 +701,7 @@ class TestProvider(TerraregIntegrationTest):
         # Ensure cached DB row is flushed and get_db_row immediately returns new data
         assert test_provider._cache_db_row is None
         new_db_row = test_provider._get_db_row()
-        assert new_db_row["description"] == terrareg.database.Database.encode_blob("New Description")
+        assert new_db_row["description"] == "New Description"
         assert new_db_row["tier"] is terrareg.provider_tier.ProviderTier.OFFICIAL
         assert new_db_row["default_provider_source_auth"] is False
 
