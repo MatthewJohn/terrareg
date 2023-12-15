@@ -60,7 +60,7 @@
 
         // If there is only 1 namespace, redirect to it
         if (namespaces.length == 1) {
-            window.location.href = namespaces[0].view_href;
+            window.location.href = `/${type}s/${namespaces[0].name}`;
         }
 
         getResults(type, 0);
