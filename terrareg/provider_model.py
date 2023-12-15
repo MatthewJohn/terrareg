@@ -7,7 +7,7 @@ Module for Provider model.
 from distutils.version import LooseVersion
 import os
 import re
-from typing import Union, List
+from typing import Optional, Union, List
 
 import sqlalchemy
 
@@ -193,7 +193,7 @@ class Provider:
         return repository.provider_source.get_public_source_url(repository)
 
     @property
-    def description(self) -> str:
+    def description(self) -> Optional[str]:
         """Return provider description"""
         return self._get_db_row()['description']
 
