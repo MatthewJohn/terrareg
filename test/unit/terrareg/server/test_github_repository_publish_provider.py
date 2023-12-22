@@ -21,6 +21,7 @@ import terrareg.provider_version_model
 import terrareg.provider_model
 import terrareg.provider_source.factory
 import terrareg.models
+import terrareg.provider_source.repository_release_metadata
 
 
 @pytest.fixture
@@ -214,6 +215,109 @@ class TestApiGithubRepositoryPublishProvider(TerraregIntegrationTest):
             mock_get_github_app_installation_id.assert_called_once_with(namespace=terrareg.models.Namespace.get("initial-providers"))
             mock_check_namespace_access.assert_called_once_with(UserGroupNamespacePermissionType.FULL, namespace='initial-providers')
             mock_refresh_versions.assert_called_once_with(limit=1)
+
+    def test_refresh_versions_extraction_terrareg_exception(self, client, test_github_provider_source, test_repository_create):
+        """Test refresh_versions method with Terrareg exception raised when extracting version"""
+        self._get_current_auth_method_mock.stop()
+        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=AdminSessionAuthMethod())
+
+        class UnittestExtractionException(terrareg.errors.TerraregError):
+            pass
+
+
+        def raise_process_version_exception(*args, **kwargs):
+            """Raise exception when attempting to extract provider"""
+            raise UnittestExtractionException("Unit test generic exception")
+
+        db = terrareg.database.Database.get()
+        with db.get_connection() as conn:
+            rows = conn.execute(db.provider_version.select()).all()
+            pre_existing_provider_version_count = len(rows)
+
+        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
+                unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource.get_github_app_installation_id', unittest.mock.MagicMock(return_value='unittestinstallationid')) as mock_get_github_app_installation_id, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', unittest.mock.MagicMock(return_value=True)) as mock_check_csrf, \
+                test_repository_create(test_github_provider_source) as test_repository, \
+                unittest.mock.patch('terrareg.provider_extractor.ProviderExtractor.obtain_gpg_key',
+                                    unittest.mock.MagicMock(return_value=terrareg.models.GpgKey.get_by_fingerprint("21A74E4E3FDFE438532BD58434DE374AC3640CDB"))) as mock_obtain_gpg_key, \
+                unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource.get_new_releases',
+                                    unittest.mock.MagicMock(return_value=[
+                                        terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
+                                            name="v1.0.0",
+                                            tag="v1.0.0",
+                                            archive_url=f"https://git.example.com/some-organisation/terraform-provider-unittest-create/1.0.0-source.tgz",
+                                            commit_hash="abcefg123100",
+                                            provider_id="provider-123-id",
+                                            release_artifacts=[]
+                                        )])) as mock_get_new_releases, \
+                unittest.mock.patch('terrareg.provider_extractor.ProviderExtractor.process_version',
+                                    unittest.mock.MagicMock(side_effect=raise_process_version_exception)) as mock_process_version:
+
+            res = client.post(f"/test-github-provider/repositories/125563113/publish-provider", data={"csrf_token": "test", "category_id": 523})
+            assert res.status_code == 400
+            assert res.json == {'message': 'No valid releases found for provider', 'status': 'Error'}
+            mock_check_csrf.assert_called_once_with('test')
+
+            mock_get_new_releases.assert_called_once()
+
+            with db.get_connection() as conn:
+                # Ensure no providers were created in database
+                rows = conn.execute(db.provider.select(db.provider.c.repository_id==test_repository.pk)).all()
+                assert len(rows) == 0
+                # Ensure no new provider versions are present
+                rows = conn.execute(db.provider_version.select()).all()
+                assert len(rows) == pre_existing_provider_version_count
+
+    def test_refresh_versions_extraction_generic_exception(self, client, test_github_provider_source, test_repository_create):
+        """Test refresh_versions method with generic exception raised when extracting version"""
+        self._get_current_auth_method_mock.stop()
+        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=AdminSessionAuthMethod())
+
+        class UnittestExtractionException(Exception):
+            pass
+
+        def raise_process_version_exception(*args, **kwargs):
+            """Raise exception when attempting to extract provider"""
+            raise UnittestExtractionException("Unit test generic exception")
+
+        db = terrareg.database.Database.get()
+        with db.get_connection() as conn:
+            rows = conn.execute(db.provider_version.select()).all()
+            pre_existing_provider_version_count = len(rows)
+
+        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
+                unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource.get_github_app_installation_id', unittest.mock.MagicMock(return_value='unittestinstallationid')) as mock_get_github_app_installation_id, \
+                unittest.mock.patch('terrareg.csrf.check_csrf_token', unittest.mock.MagicMock(return_value=True)) as mock_check_csrf, \
+                test_repository_create(test_github_provider_source) as test_repository, \
+                unittest.mock.patch('terrareg.provider_extractor.ProviderExtractor.obtain_gpg_key',
+                                    unittest.mock.MagicMock(return_value=terrareg.models.GpgKey.get_by_fingerprint("21A74E4E3FDFE438532BD58434DE374AC3640CDB"))) as mock_obtain_gpg_key, \
+                unittest.mock.patch('terrareg.provider_source.github.GithubProviderSource.get_new_releases',
+                                    unittest.mock.MagicMock(return_value=[
+                                        terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata(
+                                            name="v1.0.0",
+                                            tag="v1.0.0",
+                                            archive_url=f"https://git.example.com/some-organisation/terraform-provider-unittest-create/1.0.0-source.tgz",
+                                            commit_hash="abcefg123100",
+                                            provider_id="provider-123-id",
+                                            release_artifacts=[]
+                                        )])) as mock_get_new_releases, \
+                unittest.mock.patch('terrareg.provider_extractor.ProviderExtractor.process_version',
+                                    unittest.mock.MagicMock(side_effect=raise_process_version_exception)) as mock_process_version:
+
+            res = client.post(f"/test-github-provider/repositories/125563113/publish-provider", data={"csrf_token": "test", "category_id": 523})
+            assert res.status_code == 500
+            assert res.json == {'message': 'An internal server error occurred', 'status': 'Error'}
+            mock_check_csrf.assert_called_once_with('test')
+
+            mock_get_new_releases.assert_called_once()
+
+            with db.get_connection() as conn:
+                # Ensure no providers were created in database
+                rows = conn.execute(db.provider.select(db.provider.c.repository_id==test_repository.pk)).all()
+                assert len(rows) == 0
+                # Ensure no new provider versions are present
+                rows = conn.execute(db.provider_version.select()).all()
+                assert len(rows) == pre_existing_provider_version_count
 
     def test_github_without_permissions(self, client, test_github_provider_source, test_repository_create):
         """Test endpoint whilst authenticated with github without namespace access"""

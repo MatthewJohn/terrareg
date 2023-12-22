@@ -1,5 +1,6 @@
 """Provide database class."""
 
+from contextlib import contextmanager
 import sqlalchemy
 import sqlalchemy.dialects.mysql
 
@@ -867,6 +868,26 @@ class Database():
             raise Exception('Already within database transaction')
         conn = Database.get().get_connection()
         return Transaction(conn)
+
+    @classmethod
+    @contextmanager
+    def get_new_transaction_or_nested(cls):
+        """Obtain new transaction, if there isn't one otherwise, start a nested transaction"""
+        current_transaction = cls.get_current_transaction()
+        if current_transaction:
+            nested = current_transaction.begin_nested()
+            try:
+                yield nested
+            except:
+                nested.rollback()
+                raise
+        else:
+            with cls.start_transaction() as transaction:
+                try:
+                    yield transaction.transaction
+                except:
+                    transaction.transaction.rollback()
+                    raise
 
     @classmethod
     def get_connection(cls):

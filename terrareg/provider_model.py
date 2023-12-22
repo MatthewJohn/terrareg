@@ -355,22 +355,18 @@ class Provider:
             if not gpg_key:
                 raise CouldNotFindGpgKeyForProviderVersionError(f"Could not find a valid GPG key to verify the signature of the release: {release_metadata.name}")
 
-            current_transaction = terrareg.database.Database.get_current_transaction()
-            nested_transaction = None
-            if current_transaction:
-                nested_transaction = current_transaction.begin_nested()
-            try:
-                with provider_version.create_extraction_wrapper(git_tag=release_metadata.tag, gpg_key=gpg_key):
-                    provider_extractor = terrareg.provider_extractor.ProviderExtractor(
-                        provider_version=provider_version,
-                        release_metadata=release_metadata
-                    )
-                    provider_extractor.process_version()
-            except TerraregError:
-                # If an error occurs with the version, rollback nested transaction,
-                # and try next version
-                if nested_transaction:
-                    nested_transaction.rollback()
+            with terrareg.database.Database.get_new_transaction_or_nested() as transaction:
+                try:
+                    with provider_version.create_extraction_wrapper(git_tag=release_metadata.tag, gpg_key=gpg_key):
+                        provider_extractor = terrareg.provider_extractor.ProviderExtractor(
+                            provider_version=provider_version,
+                            release_metadata=release_metadata
+                        )
+                        provider_extractor.process_version()
+                    transaction.commit()
+                except TerraregError:
+                    transaction.rollback()
+                    continue
 
             provider_versions.append(provider_version)
             if limit and len(provider_versions) >= limit:
