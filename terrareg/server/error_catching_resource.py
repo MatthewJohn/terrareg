@@ -36,12 +36,6 @@ class ErrorCatchingResource(Resource, BaseHandler):
                 "status": "Error",
                 "message": str(exc)
             }, 500
-        except:
-            print(traceback.format_exc())
-            return {
-                "status": "Error",
-                "message": "An internal server error occurred"
-            }, 500
 
     def _post(self, *args, **kwargs):
         """Placeholder for overridable post method."""
@@ -60,12 +54,6 @@ class ErrorCatchingResource(Resource, BaseHandler):
                 "status": "Error",
                 "message": str(exc)
             }, 500
-        except:
-            print(traceback.format_exc())
-            return {
-                "status": "Error",
-                "message": "An internal server error occurred"
-            }, 500
 
     def _delete(self, *args, **kwargs):
         """Placeholder for overridable delete method."""
@@ -83,12 +71,6 @@ class ErrorCatchingResource(Resource, BaseHandler):
             return {
                 "status": "Error",
                 "message": str(exc)
-            }, 500
-        except:
-            print(traceback.format_exc())
-            return {
-                "status": "Error",
-                "message": "An internal server error occurred"
             }, 500
 
     def _get_404_response(self):

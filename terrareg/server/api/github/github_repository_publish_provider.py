@@ -104,7 +104,12 @@ class GithubRepositoryPublishProvider(ErrorCatchingResource):
                 return {'status': 'Error', 'message': 'An error occurred whilst creating provider'}, 500
 
             # Attempt to obtain 1 valid version
-            versions = provider.refresh_versions(limit=1)
+            try:
+                versions = provider.refresh_versions(limit=1)
+            except:
+                transaction.transaction.rollback()
+                return {'status': 'Error', 'message': 'An internal server error occurred'}, 500
+
             if not versions:
                 transaction.transaction.rollback()
                 return {'status': 'Error', 'message': 'No valid releases found for provider'}, 400
