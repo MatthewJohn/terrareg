@@ -20,7 +20,7 @@ class TestProviderSearch(SeleniumTest):
         cls.register_patch(mock.patch('terrareg.config.Config.CONTRIBUTED_NAMESPACE_LABEL', 'unittest contributed module'))
         cls.register_patch(mock.patch('terrareg.config.Config.TRUSTED_NAMESPACE_LABEL', 'unittest trusted namespace'))
         cls.register_patch(cls._config_trusted_namespaces_mock)
-        super().setup_class()
+        super(TestProviderSearch, cls).setup_class()
 
     def test_result_cards(self):
         """Check the result cards."""
