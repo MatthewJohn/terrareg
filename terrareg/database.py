@@ -946,7 +946,7 @@ class Transaction:
         if has_request_context():
             flask.g.database_transaction_connection = self._connection
         else:
-            Database.get().transaction = self._connection
+            Database.get().transaction_connection = self._connection
 
         return self
 
@@ -955,7 +955,7 @@ class Transaction:
         if has_request_context():
             flask.g.database_transaction_connection = None
         else:
-            Database.get().transaction = None
+            Database.get().transaction_connection = None
 
         self._transaction_outer.__exit__(*args, **kwargs)
 
