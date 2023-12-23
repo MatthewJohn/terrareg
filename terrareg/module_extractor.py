@@ -550,7 +550,7 @@ terraform {{
         ))
 
         submodules = []
-        # Search for all subdirectories containing terraform
+        # Search for all sub-directories containing terraform
         for terraform_file_path in glob.iglob('{modules_path}/**/*.tf'.format(modules_path=submodule_base_directory), recursive=True):
             # Get parent directory of terraform file
             tf_file_path_obj = pathlib.Path(terraform_file_path)

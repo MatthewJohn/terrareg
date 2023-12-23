@@ -1058,7 +1058,7 @@ Path of a signing key to be used for Terraform OIDC identity provider.
 
 This must be set to authenticate users via Terraform.
 
-The key can be generated used:
+The key can be generated using:
 ```
 ssh-keygen -t rsa -b 4096 -m PEM -f signing_key.pem
 # Do not set a password

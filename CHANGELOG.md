@@ -1,5 +1,30 @@
 # Changelog
 
+## [2.81.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.81.3...v2.81.4) (2023-12-07)
+
+
+### Bug Fixes
+
+* Dockerfile to reduce vulnerabilities ([ee63466](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ee63466aa793bcea92a08c118f1d5863a437256d))
+* Dockerfile to reduce vulnerabilities ([adf5691](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/adf5691a1a3c016b10822c3d4d2d948583a97176))
+* requirements-all.txt to reduce vulnerabilities ([3751c72](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3751c72e9d0cb6218cdfca05bd07ebaf5ace9b7b))
+* requirements-dev.txt to reduce vulnerabilities ([9f6305d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9f6305d31e670062601cb4823c7b61e25e78a840))
+* requirements-dev.txt to reduce vulnerabilities ([1699789](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1699789d3ab5c1127bad13d7079014470d35a6e6))
+* requirements-dev.txt to reduce vulnerabilities ([8b573c9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8b573c9fbdffdb633e3004351fef6e8a5a325425))
+* requirements-dev.txt to reduce vulnerabilities ([a6baffe](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a6baffe73968b58faf2d131ad5a711c69b5b2c58))
+* requirements-dev.txt to reduce vulnerabilities ([600ba7d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/600ba7d7da80bc6187634972d3c7951fedb66d05))
+* requirements-dev.txt to reduce vulnerabilities ([0256460](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0256460c152ff9aceec4a46d7415d5aa1cc8f379))
+* requirements-dev.txt to reduce vulnerabilities ([a91bbb1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a91bbb10d22c7b9f8ce257d095cf5500fa477e61))
+* requirements-dev.txt to reduce vulnerabilities ([c44af0c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c44af0c40296e523614317431d5c7f627f5b8dd0))
+* requirements.txt to reduce vulnerabilities ([7efda33](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7efda33b74da3f35808127772268bde5170fbf72))
+
+## [2.81.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.81.2...v2.81.3) (2023-12-06)
+
+
+### Bug Fixes
+
+* Handle direct HTTP Terraform downloads when using uploaded module source. ([8b6e319](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8b6e319c09fc75a40d2ca4413662cce88258c8bd)), closes [#472](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/472)
+
 ## [2.81.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.81.1...v2.81.2) (2023-10-31)
 
 
