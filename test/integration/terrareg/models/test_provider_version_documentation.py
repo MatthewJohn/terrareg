@@ -320,6 +320,10 @@ class TestProviderVersionDocumentation(TerraregIntegrationTest):
         inst = terrareg.provider_version_documentation_model.ProviderVersionDocumentation.get_by_pk(pk=6345)
         inst._cache_db_row = None
 
+        namespace = terrareg.models.Namespace.get("initial-providers")
+        provider = terrareg.provider_model.Provider.get(namespace=namespace, name="multiple-versions")
+        provider_version = terrareg.provider_version_model.ProviderVersion.get(provider=provider, version="1.5.0")
+
         assert dict(inst._get_db_row()) == {
             'content': b'Documentation for generating a thing!',
             'description': b'Inital thing for multiple versions provider',
@@ -328,7 +332,7 @@ class TestProviderVersionDocumentation(TerraregIntegrationTest):
             'id': 6345,
             'language': 'hcl',
             'name': 'some_resource',
-            'provider_version_id': 7,
+            'provider_version_id': provider_version.pk,
             'slug': 'some_resource',
             'subcategory': 'some-subcategory',
             'title': 'multiple_versions_thing',
@@ -341,7 +345,7 @@ class TestProviderVersionDocumentation(TerraregIntegrationTest):
             'id': 6345,
             'language': 'hcl',
             'name': 'some_resource',
-            'provider_version_id': 7,
+            'provider_version_id': provider_version.pk,
             'slug': 'some_resource',
             'subcategory': 'some-subcategory',
             'title': 'multiple_versions_thing',
