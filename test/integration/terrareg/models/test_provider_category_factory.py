@@ -55,7 +55,7 @@ class TestProviderCategoryFactory(TerraregIntegrationTest):
         """Test get_all_provider_categories"""
         all = terrareg.provider_category_model.ProviderCategoryFactory.get().get_all_provider_categories()
         assert sorted([category._pk for category in all]) == [
-            54, 55, 99, 100, 523
+            54, 55, 99, 100, 101, 523
         ]
 
     @pytest.mark.parametrize('name, expected_slug', [
