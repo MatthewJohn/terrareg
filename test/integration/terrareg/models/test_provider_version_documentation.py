@@ -26,7 +26,7 @@ class TestProviderVersionDocumentation(TerraregIntegrationTest):
         ('test_name.markdown', 'test_name'),
         ('test_name.html.md', 'test_name'),
         ('test_name.html.markdown', 'test_name'),
-        ('Test Name_with+special$chars-and--double_-_dashes--.md', 'ttest_name_with_special_chars-and_double_-_dashes'),
+        ('Test Name_with+special$chars-and--double_-_dashes--.md', 'test_name_with_special_chars-and_double_-_dashes'),
     ])
     def test_generate_slug_from_name(self, name, expected_slug):
         """Test generate_slug_from_name"""
