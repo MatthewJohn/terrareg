@@ -4,7 +4,7 @@ WORKDIR /
 
 RUN apt-get update && \
     apt-get install --assume-yes \
-        curl zip unzip git \
+        curl unzip git wget zip git \
         pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 libgraphviz-dev libmagic1 \
         gcc g++ libffi-dev python3-gpg && \
     apt-get clean all
