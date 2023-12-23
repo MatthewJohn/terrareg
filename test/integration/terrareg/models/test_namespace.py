@@ -66,7 +66,7 @@ class TestNamespace(TerraregIntegrationTest):
 
     def test_get_total_count(self):
         """Test get_total_count method"""
-        assert Namespace.get_total_count() == 12
+        assert Namespace.get_total_count() == 15
 
     @pytest.mark.parametrize('display_name', [
         '< Is not valid',
