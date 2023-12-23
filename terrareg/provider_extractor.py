@@ -156,6 +156,12 @@ class ProviderExtractor:
             # Setup git repository inside directory
             git_env = os.environ.copy()
             git_env["HOME"] = temp_directory
+
+            # Remove any environment variables for git commit username
+            for env_var in git_env:
+                if env_var.lower().startswith('git_'):
+                    del git_env[env_var]
+
             subprocess.check_output(["git", "init"], cwd=source_dir, env=git_env)
             # Setup fake git user to avoid errors when committing
             subprocess.check_output(["git", "config", "user.email", "terrareg@localhost"], cwd=source_dir, env=git_env)
