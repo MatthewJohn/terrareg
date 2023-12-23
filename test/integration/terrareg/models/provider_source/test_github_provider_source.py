@@ -876,10 +876,17 @@ class TestGithubProviderSource(BaseProviderSourceTests):
         provider_version = terrareg.provider_version_model.ProviderVersion(provider=test_provider, version="2.3.1")
         provider_version._create_db_row(git_tag=f"v2.3.1", gpg_key=test_gpg_key)
         provider_version.publish()
-        assert test_provider_source.get_public_artifact_download_url(
-            provider_version=provider_version,
-            artifact_name="unittest-artifact-v2.3.1.tar.gz"
-        ) == "https://github.example-test.com/some-organisation/terraform-provider-unittest-create/releases/download/v2.3.1/unittest-artifact-v2.3.1.tar.gz"
+        try:
+            assert test_provider_source.get_public_artifact_download_url(
+                provider_version=provider_version,
+                artifact_name="unittest-artifact-v2.3.1.tar.gz"
+            ) == "https://github.example-test.com/some-organisation/terraform-provider-unittest-create/releases/download/v2.3.1/unittest-artifact-v2.3.1.tar.gz"
+        finally:
+            db = terrareg.database.Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.provider_version.delete().where(
+                    db.provider_version.c.id==provider_version.pk
+                ))
 
 
     # Test Custom properties/methods
