@@ -242,7 +242,7 @@ In the IdP:
 
 ### Provider sources
 
-Provider sources are a method of integrating with a Git provider for creating providers.
+Provider sources are a method of integrating with a Git provider for authentication and creating providers.
 
 Provider sources allow users to authenticate to Terrareg.
 Information about their associated projects/organisations and repositories are used to allow providers to be created.
@@ -251,8 +251,6 @@ Currently, only Github is supported as a provider source.
 
 NOTE: These may eventually be used for modules and eventually replace GIT_PROVIDERS.
 
-
-#### 
 
 #### Confguring provider sources
 

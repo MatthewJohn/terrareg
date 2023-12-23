@@ -343,9 +343,9 @@ POST Body must be JSON, in the format:
 ...
 -----END PGP PUBLIC KEY BLOCK-----
 "
-        }
-    },
-    "csrf_token": "xxxaaabbccc"
+        },
+        "csrf_token": "xxxaaabbccc"
+    }
 }
 ```
 
