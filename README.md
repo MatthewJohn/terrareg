@@ -14,17 +14,12 @@ Provides features to aid usage and discovery of modules, providing:
  * Module example source code within the UI, with automatic rewriting of 'source' arguments
  * Interactive 'Usage builder', helping users build terraform to use the terraform modules
  * Hooks for git SCM applications to automatically index modules
- * Authentication via SSO (OpenIDConnect/SAML2)
+ * Authentication via SSO (OpenIDConnect/SAML2) and Github
+ * Terraform provider support (very early alpha version)
 
 If you like and use this project and are happy to let us know, please raise a Github issue, create a PR or contact [MatthewJohn](https://github.com/matthewjohn) so it can be added to the README :)
 
 For a full list of issues and pull requests, please see [https://gitlab.dockstudios.co.uk/pub/terrareg](https://gitlab.dockstudios.co.uk/pub/terrareg)
-
-## Coming soon!
-
-Support for Terraform Providers is in progress!
-
-An initial implementation is expected Dec 2023/Jan 2024
 
 ## Screenshots
 
