@@ -1,7 +1,7 @@
 """
 Module for Provider model.
 
-@TODO Split models from models.py into seperate modules in new package.
+@TODO Split models from models.py into separate modules in new package.
 """
 
 from distutils.version import LooseVersion
@@ -224,7 +224,7 @@ class Provider:
     
     @property
     def robots_noindex(self) -> bool:
-        """Return robots noindex status of provider"""
+        """Return robots no-index status of provider"""
         return False
 
     @property

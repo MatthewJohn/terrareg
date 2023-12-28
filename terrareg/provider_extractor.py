@@ -72,7 +72,7 @@ class ProviderExtractor:
                            provider: 'terrareg.provider_model.Provider',
                            release_metadata: 'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
                            file_name: str) -> bytes:
-        """Obtain sha file content"""
+        """Obtain SHA file content"""
         artifact = None
         for release_artifact in release_metadata.release_artifacts:
             if release_artifact.name == file_name:
@@ -195,7 +195,7 @@ class ProviderExtractor:
                         if not os.path.isdir(documentation_directory):
                             os.mkdir(documentation_directory)
 
-                        # Run go module for extractings docs
+                        # Run go module for extracting docs
                         try:
                             subprocess.call(
                                 ['tfplugindocs', 'generate'],

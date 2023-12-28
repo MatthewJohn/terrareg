@@ -73,7 +73,7 @@ class ProviderCategory:
         return self._cache_db_row
 
     def get_v2_include(self):
-        """Return API repsonse from v2 include"""
+        """Return API response from v2 include"""
         return {
             "type": "categories",
             "id": str(self.pk),

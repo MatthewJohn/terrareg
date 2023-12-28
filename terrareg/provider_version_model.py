@@ -310,7 +310,7 @@ class ProviderVersion:
         }
 
     def get_v2_include(self) -> dict:
-        """Get API respones for v2 includes"""
+        """Get API responses for v2 includes"""
         db_row = self._get_db_row()
         return {
             "type": "provider-versions",

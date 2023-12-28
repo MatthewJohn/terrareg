@@ -41,7 +41,7 @@ class GithubRepositoryPublishProvider(ErrorCatchingResource):
     }
 
     def _post_arg_parser(self):
-        """Return arg paraser for post method"""
+        """Return arg parser for post method"""
         parser = reqparse.RequestParser()
         parser.add_argument(
             'category_id',

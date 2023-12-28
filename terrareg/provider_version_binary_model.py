@@ -137,12 +137,12 @@ class ProviderVersionBinary:
 
     @property
     def architecture(self) -> 'terrareg.provider_binary_types.ProviderBinaryArchitectureType':
-        """Retrun architecture"""
+        """Return architecture"""
         return self._get_db_row()["architecture"]
 
     @property
     def operating_system(self) -> 'terrareg.provider_binary_types.ProviderBinaryOperatingSystemType':
-        """Retrun operating system"""
+        """Return operating system"""
         return self._get_db_row()["operating_system"]
 
     @property

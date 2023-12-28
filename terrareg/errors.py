@@ -295,7 +295,7 @@ class InvalidProviderCategoryConfigError(TerraregError):
 
 
 class ReindexingExistingProviderVersionsIsProhibitedError(TerraregError):
-    """Cannot reindex a module provider"""
+    """Cannot re-index a module provider"""
 
     pass
 
