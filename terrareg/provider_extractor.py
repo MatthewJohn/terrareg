@@ -154,7 +154,7 @@ class ProviderExtractor:
                 source_dir = new_source_dir
 
             # Setup git repository inside directory
-            git_env = os.environ.copy()
+            git_env = dict(os.environ.copy())
             git_env["HOME"] = temp_directory
 
             # Remove any environment variables for git commit username
