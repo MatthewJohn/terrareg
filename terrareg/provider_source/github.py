@@ -84,7 +84,7 @@ class GithubProviderSource(BaseProviderSource):
 
     @property
     def login_button_text(self) -> str:
-        """Return login buton text"""
+        """Return login button text"""
         return self._config.get("login_button_text")
 
     @property
@@ -369,7 +369,7 @@ class GithubProviderSource(BaseProviderSource):
 
     def _get_release_artifacts_metadata(self, repository: 'terrareg.repository_model.Repository',
                                         release_id: int, access_token: str) -> List['terrareg.provider_source.repository_release_metadata.ReleaseArtifactMetadata']:
-        """Obtain list of release artifact metdata for a given release"""
+        """Obtain list of release artifact metadata for a given release"""
         res = requests.get(
             f"{self._api_url}/repos/{repository.owner}/{repository.name}/releases/{release_id}/assets",
             params={

@@ -1394,7 +1394,7 @@ class GpgKey:
 
     @classmethod
     def create_db_row(cls, namespace, ascii_armor, fingerprint, key_id) -> int:
-        """Create intsance of GPG key in database"""
+        """Create instance of GPG key in database"""
         db = Database.get()
         gpg_key_insert = db.gpg_key.insert().values(
             namespace_id=namespace.pk,
