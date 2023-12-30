@@ -154,13 +154,13 @@ class ProviderExtractor:
                 source_dir = new_source_dir
 
             # Setup git repository inside directory
-            git_env = dict(os.environ.copy())
+            git_env = {
+                key: value
+                for key, value in dict(os.environ.copy()).items()
+                # Remove any environment variables for git commit username
+                if not key.lower().startswith("git_")
+            }
             git_env["HOME"] = temp_directory
-
-            # Remove any environment variables for git commit username
-            for env_var in git_env:
-                if env_var.lower().startswith('git_'):
-                    del git_env[env_var]
 
             subprocess.check_output(["git", "init"], cwd=source_dir, env=git_env)
             # Setup fake git user to avoid errors when committing
