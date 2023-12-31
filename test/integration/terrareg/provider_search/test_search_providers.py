@@ -77,13 +77,13 @@ class TestSearchProviders(TerraregIntegrationTest):
         assert result.count == expected_result_count
 
     @pytest.mark.parametrize('offset,expected_next_offset,expected_results', [
-        (0, 2, ['modulesearch-trusted/mixedsearch-trusted-result',
-                'modulesearch-trusted/mixedsearch-trusted-second-result']),
-        (2, 4, ['modulesearch-trusted/mixedsearch-trusted-result-multiversion',
-                'contributed-providersearch/mixedsearch-result']),
-        (3, None, ['contributed-providersearch/mixedsearch-result',
-                   'contributed-providersearch/mixedsearch-result-multiversion']),
-        (4, None, ['contributed-providersearch/mixedsearch-result-multiversion']),
+        (0, 2, ['modulesearch-trusted/mixedsearch-trusted-second-result',
+                'modulesearch-trusted/mixedsearch-trusted-result-multiversion']),
+        (2, 4, ['modulesearch-trusted/mixedsearch-trusted-result',
+                'contributed-providersearch/mixedsearch-result-multiversion']),
+        (3, None, ['contributed-providersearch/mixedsearch-result-multiversion',
+                   'contributed-providersearch/mixedsearch-result']),
+        (4, None, ['contributed-providersearch/mixedsearch-result']),
         (5, None, [])
     ])
     def test_offset_limit(self, offset, expected_next_offset, expected_results):

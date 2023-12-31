@@ -32,24 +32,19 @@ class TestProviderSearch(SeleniumTest):
         result_cards = self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')
 
         expected_card_headings = [
-            'providersearch-trusted / mixedsearch-trusted-result',
             'providersearch-trusted / mixedsearch-trusted-second-result',
             'providersearch-trusted / mixedsearch-trusted-result-multiversion',
+            'providersearch-trusted / mixedsearch-trusted-result',
         ]
         expected_card_links = [
-            '/providers/providersearch-trusted/mixedsearch-trusted-result',
             '/providers/providersearch-trusted/mixedsearch-trusted-second-result',
             '/providers/providersearch-trusted/mixedsearch-trusted-result-multiversion',
-        ]
-        expected_descriptions = [
-            'Provider: aws',
-            'Provider: datadog',
-            'Provider: null',
+            '/providers/providersearch-trusted/mixedsearch-trusted-result',
         ]
         expected_sources = [
-            'Source: https://github.example.com/providersearch-trusted/terraform-provider-mixedsearch-trusted-result',
             'Source: https://github.example.com/providersearch-trusted/terraform-provider-mixedsearch-trusted-second-result',
             'Source: https://github.example.com/providersearch-trusted/terraform-provider-mixedsearch-trusted-result-multiversion',
+            'Source: https://github.example.com/providersearch-trusted/terraform-provider-mixedsearch-trusted-result',
         ]
         for card in result_cards:
             heading = card.find_element(By.CLASS_NAME, 'module-card-title')
@@ -134,7 +129,7 @@ class TestProviderSearch(SeleniumTest):
                 By.ID, 'results').find_elements(
                     By.CLASS_NAME, 'card')[0].find_element(
                         By.CLASS_NAME, 'module-card-title').text,
-            'providersearch / contributedprovider-multiversion'
+            'providersearch-trusted / mixedsearch-trusted-result'
         )
 
         # Ensure that all cards have been updated
@@ -154,7 +149,7 @@ class TestProviderSearch(SeleniumTest):
                 By.ID, 'results').find_elements(
                     By.CLASS_NAME, 'card')[0].find_element(
                         By.CLASS_NAME, 'module-card-title').text,
-            'relevancysearch / descriptionmatch'
+            'initial-providers / update-attributes'
         )
 
         # Ensure that all of the original cards are displayed

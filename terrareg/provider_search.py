@@ -48,11 +48,12 @@ class ProviderSearch:
                 )
 
         relevance = sqlalchemy.sql.expression.label('relevance', point_sum)
+        provider_name = db.provider.c.name.label('provider_name')
         select = db.select_provider_joined_latest_provider_version(
             db.provider,
             db.provider_version,
             db.namespace,
-            db.provider.c.name.label('provider_name'),
+            provider_name,
             db.provider_category.c.slug.label('provider_category_slug'),
             relevance
         )
@@ -61,9 +62,11 @@ class ProviderSearch:
 
         # Group by module provider ID
         select = select.group_by(
-            db.provider.c.id
+            db.provider.c.id,
         ).order_by(
-            sqlalchemy.desc(relevance)
+            # Order by relevancy, then by name
+            sqlalchemy.desc(relevance),
+            provider_name.desc()
         )
 
         return select
