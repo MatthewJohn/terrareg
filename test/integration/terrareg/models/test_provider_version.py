@@ -410,7 +410,7 @@ class TestProviderVersion(TerraregIntegrationTest):
 
         db = terrareg.database.Database.get()
         with db.get_connection() as conn:
-            audit_row = dict(conn.execute(db.audit_history.select().order_by(db.audit_history.c.timestamp.desc()).limit(1)).first())
+            audit_row = dict(conn.execute(db.audit_history.select().order_by(db.audit_history.c.id.desc()).limit(1)).first())
             assert audit_row["action"] == terrareg.audit_action.AuditAction.PROVIDER_VERSION_INDEX
             assert audit_row["object_id"] == "initial-providers/to-delete/1.21.3"
             assert audit_row["object_type"] == "ProviderVersion"

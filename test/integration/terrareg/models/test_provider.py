@@ -92,7 +92,7 @@ class TestProvider(TerraregIntegrationTest):
             
             # Ensure audit event was created correct
             with db.get_connection() as conn:
-                res = conn.execute(db.audit_history.select().order_by(db.audit_history.c.timestamp.desc()).limit(1)).all()
+                res = conn.execute(db.audit_history.select().order_by(db.audit_history.c.id.desc()).limit(1)).all()
 
             assert len(res) == 1
             audit_event = dict(res[0])
