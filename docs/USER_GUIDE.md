@@ -107,6 +107,9 @@ This path can be customised by setting [DATA_DIRECTORY](./CONFIG.md#data_directo
 
 ## Database URL
 
+It is recommended to use an external database when using in production.
+Terrareg has been tested with MariaDB 10.X and is incompattible with MySQL <= 8.x
+
 A database URL should be configured, otherwise Terrareg will default to a local sqlite database (though this _could_ be mounted via a docker volume, it certainly shouldn't be used for multiple containers).
 
 This should be configured by setting [DATABASE_URL](./CONFIG.md#database_url)
