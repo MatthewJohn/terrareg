@@ -60,7 +60,7 @@ class TestModuleSearch(SeleniumTest):
         search_button.click()
 
         self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url(expected_url))
-        assert self.selenium_instance.title == expected_title
+        self.assert_equals(lambda: self.selenium_instance.title, expected_title)
 
         # Ensure search filter has been populated with correct search string
         assert self.selenium_instance.find_element(By.ID, 'search-query-string').get_attribute('value') == search_string
