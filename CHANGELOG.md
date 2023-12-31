@@ -1,7 +1,10 @@
 # Changelog
 
-# [2.82.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.81.4...v2.82.0) (2023-12-31)
+# [3.0.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.81.4...v3.0.0) (2023-12-31)
 
+# Breaking changes
+
+See [UPGRADE.md](./UPGRADE.md) for breaking changes
 
 ### Bug Fixes
 
