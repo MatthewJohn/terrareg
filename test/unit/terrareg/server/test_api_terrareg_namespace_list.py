@@ -3,6 +3,7 @@ from unittest import mock
 
 import pytest
 
+import terrareg.registry_resource_type
 from test.unit.terrareg import TerraregUnitTest, setup_test_data, mock_models
 from test import client
 import terrareg.result_data
@@ -21,7 +22,10 @@ class TestApiTerraregNamespaceList(TerraregUnitTest):
             assert res.status_code == 200
             assert res.json == []
 
-            mocked_namespace_get_all.assert_called_once_with(only_published=False, limit=None, offset=0)
+            mocked_namespace_get_all.assert_called_once_with(
+                only_published=False, limit=None, offset=0,
+                resource_type=terrareg.registry_resource_type.RegistryResourceType.MODULE
+            )
 
     def test_with_no_namespaces_and_limit_offset(self, client):
         """Test endpoint when no namespaces are present with limit and offset."""
@@ -36,8 +40,33 @@ class TestApiTerraregNamespaceList(TerraregUnitTest):
                 'namespaces': []
             }
 
-            mocked_namespace_get_all.assert_called_once_with(only_published=True, limit=14, offset=12)
+            mocked_namespace_get_all.assert_called_once_with(
+                only_published=True, limit=14, offset=12,
+                resource_type=terrareg.registry_resource_type.RegistryResourceType.MODULE
+            )
 
+    @pytest.mark.parametrize('query_string, expected_type', [
+        ('', terrareg.registry_resource_type.RegistryResourceType.MODULE),
+        ('&type=module', terrareg.registry_resource_type.RegistryResourceType.MODULE),
+        ('&type=provider', terrareg.registry_resource_type.RegistryResourceType.PROVIDER),
+    ])
+    def test_with_namespace_types(self, query_string, expected_type, client):
+        """Test endpoint when no namespaces are present with limit and offset."""
+        with mock.patch('terrareg.models.Namespace.get_all') as mocked_namespace_get_all:
+            mocked_namespace_get_all.return_value = terrareg.result_data.ResultData(offset=0, limit=10, rows=[], count=0)
+
+            res = client.get(f'/v1/terrareg/namespaces?only_published=true&offset=12&limit=14{query_string}')
+
+            assert res.status_code == 200
+            assert res.json == {
+                'meta': {'current_offset': 0, 'limit': 10},
+                'namespaces': []
+            }
+
+            mocked_namespace_get_all.assert_called_once_with(
+                only_published=True, limit=14, offset=12,
+                resource_type=expected_type
+            )
 
     @setup_test_data()
     def test_with_namespaces_present(self, client, mock_models):

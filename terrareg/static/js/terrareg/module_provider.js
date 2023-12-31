@@ -117,7 +117,7 @@ function getTerraformCompatibilityResultObject(compatibilityResult) {
     return undefined;
 }
 
-async function createSearchResultCard(parent_id, module) {
+async function createSearchResultCard(parent_id, type, module) {
 
     let provider_logos = await getProviderLogos();
 
@@ -130,24 +130,35 @@ async function createSearchResultCard(parent_id, module) {
         namespaceDisplayName = namespaceDetails.display_name;
     }
 
-    if (provider_logos[module.provider] !== undefined) {
+    let link = '';
+    if (type == 'module') {
+        link = `/modules/${module.namespace}/${module.name}/${module.provider}`;
+    } else {
+        link = `/providers/${module.namespace}/${module.name}`;
+    }
+
+    if (type == "module" && provider_logos[module.provider] !== undefined) {
         let provider_logo_details = provider_logos[module.provider];
         provider_logo_html = `
-            <a href="${provider_logo_details.link}">
+            <a class="provider-logo-link" href="${provider_logo_details.link}">
                 <img style="margin: 5px" height="40" width="40" alt="${provider_logo_details.alt}" src="${provider_logo_details.source}" />
             </a>
         `;
         addProviderLogoTos(module.provider);
+    } else if (type == "provider" && module.logo_url) {
+        provider_logo_html = `
+        <a href="${link}">
+            <img style="margin: 5px" height="40" width="40" src="${module.logo_url}" />
+        </a>
+        `;
     }
 
     // Replace slashes in ID with full stops
     let card_id = module.id.replace(/\//g, '.');
 
-    let link = `/modules/${module.namespace}/${module.name}/${module.provider}`;
-
     let version_compatibility_content = '';
 
-    if (module.version_compatibility) {
+    if (type == "module" && module.version_compatibility) {
         let compatibility_result = getTerraformCompatibilityResultObject(module.version_compatibility);
         if (compatibility_result) {
             version_compatibility_content = `
@@ -170,11 +181,13 @@ async function createSearchResultCard(parent_id, module) {
                     ${provider_logo_html}
                     <a class="module-card-title" href="${link}">${namespaceDisplayName} / ${module.name}</a>
                 </p>
+                ${type == "module" ? `
                 <a class="module-provider-card-provider-text" href="${link}">
                     <button class="card-header-icon" aria-label="more options">
                         Provider: ${module.provider}
                     </button>
                 </a>
+                ` : ''}
             </header>
             <a href="${link}">
                 <div class="card-content">

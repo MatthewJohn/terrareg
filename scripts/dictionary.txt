@@ -90,6 +90,10 @@ builtin
 submodulename
 myexample
 md
+ascii
+gpg
+armor
+SCM
 Terraform
 terraform
 namespace
@@ -123,3 +127,16 @@ TLS
 html
 authorize
 subprocess
+xxxaaabbccc
+repos
+endpoint
+customisations
+py
+tfplugindocs
+SHA
+selectable
+abcdefg
+pem
+supersecretkey
+kwarg
+endpoint

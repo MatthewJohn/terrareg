@@ -2,10 +2,10 @@
 import terrareg.config
 import terrareg.openid_connect
 import terrareg.saml
-import terrareg.github
 import terrareg.auth
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.auth_wrapper
+import terrareg.provider_source.factory
 
 
 class ApiTerraregConfig(ErrorCatchingResource):
@@ -14,6 +14,14 @@ class ApiTerraregConfig(ErrorCatchingResource):
     def _get(self):
         """Return config."""
         config = terrareg.config.Config()
+        provider_sources = [
+            {
+                "name": provider_source.name,
+                "api_name": provider_source.api_name,
+                "login_button_text": provider_source.login_button_text,
+            }
+            for provider_source in terrareg.provider_source.factory.ProviderSourceFactory.get().get_all_provider_sources()
+        ]
         return {
             'TRUSTED_NAMESPACE_LABEL': config.TRUSTED_NAMESPACE_LABEL,
             'CONTRIBUTED_NAMESPACE_LABEL': config.CONTRIBUTED_NAMESPACE_LABEL,
@@ -32,8 +40,7 @@ class ApiTerraregConfig(ErrorCatchingResource):
             'ADDITIONAL_MODULE_TABS': config.ADDITIONAL_MODULE_TABS,
             'OPENID_CONNECT_ENABLED': terrareg.openid_connect.OpenidConnect.is_enabled(),
             'OPENID_CONNECT_LOGIN_TEXT': config.OPENID_CONNECT_LOGIN_TEXT,
-            'GITHUB_ENABLED': terrareg.github.Github.is_enabled(),
-            'GITHUB_LOGIN_TEXT': config.GITHUB_LOGIN_TEXT,
+            'PROVIDER_SOURCES': provider_sources,
             'SAML_ENABLED': terrareg.saml.Saml2.is_enabled(),
             'SAML_LOGIN_TEXT': config.SAML2_LOGIN_TEXT,
             'ADMIN_LOGIN_ENABLED': terrareg.auth.AdminApiKeyAuthMethod.is_enabled(),

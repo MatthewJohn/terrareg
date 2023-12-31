@@ -62,5 +62,25 @@ from .terrareg_user_group import ApiTerraregAuthUserGroup
 from .terrareg_graph_data import ApiTerraregGraphData
 from .terrareg_module_provider_redirects import ApiTerraregModuleProviderRedirects
 from .terrareg_module_provider_redirect_delete import ApiTerraregModuleProviderRedirectDelete
-from .github_login_initiate import GithubLoginInitiate
-from .github_login_callback import GithubLoginCallback
+from .github.github_login_initiate import GithubLoginInitiate
+from .github.github_login_callback import GithubLoginCallback
+from .github.github_auth_status import GithubAuthStatus
+from .github.github_organisations import GithubOrganisations
+from .github.github_repositories import GithubRepositories
+from .github.github_refresh_namespace import GithubRefreshNamespace
+from .github.github_repository_publish_provider import GithubRepositoryPublishProvider
+from .provider_list import ApiProviderList
+from .namespace_providers import ApiNamespaceProviders
+from .provider import ApiProvider
+from .provider_version_download import ApiProviderVersionDownload
+from .provider_versions import ApiProviderVersions
+from .provider_search import ApiProviderSearch
+from .terrareg_provider_search_filters import ApiTerraregProviderSearchFilters
+
+from .terraform.v2.gpg_keys import ApiGpgKeys
+from .terraform.v2.gpg_key import ApiGpgKey
+from .terraform.v2.provider_categories import ApiProviderCategories
+from .terraform.v2.provider_download_summary import ApiProviderProviderDownloadSummary
+from .terraform.v2.provider import ApiV2Provider
+from .terraform.v2.provider_docs import ApiV2ProviderDocs
+from .terraform.v2.provider_doc import ApiV2ProviderDoc

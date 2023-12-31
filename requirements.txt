@@ -39,3 +39,7 @@ blinker==1.6.2
 semantic-version==2.10.0
 waitress==2.1.2
 pyop==3.4.0
+python-gnupg==0.5.1
+python-frontmatter==1.0.0
+PyYAML==6.0.1
+packaging==21.3

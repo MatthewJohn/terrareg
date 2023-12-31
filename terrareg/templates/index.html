@@ -16,10 +16,10 @@
         checkInitialSetup();
 
         $.get("/v1/terrareg/analytics/global/most_recently_published_module_version", function(data, status) {
-            createSearchResultCard('most-recent-module-version', data);
+            createSearchResultCard('most-recent-module-version', 'module', data);
         });
         $.get("/v1/terrareg/analytics/global/most_downloaded_module_provider_this_week", function(data, status) {
-            createSearchResultCard('most-downloaded-this-week', data);
+            createSearchResultCard('most-downloaded-this-week', 'module', data);
         });
     });
     

@@ -27,12 +27,14 @@ class BaseHandler:
         """Override render_template, passing in base variables."""
         return render_template(
             *args, **kwargs,
+            TEMPLATE_NAME=args[0],
             terrareg_application_name=terrareg.config.Config().APPLICATION_NAME,
             terrareg_logo_url=terrareg.config.Config().LOGO_URL,
             ALLOW_MODULE_HOSTING=terrareg.config.Config().ALLOW_MODULE_HOSTING,
             TRUSTED_NAMESPACE_LABEL=terrareg.config.Config().TRUSTED_NAMESPACE_LABEL,
             CONTRIBUTED_NAMESPACE_LABEL=terrareg.config.Config().CONTRIBUTED_NAMESPACE_LABEL,
             VERIFIED_MODULE_LABEL=terrareg.config.Config().VERIFIED_MODULE_LABEL,
+            SITE_WARNING=terrareg.config.Config().SITE_WARNING,
             csrf_token=terrareg.csrf.get_csrf_token(),
             theme_path=self._get_theme_path()
         )

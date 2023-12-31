@@ -7,7 +7,13 @@ import terrareg.auth_wrapper
 
 
 class ApiTerraregModuleSearchFilters(ErrorCatchingResource):
-    """Return list of filters available for search."""
+    """
+    Return list of filters available for search.
+    
+    *Deprecation*: The `/v1/terrareg/search_filters` endpoint has been deprecated in favour of `/v1/terrareg/modules/search/filters`
+
+    The previous endpoint will be removed in a future major release.
+    """
 
     method_decorators = [terrareg.auth_wrapper.auth_wrapper('can_access_read_api')]
 

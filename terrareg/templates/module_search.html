@@ -1,6 +1,6 @@
 {% extends 'template.html' %}
 
-{% block title %}Search{% endblock %}
+{% block title %}Module Search{% endblock %}
 
 {% block header %}
 
@@ -54,7 +54,7 @@
     let previousSearchString = undefined;
     function performSearch(new_offset) {
 
-        let searchQuery = $('#navBarSearchInput')[0].value;
+        let searchQuery = $('#search-query-string')[0].value;
 
         // Mark search query breadcrumb as active
         document.getElementById('searchQueryBreadcrumbParent').className = "is-active";
@@ -127,7 +127,7 @@
 
                 // Iterate through modules
                 data.modules.forEach((module) => {
-                    createSearchResultCard('results', module);
+                    createSearchResultCard('results', 'module', module);
                 });
             }
         });
@@ -135,7 +135,7 @@
         if (searchQuery != previousSearchString) {
 
             // Update list of search filters
-            $.get(`/v1/terrareg/search_filters?q=${encodeURIComponent(searchQuery)}`, (data, status) => {
+            $.get(`/v1/terrareg/modules/search/filters?q=${encodeURIComponent(searchQuery)}`, (data, status) => {
                 $('#search-verified-count').html(data.verified);
                 $('#search-trusted-namespaces-count').html(data.trusted_namespaces);
                 $('#search-contributed-count').html(data.contributed);
@@ -202,8 +202,6 @@
         performSearch(currentSearchMeta?.current_offset);
     }
 
-    navbar_search_modules = performSearch;
-
     $(document).ready(function () {
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
@@ -212,7 +210,7 @@
         loadSearchUserPreferences();
 
         if (searchQuery) {
-            $('#navBarSearchInput').val(searchQuery);
+            $('#search-query-string').val(searchQuery);
         }
         performSearch();
     });
@@ -231,6 +229,23 @@
 
 <div class="columns">
     <div class="column is-one-fifth">
+        <nav id="query-filters" class="panel">
+            <p class="panel-heading">
+              Search Query
+            </p>
+            <span class="panel-block">
+                <p class="control has-icons-left">
+                    <input class="input" type="text" id="search-query-string" placeholder="Query">
+                    <span class="icon is-left">
+                        <i class="fas fa-filter" aria-hidden="true"></i>
+                    </span>
+                </p>
+            </span>
+            <span class="panel-block">
+                <button id="query-search-button" class="button" onclick="performSearch();">Search</button>
+            </span>
+        </nav>
+
         <nav class="panel">
             <p class="panel-heading">
               Filters

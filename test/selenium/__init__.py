@@ -26,7 +26,7 @@ from terrareg.database import Database
 from terrareg.server import Server
 import terrareg.config
 from test import BaseTest
-from .test_data import integration_test_data, integration_git_providers, selenium_user_group_data
+from .test_data import integration_test_data, integration_git_providers, selenium_user_group_data, selenium_provider_categories, selenium_provider_sources
 
 
 class SeleniumTest(BaseTest):
@@ -34,6 +34,8 @@ class SeleniumTest(BaseTest):
     _TEST_DATA = integration_test_data
     _GIT_PROVIDER_DATA = integration_git_providers
     _USER_GROUP_DATA = selenium_user_group_data
+    _PROVIDER_CATEGORIES = selenium_provider_categories
+    _PROVIDER_SOURCES = selenium_provider_sources
     _MOCK_PATCHES = []
     _SECRET_KEY = ''
 
@@ -105,6 +107,8 @@ class SeleniumTest(BaseTest):
         log = logging.getLogger('werkzeug')
         if not cls.RUN_INTERACTIVELY:
             log.disabled = True
+            cls.selenium_instance.set_window_position(0, 0)
+            cls.selenium_instance.set_window_size(1900, 1000)
 
         cls._setup_server()
 

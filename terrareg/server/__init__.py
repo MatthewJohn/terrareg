@@ -13,6 +13,9 @@ import terrareg.database
 import terrareg.models
 import terrareg.errors
 import terrareg.auth
+import terrareg.provider_source.factory
+import terrareg.provider_category_model
+import terrareg.provider_model
 from terrareg.server.api.terrareg_module_providers import ApiTerraregModuleProviders
 from .base_handler import BaseHandler
 from terrareg.server.api import *
@@ -124,12 +127,16 @@ class Server(BaseHandler):
             os.mkdir(self._get_upload_directory())
         if not os.path.isdir(os.path.join(terrareg.config.Config().DATA_DIRECTORY, 'modules')):
             os.mkdir(os.path.join(terrareg.config.Config().DATA_DIRECTORY, 'modules'))
+        if not os.path.isdir(os.path.join(terrareg.config.Config().DATA_DIRECTORY, 'providers')):
+            os.mkdir(os.path.join(terrareg.config.Config().DATA_DIRECTORY, 'providers'))
 
         self._app.config['UPLOAD_FOLDER'] = self._get_upload_directory()
 
         # Initialise database
         terrareg.database.Database.get().initialise()
         terrareg.models.GitProvider.initialise_from_config()
+        terrareg.provider_source.factory.ProviderSourceFactory.get().initialise_from_config()
+        terrareg.provider_category_model.ProviderCategoryFactory.get().initialise_from_config()
 
         self._register_routes()
 
@@ -195,6 +202,71 @@ class Server(BaseHandler):
             '/v1/modules/<string:namespace>/<string:name>/<string:provider>/downloads/summary'
         )
 
+        # Providers APIs
+        self._api.add_resource(
+            ApiProviderList,
+            '/v1/providers',
+            '/v1/providers/'
+        )
+        self._api.add_resource(
+            ApiNamespaceProviders,
+            '/v1/providers/<string:namespace>',
+            '/v1/providers/<string:namespace>/',
+
+            # Use as terrareg endpoint, until customisations are required
+            '/v1/terrareg/providers/<string:namespace>'
+        )
+        self._api.add_resource(
+            ApiProvider,
+            '/v1/providers/<string:namespace>/<string:provider>',
+            '/v1/providers/<string:namespace>/<string:provider>/<string:version>'
+        )
+        self._api.add_resource(
+            ApiProviderVersions,
+            '/v1/providers/<string:namespace>/<string:provider>/versions'
+        )
+        self._api.add_resource(
+            ApiProviderVersionDownload,
+            '/v1/providers/<string:namespace>/<string:provider>/<string:version>/download/<string:os>/<string:arch>'
+        )
+        self._api.add_resource(
+            ApiProviderSearch,
+            '/v1/providers/search'
+        )
+
+        # V2 resources for provider
+        self._api.add_resource(
+            ApiV2Provider,
+            '/v2/providers/<string:namespace>/<string:provider>'
+        )
+        self._api.add_resource(
+            ApiProviderProviderDownloadSummary,
+            '/v2/providers/<int:provider_id>/downloads/summary'
+        )
+
+        self._api.add_resource(
+            ApiV2ProviderDocs,
+            '/v2/provider-docs'
+        )
+        self._api.add_resource(
+            ApiV2ProviderDoc,
+            '/v2/provider-docs/<int:doc_id>'
+        )
+
+        # Terraform cloud/registry APIs for GPG key
+        self._api.add_resource(
+            ApiGpgKeys,
+            '/v2/gpg-keys'
+        )
+        self._api.add_resource(
+            ApiGpgKey,
+            '/v2/gpg-keys/<string:namespace>/<string:key_id>'
+        )
+        self._api.add_resource(
+            ApiProviderCategories,
+            '/v2/categories'
+        )
+
         # Views
         self._app.route('/')(self._view_serve_static_index)
         self._app.route(
@@ -213,6 +285,9 @@ class Server(BaseHandler):
             '/create-module'
         )(self._view_serve_create_module)
         self._app.route(
+            '/create-provider'
+        )(self._view_serve_create_provider)
+        self._app.route(
             '/initial-setup'
         )(self._view_serve_initial_setup)
         self._app.route(
@@ -221,18 +296,46 @@ class Server(BaseHandler):
         self._app.route(
             '/audit-history'
         )(self._view_serve_audit_history)
-        self._app.route(
-            '/modules'
-        )(self._view_serve_namespace_list)
-        self._app.route(
-            '/modules/'
-        )(self._view_serve_namespace_list)
+
+        # Legacy module search URL
         self._app.route(
             '/modules/search'
         )(self._view_serve_module_search)
         self._app.route(
             '/modules/search/'
         )(self._view_serve_module_search)
+
+        # Search routes
+        self._app.route(
+            '/search'
+        )(self._view_serve_search)
+        self._app.route(
+            '/search/'
+        )(self._view_serve_search)
+
+        self._app.route(
+            '/search/modules'
+        )(self._view_serve_module_search)
+        self._app.route(
+            '/search/modules/'
+        )(self._view_serve_module_search)
+
+        self._app.route(
+            '/search/providers'
+        )(self._view_serve_provider_search)
+        self._app.route(
+            '/search/providers/'
+        )(self._view_serve_provider_search)
+
+
+        # Module routes
+        self._app.route(
+            '/modules'
+        )(self._view_serve_module_namespace_list)
+        self._app.route(
+            '/modules/'
+        )(self._view_serve_module_namespace_list)
+
         self._app.route(
             '/modules/<string:namespace>'
         )(self._view_serve_namespace)
@@ -281,6 +384,34 @@ class Server(BaseHandler):
             '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/graph/data/example/<path:example_path>'
         )
 
+        # Routes for provider
+        self._app.route(
+            '/providers'
+        )(self._view_serve_provider_namespace_list)
+        self._app.route(
+            '/providers/'
+        )(self._view_serve_provider_namespace_list)
+        self._app.route(
+            '/providers/<string:namespace>'
+        )(self._view_serve_namespace)
+        self._app.route(
+            '/providers/<string:namespace>/'
+        )(self._view_serve_namespace)
+        self._app.route(
+            '/providers/<string:namespace>/<string:provider>'
+        )(self._view_serve_provider)
+        self._app.route(
+            '/providers/<string:namespace>/<string:provider>/latest'
+        )(self._view_serve_provider)
+        self._app.route(
+            '/providers/<string:namespace>/<string:provider>/<string:version>'
+        )(self._view_serve_provider)
+        self._app.route(
+            '/providers/<string:namespace>/<string:provider>/<string:version>/docs'
+        )(self._view_serve_provider)
+        self._app.route(
+            '/providers/<string:namespace>/<string:provider>/<string:version>/docs/<string:doc_category>/<string:doc_slug>'
+        )(self._view_serve_provider)
 
         # OpenID connect endpoints
         self._api.add_resource(
@@ -305,11 +436,31 @@ class Server(BaseHandler):
         # Github auth endpoints
         self._api.add_resource(
             GithubLoginInitiate,
-            '/github/login'
+            '/<string:provider_source>/login'
         )
         self._api.add_resource(
             GithubLoginCallback,
-            '/github/callback'
+            '/<string:provider_source>/callback'
+        )
+        self._api.add_resource(
+            GithubAuthStatus,
+            '/<string:provider_source>/auth/status'
+        )
+        self._api.add_resource(
+            GithubOrganisations,
+            '/<string:provider_source>/organizations'
+        )
+        self._api.add_resource(
+            GithubRepositories,
+            '/<string:provider_source>/repositories'
+        )
+        self._api.add_resource(
+            GithubRefreshNamespace,
+            '/<string:provider_source>/refresh-namespace'
+        )
+        self._api.add_resource(
+            GithubRepositoryPublishProvider,
+            '/<string:provider_source>/repositories/<int:repository_id>/publish-provider'
         )
 
         # Terrareg APIs
@@ -489,7 +640,12 @@ class Server(BaseHandler):
 
         self._api.add_resource(
             ApiTerraregModuleSearchFilters,
-            '/v1/terrareg/search_filters'
+            '/v1/terrareg/search_filters',
+            '/v1/terrareg/modules/search/filters'
+        )
+        self._api.add_resource(
+            ApiTerraregProviderSearchFilters,
+            '/v1/terrareg/providers/search/filters'
         )
         self._api.add_resource(
             ApiTerraregAuditHistory,
@@ -606,6 +762,12 @@ class Server(BaseHandler):
             ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
 
+    def _view_serve_create_provider(self):
+        """Provide view to create provider."""
+        return self._render_template(
+            'create_provider.html'
+        )
+
     def _view_serve_create_namespace(self):
         """Provide view to create namespace."""
         return self._render_template(
@@ -668,10 +830,18 @@ class Server(BaseHandler):
 
         return self._render_template("graph.html", current_module=current_module)
 
-    def _view_serve_namespace_list(self):
+    def _view_serve_module_namespace_list(self):
         """Render view for display module."""
         return self._render_template(
-            'namespace_list.html'
+            'namespace_list.html',
+            selected_type="module"
+        )
+
+    def _view_serve_provider_namespace_list(self):
+        """Render view for display module."""
+        return self._render_template(
+            'namespace_list.html',
+            selected_type="provider"
         )
 
     @catch_name_exceptions
@@ -797,9 +967,44 @@ class Server(BaseHandler):
 
         return self._render_template('module_provider.html')
 
+    @catch_name_exceptions
+    def _view_serve_provider(self, namespace, provider, version=None, doc_category=None, doc_slug=None):
+        """Render view for provider"""
+        namespace_obj = terrareg.models.Namespace.get(namespace)
+        if namespace_obj is None:
+            return self._namespace_404(
+                namespace_name=namespace
+            )
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name=provider)
+        if provider_obj is None:
+            return self._render_template(
+                'error.html',
+                error_title='Provider does not exist',
+                error_description='The provider {namespace}/{provider} does not exist'.format(
+                    namespace=namespace,
+                    provider=provider
+                ),
+                namespace=namespace,
+                provider=provider
+            ), 404
+
+        return self._render_template(
+            'provider.html',
+            namespace=namespace_obj,
+            provider=provider_obj
+        )
+
+    def _view_serve_search(self):
+        """Search based on input."""
+        return self._render_template('search.html')
+
     def _view_serve_module_search(self):
         """Search modules based on input."""
         return self._render_template('module_search.html')
+
+    def _view_serve_provider_search(self):
+        """Serve provider search page"""
+        return self._render_template("provider_search.html")
 
     def _view_serve_user_groups(self):
         """Page to view/modify user groups and permissions."""

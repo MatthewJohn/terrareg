@@ -13,7 +13,8 @@ class TestTerraformWellKnown(TerraregUnitTest):
             res = client.get('/.well-known/terraform.json')
         assert res.status_code == 200
         assert res.json == {
-            'modules.v1': '/v1/modules/'
+            'modules.v1': '/v1/modules/',
+            'providers.v1': '/v1/providers/'
         }
 
     def test_with_terraform_idc(self, client):
@@ -24,6 +25,7 @@ class TestTerraformWellKnown(TerraregUnitTest):
         assert res.status_code == 200
         assert res.json == {
             'modules.v1': '/v1/modules/',
+            'providers.v1': '/v1/providers/',
             'login.v1': {
                 'authz': '/terraform/oauth/authorization',
                 'client': 'terraform-cli',

@@ -1,11 +1,13 @@
 
 from datetime import datetime
 import functools
+import json
 import os
 import unittest.mock
 
 import pytest
 
+import terrareg.models
 from terrareg.models import (
     Example, ExampleFile, ModuleDetails, ModuleVersionFile, Namespace, Module, ModuleProvider,
     ModuleVersion, GitProvider, Submodule, UserGroup, UserGroupNamespacePermission
@@ -15,6 +17,14 @@ from terrareg.server import Server
 import terrareg.config
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from terrareg.constants import EXTRACTION_VERSION
+import terrareg.provider_category_model
+import terrareg.provider_source.factory
+import terrareg.repository_model
+import terrareg.provider_version_binary_model
+import terrareg.provider_version_documentation_model
+import terrareg.provider_model
+import terrareg.provider_version_model
+import terrareg.provider_tier
 
 
 @pytest.fixture
@@ -40,11 +50,26 @@ def mock_create_audit_event():
     return unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event')
 
 
+class AnyDateString:
+    """Match any datetime isoformat string"""
+
+    def __eq__(self, __o):
+        if isinstance(__o, str):
+            try:
+                datetime.fromisoformat(__o)
+                return True
+            except:
+                pass
+        return False
+
+
 class BaseTest:
 
     _TEST_DATA = None
     _GIT_PROVIDER_DATA = None
     _USER_GROUP_DATA = None
+    _PROVIDER_SOURCES = []
+    _PROVIDER_CATEGORIES = []
 
     INSTANCE_ = None
 
@@ -74,10 +99,15 @@ class BaseTest:
             os.unlink(cls._get_database_path())
 
         Database.reset()
-        cls.SERVER = Server()
+
+        Database.get().initialise()
 
         # Create DB tables
         Database.get().get_meta().create_all(Database.get().get_engine())
+
+        Database.reset()
+
+        cls.SERVER = Server()
 
         cls._setup_test_data()
 
@@ -112,14 +142,21 @@ class BaseTest:
             conn.execute(db.user_group_namespace_permission.delete())
             conn.execute(db.user_group.delete())
             conn.execute(db.sub_module.delete())
+            conn.execute(db.module_version_file.delete())
             conn.execute(db.module_version.delete())
             conn.execute(db.module_provider.delete())
             conn.execute(db.example_file.delete())
             conn.execute(db.module_details.delete())
             conn.execute(db.git_provider.delete())
             conn.execute(db.analytics.delete())
+            conn.execute(db.provider_analytics.delete())
+            conn.execute(db.provider_version_binary.delete())
+            conn.execute(db.provider_version_documentation.delete())
+            conn.execute(db.provider_version.delete())
+            conn.execute(db.provider.delete())
+            conn.execute(db.provider_source.delete())
+            conn.execute(db.provider_category.delete())
             conn.execute(db.session.delete())
-            conn.execute(db.module_version_file.delete())
             conn.execute(db.namespace.delete())
 
         with cls._patch_audit_event_creation():
@@ -133,27 +170,27 @@ class BaseTest:
                 with Database.get_engine().connect() as conn:
                     conn.execute(insert)
 
+            with unittest.mock.patch('terrareg.config.Config.PROVIDER_CATEGORIES', json.dumps(cls._PROVIDER_CATEGORIES)):
+                terrareg.provider_category_model.ProviderCategoryFactory.get().initialise_from_config()
+
+            with unittest.mock.patch('terrareg.config.Config.PROVIDER_SOURCES', json.dumps(cls._PROVIDER_SOURCES)):
+                terrareg.provider_source.factory.ProviderSourceFactory.get().initialise_from_config()
+
             # Setup test Namespaces, Modules, ModuleProvider and ModuleVersion
             import_data = cls._TEST_DATA if test_data is None else test_data
-            namespace_attributes = ["display_name"]
 
             # Iterate through namespaces
             for namespace_name in import_data:
                 namespace_data = import_data[namespace_name]
                 display_name = import_data[namespace_name].get("display_name")
-                namespace = Namespace.create(name=namespace_name, display_name=display_name)
+                namespace = Namespace.create(name=namespace_name, display_name=display_name, type_=import_data[namespace_name].get("type"))
 
                 # Iterate through modules
-                for module_name in namespace_data:
-                    # Ignore any module names that are namespace attributes
-                    if module_name in namespace_attributes:
-                        continue
-
-                    module_data = namespace_data[module_name]
+                for module_name, module_data in namespace_data.get("modules", {}).items():
                     module = Module(namespace=namespace, name=module_name)
 
                     # Iterate through providers
-                    for provider_name in import_data[namespace_name][module_name]:
+                    for provider_name in module_data:
                         module_provider_test_data = module_data[provider_name]
                         module_provider = ModuleProvider(module=module, name=provider_name)
 
@@ -278,6 +315,78 @@ class BaseTest:
                                     example_file = ExampleFile.create(example=example, path=example_file_path)
                                     example_file.update_attributes(content=example_config['example_files'][example_file_path])
 
+                # Iterate through GPG keys
+                for gpg_key in namespace_data.get("gpg_keys", []):
+                    terrareg.models.GpgKey.create(namespace=namespace, ascii_armor=gpg_key.get("ascii_armor"))
+
+                # Iterate through providers
+                for provider_name, provider_data in namespace_data.get("providers", {}).items():
+                    repository_data = provider_data.get("repository")
+                    repository = terrareg.repository_model.Repository.create(
+                        provider_source=terrareg.provider_source.factory.ProviderSourceFactory.get().get_provider_source_by_name(repository_data["provider_source"]),
+                        provider_id=repository_data.get("provider_id"),
+                        name=repository_data.get("name"),
+                        description=repository_data.get("description"),
+                        owner=repository_data.get("owner"),
+                        clone_url=repository_data.get("clone_url"),
+                        logo_url=repository_data.get("logo_url"),
+                    )
+
+                    provider = terrareg.provider_model.Provider.create(
+                        repository=repository,
+                        provider_category=terrareg.provider_category_model.ProviderCategoryFactory.get().get_provider_category_by_slug(provider_data.get("category_slug")),
+                        use_default_provider_source_auth=provider_data.get("use_default_provider_source_auth", True),
+                        tier=terrareg.provider_tier.ProviderTier(provider_data.get("tier", "community"))
+                    )
+
+                    for version, version_data in provider_data.get("versions").items():
+                        version_obj = terrareg.provider_version_model.ProviderVersion(provider=provider, version=version)
+                        with version_obj.create_extraction_wrapper(
+                                git_tag=version_data.get("git_tag"),
+                                gpg_key=terrareg.models.GpgKey.get_by_fingerprint(fingerprint=version_data.get("gpg_key_fingerprint"))):
+                            pass
+
+                        # Update any custom attributes from test data
+                        update_kwargs = {
+                            attr: version_data[attr]
+                            for attr in ["published_at"]
+                            if attr in version_data
+                        }
+                        if update_kwargs:
+                            version_obj.update_attributes(**update_kwargs)
+
+                        # Import binaries
+                        for binary_name, binary_data in version_data.get("binaries", {}).items():
+                            terrareg.provider_version_binary_model.ProviderVersionBinary.create(
+                                provider_version=version_obj,
+                                name=binary_name,
+                                checksum=binary_data.get("checksum"),
+                                content=binary_data.get("content")
+                            )
+
+                        # Import documentation
+                        for documentation_id, documentation_data in version_data.get("documentation", {}).items():
+                            provider_documentation = terrareg.provider_version_documentation_model.ProviderVersionDocumentation.create(
+                                provider_version=version_obj,
+                                documentation_type=documentation_data.get("type"),
+                                name=documentation_id[0],
+                                title=documentation_data.get("title", ""),
+                                description=documentation_data.get("description", ""),
+                                filename=documentation_data.get("filename"),
+                                language=documentation_id[1],
+                                subcategory=documentation_data.get("subcategory"),
+                                content=documentation_data.get("content")
+                            )
+                            attributes_to_update = {
+                                k: v
+                                for k, v in documentation_data.items()
+                                if k in ["id"]
+                            }
+                            if attributes_to_update:
+                                with db.get_connection() as conn:
+                                    conn.execute(db.provider_version_documentation.update().where(db.provider_version_documentation.c.id==provider_documentation.pk).values(**attributes_to_update))
+
+
             if cls._USER_GROUP_DATA:
                 for group_name in cls._USER_GROUP_DATA:
                     user_group = UserGroup.create(name=group_name, site_admin=cls._USER_GROUP_DATA[group_name].get('site_admin', False))
@@ -287,3 +396,35 @@ class BaseTest:
                             user_group=user_group,
                             namespace=namespace,
                             permission_type=UserGroupNamespacePermissionType(permission_type))
+
+    def _test_unauthenticated_read_api_endpoint_test(self, request_callback):
+        """Check unauthenticated read API endpoint access"""
+        mock_auth_method = unittest.mock.MagicMock()
+        mock_auth_method.can_access_read_api = unittest.mock.MagicMock(return_value=False)
+        mock_auth_method.get_username.return_value = 'unauthenticated user'
+        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
+
+        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+            res = request_callback()
+            assert res.status_code == 403
+            assert res.json == {
+                'message': "You don't have the permission to access the requested resource. It is either read-protected or not readable by the server."
+            }
+
+            mock_auth_method.can_access_read_api.assert_called_once_with()
+
+    def _test_unauthenticated_terraform_api_endpoint_test(self, request_callback):
+        """Check unauthenticated Terraform API endpoint access"""
+        mock_auth_method = unittest.mock.MagicMock()
+        mock_auth_method.can_access_terraform_api = unittest.mock.MagicMock(return_value=False)
+        mock_auth_method.get_username.return_value = 'unauthenticated user'
+        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
+
+        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
+            res = request_callback()
+            assert res.status_code == 403
+            assert res.json == {
+                'message': "You don't have the permission to access the requested resource. It is either read-protected or not readable by the server."
+            }
+
+            mock_auth_method.can_access_terraform_api.assert_called_once_with()

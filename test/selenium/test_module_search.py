@@ -23,26 +23,10 @@ class TestModuleSearch(SeleniumTest):
         cls.register_patch(cls._config_trusted_namespaces_mock)
         super(TestModuleSearch, cls).setup_class()
 
-    def test_search_from_homepage(self):
-        """Check search functionality from homepage."""
-        self.selenium_instance.get(self.get_url('/'))
-
-        # Enter text into search input
-        self.selenium_instance.find_element(By.ID, 'navBarSearchInput').send_keys('modulesearch')
-
-        search_button = self.selenium_instance.find_element(By.ID, 'navBarSearchButton')
-        assert search_button.text == 'Search'
-        search_button.click()
-
-        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/search?q=modulesearch'))
-        assert self.selenium_instance.title == 'Search - Terrareg'
-
-        self.assert_equals(lambda: len(self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')), 4)
-
     def test_result_cards(self):
         """Check the result cards."""
 
-        self.selenium_instance.get(self.get_url('/modules/search?q=modulesearch'))
+        self.selenium_instance.get(self.get_url('/search/modules?q=modulesearch'))
 
         self.assert_equals(lambda: len(self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')), 4)
 
@@ -81,7 +65,7 @@ class TestModuleSearch(SeleniumTest):
     def test_search_filters(self):
         """Check value of search filters."""
 
-        self.selenium_instance.get(self.get_url('/modules/search?q=modulesearch'))
+        self.selenium_instance.get(self.get_url('/search/modules?q=modulesearch'))
 
         self.assert_equals(lambda: len(self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')), 4)
 
@@ -110,7 +94,7 @@ class TestModuleSearch(SeleniumTest):
 
     def test_next_prev_buttons(self):
         """Check next and previous buttons."""
-        self.selenium_instance.get(self.get_url('/modules/search?q=modulesearch'))
+        self.selenium_instance.get(self.get_url('/search/modules?q=modulesearch'))
 
         result_cards = self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')
         assert len(result_cards) == 4
@@ -181,7 +165,7 @@ class TestModuleSearch(SeleniumTest):
 
     def test_result_counts(self):
         """Check result count text."""
-        self.selenium_instance.get(self.get_url('/modules/search?q=modulesearch'))
+        self.selenium_instance.get(self.get_url('/search/modules?q=modulesearch'))
 
         # Check total count
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'result-count').text, 'Showing results 1 - 4 of 4')
@@ -204,14 +188,14 @@ class TestModuleSearch(SeleniumTest):
         # Check total count
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'result-count').text, 'Showing results 1 - 10 of 13')
 
-        self.selenium_instance.get(self.get_url('/modules/search?q=doesnotexist'))
+        self.selenium_instance.get(self.get_url('/search/modules?q=doesnotexist'))
 
         # Check total count
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'result-count').text, 'Showing results 0 - 0 of 0')
 
     def test_result_relevancy_ordering(self):
         """Test results are displayed in relevancy order"""
-        self.selenium_instance.get(self.get_url('/modules/search?q=namematch'))
+        self.selenium_instance.get(self.get_url('/search/modules?q=namematch'))
 
         self.assert_equals(lambda: len(self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')), 8)
         result_cards = self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')
@@ -260,7 +244,7 @@ class TestModuleSearch(SeleniumTest):
 
         with self.update_mock(self._config_trusted_namespaces_mock, 'new', ['version-constraint-test']):
             # Search for modules
-            self.selenium_instance.get(self.get_url('/modules/search?q=version-constraint-test'))
+            self.selenium_instance.get(self.get_url('/search/modules?q=version-constraint-test'))
 
             self.assert_equals(lambda: len(self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')), 5)
 
@@ -293,7 +277,7 @@ class TestModuleSearch(SeleniumTest):
         self.selenium_instance.delete_all_cookies()
 
         # Search for modules
-        self.selenium_instance.get(self.get_url('/modules/search?q='))
+        self.selenium_instance.get(self.get_url('/search/modules?q='))
 
         # Inspect and enter Terraform version into target Terraform input and update
         terraform_input = self.selenium_instance.find_element(By.ID, 'search-terraform-version')
@@ -304,7 +288,7 @@ class TestModuleSearch(SeleniumTest):
         self.selenium_instance.find_element(By.ID, 'search-options-update-button').click()
 
         # Reload page
-        self.selenium_instance.get(self.get_url('/modules/search?q='))
+        self.selenium_instance.get(self.get_url('/search/modules?q='))
         # Check terraform version is still present
         terraform_version_constraint = self.wait_for_element(By.ID, 'search-terraform-version')
         assert terraform_version_constraint.get_attribute("value") == "5.2.6-unittest"

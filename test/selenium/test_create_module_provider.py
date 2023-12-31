@@ -44,7 +44,7 @@ class TestCreateModuleProvider(SeleniumTest):
 
         expected_fields = [
             # label, placeholder value, default value
-            ('Namespace', None, 'emptynamespace'),
+            ('Namespace', None, 'contributed-providersearch'),
             ('Module Name', 'my-module', ''),
             ('Provider', 'e.g. aws, null...', ''),
             ('Git Repository Provider', None, 'Custom'),
@@ -80,7 +80,9 @@ class TestCreateModuleProvider(SeleniumTest):
                 self.selenium_instance.find_element(By.ID, 'create-module-namespace')
             ).options
         ] == [
+            'contributed-providersearch',
             'emptynamespace',
+            'initial-providers',
             'javascriptinjection',
             'moduledetails',
             'moduleextraction',
@@ -91,11 +93,14 @@ class TestCreateModuleProvider(SeleniumTest):
             'mostrecentunpublished',
             'onlybeta',
             'onlyunpublished',
+            'providersearch',
+            'providersearch-trusted',
             'real_providers',
             'relevancysearch',
             'repo_url_tests',
             'scratchnamespace',
             'searchbynamespace',
+            'second-provider-namespace',
             'testmodulecreation',
             'testnamespace',
             'trustednamespace',

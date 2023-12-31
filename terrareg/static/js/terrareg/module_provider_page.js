@@ -114,28 +114,7 @@ class ReadmeTab extends BaseTab {
                 // Populate README conrtent
                 readmeContentDiv.append(readmeContent);
 
-                // Add 'table' class to all tables in README
-                readmeContentDiv.find("table").addClass("table");
-
-                // Replace size of headers
-                readmeContentDiv.find("h1").addClass("subtitle").addClass("is-3");
-                readmeContentDiv.find("h2").addClass("subtitle").addClass("is-4");
-                readmeContentDiv.find("h3").addClass("subtitle").addClass("is-5");
-                readmeContentDiv.find("h4").addClass("subtitle").addClass("is-6");
-
-                for (let codeDiv of readmeContentDiv.find("code")) {
-                    // If code is within pre block, perform syntax highlighting.
-                    if (codeDiv.parentElement.nodeName.toLowerCase() == "pre") {
-                        window.Prism.highlightElement(codeDiv);
-                    } else {
-                        // Otherwise, removall all "language" classes
-                        for (let className of codeDiv.className.split(/\s+/)) {
-                            if (className.indexOf('language-') !== -1) {
-                                $(codeDiv).removeClass(className)
-                            }
-                        }
-                    }
-                }
+                convertImportedHtml(readmeContentDiv);
 
                 // Show README tab button
                 $("#module-tab-link-readme").removeClass('default-hidden');

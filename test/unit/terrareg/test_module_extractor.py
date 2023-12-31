@@ -513,7 +513,7 @@ disable_checkpoint = true
                 unittest.mock.patch('terrareg.module_extractor.open', mock_open_file), \
                 unittest.mock.patch('terrareg.module_extractor.safe_iglob', mock_safe_iglob), \
                 unittest.mock.patch('terrareg.module_extractor.GitModuleExtractor.module_directory', '/tmp/extraction_test'), \
-                unittest.mock.patch('terrareg.module_extractor.ExampleFile', mock_example_file):
+                unittest.mock.patch('terrareg.models.ExampleFile', mock_example_file):
 
             module_extractor = GitModuleExtractor(module_version=mock_module_version)
 
