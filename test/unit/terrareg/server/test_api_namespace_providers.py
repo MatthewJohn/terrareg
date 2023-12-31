@@ -201,6 +201,21 @@ class TestApiNamespaceProviders(TerraregIntegrationTest):
             'providers': [
                 {
                     'alias': None,
+                    'description': 'Test Multiple Versions',
+                    'downloads': 0,
+                    'id': 'test-namespace/test-two/2.0.1',
+                    'logo_url': 'https://git.example.com/initalproviders/terraform-provider-test-initial.png',
+                    'name': 'test-two',
+                    'namespace': 'test-namespace',
+                    'owner': 'test-namespace',
+                    'published_at': '2023-10-03T20:02:05',
+                    'source': 'https://github.example.com/test-namespace/terraform-provider-test-two',
+                    'tag': 'v2.0.1',
+                    'tier': 'community',
+                    'version': '2.0.1'
+                },
+                {
+                    'alias': None,
                     'description': 'Empty Provider Publish',
                     'downloads': 0,
                     'id': 'test-namespace/test-one/1.6.0',
@@ -214,21 +229,6 @@ class TestApiNamespaceProviders(TerraregIntegrationTest):
                     'tier': 'community',
                     'version': '1.6.0'
                 },
-                {
-                    'alias': None,
-                    'description': 'Test Multiple Versions',
-                    'downloads': 0,
-                    'id': 'test-namespace/test-two/2.0.1',
-                    'logo_url': 'https://git.example.com/initalproviders/terraform-provider-test-initial.png',
-                    'name': 'test-two',
-                    'namespace': 'test-namespace',
-                    'owner': 'test-namespace',
-                    'published_at': '2023-10-03T20:02:05',
-                    'source': 'https://github.example.com/test-namespace/terraform-provider-test-two',
-                    'tag': 'v2.0.1',
-                    'tier': 'community',
-                    'version': '2.0.1'
-                }
             ]
         }
 

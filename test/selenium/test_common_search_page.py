@@ -74,11 +74,11 @@ class TestModuleSearch(SeleniumTest):
 
         # Check provider cards
         provider_cards = [
-            {"link": "/providers/contributed-providersearch/mixedsearch-result", "text": "contributed-providersearch / mixedsearch-result"},
-            {"link": "/providers/contributed-providersearch/mixedsearch-result-multiversion", "text": "contributed-providersearch / mixedsearch-result-multiversion"},
-            {"link": "/providers/providersearch-trusted/mixedsearch-trusted-result", "text": "providersearch-trusted / mixedsearch-trusted-result"},
             {"link": "/providers/providersearch-trusted/mixedsearch-trusted-second-result", "text": "providersearch-trusted / mixedsearch-trusted-second-result"},
-            {"link": "/providers/providersearch-trusted/mixedsearch-trusted-result-multiversion", "text": "providersearch-trusted / mixedsearch-trusted-result-multiversion"}
+            {"link": "/providers/providersearch-trusted/mixedsearch-trusted-result-multiversion", "text": "providersearch-trusted / mixedsearch-trusted-result-multiversion"},
+            {"link": "/providers/providersearch-trusted/mixedsearch-trusted-result", "text": "providersearch-trusted / mixedsearch-trusted-result"},
+            {"link": "/providers/contributed-providersearch/mixedsearch-result-multiversion", "text": "contributed-providersearch / mixedsearch-result-multiversion"},
+            {"link": "/providers/contributed-providersearch/mixedsearch-result", "text": "contributed-providersearch / mixedsearch-result"},
         ]
         for card in self.selenium_instance.find_element(By.ID, "results-providers-content").find_elements(By.CLASS_NAME, "result-box"):
             card_details = provider_cards.pop(0)

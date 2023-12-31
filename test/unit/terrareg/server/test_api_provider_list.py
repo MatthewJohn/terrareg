@@ -221,21 +221,6 @@ class TestApiProviderList(TerraregIntegrationTest):
             'providers': [
                 {
                     'alias': None,
-                    'description': 'Empty Provider Publish',
-                    'downloads': 0,
-                    'id': 'test-namespace/test-one/1.6.0',
-                    'logo_url': 'https://git.example.com/initalproviders/terraform-provider-test-initial.png',
-                    'name': 'test-one',
-                    'namespace': 'test-namespace',
-                    'owner': 'test-namespace',
-                    'published_at': '2022-05-06T12:00:50',
-                    'source': 'https://github.example.com/test-namespace/terraform-provider-test-one',
-                    'tag': 'v1.6.0',
-                    'tier': 'community',
-                    'version': '1.6.0'
-                },
-                {
-                    'alias': None,
                     'description': 'Test Multiple Versions',
                     'downloads': 0,
                     'id': 'test-namespace/test-two/2.0.1',
@@ -248,6 +233,21 @@ class TestApiProviderList(TerraregIntegrationTest):
                     'tag': 'v2.0.1',
                     'tier': 'community',
                     'version': '2.0.1'
+                },
+                {
+                    'alias': None,
+                    'description': 'Test Multiple Versions',
+                    'downloads': 0,
+                    'id': 'second-namespace/test-two/1.4.2',
+                    'logo_url': 'https://git.example.com/second-namespace/terraform-provider-test-initial.png',
+                    'name': 'test-two',
+                    'namespace': 'second-namespace',
+                    'owner': 'second-namespace',
+                    'published_at': '2021-09-02T12:10:32',
+                    'source': 'https://github.example.com/second-namespace/terraform-provider-test-two',
+                    'tag': 'v1.4.2',
+                    'tier': 'community',
+                    'version': '1.4.2'
                 },
                 {
                     'alias': None,
@@ -266,19 +266,19 @@ class TestApiProviderList(TerraregIntegrationTest):
                 },
                 {
                     'alias': None,
-                    'description': 'Test Multiple Versions',
+                    'description': 'Empty Provider Publish',
                     'downloads': 0,
-                    'id': 'second-namespace/test-two/1.4.2',
-                    'logo_url': 'https://git.example.com/second-namespace/terraform-provider-test-initial.png',
-                    'name': 'test-two',
-                    'namespace': 'second-namespace',
-                    'owner': 'second-namespace',
-                    'published_at': '2021-09-02T12:10:32',
-                    'source': 'https://github.example.com/second-namespace/terraform-provider-test-two',
-                    'tag': 'v1.4.2',
+                    'id': 'test-namespace/test-one/1.6.0',
+                    'logo_url': 'https://git.example.com/initalproviders/terraform-provider-test-initial.png',
+                    'name': 'test-one',
+                    'namespace': 'test-namespace',
+                    'owner': 'test-namespace',
+                    'published_at': '2022-05-06T12:00:50',
+                    'source': 'https://github.example.com/test-namespace/terraform-provider-test-one',
+                    'tag': 'v1.6.0',
                     'tier': 'community',
-                    'version': '1.4.2'
-                }
+                    'version': '1.6.0'
+                },
             ]
         }
 
