@@ -4,7 +4,6 @@ import datetime
 from typing import Optional
 from enum import Enum
 import os
-from distutils.version import LooseVersion
 import json
 import re
 import secrets
@@ -20,6 +19,7 @@ import markdown
 import pygraphviz
 import networkx as nx
 
+from terrareg.loose_version import LooseVersion
 import terrareg.analytics
 from terrareg.database import Database
 import terrareg.config

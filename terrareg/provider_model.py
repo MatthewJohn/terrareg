@@ -4,7 +4,6 @@ Module for Provider model.
 @TODO Split models from models.py into separate modules in new package.
 """
 
-from distutils.version import LooseVersion
 import os
 import re
 from typing import Optional, Union, List
@@ -24,6 +23,7 @@ import terrareg.provider_category_model
 import terrareg.provider_version_model
 import terrareg.provider_extractor
 import terrareg.utils
+from terrareg.loose_version import LooseVersion
 
 
 class Provider:
