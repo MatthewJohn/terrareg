@@ -314,7 +314,7 @@ class TestProviderVersionBinary(TerraregIntegrationTest):
         test_provider_version_binary._cache_db_row = {
             "checksum": "some-other-checksum-unittest"
         }
-        assert test_provider_version_binary.checksum is "some-other-checksum-unittest"
+        assert test_provider_version_binary.checksum == "some-other-checksum-unittest"
 
     def test_local_file_path(self):
         """Test local_file_path property"""

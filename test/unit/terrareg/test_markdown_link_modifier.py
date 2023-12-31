@@ -28,8 +28,8 @@ class TestMarkdownLinkModifier(TerraregUnitTest):
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_name"></a> [name](#input\_name) | Enter your name<br>This Should be your full name | `string` | `"My Name"` | no |
-| <a name="input_test"></a> [test](#input\_test) | This should contain a large description of a variable.<br>For more informatino glahbab<br><br>adgadgadglkadnladnglakdnglakdgg<br>adgadmad ad gadg adg ad adg adg<br><br>adg<br>a | `string` | n/a | yes |
+| <a name="input_name"></a> [name](#input\\_name) | Enter your name<br>This Should be your full name | `string` | `"My Name"` | no |
+| <a name="input_test"></a> [test](#input\\_test) | This should contain a large description of a variable.<br>For more informatino glahbab<br><br>adgadgadglkadnladnglakdnglakdgg<br>adgadmad ad gadg adg ad adg adg<br><br>adg<br>a | `string` | n/a | yes |
 """.strip()
         ).strip() == """
 <h2 id="terrareg-anchor-test_file_name-inputs">Inputs</h2>
