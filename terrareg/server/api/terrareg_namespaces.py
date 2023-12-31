@@ -11,6 +11,7 @@ import terrareg.auth_wrapper
 import terrareg.models
 import terrareg.csrf
 import terrareg.auth_wrapper
+import terrareg.registry_resource_type
 
 
 class ApiTerraregNamespaces(ErrorCatchingResource):
@@ -28,7 +29,14 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
             'only_published', type=inputs.boolean,
             location='args',
             default=False,
-            help='Whether to only show namespaces with published modules'
+            help='Whether to only show namespaces with published modules or providers'
+        )
+        parser.add_argument(
+            'type', type=str,
+            location='args',
+            default=terrareg.registry_resource_type.RegistryResourceType.MODULE.value,
+            choices=[itx.value for itx in terrareg.registry_resource_type.RegistryResourceType],
+            help='Type of namespace to show results for. Either "provider" or "module"'
         )
         parser.add_argument(
             'offset', type=int,
@@ -52,14 +60,20 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
         parser = self._get_arg_parser()
         args = parser.parse_args()
 
+        try:
+            resource_type = terrareg.registry_resource_type.RegistryResourceType(args.type)
+        except ValueError:
+            return {"errors": ["Invalid type argument"]}, 400
+
         namespace_results = terrareg.models.Namespace.get_all(
-            only_published=args.only_published, limit=args.limit, offset=args.offset
+            only_published=args.only_published, limit=args.limit, offset=args.offset,
+            resource_type=resource_type
         )
 
         namespace_list = [
             {
                 "name": namespace.name,
-                "view_href": namespace.get_view_url(),
+                "view_href": namespace.get_view_url(resource_type=resource_type),
                 "display_name": namespace.display_name
             }
             for namespace in namespace_results.rows
@@ -91,6 +105,6 @@ class ApiTerraregNamespaces(ErrorCatchingResource):
 
         return {
             "name": namespace.name,
-            "view_href": namespace.get_view_url(),
+            "view_href": namespace.get_view_url(resource_type=terrareg.registry_resource_type.RegistryResourceType.MODULE),
             "display_name": namespace.display_name
         }

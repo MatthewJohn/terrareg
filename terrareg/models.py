@@ -4,11 +4,14 @@ import datetime
 from typing import Optional
 from enum import Enum
 import os
-from distutils.version import LooseVersion
 import json
 import re
 import secrets
+from tempfile import mkdtemp
+import tempfile
 import urllib.parse
+import gnupg
+from typing import List, Union
 
 import sqlalchemy
 import semantic_version
@@ -16,14 +19,16 @@ import markdown
 import pygraphviz
 import networkx as nx
 
+from terrareg.loose_version import LooseVersion
 import terrareg.analytics
 from terrareg.database import Database
 import terrareg.config
 import terrareg.audit
 import terrareg.audit_action
+from terrareg.namespace_type import NamespaceType
 import terrareg.result_data
 from terrareg.errors import (
-    DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
+    DuplicateGpgKeyError, DuplicateModuleProviderError, DuplicateNamespaceDisplayNameError, GpgKeyInUseError, InvalidGpgKeyError, InvalidModuleNameError, InvalidModuleProviderNameError, InvalidNamespaceDisplayNameError, InvalidUserGroupNameError,
     InvalidVersionError, ModuleProviderRedirectForceDeletionNotAllowedError, ModuleProviderRedirectInUseError, NamespaceAlreadyExistsError, NamespaceNotEmptyError, NoModuleVersionAvailableError,
     InvalidGitTagFormatError, InvalidNamespaceNameError, NonExistentModuleProviderRedirectError, NonExistentNamespaceRedirectError, ReindexingExistingModuleVersionsIsProhibitedError, RepositoryUrlContainsInvalidPortError, RepositoryUrlContainsInvalidTemplateError,
     RepositoryUrlDoesNotContainValidSchemeError,
@@ -40,6 +45,9 @@ from terrareg.utils import convert_markdown_to_html, get_public_url_details, saf
 from terrareg.validators import GitUrlValidator
 from terrareg.constants import EXTRACTION_VERSION
 from terrareg.presigned_url import TerraformSourcePresignedUrl
+import terrareg.provider_model
+import terrareg.provider_version_model
+import terrareg.registry_resource_type
 
 
 class Session:
@@ -94,6 +102,32 @@ class Session:
     def id(self):
         """Return ID of session"""
         return self._session_id
+
+    @property
+    def provider_source_auth(self):
+        """Return provider source authentication details"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(db.session.select().where(
+                db.session.c.id==self._session_id,
+                db.session.c.expiry >= datetime.datetime.now()
+            ))
+            row = res.fetchone()
+        if not row:
+            return None
+
+        return json.loads(Database.decode_blob((row['provider_source_auth'] or b'{}')))
+
+    @provider_source_auth.setter
+    def provider_source_auth(self, new):
+        """Update provider source authentication details in session"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            conn.execute(db.session.update().where(
+                db.session.c.id==self._session_id
+            ).values(
+                provider_source_auth=Database.encode_blob(json.dumps(new))
+            ))
 
     def __init__(self, session_id):
         """Store current session ID."""
@@ -706,7 +740,7 @@ class NamespaceRedirect(object):
 class Namespace(object):
 
     @classmethod
-    def get(cls, name, create=False, include_redirect=True):
+    def get(cls, name, create=False, include_redirect=True, case_insensitive=False):
         """Create object and ensure the object exists."""
         obj = cls(name=name)
 
@@ -714,7 +748,7 @@ class Namespace(object):
         if obj._get_db_row() is None:
 
             # Check for redirect
-            if include_redirect and (redirect_namespace := NamespaceRedirect.get_namespace_by_name(name=name, case_insensitive=False)):
+            if include_redirect and (redirect_namespace := NamespaceRedirect.get_namespace_by_name(name=name, case_insensitive=case_insensitive)):
                 return redirect_namespace
 
             # If set to create and auto module-provider creation
@@ -804,22 +838,26 @@ class Namespace(object):
         return None
 
     @classmethod
-    def insert_into_database(cls, name, display_name):
+    def insert_into_database(cls, name, display_name, type_):
         """Insert new namespace into database"""
         db = Database.get()
         module_provider_insert = db.namespace.insert().values(
             namespace=name,
-            display_name=display_name if display_name else None
+            display_name=display_name if display_name else None,
+            namespace_type=type_
         )
         with db.get_connection() as conn:
             conn.execute(module_provider_insert)
 
     @classmethod
-    def create(cls, name, display_name=None):
+    def create(cls, name, display_name=None, type_=None):
         """Create instance of object in database."""
         # Validate name
         cls._validate_name(name)
         cls._validate_display_name(display_name)
+
+        if type_ is None:
+            type_ = NamespaceType.NONE
 
         if cls.get_by_case_insensitive_name(name, include_redirect=False):
             raise NamespaceAlreadyExistsError("A namespace already exists with this name")
@@ -828,7 +866,7 @@ class Namespace(object):
             raise DuplicateNamespaceDisplayNameError("A namespace already has this display name")
 
         # Create namespace
-        cls.insert_into_database(name=name, display_name=display_name)
+        cls.insert_into_database(name=name, display_name=display_name, type_=type_)
 
         obj = cls(name=name)
 
@@ -880,11 +918,12 @@ class Namespace(object):
         return namespace, None
 
     @staticmethod
-    def get_all(only_published=False, limit=None, offset=0):
+    def get_all(only_published=False, limit=None, offset=0,
+                resource_type: 'terrareg.registry_resource_type.RegistryResourceType'=None) -> List['terrareg.result_data.ResultData']:
         """Return all namespaces."""
         db = Database.get()
 
-        if only_published:
+        if only_published and resource_type is terrareg.registry_resource_type.RegistryResourceType.MODULE:
             # If only getting namespaces, with published/visible versions,
             # query module provider, joining to latest module version
             modules_query = db.select_module_provider_joined_latest_module_version(
@@ -905,6 +944,23 @@ class Namespace(object):
             ).join(
                 db.namespace,
                 db.namespace.c.id==modules_query.c.namespace_id
+            ).group_by(
+                db.namespace.c.namespace
+            ).order_by(
+                db.namespace.c.namespace
+            )
+        elif only_published and resource_type is terrareg.registry_resource_type.RegistryResourceType.PROVIDER:
+            providers_query = db.select_provider_joined_latest_provider_version(
+                db.provider
+            ).subquery()
+
+            namespace_query = sqlalchemy.select(
+                db.namespace.c.namespace
+            ).select_from(
+                providers_query
+            ).join(
+                db.namespace,
+                db.namespace.c.id==providers_query.c.namespace_id
             ).group_by(
                 db.namespace.c.namespace
             ).order_by(
@@ -948,6 +1004,11 @@ class Namespace(object):
         return safe_join_paths(terrareg.config.Config().DATA_DIRECTORY, 'modules', self._name)
 
     @property
+    def base_provider_directory(self):
+        """Return base directory for providers"""
+        return safe_join_paths(terrareg.config.Config().DATA_DIRECTORY, 'providers', self._name)
+
+    @property
     def name(self):
         """Return name."""
         return self._name
@@ -961,6 +1022,24 @@ class Namespace(object):
     def trusted(self):
         """Whether namespace is trusted."""
         return self.name in terrareg.config.Config().TRUSTED_NAMESPACES
+
+    @property
+    def namespace_type(self):
+        """Return type of namespace"""
+        return self._get_db_row()['namespace_type']
+
+    @property
+    def can_publish_providers(self):
+        """Determine whether the namespace can publish providers"""
+        # Ensure at least one GPG key is assigned with the namespace
+        if not GpgKey.get_by_namespace(self):
+            return False
+
+        # Ensure the namespace is a github namespace
+        if self.namespace_type not in [NamespaceType.GITHUB_USER, NamespaceType.GITHUB_ORGANISATION]:
+            return False
+
+        return True
 
     @staticmethod
     def _validate_name(name):
@@ -1093,9 +1172,13 @@ class Namespace(object):
         # Remove cached DB row
         self._cache_db_row = None
 
-    def get_view_url(self):
+    def get_view_url(self, resource_type: 'terrareg.registry_resource_type.RegistryResourceType'):
         """Return view URL"""
-        return '/modules/{namespace}'.format(namespace=self.name)
+        if resource_type is terrareg.registry_resource_type.RegistryResourceType.MODULE:
+            url_part = "modules"
+        elif resource_type is terrareg.registry_resource_type.RegistryResourceType.PROVIDER:
+            url_part = "providers"
+        return f"/{url_part}/{self.name}"
 
     def get_details(self):
         """Return custom terrareg details about namespace."""
@@ -1104,6 +1187,25 @@ class Namespace(object):
             'trusted': self.trusted,
             'display_name': self.display_name
         }
+
+    def get_all_providers(self) -> List['terrareg.provider_model.Provider']:
+        """Return all providers for namespace."""
+        db = Database.get()
+        select = sqlalchemy.select(
+            db.provider.c.name.label('provider_name')
+        ).select_from(db.provider).join(
+            db.namespace, db.provider.c.namespace_id==db.namespace.c.id
+        ).where(
+            db.namespace.c.namespace==self.name
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(select)
+            providers = [r['provider_name'] for r in res]
+
+        return [
+            terrareg.provider_model.Provider(namespace=self, name=provider)
+            for provider in providers
+        ]
 
     def get_all_modules(self):
         """Return all modules for namespace."""
@@ -1132,6 +1234,9 @@ class Namespace(object):
         if self.get_all_modules():
             raise NamespaceNotEmptyError("Namespace cannot be deleted as it contains modules")
 
+        if self.get_all_providers():
+            raise NamespaceNotEmptyError("Namespace cannot be deleted as it contains providers")
+
         terrareg.audit.AuditEvent.create_audit_event(
             action=terrareg.audit_action.AuditAction.NAMESPACE_DELETE,
             object_type=self.__class__.__name__,
@@ -1158,6 +1263,12 @@ class Namespace(object):
         if not os.path.isdir(self.base_directory):
             os.mkdir(self.base_directory)
 
+    def create_provider_data_directory(self):
+        """Create data directory for providers"""
+        # Check if directory exists
+        if not os.path.isdir(self.base_provider_directory):
+            os.mkdir(self.base_provider_directory)
+
     def get_module_custom_links(self):
         """Obtain module links that are applicable to namespace"""
         links = filter(
@@ -1165,6 +1276,241 @@ class Namespace(object):
             json.loads(terrareg.config.Config().MODULE_LINKS))
         return links
 
+
+class GpgKey:
+    """Creates and manages GPG Keys"""
+
+    @classmethod
+    @contextlib.contextmanager
+    def _get_gpg_object(cls, ascii_armor: str):
+        """Obtain ascii object"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            gpg = gnupg.GPG(gnupghome=temp_dir, keyring=None, use_agent=False)
+            imported_key = gpg.import_keys(key_data=ascii_armor)
+            yield (gpg, imported_key)
+
+    @classmethod
+    def _get_gpg_object_from_ascii_armor(cls, ascii_armor: str):
+        """Validate ASCII armor and generate GPG object"""
+        with cls._get_gpg_object(ascii_armor=ascii_armor) as (_, imported_key):
+            return imported_key
+
+    @classmethod
+    def get_by_namespace(cls, namespace) -> List['GpgKey']:
+        """Obtain GPG Keys for given namespace"""
+        db = Database.get()
+        select = sqlalchemy.select(
+            db.gpg_key.c.id
+        ).select_from(
+            db.gpg_key
+        ).where(
+            db.gpg_key.c.namespace_id==namespace.pk
+        )
+
+        with db.get_connection() as conn:
+            rows = conn.execute(select).fetchall()
+
+        return [
+            cls(pk=row["id"])
+            for row in rows
+        ]
+
+    @classmethod
+    def get_by_id_and_namespace(cls, id_, namespace) -> Union[None, 'GpgKey']:
+        """Get GPG key by key id"""
+        db = Database.get()
+        select = sqlalchemy.select(
+            db.gpg_key.c.id
+        ).select_from(
+            db.gpg_key
+        ).where(
+            db.gpg_key.c.id==id_,
+            db.gpg_key.c.namespace_id==namespace.pk
+        )
+
+        with db.get_connection() as conn:
+            row = conn.execute(select).fetchone()
+
+        if row:
+            return cls(pk=row['id'])
+        return None
+
+    @classmethod
+    def get_by_fingerprint(cls, fingerprint) -> Union['GpgKey', None]:
+        """Get GPG key by fingerprint"""
+        db = Database.get()
+        select = sqlalchemy.select(
+            db.gpg_key.c.id
+        ).select_from(
+            db.gpg_key
+        ).where(
+            db.gpg_key.c.fingerprint==fingerprint
+        )
+
+        with db.get_connection() as conn:
+            row = conn.execute(select).fetchone()
+
+        if row:
+            return cls(pk=row['id'])
+        return None
+
+    @classmethod
+    def create(cls, namespace, ascii_armor) -> 'GpgKey':
+        """Create GPG key"""
+        fingerprint = None
+        if isinstance(ascii_armor, str):
+            ascii_armor = ascii_armor.strip()
+            if ascii_armor:
+                # Validate ascii armor
+                gpg_key = cls._get_gpg_object_from_ascii_armor(ascii_armor)
+                if gpg_key.returncode == 0 and len(gpg_key.fingerprints) == 1:
+                    fingerprint = gpg_key.fingerprints[0]
+
+        if not fingerprint:
+            raise InvalidGpgKeyError("GPG key provided is invalid or could not be read")
+
+        # Ensure that there is not already GPG key with the same fingerprint
+        duplicate_gpg_key = cls.get_by_fingerprint(fingerprint)
+        if duplicate_gpg_key:
+            raise DuplicateGpgKeyError("A duplicate GPG key exists with the same fingerprint")
+
+        pk = cls.create_db_row(
+            namespace=namespace,
+            ascii_armor=ascii_armor,
+            fingerprint=fingerprint,
+            key_id=fingerprint[-16:]
+        )
+
+        obj = cls(pk=pk)
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.GPG_KEY_CREATE,
+            object_type=obj.__class__.__name__,
+            object_id=obj.pk,
+            old_value=None, new_value=None
+        )
+
+        return obj
+
+    @classmethod
+    def create_db_row(cls, namespace, ascii_armor, fingerprint, key_id) -> int:
+        """Create instance of GPG key in database"""
+        db = Database.get()
+        gpg_key_insert = db.gpg_key.insert().values(
+            namespace_id=namespace.pk,
+            ascii_armor=Database.encode_blob(ascii_armor),
+            fingerprint=fingerprint,
+            key_id=key_id,
+            created_at=datetime.datetime.now(),
+            updated_at=datetime.datetime.now(),
+        )
+        with db.get_connection() as conn:
+            res = conn.execute(gpg_key_insert)
+        return res.lastrowid
+
+    @property
+    def pk(self):
+        """Return primary key of object"""
+        return self._pk
+
+    @property
+    def namespace(self):
+        """Return namespace for object"""
+        return Namespace.get_by_pk(self._get_db_row()['namespace_id'])
+
+    @property
+    def ascii_armor(self):
+        """Return ascii_armor for gpg key"""
+        return Database.decode_blob(self._get_db_row()['ascii_armor'])
+
+    @property
+    def key_id(self):
+        """Return Key ID for GPG key"""
+        return self._get_db_row()['key_id']
+
+    @property
+    def fingerprint(self):
+        """Return Key ID for GPG key"""
+        return self._get_db_row()['fingerprint']
+
+    def __init__(self, pk):
+        """Store member variables"""
+        self._pk = pk
+        self._cache_db_row = None
+
+    def _get_db_row(self):
+        """Return database row for module details."""
+        if self._cache_db_row is None:
+            db = Database.get()
+            select = db.gpg_key.select(
+            ).where(
+                db.gpg_key.c.id == self.pk
+            )
+            with db.get_connection() as conn:
+                res = conn.execute(select)
+                self._cache_db_row = res.fetchone()
+
+        return self._cache_db_row
+
+    def get_all_provider_versions(self) -> List['terrareg.provider_version_model.ProviderVersion']:
+        """Obtain list of provider versions that reference the GPG key"""
+        db = Database.get()
+        with db.get_connection() as conn:
+            res = conn.execute(
+                sqlalchemy.select(
+                    db.provider_version.c.id
+                ).select_from(
+                    db.provider_version
+                ).where(db.provider_version.c.gpg_key_id==self.pk)
+            ).all()
+            return [
+                terrareg.provider_version_model.ProviderVersion.get_by_pk(pk=row['id'])
+                for row in res
+            ]
+
+    def verify_data_signature(self, signature: bytes, data: bytes):
+        """Check if GPG key matches signature"""
+        with self._get_gpg_object(ascii_armor=self.ascii_armor) as (gpg_object, _):
+            with tempfile.NamedTemporaryFile() as sig_fh:
+                sig_fh.write(signature)
+                sig_fh.flush()
+                res = gpg_object.verify_data(sig_filename=sig_fh.name, data=data)
+                return res.valid
+
+    def delete(self):
+        """Delete GPG key"""
+        if self.get_all_provider_versions():
+            raise GpgKeyInUseError('Cannot delete GPG key as it is used by provider versions')
+
+        terrareg.audit.AuditEvent.create_audit_event(
+            action=terrareg.audit_action.AuditAction.GPG_KEY_DELETE,
+            object_type=self.__class__.__name__,
+            object_id=self.pk,
+            old_value=None, new_value=None
+        )
+        db = Database.get()
+        gpg_key_delete = db.gpg_key.delete().where(
+            db.gpg_key.c.id == self.pk
+        )
+        with db.get_connection() as conn:
+            conn.execute(gpg_key_delete)
+
+    def get_api_data(self):
+        """Return API data for model"""
+        return {
+            "type": "gpg-keys",
+            "id": str(self.pk),
+            "attributes": {
+                "ascii-armor": self.ascii_armor,
+                "created-at": self._get_db_row()['created_at'].isoformat(),
+                "key-id": self.key_id,
+                "namespace": self.namespace.name,
+                "source": "",
+                "source-url": None,
+                "trust-signature": "",
+                "updated-at": self._get_db_row()['updated_at'].isoformat()
+            }
+        }
 
 class Module(object):
 
@@ -1198,7 +1544,7 @@ class Module(object):
     def get_view_url(self):
         """Return view URL"""
         return '{namespace_url}/{module}'.format(
-            namespace_url=self._namespace.get_view_url(),
+            namespace_url=self._namespace.get_view_url(resource_type=terrareg.registry_resource_type.RegistryResourceType.MODULE),
             module=self.name
         )
 

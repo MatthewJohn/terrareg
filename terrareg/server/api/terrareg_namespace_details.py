@@ -7,6 +7,7 @@ from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.csrf
 import terrareg.models
 import terrareg.auth_wrapper
+import terrareg.registry_resource_type
 
 
 class ApiTerraregNamespaceDetails(ErrorCatchingResource):
@@ -49,7 +50,7 @@ class ApiTerraregNamespaceDetails(ErrorCatchingResource):
 
         return {
             "name": namespace.name,
-            "view_href": namespace.get_view_url(),
+            "view_href": namespace.get_view_url(resource_type=terrareg.registry_resource_type.RegistryResourceType.MODULE),
             "display_name": namespace.display_name
         }
 

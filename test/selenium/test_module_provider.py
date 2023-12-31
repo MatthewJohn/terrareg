@@ -2564,7 +2564,7 @@ various &lt; characters that could be escaped.</pre>
 
     @pytest.mark.skipif(
         not os.environ.get("RUNNING_IN_DOCKER"),
-        reason="Canvas image comparison does not work outsidde of docker"
+        reason="Canvas image comparison does not work outside of docker"
     )
     @pytest.mark.parametrize("base_url,expected_url,base_filename,", [
         ("/modules/moduledetails/fullypopulated/testprovider/1.5.0",

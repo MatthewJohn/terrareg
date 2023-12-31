@@ -5,13 +5,20 @@ from terrareg.auth import AdminApiKeyAuthMethod
 
 from test import BaseTest
 import terrareg.database
-from .test_data import integration_test_data, integration_git_providers
+from .test_data import (
+    integration_test_data,
+    integration_git_providers,
+    integration_provider_categories,
+    integration_provider_sources
+)
 
 
 class TerraregIntegrationTest(BaseTest):
 
     _TEST_DATA = integration_test_data
     _GIT_PROVIDER_DATA = integration_git_providers
+    _PROVIDER_CATEGORIES = integration_provider_categories
+    _PROVIDER_SOURCES = integration_provider_sources
 
     @staticmethod
     def _get_database_path():

@@ -262,3 +262,153 @@ class PresignedUrlsNotConfiguredError(TerraregError):
     """Missing configurations for pre-signed URLs"""
 
     pass
+
+
+class InvalidGpgKeyError(TerraregError):
+    """Invalid GPG Key"""
+
+    pass
+
+
+class DuplicateGpgKeyError(TerraregError):
+    """"Duplicate GPG key exists"""
+
+    pass
+
+
+class DuplicateProviderError(TerraregError):
+    """A provider already exists with the same name"""
+
+    pass
+
+
+class InvalidProviderSourceConfigError(TerraregError):
+    """An invalid provider source config is present"""
+
+    pass
+
+
+class InvalidProviderCategoryConfigError(TerraregError):
+    """An invalid provider category config is present"""
+
+    pass
+
+
+class ReindexingExistingProviderVersionsIsProhibitedError(TerraregError):
+    """Cannot re-index a module provider"""
+
+    pass
+
+
+class MissingSignureArtifactError(TerraregError):
+    """Missing signature error for artifacts"""
+
+    pass
+
+
+class CouldNotFindGpgKeyForProviderVersionError(TerraregError):
+    """Could not find valid GPG key for release"""
+
+    pass
+
+
+class InvalidRepositoryNameError(TerraregError):
+    """Repository name is invalid for a the given type of object"""
+
+    pass
+
+
+class UnableToObtainReleaseSourceError(TerraregError):
+    """Unable to obtain release source for provider version"""
+
+    pass
+
+
+class MissingReleaseArtifactError(TerraregError):
+    """Artifact is missing from release"""
+
+    pass
+
+
+class InvalidChecksumFileError(TerraregError):
+    """Invalid line found in checksum file"""
+
+    pass
+
+
+class InvalidProviderBinaryNameError(TerraregError):
+    """Invalid binary file name"""
+
+    pass
+
+
+class InvalidProviderBinaryOperatingSystemError(TerraregError):
+    """Invalid operating system in provider binary name"""
+
+    pass
+
+
+class InvalidProviderBinaryArchitectureError(TerraregError):
+    """Invalid architecture in provider binary name"""
+
+    pass
+
+
+class InvalidProviderManifestFileError(TerraregError):
+    """Invalid manifests file found"""
+
+    pass
+
+
+class NoGithubAppInstallationError(TerraregError):
+    """Github app is not installed in target org/user"""
+
+    pass
+
+
+class ProviderSourceDefaultAccessTokenNotConfiguredError(TerraregError):
+    """Default access token for provider source has not been configured"""
+
+    pass
+
+
+class UnableToGenerateGithubInstallationAccessTokenError(TerraregError):
+    """Unable to obtain access token for app installation"""
+
+    pass
+
+
+class InvalidReleaseArtifactChecksumError(TerraregError):
+    """Invalid checksum for release artifact"""
+
+    pass
+
+
+class NonExistentNamespaceError(TerraregError):
+    """A namespace cannot be found for a given provider owner"""
+
+    pass
+
+
+class GithubEntityDoesNotExistError(TerraregError):
+    """Could not determine github entity type"""
+
+    pass
+
+
+class InvalidGithubAppMetadataError(TerraregError):
+    """Unable to obtain github app metadata"""
+
+    pass
+
+
+class ProviderVersionBinaryAlreadyExistsError(TerraregError):
+    """Provider version binary already exists"""
+
+    pass
+
+
+class GpgKeyInUseError(TerraregError):
+    """GPG key is in use by provider versions and cannot be deleted"""
+
+    pass

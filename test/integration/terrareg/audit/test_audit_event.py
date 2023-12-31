@@ -63,6 +63,7 @@ class TestAuditEvent(TerraregIntegrationTest):
         (AuditAction.NAMESPACE_CREATE),
         (AuditAction.NAMESPACE_MODIFY_NAME),
         (AuditAction.NAMESPACE_MODIFY_DISPLAY_NAME),
+        (AuditAction.NAMESPACE_DELETE),
         (AuditAction.MODULE_PROVIDER_CREATE),
         (AuditAction.MODULE_PROVIDER_DELETE),
         (AuditAction.MODULE_PROVIDER_UPDATE_GIT_TAG_FORMAT),
@@ -75,6 +76,7 @@ class TestAuditEvent(TerraregIntegrationTest):
         (AuditAction.MODULE_PROVIDER_UPDATE_NAMESPACE),
         (AuditAction.MODULE_PROVIDER_UPDATE_MODULE_NAME),
         (AuditAction.MODULE_PROVIDER_UPDATE_PROVIDER_NAME),
+        (AuditAction.MODULE_PROVIDER_REDIRECT_DELETE),
         (AuditAction.MODULE_VERSION_INDEX),
         (AuditAction.MODULE_VERSION_PUBLISH),
         (AuditAction.MODULE_VERSION_DELETE),
@@ -83,7 +85,16 @@ class TestAuditEvent(TerraregIntegrationTest):
         (AuditAction.USER_GROUP_NAMESPACE_PERMISSION_ADD),
         (AuditAction.USER_GROUP_NAMESPACE_PERMISSION_MODIFY),
         (AuditAction.USER_GROUP_NAMESPACE_PERMISSION_DELETE),
-        (AuditAction.USER_LOGIN)
+        (AuditAction.USER_LOGIN),
+        (AuditAction.GPG_KEY_CREATE),
+        (AuditAction.GPG_KEY_DELETE),
+        (AuditAction.PROVIDER_CREATE),
+        (AuditAction.PROVIDER_DELETE),
+        (AuditAction.PROVIDER_VERSION_INDEX),
+        (AuditAction.PROVIDER_VERSION_DELETE),
+        (AuditAction.REPOSITORY_CREATE),
+        (AuditAction.REPOSITORY_UPDATE),
+        (AuditAction.REPOSITORY_DELETE),
     ])
     def test_create_audit_event_audit_action(self, audit_action):
         """Test create audit event, testing audit_action field"""

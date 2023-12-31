@@ -78,6 +78,88 @@
     }
 
     /*
+    Delete GPG Key
+    */
+    function deleteGpgKey(namespace, keyId) {
+        $.ajax({
+            method: 'DELETE',
+            url: `/v2/gpg-keys/${namespace}/${keyId}`,
+            data: JSON.stringify({
+                csrf_token: "{{ csrf_token }}"
+            }),
+            contentType: 'application/json'
+        }).done((res) => {
+            // Reload page on success
+            location.reload();
+        }).fail((res) => {
+            // Show error on failure
+            $('#create-gpg-key-error').html(failedResponseToErrorString(res));
+            $('#create-gpg-key-error').removeClass('default-hidden');
+            $(window).scrollTop($('#delete-error').offset().top);
+        });
+    }
+
+    /*
+    Populate table of GPG keys
+    */
+    function obtainGpgKeys(namespace) {
+        let tableData = $('#gpg-key-table-data');
+        $.get(`/v2/gpg-keys?filter[namespace]=${namespace}`).then((gpgKeyData) => {
+            gpgKeyData.data.forEach((gpgKey) => {
+                console.log(gpgKey);
+                let tableRow = $('<tr></tr>');
+                let fingerprintTd = $(`<td>${gpgKey.attributes["key-id"]}</td>`);
+                tableRow.append(fingerprintTd);
+
+                let actionTd = $(`<td></td>`);
+                let deleteButton = $(`<button class="button is-small is-danger">Delete</button>`);
+                deleteButton.on('click', function (ev) {
+                    deleteGpgKey(namespace, gpgKey.id);
+                });
+                actionTd.append(deleteButton);
+                tableRow.append(actionTd);
+                tableData.append(tableRow);
+            });
+
+            if (gpgKeyData.data.length == 0) {
+                let tableRow = $('<tr><td>There are no GPG keys present in this namespace</td><td></td></tr>');
+                tableData.append(tableRow);
+            }
+        })
+    }
+
+    function bindCreateGpgKeyForm(namespace) {
+        $('#create-gpg-key-form').on('submit', function(e) {
+            e.preventDefault();
+            // Obtain GPG key value
+            let gpgKey = $('#create-gpg-key-ascii-armor').val();
+            $.ajax({
+                method: 'POST',
+                url: '/v2/gpg-keys',
+                data: JSON.stringify({
+                    data: {
+                        type: "gpg-keys",
+                        attributes: {
+                            "namespace": namespace,
+                            "ascii-armor": gpgKey
+                        },
+                        csrf_token: "{{ csrf_token }}"
+                    }
+                }),
+                contentType: 'application/json'
+            }).done((res) => {
+                // Reload page on success
+                location.reload();
+            }).fail((res) => {
+                // Show error on failure
+                $('#create-gpg-key-error').html(failedResponseToErrorString(res));
+                $('#create-gpg-key-error').removeClass('default-hidden');
+                $(window).scrollTop($('#delete-error').offset().top);
+            });
+        });
+    }
+
+    /*
     Handle extraction of namespace from URL and process page rendering
     */
     function renderPage() {
@@ -91,6 +173,9 @@
             bindFormSubmit(namespace);
             loadDefaultValues(namespace);
             bindDeleteButton(namespace);
+
+            obtainGpgKeys(namespace);
+            bindCreateGpgKeyForm(namespace);
         });
 
         router.resolve();
@@ -112,7 +197,7 @@
 </nav>
 
 <div class="columns">
-    <div class="column is-one-third is-offset-one-third">
+    <div class="column is-one-third is-offset-one-fifth">
 
         <div class="field is-vertical">
             <div id="edit-error" class="notification is-danger default-hidden">
@@ -121,7 +206,7 @@
                 <div class="field">
                     <label class="label">Name</label>
                     <div class="control">
-                    <input required id="namespace-name" class="input" type="text" placeholder="">
+                        <input required id="namespace-name" class="input" type="text" placeholder="">
                     </div>
                     <b>Warning:</b> After changing the namespace name, URLs with the old namespace
                     will continue to work. However, if a new namespace is created with the original name,
@@ -162,6 +247,44 @@
             </div>
         </div>
 
+    </div>
+
+    <div class="column is-one-third">
+
+        <h2 class="subtitle is-h2">GPG Keys</h2>
+        <table class="table">
+            <thead>
+                <tr><th>GPG Key Fingerprint</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="gpg-key-table-data"></tbody>
+        </table>
+
+        <div class="card">
+            <div class="card-content" style="background-color: #edf1ff">
+                <h2 class="subtitle is-h2">Create GPG Key</h2>
+
+                <div id="create-gpg-key-error" class="notification is-danger default-hidden">
+                </div>
+
+                <form id="create-gpg-key-form" onsubmit="preventDefault();">
+                    <div class="field">
+                        <label class="label">GPG Key Armor Armor</label>
+                        <div class="control">
+                            <textarea id="create-gpg-key-ascii-armor" class="textarea" placeholder="-----BEGIN PGP PUBLIC KEY BLOCK-----
+mQINB...=txfz
+-----END PGP PUBLIC KEY BLOCK-----
+"></textarea>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <button class="button is-link">Add GPG Key</button>
+                        </div>
+                    </div>
+                </form>
+
+            </div>
+        </div>
     </div>
 </nav>
 

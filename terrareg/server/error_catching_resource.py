@@ -1,5 +1,6 @@
 
 from re import L
+import traceback
 from flask_restful import Resource
 
 from terrareg.server.base_handler import BaseHandler

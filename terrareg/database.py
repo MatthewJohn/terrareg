@@ -1,5 +1,6 @@
 """Provide database class."""
 
+from contextlib import contextmanager
 import sqlalchemy
 import sqlalchemy.dialects.mysql
 
@@ -9,7 +10,12 @@ from terrareg.audit_action import AuditAction
 
 import terrareg.config
 from terrareg.errors import DatabaseMustBeIniistalisedError
+from terrareg.provider_tier import ProviderTier
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
+from terrareg.namespace_type import NamespaceType
+from terrareg.provider_source_type import ProviderSourceType
+import terrareg.provider_documentation_type
+import terrareg.provider_binary_types
 
 
 class Database():
@@ -60,7 +66,16 @@ class Database():
         self._module_details = None
         self._module_version = None
         self._sub_module = None
+        self._gpg_key = None
+        self._provider_category = None
+        self._provider_source = None
+        self._repository = None
+        self._provider = None
+        self._provider_version = None
+        self._provider_version_documentation = None
+        self._provider_version_binary = None
         self._analytics = None
+        self._provider_analytics = None
         self._example_file = None
         self._module_version_file = None
         self.transaction_connection = None
@@ -171,18 +186,81 @@ class Database():
         return self._analytics
 
     @property
+    def provider_analytics(self):
+        """Return provider_analytics table."""
+        if self._provider_analytics is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._provider_analytics
+
+    @property
     def example_file(self):
-        """Return analytics table."""
+        """Return example_file table."""
         if self._example_file is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._example_file
 
     @property
     def module_version_file(self):
-        """Return analytics table."""
+        """Return module_version_file table."""
         if self._module_version_file is None:
             raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
         return self._module_version_file
+
+    @property
+    def gpg_key(self):
+        """Return gpg_key table."""
+        if self._gpg_key is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._gpg_key
+
+    @property
+    def provider_category(self):
+        """Return provider_category table."""
+        if self._provider_category is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._provider_category
+
+    @property
+    def provider_source(self):
+        """Return provider_source table."""
+        if self._provider_source is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._provider_source
+
+    @property
+    def repository(self):
+        """Return provider_source table."""
+        if self._repository is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._repository
+
+    @property
+    def provider(self):
+        """Return provider table."""
+        if self._provider is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._provider
+
+    @property
+    def provider_version(self):
+        """Return provider_version table."""
+        if self._provider_version is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._provider_version
+
+    @property
+    def provider_version_documentation(self):
+        """Return provider_version_documentation table."""
+        if self._provider_version_documentation is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._provider_version_documentation
+
+    @property
+    def provider_version_binary(self):
+        """Return provider_version_binary table."""
+        if self._provider_version_binary is None:
+            raise DatabaseMustBeIniistalisedError('Database class must be initialised.')
+        return self._provider_version_binary
 
     @property
     def audit_history(self):
@@ -236,7 +314,8 @@ class Database():
         self._session = sqlalchemy.Table(
             'session', meta,
             sqlalchemy.Column('id', sqlalchemy.String(128), primary_key=True),
-            sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
+            sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False),
+            sqlalchemy.Column('provider_source_auth', Database.medium_blob())
         )
 
         self._terraform_idp_authorization_code = sqlalchemy.Table(
@@ -308,7 +387,8 @@ class Database():
             'namespace', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
             sqlalchemy.Column('namespace', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
-            sqlalchemy.Column('display_name', sqlalchemy.String(GENERAL_COLUMN_SIZE))
+            sqlalchemy.Column('display_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('namespace_type', sqlalchemy.Enum(NamespaceType), nullable=False, default=NamespaceType.NONE)
         )
 
         self._namespace_redirect = sqlalchemy.Table(
@@ -488,6 +568,18 @@ class Database():
             sqlalchemy.Column('provider_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
         )
 
+        self._provider_analytics = sqlalchemy.Table(
+            'provider_analytics', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column('provider_version_id', sqlalchemy.Integer, index=True, nullable=False),
+            sqlalchemy.Column('timestamp', sqlalchemy.DateTime),
+            sqlalchemy.Column('terraform_version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+
+            # Columns for providing redirect deletion protection
+            sqlalchemy.Column('namespace_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('provider_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+        )
+
         self._example_file = sqlalchemy.Table(
             'example_file', meta,
             sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
@@ -519,6 +611,191 @@ class Database():
             ),
             sqlalchemy.Column('path', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
             sqlalchemy.Column('content', Database.medium_blob())
+        )
+
+        self._gpg_key = sqlalchemy.Table(
+            'gpg_key', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column(
+                'namespace_id',
+                sqlalchemy.ForeignKey(
+                    'namespace.id',
+                    name='fk_gpg_key_namespace_id_namespace_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'),
+                nullable=False
+            ),
+            sqlalchemy.Column('ascii_armor', Database.medium_blob()),
+            sqlalchemy.Column('key_id', sqlalchemy.String(LARGE_COLUMN_SIZE)),
+            sqlalchemy.Column('fingerprint', sqlalchemy.String(LARGE_COLUMN_SIZE)),
+            sqlalchemy.Column('source', sqlalchemy.String(LARGE_COLUMN_SIZE)),
+            sqlalchemy.Column('source_url', sqlalchemy.String(LARGE_COLUMN_SIZE)),
+            sqlalchemy.Column('created_at', sqlalchemy.DateTime),
+            sqlalchemy.Column('updated_at', sqlalchemy.DateTime),
+        )
+
+        self._provider_source = sqlalchemy.Table(
+            'provider_source', meta,
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), primary_key=True),
+            sqlalchemy.Column('api_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('provider_source_type', sqlalchemy.Enum(ProviderSourceType)),
+            sqlalchemy.Column('config', Database.medium_blob()),
+        )
+
+        self._provider_category = sqlalchemy.Table(
+            'provider_category', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('slug', sqlalchemy.String(GENERAL_COLUMN_SIZE), unique=True),
+            sqlalchemy.Column('user_selectable', sqlalchemy.Boolean, default=True),
+        )
+
+        self._repository = sqlalchemy.Table(
+            'repository', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('provider_id', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('owner', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('description', Database.medium_blob()),
+            sqlalchemy.Column('clone_url', sqlalchemy.String(URL_COLUMN_SIZE)),
+            sqlalchemy.Column('logo_url', sqlalchemy.String(URL_COLUMN_SIZE), nullable=True),
+            sqlalchemy.Column(
+                'provider_source_name',
+                sqlalchemy.ForeignKey(
+                    'provider_source.name',
+                    name='fk_repository_provider_source_name_provider_source_name',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'
+                ),
+                nullable=False
+            ),
+        )
+
+        self._provider = sqlalchemy.Table(
+            'provider', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column(
+                'namespace_id',
+                sqlalchemy.ForeignKey(
+                    'namespace.id',
+                    name='fk_provider_namespace_id_namespace_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'
+                ),
+                nullable=False
+            ),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('description', sqlalchemy.String(LARGE_COLUMN_SIZE)),
+            sqlalchemy.Column('tier', sqlalchemy.Enum(ProviderTier)),
+            sqlalchemy.Column('default_provider_source_auth', sqlalchemy.Boolean, default=False),
+            sqlalchemy.Column(
+                'provider_category_id',
+                sqlalchemy.ForeignKey(
+                    'provider_category.id',
+                    name="fk_provider_provider_category_id_provider_category_id",
+                    onupdate="CASCADE",
+                    ondelete="SET NULL"
+                )
+            ),
+            sqlalchemy.Column(
+                'repository_id',
+                sqlalchemy.ForeignKey(
+                    'repository.id',
+                    name='fk_provider_repository_id_repository_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'
+                ),
+                nullable=True
+            ),
+            sqlalchemy.Column(
+                'latest_version_id',
+                sqlalchemy.ForeignKey(
+                    'provider_version.id',
+                    name='fk_provider_latest_version_id_provider_version_id',
+                    onupdate='CASCADE',
+                    ondelete='SET NULL',
+                    use_alter=True
+                ),
+                nullable=True
+            )
+        )
+
+        self._provider_version = sqlalchemy.Table(
+            'provider_version', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column(
+                'provider_id',
+                sqlalchemy.ForeignKey(
+                    'provider.id',
+                    name='fk_provider_version_provider_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'
+                ),
+                nullable=False
+            ),
+            sqlalchemy.Column(
+                'gpg_key_id',
+                sqlalchemy.ForeignKey(
+                    'gpg_key.id',
+                    name='fk_provider_version_gpg_key_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'
+                ),
+                nullable=False
+            ),
+            sqlalchemy.Column('version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('git_tag', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('beta', sqlalchemy.BOOLEAN, nullable=False),
+            sqlalchemy.Column('published_at', sqlalchemy.DateTime),
+            sqlalchemy.Column('extraction_version', sqlalchemy.Integer),
+            sqlalchemy.Column('protocol_versions', self.medium_blob()),
+        )
+
+        self._provider_version_documentation = sqlalchemy.Table(
+            'provider_version_documentation', meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column(
+                'provider_version_id',
+                sqlalchemy.ForeignKey(
+                    'provider_version.id',
+                    name='fk_provider_version_documentation_provider_version_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'
+                ),
+                nullable=False
+            ),
+            sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('slug', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('title', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=True),
+            sqlalchemy.Column('description', Database.medium_blob(), nullable=True),
+            sqlalchemy.Column('language', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column('subcategory', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=True),
+            sqlalchemy.Column('filename', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column(
+                'documentation_type',
+                sqlalchemy.Enum(terrareg.provider_documentation_type.ProviderDocumentationType),
+                nullable=False
+            ),
+            sqlalchemy.Column('content', Database.medium_blob())
+        )
+
+        self._provider_version_binary = sqlalchemy.Table(
+            "provider_version_binary", meta,
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key = True),
+            sqlalchemy.Column(
+                'provider_version_id',
+                sqlalchemy.ForeignKey(
+                    'provider_version.id',
+                    name='fk_provider_version_binary_provider_version_id',
+                    onupdate='CASCADE',
+                    ondelete='CASCADE'
+                ),
+                nullable=False
+            ),
+            sqlalchemy.Column("name", sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
+            sqlalchemy.Column("operating_system", sqlalchemy.Enum(terrareg.provider_binary_types.ProviderBinaryOperatingSystemType), nullable=False),
+            sqlalchemy.Column("architecture", sqlalchemy.Enum(terrareg.provider_binary_types.ProviderBinaryArchitectureType), nullable=False),
+            sqlalchemy.Column("checksum", sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
         )
 
         self._audit_history = sqlalchemy.Table(
@@ -553,6 +830,21 @@ class Database():
             self.namespace, self.module_provider.c.namespace_id==self.namespace.c.id
         )
 
+    def select_provider_joined_latest_provider_version(self, *select_args):
+        """Perform select on provider, joined to latest version from provider_version table"""
+        return sqlalchemy.select(
+            *select_args
+        ).select_from(
+            self.provider
+        ).join(
+            self.provider_category,
+            self.provider.c.provider_category_id==self.provider_category.c.id
+        ).join(
+            self.provider_version, self.provider.c.latest_version_id==self.provider_version.c.id
+        ).join(
+            self.namespace, self.provider.c.namespace_id==self.namespace.c.id
+        )
+
     @classmethod
     def get_current_transaction(cls):
         """Check if currently in transaction."""
@@ -576,6 +868,26 @@ class Database():
             raise Exception('Already within database transaction')
         conn = Database.get().get_connection()
         return Transaction(conn)
+
+    @classmethod
+    @contextmanager
+    def get_new_transaction_or_nested(cls):
+        """Obtain new transaction, if there isn't one otherwise, start a nested transaction"""
+        current_transaction = cls.get_current_transaction()
+        if current_transaction:
+            nested = current_transaction.begin_nested()
+            try:
+                yield nested
+            except:
+                nested.rollback()
+                raise
+        else:
+            with cls.start_transaction() as transaction:
+                try:
+                    yield transaction.transaction
+                except:
+                    transaction.transaction.rollback()
+                    raise
 
     @classmethod
     def get_connection(cls):
@@ -634,7 +946,7 @@ class Transaction:
         if has_request_context():
             flask.g.database_transaction_connection = self._connection
         else:
-            Database.get().transaction = self._connection
+            Database.get().transaction_connection = self._connection
 
         return self
 
@@ -643,7 +955,7 @@ class Transaction:
         if has_request_context():
             flask.g.database_transaction_connection = None
         else:
-            Database.get().transaction = None
+            Database.get().transaction_connection = None
 
         self._transaction_outer.__exit__(*args, **kwargs)
 

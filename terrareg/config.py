@@ -1,6 +1,7 @@
 
 from enum import Enum
 import os
+import tempfile
 
 from terrareg.errors import InvalidBooleanConfigurationError
 
@@ -19,6 +20,13 @@ class ServerType(Enum):
 
 
 class Config:
+
+    @property
+    def SITE_WARNING(self):
+        """
+        Warning to be displayed as top banner of website.
+        """
+        return os.environ.get("SITE_WARNING")
 
     @property
     def INTERNAL_EXTRACTION_ANALYTICS_TOKEN(self):
@@ -908,6 +916,54 @@ class Config:
         return int(os.environ.get("TERRAFORM_PRESIGNED_URL_EXPIRY_SECONDS", 10))
 
     @property
+    def PROVIDER_SOURCES(self):
+        """
+        Git provider config for terraform Providers, as a JSON list.
+
+        These are used for authenticating to the provider, obtain repository information and provide integration for creating Terraform providers.
+
+        Each item in the list must contain the following attributes:
+         - `name` - Name of the git provider (e.g. 'Github')
+         - `type` - The type of SCM tool (supported: `github`)
+         - `login_button_text` - Login button text for authenticating to Github
+         - `auto_generate_namespaces` - Whether to automatically generate namespaces for the user and the organisations that the user is an admin of
+
+        Github-specific attributes (See USER_GUIDE for configuring this):
+         - `base_url` - Base public URL, e.g. `https://github.com`
+         - `api_url` - API URL, e.g. `https://api.github.com`
+         - `app_id` - Github app ID
+         - `client_id` - Github app client ID for Github authentication.
+         - `client_secret` - Github App client secret for Github authentication.
+         - `private_key_path` - Path to private key generated for Github app.
+         - `default_access_token` (optional) - Github access token, used for perform Github API requests for providers that are not authenticated via Github App.
+         - `default_installation_id` (optional) - A default installation that provides access to Github APIs for providers that are not authenticated via Github App.
+
+        An example for public repositories, using SSH for cloning, might be:
+        ```
+        [{"name": "Github", "type": "github",
+          "base_url": "https://github.com", "api_url": "https://api.github.com",
+          "client_id": "some-client-id", "client_secret": "some-secret",
+          "app_id": "123456", "private_key_path": "./supersecretkey.pem",
+          "access_token": "abcdefg", "auto_generate_namespaces": true
+        }]
+        ```
+        """
+        return os.environ.get('PROVIDER_SOURCES', '[]')
+
+    @property
+    def PROVIDER_CATEGORIES(self):
+        """
+        JSON list of provider categories.
+
+        Must be a list of objects, with the following attributes:
+         - `id` - Category ID. Must be a unique integer.
+         - `name` - Name of category.
+         - `slug` - A unique API-friendly name of the category, using lower-case letters and hyphens. Defaults to converted name with lower case letters, dashes for spaces and other characters removed.
+         - `user-selectable` (optional, defaults to `true`) - boolean based on whether it is selectable by the user. Non-user selectable categories can only currently be assigned in the database.
+        """
+        return os.environ.get("PROVIDER_CATEGORIES", '[{"id": 1, "name": "Example Category", "slug": "example-category", "user-selectable": true}]')
+
+    @property
     def GITHUB_URL(self):
         """
         URL to Github for using Github authentication.
@@ -960,6 +1016,11 @@ class Config:
         The user will have full permissions over these namespaces.
         """
         return self.convert_boolean(os.environ.get("AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES", "False"))
+
+    @property
+    def GO_PACKAGE_CACHE_DIRECTORY(self):
+        """Directory to cache go packages"""
+        return os.environ.get("GO_PACKAGE_CACHE_DIRECTORY", os.path.join(tempfile.gettempdir(), "terrareg-go-package-cache"))
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""

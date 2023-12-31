@@ -5,10 +5,10 @@ Revises: b0f952e4a027
 Create Date: 2022-06-01 06:50:03.299444
 
 """
-from distutils.version import LooseVersion
 from alembic import op
 import sqlalchemy as sa
 
+from terrareg.loose_version import LooseVersion
 
 # revision identifiers, used by Alembic.
 revision = 'ef71db86c2a1'

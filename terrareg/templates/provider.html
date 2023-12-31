@@ -1,0 +1,185 @@
+{% extends 'template.html' %}
+
+{% block title %}Provider{% endblock %}
+
+{% block header %}
+<script src="/static/js/terrareg/provider_page.js"></script>
+<link rel="stylesheet" href="/static/css/provider_page.css" />
+
+<link href="/static/css/prism/prism-hcl-1.29.0.css" rel="stylesheet" />
+<script src="/static/js/prism/prism-hcl-1.29.0.js"></script>
+
+<script>
+    window.Prism = window.Prism || {};
+    $(document).ready(function () {
+        renderPage();
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul id="breadcrumb-ul">
+    </ul>
+</nav>
+
+
+<div id="provider-header-content">
+
+    <!-- Warning when no versions of provider are available -->
+    <div id="no-version-available" class="columns is-centered default-hidden">
+        There are no versions of this provider
+    </div>
+
+    <!-- Main details header body -->
+    <div id="provider-details-body" class="columns is-centered default-hidden">
+
+        <!-- Provider Logo -->
+        <a id="provider-logo-link" class="default-hidden" href="">
+            <img id="provider-logo-img" class="default-hidden" height="150" width="150" alt="" src="" />
+        </a>
+
+        <!-- Provider details -->
+        <div class="column is-one-third">
+
+            <section id="details-version" class="default-hidden">
+                Version
+                <div class="select is-small">
+                    <select id="version-select" autocomplete="off" onchange="onVersionSelectChange(event);">
+                    </select>
+                </div>
+            </section>
+            <p id="version-text" class="subtitle default-hidden"></p>
+            <div id="provider-labels">
+            </div>
+
+            <!-- Basic details about provider -->
+            <p id="provider-title" class="title">
+            </p>
+
+            <p id="beta-warning" class="subtitle default-hidden">
+                <b>WARNING:</b> This is a beta provider version.<br />
+                To use this version in Terraform, it must be specifically pinned.<br />
+                For an example, see the 'Usage' section.
+            </p>
+            <p id="non-latest-version-warning" class="subtitle default-hidden">
+                <b>WARNING:</b> This is an outdated version of the provider.<br />
+                If you wish to view the latest version of the provider,<br />
+                use the version drop-down above.
+            </p>
+
+            <p id="provider-description" class="subtitle">
+            </p>
+
+            <p id="published-at"></p>
+            <p id="provider-owner"></p>
+            <p id="source-url"></p>
+
+            <div id="custom-links">
+            </div>
+
+            <p id="outdated-extraction-warning" class="default-hidden">
+                <br />
+                This provider version was extracted using a previous version of Terrareg meaning that some data maybe not be available.
+                <br />
+                Consider re-indexing this provider version to enable all features.
+            </p>
+
+            <br />
+            <br />
+
+        </div>
+
+        <div class="column is-one-third">
+
+            <div id="provider-download-stats-container" class="box default-hidden">
+                <table class="table provider-tab-content-table">
+                    <thead>
+                        <tr>
+                            <th>Downloads</th>
+                            <th>
+                                <span class="tag is-warning is-light">All Versions</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Downloads this week</td>
+                            <td id="downloads-week"></td>
+                        </tr>
+                        <tr>
+                            <td>Downloads this month</td>
+                            <td id="downloads-month"></td>
+                        </tr>
+                        <tr>
+                            <td>Downloads this year</td>
+                            <td id="downloads-year"></td>
+                        </tr>
+                        <tr>
+                            <td>Downloads over all time</td>
+                            <td id="downloads-total"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="usage-example-container" class="card default-hidden">
+                <header class="card-header" onclick="onProviderUsageExampleClick();">
+                    <p class="card-header-title">
+                    Use this Provider
+                    </p>
+                    <button onclick="onProviderUsageExampleClick();" class="card-header-icon" aria-label="more options">
+                        <span class="icon">
+                            <i id="usage-example-expand-icon" onclick="onProviderUsageExampleClick();" class="fas fa-angle-left" aria-hidden="true"></i>
+                        </span>
+                    </button>
+                </header>
+
+                <div id="usage-example-body" class="card-content default-hidden">
+                    <div class="content">
+                        To use this provider:
+                        <ol>
+                            <li>Add the following example to your Terraform:</li>
+                        </ol>
+                    </div>
+    
+                    <pre><code id="usage-example-terraform" class="language-hcl"></code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="columns provider-docs">
+    <div class="column is-one-fifth provider-doc-menu">
+        <div class="navbar-item has-dropdown is-active">
+
+            <div class="navbar-dropdown docs-link-dropdown" style="position: relative">
+                <a id="doclink-overview-index" class="navbar-item">
+                    Overview
+                </a>
+
+                <hr class="navbar-divider">
+                <div id="provider-docs-menu-guides-header" class="navbar-item default-hidden">
+                    <b>Guides</b>
+                </div>
+
+                <hr class="navbar-divider">
+                <div id="provider-docs-menu-resources-header" class="navbar-item default-hidden">
+                    <b>Resources</b>
+                </div>
+
+                <hr class="navbar-divider">
+                <div id="provider-docs-menu-data-sources-header" class="navbar-item default-hidden">
+                    <b>Data Sources</b>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="provider-doc-content" class="column is-four-fifths provider-doc-content">
+    </div>
+</div>
+
+{% endblock %}

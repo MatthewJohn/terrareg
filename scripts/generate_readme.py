@@ -16,7 +16,7 @@ from terrareg.server import Server
 
 
 valid_config_re = re.compile(r'^[A-Z]')
-strip_leading_space_re = re.compile(r'^ +', re.MULTILINE)
+strip_leading_space_re = re.compile(r'^        ', re.MULTILINE)
 
 config_contents = ""
 
@@ -112,7 +112,7 @@ def mock_route(route_class, *urls):
                 continue
 
         method_docs = getattr(route_class, internal_method).__doc__ or ""
-        method_docs = "\n".join([l.strip() for l in method_docs.split("\n")])
+        method_docs = strip_leading_space_re.sub("", method_docs)
 
         api_docs += f'\n#### {method}\n\n{method_docs}'
 

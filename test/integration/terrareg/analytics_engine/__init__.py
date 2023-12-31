@@ -10,68 +10,72 @@ class AnalyticsIntegrationTest(TerraregIntegrationTest):
 
     _TEST_DATA = {
         'testnamespace': {
-            'publishedmodule': {
-                'testprovider': {
-                    'id': 1,
-                    'versions': {
-                        '0.9.0': {'published': True},
-                        '0.9.1': {'published': True},
-                        '0.9.2': {'published': True},
-                        '1.3.0': {'published': True},
-                        '1.4.0': {'published': True},
-                        '1.5.0': {'published': True},
-                        '1.6.0-beta': {'published': True, 'beta': True},
-                        '2.0.0': {'published': True},
-                        '2.1.5': {'published': True},
+            'modules': {
+                'publishedmodule': {
+                    'testprovider': {
+                        'id': 1,
+                        'versions': {
+                            '0.9.0': {'published': True},
+                            '0.9.1': {'published': True},
+                            '0.9.2': {'published': True},
+                            '1.3.0': {'published': True},
+                            '1.4.0': {'published': True},
+                            '1.5.0': {'published': True},
+                            '1.6.0-beta': {'published': True, 'beta': True},
+                            '2.0.0': {'published': True},
+                            '2.1.5': {'published': True},
+                        }
+                    },
+                    # Ensure multiple providers in the same module as treated independently
+                    'secondprovider': {
+                        'id': 2,
+                        'versions': {
+                            '1.0.0': {'published': True}
+                        }
                     }
                 },
-                # Ensure multiple providers in the same module as treated independently
-                'secondprovider': {
-                    'id': 2,
+                'secondmodule': {'testprovider': {
+                    'id': 3,
+                    'versions': {'1.1.1': {'published': True}}
+                }},
+                # Ensure a module with no analytics is not displayed
+                'unusedmodule': {'testprovider': {
+                    'id': 4,
+                    'versions': {'1.2.0': {'published': True}}
+                }},
+                # Ensure module with only beta versino is not included in module count
+                'onlybeta': {'testprovider': {
+                    'id': 5,
                     'versions': {
-                        '1.0.0': {'published': True}
+                        '1.0.0-beta': {'published': True, 'beta': True}
                     }
-                }
-            },
-            'secondmodule': {'testprovider': {
-                'id': 3,
-                'versions': {'1.1.1': {'published': True}}
-            }},
-            # Ensure a module with no analytics is not displayed
-            'unusedmodule': {'testprovider': {
-                'id': 4,
-                'versions': {'1.2.0': {'published': True}}
-            }},
-            # Ensure module with only beta versino is not included in module count
-            'onlybeta': {'testprovider': {
-                'id': 5,
-                'versions': {
-                    '1.0.0-beta': {'published': True, 'beta': True}
-                }
-            }},
-            'noanalyticstoken': {'testprovider': {
-                'id': 6,
-                'versions': {'2.2.2': {'published': True}}
-            }},
-            # Ensure module with no versions is not included in count
-            'noversions': {'testprovider': {
-                'id': 7,
-                'versions': {}
-            }},
-            # Ensure module with unpublished version is not included in count
-            'unpublishedversion': {'testprovider': {
-                'id': 8,
-                'versions': {'2.45.2': {'published': False}}
-            }}
+                }},
+                'noanalyticstoken': {'testprovider': {
+                    'id': 6,
+                    'versions': {'2.2.2': {'published': True}}
+                }},
+                # Ensure module with no versions is not included in count
+                'noversions': {'testprovider': {
+                    'id': 7,
+                    'versions': {}
+                }},
+                # Ensure module with unpublished version is not included in count
+                'unpublishedversion': {'testprovider': {
+                    'id': 8,
+                    'versions': {'2.45.2': {'published': False}}
+                }}
+            }
         },
         # Ensure a second namespace is displayed
         'secondnamespace': {
-            'othernamespacemodule': {'anotherprovider': {
-                'id': 9,
-                'versions': {
-                    '2.0.4': {'published': True}
-                }
-            }}
+            'modules': {
+                'othernamespacemodule': {'anotherprovider': {
+                    'id': 9,
+                    'versions': {
+                        '2.0.4': {'published': True}
+                    }
+                }}
+            }
         }
     }
 

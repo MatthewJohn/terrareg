@@ -8,7 +8,7 @@
         // Perform request to obtain the config
         $.get("/v1/terrareg/modules/{{ namespace.name }}/{{ module.name }}").then((data) => {
             $.each(data.modules, (itx, module_data) => {
-                createSearchResultCard('module-list-table', module_data);
+                createSearchResultCard('module-list-table', 'module', module_data);
             });
             if (data.modules.length === 0) {
                 $('#no-results').removeClass('default-hidden');

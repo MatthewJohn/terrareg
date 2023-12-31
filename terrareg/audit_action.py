@@ -37,3 +37,15 @@ class AuditAction(Enum):
     USER_GROUP_NAMESPACE_PERMISSION_DELETE = "user_group_namespace_permission_delete"
 
     USER_LOGIN = "user_login"
+
+    GPG_KEY_CREATE = "gpg_key_create"
+    GPG_KEY_DELETE = "gpg_key_delete"
+
+    PROVIDER_CREATE = "provider_create"
+    PROVIDER_DELETE = "provider_delete"
+    PROVIDER_VERSION_INDEX = "provider_version_index"
+    PROVIDER_VERSION_DELETE = "provider_version_delete"
+
+    REPOSITORY_CREATE = "repository_create"
+    REPOSITORY_UPDATE = "repository_update"
+    REPOSITORY_DELETE = "repository_delete"

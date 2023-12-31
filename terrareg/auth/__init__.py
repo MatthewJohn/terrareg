@@ -1,6 +1,9 @@
 
 from flask import g
+import flask
 
+import terrareg.models
+from .base_auth_method import BaseAuthMethod
 from .admin_api_key_auth_method import AdminApiKeyAuthMethod
 from .admin_session_auth_method import AdminSessionAuthMethod
 from .upload_api_key_auth_method import UploadApiKeyAuthMethod
@@ -24,7 +27,7 @@ class AuthFactory:
 
     FLASK_GLOBALS_AUTH_KEY = 'user_auth'
 
-    def get_current_auth_method(self):
+    def get_current_auth_method(self) -> BaseAuthMethod:
         """Obtain user's current login state"""
         # Check if current authenticate type has been determined
         if (current_auth_method := g.get(AuthFactory.FLASK_GLOBALS_AUTH_KEY, None)) is not None:
@@ -51,3 +54,8 @@ class AuthFactory:
                 return auth_method
 
         raise Exception('Unable to determine current auth type - not caught by NotAuthenticated')
+
+    @classmethod
+    def get_current_session(cls):
+        """Return session object for current session"""
+        return terrareg.models.Session.check_session(flask.session.get('session_id', None))

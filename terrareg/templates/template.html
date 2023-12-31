@@ -41,11 +41,12 @@
 
         <script src="/static/js/terrareg/config.js"></script>
         <script src="/static/js/terrareg/module_provider.js"></script>
+        <script src="/static/js/terrareg/provider.js"></script>
 
         <script>
           function navbar_search_modules() {
             let search_string = document.getElementById('navBarSearchInput').value;
-            window.location.href = '/modules/search?q=' + encodeURIComponent(search_string);
+            window.location.href = '/search?q=' + encodeURIComponent(search_string);
           }
           function navbar_search_keyup(event) {
             // If enter
@@ -82,13 +83,15 @@
                 $('#navbarCreateDropdown').css('display', 'flex');
                 // Show create module button
                 $('#navbarCreateModuleButton').css('display', 'block');
+                // Show create provider button
+                $('#navbarCreateProviderButton').css('display', 'block');
               }
 
-            } else if (!loggedIn.read_access && window.location.pathname !== '/login') {
+            }{% if TEMPLATE_NAME != "error.html" %} else if (!loggedIn.read_access && window.location.pathname !== '/login') {
               // If not logged in and read access is not allowed,
               // and not currently redirect to login page
               window.location.href = '/login';
-            }
+            }{% endif %}
           }
 
           $(document).ready(() => {
@@ -110,6 +113,11 @@
 
 
     <body>
+        {% if SITE_WARNING %}
+        <div id="site-warning">
+          {{SITE_WARNING}}
+        </div>
+        {% endif %}
         <nav class="navbar is-transparent">
             <div class="navbar-brand">
               <a class="navbar-item" href="/">
@@ -126,10 +134,19 @@
               <div class="navbar-start">
                 <a class="navbar-item" href="/">Home</a>
 
-                <div id="navbarRegistryDropdown" class="navbar-item has-dropdown is-hoverable">
-                  <a class="navbar-link" href="#">Registry</a>
+                <div id="navbarModulesDropdown" class="navbar-item has-dropdown is-hoverable">
+                  <a class="navbar-link" href="#">Modules</a>
                   <div class="navbar-dropdown is-boxed">
-                    <a class="navbar-item" href="/modules">Modules</a>
+                    <a class="navbar-item" href="/search/modules">Search</a>
+                    <a class="navbar-item" href="/modules">Namespaces</a>
+                  </div>
+                </div>
+
+                <div id="navbarProvidersDropdown" class="navbar-item has-dropdown is-hoverable">
+                  <a class="navbar-link" href="#">Providers</a>
+                  <div class="navbar-dropdown is-boxed">
+                    <a class="navbar-item" href="/search/providers">Search</a>
+                    <a class="navbar-item" href="/providers">Namespaces</a>
                   </div>
                 </div>
 
@@ -138,6 +155,7 @@
                   <div class="navbar-dropdown is-boxed">
                     <a id="navbarCreateNamespaceButton" style="display: none;" class="navbar-item" href="/create-namespace">Namespace</a>
                     <a id="navbarCreateModuleButton" style="display: none;" class="navbar-item" href="/create-module">Module</a>
+                    <a id="navbarCreateProviderButton" style="display: none;" class="navbar-item" href="/create-provider">Provider</a>
                   </div>
                 </div>
 

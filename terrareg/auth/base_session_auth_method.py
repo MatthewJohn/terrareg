@@ -4,6 +4,7 @@ import flask
 import terrareg.config
 import terrareg.models
 from .base_auth_method import BaseAuthMethod
+import terrareg.auth
 
 
 class BaseSessionAuthMethod(BaseAuthMethod):
@@ -38,7 +39,7 @@ class BaseSessionAuthMethod(BaseAuthMethod):
         # session ID is present and valid and
         # is_admin_authenticated session is set
         if (not terrareg.config.Config().SECRET_KEY or
-                not terrareg.models.Session.check_session(flask.session.get('session_id', None)) or
+                not terrareg.auth.AuthFactory.get_current_session() or
                 not flask.session.get('is_admin_authenticated', False)):
             return False
 

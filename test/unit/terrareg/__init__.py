@@ -40,38 +40,6 @@ class TerraregUnitTest(BaseTest):
         # Create DB tables
         Database.get().get_meta().create_all(Database.get().get_engine())
 
-    def _test_unauthenticated_read_api_endpoint_test(self, request_callback):
-        """Check unauthenticated read API endpoint access"""
-        mock_auth_method = unittest.mock.MagicMock()
-        mock_auth_method.can_access_read_api = unittest.mock.MagicMock(return_value=False)
-        mock_auth_method.get_username.return_value = 'unauthenticated user'
-        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
-
-        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
-            res = request_callback()
-            assert res.status_code == 403
-            assert res.json == {
-                'message': "You don't have the permission to access the requested resource. It is either read-protected or not readable by the server."
-            }
-
-            mock_auth_method.can_access_read_api.assert_called_once_with()
-
-    def _test_unauthenticated_terraform_api_endpoint_test(self, request_callback):
-        """Check unauthenticated Terraform API endpoint access"""
-        mock_auth_method = unittest.mock.MagicMock()
-        mock_auth_method.can_access_terraform_api = unittest.mock.MagicMock(return_value=False)
-        mock_auth_method.get_username.return_value = 'unauthenticated user'
-        mock_get_current_auth_method = unittest.mock.MagicMock(return_value=mock_auth_method)
-
-        with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method):
-            res = request_callback()
-            assert res.status_code == 403
-            assert res.json == {
-                'message': "You don't have the permission to access the requested resource. It is either read-protected or not readable by the server."
-            }
-
-            mock_auth_method.can_access_terraform_api.assert_called_once_with()
-
 
 TEST_MODULE_DATA = {}
 TEST_GIT_PROVIDER_DATA = {}
@@ -535,13 +503,14 @@ def mock_namespace_redirect(request):
 def mock_namespace(request):
 
     @classmethod
-    def insert_into_database(cls, name, display_name):
+    def insert_into_database(cls, name, display_name, type_):
         """Create namespace"""
         global TEST_MODULE_DATA
         TEST_MODULE_DATA[name] = {
             'id': len(TEST_MODULE_DATA) + 1,
             'display_name': display_name,
-            'modules': {}
+            'modules': {},
+            'type': type_,
         }
     mock_method(request, 'terrareg.models.Namespace.insert_into_database', insert_into_database)
 
@@ -595,7 +564,8 @@ def mock_namespace(request):
         return {
             'namespace': self._name,
             'id': mock_namespace_data['id'],
-            'display_name': mock_namespace_data.get('display_name')
+            'display_name': mock_namespace_data.get('display_name'),
+            'type': mock_namespace_data.get("type")
         }
     mock_method(request, 'terrareg.models.Namespace._get_db_row', _get_db_row)
 
@@ -604,7 +574,7 @@ def mock_namespace(request):
         return len(TEST_MODULE_DATA)
     mock_method(request, 'terrareg.models.Namespace.get_total_count', get_total_count)
 
-    def get_all(only_published=False, limit=None, offset=0):
+    def get_all(only_published=False, limit=None, offset=0, resource_type=None):
         """Return all namespaces."""
         valid_namespaces = []
         if only_published:
@@ -612,13 +582,17 @@ def mock_namespace(request):
             # to determine if the namespace has a published version
             for namespace_name in TEST_MODULE_DATA.keys():
                 namespace = terrareg.models.Namespace(namespace_name)
-                for module in namespace.get_all_modules():
-                    for provider in module.get_providers():
-                        for version in provider.get_versions():
-                            if (namespace_name not in valid_namespaces and
-                                    version.published and
-                                    version.beta == False):
-                                valid_namespaces.append(namespace_name)
+                if resource_type == "module":
+                    for module in namespace.get_all_modules():
+                        for provider in module.get_providers():
+                            for version in provider.get_versions():
+                                if (namespace_name not in valid_namespaces and
+                                        version.published and
+                                        version.beta == False):
+                                    valid_namespaces.append(namespace_name)
+                elif resource_type == "provider":
+                    if TEST_MODULE_DATA[namespace_name].get("providers"):
+                        valid_namespaces.append(namespace_name)
         else:
             valid_namespaces = TEST_MODULE_DATA.keys()
 

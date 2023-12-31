@@ -20,7 +20,7 @@ import magic
 from bs4 import BeautifulSoup
 import markdown
 
-from terrareg.models import BaseSubmodule, Example, ExampleFile, ModuleVersion, Submodule, ModuleDetails, ModuleVersionFile
+import terrareg.models
 from terrareg.database import Database
 from terrareg.errors import (
     UnableToProcessTerraformError,
@@ -42,14 +42,14 @@ class ModuleExtractor:
     TERRAREG_METADATA_FILES = ['terrareg.json', '.terrareg.json']
     TERRAFORM_LOCK = threading.Lock()
 
-    def __init__(self, module_version: ModuleVersion):
+    def __init__(self, module_version: 'terrareg.models.ModuleVersion'):
         """Create temporary directories and store member variables."""
         self._module_version = module_version
         self._extract_directory = tempfile.TemporaryDirectory()  # noqa: R1732
         self._upload_directory = tempfile.TemporaryDirectory()  # noqa: R1732
 
-    @property
-    def terraform_binary(self):
+    @staticmethod
+    def terraform_binary():
         """Return path of terraform binary"""
         return os.path.join(os.getcwd(), "bin", "terraform")
 
@@ -106,8 +106,9 @@ class ModuleExtractor:
 
         return json.loads(terradocs_output)
 
+    @classmethod
     @contextmanager
-    def _switch_terraform_versions(self, module_path):
+    def _switch_terraform_versions(cls, module_path):
         """Switch terraform to required version for module"""
         # Wait for global lock on terraform, so that only
         # instance can run terraform at a time
@@ -125,7 +126,7 @@ class ModuleExtractor:
             # Run tfswitch
             try:
                 subprocess.check_output(
-                    ["tfswitch", "--mirror", Config().TERRAFORM_ARCHIVE_MIRROR, "--bin", self.terraform_binary],
+                    ["tfswitch", "--mirror", Config().TERRAFORM_ARCHIVE_MIRROR, "--bin", cls.terraform_binary()],
                     env=tfswitch_env,
                     cwd=module_path
                 )
@@ -230,7 +231,7 @@ terraform {{
         self._override_tf_backend(module_path=module_path)
 
         try:
-            subprocess.check_call([self.terraform_binary, "init"], cwd=module_path)
+            subprocess.check_call([self.terraform_binary(), "init"], cwd=module_path)
         except subprocess.CalledProcessError:
             return False
         return True
@@ -239,7 +240,7 @@ terraform {{
         """Run inframap and generate graphiz"""
         try:
             terraform_graph_data = subprocess.check_output(
-                [self.terraform_binary, "graph"],
+                [self.terraform_binary(), "graph"],
                 cwd=module_path
             )
         except subprocess.CalledProcessError as exc:
@@ -268,7 +269,7 @@ terraform {{
         """Run terraform -version and return output"""
         try:
             terraform_version_data = subprocess.check_output(
-                [self.terraform_binary, "-version", "-json"],
+                [self.terraform_binary(), "-version", "-json"],
                 cwd=module_path
             )
         except subprocess.CalledProcessError as exc:
@@ -340,7 +341,7 @@ terraform {{
                 with open(path, 'r') as fh:
                     file_content = ''.join(fh.readlines())
 
-                module_version_file = ModuleVersionFile.create(module_version=self._module_version, path=file_name)
+                module_version_file = terrareg.models.ModuleVersionFile.create(module_version=self._module_version, path=file_name)
                 module_version_file.update_attributes(content=file_content)
 
     def _generate_archive(self):
@@ -378,7 +379,7 @@ terraform {{
 
     def _create_module_details(self, readme_content, terraform_docs, tfsec, terraform_graph, terraform_modules, terraform_version, infracost=None):
         """Create module details row."""
-        module_details = ModuleDetails.create()
+        module_details = terrareg.models.ModuleDetails.create()
         module_details.update_attributes(
             readme_content=readme_content,
             terraform_docs=json.dumps(terraform_docs),
@@ -429,7 +430,7 @@ terraform {{
             extraction_version=EXTRACTION_VERSION
         )
 
-    def _process_submodule(self, submodule: BaseSubmodule):
+    def _process_submodule(self, submodule: 'terrareg.models.BaseSubmodule'):
         """Process submodule."""
         submodule_dir = safe_join_paths(self.module_directory, submodule.path)
 
@@ -437,7 +438,7 @@ terraform {{
         # any other analysis, as the analysis may modify
         # files in the repository, which should not
         # be present in the stored files in the database
-        if isinstance(submodule, Example):
+        if isinstance(submodule, terrareg.models.Example):
             self._extract_example_files(example=submodule)
 
         tf_docs = self._run_terraform_docs(submodule_dir)
@@ -455,7 +456,7 @@ terraform {{
 
         infracost = None
         # Run Infracost on examples, if API key is set
-        if isinstance(submodule, Example) and Config().INFRACOST_API_KEY:
+        if isinstance(submodule, terrareg.models.Example) and Config().INFRACOST_API_KEY:
             try:
                 infracost = self._run_infracost(example=submodule)
             except UnableToProcessTerraformError as exc:
@@ -476,7 +477,7 @@ terraform {{
             module_details_id=module_details.pk
         )
 
-    def _run_infracost(self, example: Example):
+    def _run_infracost(self, example: 'terrareg.models.Example'):
         """Run Infracost to obtain cost of examples."""
         # Ensure example path is within root module
         safe_join_paths(self.module_directory, example.path)
@@ -511,7 +512,7 @@ terraform {{
 
         return infracost_result
 
-    def _extract_example_files(self, example: Example):
+    def _extract_example_files(self, example: 'terrareg.models.Example'):
         """Extract all terraform files in example and insert into DB"""
         example_base_dir = safe_join_paths(self.module_directory, example.path)
         for extension in Config().EXAMPLE_FILE_EXTENSIONS:
@@ -527,12 +528,12 @@ terraform {{
                     content = ''.join(file_fd.readlines())
 
                 # Create example file and update content attribute
-                example_file = ExampleFile.create(example=example, path=tf_file)
+                example_file = terrareg.models.ExampleFile.create(example=example, path=tf_file)
                 example_file.update_attributes(
                     content=content
                 )
 
-    def _scan_submodules(self, subdirectory: str, submodule_class: Type[BaseSubmodule]):
+    def _scan_submodules(self, subdirectory: str, submodule_class: Type['terrareg.models.BaseSubmodule']):
         """Scan for submodules and extract details."""
         try:
             submodule_base_directory = safe_join_paths(self.module_directory, subdirectory, is_dir=True)
@@ -685,10 +686,10 @@ terraform {{
         self._extract_additional_tab_files()
 
         self._scan_submodules(
-            submodule_class=Submodule,
+            submodule_class=terrareg.models.Submodule,
             subdirectory=Config().MODULES_DIRECTORY)
         self._scan_submodules(
-            submodule_class=Example,
+            submodule_class=terrareg.models.Example,
             subdirectory=Config().EXAMPLES_DIRECTORY)
 
 
