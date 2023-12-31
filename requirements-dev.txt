@@ -1,6 +1,6 @@
 -r requirements.txt
 
-pytest==7.1.1
+pytest==7.4.3
 pytest-cov==3.0.0
 selenium==4.6.1
 PyVirtualDisplay==3.0
