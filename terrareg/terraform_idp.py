@@ -52,7 +52,6 @@ class BaseIdpDatabase:
     def __getitem__(self, item):
         """Obtain data from database where code matches the key"""
         db = Database.get()
-        print(f"{self.__class__.__name__}: __getitem__ {item}")
         with db.get_connection() as conn:
             res = conn.execute(
                 sqlalchemy.select(
@@ -70,7 +69,6 @@ class BaseIdpDatabase:
 
     def __setitem__(self, key, value):
         """Set code and data into database"""
-        print(f"{self.__class__.__name__}: Setting {key} to {value}")
         db = Database.get()
         with db.get_connection() as conn:
             # Perform update, determine if any rows are affected and fallback
@@ -108,7 +106,6 @@ class BaseIdpDatabase:
 
     def __contains__(self, item):
         """Determine if code exists"""
-        print(f"{self.__class__.__name__}: __contains__: {item}")
         db = Database.get()
         with db.get_connection() as conn:
             res = conn.execute(
@@ -124,7 +121,6 @@ class BaseIdpDatabase:
 
     def items(self):
         """Return all code/data from database"""
-        print(f'{self.__class__.__name__} - called items')
         db = Database.get()
         with db.get_connection() as conn:
             res = conn.execute(
