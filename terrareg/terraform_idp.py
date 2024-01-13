@@ -239,7 +239,8 @@ class TerraformIdp:
                     authorization_code_db=AuthorizationCodeDatabase(),
                     access_token_db=AccessTokenDatabase(),
                     subject_identifier_db=SubjectIdentifierDatabase(),
-                    authorization_code_lifetime=terrareg.config.Config().TERRAFORM_OIDC_IDP_SESSION_EXPIRY
+                    authorization_code_lifetime=terrareg.config.Config().TERRAFORM_OIDC_IDP_SESSION_EXPIRY,
+                    access_token_lifetime=terrareg.config.Config().TERRAFORM_OIDC_IDP_SESSION_EXPIRY,
                 ),
                 clients={
                     "terraform-cli": {
