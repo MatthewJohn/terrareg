@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.0.1...v3.0.2) (2024-01-22)
+
+
+### Bug Fixes
+
+* Pass current URL modified with PUBLIC_URL protocol/domain to avoid OIDC callback throwing errors when terrareg is running with reverse proxy performing SSL offloading ([afb0522](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/afb052247637eb06d41ba064f7ba9df8a7e86551)), closes [#484](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/484)
+
 ## [3.0.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.0.0...v3.0.1) (2024-01-22)
 
 
