@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.0.0...v3.0.1) (2024-01-22)
+
+
+### Bug Fixes
+
+* Allow custom IDP expiry time to be applied to actual access token lifetime. ([452cb95](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/452cb95dac9e2a49f140398dcb7f8eba035503da)), closes [#483](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/483)
+
 # [3.0.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v2.81.4...v3.0.0) (2023-12-31)
 
 # Breaking changes
