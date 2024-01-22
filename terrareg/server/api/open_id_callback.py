@@ -1,5 +1,6 @@
 
 import datetime
+import urllib.parse
 
 from flask import request, make_response, render_template, session, redirect
 
@@ -10,6 +11,7 @@ import terrareg.models
 import terrareg.audit
 import terrareg.audit_action
 import terrareg.auth
+import terrareg.utils
 
 
 class ApiOpenIdCallback(ErrorCatchingResource):
@@ -22,9 +24,15 @@ class ApiOpenIdCallback(ErrorCatchingResource):
         if not state:
             return {}, 400
 
+        # Adapt current URL to URL manipulated over PUBLIC_URL to avoid
+        # issues with reverse proxies forwarding to Terrareg serving on HTTP port
+        parsed_url = urllib.parse.urlparse(request.url)
+        protocol, domain, port = terrareg.utils.get_public_url_details()
+        parsed_url = parsed_url._replace(scheme=protocol, netloc=f'{domain}:{port}')
+
         # Fetch access token
         try:
-            access_token = terrareg.openid_connect.OpenidConnect.fetch_access_token(uri=request.url, valid_state=state)
+            access_token = terrareg.openid_connect.OpenidConnect.fetch_access_token(uri=parsed_url.geturl(), valid_state=state)
             if access_token is None:
                 raise Exception('Error getting access token')
         except Exception as exc:
