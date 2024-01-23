@@ -7,8 +7,8 @@ name: Docker
 
 on:
   push:
-      tags: [ 'v*.*.*' ]
-  workflow_dispatch:
+    tags:
+      - "v*.*.*"
 
 env:
   # Use docker.io for Docker Hub if empty
