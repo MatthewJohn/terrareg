@@ -93,6 +93,10 @@ COPY terrareg.py .
 COPY terrareg terrareg
 COPY scripts scripts
 
+# Copy licenses for JS/CSS
+RUN mkdir licenses/static
+RUN bash -c 'for n in js css; do pushd /app/terrareg/static/$n; for i in *; do if [ -d $i ]; then mkdir /app/licenses/static/$i; cp $i/LICENSE /app/licenses/static/$i/; fi; done; popd; done'
+
 ENV MANAGE_TERRAFORM_RC_FILE=True
 
 EXPOSE 5000
