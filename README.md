@@ -163,7 +163,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 This project and all associated code is covered by GNU General Public License v3.0.
 
-For full license, see [LICENSE](LICENSE)
+For full license, see [LICENSE](LICENSE).
+
+For licenses of third party software and libraries used in this project, see [LICENSE.third-party](LICENSE.third-party).
 
 # Contributors
 

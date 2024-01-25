@@ -1,5 +1,6 @@
 {
   "branches": ["main", "+([0-9])?(.{+([0-9]),x}).x"],
+  "gitPushOptions": ["ci.skip"],
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
@@ -15,7 +16,8 @@
       {
         "assets": [
           "CHANGELOG.md"
-        ]
+        ],
+        "message": "chore(release): ${nextRelease.version}\n\n${nextRelease.notes}"
       }
     ]
   ]

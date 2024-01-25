@@ -1,0 +1,7 @@
+# Third party licenses
+
+Terrareg makes use of third party software and libraries.
+
+If the Terrareg source code was downloaded, please review the licenses in `terrareg/static/js` and `terrareg/static/css`.
+
+If the pre-built Terrareg Docker image was downloaded, please review all licenses in the `licenses` directory.

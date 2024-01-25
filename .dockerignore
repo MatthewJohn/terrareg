@@ -2,3 +2,5 @@ example
 data
 venv
 modules.db
+local-dbs
+__pycache__

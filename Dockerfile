@@ -9,7 +9,6 @@ RUN apt-get update && \
         gcc g++ libffi-dev python3-gpg && \
     apt-get clean all
 
-
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     then \
       arch=arm64; \
@@ -72,13 +71,31 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-RUN mkdir bin
+RUN mkdir bin licenses
+
+# Create licenses for python packages
+RUN pip install pip-licenses && pip-licenses --with-system --with-license-file --format=plain-vertical > licenses/LICENSES.python && pip uninstall --yes pip-licenses
+# Copy licenses for deb packages
+RUN mkdir licenses/deb
+RUN bash -c 'pushd /usr/share/doc; for i in *; do mkdir /app/licenses/deb/$i; cp $i/{LICENSE,NOTICE,copyright} /app/licenses/deb/$i/; done; rmdir /app/licenses/deb/*; popd'
+# Get licenses for installed binaries
+RUN mkdir licenses/terraform-docs && wget https://github.com/terraform-docs/terraform-docs/raw/master/LICENSE -O ./licenses/terraform-docs/LICENSE
+RUN mkdir licenses/tfsec && wget https://github.com/aquasecurity/tfsec/raw/master/LICENSE -O ./licenses/tfsec/LICENSE
+RUN mkdir licenses/infracost && wget https://github.com/infracost/infracost/raw/master/LICENSE -O ./licenses/infracost/LICENSE
+RUN mkdir licenses/terraform-switcher && wget https://github.com/warrensbox/terraform-switcher/raw/master/LICENSE -O ./licenses/terraform-switcher/LICENSE
+RUN mkdir licenses/go && wget https://github.com/golang/go/raw/master/LICENSE -O ./licenses/go/LICENSE
+RUN mkdir licenses/tfplugindocs && wget https://github.com/hashicorp/terraform-plugin-docs/raw/main/LICENSE -O ./licenses/tfplugindocs/LICENSE
 
 COPY LICENSE .
+COPY LICENSE.third-party .
 COPY alembic.ini .
 COPY terrareg.py .
 COPY terrareg terrareg
 COPY scripts scripts
+
+# Copy licenses for JS/CSS
+RUN mkdir licenses/static
+RUN bash -c 'for n in js css; do pushd /app/terrareg/static/$n; for i in *; do if [ -d $i ]; then mkdir /app/licenses/static/$i; cp $i/LICENSE /app/licenses/static/$i/; fi; done; popd; done'
 
 ENV MANAGE_TERRAFORM_RC_FILE=True
 
