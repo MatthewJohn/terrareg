@@ -50,6 +50,10 @@ unit-integration-selenium-tests:
       coverage_report:
         coverage_format: cobertura
         path: pytest-report.xml
+  except:
+    changes:
+      - CHANGELOG.md
+      - README.md
 
 mysql-integration-selenium-tests:
   stage: test
@@ -74,12 +78,20 @@ mysql-integration-selenium-tests:
   artifacts:
     reports:
       junit: pytest-report.xml
+  except:
+    changes:
+      - CHANGELOG.md
+      - README.md
 
 spell-checker:
   stage: test
   extends: .test_image
   script:
     ./scripts/check_spelling.sh
+  except:
+    changes:
+      - CHANGELOG.md
+      - README.md
 
 test-docker-image:
   stage: test
@@ -96,6 +108,10 @@ test-docker-image:
     - sleep 30
     # Curl the terrareg homepage and ensure the title is displayed
     - http_proxy= curl http://terrareg:5000 | grep 'Home - Terrareg'
+  except:
+    changes:
+      - CHANGELOG.md
+      - README.md
 
 test-docker-image-waitress:
   stage: test
@@ -113,6 +129,10 @@ test-docker-image-waitress:
     - sleep 30
     # Curl the terrareg homepage and ensure the title is displayed
     - http_proxy= curl http://terrareg:5000 | grep 'Home - Terrareg'
+  except:
+    changes:
+      - CHANGELOG.md
+      - README.md
 
 build-wheel:
   stage: build
@@ -126,6 +146,10 @@ build-wheel:
   artifacts:
     paths:
       - dist/*.whl
+  except:
+    changes:
+      - CHANGELOG.md
+      - README.md
 
 build-docker-image:
   stage: build
@@ -134,6 +158,10 @@ build-docker-image:
     - docker:dind
   script:
     - docker build -f Dockerfile -t terrareg-image:v${CI_COMMIT_SHORT_SHA} --build-arg http_proxy=$http_proxy --build-arg HTTP_PROXY=$http_proxy --build-arg https_proxy=$https_proxy --build-arg HTTPS_PROXY=$https_proxy .
+  except:
+    changes:
+      - CHANGELOG.md
+      - README.md
 
 build-test-docker-image:
   stage: build
@@ -142,6 +170,10 @@ build-test-docker-image:
     - docker:dind
   script:
     - docker build -f Dockerfile.tests -t terrareg-test-image:v${CI_COMMIT_SHORT_SHA} --build-arg http_proxy=$http_proxy --build-arg HTTP_PROXY=$http_proxy --build-arg https_proxy=$https_proxy --build-arg HTTPS_PROXY=$https_proxy .
+  except:
+    changes:
+      - CHANGELOG.md
+      - README.md
 
 release:
   stage: deploy
@@ -156,6 +188,10 @@ release:
     - semantic-release
   only:
     - main
+  except:
+    changes:
+      - CHANGELOG.md
+      - README.md
 
 stages:
  - build
