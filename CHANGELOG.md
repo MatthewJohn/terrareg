@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.0.3...v3.0.4) (2024-01-28)
+
+
+### Bug Fixes
+
+* Update gitlab CI/CD workflow for docker build to perform builds for amd64 and arm64 ([4d4af30](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4d4af3092040159fb1cf365ed288734015f136a0)), closes [#487](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/487)
+
 ## [3.0.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.0.2...v3.0.3) (2024-01-25)
 
 ### CI
