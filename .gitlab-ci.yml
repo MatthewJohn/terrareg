@@ -88,10 +88,6 @@ spell-checker:
   extends: .test_image
   script:
     ./scripts/check_spelling.sh
-  except:
-    changes:
-      - CHANGELOG.md
-      - README.md
 
 test-docker-image:
   stage: test
@@ -146,10 +142,6 @@ build-wheel:
   artifacts:
     paths:
       - dist/*.whl
-  except:
-    changes:
-      - CHANGELOG.md
-      - README.md
 
 build-docker-image:
   stage: build
