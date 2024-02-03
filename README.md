@@ -93,6 +93,13 @@ For a full list of environment variables, please see [Deployment Guide](./docs/U
 
 See the [User Guide](./docs/USER_GUIDE.md) for configuring and using Terrareg features.
 
+## Terraform Provider
+
+The Terrareg Terraform provider can be used to create namespaces, modules and manage other aspects of Terrareg:
+
+ * https://registry.terraform.io/providers/dockstudios/terrareg
+ * https://github.com/DockStudios/terraform-provider-terrareg
+
 ## API Documentation
 
 See the [API Docs](./docs/API.md) for a list of all API endpoint.
