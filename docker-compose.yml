@@ -152,7 +152,7 @@ services:
      - .env
     entrypoint: >
       /bin/sh -c "
-      /usr/bin/mc config host add terrareg $AWS_ENDPOINT $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY;
+      /usr/bin/mc config host add terrareg $AWS_ENDPOINT_URL $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY;
       /usr/bin/mc mb terrareg/$AWS_BUCKET_NAME;
       exit 0;
       "
