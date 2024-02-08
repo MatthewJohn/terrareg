@@ -1001,12 +1001,12 @@ class Namespace(object):
     @property
     def base_directory(self):
         """Return base directory."""
-        return safe_join_paths(terrareg.config.Config().DATA_DIRECTORY, 'modules', self._name)
+        return safe_join_paths('/modules', self._name)
 
     @property
     def base_provider_directory(self):
         """Return base directory for providers"""
-        return safe_join_paths(terrareg.config.Config().DATA_DIRECTORY, 'providers', self._name)
+        return safe_join_paths('/providers', self._name)
 
     @property
     def name(self):
