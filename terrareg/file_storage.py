@@ -50,10 +50,11 @@ class LocalFileStorage(BaseFileStorage):
 
     def upload_file(self, source_path: str, dest_directory: str, dest_filename: str):
         """Upload file"""
+        self.make_directory(dest_directory)
+
         dest_directory = self._generate_path(dest_directory)
-        # Create all parent directories
-        os.makedirs(dest_directory, exist_ok=True)
         dest_full_path = os.path.join(dest_directory, dest_filename)
+
         # If destination already exists, but isnt a file, raise error.
         if os.path.exists(dest_full_path) and not os.path.isfile(dest_full_path):
             raise Exception("Destination already exists, but is not a file")
