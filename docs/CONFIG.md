@@ -1142,6 +1142,21 @@ To disable authentication for upload endpoint, leave empty.
 Default: ``
 
 
+### UPLOAD_DIRECTORY
+
+
+Directory for storing temporary upload data.
+
+By default, this uses an 'upload' sub-directory of the DATA_DIRECTORY.
+
+However, if the DATA_DIRECTORY is configured to 's3', this path must be changed to a local directory.
+
+In most situations, the path can be set to a temporary directory.
+
+
+Default: `./data/UPLOAD`
+
+
 ### VERIFIED_MODULE_LABEL
 
 Custom name for 'verified module' in UI.
