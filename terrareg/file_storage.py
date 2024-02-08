@@ -22,6 +22,10 @@ class BaseFileStorage(ABC):
     def read_file(self, path: str, bytes_mode: bool=False) -> TextIOWrapper:
         ...
 
+    def make_directory(self, directory: str) -> None:
+        """Recursively create directory"""
+        ...
+
 
 class LocalFileStorage(BaseFileStorage):
 
@@ -31,6 +35,12 @@ class LocalFileStorage(BaseFileStorage):
 
     def _generate_path(self, *paths: str) -> str:
         return os.path.join(self._base_directory, *paths)
+
+    def make_directory(self, directory: str):
+
+        directory = self._generate_path(directory)
+        # os.mkdir(directory)
+        os.makedirs(directory, exist_ok=True)
 
     def upload_file(self, source_path: str, dest_directory: str, dest_filename: str):
         """Upload file"""
