@@ -11,7 +11,7 @@ import terrareg.config
 class BaseFileStorage(abc.ABC):
 
     @abc.abstractmethod
-    def upload_file(self, source_path: str, dest_directory: str, dest_filename: str):
+    def upload_file(self, source_path: str, dest_directory: str, dest_filename: str) -> None:
         """Upload file to storage"""
         ...
 
@@ -21,8 +21,13 @@ class BaseFileStorage(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def delete_file(self, path: str):
+    def delete_file(self, path: str) -> None:
         """Delete file from storage"""
+        ...
+
+    @abc.abstractmethod
+    def delete_directory(self, path: str) -> None:
+        """Delete directory recursively from storage"""
         ...
 
     @abc.abstractmethod
@@ -42,6 +47,7 @@ class LocalFileStorage(BaseFileStorage):
     def __init__(self, base_directory):
         """Store base directory"""
         self._base_directory = base_directory
+        super().__init__()
 
     def _generate_path(self, *paths: str) -> str:
         """Generate real path of file, prepending base directory"""
@@ -77,20 +83,19 @@ class LocalFileStorage(BaseFileStorage):
         path = self._generate_path(path)
         return os.path.isfile(path)
 
-    def delete_file(self, path: str):
+    def delete_file(self, path: str) -> None:
         """Delete path"""
         path = self._generate_path(path)
         if self.file_exists(path):
             os.unlink(path)
 
-    def delete_directory(self, path: str):
+    def delete_directory(self, path: str) -> None:
         """Delete path"""
         path = self._generate_path(path)
-        raise Exception(f"Going to delete direcxtory: {path}")
         if os.path.exists(path):
-            shutil.rmtree(path)
+            os.rmdir(path)
 
-    def read_file(self, path: str, bytes_mode: bool=False):
+    def read_file(self, path: str, bytes_mode: bool=False) -> TextIOWrapper:
         """Return filehandler for file"""
         path = self._generate_path(path)
         mode = "r"
