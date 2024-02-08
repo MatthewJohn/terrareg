@@ -1,6 +1,6 @@
 
 
-from abc import ABC
+import abc
 from io import TextIOWrapper
 import os
 import shutil
@@ -8,32 +8,43 @@ import shutil
 import terrareg.config
 
 
-class BaseFileStorage(ABC):
+class BaseFileStorage(abc.ABC):
 
+    @abc.abstractmethod
     def upload_file(self, source_path: str, dest_directory: str, dest_filename: str):
+        """Upload file to storage"""
         ...
 
+    @abc.abstractmethod
     def file_exists(self, path: str) -> bool:
+        """Check if file exists"""
         ...
 
+    @abc.abstractmethod
     def delete_file(self, path: str):
+        """Delete file from storage"""
         ...
 
+    @abc.abstractmethod
     def read_file(self, path: str, bytes_mode: bool=False) -> TextIOWrapper:
+        """Obtain file handle of file from storage"""
         ...
 
+    @abc.abstractmethod
     def make_directory(self, directory: str) -> None:
         """Recursively create directory"""
         ...
 
 
 class LocalFileStorage(BaseFileStorage):
+    """Handle local file storage."""
 
     def __init__(self, base_directory):
         """Store base directory"""
         self._base_directory = base_directory
 
     def _generate_path(self, *paths: str) -> str:
+        """Generate real path of file, prepending base directory"""
         # Remove leading slash, as it does not allow the base
         # directory to be prepended
         paths = [
@@ -43,9 +54,8 @@ class LocalFileStorage(BaseFileStorage):
         return os.path.join(self._base_directory, *paths)
 
     def make_directory(self, directory: str):
-
+        """Recursively create directory"""
         directory = self._generate_path(directory)
-        # os.mkdir(directory)
         os.makedirs(directory, exist_ok=True)
 
     def upload_file(self, source_path: str, dest_directory: str, dest_filename: str):
