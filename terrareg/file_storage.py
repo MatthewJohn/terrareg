@@ -34,6 +34,12 @@ class LocalFileStorage(BaseFileStorage):
         self._base_directory = base_directory
 
     def _generate_path(self, *paths: str) -> str:
+        # Remove leading slash, as it does not allow the base
+        # directory to be prepended
+        paths = [
+            path[1:] if path.startswith('/') else path
+            for path in paths
+        ]
         return os.path.join(self._base_directory, *paths)
 
     def make_directory(self, directory: str):
