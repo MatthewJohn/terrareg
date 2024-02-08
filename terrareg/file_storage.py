@@ -10,7 +10,7 @@ import terrareg.config
 
 class BaseFileStorage(ABC):
 
-    def upload_file(self, source_path: str, dest: str):
+    def upload_file(self, source_path: str, dest_directory: str, dest_filename: str):
         ...
 
     def file_exists(self, path: str) -> bool:
