@@ -1259,15 +1259,12 @@ class Namespace(object):
 
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
-        # Check if data directory exists
-        if not os.path.isdir(self.base_directory):
-            os.mkdir(self.base_directory)
+        pass
 
     def create_provider_data_directory(self):
         """Create data directory for providers"""
         # Check if directory exists
-        if not os.path.isdir(self.base_provider_directory):
-            os.mkdir(self.base_provider_directory)
+        pass
 
     def get_module_custom_links(self):
         """Obtain module links that are applicable to namespace"""
@@ -1575,12 +1572,7 @@ class Module(object):
 
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
-        # Check if parent exists
-        if not os.path.isdir(self._namespace.base_directory):
-            self._namespace.create_data_directory()
-        # Check if data directory exists
-        if not os.path.isdir(self.base_directory):
-            os.mkdir(self.base_directory)
+        pass
 
 
 class ModuleDetails:
@@ -2948,12 +2940,7 @@ class ModuleProvider(object):
 
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
-        # Check if parent exists
-        if not os.path.isdir(self._module.base_directory):
-            self._module.create_data_directory()
-        # Check if data directory exists
-        if not os.path.isdir(self.base_directory):
-            os.mkdir(self.base_directory)
+        pass
 
     def get_versions(self, include_beta=True, include_unpublished=False):
         """Return all module provider versions."""
@@ -3968,12 +3955,7 @@ class ModuleVersion(TerraformSpecsObject):
 
     def create_data_directory(self):
         """Create data directory and data directories of parents."""
-        # Check if parent exists
-        if not os.path.isdir(self._module_provider.base_directory):
-            self._module_provider.create_data_directory()
-        # Check if data directory exists
-        if not os.path.isdir(self.base_directory):
-            os.mkdir(self.base_directory)
+        pass
 
     def publish(self):
         """Publish module version."""
