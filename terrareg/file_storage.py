@@ -176,17 +176,13 @@ class S3FileStorage(BaseFileStorage):
 
     def delete_directory(self, path: str) -> None:
         """Delete directory from s3"""
-        self.delete_file(path=path)
+        # There is no method required to delete a directory
+        pass
 
     def delete_file(self, path: str) -> None:
         """Delete key from s3"""
         path = self._generate_key(path)
-        # List all files from s3, with the path prefix,
-        # and delete the files
-        response = self._s3_client.list_objects_v2(Bucket=self._bucket_name, Prefix=path)
-
-        for object in response['Contents']:
-            self._s3_client.delete_object(Bucket=self._bucket_name, Key=object['Key'])
+        self._s3_client.delete_object(Bucket=self._bucket_name, Key=path)
 
     def read_file(self, path: str, bytes_mode: bool = False) -> TextIOWrapper:
         """Obtain FH containing contents of file from s3"""
