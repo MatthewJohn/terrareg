@@ -48,6 +48,7 @@ from terrareg.presigned_url import TerraformSourcePresignedUrl
 import terrareg.provider_model
 import terrareg.provider_version_model
 import terrareg.registry_resource_type
+import terrareg.file_storage
 
 
 class Session:
@@ -4142,13 +4143,16 @@ class ModuleVersion(TerraformSpecsObject):
         )
 
         # Delete archives for module version and version directory
-        if os.path.isfile(self.archive_path_tar_gz):
-            os.unlink(self.archive_path_tar_gz)
-        if os.path.isfile(self.archive_path_zip):
-            os.unlink(self.archive_path_zip)
+        file_storage = terrareg.file_storage.FileStorageFactory().get_file_storage()
+        if file_storage.file_exists(self.archive_path_tar_gz):
+            file_storage.delete_file(self.archive_path_tar_gz)
+        if file_storage.file_exists(self.archive_path_zip):
+            file_storage.delete_file(self.archive_path_zip)
+
+        # @TODO How to handle this
         if os.path.isdir(self.base_directory):
             try:
-                os.rmdir(self.base_directory)
+                file_storage.delete_directory(self.base_directory)
             except OSError as exc:
                 # Handle OSError which can be caused when
                 # files that are not managed by Terrareg
