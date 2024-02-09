@@ -202,12 +202,19 @@ class S3FileStorage(BaseFileStorage):
         return content
 
     def file_exists(self, path: str) -> bool:
-        return super().file_exists(path)
+        """Check if object exists in s3"""
+        path = self._generate_key(path)
+        try:
+            res = self._s3_client.head_object(Bucket=self._bucket_name, Key=path)
+            return True
+        except botocore.exceptions.ClientError as exc:
+            if "Not Found" in str(exc):
+                return False
+            raise
 
     def make_directory(self, directory: str) -> None:
         """Directories do not need to be created in s3"""
         pass
-
 
 
 class FileStorageFactory:
