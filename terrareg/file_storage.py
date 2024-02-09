@@ -151,7 +151,13 @@ class S3FileStorage(BaseFileStorage):
 
     def _generate_key(self, *paths):
         """Generate s3 key"""
-        return "/".join([self._base_s3_path, *paths])
+        path = "/".join([self._base_s3_path, *paths])
+        # Replace any double slashes
+        path = path.replace('//', '/')
+        if not path.startswith('/'):
+            path = f'/{path}'
+        return path
+
 
     def upload_file(self, source_path: str, dest_directory: str, dest_filename: str) -> None:
         """Upload file to s3"""
