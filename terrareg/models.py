@@ -1258,10 +1258,6 @@ class Namespace(object):
         with db.get_connection() as conn:
             conn.execute(delete)
 
-    def create_data_directory(self):
-        """Create data directory and data directories of parents."""
-        pass
-
     def create_provider_data_directory(self):
         """Create data directory for providers"""
         # Check if directory exists
@@ -1570,10 +1566,6 @@ class Module(object):
             ModuleProvider(module=self, name=provider)
             for provider in providers
         ]
-
-    def create_data_directory(self):
-        """Create data directory and data directories of parents."""
-        pass
 
 
 class ModuleDetails:
@@ -2939,10 +2931,6 @@ class ModuleProvider(object):
         # Obtain latest row
         return ModuleVersion(module_provider=self, version=rows[0]['version'])
 
-    def create_data_directory(self):
-        """Create data directory and data directories of parents."""
-        pass
-
     def get_versions(self, include_beta=True, include_unpublished=False):
         """Return all module provider versions."""
         db = Database.get()
@@ -3954,10 +3942,6 @@ class ModuleVersion(TerraformSpecsObject):
 
         return None
 
-    def create_data_directory(self):
-        """Create data directory and data directories of parents."""
-        pass
-
     def publish(self):
         """Publish module version."""
         terrareg.audit.AuditEvent.create_audit_event(
@@ -4080,7 +4064,6 @@ class ModuleVersion(TerraformSpecsObject):
 
         Returns boolean whether the module should be published after creation.
         """
-        self.create_data_directory()
         should_publish = self._create_db_row()
 
         terrareg.audit.AuditEvent.create_audit_event(
