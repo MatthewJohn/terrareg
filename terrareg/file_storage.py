@@ -44,6 +44,11 @@ class BaseFileStorage(abc.ABC):
         """Recursively create directory"""
         ...
 
+    @abc.abstractmethod
+    def write_file(self, path: str, content: any, binary: bool):
+        """Write file to file storage from content"""
+        ...
+
 
 class LocalFileStorage(BaseFileStorage):
     """Handle local file storage."""
@@ -107,6 +112,15 @@ class LocalFileStorage(BaseFileStorage):
             mode += "b"
         return open(path, mode)
 
+    def write_file(self, path: str, content: any, binary: bool):
+        """Write file to file storage from content"""
+        path = self._generate_path(path)
+        mode = "w"
+        if binary:
+            mode += "b"
+        with open(path, mode) as fh:
+            fh.write(content)
+
 
 class S3FileStorage(BaseFileStorage):
     """Handle file storage in s3"""
@@ -143,8 +157,11 @@ class S3FileStorage(BaseFileStorage):
         """Upload file to s3"""
         with open(source_path, 'rb') as fh:
             content = fh.read()
+        self.write_file(path=f'{dest_directory}/{dest_filename}', content=content, binary=True)
 
-        key = self._generate_key(dest_directory, dest_filename)
+    def write_file(self, path: str, content: any, binary: bool):
+        """Write file to file storage from content"""
+        key = self._generate_key(path)
 
         self._get_bucket().put_object(
             Key=key,
