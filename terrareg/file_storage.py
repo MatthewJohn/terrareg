@@ -206,7 +206,7 @@ class S3FileStorage(BaseFileStorage):
         """Check if object exists in s3"""
         path = self._generate_key(path)
         try:
-            res = self._s3_client.head_object(Bucket=self._bucket_name, Key=path)
+            self._s3_client.head_object(Bucket=self._bucket_name, Key=path)
             return True
         except botocore.exceptions.ClientError as exc:
             if "Not Found" in str(exc):
