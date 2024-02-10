@@ -76,17 +76,23 @@ class LocalFileStorage(BaseFileStorage):
 
     def upload_file(self, source_path: str, dest_directory: str, dest_filename: str):
         """Upload file"""
-        self.make_directory(dest_directory)
+        self._check_not_directory(dest_directory, dest_filename)
 
         dest_directory = self._generate_path(dest_directory)
         dest_full_path = os.path.join(dest_directory, dest_filename)
 
-        # If destination already exists, but isn't a file, raise error.
-        if os.path.exists(dest_full_path) and not os.path.isfile(dest_full_path):
-            raise FileUploadError("Destination already exists, but is not a file")
+        # Create directory to store file
+        self.make_directory(dest_directory)
 
         # Copy source file to destination
         shutil.copyfile(source_path, dest_full_path)
+
+    def _check_not_directory(self, *paths):
+        """Ensure path is not a directory"""
+        # If destination already exists, but isn't a file, raise error.
+        path = self._generate_path(*paths)
+        if os.path.exists(path) and not os.path.isfile(path):
+            raise FileUploadError("Destination already exists, but is not a file")
 
     def file_exists(self, path: str) -> bool:
         """Return if a file exists"""
@@ -115,6 +121,13 @@ class LocalFileStorage(BaseFileStorage):
 
     def write_file(self, path: str, content: any, binary: bool):
         """Write file to file storage from content"""
+        # Ensure destination is not a directory
+        self._check_not_directory(path)
+
+        # Create directory to store file
+        dest_directory = os.path.abspath(os.path.join(path, '..'))
+        self.make_directory(dest_directory)
+
         path = self._generate_path(path)
         mode = "w"
         if binary:
