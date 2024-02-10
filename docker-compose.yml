@@ -39,6 +39,7 @@ services:
       # Open traefik http [80] and https [443] ports.
       - '80:80'
       - '443:443'
+      - '8080:8080'
     volumes:
       - ./traefik/dynamic_conf.yaml:/etc/traefik/dynamic_conf.yaml:ro
       - ./traefik/traefik.yaml:/etc/traefik/traefik.yaml:ro
