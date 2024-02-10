@@ -52,6 +52,7 @@ class TestConfig:
         ('CONTRIBUTED_NAMESPACE_LABEL', None),
         ('DATABASE_URL', None),
         ('DATA_DIRECTORY', 'unittest-value/data'),
+        ('UPLOAD_DIRECTORY', None),
         ('EXAMPLES_DIRECTORY', None),
         ('EXAMPLE_ANALYTICS_TOKEN', None),
         ('GIT_PROVIDER_CONFIG', None),
