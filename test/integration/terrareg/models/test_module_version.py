@@ -495,12 +495,8 @@ class TestModuleVersion(TerraregIntegrationTest):
         data_directory = tempfile.mkdtemp()
         try:
             with unittest.mock.patch('terrareg.config.Config.DATA_DIRECTORY', data_directory):
-                # Create modules directory
-                os.mkdir(os.path.join(data_directory, 'modules'))
-
                 # Create module provider data directory tree
-                namespace.create_data_directory()
-                module_provider.create_data_directory()
+                os.makedirs(module_provider.base_directory)
 
                 # Create test module version
                 module_version = ModuleVersion(module_provider=module_provider, version='2.5.5')

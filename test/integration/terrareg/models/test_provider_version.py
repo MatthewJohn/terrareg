@@ -351,20 +351,6 @@ class TestProviderVersion(TerraregIntegrationTest):
 
         assert version_obj.generate_file_name_from_suffix("test_file_suffix") == "terraform-provider-test-initial_1.5.0_test_file_suffix"
 
-    def test_create_data_directory(self):
-        """Test create_data_directory."""
-        with TemporaryDirectory() as temp_data_dir, \
-                unittest.mock.patch('terrareg.config.Config.DATA_DIRECTORY', temp_data_dir):
-
-            os.mkdir(os.path.join(temp_data_dir, "providers"))
-            
-            namespace_obj = terrareg.models.Namespace.get("initial-providers")
-            provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
-            version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
-            version_obj.create_data_directory()
-
-            assert os.path.isdir(os.path.join(temp_data_dir, "providers", "initial-providers", "test-initial", "1.5.0"))
-
     def test_create_extraction_wrapper(self):
         """Test create_extraction_wrapper"""
         namespace_obj = terrareg.models.Namespace.get("initial-providers")
@@ -399,13 +385,11 @@ class TestProviderVersion(TerraregIntegrationTest):
         provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="to-delete")
         gpg_key = terrareg.models.GpgKey.get_by_fingerprint("21A74E4E3FDFE438532BD58434DE374AC3640CDB")
 
-        with unittest.mock.patch("terrareg.provider_version_model.ProviderVersion.create_data_directory", unittest.mock.MagicMock()) as mock_create_data_directory, \
-                unittest.mock.patch("terrareg.provider_version_model.ProviderVersion._create_db_row", unittest.mock.MagicMock()) as mock_create_db_row:
+        with unittest.mock.patch("terrareg.provider_version_model.ProviderVersion._create_db_row", unittest.mock.MagicMock()) as mock_create_db_row:
             
             version_obj = terrareg.provider_version_model.ProviderVersion(provider=provider_obj, version="1.21.3")
             version_obj.prepare_version(git_tag="vunittest-git-tag", gpg_key=gpg_key)
 
-            mock_create_data_directory.assert_called_once_with()
             mock_create_db_row.assert_called_once_with(git_tag="vunittest-git-tag", gpg_key=gpg_key)
 
         db = terrareg.database.Database.get()

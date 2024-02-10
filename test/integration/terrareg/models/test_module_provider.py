@@ -304,13 +304,8 @@ class TestModuleProvider(TerraregIntegrationTest):
         data_directory = tempfile.mkdtemp()
         try:
             with mock.patch('terrareg.config.Config.DATA_DIRECTORY', data_directory):
-                # Create modules directory
-                os.mkdir(os.path.join(data_directory, 'modules'))
-
                 # Create module provider data directory tree
-                namespace.create_data_directory()
-                module.create_data_directory()
-                module_provider.create_data_directory()
+                os.makedirs(module_provider.base_directory)
 
                 # Create additional test file in module provider directory
                 # to ensure it is not accidently removed

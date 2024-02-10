@@ -402,8 +402,6 @@ class TestProviderVersionBinary(TerraregIntegrationTest):
         )
         with TemporaryDirectory() as temp_dir, \
                 unittest.mock.patch('terrareg.config.Config.DATA_DIRECTORY', temp_dir):
-            os.mkdir(os.path.join(temp_dir, "providers"))
-            provider_version.create_data_directory()
 
             test_provider_version_binary.create_local_binary(b"Some test local binary content\nisHere!")
 

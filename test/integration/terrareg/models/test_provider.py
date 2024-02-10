@@ -379,16 +379,6 @@ class TestProvider(TerraregIntegrationTest):
         test_provider._cache_db_row = {"default_provider_source_auth": default_provider_source_auth}
         assert test_provider.use_default_provider_source_auth is default_provider_source_auth
 
-    def test_create_data_directory(self, test_provider):
-        """"Test create_data_directory method"""
-        with tempfile.TemporaryDirectory() as tempdir, \
-                unittest.mock.patch("terrareg.config.Config.DATA_DIRECTORY", tempdir):
-            os.mkdir(os.path.join(tempdir, "providers"))
-
-            test_provider.create_data_directory()
-
-            assert os.path.isdir(os.path.join(tempdir, "providers", "some-organisation", "unittest-create-provider-name"))
-
     @pytest.mark.parametrize('provider_versions, expected_latest_version', [
         ([], None),
         (['1.0.0'], '1.0.0'),

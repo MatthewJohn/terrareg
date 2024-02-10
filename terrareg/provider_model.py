@@ -266,15 +266,6 @@ class Provider:
 
         return self._cache_db_row
 
-    def create_data_directory(self):
-        """Create data directory and data directories of parents."""
-        # Check if parent exists
-        if not os.path.isdir(self._namespace.base_provider_directory):
-            self._namespace.create_provider_data_directory()
-        # Check if data directory exists
-        if not os.path.isdir(self.base_directory):
-            os.mkdir(self.base_directory)
-
     def get_latest_version(self) -> Union[None, 'terrareg.provider_version_model.ProviderVersion']:
         """Return latest version of module provider"""
         if provider_version_pk := self._get_db_row()["latest_version_id"]:
