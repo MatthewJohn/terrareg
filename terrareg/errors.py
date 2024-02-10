@@ -418,3 +418,9 @@ class InvalidUploadDirectoryError(TerraregError):
     """Upload directory is configured incorrectly."""
 
     pass
+
+
+class FileUploadError(TerraregError):
+    """Error whilst uploading a file"""
+
+    pass

@@ -10,6 +10,7 @@ import boto3
 import botocore.exceptions
 
 import terrareg.config
+from terrareg.errors import FileUploadError
 
 
 class BaseFileStorage(abc.ABC):
@@ -80,9 +81,9 @@ class LocalFileStorage(BaseFileStorage):
         dest_directory = self._generate_path(dest_directory)
         dest_full_path = os.path.join(dest_directory, dest_filename)
 
-        # If destination already exists, but isnt a file, raise error.
+        # If destination already exists, but isn't a file, raise error.
         if os.path.exists(dest_full_path) and not os.path.isfile(dest_full_path):
-            raise Exception("Destination already exists, but is not a file")
+            raise FileUploadError("Destination already exists, but is not a file")
 
         # Copy source file to destination
         shutil.copyfile(source_path, dest_full_path)
