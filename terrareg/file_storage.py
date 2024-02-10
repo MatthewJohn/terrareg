@@ -214,7 +214,8 @@ class S3FileStorage(BaseFileStorage):
             raise
 
     def make_directory(self, directory: str) -> None:
-        """Directories do not need to be created in s3"""
+        """Create directory"""
+        # Directories do not need to be created in s3
         pass
 
 
