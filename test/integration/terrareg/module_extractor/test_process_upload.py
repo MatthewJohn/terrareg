@@ -1723,7 +1723,7 @@ resource "aws_s3_bucket" "test" {
 
                     # Ensure the module version tar archive path looks correct
                     assert module_version.archive_path_tar_gz == "/modules/testprocessupload/test-module/aws/21.0.0/source.tar.gz"
-                    full_tar_path = os.path.join(temp_dir, module_version.archive_path_tar_gz.strip('/'))
+                    full_tar_path = os.path.join(temp_dir, module_version.archive_path_tar_gz.lstrip(os.path.sep))
                     assert os.path.isfile(full_tar_path)
 
                     # Inspect generated archive
@@ -1745,7 +1745,7 @@ resource "aws_s3_bucket" "test" {
                     # Ensure zip file was created correctly
                     assert module_version.archive_path_zip == "/modules/testprocessupload/test-module/aws/21.0.0/source.zip"
 
-                    full_zip_path = os.path.join(temp_dir, module_version.archive_path_zip.strip('/'))
+                    full_zip_path = os.path.join(temp_dir, module_version.archive_path_zip.lstrip(os.path.sep))
                     assert os.path.isfile(full_zip_path)
 
                     # Inspect generated archive
