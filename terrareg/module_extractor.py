@@ -366,7 +366,7 @@ terraform {{
 
 
         # Create tar.gz
-        with tempfile.TemporaryDirectory() as temp_dir:
+        with tempfile.TemporaryDirectory(suffix='generate-archive') as temp_dir:
             tar_file_path = os.path.join(temp_dir, self._module_version.archive_name_tar_gz)
             with tarfile.open(tar_file_path, "w:gz") as tar:
                 tar.add(self.extract_directory, arcname='', recursive=True, filter=tar_filter)
