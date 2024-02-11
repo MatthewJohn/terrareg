@@ -112,7 +112,7 @@ class LocalFileStorage(BaseFileStorage):
             os.rmdir(path)
 
     def read_file(self, path: str, bytes_mode: bool=False) -> TextIOWrapper:
-        """Return filehandler for file"""
+        """Return file handler for file"""
         path = self._generate_path(path)
         mode = "r"
         if bytes_mode:
