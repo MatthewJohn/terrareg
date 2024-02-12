@@ -112,14 +112,12 @@ class LocalFileStorage(BaseFileStorage):
     def delete_file(self, path: str) -> None:
         """Delete path"""
         path = self._generate_path(path)
-        if self.file_exists(path):
-            os.unlink(path)
+        os.unlink(path)
 
     def delete_directory(self, path: str) -> None:
         """Delete path"""
         path = self._generate_path(path)
-        if os.path.exists(path):
-            os.rmdir(path)
+        os.rmdir(path)
 
     def read_file(self, path: str, bytes_mode: bool=False) -> TextIOWrapper:
         """Return file handler for file"""
