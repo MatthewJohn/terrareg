@@ -2547,10 +2547,12 @@ class ModuleProvider(object):
 
         db = Database.get()
 
+        file_storage = terrareg.file_storage.FileStorageFactory().get_file_storage()
+
         # Remove directory for module provider
-        if os.path.isdir(self.base_directory):
+        if file_storage.directory_exists(self.base_directory):
             try:
-                os.rmdir(self.base_directory)
+                file_storage.delete_directory(self.base_directory)
             except OSError as exc:
                 # Handle OSError which can be caused when
                 # files that are not managed by Terrareg

@@ -305,11 +305,13 @@ class TestModuleProvider(TerraregIntegrationTest):
         try:
             with mock.patch('terrareg.config.Config.DATA_DIRECTORY', data_directory):
                 # Create module provider data directory tree
-                os.makedirs(module_provider.base_directory)
+                module_provider_directory = os.path.join(data_directory, module_provider.base_directory.lstrip(os.path.sep))
+                module_directory = os.path.join(data_directory, module.base_directory.lstrip(os.path.sep))
+                os.makedirs(module_provider_directory)
 
                 # Create additional test file in module provider directory
                 # to ensure it is not accidently removed
-                test_module_provider_file = os.path.join(module_provider.base_directory, 'test_file')
+                test_module_provider_file = os.path.join(module_provider_directory, 'test_file')
                 if module_provider_directory_non_empty:
                     with open(test_module_provider_file, 'w'):
                         pass
@@ -317,11 +319,9 @@ class TestModuleProvider(TerraregIntegrationTest):
                 # Remove module provider/module directories to match
                 # test case
                 if not module_provider_directory_exists:
-                    os.rmdir(module_provider.base_directory)
+                    os.rmdir(module_provider_directory)
                 if not module_directory_exists:
-                    os.rmdir(module.base_directory)
-
-                module_provider_directory = module_provider.base_directory
+                    os.rmdir(module_directory)
 
                 # Remove module version
                 module_provider.delete()
@@ -333,7 +333,7 @@ class TestModuleProvider(TerraregIntegrationTest):
                 # Ensure module provider directory exists, if it
                 # existed in test case
                 if module_directory_exists:
-                    assert os.path.isdir(module.base_directory)
+                    assert os.path.isdir(module_directory)
 
         finally:
             shutil.rmtree(data_directory)
