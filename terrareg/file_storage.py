@@ -69,10 +69,23 @@ class LocalFileStorage(BaseFileStorage):
         # Remove leading slash, as it does not allow the base
         # directory to be prepended
         paths = [
-            path[1:] if path.startswith('/') else path
+            path.lstrip(os.path.sep)
             for path in paths
         ]
-        return os.path.join(self._base_directory, *paths)
+        path = os.path.join(self._base_directory, *paths)
+
+        # Add leading slash to path, if it does not contain one
+        # before passing to abspath, as abspath will
+        # prefix with CWD
+        contains_leading_slash = path.startswith(os.path.sep)
+        if not contains_leading_slash:
+            path = f"{os.path.sep}{path}"
+
+        path = os.path.abspath(path)
+        if not contains_leading_slash:
+            path = path[1:]
+
+        return path
 
     def make_directory(self, directory: str):
         """Recursively create directory"""
