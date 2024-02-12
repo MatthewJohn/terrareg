@@ -96,11 +96,11 @@ class LocalFileStorage(BaseFileStorage):
         """Upload file"""
         self._check_not_directory(dest_directory, dest_filename)
 
-        dest_directory = self._generate_path(dest_directory)
-        dest_full_path = os.path.join(dest_directory, dest_filename)
-
         # Create directory to store file
         self.make_directory(dest_directory)
+
+        dest_directory = self._generate_path(dest_directory)
+        dest_full_path = os.path.join(dest_directory, dest_filename)
 
         # Copy source file to destination
         shutil.copyfile(source_path, dest_full_path)
