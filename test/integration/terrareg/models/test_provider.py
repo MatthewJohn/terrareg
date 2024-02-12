@@ -316,7 +316,7 @@ class TestProvider(TerraregIntegrationTest):
 
     def test_base_directory(self, test_provider):
         """Test base_directory property of Provider."""
-        assert test_provider.base_directory == f"{os.getcwd()}/data/providers/some-organisation/unittest-create-provider-name"
+        assert test_provider.base_directory == "/providers/some-organisation/unittest-create-provider-name"
 
     def test_repository(self, test_provider, test_repository):
         """Test repository property of provider"""

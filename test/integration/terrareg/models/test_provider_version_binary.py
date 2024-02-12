@@ -325,8 +325,7 @@ class TestProviderVersionBinary(TerraregIntegrationTest):
             operating_system_type=terrareg.provider_binary_types.ProviderBinaryOperatingSystemType.WINDOWS,
             architecture_type=terrareg.provider_binary_types.ProviderBinaryArchitectureType.AMD64
         )
-        with unittest.mock.patch('terrareg.config.Config.DATA_DIRECTORY', '/some/test/directory'):
-            assert test_provider_version_binary.local_file_path == "/some/test/directory/providers/initial-providers/multiple-versions/1.5.0/terraform-provider-multiple-versions_1.5.0_windows_amd64.zip"
+        assert test_provider_version_binary.local_file_path == "/providers/initial-providers/multiple-versions/1.5.0/terraform-provider-multiple-versions_1.5.0_windows_amd64.zip"
 
     def test_provider_version(self):
         """Test provider_version attribute"""

@@ -139,8 +139,7 @@ class TestProviderVersion(TerraregIntegrationTest):
         namespace_obj = terrareg.models.Namespace.get("initial-providers")
         provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name="test-initial")
         version_obj = terrareg.provider_version_model.ProviderVersion.get(provider=provider_obj, version="1.5.0")
-        with unittest.mock.patch('terrareg.config.Config.DATA_DIRECTORY', '/tmp/some-dir'):
-            assert version_obj.base_directory == "/tmp/some-dir/providers/initial-providers/test-initial/1.5.0"
+        assert version_obj.base_directory == "/providers/initial-providers/test-initial/1.5.0"
 
     @pytest.mark.parametrize('version, expected', [
         ('1.1.0', False),
