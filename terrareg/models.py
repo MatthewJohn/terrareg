@@ -4133,7 +4133,7 @@ class ModuleVersion(TerraformSpecsObject):
             file_storage.delete_file(self.archive_path_zip)
 
         # @TODO How to handle this
-        if os.path.isdir(self.base_directory):
+        if file_storage.directory_exists(self.base_directory):
             try:
                 file_storage.delete_directory(self.base_directory)
             except OSError as exc:
