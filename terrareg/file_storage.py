@@ -26,6 +26,11 @@ class BaseFileStorage(abc.ABC):
         ...
 
     @abc.abstractmethod
+    def directory_exists(self, path: str) -> bool:
+        """Return if a directory exists"""
+        ...
+
+    @abc.abstractmethod
     def delete_file(self, path: str) -> None:
         """Delete file from storage"""
         ...
@@ -98,6 +103,11 @@ class LocalFileStorage(BaseFileStorage):
         """Return if a file exists"""
         path = self._generate_path(path)
         return os.path.isfile(path)
+
+    def directory_exists(self, path: str) -> bool:
+        """Return if a directory exists"""
+        path = self._generate_path(path)
+        return os.path.isdir(path)
 
     def delete_file(self, path: str) -> None:
         """Delete path"""
@@ -225,6 +235,14 @@ class S3FileStorage(BaseFileStorage):
             if "Not Found" in str(exc):
                 return False
             raise
+
+    def directory_exists(self, path: str) -> bool:
+        """Check if directory exists"""
+        # Always return True.
+        # This will lead to logic where, directories are always removed,
+        # but also means files can be uploaded, since directories
+        # do not need creating.
+        return True
 
     def make_directory(self, directory: str) -> None:
         """Create directory"""
