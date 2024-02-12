@@ -59,7 +59,7 @@ class BaseFileStorage(abc.ABC):
 class LocalFileStorage(BaseFileStorage):
     """Handle local file storage."""
 
-    def __init__(self, base_directory):
+    def __init__(self, base_directory: str):
         """Store base directory"""
         self._base_directory = base_directory
         super().__init__()
