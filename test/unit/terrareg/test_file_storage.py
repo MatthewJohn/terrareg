@@ -1,11 +1,15 @@
+import contextlib
 import tempfile
 import unittest.mock
 import os
 
 import pytest
+import boto3
+import botocore.exceptions
 
 from test.unit.terrareg import TerraregUnitTest
 import terrareg.file_storage
+from terrareg.errors import InvalidDataDirectoryError
 
 
 class TestFileStorageFactory(TerraregUnitTest):
@@ -296,3 +300,234 @@ class TestLocalFileStorage(TerraregUnitTest):
 
             with open(os.path.join(temp_dir, file), "r") as fh:
                 assert fh.read() == "Test write content"
+
+
+@contextlib.contextmanager
+def create_s3_file_storage_with_bucket(bucket_name, bucket_path):
+    """Create instance of S3FileStorage and S3 bucket"""
+    instance = terrareg.file_storage.S3FileStorage(s3_url=f's3://{bucket_name}{bucket_path}')
+    try:
+        instance._s3_client.create_bucket(
+            ACL='private',
+            Bucket=bucket_name
+        )
+    except Exception as exc:
+        # If bucket already exists from a previous test, ignore it
+        # @TODO What to do with content
+        if "BucketAlreadyOwnedByYou" not in str(exc):
+            raise
+
+    try:
+        yield instance
+    finally:
+        # Destroy test bucket
+        response = instance._s3_client.list_objects_v2(Bucket=bucket_name)
+
+        for object in response.get('Contents', []):
+            instance._s3_client.delete_object(Bucket=bucket_name, Key=object['Key'])
+
+        instance._s3_client.delete_bucket(Bucket=bucket_name)
+
+
+class TestS3FileStorage(TerraregUnitTest):
+    """Handle file storage in s3"""
+
+
+    def test___init__(self):
+        """Test __init__ method"""
+        instance = terrareg.file_storage.S3FileStorage(s3_url="s3://unittest-bucket-name/some_path/for-ut/")
+        assert instance._s3_url == "s3://unittest-bucket-name/some_path/for-ut/"
+        assert instance._bucket_name == "unittest-bucket-name"
+        assert instance._base_s3_path == "/some_path/for-ut"
+        assert isinstance(instance._session, boto3.session.Session)
+
+    @pytest.mark.parametrize('s3_url, expected_bucket, expected_path', [
+        ('s3://test-bucket', 'test-bucket', ''),
+        ('s3://test-bucket/', 'test-bucket', ''),
+        ('s3://test-bucket/some-path', 'test-bucket', '/some-path'),
+        ('s3://test-bucket/some-path/', 'test-bucket', '/some-path'),
+        ('s3://test-bucket/some-path//', 'test-bucket', '/some-path'),
+        ('s3://test-bucket/some/extra//path//', 'test-bucket', '/some/extra/path'),
+    ])
+    def test__get_path_details(self, s3_url, expected_bucket, expected_path):
+        """Obtain bucket name and base path from s3 path"""
+        instance = terrareg.file_storage.S3FileStorage(s3_url="s3://unittest-bucket-name/some_path/for-ut/")
+        assert instance._get_path_details(s3_url=s3_url) == (expected_bucket, expected_path)
+
+    @pytest.mark.parametrize('s3_url', [
+        (''),
+        ('s3://'),
+        ('s3:///adg'),
+        ('adg'),
+    ])
+    def test__get_path_details_invalid(self, s3_url):
+        """Obtain bucket name and base path from s3 path"""
+        instance = terrareg.file_storage.S3FileStorage(s3_url="s3://unittest-bucket-name/some_path/for-ut/")
+        with pytest.raises(InvalidDataDirectoryError):
+            instance._get_path_details(s3_url=s3_url)
+
+    def test__get_bucket(self):
+        """Get bucket object"""
+        instance = terrareg.file_storage.S3FileStorage(s3_url="s3://unittest-bucket-name/some_path/for-ut")
+        bucket = instance._get_bucket()
+        assert bucket
+        assert bucket.name == "unittest-bucket-name"
+        assert bucket.__class__.__name__ == "s3.Bucket"
+
+    @pytest.mark.parametrize('s3_url, paths, expected_key', [
+        ('s3://test-bucket', ['path1'], '/path1'),
+        ('s3://test-bucket', ['path1', 'path2'], '/path1/path2'),
+        ('s3://test-bucket/', ['path1', 'path2'], '/path1/path2'),
+        ('s3://test-bucket/', ['/path1', 'path2'], '/path1/path2'),
+        ('s3://test-bucket/', ['/path1/', '/path2/'], '/path1/path2'),
+        ('s3://test-bucket/', ['/path1//', '/path2//'], '/path1/path2'),
+        ('s3://test-bucket/some-path', ['path1', 'path2'], '/some-path/path1/path2'),
+        ('s3://test-bucket/some-path/', ['/path1', 'path2'], '/some-path/path1/path2'),
+    ])
+    def test__generate_key(self, s3_url, paths, expected_key):
+        """Generate s3 key"""
+        instance = terrareg.file_storage.S3FileStorage(s3_url=s3_url)
+        assert instance._generate_key(*paths) == expected_key
+
+    @pytest.mark.parametrize('bucket_path, dest_directory, dest_filename, test_key', [
+        ("", "/test/directory/in/s3", "test_dest_file", "/test/directory/in/s3/test_dest_file"),
+        ("/", "/test/directory/in/s3", "test_dest_file", "/test/directory/in/s3/test_dest_file"),
+        ("/test-path", "/test/directory/in/s3", "test_dest_file", "/test-path//test/directory/in/s3/test_dest_file"),
+        ("/test-path/test-path2", "/test/directory/in/s3/", "test_dest_file", "/test-path/test-path2/test/directory/in/s3/test_dest_file"),
+        ("/test-path/test-path3/", "/test/dir/", "/leadingslash", "/test-path/test-path3/test/dir/leadingslash"),
+    ])
+    @pytest.mark.skipif(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to minio not configured")
+    def test_upload_file(self, bucket_path, dest_directory, dest_filename, test_key):
+        """Upload file to s3"""
+
+        with create_s3_file_storage_with_bucket(bucket_name="test-bucket", bucket_path=bucket_path) as instance, \
+                tempfile.TemporaryDirectory() as temp_dir:
+            # Create test file
+            source_file = os.path.join(temp_dir, "test_upload_file")
+            with open(source_file, "w") as fh:
+                fh.write("Test upload content")
+            
+            instance.upload_file(source_path=source_file, dest_directory=dest_directory, dest_filename=dest_filename)
+
+            # Obtain file from s3 to ensure it was uploaded correctly
+            res = instance._s3_client.get_object(
+                Bucket="test-bucket",
+                Key=test_key
+            )
+            assert res['Body'].read() == "Test upload content".encode('utf-8')
+
+
+    @pytest.mark.parametrize('bucket_path, dest_path, test_key', [
+        ("", "/test/directory/in/s3/test_dest_file", "/test/directory/in/s3/test_dest_file"),
+        ("/", "/test/directory/in/s3/test_dest_file", "/test/directory/in/s3/test_dest_file"),
+        ("/test-path", "/test/directory/in/s3/test_dest_file", "/test-path//test/directory/in/s3/test_dest_file"),
+        ("/test-path/test-path2", "/test/directory/in/s3/test_dest_file", "/test-path/test-path2/test/directory/in/s3/test_dest_file"),
+        ("/test-path/test-path3/", "/test/dir/leadingslash", "/test-path/test-path3/test/dir/leadingslash"),
+    ])
+    @pytest.mark.parametrize('binary', [
+        True,
+        False
+    ])
+    @pytest.mark.skipif(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to minio not configured")
+    def test_write_file(self, bucket_path, dest_path, test_key, binary):
+        """Upload file to s3"""
+
+        with create_s3_file_storage_with_bucket(bucket_name="test-bucket", bucket_path=bucket_path) as instance:
+            # Create test file - binary parameter should be unused
+            instance.write_file(path=dest_path, content="Test Write content", binary=binary)
+
+            # Obtain file from s3 to ensure it was uploaded correctly
+            res = instance._s3_client.get_object(
+                Bucket="test-bucket",
+                Key=test_key
+            )
+            assert res['Body'].read() == "Test Write content".encode('utf-8')
+
+    def test_delete_directory(self):
+        """Test delete_directory method"""
+        instance = terrareg.file_storage.S3FileStorage(s3_url='s3://test-bucket')
+        assert instance.make_directory(directory="/does/not/exist") is None
+
+    @pytest.mark.skipif(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to minio not configured")
+    def test_delete_file(self):
+        """Test delete_file method"""
+        with create_s3_file_storage_with_bucket(bucket_name="test-bucket", bucket_path="/test-base-dir/") as instance:
+            # Upload file to s3
+            bucket = instance._s3_resource.Bucket("test-bucket")
+            bucket.put_object(
+                Key="/test-base-dir/some-test/file-to-delete",
+                Body="Test Content"
+            )
+
+            # Ensure file exists
+            instance._s3_client.head_object(Bucket="test-bucket", Key="/test-base-dir/some-test/file-to-delete")
+
+            instance.delete_file(path="/some-test/file-to-delete")
+
+            with pytest.raises(botocore.exceptions.ClientError):
+                instance._s3_client.head_object(Bucket="test-bucket", Key="/test-base-dir/some-test/file-to-delete")
+
+    @pytest.mark.skipif(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to minio not configured")
+    def test_read_file_bytes_mode(self):
+        """Test read_file method"""
+        with create_s3_file_storage_with_bucket(bucket_name="test-bucket", bucket_path="/another-base-dir/") as instance:
+            # Upload file to s3
+            bucket = instance._s3_resource.Bucket("test-bucket")
+            bucket.put_object(
+                Key="/another-base-dir/some-test/file-to-read",
+                Body="Test Content To Read"
+            )
+
+            expected_content = "Test Content To Read".encode("utf-8")
+
+            file_handler = instance.read_file(path="/some-test/file-to-read", bytes_mode=True)
+            assert file_handler is not None
+            assert file_handler.read() == expected_content
+
+    @pytest.mark.skipif(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to minio not configured")
+    def test_read_file_text_mode(self):
+        """Test read_file method"""
+        with create_s3_file_storage_with_bucket(bucket_name="test-bucket", bucket_path="/another-base-dir/") as instance:
+            # Upload file to s3
+            bucket = instance._s3_resource.Bucket("test-bucket")
+            bucket.put_object(
+                Key="/another-base-dir/some-test/file-to-read",
+                Body="Test Content To Read"
+            )
+
+            with pytest.raises(NotImplementedError):
+                instance.read_file(path="/some-test/file-to-read", bytes_mode=False)
+
+    @pytest.mark.skipif(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to minio not configured")
+    def test_read_file_non_existent(self):
+        """Test read_file method with non-existent file"""
+        with create_s3_file_storage_with_bucket(bucket_name="test-bucket", bucket_path="/another-base-dir/") as instance:
+            assert instance.read_file(path="/does/not/exist", bytes_mode=True) is None
+
+    @pytest.mark.parametrize('exists', [
+        True,
+        False
+    ])
+    @pytest.mark.skipif(not os.environ.get('AWS_ENDPOINT_URL'), reason="Skipping due to minio not configured")
+    def test_file_exists(self, exists):
+        """Test file_exists method"""
+        with create_s3_file_storage_with_bucket(bucket_name="test-bucket", bucket_path="/exists-base-dir/") as instance:
+            # Upload file to s3
+            if exists:
+                bucket = instance._s3_resource.Bucket("test-bucket")
+                bucket.put_object(
+                    Key="/exists-base-dir/some-test/file-to-exist",
+                    Body="Test Content To Read"
+                )
+
+            assert instance.file_exists("/some-test/file-to-exist") is exists
+
+    def test_directory_exists(self):
+        """Test test_directory_exists"""
+        instance = terrareg.file_storage.S3FileStorage(s3_url='s3://test-bucket')
+        assert instance.directory_exists(path="/does/not/exist") is True
+
+    def test_make_directory(self):
+        """Test make_directory"""
+        instance = terrareg.file_storage.S3FileStorage(s3_url='s3://test-bucket')
+        instance.make_directory(directory="/test/dir")

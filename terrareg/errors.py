@@ -414,6 +414,12 @@ class GpgKeyInUseError(TerraregError):
     pass
 
 
+class InvalidDataDirectoryError(TerraregError):
+    """Data directory is configured incorrectly."""
+
+    pass
+
+
 class InvalidUploadDirectoryError(TerraregError):
     """Upload directory is configured incorrectly."""
 

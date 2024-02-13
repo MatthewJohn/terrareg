@@ -10,7 +10,7 @@ import boto3
 import botocore.exceptions
 
 import terrareg.config
-from terrareg.errors import FileUploadError
+from terrareg.errors import FileUploadError, InvalidDataDirectoryError
 
 
 class BaseFileStorage(abc.ABC):
@@ -174,7 +174,7 @@ class S3FileStorage(BaseFileStorage):
         """Obtain bucket name and base path from s3 path"""
         match = re.match(r"s3://([^/]+)((:?/.*)?)$", s3_url)
         if not match:
-            raise Exception("Invalid s3 path for DATA_DIRECTORY. Must be in the form: s3://BUCKETNAME/")
+            raise InvalidDataDirectoryError("Invalid s3 path for DATA_DIRECTORY. Must be in the form: s3://BUCKETNAME/")
 
         bucket = match.group(1)
         path = match.group(2)
