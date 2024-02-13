@@ -6,6 +6,11 @@ variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   MYSQL_DATABASE: terrareg-integration
   MYSQL_ROOT_PASSWORD: password
+  AWS_ENDPOINT_URL: "http://minio:9000"
+  AWS_ACCESS_KEY_ID: "GA7JXYR4LUFQ23YPMO_MFKLI"
+  AWS_SECRET_ACCESS_KEY: "4x5JqXPd-1JOo97CwI0Pr_LBVS-gApjrU7JUNrclkbOXrdYU"
+  AWS_BUCKET_NAME: "terrareg"
+  AWS_REGION: "us-east-1"
 
 # Pip's cache doesn't store the python packages
 # https://pip.pypa.io/en/stable/reference/pip_install/#caching
@@ -36,6 +41,13 @@ cache:
 unit-integration-selenium-tests:
   stage: test
   extends: .test_image
+  services:
+    - name: minio/minio
+      alias: minio
+      command: ["server", "/data", "--console-address", ":9001"]
+  variables:
+    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
+    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
   script:
     # Perform database migration
     - alembic upgrade head
@@ -65,11 +77,16 @@ mysql-integration-selenium-tests:
   services:
     - name: mariadb:10.8
       alias: mysql
+    - name: minio/minio
+      alias: minio
+      command: ["server", "/data", "--console-address", ":9001"]
   variables:
     # Set database url for integration tests
     INTEGRATION_DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
     # Set datbase URL for schema migration
     DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
+    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
+    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
   script:
     # Perform database migration
     - alembic upgrade head
