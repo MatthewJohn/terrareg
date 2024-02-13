@@ -17,7 +17,7 @@ import terrareg.errors
 from terrareg.models import GitProvider, Module, ModuleProvider, ModuleVersion, Namespace
 from terrareg.module_extractor import ApiUploadModuleExtractor
 from test.integration.terrareg import TerraregIntegrationTest
-from test import client
+from test import client, skipif_unless_ci
 from test.integration.terrareg.module_extractor import UploadTestModule
 import terrareg.utils
 import terrareg.file_storage
@@ -1072,7 +1072,7 @@ digraph {
 }
 """.strip()
 
-    @pytest.mark.skipif(terrareg.config.Config().INFRACOST_API_KEY == None, reason="Requires valid infracost API key")
+    @skipif_unless_ci(terrareg.config.Config().INFRACOST_API_KEY == None, reason="Requires valid infracost API key")
     def test_uploading_module_with_infracost(self):
         """Test uploading a module with real Infracost API key."""
         test_upload = UploadTestModule()
@@ -1624,7 +1624,7 @@ resource "aws_s3_bucket" "test" {
         } == expected_files
 
 
-    @pytest.mark.skipif((not os.path.isfile('/usr/bin/zip')), reason="Zip must be installed on system")
+    @skipif_unless_ci((not os.path.isfile('/usr/bin/zip')), reason="Zip must be installed on system")
     def test_upload_malicious_zip(self):
         """Test basic module upload with single depth."""
         namespace = Namespace.get(name='testprocessupload', create=True)

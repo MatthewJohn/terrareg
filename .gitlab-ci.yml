@@ -6,6 +6,7 @@ variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   MYSQL_DATABASE: terrareg-integration
   MYSQL_ROOT_PASSWORD: password
+  IN_TERRAREG_CI: "true"
   AWS_ENDPOINT_URL: "http://minio:9000"
   AWS_ACCESS_KEY_ID: "GA7JXYR4LUFQ23YPMO_MFKLI"
   AWS_SECRET_ACCESS_KEY: "4x5JqXPd-1JOo97CwI0Pr_LBVS-gApjrU7JUNrclkbOXrdYU"
