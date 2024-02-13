@@ -229,10 +229,10 @@ class S3FileStorage(BaseFileStorage):
 
     def read_file(self, path: str, bytes_mode: bool = False) -> TextIOWrapper:
         """Obtain FH containing contents of file from s3"""
-        if bytes_mode:
-            content = BytesIO()
-        else:
-            content = TextIO()
+        if bytes_mode is False:
+            raise NotImplementedError("S3 storage does not support text-based read_file")
+
+        content = BytesIO()
 
         key = self._generate_key(path)
 
