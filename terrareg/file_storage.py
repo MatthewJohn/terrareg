@@ -178,6 +178,13 @@ class S3FileStorage(BaseFileStorage):
 
         bucket = match.group(1)
         path = match.group(2)
+
+        path = re.sub(r'//+', '/', path)
+        if not path.startswith('/'):
+            path = f'/{path}'
+
+        path = path.rstrip('/')
+
         return bucket, path
 
     def _get_bucket(self):
@@ -188,11 +195,12 @@ class S3FileStorage(BaseFileStorage):
         """Generate s3 key"""
         path = "/".join([self._base_s3_path, *paths])
         # Replace any double slashes
-        path = path.replace('//', '/')
+        path = re.sub(r'//+', '/', path)
         if not path.startswith('/'):
             path = f'/{path}'
-        return path
 
+        path = path.rstrip('/')
+        return path
 
     def upload_file(self, source_path: str, dest_directory: str, dest_filename: str) -> None:
         """Upload file to s3"""
