@@ -63,12 +63,7 @@ unit-integration-selenium-tests:
       coverage_report:
         coverage_format: cobertura
         path: pytest-report.xml
-  only:
-    changes:
-      - terrareg/**/*
-      - test/**/*
-      - terrareg.py
-      - Dockerfile*
+
 
 mysql-integration-selenium-tests:
   stage: test
@@ -98,24 +93,14 @@ mysql-integration-selenium-tests:
   artifacts:
     reports:
       junit: pytest-report.xml
-  only:
-    changes:
-      - terrareg/**/*
-      - test/**/*
-      - terrareg.py
-      - Dockerfile*
+
 
 spell-checker:
   stage: test
   extends: .test_image
   script:
     ./scripts/check_spelling.sh
-  only:
-    changes:
-      - terrareg/**/*
-      - test/**/*
-      - terrareg.py
-      - Dockerfile*
+
 
 test-docker-image:
   stage: test
@@ -132,12 +117,7 @@ test-docker-image:
     - sleep 30
     # Curl the terrareg homepage and ensure the title is displayed
     - http_proxy= curl http://terrareg:5000 | grep 'Home - Terrareg'
-  only:
-    changes:
-      - terrareg/**/*
-      - test/**/*
-      - terrareg.py
-      - Dockerfile*
+
 
 test-docker-image-waitress:
   stage: test
@@ -155,12 +135,7 @@ test-docker-image-waitress:
     - sleep 30
     # Curl the terrareg homepage and ensure the title is displayed
     - http_proxy= curl http://terrareg:5000 | grep 'Home - Terrareg'
-  only:
-    changes:
-      - terrareg/**/*
-      - test/**/*
-      - terrareg.py
-      - Dockerfile*
+
 
 build-wheel:
   stage: build
@@ -182,12 +157,7 @@ build-docker-image:
     - docker:dind
   script:
     - docker build -f Dockerfile -t terrareg-image:v${CI_COMMIT_SHORT_SHA} --build-arg http_proxy=$http_proxy --build-arg HTTP_PROXY=$http_proxy --build-arg https_proxy=$https_proxy --build-arg HTTPS_PROXY=$https_proxy .
-  only:
-    changes:
-      - terrareg/**/*
-      - test/**/*
-      - terrareg.py
-      - Dockerfile*
+
 
 build-test-docker-image:
   stage: build
@@ -196,12 +166,7 @@ build-test-docker-image:
     - docker:dind
   script:
     - docker build -f Dockerfile.tests -t terrareg-test-image:v${CI_COMMIT_SHORT_SHA} --build-arg http_proxy=$http_proxy --build-arg HTTP_PROXY=$http_proxy --build-arg https_proxy=$https_proxy --build-arg HTTPS_PROXY=$https_proxy .
-  only:
-    changes:
-      - terrareg/**/*
-      - test/**/*
-      - terrareg.py
-      - Dockerfile*
+
 
 release:
   stage: deploy
@@ -216,14 +181,15 @@ release:
     - semantic-release
   only:
     - main
-  only:
-    changes:
-      - terrareg/**/*
-      - test/**/*
-      - terrareg.py
-      - Dockerfile*
+
 
 stages:
  - build
  - test
  - deploy
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /^chore\(release\):.*/
+      when: never
+    - when: always
