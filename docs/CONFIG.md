@@ -255,7 +255,11 @@ Default: `sqlite:///modules.db`
 
 Directory for storing module data.
 
-This directory must be persistent (e.g. mounted to shared volume for distributed docker containers)
+This directory must be persistent (e.g. mounted to shared volume for distributed docker containers).
+
+To use S3 for storing module/provider archives, specify in the form `s3://<bucketname>/subdir`, e.g. `s3://my-terrareg-bucket` or `s3://another-bucket/terrareg/dev`.
+
+If S3 is used for the `DATA_DIRECTORY`, the `UPLOAD_DIRECTORY`configuration must be configured to a local path.
 
 
 Default: `./data`
