@@ -21,6 +21,7 @@ This can be set using [TERRAFORM_EXAMPLE_VERSION_TEMPLATE](./CONFIG.md#terraform
 ### Labels
 
 Modules can be labelled in two ways:
+
  * Trusted - this is applied on a per-namespace basis and all modules within the namespace are labeled as 'Trusted'
  * Contributed - this label is applied to any module that is not within a 'Trusted' namespace.
  * Verified - this can be applied on a per-module basis and can be set by anyone with MODIFY privileges of the namespace that contains the module.

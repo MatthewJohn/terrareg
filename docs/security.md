@@ -27,6 +27,7 @@ The disable this functionality, set [AUTO_CREATE_NAMESPACE](./CONFIG.md#auto_cre
 Each protected API endpoint (generally all API endpoints that are non read-only actions) require API key authentication, with the exception of module upload/publish endpoints (see [Security module creationg/indexing](#securing-module-creationindexing)).
 
 To authenticate to an API endpoint, you must either:
+
  * Pass the approrpriate API key for the endpoint (specifically for module upload/publishing), in a `X-Terrareg-ApiKey` header;
  * Pass the admin authentication token to the endpoint in a `X-Terrareg-ApiKey` header;
  * Authenticate via the authentication API endpoint and authenticate using session (not a programatic approach).
@@ -121,24 +122,26 @@ NOTE: These may eventually be used for modules and eventually replace GIT_PROVID
 Provider sources are configured using [PROVIDER_SOURCES](./CONFIG.md#provider_sources) configuration.
 
 Each provider source must be configured with:
+
  * `name` - The name of the provider source, shown the users when selecting the source for creating a provider.
  * `type` - Must be one of the supported platforms. (See the configuration for a list of supported values)
  * `login_button_text` - The text displayed in the login button on the login page for the provider
  * `auto_generate_namespaces` - Determines if the namespaces are created for each of the organisations that the user is an owner of, when authenticating.
-   * If this is disabled, namespaces must be created by a site admin.
+    * If this is disabled, namespaces must be created by a site admin.
 
 ##### Github
 
 The following configurations must be configured (see CONFIG.md for details about how to generate them):
- - `base_url` - Base public URL, e.g. `https://github.com`
- - `api_url` - API URL, e.g. `https://api.github.com`
- - `app_id` - Github app ID
- - `client_id` - Github app client ID for Github authentication.
- - `client_secret` - Github App client secret for Github authentication.
- - `private_key_path` - Path to private key generated for Github app.
- - `webhook_secret` (optional) - Web hook secret that Github will provide to Terrareg when calling the webhook endpoint. This cannot be used for non-publicly accessible Terrareg installations.
- - `default_access_key` (optional) - Github access token, used for perform Github API requests for providers that are not authenticated via Github App.
- - `default_installation_id` (optional) - A default installation that provides access to Github APIs for providers that are not authenticated via Github App.
+
+ * `base_url` - Base public URL, e.g. `https://github.com`
+ * `api_url` - API URL, e.g. `https://api.github.com`
+ * `app_id` - Github app ID
+ * `client_id` - Github app client ID for Github authentication.
+ * `client_secret` - Github App client secret for Github authentication.
+ * `private_key_path` - Path to private key generated for Github app.
+ * `webhook_secret` (optional) - Web hook secret that Github will provide to Terrareg when calling the webhook endpoint. This cannot be used for non-publicly accessible Terrareg installations.
+ * `default_access_key` (optional) - Github access token, used for perform Github API requests for providers that are not authenticated via Github App.
+ * `default_installation_id` (optional) - A default installation that provides access to Github APIs for providers that are not authenticated via Github App.
 
 For self-hosted Github Enterprise installations, `base_url` and `api_url` can be set to match the github installation.
 
@@ -204,6 +207,7 @@ For the second case, authenticating to Terrareg via Github will not provide the 
 To achive this, Terrareg must be provided with a means to authenticate to Github to query the APIs.
 
 This can be performed by setting one of the two provider source configurations:
+
  * `default_installation_id` - The created Github app for Terrareg can be 'installed' to a user/organisations profile. Once this has been performed, the "installation ID" can be provided to Terrareg.
  * `default_access_token` - A personal access token can be provided to Terrareg, which will be used.
 
@@ -226,6 +230,7 @@ For Terrareg to be able to authenticate users, several configurations must be pr
  * [TERRAFORM_PRESIGNED_URL_SECRET](./CONFIG.md#terraform_presigned_url_secret)
 
 Consider reviewing the default values for:
+
  * [TERRAFORM_OIDC_IDP_SESSION_EXPIRY](./CONFIG.md#terraform_oidc_idp_session_expiry)
  * [TERRAFORM_PRESIGNED_URL_EXPIRY](./CONFIG.md#terraform_presigned_url_expiry)
 

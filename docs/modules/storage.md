@@ -2,6 +2,7 @@
 # Module storage
 
 Terrareg can work in one of two ways:
+
  * Modules hosting
  * Git-based
 
@@ -37,6 +38,7 @@ This means modules remain secured, protected by the SCM tool.
 Modules can stil be uploaded via uploading a zip file, however, if module hosting is disabled, the module must be also configured with a git clone URL for Terraform to download the module, either via Git Provider, custom clone URL in the module or defined in the terrareg metadata file of the module.
 
 The git URLs can be set in several places:
+
  * Globally using 'Git Providers'
  * In the setting of a module
  * In the terrareg metadata file within a module (though the module must be uploaded via source archive)
@@ -48,6 +50,7 @@ Terrareg will retain an archive of indexed modules, this can be disabled using [
 # Git Providers
 
 To fully utilise the features that Terraform provides for git, each module can be provided with three URLs:
+
  * Repository base URL - the base URL of the repository
  * Repository clone URL - the url for cloning the repository
  * Repository source browse URL - the URL for browsing a single file, using a placeholders for git tag and file path
@@ -66,6 +69,7 @@ Once enabled, users can be limited from providing custom URLs by disabling: [ALL
 ## Terminology
 
 Each "terraform module" in the registry is identified by 3 components:
+
  * Namespace (see (Namespace)[#namespace] documentation)
  * Module name
    * This is the descriptive name of the module
@@ -79,6 +83,7 @@ We use the terminology 'Module' for a single module, where `namespace/module/pro
 Namespaces form part of the module path and are created indepedently of modules.
 
 These can be used in several ways:
+
  * A logical way to seperate modules
  * Used in conjunction with [Git Providers](#git-providers) to determine part of the SCM path (e.g. the organisation/user for github or projects for stash)
  * To manage user group permissions, which are set on a namespace level (see [Single Sign-on](#single-sign-on))
@@ -115,11 +120,13 @@ If the git tagging format of the repository does not contain the full semantic v
 To attempt to avoid this, the module version import API endpoints do not allow indexing by **version** if these placeholders are uesd and, instead, a git tag must be supplied to the [import api](./API.md#apimoduleversionimport). Importing/indexing modules using the Github/Gitlab/Bitbucket hooks are unaffected by this restriction.
 
 Placeholders for non-semantic versions:
+
  * `{major}` - Specifies the major part of the semantic version
  * `{minor}` - Specifies the minor part of the semantic version
  * `{patch}` - Specifies the patch part of the semantic version
 
 **NOTE:** The preference of these should always be in the above order, i.e.:
+
  * If you version using `v1`, you should use the placeholder `v{major}`
  * If you version using `v1.1`, you should use the placeholder `v{major}.{minor}`
 

@@ -6,6 +6,7 @@ Example cost analysis is performed using infracost.
 A valid API key must be provided to enable this functionality.
 
 Terrareg supports both:
+
  * Hosted Infracost solution (see [INFRACOST_API_KEY](./CONFIG.md#infracost_api_key) to setup)
  * Locally hosted Infracost API (see [INFRACOST_PRICING_API_ENDPOINT](./CONFIG.md#infracost_pricing_api_endpoint), [INFRACOST_API_KEY](./CONFIG.md#infracost_api_key)).
 

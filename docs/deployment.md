@@ -52,6 +52,7 @@ Terrareg can be deployed via Docker and scaled out to support high-availability 
 However, whilst perform upgrades with database migrations, it's important to ensure that only one container performs the database migration step.
 
 This can be accomplished in two ways:
+
  * Scale down to 1 container when performing upgrades that container a database migration
  * Run a single dedicated container that performs the database upgrades.
 
