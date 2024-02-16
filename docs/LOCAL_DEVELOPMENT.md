@@ -74,7 +74,7 @@ You can access the stack at the following URLs:
 
 Because everything referencing localhost routes to 172.0.0.1 no special host file entries are required.
 
-### Building locally and running
+## Building locally and running
 
     # Clone the repository
     git clone https://github.com/matthewJohn/terrareg
@@ -115,3 +115,39 @@ Because everything referencing localhost routes to 172.0.0.1 no special host fil
 
 
 The site can be accessed at http://localhost:5000
+
+## Generating DB changes
+
+Once changes are made to a
+
+```
+# Ensure database is up-to-date before generating schema migrations
+alembic upgrade head
+
+# Generate migration
+alembic revision --autogenerate
+```
+
+## Applying DB changes
+
+```
+alembic upgrade head
+```
+
+## Running tests
+
+```
+# Install dev requirements
+pip install -r requirements-dev.txt
+
+# Run all tests
+pytest
+
+# Running unit/integration/selenium tests individually
+pytest ./test/unit
+pytest ./test/integration
+pytest ./test/selenium
+
+# Running a specific test
+pytest -k test_setup_page
+```
