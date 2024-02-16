@@ -1,6 +1,5 @@
 # Local Development
 
-
 ## Running with docker-compose for Development
 
 A docker-compose file is avaiable to simplify launching terrareg for local testing and development. This will let you run terrareg with an SSL certificate, allowing terraform cli to access modules while developing or testing the software. In addition, the root folder is mounted in the container allowing for rapid development and testing without rebuilding the container.
