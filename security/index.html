@@ -1,0 +1,1671 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../diagnosing_issues/">
+      
+      
+        <link rel="next" href="../customising/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.5.8">
+    
+    
+      
+        <title>Security - Terrareg</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.f2e4d321.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+   <link href="../assets/stylesheets/glightbox.min.css" rel="stylesheet"/><style>
+    html.glightbox-open { overflow: initial; height: 100%; }
+    .gslide-title { margin-top: 0px; user-select: text; }
+    .gslide-desc { color: #666; user-select: text; }
+    .gslide-image img { background: white; }
+    .gscrollbar-fixer { padding-right: 15px; }
+    .gdesc-inner { font-size: 0.75rem; }
+    body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color);}
+    body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color);}
+    body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color);}</style> <script src="../assets/javascripts/glightbox.min.js"></script></head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#security" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Terrareg" class="md-header__button md-logo" aria-label="Terrareg" data-md-component="logo">
+      
+  <img src="../logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Terrareg
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Security
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/matthewjohn/terrareg" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href=".." class="md-tabs__link">
+          
+  
+    
+  
+  Introduction
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../quickstart/" class="md-tabs__link">
+          
+  
+    
+  
+  Quick Start
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../deployment/" class="md-tabs__link">
+          
+  
+    
+  
+  Deployment
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+    
+  
+  Configuration
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../modules/storage/" class="md-tabs__link">
+          
+  
+    
+  
+  Modules
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../providers/" class="md-tabs__link">
+          
+  
+    
+  
+  Providers
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../LOCAL_DEVELOPMENT/" class="md-tabs__link">
+          
+  
+    
+  
+  Development
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Terrareg" class="md-nav__button md-logo" aria-label="Terrareg" data-md-component="logo">
+      
+  <img src="../logo.png" alt="logo">
+
+    </a>
+    Terrareg
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/matthewjohn/terrareg" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.5.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+    
+      
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_1" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href=".." class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Introduction
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Introduction
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MAIN/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    README
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+    
+      
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Quick Start
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Quick Start
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quickstart
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Deployment
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Deployment
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Deployment
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UPGRADE/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Upgrading
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../diagnosing_issues/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Diagnosing issues
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      
+      
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Configuration
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Configuration
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Security
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Security
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#securing-module-creationindexing" class="md-nav__link">
+    <span class="md-ellipsis">
+      Securing module creation/indexing
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auto-creation-of-namespacesmodules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Auto creation of namespaces/modules
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      API authentication
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#access-controls" class="md-nav__link">
+    <span class="md-ellipsis">
+      Access controls
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#single-sign-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      Single Sign-on
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Single Sign-on">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#openid-connect" class="md-nav__link">
+    <span class="md-ellipsis">
+      OpenID Connect
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#saml2" class="md-nav__link">
+    <span class="md-ellipsis">
+      SAML2
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#provider-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Provider sources
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Provider sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#confguring-provider-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Confguring provider sources
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Confguring provider sources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#github" class="md-nav__link">
+    <span class="md-ellipsis">
+      Github
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Github">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#setup-github-app" class="md-nav__link">
+    <span class="md-ellipsis">
+      Setup Github app
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#github-namespace-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      Github namespace mapping
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#default-github-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      Default Github authentication
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#disable-unauthenticated-access" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disable Unauthenticated Access
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Disable Unauthenticated Access">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enabling-terraform-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      Enabling Terraform authentication
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../customising/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Customising Terrareg UI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONFIG/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Configuration Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    API Reference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Modules
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Modules
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../modules/storage/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Module storage
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../modules/uploading/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Uploading modules
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../modules/best_practices/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Module best practices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../modules/analytics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Module Usage Analytics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../modules/cost_analysis/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cost Analysis
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../modules/security_scanning/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Security Scanning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../modules/misc/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Misc
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+    
+    
+    
+    
+      
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../providers/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Providers
+  </span>
+  
+
+            </a>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Providers
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      
+      
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Development
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Development
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../LOCAL_DEVELOPMENT/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Local Development
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contributing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+    <a href="https://github.com/matthewjohn/terrareg/edit/master/docs/security.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/matthewjohn/terrareg/raw/master/docs/security.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.15 8.15 0 0 1-1.23-2Z"/></svg>
+    </a>
+  
+
+
+<h1 id="security">Security</h1>
+<p>Terrareg must be configured with a secret key, which is used for encrypting sessions, to enable authentication. This can be configured via <a href="../CONFIG/#secret_key">SECRET_KEY</a>.</p>
+<p>By default, Terrareg administration is protected by an <a href="../CONFIG/#admin_authentication_token">ADMIN_AUTHENTICATION_TOKEN</a>, which is set via environment variable, which becomes the password used for authentication on the login page.</p>
+<p>Authentication is required to perform tasks such as: creating namespaces, creating/deleting modules and managing additional user permissions, with a few exceptions:</p>
+<h3 id="securing-module-creationindexing">Securing module creation/indexing</h3>
+<p>By default, indexing and publishing modules does <em>not</em> require authentication. To disable unauthorised indexing/publishing of modules, set up dedicated API keys for these functions, see <a href="../CONFIG/#upload_api_keys">UPLOAD_API_KEYS</a> and <a href="../CONFIG/#Ppublish_api_keys">PUBLISH_API_KEYS</a>.</p>
+<p>API keys can be specified in requests to API endpoing with an 'X-Terrareg-ApiKey' header.</p>
+<p>Enabling <a href="#access-controls">access controls</a> will disable unauthenticated indexing/publishing of modules, requiring authentication via SSO or Admin password or, once set, the upload/publish API keys.</p>
+<h3 id="auto-creation-of-namespacesmodules">Auto creation of namespaces/modules</h3>
+<p>By default, the module upload endpoint will create a namespace/module if it does not exist.</p>
+<p>For a secure installation, it is recommended to disable this, forcing all namespaces/modules to be created by authenticated users.</p>
+<p>The disable this functionality, set <a href="../CONFIG/#auto_create_namespace">AUTO_CREATE_NAMESPACE</a> and <a href="../CONFIG/#auto_create_module_provider">AUTO_CREATE_MODULE_PROVIDER</a></p>
+<h2 id="api-authentication">API authentication</h2>
+<p>Each protected API endpoint (generally all API endpoints that are non read-only actions) require API key authentication, with the exception of module upload/publish endpoints (see <a href="#securing-module-creationindexing">Security module creationg/indexing</a>).</p>
+<p>To authenticate to an API endpoint, you must either:</p>
+<ul>
+<li>Pass the approrpriate API key for the endpoint (specifically for module upload/publishing), in a <code>X-Terrareg-ApiKey</code> header;</li>
+<li>Pass the admin authentication token to the endpoint in a <code>X-Terrareg-ApiKey</code> header;</li>
+<li>Authenticate via the authentication API endpoint and authenticate using session (not a programatic approach).</li>
+</ul>
+<p>There will be future work to allow API key authentication for all endpoints in future: https://gitlab.dockstudios.co.uk/pub/terrareg/-/issues/353</p>
+<h2 id="access-controls">Access controls</h2>
+<p>By default, all authenticated users will have global admin permissions, allowing the creation/deletion of all namespaces, modules and module versions.</p>
+<p>Role based access controls (RBAC) can be enabled by setting <a href="../CONFIG/#enable_access_controls">ENABLE_ACCESS_CONTROLS</a>.</p>
+<p>This will remove any default privilges given to SSO users. The admin user will still retain global admin privileges.</p>
+<p>For information about user groups, see <a href="#single-sign-on">Single Sign-on</a>.</p>
+<h2 id="single-sign-on">Single Sign-on</h2>
+<p>Single sign-on can be used to allow authentication via external authentication providers.</p>
+<p>SSO groups can be assigned global admin permissions, or per-namespace permissions, allowing creation/deletion of modules and versions.</p>
+<p>User groups and permissions can be configured on the 'User Groups' (/user-groups) page.</p>
+<p>Once single sign-on has been setup, the <a href="../CONFIG/#admin_authentication_token">ADMIN_AUTHENTICATION_TOKEN</a> can be removed, stopping further sign-in via password authentication.</p>
+<p><em>NOTE</em> OpenID and SAML2 authentication is currently experimental.</p>
+<p>It is advised to use with caution and avoid using on publicly hosted/accessible instances.</p>
+<h3 id="openid-connect">OpenID Connect</h3>
+<p>To configure OpenID connect, setup an application in an identity provider (IdP) with the following:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Grant type</td>
+<td>Authorization Code</td>
+</tr>
+<tr>
+<td>Sign-in redirect URI</td>
+<td><code>https://&lt;terrareg-instance-domain&gt;/openid/callback</code></td>
+</tr>
+<tr>
+<td>Sign-out URI</td>
+<td><code>https://&lt;terrareg-instance-domain&gt;/logout</code></td>
+</tr>
+<tr>
+<td>Initiate login URI</td>
+<td><code>https://&lt;terrareg-instance-domain&gt;/openid/login</code></td>
+</tr>
+<tr>
+<td>Login flow</td>
+<td>Redirect to app to initiate login</td>
+</tr>
+</tbody>
+</table>
+<p>Obtain the client ID, client secret and issuer URL from the IdP provider and populate the following environment variables:</p>
+<ul>
+<li><a href="../CONFIG/#public_url">PUBLIC_URL</a></li>
+<li><a href="../CONFIG/#openid_connect_client_id">OPENID_CONNECT_CLIENT_ID</a></li>
+<li><a href="../CONFIG/#openid_connect_client_secret">OPENID_CONNECT_CLIENT_SECRET</a></li>
+<li><a href="../CONFIG/#openid_connect_issuer">OPENID_CONNECT_ISSUER</a></li>
+</ul>
+<p>Note: Most IdP providers will require the terrareg installation to be accessed via https.
+The instance should be configured with SSL certificates (<a href="../CONFIG/#ssl_cert_private_key">SSL_CERT_PRIVATE_KEY</a>/<a href="../CONFIG/#ssl_cert_public_key">SSL_CERT_PUBLIC_KEY</a>) or be hosted behind a reverse-proxy/load balancer.</p>
+<p>The text displayed on the login button can be customised by setting <a href="../CONFIG/#openid_connect_login_text">OPENID_CONNECT_LOGIN_TEXT</a></p>
+<h3 id="saml2">SAML2</h3>
+<p>Generate a public and a private key, using:</p>
+<pre><code>openssl genrsa -out private.key 4096
+openssl req -new -x509 -key private.key -out publickey.cer -days 365
+</code></pre>
+<p>Set the folllowing environment variables:</p>
+<ul>
+<li><a href="../CONFIG/#public_url">PUBLIC_URL</a> (required)</li>
+<li><a href="../CONFIG/#saml2_idp_metadata_url">SAML2_IDP_METADATA_URL</a> (required)</li>
+<li><a href="../CONFIG/#saml2_entity_id">SAML2_ENTITY_ID</a> (required)</li>
+<li><a href="../CONFIG/#saml2_private_key">SAML2_PRIVATE_KEY</a> (required) (See above)</li>
+<li><a href="../CONFIG/#saml2_public_key">SAML2_PUBLIC_KEY</a> (required) (See above)</li>
+<li><a href="../CONFIG/#saml2_issuer_entity_id">SAML2_ISSUER_ENTITY_ID</a> (optional)</li>
+</ul>
+<p>In the IdP:</p>
+<ul>
+<li>configure the Single signin URL to <code>https://{terrareg_installation_domain}/saml/login?sso</code>;</li>
+<li>configure the request and response to be signed;</li>
+<li>ensure at least one attribute is assigned.</li>
+</ul>
+<h3 id="provider-sources">Provider sources</h3>
+<p>Provider sources are a method of integrating with a Git provider for authentication and creating providers.</p>
+<p>Provider sources allow users to authenticate to Terrareg.
+Information about their associated projects/organisations and repositories are used to allow providers to be created.</p>
+<p>Currently, only Github is supported as a provider source.</p>
+<p>NOTE: These may eventually be used for modules and eventually replace GIT_PROVIDERS.</p>
+<h4 id="confguring-provider-sources">Confguring provider sources</h4>
+<p>Provider sources are configured using <a href="../CONFIG/#provider_sources">PROVIDER_SOURCES</a> configuration.</p>
+<p>Each provider source must be configured with:</p>
+<ul>
+<li><code>name</code> - The name of the provider source, shown the users when selecting the source for creating a provider.</li>
+<li><code>type</code> - Must be one of the supported platforms. (See the configuration for a list of supported values)</li>
+<li><code>login_button_text</code> - The text displayed in the login button on the login page for the provider</li>
+<li><code>auto_generate_namespaces</code> - Determines if the namespaces are created for each of the organisations that the user is an owner of, when authenticating.<ul>
+<li>If this is disabled, namespaces must be created by a site admin.</li>
+</ul>
+</li>
+</ul>
+<h5 id="github">Github</h5>
+<p>The following configurations must be configured (see CONFIG.md for details about how to generate them):</p>
+<ul>
+<li><code>base_url</code> - Base public URL, e.g. <code>https://github.com</code></li>
+<li><code>api_url</code> - API URL, e.g. <code>https://api.github.com</code></li>
+<li><code>app_id</code> - Github app ID</li>
+<li><code>client_id</code> - Github app client ID for Github authentication.</li>
+<li><code>client_secret</code> - Github App client secret for Github authentication.</li>
+<li><code>private_key_path</code> - Path to private key generated for Github app.</li>
+<li><code>webhook_secret</code> (optional) - Web hook secret that Github will provide to Terrareg when calling the webhook endpoint. This cannot be used for non-publicly accessible Terrareg installations.</li>
+<li><code>default_access_key</code> (optional) - Github access token, used for perform Github API requests for providers that are not authenticated via Github App.</li>
+<li><code>default_installation_id</code> (optional) - A default installation that provides access to Github APIs for providers that are not authenticated via Github App.</li>
+</ul>
+<p>For self-hosted Github Enterprise installations, <code>base_url</code> and <code>api_url</code> can be set to match the github installation.</p>
+<p>Github users are automatically mapped to any groups in Terrareg that are named after organisations that they are named after.
+E.g. User <code>testuser</code>, who is a member of the <code>testorg</code> organisation would be mapped to the groups <code>testuser</code> and <code>testorg</code> Terrareg group, if they exist.</p>
+<h6 id="setup-github-app">Setup Github app</h6>
+<p>To setup the application for Github, goto <code>https://github.com/settings/apps/new</code> (or <code>https://github.com/organizations/&lt;organisation&gt;/settings/apps</code>)</p>
+<p>Configure the following:</p>
+<p>In this example, the "provider source" "name" will be "github-terra-example", be sure to replace this with the chosen provider source name.</p>
+<ul>
+<li>Homepage URL: https://my-terrareg-installation.example.com</li>
+<li>Identifying and authorizing users</li>
+<li>Callback URL: https://my-terrareg-installation.example.com/github-terra-example/callback</li>
+<li>Expire user authorization tokens: Check</li>
+<li>Request user authorization (OAuth) during installation: Check</li>
+<li>Enable Device Flow: Uncheck</li>
+<li>Post installation</li>
+<li>Setup URL: <code>Not set</code></li>
+<li>Redirect on update: Uncheck</li>
+<li>Webhook (only select if your Terrareg installation is accessible from the internet, meaning Github can call it's APIs)</li>
+<li>Active: Check</li>
+<li>Webhook URL: https://my-terrareg-installation.example.com/github-terra-example/webhook</li>
+<li>Webhook secret: <code>Value from webhook_secret</code></li>
+<li>Permissions:</li>
+<li>None</li>
+<li>Where can this GitHub App be installed?</li>
+<li>Select based on whether you with to limit who can authenticate to Terrareg (publicly or members of the organisation)</li>
+</ul>
+<p>From the created app landing page, obtain the App ID and Client ID from the "about" section of the page to populate the <code>app_id</code> and <code>client_id</code> configurations.</p>
+<p>Generate a client secret:</p>
+<ul>
+<li>Click "Generate a new client secret"</li>
+<li>Copy the value from the client secret to populate <code>client_secret</code></li>
+</ul>
+<p>Once created, generate a private key (this is not currently used, but will be in future):</p>
+<ul>
+<li>On the same page, find <code>Private keys</code> and click "Generate a private key"</li>
+<li>Download the file and make the file accessible to the Terrareg installation, set in <code>private_key_path</code></li>
+</ul>
+<h6 id="github-namespace-mapping">Github namespace mapping</h6>
+<p>If <code>auto_generate_namespaces</code> is enabled, namespaces are automatically created for the logged in Github user and all organisations that they are an owner of.</p>
+<p>The user has full permissions to each of these namespaces, allowing them to create modules/providers in them.</p>
+<h6 id="default-github-authentication">Default Github authentication</h6>
+<p>Terrareg can be used in two use cases for using Github as a provider source:
+ 1. Owners of Terraform providers authenticate to Terrareg.
+   * These users add their own providers to Terrareg and manage them.
+ 2. Terrareg administrators add providers from Github that they do not maintain.</p>
+<p>Both of these can be used simulatiously and Terrareg will authenticate using the Github App authentication, when a user authenticates via Github and uses the default authentication for the second use case.</p>
+<p>For the second case, authenticating to Terrareg via Github will not provide the necessary permissions to create providers and index versions.
+To achive this, Terrareg must be provided with a means to authenticate to Github to query the APIs.</p>
+<p>This can be performed by setting one of the two provider source configurations:</p>
+<ul>
+<li><code>default_installation_id</code> - The created Github app for Terrareg can be 'installed' to a user/organisations profile. Once this has been performed, the "installation ID" can be provided to Terrareg.</li>
+<li><code>default_access_token</code> - A personal access token can be provided to Terrareg, which will be used.</li>
+</ul>
+<h2 id="disable-unauthenticated-access">Disable Unauthenticated Access</h2>
+<p>Unauthenticated access can be disabled, enforcing all users to authenticate to use Terrareg, by disabling the setting <a href="../CONFIG/#allow_unauthenticated_access">ALLOW_UNAUTHENTICATED_ACCESS</a>.</p>
+<p>Disabling unauthenticated access requires Terraform to authenticate to obtain modules, see below.</p>
+<h3 id="enabling-terraform-authentication">Enabling Terraform authentication</h3>
+<p>Terraform can authenticate to the registry via the built-in authentication mechanisms of Terrareg. That is, Terraform attempts to authenticate to Terrareg by redirecting the user to Terrareg. Terrareg ensures the user is authenticated and provides a redirect back to Terraform to finalise authentication using OpenIDC.</p>
+<p>For Terrareg to be able to authenticate users, several configurations must be provided:</p>
+<ul>
+<li><a href="../CONFIG/#terraform_oidc_idp_subject_id_hash_salt">TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT</a></li>
+<li><a href="../CONFIG/#terraform_oidc_idp_signing_key_path">TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH</a></li>
+<li><a href="../CONFIG/#public_url">PUBLIC_URL</a></li>
+<li><a href="../CONFIG/#terraform_presigned_url_secret">TERRAFORM_PRESIGNED_URL_SECRET</a></li>
+</ul>
+<p>Consider reviewing the default values for:</p>
+<ul>
+<li><a href="../CONFIG/#terraform_oidc_idp_session_expiry">TERRAFORM_OIDC_IDP_SESSION_EXPIRY</a></li>
+<li><a href="../CONFIG/#terraform_presigned_url_expiry">TERRAFORM_PRESIGNED_URL_EXPIRY</a></li>
+</ul>
+<p>Once these are configured, users can authenticate via terraform using:</p>
+<pre><code>terraform login &lt;registry-fqdn&gt;
+# e.g. terraform login my-registry.example.com
+</code></pre>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../diagnosing_issues/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Diagnosing issues">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Diagnosing issues
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../customising/" class="md-footer__link md-footer__link--next" aria-label="Next: Customising Terrareg UI">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Customising Terrareg UI
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow", "toc.integrate"], "search": "../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.8fd75fb4.min.js"></script>
+      
+    
+  <script>document$.subscribe(() => {const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});})</script></body>
+</html>
