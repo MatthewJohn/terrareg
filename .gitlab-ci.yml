@@ -209,7 +209,6 @@ generate-docs:
   variables:
     GITLAB_TOKEN: $GITLAB_TOKEN
   script:
-    - deactivate
     - pip install -r requirements-docs.txt
     - mkdocs gh-deploy
   only:
