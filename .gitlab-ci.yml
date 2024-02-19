@@ -196,10 +196,10 @@ release:
     GIT_STRATEGY: clone
   script:
     - semantic-release
-  only:
-    - main
   rules:
-    - if: '$CI_COMMIT_MESSAGE !~ /chore\(release\)/'
+    - if: '$CI_COMMIT_REF_NAME != "main"'
+      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /chore\(release\)/'
       when: never
     - when: always
 
