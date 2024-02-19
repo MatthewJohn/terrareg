@@ -204,6 +204,7 @@ release:
 
 generate-docs:
   stage: deploy
+  image: python:3.10
   variables:
     GITLAB_TOKEN: $GITLAB_TOKEN
   script:
