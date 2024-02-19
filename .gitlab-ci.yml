@@ -197,13 +197,10 @@ release:
   script:
     - semantic-release
   only:
-    - main
-  only:
-    changes:
-      - terrareg/**/*
-      - test/**/*
-      - terrareg.py
-      - Dockerfile*
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - "*.md"
+        - docs/**/*
 
 generate-docs:
   stage: deploy
@@ -214,11 +211,10 @@ generate-docs:
     - pip install -r requirements-docs.txt
     - mkdocs gh-deploy
   only:
-    - main
-  only:
-    changes:
-      - *.md
-      - docs/**/*
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - "*.md"
+        - docs/**/*
 
 stages:
  - build
