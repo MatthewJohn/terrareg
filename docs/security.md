@@ -8,7 +8,7 @@ Authentication is required to perform tasks such as: creating namespaces, creati
 
 ### Securing module creation/indexing
 
-By default, indexing and publishing modules does *not* require authentication. To disable unauthorised indexing/publishing of modules, set up dedicated API keys for these functions, see [UPLOAD_API_KEYS](./CONFIG.MD#upload_api_keys) and [PUBLISH_API_KEYS](./CONFIG.MD#Ppublish_api_keys).
+By default, indexing and publishing modules does *not* require authentication. To disable unauthorised indexing/publishing of modules, set up dedicated API keys for these functions, see [UPLOAD_API_KEYS](./CONFIG.md#upload_api_keys) and [PUBLISH_API_KEYS](./CONFIG.md#Ppublish_api_keys).
 
 API keys can be specified in requests to API endpoing with an 'X-Terrareg-ApiKey' header.
 

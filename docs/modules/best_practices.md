@@ -12,7 +12,7 @@ A metadata file can be provided each an uploaded module's archive to provide add
 
 This should be called `terrareg.json` or `.terrareg.json` and be placed in the root of the module.
 
-For an example, please see: [docs/example-terrareg-module-metadata.json](./example-terrareg-module-metadata.json)
+For an example, please see: [../example-terrareg-module-metadata.json](../example-terrareg-module-metadata.json)
 
 The following attributes are available at the root of the JSON object:
 
@@ -27,13 +27,13 @@ The following attributes are available at the root of the JSON object:
 
 For information on the repo URLs, see [Git Providers](#git-providers)
 
-Each of these attributes can be enforced in modules uploaded to the registry by setting [REQUIRED_MODULE_METADATA_ATTRIBUTES](./CONFIG.md#required_module_metadata_attributes).
+Each of these attributes can be enforced in modules uploaded to the registry by setting [REQUIRED_MODULE_METADATA_ATTRIBUTES](../CONFIG.md#required_module_metadata_attributes).
 
 ## Description
 
 If a metadata file is not present or a description is not provided, Terrareg will attempt to automatically generate a description of the module, using the README.md from the module.
 
-This functionality can be disabled by setting [AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION](CONFIG.md#autogenerate_module_provider_description).
+This functionality can be disabled by setting [AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION](../CONFIG.md#autogenerate_module_provider_description).
 
 ### Usage builder configuration
 
@@ -61,7 +61,7 @@ There are common attributes that can be added to each of variable objects, which
 |static|This does not appear in the 'Usage Builder' 'config input' table, but provides a static value in the 'terraform input'||
 |select|Provides a dropdown for the user to select from a list of choices|"choices" must be added to the object, which may either be a list of strings, or a list of objects. If using a list of objects, a "name" and "value" must be provided. Optionally an "additional_content" attribute can be added to the choice, which provides additional terraform to be added to the top of the terraform example. The main variable object may also contain a "allow_custom" boolean attribute, which allows the user to enter a custom text input.|
 
-Terrareg will automatically generated usage builder inputs based on discovered variables in the module. This functionality can be disabled by setting [AUTOGENERATE_USAGE_BUILDER_VARIABLES](./CONFIG.md#autogenerate_usage_builder_variables)
+Terrareg will automatically generated usage builder inputs based on discovered variables in the module. This functionality can be disabled by setting [AUTOGENERATE_USAGE_BUILDER_VARIABLES](../CONFIG.md#autogenerate_usage_builder_variables)
 
 ## Submodules
 
@@ -83,7 +83,7 @@ By default, sub-modules are located in individual sub-directories of the `module
      
 ```
 
-This directory can be changed on a global level with [MODULES_DIRECTORY](./CONFIG.md#modules_directory)
+This directory can be changed on a global level with [MODULES_DIRECTORY](../CONFIG.md#modules_directory)
 
 ## Examples
 
@@ -104,7 +104,7 @@ By default, examples are located in individual sub-directories of the `examples`
      
 ```
 
-This directory can be changed on a global level with [EXAMPLES_DIRECTORY](./CONFIG.md#examples_directory)
+This directory can be changed on a global level with [EXAMPLES_DIRECTORY](../CONFIG.md#examples_directory)
 
 ### Variable defaults
 
@@ -163,4 +163,4 @@ module "vpc" {
 
 Note: We also recommend using a single line break before any variables being passing into the module call, as this results in a more consistent styling of the rewritten code.
 
-The version constraint template can be modified by setting [TERRAFORM_EXAMPLE_VERSION_TEMPLATE](./CONFIG.md#terraform_example_version_template).
+The version constraint template can be modified by setting [TERRAFORM_EXAMPLE_VERSION_TEMPLATE](../CONFIG.md#terraform_example_version_template).

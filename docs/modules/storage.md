@@ -8,15 +8,15 @@ Terrareg can work in one of two ways:
 
 If only one of these methods is to be used, the other can be disabled:
 
- * [ALLOW_MODULE_HOSTING](./CONFIG.md#allow_module_hosting) - enables/disables hosting module source code
- * [ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER](./CONFIG.md#allow_custom_git_url_module_provider) and [ALLOW_CUSTOM_GIT_URL_MODULE_VERSION](./CONFIG.md#allow_custom_git_url_module_version) - enables disables setting git URLs on modules/within metadata file.
+ * [ALLOW_MODULE_HOSTING](../CONFIG.md#allow_module_hosting) - enables/disables hosting module source code
+ * [ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER](../CONFIG.md#allow_custom_git_url_module_provider) and [ALLOW_CUSTOM_GIT_URL_MODULE_VERSION](../CONFIG.md#allow_custom_git_url_module_version) - enables disables setting git URLs on modules/within metadata file.
 
 
 ## Module hosting
 
 Modules are indexed by uploading a zip/tar archive of the code to the upload endpoint.
 
-Modules are stored in Terrareg in the [DATA_DIRECTORY](./CONFIG.md#data_directory) - it is important to ensure this path is mounted to persistent storage, so that the data is not lost between container rebuilds/upgrades.
+Modules are stored in Terrareg in the [DATA_DIRECTORY](../CONFIG.md#data_directory) - it is important to ensure this path is mounted to persistent storage, so that the data is not lost between container rebuilds/upgrades.
 
 When a module is used in Terraform, Terraform obtains the module source code directly from Terrareg.
 
@@ -45,7 +45,7 @@ The git URLs can be set in several places:
 
 These URLs can be provided in the terrareg metadata file within the repository, setting/overriding the URLs displayed for the version of the module.
 
-Terrareg will retain an archive of indexed modules, this can be disabled using [DELETE_EXTERNALLY_HOSTED_ARTIFACTS](./CONFIG.md#delete_externally_hosted_artifacts)
+Terrareg will retain an archive of indexed modules, this can be disabled using [DELETE_EXTERNALLY_HOSTED_ARTIFACTS](../CONFIG.md#delete_externally_hosted_artifacts)
 
 # Git Providers
 
@@ -59,9 +59,9 @@ The avoid having to set this up in each module, Git Providers collapse these con
 
 Using git providers, the namespace, module name and provider of the module can be used in the templates of the URLs, meaning that the namespace can be used to determine the organisation/user of the repository (when using Github for example).
 
-Details of the format of this configuration and some examples can be found in the configuration documentation: [GIT_PROVIDER_CONFIG](./CONFIG.md#git_provider_config).
+Details of the format of this configuration and some examples can be found in the configuration documentation: [GIT_PROVIDER_CONFIG](../CONFIG.md#git_provider_config).
 
-Once enabled, users can be limited from providing custom URLs by disabling: [ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER](./CONFIG.md#allow_custom_git_url_module_provider) and [ALLOW_CUSTOM_GIT_URL_MODULE_VERSION](./CONFIG.md#allow_custom_git_url_module_version)
+Once enabled, users can be limited from providing custom URLs by disabling: [ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER](../CONFIG.md#allow_custom_git_url_module_provider) and [ALLOW_CUSTOM_GIT_URL_MODULE_VERSION](../CONFIG.md#allow_custom_git_url_module_version)
 
 
 # Create modules in the registry
@@ -100,7 +100,7 @@ Enter a module name and provider - these must adhere to Terraform's naming restr
 
 The git provider can be selected - for information on this see [Git Providers](#git-providers).
 
-If a [ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER](./CONFIG.md#allow_custom_git_url_module_provider) is enabled, the custom URLs (as docuented in the Git Providers section) can be entered specifically for the module.
+If a [ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER](../CONFIG.md#allow_custom_git_url_module_provider) is enabled, the custom URLs (as docuented in the Git Providers section) can be entered specifically for the module.
 
 ### Git tag format
 
@@ -117,7 +117,7 @@ If the tags are prefixed or suffixed with any static string, this can be added t
 If the git tagging format of the repository does not contain the full semantic version, specific placeholders are availale to designate how to extract the individual major, minor and patch parts of the release.
 **However**, using this methology is strongly discouraged as it _could_ lead to a many-to-one mapping between module versions and git tags. This is because Terraform (and the associated Terraform module registry APIs) must adhere to Semantic versioning. If a *part* of the semantic version is not provided in the "git tag format", it will be set to 0, i.e. if a git tag format of `{major}.{minor}` is used, a git tag 1.1 would be used for all `1.1.X` semantic versions.
 
-To attempt to avoid this, the module version import API endpoints do not allow indexing by **version** if these placeholders are uesd and, instead, a git tag must be supplied to the [import api](./API.md#apimoduleversionimport). Importing/indexing modules using the Github/Gitlab/Bitbucket hooks are unaffected by this restriction.
+To attempt to avoid this, the module version import API endpoints do not allow indexing by **version** if these placeholders are uesd and, instead, a git tag must be supplied to the [import api](../API.md#apimoduleversionimport). Importing/indexing modules using the Github/Gitlab/Bitbucket hooks are unaffected by this restriction.
 
 Placeholders for non-semantic versions:
 

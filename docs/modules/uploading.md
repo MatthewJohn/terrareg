@@ -15,7 +15,7 @@ If a git-based uploading and the git_clone_url has been configured for a module,
 
 The URL for API endpoints (upload, import, Bitbucket/Github hooks) are dynamic and the URL for a module can be found on the 'integrations' tab of the module.
 
-Note: If the [UPLOAD_API_KEYS](./CONFIG.MD#upload_api_keys) has been configured, this means:
+Note: If the [UPLOAD_API_KEYS](../CONFIG.md#upload_api_keys) has been configured, this means:
 
  * Indexing via the web UI is disabled
  * The API key must be configured in any webhooks in Github/Bitbucket
@@ -39,8 +39,8 @@ Until publishing, by default:
 
 To publish a module, the 'publish' API endpoint must be called. The URL for this can be found in the 'integrations' tab of the module.
 
-If [PUBLISH_API_KEYS](./CONFIG.MD#Ppublish_api_keys) has been configured, a valid publish API must be provided as the value of a 'X-Terrareg-ApiKey' header.
+If [PUBLISH_API_KEYS](../CONFIG.md#publish_api_keys) has been configured, a valid publish API must be provided as the value of a 'X-Terrareg-ApiKey' header.
 
 ## Re-indexing a module version
 
-Once a module version has been uploaded, the behavoir of how Terrareg handles requests to re-upload the module can be configured with [MODULE_VERSION_REINDEX_MODULE](./CONFIG.md#module_version_reindex_mode), which can be used to disable re-indexing of existing module versions or enable/disable re-publishing of previously published versions.
+Once a module version has been uploaded, the behavoir of how Terrareg handles requests to re-upload the module can be configured with [MODULE_VERSION_REINDEX_MODULE](../CONFIG.md#module_version_reindex_mode), which can be used to disable re-indexing of existing module versions or enable/disable re-publishing of previously published versions.

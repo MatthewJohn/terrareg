@@ -42,7 +42,7 @@ Default: ''
 
 ## Application environment variables
 
-For a list of available application configuration environment variables, please see [docs/CONFIG.md](./CONFIG.md)
+For a list of available application configuration environment variables, please see [doc/CONFIG](./CONFIG.md)
 
 
 ## Database Migrations
