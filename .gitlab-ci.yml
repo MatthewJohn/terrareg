@@ -196,7 +196,7 @@ release:
     GIT_STRATEGY: clone
   script:
     - semantic-release
-  only:
+  rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
       changes:
         - "*.md"
@@ -211,7 +211,7 @@ generate-docs:
     - deactivate
     - pip install -r requirements-docs.txt
     - mkdocs gh-deploy
-  only:
+  rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
       changes:
         - "*.md"
