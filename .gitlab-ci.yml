@@ -196,11 +196,12 @@ release:
     GIT_STRATEGY: clone
   script:
     - semantic-release
+  only:
+    - main
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-      changes:
-        - "*.md"
-        - docs/**/*
+    - if: '$CI_COMMIT_MESSAGE !~ /chore\(release\)/'
+      when: never
+    - when: always
 
 generate-docs:
   stage: deploy
@@ -211,11 +212,8 @@ generate-docs:
     - deactivate
     - pip install -r requirements-docs.txt
     - mkdocs gh-deploy
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-      changes:
-        - "*.md"
-        - docs/**/*
+  only:
+    - main
 
 stages:
  - build
