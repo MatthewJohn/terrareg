@@ -87,18 +87,22 @@ For information about running with docker-compose, SSL certificate generation or
 
 ## Additional configuration
 
-For a full list of environment variables, please see [Deployment Guide](./docs/USER_GUIDE.md#deployment) and [docs/CONFIG.md](./docs/CONFIG.md)
+For a full list of environment variables, please see [Deployment Guide](https://matthewjohn.github.io/terrareg/deployment) and [docs/CONFIG.md](https://matthewjohn.github.io/terrareg/CONFIG)
 
 ## User Guide
 
-See the [User Guide](./docs/USER_GUIDE.md) for configuring and using Terrareg features.
+For documentation about features, deployment, configuration and using Terrareg, please see: [https://matthewjohn.github.io/terrareg](https://matthewjohn.github.io/terrareg)
 
 ## Terraform Provider
 
 The Terrareg Terraform provider can be used to create namespaces, modules and manage other aspects of Terrareg:
 
- * https://registry.terraform.io/providers/dockstudios/terrareg
- * https://github.com/DockStudios/terraform-provider-terrareg
+ * [https://registry.terraform.io/providers/dockstudios/terrareg](https://registry.terraform.io/providers/dockstudios/terrareg)
+ * [https://github.com/DockStudios/terraform-provider-terrareg](https://github.com/DockStudios/terraform-provider-terrareg)
+
+## Upgrading
+
+For notes on upgrading, please see: [https://matthewjohn.github.io/terrareg/UPGRADE](https://matthewjohn.github.io/terrareg/UPGRADE)
 
 ## API Documentation
 
@@ -110,6 +114,8 @@ See [CHANGELOG.md](CHANGELOG.md)
 
 
 ## Local development
+
+For all installation about local development, see [https://matthewjohn.github.io/terrareg/LOCAL_DEVELOPMENT](https://matthewjohn.github.io/terrareg/LOCAL_DEVELOPMENT).
 
 Since terraform requires HTTPS with a valid SSL cert, this must be provided in local development
 
@@ -135,32 +141,6 @@ PUBLIC_URL=http://localhost:5000 ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=False ALLO
 
 ```
 
-## Generating DB changes
-
-```
-alembic revision --autogenerate
-```
-
-## Applying DB changes
-
-```
-alembic upgrade head
-```
-
-## Running tests
-
-```
-# Run all tests
-pytest
-
-# Running unit/integration/selenium tests individually
-pytest ./test/unit
-pytest ./test/integration
-pytest ./test/selenium
-
-# Running a specific test
-pytest -k test_setup_page
-```
 
 ## Committing
 

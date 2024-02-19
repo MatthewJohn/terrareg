@@ -196,14 +196,23 @@ release:
     GIT_STRATEGY: clone
   script:
     - semantic-release
+  rules:
+    - if: '$CI_COMMIT_REF_NAME != "main"'
+      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /chore\(release\)/'
+      when: never
+    - when: always
+
+generate-docs:
+  stage: deploy
+  image: python:3.10
+  variables:
+    GITLAB_TOKEN: $GITLAB_TOKEN
+  script:
+    - pip install -r requirements-docs.txt
+    - mkdocs gh-deploy
   only:
     - main
-  only:
-    changes:
-      - terrareg/**/*
-      - test/**/*
-      - terrareg.py
-      - Dockerfile*
 
 stages:
  - build
