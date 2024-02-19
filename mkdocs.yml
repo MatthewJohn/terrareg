@@ -4,8 +4,7 @@ plugins:
 - glightbox
 theme:
   name: material
-  palette:
-    primary: white
+  logo: ./logo.png
   features:
     - content.action.edit
     - content.action.view
