@@ -8,7 +8,7 @@ To upgrade from v2.x.x to v3.0.0, the following need to be reviewed to perform t
 
 ### Github authentication
 
-The GITHUB_* environment variables have been replaced by a new [PROVIDER_SOURCES](./CONFIG.md#provider_sources) configuration.
+The GITHUB_* environment variables have been replaced by a new [PROVIDER_SOURCES](docs/CONFIG.md#provider_sources) configuration.
 
 To retain the same functionality, create a PROVIDER_SOURCES configuration with the following, replacing the variables with the values from your previous configurations:
 
