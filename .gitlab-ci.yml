@@ -210,6 +210,8 @@ generate-docs:
     GITHUB_TOKEN: $GH_DEPLOY_TOKEN
   script:
     - pip install -r requirements-docs.txt
+    - git remote remove origin
+    - git remote add origin https://$GITHUB_TOKEN@gitlab.dockstudios.co.uk/pub/terrareg.git
     - mkdocs gh-deploy
   only:
     - main
