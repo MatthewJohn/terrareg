@@ -1231,7 +1231,7 @@
 <h2 id="300">3.0.0</h2>
 <p>To upgrade from v2.x.x to v3.0.0, the following need to be reviewed to perform the upgrade.</p>
 <h3 id="github-authentication">Github authentication</h3>
-<p>The GITHUB_* environment variables have been replaced by a new <a href="../CONFIG/#provider_sources">PROVIDER_SOURCES</a> configuration.</p>
+<p>The GITHUB_* environment variables have been replaced by a new <a href="docs/CONFIG.md#provider_sources">PROVIDER_SOURCES</a> configuration.</p>
 <p>To retain the same functionality, create a PROVIDER_SOURCES configuration with the following, replacing the variables with the values from your previous configurations:</p>
 <pre><code>PROVIDER_SOURCES='[{&quot;name&quot;: &quot;Github&quot;, &quot;type&quot;: &quot;github&quot;, &quot;base_url&quot;: &quot;https://github.com&quot;, &quot;api_url&quot;: &quot;https://api.github.com&quot;, &quot;client_id&quot;: &quot;$GITHUB_APP_CLIENT_ID&quot;, &quot;client_secret&quot;: &quot;$GITHUB_APP_CLIENT_SECRET&quot;, &quot;app_id&quot;: &quot;123456&quot;, &quot;private_key_path&quot;: &quot;$GITHUB_APP_PRIVATE_KEY_PATH&quot;, &quot;webhook_secret&quot;: &quot;$GITHUB_APP_WEBHOOK_SECRET&quot;, &quot;auto_generate_namespaces&quot;: false}]'
 </code></pre>
