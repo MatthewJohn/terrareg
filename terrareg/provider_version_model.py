@@ -191,16 +191,6 @@ class ProviderVersion:
         """Return artifact filename from suffix"""
         return f"{self.provider.repository.name}_{self.version}_{suffix}"
 
-    def create_data_directory(self):
-        """Create data directory and data directories of parents."""
-        # Check if parent exists
-        if not os.path.isdir(self._provider.base_directory):
-            self._provider.create_data_directory()
-
-        # Check if data directory exists
-        if not os.path.isdir(self.base_directory):
-            os.mkdir(self.base_directory)
-
     @contextlib.contextmanager
     def create_extraction_wrapper(self, git_tag: str, gpg_key: 'terrareg.models.GpgKey'):
         """Handle provider creation with yield for extraction"""
@@ -214,7 +204,6 @@ class ProviderVersion:
         """
         Handle file upload of provider version.
         """
-        self.create_data_directory()
         self._create_db_row(gpg_key=gpg_key, git_tag=git_tag)
 
         terrareg.audit.AuditEvent.create_audit_event(

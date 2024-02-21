@@ -11,6 +11,7 @@ Using docker-compose will spin up a stack of containers including:
   * terrarreg
   * mysql
   * phpmyadmin
+  * minio (S3 storage)
 
 __*NOTE: Traefik requires exposing the docker socket to thhe container. Please see [here](https://doc.traefik.io/traefik/providers/docker/#docker-api-access) for more information. This implementation utilizes [docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy) to limit the exposure*__
 

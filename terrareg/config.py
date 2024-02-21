@@ -3,7 +3,7 @@ from enum import Enum
 import os
 import tempfile
 
-from terrareg.errors import InvalidBooleanConfigurationError
+from terrareg.errors import InvalidBooleanConfigurationError, InvalidUploadDirectoryError
 
 
 class ModuleVersionReindexMode(Enum):
@@ -104,9 +104,29 @@ class Config:
         """
         Directory for storing module data.
 
-        This directory must be persistent (e.g. mounted to shared volume for distributed docker containers)
+        This directory must be persistent (e.g. mounted to shared volume for distributed docker containers).
+
+        To use S3 for storing module/provider archives, specify in the form `s3://<bucketname>/subdir`, e.g. `s3://my-terrareg-bucket` or `s3://another-bucket/terrareg/dev`.
+
+        If S3 is used for the `DATA_DIRECTORY`, the `UPLOAD_DIRECTORY`configuration must be configured to a local path.
         """
         return os.path.join(os.environ.get('DATA_DIRECTORY', os.getcwd()), 'data')
+
+    @property
+    def UPLOAD_DIRECTORY(self):
+        """
+        Directory for storing temporary upload data.
+
+        By default, this uses an 'upload' sub-directory of the DATA_DIRECTORY.
+
+        However, if the DATA_DIRECTORY is configured to 's3', this path must be changed to a local directory.
+
+        In most situations, the path can be set to a temporary directory.
+        """
+        upload_directory = os.environ.get('UPLOAD_DIRECTORY', os.path.join(self.DATA_DIRECTORY, 'UPLOAD'))
+        if upload_directory.startswith('s3://'):
+            raise InvalidUploadDirectoryError('UPLOAD_DIRECTORY must be configured with a path, if DATA_DIRECTORY is configured for s3.')
+        return upload_directory
 
     @property
     def DATABASE_URL(self):

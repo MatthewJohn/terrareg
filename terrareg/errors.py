@@ -412,3 +412,21 @@ class GpgKeyInUseError(TerraregError):
     """GPG key is in use by provider versions and cannot be deleted"""
 
     pass
+
+
+class InvalidDataDirectoryError(TerraregError):
+    """Data directory is configured incorrectly."""
+
+    pass
+
+
+class InvalidUploadDirectoryError(TerraregError):
+    """Upload directory is configured incorrectly."""
+
+    pass
+
+
+class FileUploadError(TerraregError):
+    """Error whilst uploading a file"""
+
+    pass

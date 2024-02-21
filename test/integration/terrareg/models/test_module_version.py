@@ -495,50 +495,51 @@ class TestModuleVersion(TerraregIntegrationTest):
         data_directory = tempfile.mkdtemp()
         try:
             with unittest.mock.patch('terrareg.config.Config.DATA_DIRECTORY', data_directory):
-                # Create modules directory
-                os.mkdir(os.path.join(data_directory, 'modules'))
-
-                # Create module provider data directory tree
-                namespace.create_data_directory()
-                module_provider.create_data_directory()
-
                 # Create test module version
                 module_version = ModuleVersion(module_provider=module_provider, version='2.5.5')
                 module_version.prepare_module()
                 module_version.publish()
 
+                module_version_directory = os.path.join(data_directory, module_version.base_directory.lstrip(os.path.sep))
+                module_provider_directory = os.path.join(data_directory, module_provider.base_directory.lstrip(os.path.sep))
+
+                if zip_file_exists or tar_gz_file_exists or non_managed_file_exists:
+                    if not os.path.isdir(module_version_directory):
+                        os.makedirs(module_version_directory)
+
                 # Create test zip/targz files
                 if zip_file_exists:
-                    with open(module_version.archive_path_zip, 'w'):
+                    with open(os.path.join(data_directory, module_version.archive_path_zip.lstrip(os.path.sep)), 'w'):
                         pass
                 if tar_gz_file_exists:
-                    with open(module_version.archive_path_tar_gz, 'w'):
+                    with open(os.path.join(data_directory, module_version.archive_path_tar_gz.lstrip(os.path.sep)), 'w'):
                         pass
 
                 # Create additional test file in module provider directory
                 # to ensure it is not accidently removed
-                test_module_provider_file = os.path.join(module_provider.base_directory, 'test_file')
+                test_module_provider_file = os.path.join(module_provider_directory, 'test_file')
                 if module_provider_directory_exists:
+                    if not os.path.isdir(module_provider_directory):
+                        os.makedirs(module_provider_directory)
                     with open(test_module_provider_file, 'w'):
                         pass
 
                 # Create non-managed Terrareg file in module version
                 # directory
-                test_module_version_file = os.path.join(module_version.base_directory, 'test_file')
+                test_module_version_file = os.path.join(data_directory, module_version.base_directory.lstrip(os.path.sep), 'test_file')
                 if non_managed_file_exists:
                     with open(test_module_version_file, 'w'):
                         pass
 
                 # Remove module version/provider directories to match
                 # test case
-                if not module_version_directory_exists:
-                    os.rmdir(module_version.base_directory)
-                if not module_provider_directory_exists:
-                    os.rmdir(module_provider.base_directory)
+                if not module_version_directory_exists and os.path.isdir(module_version_directory):
+                    os.rmdir(module_version_directory)
+                if not module_provider_directory_exists and os.path.isdir(module_provider_directory):
+                    os.rmdir(module_provider_directory)
 
-                zip_file_path = module_version.archive_path_zip
-                tar_gz_file_path = module_version.archive_path_zip
-                module_version_directory = module_version.base_directory
+                zip_file_path = os.path.join(data_directory, module_version.archive_path_zip.lstrip(os.path.sep))
+                tar_gz_file_path = os.path.join(data_directory, module_version.archive_path_zip.lstrip(os.path.sep))
 
                 # Remove module version
                 module_version.delete()
@@ -558,7 +559,7 @@ class TestModuleVersion(TerraregIntegrationTest):
                 # Ensure module provider directory exists, if it
                 # existed in test case
                 if module_provider_directory_exists:
-                    assert os.path.isdir(module_provider.base_directory)
+                    assert os.path.isdir(module_provider_directory)
                     assert os.path.isfile(test_module_provider_file)
 
         finally:

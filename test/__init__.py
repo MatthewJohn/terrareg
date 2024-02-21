@@ -50,6 +50,17 @@ def mock_create_audit_event():
     return unittest.mock.patch('terrareg.audit.AuditEvent.create_audit_event')
 
 
+def skipif_unless_ci(*args, **kwargs):
+    """Wrapper for pytest.mark.skipif, which forces test failure if running in CI"""
+    in_ci = os.environ.get("IN_TERRAREG_CI", "false").lower() == "true"
+    def wrapper(func):
+        # If in CI, do not wrap in pytest skipif wrapper
+        if in_ci:
+            return func
+        return pytest.mark.skipif(*args, **kwargs)(func)
+    return wrapper
+
+
 class AnyDateString:
     """Match any datetime isoformat string"""
 

@@ -77,10 +77,14 @@ This functionality is enabled by default in the docker container, by disabled ou
 
 ## Docker storage
 
-### Module data
+### Module/Provider data
 
-If [module hosting](#module-hosting) is being used, ensure that a directory is mounted into the container for storing module data.
+If [module hosting](./modules/storage.md) is being used, ensure that a directory is mounted into the container for storing module data.
 This path can be customised by setting [DATA_DIRECTORY](./CONFIG.md#data_directory)
+
+Alternative, an S3 bucket may be used for storage. Configure the [DATA_DIRECTORY](./CONFIG.md#data_directory) with an `s3://` URL, as per the example. When using S3, the container must have native access to an s3 bucket, that is, either on an EC2 instance with S3 permissions, an ECS container with an IAM role that has permission to the s3 bucket or have AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables configured.
+
+If S3 is used for the data directory, the [UPLOAD_DIRECTORY](./CONFIG.md#upload_directory) must be configured to a path, as this usually default to the DATA_DIRECTORY but does not support S3.
 
 ## Database URL
 

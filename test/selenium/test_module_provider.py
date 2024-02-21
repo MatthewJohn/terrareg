@@ -18,7 +18,7 @@ import imagehash
 
 from terrareg.database import Database
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
-from test import mock_create_audit_event
+from test import mock_create_audit_event, skipif_unless_ci
 from test.selenium import SeleniumTest
 from terrareg.models import (
     GitProvider, ModuleVersion, Namespace, Module,
@@ -2562,7 +2562,7 @@ various &lt; characters that could be escaped.</pre>
 
         return imagehash.phash(actual_image) == imagehash.phash(expected_image)
 
-    @pytest.mark.skipif(
+    @skipif_unless_ci(
         not os.environ.get("RUNNING_IN_DOCKER"),
         reason="Canvas image comparison does not work outside of docker"
     )

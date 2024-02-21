@@ -34,6 +34,7 @@ from terrareg.errors import (
 from terrareg.utils import PathDoesNotExistError, get_public_url_details, safe_iglob, safe_join_paths
 from terrareg.config import Config
 from terrareg.constants import EXTRACTION_VERSION
+import terrareg.file_storage
 
 
 class ModuleExtractor:
@@ -352,7 +353,9 @@ terraform {{
         # and DELETE_EXTERNALLY_HOSTED_ARTIFACTS has not been disabled and
         # the data directory has not been mounted outside of ephemeral storage,
         # the parent directories may have been lost
-        os.makedirs(self._module_version.base_directory, exist_ok=True)
+        file_storage = terrareg.file_storage.FileStorageFactory().get_file_storage()
+
+        file_storage.make_directory(self._module_version.base_directory)
 
         def tar_filter(tarinfo):
             """Filter files being added to tar archive"""
@@ -361,21 +364,29 @@ terraform {{
                 return None
             return tarinfo
 
-        # Create tar.gz
-        with tarfile.open(self._module_version.archive_path_tar_gz, "w:gz") as tar:
-            tar.add(self.extract_directory, arcname='', recursive=True, filter=tar_filter)
 
-        # Create zip
-        # Use 'cwd' to ensure zip file is generated with directory structure
-        # from the root of the module.
-        # Use subprocess to execute zip, rather than shutil.make_archive,
-        # as make_archive is not thread-safe and changes the CWD of the main
-        # process.
-        # Exclude .git directory from archive
-        subprocess.call(
-            ['zip', '-r', self._module_version.archive_path_zip, '--exclude=./.git/*', '.'],
-            cwd=self.extract_directory
-        )
+        # Create tar.gz
+        with tempfile.TemporaryDirectory(suffix='generate-archive') as temp_dir:
+            tar_file_path = os.path.join(temp_dir, self._module_version.archive_name_tar_gz)
+            with tarfile.open(tar_file_path, "w:gz") as tar:
+                tar.add(self.extract_directory, arcname='', recursive=True, filter=tar_filter)
+
+            # Add tar file to file storage
+            file_storage.upload_file(tar_file_path, self._module_version.base_directory, self._module_version.archive_name_tar_gz)
+
+            # Create zip
+            # Use 'cwd' to ensure zip file is generated with directory structure
+            # from the root of the module.
+            # Use subprocess to execute zip, rather than shutil.make_archive,
+            # as make_archive is not thread-safe and changes the CWD of the main
+            # process.
+            # Exclude .git directory from archive
+            zip_file_path = os.path.join(temp_dir, self._module_version.archive_name_zip)
+            subprocess.call(
+                ['zip', '-r', zip_file_path, '--exclude=./.git/*', '.'],
+                cwd=self.extract_directory
+            )
+            file_storage.upload_file(zip_file_path, self._module_version.base_directory, self._module_version.archive_name_zip)
 
     def _create_module_details(self, readme_content, terraform_docs, tfsec, terraform_graph, terraform_modules, terraform_version, infracost=None):
         """Create module details row."""

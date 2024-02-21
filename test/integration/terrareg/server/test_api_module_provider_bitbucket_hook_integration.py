@@ -1,5 +1,6 @@
 
 
+import os
 import unittest.mock
 
 import pytest
@@ -51,6 +52,9 @@ class TestApiModuleProviderBitbucketHookIntegration(TerraregIntegrationTest):
         def clone_repository_side_effect(self):
             if self._module_version.version in import_failures:
                 raise terrareg.errors.GitCloneError('Unittest clone error')
+            else:
+                with open(os.path.join(self.extract_directory, 'main.tf'), 'w') as fh:
+                    fh.write('output "test" { value = "test" }')
 
         with unittest.mock.patch(
                 'terrareg.module_extractor.GitModuleExtractor._clone_repository', clone_repository_side_effect) as mocked_clone_repository, \

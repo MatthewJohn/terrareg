@@ -2,7 +2,7 @@
 from glob import escape
 import os
 import re
-from typing import Union, List
+from typing import Union, List, Optional
 
 import sqlalchemy
 from terrareg.errors import InvalidProviderBinaryArchitectureError, InvalidProviderBinaryNameError, InvalidProviderBinaryOperatingSystemError, ProviderVersionBinaryAlreadyExistsError
@@ -11,6 +11,7 @@ import terrareg.provider_version_model
 import terrareg.provider_documentation_type
 import terrareg.database
 import terrareg.provider_binary_types
+import terrareg.file_storage
 
 
 class ProviderVersionBinary:
@@ -63,7 +64,6 @@ class ProviderVersionBinary:
 
         # Store binary
         obj = cls(pk=pk)
-        provider_version.create_data_directory()
         obj.create_local_binary(content=content)
 
         return obj
@@ -156,7 +156,7 @@ class ProviderVersionBinary:
         return os.path.join(self.provider_version.base_directory, self.name)
 
     @property
-    def provider_version(self):
+    def provider_version(self) -> Optional['terrareg.provider_version_model.ProviderVersion']:
         """Return provider_version"""
         return terrareg.provider_version_model.ProviderVersion.get_by_pk(self._get_db_row()["provider_version_id"])
 
@@ -179,8 +179,9 @@ class ProviderVersionBinary:
 
     def create_local_binary(self, content: bytes):
         """Create local binary file"""
-        with open(self.local_file_path, "wb") as fh:
-            fh.write(content)
+        file_storage = terrareg.file_storage.FileStorageFactory().get_file_storage()
+        file_storage.make_directory(self.provider_version.base_directory)
+        file_storage.write_file(self.local_file_path, content, binary=True)
 
     def get_api_outline(self) -> dict:
         """Return API details"""
