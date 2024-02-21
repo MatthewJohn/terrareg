@@ -74,7 +74,9 @@ class Config:
         The URL that is used for accessing Terrareg by end-users.
 
         E.g.:
+
         `https://terrareg.mycorp.com`
+
         `https://terrareg.mycorg.com:8443`
 
 
@@ -304,7 +306,7 @@ class Config:
         """
         Whether to disable 'terrareg exclusive' labels from feature tabs in UI.
 
-        Set to 'True' to disable the labels.
+        Set to `True` to disable the labels.
         """
         return self.convert_boolean(os.environ.get('DISABLE_TERRAREG_EXCLUSIVE_LABELS', 'False'))
 
@@ -433,6 +435,7 @@ class Config:
         This configuration defines how re-indexes a module version, that already exists, behaves.
 
         This can be set to one of:
+
          * 'legacy' - The new module version will replace the old one. Until the version is re-published, it will not be available to Terraform. Analytics for the module version will be retained.
          * 'auto-publish' - The new module version will replace the old one. If the previous version was published, the new version will be automatically published. Analytics for the module version will be retained.
          * 'prohibit' - If a module version has already been indexed, it cannot be re-indexed via hooks/API calls without the version first being deleted.
@@ -550,11 +553,13 @@ class Config:
         This is used by the snippet example of a Terraform module and the 'resource builder' example.
 
         The template can contain the following placeholders:
+
          * `{major}`, `{minor}`, `{patch}`
          * `{major_minus_one}`, `{minor_minus_one}`, `{patch_minus_one}`
          * `{major_plus_one}`, `{minor_plus_one}`, `{patch_plus_one}`
 
         Some examples:
+
          * `>= {major}.{minor}.{patch}, < {major_plus_one}.0.0`
          * `~> {major}.{minor}.{patch}`
 
@@ -645,6 +650,7 @@ class Config:
 
         Each link must contain a display and and link URL.
         These can contain placeholders, such as:
+
          * namespace
          * module
          * provider
@@ -653,6 +659,7 @@ class Config:
         The links can be provided with a list of namespaces to limit the link to only modules within those namespaces.
 
         The format should be similar to this example:
+        ```
         [
             {"text": "Text for the link e.g. Github Issues for {module}",
              "url": "https://github.com/{namespace}/{module}-{provider}/issues"},
@@ -660,6 +667,7 @@ class Config:
              "url": "https://mydomain.example.com/",
              "namespaces": ["namespace1", "namespace2"]}
         ]
+        ```
         """
         return os.environ.get('MODULE_LINKS', '[]')
 
@@ -860,6 +868,7 @@ class Config:
         Example: `tf,sh,json`
 
         Supported languages for syntax highlighting:
+
          * HCL
          * JavaScript/JSON
          * Bash
@@ -943,20 +952,22 @@ class Config:
         These are used for authenticating to the provider, obtain repository information and provide integration for creating Terraform providers.
 
         Each item in the list must contain the following attributes:
-         - `name` - Name of the git provider (e.g. 'Github')
-         - `type` - The type of SCM tool (supported: `github`)
-         - `login_button_text` - Login button text for authenticating to Github
-         - `auto_generate_namespaces` - Whether to automatically generate namespaces for the user and the organisations that the user is an admin of
+
+         * `name` - Name of the git provider (e.g. 'Github')
+         * `type` - The type of SCM tool (supported: `github`)
+         * `login_button_text` - Login button text for authenticating to Github
+         * `auto_generate_namespaces` - Whether to automatically generate namespaces for the user and the organisations that the user is an admin of
 
         Github-specific attributes (See USER_GUIDE for configuring this):
-         - `base_url` - Base public URL, e.g. `https://github.com`
-         - `api_url` - API URL, e.g. `https://api.github.com`
-         - `app_id` - Github app ID
-         - `client_id` - Github app client ID for Github authentication.
-         - `client_secret` - Github App client secret for Github authentication.
-         - `private_key_path` - Path to private key generated for Github app.
-         - `default_access_token` (optional) - Github access token, used for perform Github API requests for providers that are not authenticated via Github App.
-         - `default_installation_id` (optional) - A default installation that provides access to Github APIs for providers that are not authenticated via Github App.
+
+         * `base_url` - Base public URL, e.g. `https://github.com`
+         * `api_url` - API URL, e.g. `https://api.github.com`
+         * `app_id` - Github app ID
+         * `client_id` - Github app client ID for Github authentication.
+         * `client_secret` - Github App client secret for Github authentication.
+         * `private_key_path` - Path to private key generated for Github app.
+         * `default_access_token` (optional) - Github access token, used for perform Github API requests for providers that are not authenticated via Github App.
+         * `default_installation_id` (optional) - A default installation that provides access to Github APIs for providers that are not authenticated via Github App.
 
         An example for public repositories, using SSH for cloning, might be:
         ```
@@ -976,10 +987,11 @@ class Config:
         JSON list of provider categories.
 
         Must be a list of objects, with the following attributes:
-         - `id` - Category ID. Must be a unique integer.
-         - `name` - Name of category.
-         - `slug` - A unique API-friendly name of the category, using lower-case letters and hyphens. Defaults to converted name with lower case letters, dashes for spaces and other characters removed.
-         - `user-selectable` (optional, defaults to `true`) - boolean based on whether it is selectable by the user. Non-user selectable categories can only currently be assigned in the database.
+
+         * `id` - Category ID. Must be a unique integer.
+         * `name` - Name of category.
+         * `slug` - A unique API-friendly name of the category, using lower-case letters and hyphens. Defaults to converted name with lower case letters, dashes for spaces and other characters removed.
+         * `user-selectable` (optional, defaults to `true`) - boolean based on whether it is selectable by the user. Non-user selectable categories can only currently be assigned in the database.
         """
         return os.environ.get("PROVIDER_CATEGORIES", '[{"id": 1, "name": "Example Category", "slug": "example-category", "user-selectable": true}]')
 

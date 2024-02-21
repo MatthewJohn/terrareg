@@ -3,6 +3,7 @@
 ## Github Authentication
 
 Github authentication is used to:
+
 * Authenticate users to Terrareg:
   * determine which organisations the authenticated user is an owner of,
 * Authenticate Terrareg to github to allow it access information:
@@ -11,6 +12,7 @@ Github authentication is used to:
   * Setup repository webhooks (private)
 
 To achieve this, several methods are used:
+
  * Terrareg should be setup as a Github app
  * If a user authenticates using Github, Terrareg will generated a token to obtain information about their organisations and their membership status of those organisations.
    * These tokens are temporary

@@ -1,6 +1,5 @@
 # Local Development
 
-
 ## Running with docker-compose for Development
 
 A docker-compose file is avaiable to simplify launching terrareg for local testing and development. This will let you run terrareg with an SSL certificate, allowing terraform cli to access modules while developing or testing the software. In addition, the root folder is mounted in the container allowing for rapid development and testing without rebuilding the container.
@@ -74,44 +73,81 @@ You can access the stack at the following URLs:
 
 Because everything referencing localhost routes to 172.0.0.1 no special host file entries are required.
 
-### Building locally and running
+## Building locally and running
 
-    # Clone the repository
-    git clone https://github.com/matthewJohn/terrareg
-    cd terrareg
+```
+# Clone the repository
+git clone https://github.com/matthewJohn/terrareg
+cd terrareg
 
-    # Optionally create a virtualenv
-    virtualenv -ppython3 venv
-    . venv/bin/activate
+# Optionally create a virtualenv
+virtualenv -ppython3 venv
+. venv/bin/activate
 
-    # Install libmagic
-    ## For OS X:
-    brew install libmagic
+# Install libmagic
+## For OS X:
+brew install libmagic
 
-    ## For Ubuntu
-    sudo apt-get install libmagic1
+## For Ubuntu
+sudo apt-get install libmagic1
 
-    # Install depdencies:
-    pip install -r requirements.txt
+# Install depdencies:
+pip install -r requirements.txt
 
-    # Initialise database and start server:
-    alembic upgrade head
+# Initialise database and start server:
+alembic upgrade head
 
-    # Set random admin authentication token - the password used for authenticating as the built-in admin user
-    export ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword
-    # Set random secret key, used encrypting client session data
-    export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex())')
-    
-    # Obtain terraform-docs, Tfsec and Infracost
-    mkdir bin
-    export PATH=$PATH:`pwd`/bin
-    if [ "$(uname -m)" == "aarch64" ]; then arch=arm64; else arch=amd64; fi
-    wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-linux-${arch}.tar.gz && tar -zxvf terraform-docs-v0.16.0-linux-${arch}.tar.gz terraform-docs && chmod +x terraform-docs && mv terraform-docs ./bin/ && rm terraform-docs-v0.16.0-linux-${arch}.tar.gz
-    wget https://github.com/aquasecurity/tfsec/releases/download/v1.26.0/tfsec-linux-${arch} -O ./bin/tfsec && chmod +x ./bin/tfsec
-    wget https://github.com/infracost/infracost/releases/download/v0.10.10/infracost-linux-${arch}.tar.gz && tar -zxvf infracost-linux-${arch}.tar.gz infracost-linux-${arch} && mv infracost-linux-${arch} ./bin/infracost && chmod +x ./bin/infracost && rm infracost-linux-${arch}.tar.gz
-    
-    # Run the server
-    python ./terrareg.py
+# Set random admin authentication token - the password used for authenticating as the built-in admin user
+export ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword
+# Set random secret key, used encrypting client session data
+export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex())')
 
+# Obtain terraform-docs, Tfsec and Infracost
+mkdir bin
+export PATH=$PATH:`pwd`/bin
+if [ "$(uname -m)" == "aarch64" ]; then arch=arm64; else arch=amd64; fi
+wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-linux-${arch}.tar.gz && tar -zxvf terraform-docs-v0.16.0-linux-${arch}.tar.gz terraform-docs && chmod +x terraform-docs && mv terraform-docs ./bin/ && rm terraform-docs-v0.16.0-linux-${arch}.tar.gz
+wget https://github.com/aquasecurity/tfsec/releases/download/v1.26.0/tfsec-linux-${arch} -O ./bin/tfsec && chmod +x ./bin/tfsec
+wget https://github.com/infracost/infracost/releases/download/v0.10.10/infracost-linux-${arch}.tar.gz && tar -zxvf infracost-linux-${arch}.tar.gz infracost-linux-${arch} && mv infracost-linux-${arch} ./bin/infracost && chmod +x ./bin/infracost && rm infracost-linux-${arch}.tar.gz
+
+# Run the server
+python ./terrareg.py
+```
 
 The site can be accessed at http://localhost:5000
+
+## Generating DB changes
+
+Once changes are made to a
+
+```
+# Ensure database is up-to-date before generating schema migrations
+alembic upgrade head
+
+# Generate migration
+alembic revision --autogenerate
+```
+
+## Applying DB changes
+
+```
+alembic upgrade head
+```
+
+## Running tests
+
+```
+# Install dev requirements
+pip install -r requirements-dev.txt
+
+# Run all tests
+pytest
+
+# Running unit/integration/selenium tests individually
+pytest ./test/unit
+pytest ./test/integration
+pytest ./test/selenium
+
+# Running a specific test
+pytest -k test_setup_page
+```

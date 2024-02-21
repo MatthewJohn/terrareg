@@ -179,9 +179,25 @@ release:
     GIT_STRATEGY: clone
   script:
     - semantic-release
+  rules:
+    - if: '$CI_COMMIT_REF_NAME != "main"'
+      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /chore\(release\)/'
+      when: never
+    - when: always
+
+generate-docs:
+  stage: deploy
+  image: python:3.10
+  variables:
+    GITHUB_TOKEN: $GH_DEPLOY_TOKEN
+  script:
+    - pip install -r requirements-docs.txt
+    - git remote remove origin
+    - git remote add origin https://$GITHUB_TOKEN@gitlab.dockstudios.co.uk/pub/terrareg.git
+    - mkdocs gh-deploy
   only:
     - main
-
 
 stages:
  - build
