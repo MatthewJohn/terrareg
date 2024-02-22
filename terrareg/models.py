@@ -48,6 +48,7 @@ from terrareg.presigned_url import TerraformSourcePresignedUrl
 import terrareg.provider_model
 import terrareg.provider_version_model
 import terrareg.registry_resource_type
+import terrareg.file_storage
 
 
 class Session:
@@ -1001,12 +1002,12 @@ class Namespace(object):
     @property
     def base_directory(self):
         """Return base directory."""
-        return safe_join_paths(terrareg.config.Config().DATA_DIRECTORY, 'modules', self._name)
+        return safe_join_paths('/modules', self._name)
 
     @property
     def base_provider_directory(self):
         """Return base directory for providers"""
-        return safe_join_paths(terrareg.config.Config().DATA_DIRECTORY, 'providers', self._name)
+        return safe_join_paths('/providers', self._name)
 
     @property
     def name(self):
@@ -1257,17 +1258,10 @@ class Namespace(object):
         with db.get_connection() as conn:
             conn.execute(delete)
 
-    def create_data_directory(self):
-        """Create data directory and data directories of parents."""
-        # Check if data directory exists
-        if not os.path.isdir(self.base_directory):
-            os.mkdir(self.base_directory)
-
     def create_provider_data_directory(self):
         """Create data directory for providers"""
         # Check if directory exists
-        if not os.path.isdir(self.base_provider_directory):
-            os.mkdir(self.base_provider_directory)
+        pass
 
     def get_module_custom_links(self):
         """Obtain module links that are applicable to namespace"""
@@ -1572,15 +1566,6 @@ class Module(object):
             ModuleProvider(module=self, name=provider)
             for provider in providers
         ]
-
-    def create_data_directory(self):
-        """Create data directory and data directories of parents."""
-        # Check if parent exists
-        if not os.path.isdir(self._namespace.base_directory):
-            self._namespace.create_data_directory()
-        # Check if data directory exists
-        if not os.path.isdir(self.base_directory):
-            os.mkdir(self.base_directory)
 
 
 class ModuleDetails:
@@ -2562,10 +2547,12 @@ class ModuleProvider(object):
 
         db = Database.get()
 
+        file_storage = terrareg.file_storage.FileStorageFactory().get_file_storage()
+
         # Remove directory for module provider
-        if os.path.isdir(self.base_directory):
+        if file_storage.directory_exists(self.base_directory):
             try:
-                os.rmdir(self.base_directory)
+                file_storage.delete_directory(self.base_directory)
             except OSError as exc:
                 # Handle OSError which can be caused when
                 # files that are not managed by Terrareg
@@ -2945,15 +2932,6 @@ class ModuleProvider(object):
 
         # Obtain latest row
         return ModuleVersion(module_provider=self, version=rows[0]['version'])
-
-    def create_data_directory(self):
-        """Create data directory and data directories of parents."""
-        # Check if parent exists
-        if not os.path.isdir(self._module.base_directory):
-            self._module.create_data_directory()
-        # Check if data directory exists
-        if not os.path.isdir(self.base_directory):
-            os.mkdir(self.base_directory)
 
     def get_versions(self, include_beta=True, include_unpublished=False):
         """Return all module provider versions."""
@@ -3966,15 +3944,6 @@ class ModuleVersion(TerraformSpecsObject):
 
         return None
 
-    def create_data_directory(self):
-        """Create data directory and data directories of parents."""
-        # Check if parent exists
-        if not os.path.isdir(self._module_provider.base_directory):
-            self._module_provider.create_data_directory()
-        # Check if data directory exists
-        if not os.path.isdir(self.base_directory):
-            os.mkdir(self.base_directory)
-
     def publish(self):
         """Publish module version."""
         terrareg.audit.AuditEvent.create_audit_event(
@@ -4097,7 +4066,6 @@ class ModuleVersion(TerraformSpecsObject):
 
         Returns boolean whether the module should be published after creation.
         """
-        self.create_data_directory()
         should_publish = self._create_db_row()
 
         terrareg.audit.AuditEvent.create_audit_event(
@@ -4160,13 +4128,16 @@ class ModuleVersion(TerraformSpecsObject):
         )
 
         # Delete archives for module version and version directory
-        if os.path.isfile(self.archive_path_tar_gz):
-            os.unlink(self.archive_path_tar_gz)
-        if os.path.isfile(self.archive_path_zip):
-            os.unlink(self.archive_path_zip)
-        if os.path.isdir(self.base_directory):
+        file_storage = terrareg.file_storage.FileStorageFactory().get_file_storage()
+        if file_storage.file_exists(self.archive_path_tar_gz):
+            file_storage.delete_file(self.archive_path_tar_gz)
+        if file_storage.file_exists(self.archive_path_zip):
+            file_storage.delete_file(self.archive_path_zip)
+
+        # @TODO How to handle this
+        if file_storage.directory_exists(self.base_directory):
             try:
-                os.rmdir(self.base_directory)
+                file_storage.delete_directory(self.base_directory)
             except OSError as exc:
                 # Handle OSError which can be caused when
                 # files that are not managed by Terrareg

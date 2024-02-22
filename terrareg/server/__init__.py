@@ -121,16 +121,11 @@ class Server(BaseHandler):
 
         self._app.register_blueprint(terrareg.server.api.terraform_oauth.terraform_oidc_provider_blueprint)
 
-        if not os.path.isdir(terrareg.config.Config().DATA_DIRECTORY):
-            os.mkdir(terrareg.config.Config().DATA_DIRECTORY)
-        if not os.path.isdir(self._get_upload_directory()):
-            os.mkdir(self._get_upload_directory())
-        if not os.path.isdir(os.path.join(terrareg.config.Config().DATA_DIRECTORY, 'modules')):
-            os.mkdir(os.path.join(terrareg.config.Config().DATA_DIRECTORY, 'modules'))
-        if not os.path.isdir(os.path.join(terrareg.config.Config().DATA_DIRECTORY, 'providers')):
-            os.mkdir(os.path.join(terrareg.config.Config().DATA_DIRECTORY, 'providers'))
+        config = terrareg.config.Config()
+        if not os.path.isdir(config.UPLOAD_DIRECTORY):
+            os.makedirs(config.UPLOAD_DIRECTORY, exist_ok=True)
 
-        self._app.config['UPLOAD_FOLDER'] = self._get_upload_directory()
+        self._app.config['UPLOAD_FOLDER'] = config.UPLOAD_DIRECTORY
 
         # Initialise database
         terrareg.database.Database.get().initialise()

@@ -4,7 +4,7 @@ import subprocess
 import json
 import os
 import tarfile
-from tempfile import mkdtemp
+from tempfile import TemporaryDirectory, mkdtemp
 import tempfile
 import platform
 
@@ -17,9 +17,10 @@ import terrareg.errors
 from terrareg.models import GitProvider, Module, ModuleProvider, ModuleVersion, Namespace
 from terrareg.module_extractor import ApiUploadModuleExtractor
 from test.integration.terrareg import TerraregIntegrationTest
-from test import client
+from test import client, skipif_unless_ci
 from test.integration.terrareg.module_extractor import UploadTestModule
 import terrareg.utils
+import terrareg.file_storage
 
 
 class TestProcessUpload(TerraregIntegrationTest):
@@ -1071,7 +1072,7 @@ digraph {
 }
 """.strip()
 
-    @pytest.mark.skipif(terrareg.config.Config().INFRACOST_API_KEY == None, reason="Requires valid infracost API key")
+    @skipif_unless_ci(terrareg.config.Config().INFRACOST_API_KEY == None, reason="Requires valid infracost API key")
     def test_uploading_module_with_infracost(self):
         """Test uploading a module with real Infracost API key."""
         test_upload = UploadTestModule()
@@ -1623,7 +1624,7 @@ resource "aws_s3_bucket" "test" {
         } == expected_files
 
 
-    @pytest.mark.skipif((not os.path.isfile('/usr/bin/zip')), reason="Zip must be installed on system")
+    @skipif_unless_ci((not os.path.isfile('/usr/bin/zip')), reason="Zip must be installed on system")
     def test_upload_malicious_zip(self):
         """Test basic module upload with single depth."""
         namespace = Namespace.get(name='testprocessupload', create=True)
@@ -1700,20 +1701,33 @@ resource "aws_s3_bucket" "test" {
 
             temp_dir = tempfile.mkdtemp()
             os.mkdir(os.path.join(temp_dir, 'modules'))
-            try:
 
+            # Mock tempfile to obtain temporary directory used for generating archives
+            generate_archive_temp_dir = None
+            def mock_temporary_directory(suffix=None, *args, **kwargs):
+                nonlocal generate_archive_temp_dir
+                temp_dir_ret = TemporaryDirectory(suffix=suffix, *args, **kwargs)
+                if suffix == "generate-archive":
+                    generate_archive_temp_dir = temp_dir_ret.name
+                return temp_dir_ret
+
+            try:
+                local_storage = terrareg.file_storage.LocalFileStorage(base_directory=temp_dir)
+                mock_local_file_storage = mock.MagicMock(wraps=local_storage)
                 with mock.patch('terrareg.config.Config.DELETE_EXTERNALLY_HOSTED_ARTIFACTS', False), \
-                        mock.patch('terrareg.config.Config.DATA_DIRECTORY', temp_dir):
+                        mock.patch('terrareg.config.Config.DATA_DIRECTORY', temp_dir), \
+                        mock.patch('terrareg.file_storage.FileStorageFactory.get_file_storage', return_value=mock_local_file_storage), \
+                        mock.patch('tempfile.TemporaryDirectory', side_effect=mock_temporary_directory):
+
                     UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
                     # Ensure the module version tar archive path looks correct
-                    assert module_version.archive_path_tar_gz.startswith(temp_dir)
-                    assert module_version.archive_path_tar_gz.replace(f"{temp_dir}/", '') == 'modules/testprocessupload/test-module/aws/21.0.0/source.tar.gz'
-
-                    assert os.path.isfile(module_version.archive_path_tar_gz)
+                    assert module_version.archive_path_tar_gz == "/modules/testprocessupload/test-module/aws/21.0.0/source.tar.gz"
+                    full_tar_path = os.path.join(temp_dir, module_version.archive_path_tar_gz.lstrip(os.path.sep))
+                    assert os.path.isfile(full_tar_path)
 
                     # Inspect generated archive
-                    with tarfile.open(module_version.archive_path_tar_gz, "r:gz") as tar_fh:
+                    with tarfile.open(full_tar_path, "r:gz") as tar_fh:
                         # Create map of all files paths against the file contents for verification
                         tar_contents = {
                             member.name: tar_fh.extractfile(member).read().decode('utf-8')
@@ -1729,13 +1743,13 @@ resource "aws_s3_bucket" "test" {
                         }
 
                     # Ensure zip file was created correctly
-                    assert module_version.archive_path_zip.startswith(temp_dir)
-                    assert module_version.archive_path_zip.replace(f"{temp_dir}/", '') == 'modules/testprocessupload/test-module/aws/21.0.0/source.zip'
+                    assert module_version.archive_path_zip == "/modules/testprocessupload/test-module/aws/21.0.0/source.zip"
 
-                    assert os.path.isfile(module_version.archive_path_zip)
+                    full_zip_path = os.path.join(temp_dir, module_version.archive_path_zip.lstrip(os.path.sep))
+                    assert os.path.isfile(full_zip_path)
 
                     # Inspect generated archive
-                    with zipfile.ZipFile(module_version.archive_path_zip) as z:
+                    with zipfile.ZipFile(full_zip_path) as z:
                         zip_contents = {
                             fileobj.filename: z.open(fileobj.filename).read().decode('utf-8')
                             for fileobj in z.infolist()
@@ -1749,6 +1763,11 @@ resource "aws_s3_bucket" "test" {
                             'subdir/nested-file.tf': '# Nested file',
                         }
 
+                    mock_local_file_storage.make_directory.assert_called_once_with("/modules/testprocessupload/test-module/aws/21.0.0")
+                    mock_local_file_storage.upload_file.assert_has_calls(calls=[
+                        mock.call(os.path.join(generate_archive_temp_dir, "source.tar.gz"), '/modules/testprocessupload/test-module/aws/21.0.0', 'source.tar.gz'),
+                        mock.call(os.path.join(generate_archive_temp_dir, "source.zip"), '/modules/testprocessupload/test-module/aws/21.0.0', 'source.zip')
+                    ])
 
             finally:
                 shutil.rmtree(temp_dir)

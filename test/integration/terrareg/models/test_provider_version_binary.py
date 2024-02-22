@@ -145,8 +145,6 @@ class TestProviderVersionBinary(TerraregIntegrationTest):
         with TemporaryDirectory() as temp_dir, \
                 unittest.mock.patch('terrareg.config.Config.DATA_DIRECTORY', temp_dir):
 
-            os.mkdir(os.path.join(temp_dir, "providers"))
-    
             terrareg.provider_version_binary_model.ProviderVersionBinary.create(
                 provider_version=test_provider_version,
                 name="terraform-provider-unittest-create-provider-name_6.4.1_linux_amd64.zip",
@@ -166,7 +164,7 @@ class TestProviderVersionBinary(TerraregIntegrationTest):
             assert len(provider_version_binaries) == 1
             assert provider_version_binaries[0].checksum == "c27f1263ae06f263d59eb1f172c7fe39f6d7a06771544d869cc272d94ed301d1"
 
-            with open(provider_version_binaries[0].local_file_path, "r") as fh:
+            with open(os.path.join(temp_dir, provider_version_binaries[0].local_file_path.lstrip(os.path.sep)), "r") as fh:
                 assert fh.read() == "Some original test Content"
 
     def test__insert_db_row(self, test_provider_version):
@@ -327,8 +325,7 @@ class TestProviderVersionBinary(TerraregIntegrationTest):
             operating_system_type=terrareg.provider_binary_types.ProviderBinaryOperatingSystemType.WINDOWS,
             architecture_type=terrareg.provider_binary_types.ProviderBinaryArchitectureType.AMD64
         )
-        with unittest.mock.patch('terrareg.config.Config.DATA_DIRECTORY', '/some/test/directory'):
-            assert test_provider_version_binary.local_file_path == "/some/test/directory/providers/initial-providers/multiple-versions/1.5.0/terraform-provider-multiple-versions_1.5.0_windows_amd64.zip"
+        assert test_provider_version_binary.local_file_path == "/providers/initial-providers/multiple-versions/1.5.0/terraform-provider-multiple-versions_1.5.0_windows_amd64.zip"
 
     def test_provider_version(self):
         """Test provider_version attribute"""
@@ -402,8 +399,6 @@ class TestProviderVersionBinary(TerraregIntegrationTest):
         )
         with TemporaryDirectory() as temp_dir, \
                 unittest.mock.patch('terrareg.config.Config.DATA_DIRECTORY', temp_dir):
-            os.mkdir(os.path.join(temp_dir, "providers"))
-            provider_version.create_data_directory()
 
             test_provider_version_binary.create_local_binary(b"Some test local binary content\nisHere!")
 

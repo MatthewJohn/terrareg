@@ -1,11 +1,13 @@
 
 
-from flask import send_from_directory, request
+import os
+from flask import send_file, request
 
 from terrareg.errors import InvalidPresignedUrlKeyError
 from terrareg.presigned_url import TerraformSourcePresignedUrl
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.config
+import terrareg.file_storage
 
 
 class ApiModuleVersionSourceDownload(ErrorCatchingResource):
@@ -28,5 +30,8 @@ class ApiModuleVersionSourceDownload(ErrorCatchingResource):
         if error:
             return error
 
-        return send_from_directory(module_version.base_directory, module_version.archive_name_zip)
-
+        file_storage = terrareg.file_storage.FileStorageFactory().get_file_storage()
+        return send_file(
+            file_storage.read_file(os.path.join(module_version.base_directory, module_version.archive_name_zip), bytes_mode=True),
+            download_name=module_version.archive_name_zip
+        )

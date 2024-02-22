@@ -39,6 +39,7 @@ services:
       # Open traefik http [80] and https [443] ports.
       - '80:80'
       - '443:443'
+      - '8080:8080'
     volumes:
       - ./traefik/dynamic_conf.yaml:/etc/traefik/dynamic_conf.yaml:ro
       - ./traefik/traefik.yaml:/etc/traefik/traefik.yaml:ro
@@ -67,6 +68,7 @@ services:
     depends_on:
       - mysql
       - traefik
+      - minio
     env_file:
       - ./.env
     volumes:
@@ -84,7 +86,7 @@ services:
   mysql:
     container_name: "${DOCKER_NAME}_mysql"
     restart: unless-stopped
-    image: docker.io/bitnami/mysql:8.0
+    image: docker.io/bitnami/mariadb:10.5
     volumes:
       - 'mysql:/bitnami/mysql/data'
     env_file:
@@ -115,6 +117,49 @@ services:
     networks:
       web:
 
+  minio:
+    image: minio/minio
+    ports:
+     - 9000:9000
+     - 9001:9001
+    restart: always
+    env_file:
+     - .env
+    environment:
+      MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
+      MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
+    command: server /data --console-address ":9001"
+    volumes:
+     - 'minio:/data'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${DOCKER_NAME}_minio.tls=true"
+      - "traefik.http.routers.${DOCKER_NAME}_minio.rule=Host(`minio.${DOCKER_BASE_URL}`)"
+      - "traefik.http.services.${DOCKER_NAME}_minio.loadbalancer.server.port=9000"
+      - "traefik.http.routers.${DOCKER_NAME}_minio.service=${DOCKER_NAME}_minio"
+
+      - "traefik.http.routers.${DOCKER_NAME}_minioui.tls=true"
+      - "traefik.http.routers.${DOCKER_NAME}_minioui.rule=Host(`minio-ui.${DOCKER_BASE_URL}`)"
+      - "traefik.http.services.${DOCKER_NAME}_minioui.loadbalancer.server.port=9001"
+      - "traefik.http.routers.${DOCKER_NAME}_minioui.service=${DOCKER_NAME}_minio"
+    networks:
+      web:
+
+  createbucket:
+    image: minio/mc
+    depends_on:
+      - minio
+    env_file:
+     - .env
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc config host add terrareg $AWS_ENDPOINT_URL $AWS_ACCESS_KEY_ID $AWS_SECRET_ACCESS_KEY;
+      /usr/bin/mc mb terrareg/$AWS_BUCKET_NAME;
+      exit 0;
+      "
+    networks:
+      web:
+
 volumes:
   terrareg:
     driver: local
@@ -122,7 +167,10 @@ volumes:
   mysql:
     driver: local
     name: "${DOCKER_NAME}_mysql"
-    
+  minio:
+    driver: local
+    name: "${DOCKER_NAME}_s3"
+
 networks:
   web: 
     name: "${DOCKER_NAME}_web"
