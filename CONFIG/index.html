@@ -1591,6 +1591,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#upload_directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      UPLOAD_DIRECTORY
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#verified_module_label" class="md-nav__link">
     <span class="md-ellipsis">
       VERIFIED_MODULE_LABEL
@@ -2159,7 +2168,9 @@ Defaults to local SQLite database.</p>
 <p>Default: <code>sqlite:///modules.db</code></p>
 <h3 id="data_directory">DATA_DIRECTORY</h3>
 <p>Directory for storing module data.</p>
-<p>This directory must be persistent (e.g. mounted to shared volume for distributed docker containers)</p>
+<p>This directory must be persistent (e.g. mounted to shared volume for distributed docker containers).</p>
+<p>To use S3 for storing module/provider archives, specify in the form <code>s3://&lt;bucketname&gt;/subdir</code>, e.g. <code>s3://my-terrareg-bucket</code> or <code>s3://another-bucket/terrareg/dev</code>.</p>
+<p>If S3 is used for the <code>DATA_DIRECTORY</code>, the <code>UPLOAD_DIRECTORY</code>configuration must be configured to a local path.</p>
 <p>Default: <code>./data</code></p>
 <h3 id="debug">DEBUG</h3>
 <p>Whether Flask and SQLalchemy is setup in debug mode.</p>
@@ -2584,6 +2595,12 @@ this value may need to be increased.</p>
 <p>For Bitbucket hooks, one of these keys must be provided as the 'secret' to the web-hook.</p>
 <p>To disable authentication for upload endpoint, leave empty.</p>
 <p>Default: ``</p>
+<h3 id="upload_directory">UPLOAD_DIRECTORY</h3>
+<p>Directory for storing temporary upload data.</p>
+<p>By default, this uses an 'upload' sub-directory of the DATA_DIRECTORY.</p>
+<p>However, if the DATA_DIRECTORY is configured to 's3', this path must be changed to a local directory.</p>
+<p>In most situations, the path can be set to a temporary directory.</p>
+<p>Default: <code>./data/UPLOAD</code></p>
 <h3 id="verified_module_label">VERIFIED_MODULE_LABEL</h3>
 <p>Custom name for 'verified module' in UI.</p>
 <p>Default: <code>Verified</code></p>

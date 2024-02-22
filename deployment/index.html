@@ -705,9 +705,9 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#module-data" class="md-nav__link">
+  <a href="#moduleprovider-data" class="md-nav__link">
     <span class="md-ellipsis">
-      Module data
+      Module/Provider data
     </span>
   </a>
   
@@ -1412,9 +1412,11 @@ Use <code>MIGRATE_DATABASE_ONLY</code> to run an instance that will perform the 
 <p>To ensure terraform does not generate unecessary analytics in the module, terrareg must manage the .terraformrc file in the user's home directory.
 This functionality is enabled by default in the docker container, by disabled outside of it. To enable/disable this functionality, see <a href="../CONFIG/#manage_terraform_rc_file">MANAGE_TERRAFORM_RC_FILE</a></p>
 <h2 id="docker-storage">Docker storage</h2>
-<h3 id="module-data">Module data</h3>
-<p>If <a href="#module-hosting">module hosting</a> is being used, ensure that a directory is mounted into the container for storing module data.
+<h3 id="moduleprovider-data">Module/Provider data</h3>
+<p>If <a href="../modules/storage/">module hosting</a> is being used, ensure that a directory is mounted into the container for storing module data.
 This path can be customised by setting <a href="../CONFIG/#data_directory">DATA_DIRECTORY</a></p>
+<p>Alternative, an S3 bucket may be used for storage. Configure the <a href="../CONFIG/#data_directory">DATA_DIRECTORY</a> with an <code>s3://</code> URL, as per the example. When using S3, the container must have native access to an s3 bucket, that is, either on an EC2 instance with S3 permissions, an ECS container with an IAM role that has permission to the s3 bucket or have AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables configured.</p>
+<p>If S3 is used for the data directory, the <a href="../CONFIG/#upload_directory">UPLOAD_DIRECTORY</a> must be configured to a path, as this usually default to the DATA_DIRECTORY but does not support S3.</p>
 <h2 id="database-url">Database URL</h2>
 <p>It is recommended to use an external database when using in production.
 Terrareg has been tested with MariaDB 10.X and is incompattible with MySQL &lt;= 8.x</p>
