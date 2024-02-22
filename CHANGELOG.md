@@ -1,5 +1,21 @@
 # Changelog
 
+# [3.1.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.0.4...v3.1.0) (2024-02-22)
+
+
+### Bug Fixes
+
+* Update docker-compose for local development to use mariadb with version 10 as MySQL 8 isn't supported ([ffd8636](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ffd8636c7d5e3e7bbd5c78e964f0769170030a87)), closes [#491](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/491)
+
+
+### Features
+
+* Add new base classes and factory for handling file storage ([1809f6e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1809f6e9f32cb88ac02377d8913ac7dc5ab4aead)), closes [#491](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/491)
+* Add support for file storage in S3. ([daf16b2](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/daf16b2b7fa355f379190ee1a5769f1ebb83a592)), closes [#491](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/491)
+* Create new configuration for UPLOAD_DIRECTORY. ([803a3c7](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/803a3c706d3344fd3147e57ad32c190821e9ff15)), closes [#491](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/491)
+* Update module extractor to use FileStorage classes for uploading files to data directories ([9a3ab7b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9a3ab7b1e9c86ecefb957ef5da6dfed0966d03a3)), closes [#491](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/491)
+* Update module provider to use file_storage to delete data directories. ([724d429](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/724d42909539682d6127bd5a84682950992befee)), closes [#491](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/491)
+
 ## [3.0.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.0.3...v3.0.4) (2024-01-28)
 
 
