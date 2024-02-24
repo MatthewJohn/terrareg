@@ -201,7 +201,7 @@ build-pr-image:
   image: docker:latest
 
   script:
-    - docker build -f Dockerfile -t terrareg:$TF_VAR_pull_request .
+    - docker build -f Dockerfile -t terrareg:$TF_VAR_pull_request --build-arg http_proxy=$NOMAD_PROXY --build-arg HTTP_PROXY=$NOMAD_PROXY --build-arg https_proxy=$NOMAD_PROXY --build-arg HTTPS_PROXY=$NOMAD_PROXY .
 
 deploy_review:
   stage: deploy
