@@ -40,6 +40,8 @@ cache:
     TF_VAR_pull_request: $CI_COMMIT_REF_SLUG
     # Variable for docker tag
     TF_VAR_docker_image: "terrareg:v${CI_COMMIT_SHORT_SHA}"
+    TF_VAR_http_proxy: $NOMAD_PROXY
+    TF_VAR_no_proxy: $NOMAD_NO_PROXY
 
     http_proxy: $NOMAD_PROXY
     https_proxy: $NOMAD_PROXY
