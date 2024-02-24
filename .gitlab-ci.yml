@@ -38,6 +38,8 @@ cache:
     # variable that will be passed to the
     # deployment terraform
     TF_VAR_pull_request: $CI_COMMIT_REF_SLUG
+    # Variable for docker tag
+    TF_VAR_docker_image: "terrareg:v${CI_COMMIT_SHORT_SHA}"
 
     http_proxy: $NOMAD_PROXY
     https_proxy: $NOMAD_PROXY
@@ -201,7 +203,7 @@ build-pr-image:
   image: docker:latest
 
   script:
-    - docker build -f Dockerfile -t terrareg:$TF_VAR_pull_request --build-arg http_proxy=$NOMAD_PROXY --build-arg HTTP_PROXY=$NOMAD_PROXY --build-arg https_proxy=$NOMAD_PROXY --build-arg HTTPS_PROXY=$NOMAD_PROXY .
+    - docker build -f Dockerfile -t $TF_VAR_docker_image --build-arg http_proxy=$NOMAD_PROXY --build-arg HTTP_PROXY=$NOMAD_PROXY --build-arg https_proxy=$NOMAD_PROXY --build-arg HTTPS_PROXY=$NOMAD_PROXY .
 
 deploy_review:
   stage: deploy
