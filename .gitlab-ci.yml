@@ -198,7 +198,7 @@ build-pr-image:
   tags: [nomad]
 
   rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
 
   # Use docker without docker-in-docker, as we're
   # passing through the docker socket
@@ -213,7 +213,7 @@ deploy_review:
   tags: [nomad]
   needs: [ build-pr-image ]
   rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
   image:
     name: hashicorp/terraform:1.5
     entrypoint: ["/bin/sh", "-c"]
@@ -239,7 +239,7 @@ stop_review:
   extends: .pr_deployment
   tags: [nomad]
   rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
       when: manual
   image:
     name: hashicorp/terraform:1.5
@@ -285,8 +285,12 @@ generate-docs:
     - git remote remove origin
     - git remote add origin https://$GITHUB_TOKEN@gitlab.dockstudios.co.uk/pub/terrareg.git
     - mkdocs gh-deploy
-  only:
-    - main
+  rules:
+    - if: '$CI_COMMIT_REF_NAME != "main"'
+      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /chore\(release\)/'
+      when: never
+    - when: always
 
 stages:
  - build
@@ -297,7 +301,4 @@ workflow:
   rules:
     - if: $CI_COMMIT_MESSAGE =~ /^chore\(release\):.*/
       when: never
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: always
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: always
+    - when: always
