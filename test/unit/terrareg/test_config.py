@@ -213,6 +213,7 @@ class TestConfig:
         'ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION',
         'ALLOW_UNAUTHENTICATED_ACCESS',
         'AUTO_GENERATE_GITHUB_ORGANISATION_NAMESPACES',
+        'MODULE_VERSION_USE_GIT_COMMIT',
     ])
     def test_boolean_configs(self, config_name, test_value, expected_value):
         """Test boolean configs to ensure they are overridden with environment variables."""

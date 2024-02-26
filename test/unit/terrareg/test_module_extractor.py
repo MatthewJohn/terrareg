@@ -97,6 +97,42 @@ class TestGitModuleExtractor(TerraregUnitTest):
 
                 assert str(error.value) == 'Unknown error occurred during git clone'
 
+    @setup_test_data()
+    def test__get_git_commit_sha(self, mock_models):
+        """Test _get_git_commit_sha method"""
+        namespace = terrareg.models.Namespace(name='moduleextraction')
+        module = terrareg.models.Module(namespace=namespace, name='gitextraction')
+        module_provider = terrareg.models.ModuleProvider(module=module, name='gitcommithash')
+        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
+
+        check_call_mock = unittest.mock.MagicMock(return_value="d94485323894790b52c16558b3fe1650542038bd")
+        module_extractor = GitModuleExtractor(module_version=module_version)
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock):
+            with module_extractor as me:
+                assert me._get_git_commit_sha("/tmp/some-dir/of/module") == "d94485323894790b52c16558b3fe1650542038bd"
+
+        check_call_mock.assert_called_with([
+            'git', 'rev-parse', 'HEAD'],
+            cwd="/tmp/some-dir/of/module"
+        )
+
+    @setup_test_data()
+    def test__get_git_commit_sha_failure(self, mock_models):
+        """Test _get_git_commit_sha method"""
+        namespace = terrareg.models.Namespace(name='moduleextraction')
+        module = terrareg.models.Module(namespace=namespace, name='gitextraction')
+        module_provider = terrareg.models.ModuleProvider(module=module, name='gitcommithash')
+        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
+
+        test_error = subprocess.CalledProcessError(returncode=1, cmd=[])
+        test_error.output = 'Preceeding line\nnot a recognised output\nend of output'.encode('ascii')
+        check_call_mock = unittest.mock.MagicMock(side_effect=test_error)
+        module_extractor = GitModuleExtractor(module_version=module_version)
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock):
+            with module_extractor as me:
+                with pytest.raises(terrareg.errors.UnableToProcessTerraformError):
+                    me._get_git_commit_sha("/tmp/some-dir/of/module")
+
     @pytest.mark.parametrize('readme,expected_description', [
         # Expect empty README produces None description
         (None, None),

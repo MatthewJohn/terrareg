@@ -3,7 +3,7 @@
 from contextlib import contextmanager
 import os
 import threading
-from typing import Type
+from typing import Optional, Type
 import tempfile
 import uuid
 import zipfile
@@ -388,6 +388,11 @@ terraform {{
             )
             file_storage.upload_file(zip_file_path, self._module_version.base_directory, self._module_version.archive_name_zip)
 
+    def _get_git_commit_sha(self, module_directory: str):
+        """Obtain git commit hash for module version"""
+        # The git commit hash is only available for Git-based modules
+        return None
+
     def _create_module_details(self, readme_content, terraform_docs, tfsec, terraform_graph, terraform_modules, terraform_version, infracost=None):
         """Create module details row."""
         module_details = terrareg.models.ModuleDetails.create()
@@ -411,7 +416,8 @@ terraform {{
         terrareg_metadata: dict,
         terraform_graph: str,
         terraform_version: str,
-        terraform_modules: str) -> None:
+        terraform_modules: str,
+        git_sha: Optional[str]) -> None:
         """Insert module into DB, overwrite any pre-existing"""
         # Create module details row
         module_details = self._create_module_details(
@@ -437,6 +443,7 @@ terraform {{
             repo_base_url_template=terrareg_metadata.get('repo_base_url', None),
             variable_template=json.dumps(terrareg_metadata.get('variable_template', {})),
             published=False,
+            git_sha=git_sha,
             internal=terrareg_metadata.get('internal', False),
             extraction_version=EXTRACTION_VERSION
         )
@@ -683,6 +690,8 @@ terraform {{
             # Otherwise, attempt to extract description from README
             description = self._extract_description(readme_content)
 
+        git_sha = self._get_git_commit_sha(self.module_directory)
+
         self._insert_database(
             description=description,
             readme_content=readme_content,
@@ -691,7 +700,8 @@ terraform {{
             terrareg_metadata=terrareg_metadata,
             terraform_graph=terraform_graph,
             terraform_modules=terraform_modules,
-            terraform_version=terraform_version
+            terraform_version=terraform_version,
+            git_sha=git_sha,
         )
 
         self._extract_additional_tab_files()
@@ -789,6 +799,19 @@ class GitModuleExtractor(ModuleExtractor):
             if Config().DEBUG:
                 error += f'\n{str(exc)}\n{exc.output.decode("utf-8")}'
             raise GitCloneError(error)
+
+    def _get_git_commit_sha(self, module_directory: str):
+        """Obtain git commit hash for module version"""
+        try:
+            return subprocess.check_output(
+                ["git", "rev-parse", "HEAD"],
+                cwd=module_directory
+            )
+        except subprocess.CalledProcessError as exc:
+            error = 'Unknown error occurred whilst obtaining git commit hash'
+            if Config().DEBUG:
+                error += f'\n{str(exc)}\n{exc.output.decode("utf-8")}'
+            raise UnableToProcessTerraformError(error)
 
     def process_upload(self):
         """Extract archive and perform data extraction from module source."""
