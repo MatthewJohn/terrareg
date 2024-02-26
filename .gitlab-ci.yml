@@ -219,7 +219,7 @@ deploy_review:
     entrypoint: ["/bin/sh", "-c"]
   environment:
     name: review/$CI_COMMIT_REF_NAME
-    url: https://$CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG.$APP_DOMAIN
+    url: $DYNAMIC_ENVIRONMENT_URL
     auto_stop_in: 1 week
     on_stop: stop_review
   variables:
@@ -229,9 +229,10 @@ deploy_review:
   script:
     - git clone https://gitlab.dockstudios.co.uk/pub/terra/terrareg-nomad-pipeline
     - cd terrareg-nomad-pipeline
-    - apk add idn2-utils
+    - apk add idn2-utils jq
     - ./gitlab-terraform plan
     - ./gitlab-terraform apply
+    - echo "DYNAMIC_ENVIRONMENT_URL=https://$(./gitlab-terraform output -json | jq -r '.domain.value')" >> ../deploy.env
 
 stop_review:
   stage: deploy
