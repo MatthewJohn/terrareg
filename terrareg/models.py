@@ -3536,7 +3536,7 @@ class ModuleVersion(TerraformSpecsObject):
 
     @property
     def git_sha(self):
-        """Return git sha of tag"""
+        """Return git SHA of tag"""
         return self._get_db_row()["git_sha"]
 
     @property
@@ -3848,7 +3848,7 @@ class ModuleVersion(TerraformSpecsObject):
                     rendered_url=rendered_url,
                     path=path)
 
-            # Add git ref - if enabled and availabe, get git commit sha.
+            # Add git ref - if enabled and available, get git commit SHA.
             # Otherwise, fallback to git tag ref
             if terrareg.config.Config().MODULE_VERSION_USE_GIT_COMMIT and self.git_sha:
                 ref = self.git_sha
