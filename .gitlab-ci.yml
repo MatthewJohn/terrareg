@@ -255,6 +255,7 @@ stop_review:
     - cd terrareg-nomad-pipeline
     - apk add idn2-utils
     - ./gitlab-terraform destroy
+  allow_failure: true
 
 release:
   stage: deploy
