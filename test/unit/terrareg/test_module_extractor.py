@@ -105,7 +105,35 @@ class TestGitModuleExtractor(TerraregUnitTest):
         module_provider = terrareg.models.ModuleProvider(module=module, name='gitcommithash')
         module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
 
-        check_call_mock = unittest.mock.MagicMock(return_value="d94485323894790b52c16558b3fe1650542038bd")
+        module_extractor = GitModuleExtractor(module_version=module_version)
+        with module_extractor as me, \
+                tempfile.TemporaryDirectory() as temp_dir:
+
+            # Create git repo and commit file
+            subprocess.check_output(["git", "init"], cwd=temp_dir)
+            with open(os.path.join(temp_dir, "test_file"), "w") as fh:
+                pass
+            subprocess.check_output(["git", "add", "test_file"], cwd=temp_dir)
+            commit_output = subprocess.check_output(["git", "commit", "-m", "commit"], cwd=temp_dir).decode('utf-8')
+            # Get partial commit ID from commit output
+            git_sha_compare = commit_output.split(' ')[2][:-1]
+
+            # Run _get_git_commit_sha and ensure the hash is the correct
+            # length and it starts with the hash returned from the commit
+            git_commit_output = me._get_git_commit_sha(temp_dir)
+            assert isinstance(git_commit_output, str)
+            assert len(git_commit_output) == 40
+            assert git_commit_output[:7] == git_sha_compare
+
+    @setup_test_data()
+    def test__get_git_commit_sha_mock(self, mock_models):
+        """Test _get_git_commit_sha method"""
+        namespace = terrareg.models.Namespace(name='moduleextraction')
+        module = terrareg.models.Module(namespace=namespace, name='gitextraction')
+        module_provider = terrareg.models.ModuleProvider(module=module, name='gitcommithash')
+        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
+
+        check_call_mock = unittest.mock.MagicMock(return_value=b"d94485323894790b52c16558b3fe1650542038bd")
         module_extractor = GitModuleExtractor(module_version=module_version)
         with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock):
             with module_extractor as me:
