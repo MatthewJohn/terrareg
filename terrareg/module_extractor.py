@@ -800,13 +800,13 @@ class GitModuleExtractor(ModuleExtractor):
                 error += f'\n{str(exc)}\n{exc.output.decode("utf-8")}'
             raise GitCloneError(error)
 
-    def _get_git_commit_sha(self, module_directory: str):
+    def _get_git_commit_sha(self, module_directory: str) -> str:
         """Obtain git commit hash for module version"""
         try:
             return subprocess.check_output(
                 ["git", "rev-parse", "HEAD"],
                 cwd=module_directory
-            )
+            ).decode('utf-8').strip()
         except subprocess.CalledProcessError as exc:
             error = 'Unknown error occurred whilst obtaining git commit hash'
             if Config().DEBUG:
