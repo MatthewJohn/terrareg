@@ -49,6 +49,7 @@ nav:
     - Configuration Reference: CONFIG.md
     - API Reference: API.md
   - Modules:
+    - modules/overview.md
     - modules/storage.md
     - modules/uploading.md
     - modules/best_practices.md
