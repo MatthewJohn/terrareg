@@ -228,6 +228,27 @@ class Config:
         return int(os.environ.get('REDIRECT_DELETION_LOOKBACK_DAYS', "-1"))
 
     @property
+    def MODULE_VERSION_USE_GIT_COMMIT(self):
+        """
+        Whether to return git commit hash to Terraform for module versions.
+
+        If disabled, Terraform will be downloaded with the git tag, which it will use.
+        The user will "blindly" use whatever the tag points to, meaning that if it's modified, users will not.
+
+        If enabled, Terrareg will return the git commit hash that was obtained during indexing.
+
+        If the commit is removed from the repository, users will no longer be able to use the module without re-indexing.
+
+        If the tag is modified, the module version will need to be re-indexed in Terrareg.
+
+        For modules that do not use git, this configuration has not effect.
+
+        If the module version does not have a recorded git commit hash (if the module version existed prior to the feature being available in Terrareg),
+        then the git tag will be used as a fallback.
+        """
+        return self.convert_boolean(os.environ.get('MODULE_VERSION_USE_GIT_COMMIT', 'False'))
+
+    @property
     def DEBUG(self):
         """Whether Flask and SQLalchemy is setup in debug mode."""
         return self.convert_boolean(os.environ.get('DEBUG', 'False'))

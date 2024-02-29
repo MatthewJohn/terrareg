@@ -57,7 +57,9 @@ class TestApiModuleProviderBitbucketHookIntegration(TerraregIntegrationTest):
                     fh.write('output "test" { value = "test" }')
 
         with unittest.mock.patch(
-                'terrareg.module_extractor.GitModuleExtractor._clone_repository', clone_repository_side_effect) as mocked_clone_repository, \
+                    'terrareg.module_extractor.GitModuleExtractor._clone_repository', clone_repository_side_effect) as mocked_clone_repository, \
+                unittest.mock.patch('terrareg.module_extractor.GitModuleExtractor._get_git_commit_sha',
+                                    unittest.mock.MagicMock(return_value=b'358335a5c2ad19f8a08228f85ff6e7e5fa1e04b2')), \
                 unittest.mock.patch('terrareg.config.Config.UPLOAD_API_KEYS', ''):
 
             module = Module(Namespace('moduleextraction'), 'bitbucketmultipletags')
