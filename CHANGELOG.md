@@ -1,5 +1,12 @@
 # Changelog
 
+# [3.2.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.1.0...v3.2.0) (2024-02-29)
+
+
+### Features
+
+* Add support for pinning versions to git commit hashes. ([aeeb17d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/aeeb17d41d57325df1fcbc998096ed8c4dd67616)), closes [#471](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/471)
+
 # [3.1.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.0.4...v3.1.0) (2024-02-22)
 
 
