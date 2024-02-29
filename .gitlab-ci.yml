@@ -24,6 +24,14 @@ cache:
     - venv/
     - terraform-docs
 
+.limit_release_and_non_pushes:
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /^chore\(release\):.*/
+      when: never
+    - if: $CI_PIPELINE_SOURCE == 'push'
+      when: always
+    - when: never
+
 .pr_deployment:
   variables:
     # Configure base domain that the
@@ -65,7 +73,7 @@ cache:
 
 unit-integration-selenium-tests:
   stage: test
-  extends: .test_image
+  extends: [.test_image, .limit_release_and_non_pushes]
   services:
     - name: minio/minio
       alias: minio
@@ -91,7 +99,7 @@ unit-integration-selenium-tests:
 
 mysql-integration-selenium-tests:
   stage: test
-  extends: .test_image
+  extends: [.test_image, .limit_release_and_non_pushes]
   needs:
     - unit-integration-selenium-tests
   services:
@@ -121,7 +129,7 @@ mysql-integration-selenium-tests:
 
 spell-checker:
   stage: test
-  extends: .test_image
+  extends: [.test_image, .limit_release_and_non_pushes]
   script:
     ./scripts/check_spelling.sh
 
@@ -131,6 +139,7 @@ test-docker-image:
   # Use python:3.10, as it's already used
   # by build and comes with curl
   image: python:3.10
+  extends: .limit_release_and_non_pushes
   services:
     - name: terrareg-image:v${CI_COMMIT_SHORT_SHA}
       alias: terrareg
@@ -148,6 +157,7 @@ test-docker-image-waitress:
   # Use python:3.10, as it's already used
   # by build and comes with curl
   image: python:3.10
+  extends: .limit_release_and_non_pushes
   services:
     - name: terrareg-image:v${CI_COMMIT_SHORT_SHA}
       alias: terrareg
@@ -163,7 +173,7 @@ test-docker-image-waitress:
 
 build-wheel:
   stage: build
-  extends: .before_script_python
+  extends: [.before_script_python, .limit_release_and_non_pushes]
   script:
     - python setup.py bdist_wheel
     # an alternative approach is to install and run:
@@ -177,6 +187,7 @@ build-wheel:
 build-docker-image:
   stage: build
   image: docker:latest
+  extends: .limit_release_and_non_pushes
   services:
     - docker:dind
   script:
@@ -186,10 +197,12 @@ build-docker-image:
 build-test-docker-image:
   stage: build
   image: docker:latest
+  extends: .limit_release_and_non_pushes
   services:
     - docker:dind
   script:
     - docker build -f Dockerfile.tests -t terrareg-test-image:v${CI_COMMIT_SHORT_SHA} --build-arg http_proxy=$http_proxy --build-arg HTTP_PROXY=$http_proxy --build-arg https_proxy=$https_proxy --build-arg HTTPS_PROXY=$https_proxy .
+
 
 build-pr-image:
   stage: build
@@ -198,7 +211,7 @@ build-pr-image:
   tags: [nomad]
 
   rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
 
   # Use docker without docker-in-docker, as we're
   # passing through the docker socket
@@ -213,13 +226,13 @@ deploy_review:
   tags: [nomad]
   needs: [ build-pr-image ]
   rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
   image:
     name: hashicorp/terraform:1.5
     entrypoint: ["/bin/sh", "-c"]
   environment:
     name: review/$CI_COMMIT_REF_NAME
-    url: https://$CI_PROJECT_NAME-$CI_COMMIT_REF_SLUG.$APP_DOMAIN
+    url: $DYNAMIC_ENVIRONMENT_URL
     auto_stop_in: 1 week
     on_stop: stop_review
   variables:
@@ -229,16 +242,20 @@ deploy_review:
   script:
     - git clone https://gitlab.dockstudios.co.uk/pub/terra/terrareg-nomad-pipeline
     - cd terrareg-nomad-pipeline
-    - apk add idn2-utils
+    - apk add idn2-utils jq
     - ./gitlab-terraform plan
     - ./gitlab-terraform apply
+    - echo "DYNAMIC_ENVIRONMENT_URL=https://$(./gitlab-terraform output -json | jq -r '.domain.value')" >> ../deploy.env
+  artifacts:
+    reports:
+      dotenv: deploy.env
 
 stop_review:
   stage: deploy
   extends: .pr_deployment
   tags: [nomad]
   rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
       when: manual
   image:
     name: hashicorp/terraform:1.5
@@ -255,6 +272,7 @@ stop_review:
     - cd terrareg-nomad-pipeline
     - apk add idn2-utils
     - ./gitlab-terraform destroy
+  allow_failure: true
 
 release:
   stage: deploy
@@ -272,7 +290,9 @@ release:
       when: never
     - if: '$CI_COMMIT_MESSAGE =~ /chore\(release\)/'
       when: never
-    - when: always
+    - if: $CI_PIPELINE_SOURCE == 'push'
+      when: always
+    - when: never
 
 generate-docs:
   stage: deploy
@@ -284,19 +304,14 @@ generate-docs:
     - git remote remove origin
     - git remote add origin https://$GITHUB_TOKEN@gitlab.dockstudios.co.uk/pub/terrareg.git
     - mkdocs gh-deploy
-  only:
-    - main
+  rules:
+    - if: '$CI_COMMIT_REF_NAME != "main"'
+      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /chore\(release\)/'
+      when: never
+    - when: always
 
 stages:
  - build
  - test
  - deploy
-
-workflow:
-  rules:
-    - if: $CI_COMMIT_MESSAGE =~ /^chore\(release\):.*/
-      when: never
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: always
-    - if: $CI_COMMIT_BRANCH == "main"
-      when: always

@@ -3535,6 +3535,11 @@ class ModuleVersion(TerraformSpecsObject):
         return self._version
 
     @property
+    def git_sha(self):
+        """Return git SHA of tag"""
+        return self._get_db_row()["git_sha"]
+
+    @property
     def source_git_tag(self):
         """Return git tag used for extraction clone"""
         tag = semantic_version.Version(version_string=self._version)
@@ -3843,10 +3848,15 @@ class ModuleVersion(TerraformSpecsObject):
                     rendered_url=rendered_url,
                     path=path)
 
-            # Add tag to URL
-            rendered_url = '{rendered_url}?ref={tag}'.format(
+            # Add git ref - if enabled and available, get git commit SHA.
+            # Otherwise, fallback to git tag ref
+            if terrareg.config.Config().MODULE_VERSION_USE_GIT_COMMIT and self.git_sha:
+                ref = self.git_sha
+            else:
+                ref = self.source_git_tag
+            rendered_url = '{rendered_url}?ref={ref}'.format(
                 rendered_url=rendered_url,
-                tag=self.source_git_tag
+                ref=ref
             )
 
             return rendered_url

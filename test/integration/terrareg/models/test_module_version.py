@@ -1517,6 +1517,36 @@ module &quot;test-usage3&quot; {
         finally:
             module_provider.update_git_path(None)
 
+    @pytest.mark.parametrize('git_sha,module_version_use_git_commit,expected_source_download_url', [
+        # Test without git sha and use_git_commit not enabled
+        (None, False, 'git::ssh://mv-clone-url.com/repo_url_tests/no-git-provider-test?ref=1.4.0'),
+        # Test with use_git_commit enabled, but no sha available
+        (None, True, 'git::ssh://mv-clone-url.com/repo_url_tests/no-git-provider-test?ref=1.4.0'),
+        # Git sha available but not enabled
+        ("41f636a1436b56f2a7eec01f40820e0e13daff6c", False, 'git::ssh://mv-clone-url.com/repo_url_tests/no-git-provider-test?ref=1.4.0'),
+        # Enabled and available
+        ("41f636a1436b56f2a7eec01f40820e0e13daff6c", True, 'git::ssh://mv-clone-url.com/repo_url_tests/no-git-provider-test?ref=41f636a1436b56f2a7eec01f40820e0e13daff6c'),
+    ])
+    def test_get_source_download_url_git_sha(self, git_sha, module_version_use_git_commit, expected_source_download_url):
+        """Ensure clone URL matches the expected values."""
+        namespace = Namespace(name='repo_url_tests')
+        module = Module(namespace=namespace, name="no-git-provider")
+        module_provider = ModuleProvider.get(module=module, name='test')
+        assert module_provider is not None
+
+        module_version = ModuleVersion.get(module_provider=module_provider, version="1.4.0")
+        assert module_version is not None
+
+        try:
+            module_version.update_attributes(git_sha=git_sha)
+
+            with unittest.mock.patch('terrareg.config.Config.PUBLIC_URL', "https://example.com"), \
+                    unittest.mock.patch('terrareg.config.Config.MODULE_VERSION_USE_GIT_COMMIT', module_version_use_git_commit):
+                assert module_version.get_source_download_url(request_domain="localhost", direct_http_request=False) == expected_source_download_url
+
+        finally:
+            module_version.update_attributes(git_sha=None)
+
     @pytest.mark.parametrize('module_name, module_version, git_path, expected_source_download_url, allow_unauthenticated_access, expect_presigned, should_prefix_domain', [
         # Test no clone URL in any configuration, defaulting to source archive download
         ('no-git-provider', '1.0.0', None, '/v1/terrareg/modules/repo_url_tests/no-git-provider/test/1.0.0/source.zip', True, False, True),

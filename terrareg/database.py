@@ -501,6 +501,7 @@ class Database():
                 nullable=False
             ),
             sqlalchemy.Column('version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('git_sha', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column(
                 'module_details_id',
                 sqlalchemy.ForeignKey(
