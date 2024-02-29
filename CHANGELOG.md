@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.2.0...v3.2.1) (2024-02-29)
+
+
+### Bug Fixes
+
+* Stop theme from being reset after closing browser. ([dae5fb3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/dae5fb38244ab2e93b2b43b325af8fc602bf884f)), closes [#461](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/461)
+
 # [3.2.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.1.0...v3.2.0) (2024-02-29)
 
 
