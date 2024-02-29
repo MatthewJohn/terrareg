@@ -40,7 +40,7 @@ function userPreferencesModalSave() {
     localStorage.setItem('show-unpublished-versions', $('#user-preferences-show-unpublished').is(':checked'));
     localStorage.setItem('terraform-compatibility-version', $('#user-preferences-terraform-compatibility-version').val());
     localStorage.setItem('theme', $('#user-preferences-theme').val());
-    $.cookie("theme", $('#user-preferences-theme').val(), {path: "/"});
+    $.cookie("theme", $('#user-preferences-theme').val(), {path: "/", expires: 365});
     userPreferencesModalClose();
 
     location.reload();
