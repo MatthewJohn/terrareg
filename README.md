@@ -156,13 +156,10 @@ For licenses of third party software and libraries used in this project, see [LI
 
 # Contributors
 
- * Matt Comben <matthew@dockstudios.co.uk>
- * Michael Holt <mike@holtit.com>
-
-## Special thanks
-
- * David Soff <david@soff.nl> for implementing Github hook support
+ * @mholttech for usage builder improvements and docker-compose dev environment
+ * @Davidsoff for implementing Github hook support
  * @0xken for impleenting a custom Cherry Dark theme
  * @chriscunningham-trivago for fixing tfswitch bug in docker build
- * @bmaximuml for fixing typos
+ * @bmaximuml for fixing typos and Dockerfile improvements
+ * @cayce-hengeveld for grammar fixes
 
