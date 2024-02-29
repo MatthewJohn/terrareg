@@ -232,7 +232,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../modules/storage/" class="md-tabs__link">
+        <a href="../modules/overview/" class="md-tabs__link">
           
   
     
@@ -1249,6 +1249,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#module_version_use_git_commit" class="md-nav__link">
+    <span class="md-ellipsis">
+      MODULE_VERSION_USE_GIT_COMMIT
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#openid_connect_client_id" class="md-nav__link">
     <span class="md-ellipsis">
       OPENID_CONNECT_CLIENT_ID
@@ -1682,6 +1691,8 @@
       
         
       
+        
+      
     
     
     
@@ -1716,6 +1727,27 @@
             Modules
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../modules/overview/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Create modules
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
             
               
                 
@@ -2377,6 +2409,17 @@ These can contain placeholders, such as:</p>
 <li>'prohibit' - If a module version has already been indexed, it cannot be re-indexed via hooks/API calls without the version first being deleted.</li>
 </ul>
 <p>Default: <code>legacy</code></p>
+<h3 id="module_version_use_git_commit">MODULE_VERSION_USE_GIT_COMMIT</h3>
+<p>Whether to return git commit hash to Terraform for module versions.</p>
+<p>If disabled, Terraform will be downloaded with the git tag, which it will use.
+The user will "blindly" use whatever the tag points to, meaning that if it's modified, users will not.</p>
+<p>If enabled, Terrareg will return the git commit hash that was obtained during indexing.</p>
+<p>If the commit is removed from the repository, users will no longer be able to use the module without re-indexing.</p>
+<p>If the tag is modified, the module version will need to be re-indexed in Terrareg.</p>
+<p>For modules that do not use git, this configuration has not effect.</p>
+<p>If the module version does not have a recorded git commit hash (if the module version existed prior to the feature being available in Terrareg),
+then the git tag will be used as a fallback.</p>
+<p>Default: <code>False</code></p>
 <h3 id="openid_connect_client_id">OPENID_CONNECT_CLIENT_ID</h3>
 <p>Client ID for OpenID Connect authentication</p>
 <p>Default: ``</p>
