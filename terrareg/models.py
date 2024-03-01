@@ -2293,7 +2293,7 @@ class ModuleProvider(object):
                     namespace=module.namespace,
                     module=module.name,
                     provider=name,
-                    case_insensitive=False
+                    case_insensitive=True
                 )
                 if redirect_module_provider:
                     return redirect_module_provider
@@ -2542,8 +2542,10 @@ class ModuleProvider(object):
                 db.module_provider.c.namespace_id==db.namespace.c.id
             ).where(
                 db.namespace.c.id == self._module._namespace.pk,
-                db.module_provider.c.module == self._module.name,
-                db.module_provider.c.provider == self.name
+                # Use like to be case insensitive in Sqlite,
+                # since MySQL is case insensitive for '==' operations.
+                db.module_provider.c.module.like(self._module.name),
+                db.module_provider.c.provider.like(self.name)
             )
             with db.get_connection() as conn:
                 res = conn.execute(select)
