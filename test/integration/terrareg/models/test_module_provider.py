@@ -677,14 +677,20 @@ class TestModuleProvider(TerraregIntegrationTest):
         "torename",
 
         # New module name
-        "newname"
+        "newname",
+
+        # Case change
+        "NewName",
     ])
     @pytest.mark.parametrize("new_provider_name", [
         # Original provider name
         "test",
 
         # New provider name
-        "newprovider"
+        "newprovider",
+
+        # Case change
+        "NewProvider",
     ])
     def test_update_name(self, new_namespace_name, new_module_name, new_provider_name):
         """Test update_name method in successful case"""

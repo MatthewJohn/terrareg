@@ -2026,7 +2026,7 @@ class ModuleProviderRedirect(object):
     @classmethod
     def create(cls, module_provider, original_namespace, original_name, original_provider):
         """Create instance of object in database."""
-        # Create module provider
+        # Create module provider redirect
         db = Database.get()
         module_provider_redirect_insert = db.module_provider_redirect.insert().values(
             module_provider_id=module_provider.pk,
@@ -2318,6 +2318,16 @@ class ModuleProvider(object):
         return self._module
 
     @property
+    def db_module_name(self):
+        """Return DB module name from database"""
+        return self._get_db_row()["module"]
+
+    @property
+    def db_provider_name(self):
+        """Return DB module name from database"""
+        return self._get_db_row()["provider"]
+
+    @property
     def id(self):
         """Return ID in form of namespace/name/provider/version"""
         return '{namespace}/{name}/{provider}'.format(
@@ -2418,7 +2428,14 @@ class ModuleProvider(object):
         # Ensure a module does not exist with the new name/provider
         duplicate_provider = ModuleProvider.get(module=Module(namespace=namespace, name=module_name), name=provider_name)
         if duplicate_provider:
-            raise DuplicateModuleProviderError("A module/provider already exists with the same name in the namespace")
+            # If the module is the current module, but the name
+            # is a case change, allow it
+            if (duplicate_provider != self or
+                    (module_name == duplicate_provider.db_module_name and
+                     provider_name == duplicate_provider.db_provider_name)):
+                raise DuplicateModuleProviderError("A module/provider already exists with the same name in the namespace")
+
+            # @TODO look for redirects that already exist - stop ecs -> ECS, then ECS -> ecs
 
         # Create audit events for the modifications
         for action, old_value, new_value in [
@@ -2495,6 +2512,12 @@ class ModuleProvider(object):
     def base_directory(self):
         """Return base directory."""
         return safe_join_paths(self._module.base_directory, self._name)
+
+    def __eq__(self, __o):
+        """Check if two module providers are the same"""
+        if isinstance(__o, self.__class__):
+            return self.pk == __o.pk
+        return super(ModuleProvider, self).__eq__(__o)
 
     def __init__(self, module: Module, name: str):
         """Validate name and store member variables."""
