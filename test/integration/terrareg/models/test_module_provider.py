@@ -688,9 +688,6 @@ class TestModuleProvider(TerraregIntegrationTest):
 
         # New provider name
         "newprovider",
-
-        # Case change
-        "NewProvider",
     ])
     def test_update_name(self, new_namespace_name, new_module_name, new_provider_name):
         """Test update_name method in successful case"""
@@ -788,12 +785,15 @@ class TestModuleProvider(TerraregIntegrationTest):
 
         # When module name is changed to duplicate
         ("testnamespace", "duplicate", "test"),
+        # Duplicate with different case
+        ("testnamespace", "DuplicatE", "test"),
 
         # When namespace is changed to duplicate
         ("moduleextraction", "torename", "test"),
 
         # When changing all parameters
-        ("moduleextraction", "duplicate", "duplicate")
+        ("moduleextraction", "duplicate", "duplicate"),
+        ("moduleextraction", "Duplicate", "duplicate"),
     ])
     def test_update_name_duplicate(self, duplicate_namespace_name, duplicate_module_name, duplicate_provider_name):
         """Test using update_name with duplicate resulting module provider"""

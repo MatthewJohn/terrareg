@@ -2425,17 +2425,21 @@ class ModuleProvider(object):
         # Validate new name
         self._validate_name(provider_name)
 
+        create_redirect = True
+
         # Ensure a module does not exist with the new name/provider
         duplicate_provider = ModuleProvider.get(module=Module(namespace=namespace, name=module_name), name=provider_name)
         if duplicate_provider:
             # If the module is the current module, but the name
-            # is a case change, allow it
-            if (duplicate_provider != self or
-                    (module_name == duplicate_provider.db_module_name and
-                     provider_name == duplicate_provider.db_provider_name)):
+            # is a case change, allow it, but do not create redirect,
+            # as module name matching is already case-insensitive
+            if duplicate_provider == self and \
+                namespace == duplicate_provider.module.namespace and \
+                module_name.lower() == duplicate_provider._module._name.lower() and \
+                provider_name == duplicate_provider.name:
+                create_redirect = False
+            else:
                 raise DuplicateModuleProviderError("A module/provider already exists with the same name in the namespace")
-
-            # @TODO look for redirects that already exist - stop ecs -> ECS, then ECS -> ecs
 
         # Create audit events for the modifications
         for action, old_value, new_value in [
@@ -2451,12 +2455,13 @@ class ModuleProvider(object):
                 )
 
         # Create redirect to new name
-        ModuleProviderRedirect.create(
-            module_provider=self,
-            original_namespace=self.module.namespace,
-            original_name=self.module.name,
-            original_provider=self.name
-        )
+        if create_redirect:
+            ModuleProviderRedirect.create(
+                module_provider=self,
+                original_namespace=self.module.namespace,
+                original_name=self.module.name,
+                original_provider=self.name
+            )
 
         self.update_attributes(
             namespace_id=namespace.pk,
