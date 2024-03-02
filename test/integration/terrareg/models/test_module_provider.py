@@ -677,14 +677,17 @@ class TestModuleProvider(TerraregIntegrationTest):
         "torename",
 
         # New module name
-        "newname"
+        "newname",
+
+        # Case change
+        "NewName",
     ])
     @pytest.mark.parametrize("new_provider_name", [
         # Original provider name
         "test",
 
         # New provider name
-        "newprovider"
+        "newprovider",
     ])
     def test_update_name(self, new_namespace_name, new_module_name, new_provider_name):
         """Test update_name method in successful case"""
@@ -782,12 +785,15 @@ class TestModuleProvider(TerraregIntegrationTest):
 
         # When module name is changed to duplicate
         ("testnamespace", "duplicate", "test"),
+        # Duplicate with different case
+        ("testnamespace", "DuplicatE", "test"),
 
         # When namespace is changed to duplicate
         ("moduleextraction", "torename", "test"),
 
         # When changing all parameters
-        ("moduleextraction", "duplicate", "duplicate")
+        ("moduleextraction", "duplicate", "duplicate"),
+        ("moduleextraction", "Duplicate", "duplicate"),
     ])
     def test_update_name_duplicate(self, duplicate_namespace_name, duplicate_module_name, duplicate_provider_name):
         """Test using update_name with duplicate resulting module provider"""
