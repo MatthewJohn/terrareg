@@ -75,7 +75,7 @@ class TestApiProviderVersionDownload(TerraregIntegrationTest):
             provider_name='multiple-versions',
             provider_version=provider_version,
             terraform_version=None,
-            user_agent='werkzeug/2.2.3'
+            user_agent='werkzeug/2.3.8'
         )
 
     def test_endpoint_with_provider_invalid_architecture(self, client):
