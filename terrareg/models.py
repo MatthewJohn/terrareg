@@ -2026,7 +2026,7 @@ class ModuleProviderRedirect(object):
     @classmethod
     def create(cls, module_provider, original_namespace, original_name, original_provider):
         """Create instance of object in database."""
-        # Create module provider
+        # Create module provider redirect
         db = Database.get()
         module_provider_redirect_insert = db.module_provider_redirect.insert().values(
             module_provider_id=module_provider.pk,
@@ -2293,7 +2293,7 @@ class ModuleProvider(object):
                     namespace=module.namespace,
                     module=module.name,
                     provider=name,
-                    case_insensitive=False
+                    case_insensitive=True
                 )
                 if redirect_module_provider:
                     return redirect_module_provider
@@ -2316,6 +2316,16 @@ class ModuleProvider(object):
     def module(self):
         """Return module object of provider"""
         return self._module
+
+    @property
+    def db_module_name(self):
+        """Return DB module name from database"""
+        return self._get_db_row()["module"]
+
+    @property
+    def db_provider_name(self):
+        """Return DB module name from database"""
+        return self._get_db_row()["provider"]
 
     @property
     def id(self):
@@ -2415,10 +2425,21 @@ class ModuleProvider(object):
         # Validate new name
         self._validate_name(provider_name)
 
+        create_redirect = True
+
         # Ensure a module does not exist with the new name/provider
         duplicate_provider = ModuleProvider.get(module=Module(namespace=namespace, name=module_name), name=provider_name)
         if duplicate_provider:
-            raise DuplicateModuleProviderError("A module/provider already exists with the same name in the namespace")
+            # If the module is the current module, but the name
+            # is a case change, allow it, but do not create redirect,
+            # as module name matching is already case-insensitive
+            if duplicate_provider == self and \
+                namespace == duplicate_provider.module.namespace and \
+                module_name.lower() == duplicate_provider._module._name.lower() and \
+                provider_name == duplicate_provider.name:
+                create_redirect = False
+            else:
+                raise DuplicateModuleProviderError("A module/provider already exists with the same name in the namespace")
 
         # Create audit events for the modifications
         for action, old_value, new_value in [
@@ -2434,12 +2455,13 @@ class ModuleProvider(object):
                 )
 
         # Create redirect to new name
-        ModuleProviderRedirect.create(
-            module_provider=self,
-            original_namespace=self.module.namespace,
-            original_name=self.module.name,
-            original_provider=self.name
-        )
+        if create_redirect:
+            ModuleProviderRedirect.create(
+                module_provider=self,
+                original_namespace=self.module.namespace,
+                original_name=self.module.name,
+                original_provider=self.name
+            )
 
         self.update_attributes(
             namespace_id=namespace.pk,
@@ -2496,6 +2518,12 @@ class ModuleProvider(object):
         """Return base directory."""
         return safe_join_paths(self._module.base_directory, self._name)
 
+    def __eq__(self, __o):
+        """Check if two module providers are the same"""
+        if isinstance(__o, self.__class__):
+            return self.pk == __o.pk
+        return super(ModuleProvider, self).__eq__(__o)
+
     def __init__(self, module: Module, name: str):
         """Validate name and store member variables."""
         self._validate_name(name)
@@ -2519,8 +2547,10 @@ class ModuleProvider(object):
                 db.module_provider.c.namespace_id==db.namespace.c.id
             ).where(
                 db.namespace.c.id == self._module._namespace.pk,
-                db.module_provider.c.module == self._module.name,
-                db.module_provider.c.provider == self.name
+                # Use like to be case insensitive in SQLite,
+                # since MySQL is case insensitive for '==' operations.
+                db.module_provider.c.module.like(self._module.name),
+                db.module_provider.c.provider.like(self.name)
             )
             with db.get_connection() as conn:
                 res = conn.execute(select)
