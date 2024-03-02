@@ -2547,7 +2547,7 @@ class ModuleProvider(object):
                 db.module_provider.c.namespace_id==db.namespace.c.id
             ).where(
                 db.namespace.c.id == self._module._namespace.pk,
-                # Use like to be case insensitive in Sqlite,
+                # Use like to be case insensitive in SQLite,
                 # since MySQL is case insensitive for '==' operations.
                 db.module_provider.c.module.like(self._module.name),
                 db.module_provider.c.provider.like(self.name)
