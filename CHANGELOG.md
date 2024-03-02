@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.2.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.2.1...v3.2.2) (2024-03-02)
+
+
+### Bug Fixes
+
+* Allow renaming module to the same name with different capitalisation ([b616f5d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b616f5d72cd8f4d30c5e37560705a3c8ab91fd0c)), closes [#457](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/457)
+* Update module "getting" to be case insensitive, MySQL does this anyway so this aligns SQLite. ([0d1f571](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0d1f571fde011e993089e92f2ae13bbc42a00af7)), closes [#457](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/457)
+
 ## [3.2.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.2.0...v3.2.1) (2024-02-29)
 
 
