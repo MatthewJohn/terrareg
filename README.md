@@ -6,7 +6,7 @@ Provides features to aid usage and discovery of modules, providing:
 
  * Fully implemented Terraform modules API
  * Completely API driven for automating all features
- * Host Terraform modules internally or from an exteral Git source
+ * Host Terraform modules internally or from an external Git source
  * Analytics about the usage of modules
  * All information about a module - README, inputs, outputs, provider requirements and managed resources
  * Security alerts for each module, submodule and examples
@@ -14,10 +14,10 @@ Provides features to aid usage and discovery of modules, providing:
  * Module example source code within the UI, with automatic rewriting of 'source' arguments
  * Interactive 'Usage builder', helping users build terraform to use the terraform modules
  * Hooks for git SCM applications to automatically index modules
- * Authentication via SSO (OpenIDConnect/SAML2) and Github
+ * Authentication via SSO (OpenIDConnect/SAML2) and GitHub
  * Terraform provider support (very early alpha version)
 
-If you like and use this project and are happy to let us know, please raise a Github issue, create a PR or contact [MatthewJohn](https://github.com/matthewjohn) so it can be added to the README :)
+If you like and use this project and are happy to let us know, please raise a GitHub issue, create a PR or contact [MatthewJohn](https://github.com/matthewjohn) so it can be added to the README :)
 
 For a full list of issues and pull requests, please see [https://gitlab.dockstudios.co.uk/pub/terrareg](https://gitlab.dockstudios.co.uk/pub/terrareg)
 
@@ -133,7 +133,7 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 
 # Without SSL cert
-PUBLIC_URL=http://localhost:5000 ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=False ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=False GIT_PROVIDER_CONFIG='[{"name": "Github", "base_url": "https://github.com/{namespace}/{module}", "clone_url": "ssh://git@github.com/{namespace}/{module}.git", "browse_url": "https://github.com/{namespace}/{module}/tree/{tag}/{path}"}, {"name": "Bitbucket", "base_url": "https://bitbucket.org/{namespace}/{module}", "clone_url": "ssh://git@bitbucket.org/{namespace}/{module}-{provider}.git", "browse_url": "https://bitbucket.org/{namespace}/{module}-{provider}/src/{tag}/{path}"}, {"name": "Gitlab", "base_url": "https://gitlab.com/{namespace}/{module}", "clone_url": "ssh://git@gitlab.com/{namespace}/{module}-{provider}.git", "browse_url": "https://gitlab.com/{namespace}/{module}-{provider}/-/tree/{tag}/{path}"}]' SECRET_KEY=ec9b8cc5ed0404acb3983b7836844d828728c22c28ecbed9095edef9b7489e85 ADMIN_AUTHENTICATION_TOKEN=password ANALYTICS_AUTH_KEYS=xxxxxx.atlasv1.zzzzzzzzzzzzz:dev,xxxxxx.atlasv1.xxxxxxxxxx:prod VERIFIED_MODULE_NAMESPACES=hashicorp TRUSTED_NAMESPACES=test DEBUG=True AUTO_PUBLISH_MODULE_VERSIONS=False LISTEN_PORT=5001 python ./terrareg.py
+PUBLIC_URL=http://localhost:5000 ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=False ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=False GIT_PROVIDER_CONFIG='[{"name": "GitHub", "base_url": "https://github.com/{namespace}/{module}", "clone_url": "ssh://git@github.com/{namespace}/{module}.git", "browse_url": "https://github.com/{namespace}/{module}/tree/{tag}/{path}"}, {"name": "Bitbucket", "base_url": "https://bitbucket.org/{namespace}/{module}", "clone_url": "ssh://git@bitbucket.org/{namespace}/{module}-{provider}.git", "browse_url": "https://bitbucket.org/{namespace}/{module}-{provider}/src/{tag}/{path}"}, {"name": "Gitlab", "base_url": "https://gitlab.com/{namespace}/{module}", "clone_url": "ssh://git@gitlab.com/{namespace}/{module}-{provider}.git", "browse_url": "https://gitlab.com/{namespace}/{module}-{provider}/-/tree/{tag}/{path}"}]' SECRET_KEY=ec9b8cc5ed0404acb3983b7836844d828728c22c28ecbed9095edef9b7489e85 ADMIN_AUTHENTICATION_TOKEN=password ANALYTICS_AUTH_KEYS=xxxxxx.atlasv1.zzzzzzzzzzzzz:dev,xxxxxx.atlasv1.xxxxxxxxxx:prod VERIFIED_MODULE_NAMESPACES=hashicorp TRUSTED_NAMESPACES=test DEBUG=True AUTO_PUBLISH_MODULE_VERSIONS=False LISTEN_PORT=5001 python ./terrareg.py
 
 # With SSL Cert
 # Add the following argument
@@ -157,7 +157,7 @@ For licenses of third party software and libraries used in this project, see [LI
 # Contributors
 
  * @mholttech for usage builder improvements and docker-compose dev environment
- * @Davidsoff for implementing Github hook support
+ * @Davidsoff for implementing GitHub hook support
  * @0xken for impleenting a custom Cherry Dark theme
  * @chriscunningham-trivago for fixing tfswitch bug in docker build
  * @bmaximuml for fixing typos and Dockerfile improvements
