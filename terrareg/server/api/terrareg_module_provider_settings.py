@@ -20,8 +20,8 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         )
     ]
 
-    def _post(self, namespace, name, provider):
-        """Handle update to settings."""
+    def _post_arg_parser(self):
+        """Return arg parser for POST request"""
         parser = reqparse.RequestParser()
         parser.add_argument(
             'git_provider_id', type=str,
@@ -100,7 +100,11 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             location='json',
             default=None
         )
+        return parser
 
+    def _post(self, namespace, name, provider):
+        """Handle update to settings."""
+        parser = self._post_arg_parser()
         args = parser.parse_args()
 
         terrareg.csrf.check_csrf_token(args.csrf_token)
