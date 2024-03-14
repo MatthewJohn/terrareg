@@ -18,8 +18,8 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
             terrareg.user_group_namespace_permission_type.UserGroupNamespacePermissionType.FULL,
             request_kwarg_map={'namespace': 'namespace'})]
 
-    def _post(self, namespace, name, provider):
-        """Handle update to settings."""
+    def _post_arg_parser(self):
+        """Return arg parrser for POST request"""
         parser = reqparse.RequestParser()
         parser.add_argument(
             'git_provider_id', type=str,
@@ -70,6 +70,11 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
             location='json',
             default=None
         )
+        return parser
+
+    def _post(self, namespace, name, provider):
+        """Handle update to settings."""
+        parser = self._post_arg_parser()
 
         args = parser.parse_args()
 

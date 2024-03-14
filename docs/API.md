@@ -774,6 +774,18 @@ Provide interface to create module provider.
 #### POST
 
 Handle update to settings.
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| git_provider_id | json | str | False | `None` | ID of the git provider to associate to module provider. |
+| repo_base_url_template | json | str | False | `None` | Templated base git URL. |
+| repo_clone_url_template | json | str | False | `None` | Templated git clone URL. |
+| repo_browse_url_template | json | str | False | `None` | Templated URL for browsing repository. |
+| git_tag_format | json | str | False | `None` | Module provider git tag format. |
+| git_path | json | str | False | `None` | Path within git repository that the module exists. |
+| csrf_token | json | str | False | `None` | CSRF token |
+
 
 
 ## ApiTerraregModuleProviderDelete
