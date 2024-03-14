@@ -2398,6 +2398,11 @@ class ModuleProvider(object):
         return self.get_tag_regex(self.git_ref_format)
 
     @property
+    def archive_git_path(self):
+        """Return whether archives should only contain the contents of the git_path of the repo"""
+        return self._get_db_row()['archive_git_path']
+
+    @property
     def git_path(self):
         """Return path of module within git"""
         row_value = self._get_db_row()['git_path']
@@ -2604,6 +2609,19 @@ class ModuleProvider(object):
         if self._get_db_row()['git_provider_id']:
             return GitProvider.get(id=self._get_db_row()['git_provider_id'])
         return None
+
+    def update_archive_git_path(self, archive_git_path):
+        """Set archive_git_path value"""
+        original_value = self._get_db_row()['archive_git_path']
+        if original_value != archive_git_path:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_ARCHIVE_GIT_PATH,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_value,
+                new_value=archive_git_path
+            )
+        self.update_attributes(archive_git_path=archive_git_path)
 
     def get_git_clone_url(self):
         """Return URL to perform git clone"""

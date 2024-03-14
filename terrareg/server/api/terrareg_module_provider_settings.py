@@ -66,6 +66,14 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             location='json'
         )
         parser.add_argument(
+            'archive_git_path', type=inputs.boolean,
+            required=False,
+            default=None,
+            help=('Whether to generate module archives from the git_path directory. '
+                  'Otherwise, archives are generated from the root'),
+            location='json'
+        )
+        parser.add_argument(
             'verified', type=inputs.boolean,
             required=False,
             default=None,
@@ -174,6 +182,11 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         if git_path is not None:
             module_provider.update_git_path(git_path=git_path)
 
+        # Update archive_git_path if specified
+        if args.archive_git_path is not None:
+            module_provider.update_archive_git_path(archive_git_path=args.archive_git_path)
+
+        # Update verified if specified
         if args.verified is not None:
             module_provider.update_verified(verified=args.verified)
 

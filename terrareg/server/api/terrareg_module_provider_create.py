@@ -1,5 +1,5 @@
 
-from flask_restful import reqparse
+from flask_restful import reqparse, inputs
 
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.auth_wrapper
@@ -61,6 +61,14 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
             required=False,
             default=None,
             help='Path within git repository that the module exists.',
+            location='json'
+        )
+        parser.add_argument(
+            'archive_git_path', type=inputs.boolean,
+            required=False,
+            default=False,
+            help=('Whether to generate module archives from the git_path directory. '
+                  'Otherwise, archives are generated from the root'),
             location='json'
         )
         parser.add_argument(
@@ -159,6 +167,8 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
             git_path = args.git_path
             if git_path is not None:
                 module_provider.update_git_path(git_path=git_path)
+
+            module_provider.update_archive_git_path(archive_git_path=args.archive_git_path)
 
         return {
             'id': module_provider.id
