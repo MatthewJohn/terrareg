@@ -162,6 +162,7 @@ class TestConfig:
     @pytest.mark.parametrize('config_name,enum,expected_default', [
         ('MODULE_VERSION_REINDEX_MODE', terrareg.config.ModuleVersionReindexMode, terrareg.config.ModuleVersionReindexMode.LEGACY),
         ('SERVER', terrareg.config.ServerType, terrareg.config.ServerType.BUILTIN),
+        ('ALLOW_MODULE_HOSTING', terrareg.config.ModuleHostingMode),
     ])
     def test_enum_configs(self, config_name, enum, expected_default):
         """Test enum configs to ensure they are overridden with environment variables."""
@@ -192,7 +193,6 @@ class TestConfig:
     @pytest.mark.parametrize('config_name', [
         'ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER',
         'ALLOW_CUSTOM_GIT_URL_MODULE_VERSION',
-        'ALLOW_MODULE_HOSTING',
         'ALLOW_UNIDENTIFIED_DOWNLOADS',
         'AUTO_CREATE_MODULE_PROVIDER',
         'AUTO_CREATE_NAMESPACE',
