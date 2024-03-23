@@ -183,6 +183,7 @@ def mock_module(request):
 
 
 def mock_module_details(request):
+    @classmethod
     def create(cls):
         """Mock create method"""
         global TEST_MODULE_DETAILS_ITX
