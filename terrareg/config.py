@@ -162,7 +162,7 @@ class Config:
         * `builtin` - Use the default built-in flask web server. This is less performant and is no longer recommended for production use-cases.
         * `waitress` - Uses [waitress](https://docs.pylonsproject.org/projects/waitress/en/latest/index.html) for running the application. This does not support SSL offloading, meaning that it must be used behind a reverse proxy that performs SSL-offloading.
         """
-        return ServerType(os.environ.get("SERVER", "builtin"))
+        return ServerType(os.environ.get("SERVER", "builtin").lower())
 
     @property
     def SSL_CERT_PRIVATE_KEY(self):
