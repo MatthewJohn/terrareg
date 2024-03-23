@@ -29,33 +29,31 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
         if terrareg.config.Config().ALLOW_MODULE_HOSTING is terrareg.config.ModuleHostingMode.DISALLOW:
             return {'message': 'Module upload is disabled.'}, 400
 
+        # Get module provider and, optionally create, if it doesn't exist
+        _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider, create=True)
+        if error:
+            return error
+
+        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version=version)
+
+        if len(request.files) != 1:
+            raise terrareg.errors.UploadError('One file can be uploaded')
+
+        file = request.files[[f for f in request.files.keys()][0]]
+
+        # If the user does not select a file, the browser submits an
+        # empty file without a filename.
+        if file.filename == '':
+            raise terrareg.errors.UploadError('No selected file')
+
+        if not file or not self.allowed_file(file.filename):
+            raise terrareg.errors.UploadError('Error occurred - unknown file extension')
+
         with terrareg.database.Database.start_transaction():
-
-            # Get module provider and, optionally create, if it doesn't exist
-            _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider, create=True)
-            if error:
-                return error
-
-            module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version=version)
-
-            if len(request.files) != 1:
-                raise terrareg.errors.UploadError('One file can be uploaded')
-
-            file = request.files[[f for f in request.files.keys()][0]]
-
-            # If the user does not select a file, the browser submits an
-            # empty file without a filename.
-            if file.filename == '':
-                raise terrareg.errors.UploadError('No selected file')
-
-            if not file or not self.allowed_file(file.filename):
-                raise terrareg.errors.UploadError('Error occurred - unknown file extension')
-
-
             with module_version.module_create_extraction_wrapper():
                 with terrareg.module_extractor.ApiUploadModuleExtractor(upload_file=file, module_version=module_version) as me:
                     me.process_upload()
 
-            return {
-                'status': 'Success'
-            }
+        return {
+            'status': 'Success'
+        }
