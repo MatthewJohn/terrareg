@@ -16,6 +16,19 @@ class GitUrlValidator:
                  requires_tag_placeholder=False,
                  requires_path_placeholder=False):
 
+        # Ensure exceptions are not thrown when formatting string
+        try:
+            self._template.format(
+                namespace='',
+                module='',
+                provider='',
+                path='',
+                tag='',
+                tag_uri_encoded=''
+            )
+        except KeyError as exc:
+            raise RepositoryUrlParseError(f"Template contains unknown placeholder: {', '.join(exc.args)}")
+
         really_random_string = 'D3f1N1t3LyW0nt3x15t!'
         if requires_namespace_placeholder:
             if '{namespace}' not in self._template:
