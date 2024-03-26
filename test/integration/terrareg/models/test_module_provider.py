@@ -421,7 +421,7 @@ class TestModuleProvider(TerraregIntegrationTest):
          'URL does not contain a host/domain'),
         ('ssh://{invalidvalue}/example',
          terrareg.errors.RepositoryUrlContainsInvalidTemplateError,
-         'URL contains invalid template value. Only the following template values are allowed: {namespace}, {module}, {provider}'),
+         'Template contains unknown placeholder: invalidvalue. Valid placeholders are contain: {namespace}, {module}, {provider}, {path}, {tag} and {tag_uri_encoded}'),
         ('ssh://{tag}/example',
          terrareg.errors.RepositoryUrlContainsInvalidTemplateError,
          'URL contains invalid template value. Only the following template values are allowed: {namespace}, {module}, {provider}'),

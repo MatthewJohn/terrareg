@@ -1,7 +1,7 @@
 
 import urllib.parse
 
-from terrareg.errors import RepositoryUrlParseError
+from terrareg.errors import RepositoryUrlParseError, RepositoryUrlContainsInvalidTemplateError
 
 
 class GitUrlValidator:
@@ -27,7 +27,10 @@ class GitUrlValidator:
                 tag_uri_encoded=''
             )
         except KeyError as exc:
-            raise RepositoryUrlParseError(f"Template contains unknown placeholder: {', '.join(exc.args)}")
+            raise RepositoryUrlContainsInvalidTemplateError(
+                f"Template contains unknown placeholder: {', '.join(exc.args)}. "
+                "Valid placeholders are contain: {namespace}, {module}, {provider}, {path}, {tag} and {tag_uri_encoded}"
+            )
 
         really_random_string = 'D3f1N1t3LyW0nt3x15t!'
         if requires_namespace_placeholder:
