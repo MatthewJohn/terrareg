@@ -228,7 +228,13 @@ class TestModuleProvider(TerraregIntegrationTest):
         ('./subpath/', 'subpath'),
         ('./test/another/dir', 'test/another/dir'),
         ('./test/another/dir/', 'test/another/dir'),
-        ('.//lots/of///slashes//', 'lots/of/slashes')
+        ('.//lots/of///slashes//', 'lots/of/slashes'),
+
+        # With placeholders
+        ('{namespace}/test', 'moduledetails/test'),
+        ('{module}/test', 'git-path/test'),
+        ('{provider}/test', 'provider/test'),
+        ('{namespace}/{module}-{provider}/test', 'moduledetails/git-path-provider/test'),
     ])
     def test_git_path(self, git_path, expected_git_path):
         """Test git_path property"""

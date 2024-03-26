@@ -44,6 +44,9 @@
         let selectedOption = select.selectedOptions[0];
         let display = (selectedOption.dataset.customProvider == "yes");
 
+        // Set git path from git provider
+        $('#create-module-git-path').val(selectedOption.dataset.gitPath);
+
         // Iterate through each of the custom input containers
         $('.create-module-custom-field-container').each((itx, html_div) => {
             let div = $(html_div);
@@ -117,13 +120,13 @@
                         <select id="create-module-git-provider" onchange="toggleCustomModuleProviderInputs(this);">
 
                             {% if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER or ALLOW_CUSTOM_GIT_URL_MODULE_VERSION %}
-                            <option value="" selected data-custom-provider="yes">
+                            <option value="" selected data-custom-provider="yes" data-git-path="">
                                 Custom
                             </option>
                             {% endif %}
 
                             {% for git_provider in git_providers %}
-                            <option value="{{ git_provider.pk }}" data-custom-provider="no">
+                            <option value="{{ git_provider.pk }}" data-custom-provider="no" data-git-path="{{ git_provider.git_path_template or '' }}">
 
                                 {{ git_provider.name }}
                             </option>

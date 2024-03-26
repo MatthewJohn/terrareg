@@ -528,21 +528,25 @@ class Config:
         - name - Name of the git provider (e.g. 'Corporate Gitlab')
 
         - base_url - Formatted base URL for project's repo.
-                    (e.g. 'https://github.com/{namespace}/{module}'
-                        or 'https://gitlab.corporate.com/{namespace}/{module}')
+                    (e.g. `https://github.com/{namespace}/{module}`
+                        or `https://gitlab.corporate.com/{namespace}/{module}`)
         - clone_url - Formatted clone URL for modules.
-                    (e.g. 'ssh://gitlab.corporate.com/scm/{namespace}/{module}.git'
-                        or 'https://github.com/{namespace}/{module}-{provider}.git')
-                    Note: Do not include '{version}' placeholder in the URL -
+                    (e.g. `ssh://gitlab.corporate.com/scm/{namespace}/{module}.git`
+                        or `https://github.com/{namespace}/{module}-{provider}.git`)
+                    Note: Do not include `{version}` placeholder in the URL -
                     the git tag will be automatically provided.
                     If using SSH, the domain must be separated by the path using a forward slash. Use a colon to specify a port (e.g. `ssh://gitlab.corp.com:7999/namespace/name.git`)
 
         - browse_url - Formatted URL for user-viewable source code
-                        (e.g. 'https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}'
-                        or 'https://bitbucket.org/{namespace}/{module}/src/{version}?at=refs%2Ftags%2F{tag_uri_encoded}').
+                        (e.g. `https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}`
+                        or `https://bitbucket.org/{namespace}/{module}/src/{version}?at=refs%2Ftags%2F{tag_uri_encoded}`).
                         Must include placeholders:
-                         - {path} (for source file/folder path)
-                         - {tag} or {tag_uri_encoded} for the git tag
+                         - `{path}` (for source file/folder path)
+                         - `{tag}` or `{tag_uri_encoded}` for the git tag
+
+        - git_path - (optional) Formatted path to be used as default git_path for modules.
+                      (e.g. `/modules/{module}`)
+                      Any placeholders used in git_path can be omitted from base_url, clone_url and browse_url.
 
         An example for public repositories, using SSH for cloning, might be:
         ```
