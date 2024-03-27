@@ -12,6 +12,7 @@ from terrareg.config import ModuleVersionReindexMode
 from terrareg.database import Database
 
 from terrareg.models import Example, ExampleFile, Module, Namespace, ModuleProvider, ModuleVersion
+import terrareg.config
 import terrareg.errors
 from test.integration.terrareg import TerraregIntegrationTest
 
@@ -1442,47 +1443,47 @@ module &quot;test-usage3&quot; {
             with unittest.mock.patch('terrareg.config.Config.ALLOW_CUSTOM_GIT_URL_MODULE_VERSION', False):
                 assert module_version.get_source_base_url() == expected_base_url
 
-    @pytest.mark.parametrize('module_name,module_version,git_path,expected_source_download_url,should_prefix_domain', [
+    @pytest.mark.parametrize('module_name,module_version,git_path,expected_source_download_url,should_prefix_domain, has_git_url', [
         # Test no clone URL in any configuration, defaulting to source archive download
-        ('no-git-provider', '1.0.0', None, '/v1/terrareg/modules/repo_url_tests/no-git-provider/test/1.0.0/source.zip', True),
+        ('no-git-provider', '1.0.0', None, '/v1/terrareg/modules/repo_url_tests/no-git-provider/test/1.0.0/source.zip', True, False),
         # Test clone URL only configured in module version
-        ('no-git-provider', '1.4.0', None, 'git::ssh://mv-clone-url.com/repo_url_tests/no-git-provider-test?ref=1.4.0', False),
+        ('no-git-provider', '1.4.0', None, 'git::ssh://mv-clone-url.com/repo_url_tests/no-git-provider-test?ref=1.4.0', False, True),
 
         # Test with git provider configured in module provider
-        ('git-provider-urls', '1.1.0', None, 'git::ssh://clone-url.com/repo_url_tests/git-provider-urls-test?ref=1.1.0', False),
+        ('git-provider-urls', '1.1.0', None, 'git::ssh://clone-url.com/repo_url_tests/git-provider-urls-test?ref=1.1.0', False, True),
         # Test with git provider configured in module provider and override in module version
-        ('git-provider-urls', '1.4.0', None, 'git::ssh://mv-clone-url.com/repo_url_tests/git-provider-urls-test?ref=1.4.0', False),
+        ('git-provider-urls', '1.4.0', None, 'git::ssh://mv-clone-url.com/repo_url_tests/git-provider-urls-test?ref=1.4.0', False, True),
 
         # Test with git provider configured in module provider
-        ('module-provider-urls', '1.2.0', None, 'git::ssh://mp-clone-url.com/repo_url_tests/module-provider-urls-test?ref=1.2.0', False),
+        ('module-provider-urls', '1.2.0', None, 'git::ssh://mp-clone-url.com/repo_url_tests/module-provider-urls-test?ref=1.2.0', False, True),
         # Test with URls configured in module provider and override in module version
-        ('module-provider-urls', '1.4.0', None, 'git::ssh://mv-clone-url.com/repo_url_tests/module-provider-urls-test?ref=1.4.0', False),
+        ('module-provider-urls', '1.4.0', None, 'git::ssh://mv-clone-url.com/repo_url_tests/module-provider-urls-test?ref=1.4.0', False, True),
 
         # Test with git provider configured in module provider and URLs configured in git provider
-        ('module-provider-override-git-provider', '1.3.0', None, 'git::ssh://mp-clone-url.com/repo_url_tests/module-provider-override-git-provider-test?ref=1.3.0', False),
+        ('module-provider-override-git-provider', '1.3.0', None, 'git::ssh://mp-clone-url.com/repo_url_tests/module-provider-override-git-provider-test?ref=1.3.0', False, True),
         # Test with URls configured in module provider and override in module version
-        ('module-provider-override-git-provider', '1.4.0', None, 'git::ssh://mv-clone-url.com/repo_url_tests/module-provider-override-git-provider-test?ref=1.4.0', False),
+        ('module-provider-override-git-provider', '1.4.0', None, 'git::ssh://mv-clone-url.com/repo_url_tests/module-provider-override-git-provider-test?ref=1.4.0', False, True),
 
         ## Tests with git_path set for sub-directory of repo
         # Test no clone URL in any configuration, defaulting to source archive download
-        ('no-git-provider', '1.0.0', 'sub/directory/of/repo', '/v1/terrareg/modules/repo_url_tests/no-git-provider/test/1.0.0/source.zip', True),
+        ('no-git-provider', '1.0.0', 'sub/directory/of/repo', '/v1/terrareg/modules/repo_url_tests/no-git-provider/test/1.0.0/source.zip', True, False),
         # Test clone URL only configured in module version
-        ('no-git-provider', '1.4.0', 'sub/directory/of/repo', 'git::ssh://mv-clone-url.com/repo_url_tests/no-git-provider-test//sub/directory/of/repo?ref=1.4.0', False),
+        ('no-git-provider', '1.4.0', 'sub/directory/of/repo', 'git::ssh://mv-clone-url.com/repo_url_tests/no-git-provider-test//sub/directory/of/repo?ref=1.4.0', False, True),
 
         # Test with git provider configured in module provider
-        ('git-provider-urls', '1.1.0', 'sub/directory/of/repo', 'git::ssh://clone-url.com/repo_url_tests/git-provider-urls-test//sub/directory/of/repo?ref=1.1.0', False),
+        ('git-provider-urls', '1.1.0', 'sub/directory/of/repo', 'git::ssh://clone-url.com/repo_url_tests/git-provider-urls-test//sub/directory/of/repo?ref=1.1.0', False, True),
         # Test with git provider configured in module provider and override in module version
-        ('git-provider-urls', '1.4.0', 'sub/directory/of/repo', 'git::ssh://mv-clone-url.com/repo_url_tests/git-provider-urls-test//sub/directory/of/repo?ref=1.4.0', False),
+        ('git-provider-urls', '1.4.0', 'sub/directory/of/repo', 'git::ssh://mv-clone-url.com/repo_url_tests/git-provider-urls-test//sub/directory/of/repo?ref=1.4.0', False, True),
 
         # Test with git provider configured in module provider
-        ('module-provider-urls', '1.2.0', 'sub/directory/of/repo', 'git::ssh://mp-clone-url.com/repo_url_tests/module-provider-urls-test//sub/directory/of/repo?ref=1.2.0', False),
+        ('module-provider-urls', '1.2.0', 'sub/directory/of/repo', 'git::ssh://mp-clone-url.com/repo_url_tests/module-provider-urls-test//sub/directory/of/repo?ref=1.2.0', False, True),
         # Test with URls configured in module provider and override in module version
-        ('module-provider-urls', '1.4.0', 'sub/directory/of/repo', 'git::ssh://mv-clone-url.com/repo_url_tests/module-provider-urls-test//sub/directory/of/repo?ref=1.4.0', False),
+        ('module-provider-urls', '1.4.0', 'sub/directory/of/repo', 'git::ssh://mv-clone-url.com/repo_url_tests/module-provider-urls-test//sub/directory/of/repo?ref=1.4.0', False, True),
 
         # Test with git provider configured in module provider and URLs configured in git provider
-        ('module-provider-override-git-provider', '1.3.0', 'sub/directory/of/repo', 'git::ssh://mp-clone-url.com/repo_url_tests/module-provider-override-git-provider-test//sub/directory/of/repo?ref=1.3.0', False),
+        ('module-provider-override-git-provider', '1.3.0', 'sub/directory/of/repo', 'git::ssh://mp-clone-url.com/repo_url_tests/module-provider-override-git-provider-test//sub/directory/of/repo?ref=1.3.0', False, True),
         # Test with URls configured in module provider and override in module version
-        ('module-provider-override-git-provider', '1.4.0', 'sub/directory/of/repo', 'git::ssh://mv-clone-url.com/repo_url_tests/module-provider-override-git-provider-test//sub/directory/of/repo?ref=1.4.0', False),
+        ('module-provider-override-git-provider', '1.4.0', 'sub/directory/of/repo', 'git::ssh://mv-clone-url.com/repo_url_tests/module-provider-override-git-provider-test//sub/directory/of/repo?ref=1.4.0', False, True),
     ])
     @pytest.mark.parametrize('public_url, direct_http_download, expected_url_prefix', [
         (None, False, ''),
@@ -1496,7 +1497,13 @@ module &quot;test-usage3&quot; {
         ('https://example.com:1232', True, 'https://example.com:1232'),
         ('http://example.com:1232', True, 'http://example.com:1232'),
     ])
-    def test_get_source_download_url(self, module_name, module_version, git_path, expected_source_download_url, should_prefix_domain, public_url, direct_http_download, expected_url_prefix):
+    @pytest.mark.parametrize('allow_module_hosting', [
+        terrareg.config.ModuleHostingMode.ALLOW,
+        terrareg.config.ModuleHostingMode.DISALLOW,
+        terrareg.config.ModuleHostingMode.ENFORCE,
+    ])
+    def test_get_source_download_url(self, module_name, module_version, git_path, expected_source_download_url, should_prefix_domain, has_git_url,
+                                     public_url, direct_http_download, expected_url_prefix, allow_module_hosting):
         """Ensure clone URL matches the expected values."""
         namespace = Namespace(name='repo_url_tests')
         module = Module(namespace=namespace, name=module_name)
@@ -1505,14 +1512,27 @@ module &quot;test-usage3&quot; {
 
         try:
             assert module_provider is not None
-            module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
-            assert module_version is not None
+            module_version_obj = ModuleVersion.get(module_provider=module_provider, version=module_version)
+            assert module_version_obj is not None
+
+            # When module hosting is enforced, ensure the URL is for the hosted module
+            if allow_module_hosting is terrareg.config.ModuleHostingMode.ENFORCE:
+                expected_source_download_url = f"/v1/terrareg/modules/repo_url_tests/{module_name}/test/{module_version}/source.zip"
+                should_prefix_domain = True
 
             if should_prefix_domain:
                 expected_source_download_url = f"{expected_url_prefix}{expected_source_download_url}"
 
-            with unittest.mock.patch('terrareg.config.Config.PUBLIC_URL', public_url):
-                assert module_version.get_source_download_url(request_domain="localhost", direct_http_request=direct_http_download) == expected_source_download_url
+            with unittest.mock.patch('terrareg.config.Config.PUBLIC_URL', public_url), \
+                    unittest.mock.patch('terrareg.config.Config.ALLOW_MODULE_HOSTING', allow_module_hosting):
+
+                # If the module does not have a git URL and module hosting is dis-allowed, expect an error,
+                # otherwise, check the URL
+                if not has_git_url and allow_module_hosting is terrareg.config.ModuleHostingMode.DISALLOW:
+                    with pytest.raises(terrareg.errors.NoModuleDownloadMethodConfiguredError):
+                        module_version_obj.get_source_download_url(request_domain="localhost", direct_http_request=direct_http_download)
+                else:
+                    assert module_version_obj.get_source_download_url(request_domain="localhost", direct_http_request=direct_http_download) == expected_source_download_url
 
         finally:
             module_provider.update_git_path(None)
