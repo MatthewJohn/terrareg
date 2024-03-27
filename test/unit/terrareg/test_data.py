@@ -8,13 +8,15 @@ test_git_providers = {
         'name': 'testgitprovider',
         'base_url_template': 'https://localhost.com/{namespace}/{module}-{provider}',
         'browse_url_template': 'https://localhost.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
-        'clone_url_template': 'ssh://localhost.com/{namespace}/{module}-{provider}'
+        'clone_url_template': 'ssh://localhost.com/{namespace}/{module}-{provider}',
+        'git_path_template': None
     },
     2: {
         'name': 'second-git-provider',
         'base_url_template': 'https://localhost2.example/{namespace}-{module}-{provider}',
         'browse_url_template': 'https://localhost2.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
-        'clone_url_template': 'ssh://localhost2.com/{namespace}/{module}-{provider}'
+        'clone_url_template': 'ssh://localhost2.com/{namespace}/{module}-{provider}',
+        'git_path_template': '/modules/{module}/'
     }
 }
 
