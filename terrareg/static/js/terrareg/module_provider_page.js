@@ -595,7 +595,7 @@ class IntegrationsTab extends ModuleDetailsTab {
             let config = await getConfig();
             let loggedIn = await isLoggedIn();
 
-            if (config.ALLOW_MODULE_HOSTING) {
+            if (config.ALLOW_MODULE_HOSTING != 'disallow') {
                 $("#module-integrations-upload-container").removeClass('default-hidden');
             }
             if (!config.PUBLISH_API_KEYS_ENABLED ||

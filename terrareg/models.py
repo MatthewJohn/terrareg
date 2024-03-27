@@ -3089,7 +3089,7 @@ class ModuleProvider(object):
                 'notes': ''
             }
         }
-        if terrareg.config.Config().ALLOW_MODULE_HOSTING:
+        if terrareg.config.Config().ALLOW_MODULE_HOSTING is not terrareg.config.ModuleHostingMode.DISALLOW:
             integrations['upload'] = {
                 'method': 'POST',
                 'url': f'/v1/terrareg/modules/{self.id}/${{version}}/upload',
@@ -3877,9 +3877,13 @@ class ModuleVersion(TerraformSpecsObject):
         """Return URL to download source file."""
         rendered_url = None
 
-        rendered_url = self.get_git_clone_url()
+        config = terrareg.config.Config()
 
-        # Return rendered version of template
+        # If module hosting is not enforced, attempt to get git clone URL template
+        if config.ALLOW_MODULE_HOSTING is not terrareg.config.ModuleHostingMode.ENFORCE:
+            rendered_url = self.get_git_clone_url()
+
+        # If a git cone URL template is available, render template and return
         if rendered_url:
             # Check if scheme starts with git::, which is required
             # by Terraform to acknowledge a git repository
@@ -3914,10 +3918,8 @@ class ModuleVersion(TerraformSpecsObject):
 
             return rendered_url
 
-        config = terrareg.config.Config()
-
         # If a git URL is not present, revert to using built-in module hosting
-        if config.ALLOW_MODULE_HOSTING:
+        if config.ALLOW_MODULE_HOSTING is not terrareg.config.ModuleHostingMode.DISALLOW:
             url = '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
 
             # If authentication is required, generate pre-signed URL
