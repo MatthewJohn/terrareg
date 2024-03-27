@@ -707,6 +707,7 @@ class SettingsTab extends ModuleDetailsTab {
                 customGitProvider.val('');
                 customGitProvider.text('Custom');
                 customGitProvider.data('custom', true);
+                customGitProvider.data('gitPathTemplate', null);
 
                 // If the module does not use a git provider, select the 'custom' option.
                 if (!this._moduleDetails.git_provider_id) {
@@ -725,6 +726,7 @@ class SettingsTab extends ModuleDetailsTab {
                     gitProviderOption.val(gitProvider.id);
                     gitProviderOption.text(gitProvider.name);
                     gitProviderOption.data('custom', false);
+                    gitProviderOption.data('gitPathTemplate', gitProvider.git_path_template);
                     if (this._moduleDetails.git_provider_id == gitProvider.id) {
                         gitProviderOption.attr('selected', '');
                     }
@@ -734,7 +736,13 @@ class SettingsTab extends ModuleDetailsTab {
 
             // Bind update of git provider to toggle visibility of custom URL inputs
             gitProviderSelect.bind('change', (event) => {
-                this.updateCustomUrlVisibility($(event.target.selectedOptions[0]).data('custom'));
+                let gitProvider = $(event.target.selectedOptions[0]);
+                this.updateCustomUrlVisibility(gitProvider.data('custom'));
+                // Update git path input, if the git provider has a template
+                let gitProviderGitPath = gitProvider.data('gitPathTemplate');
+                if (gitProviderGitPath) {
+                    $('#settings-git-path').val(gitProviderGitPath);
+                }
             });
 
             $('#settings-git-path').val(this._moduleDetails.git_path);
