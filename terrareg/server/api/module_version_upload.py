@@ -26,7 +26,7 @@ class ApiModuleVersionUpload(ErrorCatchingResource):
 
         # If module hosting is disabled,
         # refuse the upload of new modules
-        if not terrareg.config.Config().ALLOW_MODULE_HOSTING:
+        if terrareg.config.Config().ALLOW_MODULE_HOSTING is terrareg.config.ModuleHostingMode.DISALLOW:
             return {'message': 'Module upload is disabled.'}, 400
 
         with terrareg.database.Database.start_transaction():

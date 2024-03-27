@@ -129,7 +129,7 @@ async function loadSetupPage(overrideHttpsCheck = false) {
 
         let secureTasksRemaining = 0;
         // Check upload API keys
-        if (config.UPLOAD_API_KEYS_ENABLED || ! config.ALLOW_MODULE_HOSTING) {
+        if (config.UPLOAD_API_KEYS_ENABLED || config.ALLOW_MODULE_HOSTING == 'disallow') {
             strikeThrough($('#setup-step-secure-upload'));
         } else {
             secureTasksRemaining += 1;
