@@ -16,7 +16,7 @@ class ApiModuleVersionSourceDownload(ErrorCatchingResource):
     def _get(self, namespace, name, provider, version):
         """Return static file."""
         config = terrareg.config.Config()
-        if not config.ALLOW_MODULE_HOSTING:
+        if config.ALLOW_MODULE_HOSTING is terrareg.config.ModuleHostingMode.DISALLOW:
             return {'message': 'Module hosting is disbaled'}, 500
 
         # If authentication is required, check pre-signed URL

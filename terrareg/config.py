@@ -19,6 +19,13 @@ class ServerType(Enum):
     WAITRESS = "waitress"
 
 
+class ModuleHostingMode(Enum):
+    """Type of module hosting module"""
+    ALLOW = "true"
+    DISALLOW = "false"
+    ENFORCE = "enforce"
+
+
 class Config:
 
     @property
@@ -155,7 +162,7 @@ class Config:
         * `builtin` - Use the default built-in flask web server. This is less performant and is no longer recommended for production use-cases.
         * `waitress` - Uses [waitress](https://docs.pylonsproject.org/projects/waitress/en/latest/index.html) for running the application. This does not support SSL offloading, meaning that it must be used behind a reverse proxy that performs SSL-offloading.
         """
-        return ServerType(os.environ.get("SERVER", "builtin"))
+        return ServerType(os.environ.get("SERVER", "builtin").lower())
 
     @property
     def SSL_CERT_PRIVATE_KEY(self):
@@ -344,9 +351,13 @@ class Config:
     def ALLOW_MODULE_HOSTING(self):
         """
         Whether uploaded modules can be downloaded directly.
-        If disabled, all modules must be configured with a git URL.
+
+        Set to one of the following:
+         * True - Allow module hosting, if Git clone path is not set (either at module or git provider),
+         * False - Do not allow module hosting - all modules must be configured with a Git clone URL (either at module or git provider),
+         * Enforce - Modules are always hosted directory. If provided, Git clone URLs are only used for module indexing.
         """
-        return self.convert_boolean(os.environ.get('ALLOW_MODULE_HOSTING', 'True'))
+        return ModuleHostingMode(os.environ.get('ALLOW_MODULE_HOSTING', 'True').lower())
 
     @property
     def REQUIRED_MODULE_METADATA_ATTRIBUTES(self):

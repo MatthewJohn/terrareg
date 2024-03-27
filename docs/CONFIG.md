@@ -91,10 +91,14 @@ Default: `False`
 
 
 Whether uploaded modules can be downloaded directly.
-If disabled, all modules must be configured with a git URL.
+
+Set to one of the following:
+ * True - Allow module hosting, if Git clone path is not set (either at module or git provider),
+ * False - Do not allow module hosting - all modules must be configured with a Git clone URL (either at module or git provider),
+ * Enforce - Modules are always hosted directory. If provided, Git clone URLs are only used for module indexing.
 
 
-Default: `True`
+Default: `true`
 
 
 ### ALLOW_UNAUTHENTICATED_ACCESS

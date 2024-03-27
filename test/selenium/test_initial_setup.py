@@ -9,6 +9,7 @@ from test import mock_create_audit_event
 
 from test.selenium import SeleniumTest
 from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
+import terrareg.config
 
 class TestInitialSetup(SeleniumTest):
     """Test initial setup page."""
@@ -21,7 +22,7 @@ class TestInitialSetup(SeleniumTest):
     def setup_class(cls):
         """Setup required mocks."""
         cls._config_upload_api_keys_mock = mock.patch('terrareg.config.Config.UPLOAD_API_KEYS', [])
-        cls._config_allow_module_uploads_mock = mock.patch('terrareg.config.Config.ALLOW_MODULE_HOSTING', True)
+        cls._config_allow_module_uploads_mock = mock.patch('terrareg.config.Config.ALLOW_MODULE_HOSTING', terrareg.config.ModuleHostingMode.ALLOW)
         cls._config_publish_api_keys_mock = mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', [])
         cls._config_admin_authentication_key_mock = mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', '')
         cls._config_auto_create_namespace_mock = mock.patch('terrareg.config.Config.AUTO_CREATE_NAMESPACE', True)
