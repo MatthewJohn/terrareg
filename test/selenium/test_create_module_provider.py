@@ -278,22 +278,49 @@ class TestCreateModuleProvider(SeleniumTest):
         """Create a module with invalid git URLs"""
         pass
 
-    @pytest.mark.skip(reason="Not implemented")
     def test_creating_with_invalid_git_tag(self):
         """Create a module with invalid git tag format"""
-        pass
+        self.perform_admin_authentication('unittest-password')
 
-    @pytest.mark.skip(reason="Not implemented")
-    def test_creating_with_invalid_namespace(self):
-        """Attempt to create a module with an invalid namespace."""
-        pass
+        self.selenium_instance.get(self.get_url('/create-module'))
 
-    @pytest.mark.skip(reason="Not implemented")
+        Select(self.selenium_instance.find_element(By.ID, 'create-module-namespace')).select_by_visible_text('moduledetails')
+        self._fill_out_field_by_label('Module Name', 'fullypopulated')
+        self._fill_out_field_by_label('Provider', 'invalidgittag')
+
+        self._fill_out_field_by_label('Git tag format', "doesnotcontainplaceholder")
+
+        self._click_create()
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'create-error').is_displayed(), True)
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'create-error').text, "Invalid git tag format. Must contain one placeholder: {version}, {major}, {minor}, {patch}.")
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/create-module'))
+
     def test_creating_with_invalid_module_name(self):
         """Attempt to create a module with an invalid module name."""
-        pass
+        self.perform_admin_authentication('unittest-password')
 
-    @pytest.mark.skip(reason="Not implemented")
+        self.selenium_instance.get(self.get_url('/create-module'))
+
+        Select(self.selenium_instance.find_element(By.ID, 'create-module-namespace')).select_by_visible_text('moduledetails')
+        self._fill_out_field_by_label('Module Name', 'Invalid Module Name')
+        self._fill_out_field_by_label('Provider', 'testprovider')
+
+        self._click_create()
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'create-error').is_displayed(), True)
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'create-error').text, "Module name is invalid")
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/create-module'))
+
     def test_creating_with_invalid_provider(self):
         """Attempt to create a module with an invalid provider name."""
-        pass
+        self.perform_admin_authentication('unittest-password')
+
+        self.selenium_instance.get(self.get_url('/create-module'))
+
+        Select(self.selenium_instance.find_element(By.ID, 'create-module-namespace')).select_by_visible_text('moduledetails')
+        self._fill_out_field_by_label('Module Name', 'fullypopulated')
+        self._fill_out_field_by_label('Provider', 'Invalid Provider Name')
+
+        self._click_create()
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'create-error').is_displayed(), True)
+        self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'create-error').text, "Module provider name is invalid")
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/create-module'))
