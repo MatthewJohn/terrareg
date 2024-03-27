@@ -9,6 +9,7 @@ import selenium
 
 from test.selenium import SeleniumTest
 from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
+import terrareg.models
 
 class TestCreateModuleProvider(SeleniumTest):
     """Test create_module_provider page."""
@@ -324,3 +325,64 @@ class TestCreateModuleProvider(SeleniumTest):
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'create-error').is_displayed(), True)
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'create-error').text, "Module provider name is invalid")
         self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/create-module'))
+
+    @pytest.mark.parametrize('git_provider_name, expected_git_path_template', [
+        ('testgitprovider', ''),
+        ('with_git_path_template', '/modules/{module}'),
+    ])
+    def test_selecting_git_provider(self, git_provider_name, expected_git_path_template):
+        """Test creating module provider using git provider"""
+        self.perform_admin_authentication('unittest-password')
+
+        self.selenium_instance.get(self.get_url('/create-module'))
+
+        Select(self.selenium_instance.find_element(By.ID, 'create-module-namespace')).select_by_visible_text('testmodulecreation')
+        self._fill_out_field_by_label('Module Name', 'withgitprovider')
+        self._fill_out_field_by_label('Provider', 'testprovider')
+
+        # Fill out values for custom URL templates
+        self._fill_out_field_by_label('Custom Repository base URL', 'baseurl')
+        self._fill_out_field_by_label('Custom Repository Clone URL', 'cloneurl')
+        self._fill_out_field_by_label('Custom Repository source browse URL', 'sourceurl')
+
+        form = self.selenium_instance.find_element(By.ID, 'create-module-form')
+
+        # Ensure initial git path is empty
+        assert form.find_element(By.XPATH, ".//label[text()='Git path']/parent::*//input").get_attribute('value') == ''
+
+        # Select git provider
+        Select(form.find_element(By.XPATH, ".//label[text()='Git Repository Provider']/parent::*//select")).select_by_visible_text(git_provider_name)
+
+        # Ensure git path field has been populated with the expected value
+        self.assert_equals(lambda: form.find_element(By.XPATH, ".//label[text()='Git path']/parent::*//input").get_attribute('value'), expected_git_path_template)
+
+        # Ensure URL templates are no longer visible
+        for element in [
+                "create-module-base-url-template-container",
+                "create-module-base-url-template",
+                "create-module-clone-url-template-container",
+                "create-module-clone-url-template",
+                "create-module-browse-url-template-container",
+                "create-module-browse-url-template"]:
+            assert form.find_element(By.ID, element).is_displayed() is False
+
+        self._click_create()
+        module_provider = ModuleProvider.get(Module(Namespace('testmodulecreation'), 'withgitprovider'), 'testprovider')
+        assert module_provider is not None
+
+        try:
+            # Ensure user was redirected
+            self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/testmodulecreation/withgitprovider/testprovider'))
+
+            # Ensure module was created with correct attrtibutes
+            git_provider = terrareg.models.GitProvider.get_by_name(git_provider_name)
+            assert module_provider is not None
+            assert module_provider._get_db_row()['git_provider_id'] == git_provider.pk
+            assert module_provider._get_db_row()['repo_base_url_template'] is None
+            assert module_provider._get_db_row()['repo_clone_url_template'] is None
+            assert module_provider._get_db_row()['repo_browse_url_template'] is None
+            assert module_provider._get_db_row()['git_path'] == expected_git_path_template
+
+        finally:
+            with self._patch_audit_event_creation():
+                module_provider.delete()
