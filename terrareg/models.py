@@ -498,7 +498,7 @@ class GitProvider:
             git_path_template = git_provider_config.get('git_path', '')
 
             # Valid git URLs for git provider.
-            # Append git_path to base, clone and browse URL, as placesholders may be delegated
+            # Append git_path to base, clone and browse URL, as placeholders may be delegated
             # to the git path to ensure unique locations for modules.
             GitUrlValidator(git_provider_config['base_url'] + git_path_template).validate(
                 requires_namespace_placeholder=True,
