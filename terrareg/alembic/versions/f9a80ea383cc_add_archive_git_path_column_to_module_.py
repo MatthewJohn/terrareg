@@ -1,7 +1,7 @@
 """Add archive_git_path column to module provider
 
 Revision ID: f9a80ea383cc
-Revises: 2bc9677e93d1
+Revises: 9dbcb4240c55
 Create Date: 2024-03-14 06:05:26.867657
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'f9a80ea383cc'
-down_revision = '2bc9677e93d1'
+down_revision = '9dbcb4240c55'
 branch_labels = None
 depends_on = None
 
