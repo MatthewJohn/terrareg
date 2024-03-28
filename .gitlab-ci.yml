@@ -306,7 +306,7 @@ generate-docs:
     # Ensure gh-pages branch is up-to-date
     - git fetch --all
     - git checkout gh-pages
-    - git pull origin gh-pages
+    - git reset --hard origin/gh-pages
     - git checkout -
     # Generate docs
     - mkdocs gh-deploy

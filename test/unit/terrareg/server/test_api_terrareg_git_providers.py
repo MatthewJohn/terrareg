@@ -21,8 +21,8 @@ class TestApiTerraregGitProviders(TerraregUnitTest):
         res = client.get('/v1/terrareg/git_providers')
         assert res.status_code == 200
         assert res.json == [
-            {'id': 1, 'name': 'testgitprovider'},
-            {'id': 2, 'name': 'second-git-provider'}
+            {'id': 1, 'name': 'testgitprovider', 'git_path_template': None},
+            {'id': 2, 'name': 'second-git-provider', 'git_path_template': '/modules/{module}/'}
         ]
 
     def test_unauthenticated(self, client, mock_models):

@@ -59,6 +59,9 @@ The avoid having to set this up in each module, Git Providers collapse these con
 
 Using git providers, the namespace, module name and provider of the module can be used in the templates of the URLs, meaning that the namespace can be used to determine the organisation/user of the repository (when using Github for example).
 
+Optionally, a default `git_path` can be supplied with placeholders, which provides the default `git_path` (the directory within a repository where the module is present) value when creating a module. If a common repository with multiple modules is used, the base/clone/source URL templates may not be unique per module. The templates are validated to ensure that placeholders are present in each of the templates, but can be included in the `git_path` instead.
+For example, the repository clone URL could be `git@git.example.com/{namespace}/modules.git` with a git path `modules/{module}-{provider}`, meaning that an example module (Namespace: `infrastructure`, Module: `s3-bucket`, Provider: `aws`) would be present in the repository `git@git.example.com/infrastructure/modules.git` in the directory `modules/s3-bucket-aws`.
+
 Details of the format of this configuration and some examples can be found in the configuration documentation: [GIT_PROVIDER_CONFIG](../CONFIG.md#git_provider_config).
 
 Once enabled, users can be limited from providing custom URLs by disabling: [ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER](../CONFIG.md#allow_custom_git_url_module_provider) and [ALLOW_CUSTOM_GIT_URL_MODULE_VERSION](../CONFIG.md#allow_custom_git_url_module_version)
