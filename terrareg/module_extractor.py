@@ -65,6 +65,11 @@ class ModuleExtractor:
         return self._extract_directory.name
 
     @property
+    def archive_source_directory(self):
+        """Return directory that is used for generating the archives"""
+        return self.extract_directory
+
+    @property
     def module_directory(self):
         """Return path of module directory, based on configured git path."""
         if self._module_version.git_path:
@@ -364,12 +369,11 @@ terraform {{
                 return None
             return tarinfo
 
-
         # Create tar.gz
         with tempfile.TemporaryDirectory(suffix='generate-archive') as temp_dir:
             tar_file_path = os.path.join(temp_dir, self._module_version.archive_name_tar_gz)
             with tarfile.open(tar_file_path, "w:gz") as tar:
-                tar.add(self.extract_directory, arcname='', recursive=True, filter=tar_filter)
+                tar.add(self.archive_source_directory, arcname='', recursive=True, filter=tar_filter)
 
             # Add tar file to file storage
             file_storage.upload_file(tar_file_path, self._module_version.base_directory, self._module_version.archive_name_tar_gz)
@@ -384,7 +388,7 @@ terraform {{
             zip_file_path = os.path.join(temp_dir, self._module_version.archive_name_zip)
             subprocess.call(
                 ['zip', '-r', zip_file_path, '--exclude=./.git/*', '.'],
-                cwd=self.extract_directory
+                cwd=self.archive_source_directory
             )
             file_storage.upload_file(zip_file_path, self._module_version.base_directory, self._module_version.archive_name_zip)
 
@@ -818,3 +822,14 @@ class GitModuleExtractor(ModuleExtractor):
         self._clone_repository()
 
         super(GitModuleExtractor, self).process_upload()
+
+    @property
+    def archive_source_directory(self):
+        """Return directory that is used for generating the archives"""
+        # If the module provider is configured to only archive the git_path
+        # of the source, limit to only this path
+        if self._module_version.module_provider.archive_git_path:
+            return self.module_directory
+
+        # Otherwise, return the root of the repository
+        return self.extract_directory
