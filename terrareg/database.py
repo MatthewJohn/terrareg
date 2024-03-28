@@ -380,7 +380,8 @@ class Database():
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), unique=True),
             sqlalchemy.Column('base_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('clone_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
-            sqlalchemy.Column('browse_url_template', sqlalchemy.String(URL_COLUMN_SIZE))
+            sqlalchemy.Column('browse_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
+            sqlalchemy.Column('git_path_template', sqlalchemy.String(URL_COLUMN_SIZE)),
         )
 
         self._namespace = sqlalchemy.Table(
