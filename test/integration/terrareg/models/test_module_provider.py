@@ -228,7 +228,13 @@ class TestModuleProvider(TerraregIntegrationTest):
         ('./subpath/', 'subpath'),
         ('./test/another/dir', 'test/another/dir'),
         ('./test/another/dir/', 'test/another/dir'),
-        ('.//lots/of///slashes//', 'lots/of/slashes')
+        ('.//lots/of///slashes//', 'lots/of/slashes'),
+
+        # With placeholders
+        ('{namespace}/test', 'moduledetails/test'),
+        ('{module}/test', 'git-path/test'),
+        ('{provider}/test', 'provider/test'),
+        ('{namespace}/{module}-{provider}/test', 'moduledetails/git-path-provider/test'),
     ])
     def test_git_path(self, git_path, expected_git_path):
         """Test git_path property"""
@@ -483,7 +489,7 @@ class TestModuleProvider(TerraregIntegrationTest):
          'Path placeholder not present in URL'),
         ('https://{invalidvalue}/{tag}/{path}/example',
          terrareg.errors.RepositoryUrlContainsInvalidTemplateError,
-         'URL contains invalid template value. Only the following template values are allowed: {namespace}, {module}, {provider}, {tag}, {path}'),
+         'Template contains unknown placeholder: invalidvalue. Valid placeholders are contain: {namespace}, {module}, {provider}, {path}, {tag} and {tag_uri_encoded}'),
     ])
     def test_update_repo_browse_url_invalid_url(self, url, expected_exception, expected_message):
         """Ensure update_repo_browse_url with invalid URLs"""

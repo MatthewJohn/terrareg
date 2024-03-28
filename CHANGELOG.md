@@ -1,5 +1,35 @@
 # Changelog
 
+# [3.4.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.3.0...v3.4.0) (2024-03-28)
+
+
+### Bug Fixes
+
+* Hide custom git URLs in update module provider settings - removing custom URLs when configuring a Git provider ([d4d1e05](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/d4d1e05e6ffb689812d78e5eb409061036e37520)), closes [#502](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/502)
+* Update module provider settings page to update git path when changing to a git provider that specifies a git path ([6ec8829](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/6ec88295e411e57209bf94d8ef03035d58408c2c)), closes [#502](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/502)
+
+
+### Features
+
+* Add git_path template to git provider, allowing templated default values for git_path to be supplied when selecting git provider. ([c059820](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c05982003a957ce5ca6b8a4e4707a43158deded5)), closes [#502](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/502)
+
+# [3.3.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.2.2...v3.3.0) (2024-03-27)
+
+
+### Bug Fixes
+
+* Make server type configuration case insensitive ([3e897b9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/3e897b9e216cbfcf144bfa1766a2258faf80f129)), closes [#490](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/490)
+
+
+### Features
+
+* Support disabling serving modules via Git, forcing modules to be downloaded from archives ([f9702a3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f9702a32b234bbc71064e84bfecd1571c248e195)), closes [#490](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/490)
+
+
+### Reverts
+
+* Revert "chore: Only use database transaction when performing extraction" ([784f302](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/784f30209287a843175fb4ea97bad8b90a82dac8)), closes [#490](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/490)
+
 ## [3.2.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.2.1...v3.2.2) (2024-03-02)
 
 

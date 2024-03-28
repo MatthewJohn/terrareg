@@ -30,6 +30,13 @@ integration_git_providers = {
         'base_url_template': 'https://base-url.com/{namespace}/{module}-{provider}',
         'browse_url_template': None,
         'clone_url_template': 'ssh://clone-url.com/{namespace}/{module}-{provider}'
+    },
+    5: {
+        'name': 'with_git_path_template',
+        'base_url_template': 'https://base-url.com/{namespace}/modules',
+        'browse_url_template': 'https://browse-url.com/{namespace}/modules/browse/{path}?at={tag_uri_encoded}',
+        'clone_url_template': 'ssh://clone-url.com/{namespace}/modules.git',
+        'git_path_template': '/modules/{module}'
     }
 }
 

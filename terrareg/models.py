@@ -494,25 +494,34 @@ class GitProvider:
                     raise InvalidGitProviderConfigError(
                         'Git provider config does not contain required attribute: {}'.format(attr))
 
-            # Valid git URLs for git provider
-            GitUrlValidator(git_provider_config['base_url']).validate(
+            # Obtain git path value, defaulting to empty string
+            git_path_template = git_provider_config.get('git_path', '')
+
+            # Valid git URLs for git provider.
+            # Append git_path to base, clone and browse URL, as placeholders may be delegated
+            # to the git path to ensure unique locations for modules.
+            GitUrlValidator(git_provider_config['base_url'] + git_path_template).validate(
                 requires_namespace_placeholder=True,
                 requires_module_placeholder=True,
                 requires_tag_placeholder=False,
                 requires_path_placeholder=False
             )
-            GitUrlValidator(git_provider_config['clone_url']).validate(
+            GitUrlValidator(git_provider_config['clone_url'] + git_path_template).validate(
                 requires_namespace_placeholder=True,
                 requires_module_placeholder=True,
                 requires_tag_placeholder=False,
                 requires_path_placeholder=False
             )
-            GitUrlValidator(git_provider_config['browse_url']).validate(
+            GitUrlValidator(git_provider_config['browse_url'] + git_path_template).validate(
                 requires_namespace_placeholder=True,
                 requires_module_placeholder=True,
                 requires_tag_placeholder=True,
                 requires_path_placeholder=True
             )
+
+            # If git_path template is an empty string, revert to None
+            if not git_path_template:
+                git_path_template = None
 
             # Check if git provider exists in DB
             existing_git_provider = GitProvider.get_by_name(name=git_provider_config['name'])
@@ -523,14 +532,16 @@ class GitProvider:
                 ).values(
                     base_url_template=git_provider_config['base_url'],
                     clone_url_template=git_provider_config['clone_url'],
-                    browse_url_template=git_provider_config['browse_url']
+                    browse_url_template=git_provider_config['browse_url'],
+                    git_path_template=git_path_template,
                 )
             else:
                 upsert = db.git_provider.insert().values(
                     name=git_provider_config['name'],
                     base_url_template=git_provider_config['base_url'],
                     clone_url_template=git_provider_config['clone_url'],
-                    browse_url_template=git_provider_config['browse_url']
+                    browse_url_template=git_provider_config['browse_url'],
+                    git_path_template=git_path_template,
                 )
             with db.get_connection() as conn:
                 conn.execute(upsert)
@@ -602,6 +613,11 @@ class GitProvider:
     def browse_url_template(self):
         """Return browse_url for git provider."""
         return self._get_db_row()['browse_url_template']
+
+    @property
+    def git_path_template(self):
+        """Return git_path for git provider."""
+        return self._get_db_row()['git_path_template']
 
     def __eq__(self, __o):
         """Check if two git providers are the same"""
@@ -2408,6 +2424,13 @@ class ModuleProvider(object):
         row_value = self._get_db_row()['git_path']
         # Strip leading slash or dot-slash
         if row_value:
+            # Replace placeholders in git_path
+            row_value = row_value.format(
+                namespace=self._module._namespace.name,
+                module=self._module.name,
+                provider=self.name
+            )
+
             # Use safe_join_path twice:
             # - check it doesn't traverse back any paths
             # - remove any relative paths and return absolute path against root
@@ -3084,7 +3107,7 @@ class ModuleProvider(object):
                 'notes': ''
             }
         }
-        if terrareg.config.Config().ALLOW_MODULE_HOSTING:
+        if terrareg.config.Config().ALLOW_MODULE_HOSTING is not terrareg.config.ModuleHostingMode.DISALLOW:
             integrations['upload'] = {
                 'method': 'POST',
                 'url': f'/v1/terrareg/modules/{self.id}/${{version}}/upload',
@@ -3872,9 +3895,13 @@ class ModuleVersion(TerraformSpecsObject):
         """Return URL to download source file."""
         rendered_url = None
 
-        rendered_url = self.get_git_clone_url()
+        config = terrareg.config.Config()
 
-        # Return rendered version of template
+        # If module hosting is not enforced, attempt to get git clone URL template
+        if config.ALLOW_MODULE_HOSTING is not terrareg.config.ModuleHostingMode.ENFORCE:
+            rendered_url = self.get_git_clone_url()
+
+        # If a git cone URL template is available, render template and return
         if rendered_url:
             # Check if scheme starts with git::, which is required
             # by Terraform to acknowledge a git repository
@@ -3909,10 +3936,8 @@ class ModuleVersion(TerraformSpecsObject):
 
             return rendered_url
 
-        config = terrareg.config.Config()
-
         # If a git URL is not present, revert to using built-in module hosting
-        if config.ALLOW_MODULE_HOSTING:
+        if config.ALLOW_MODULE_HOSTING is not terrareg.config.ModuleHostingMode.DISALLOW:
             url = '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
 
             # If authentication is required, generate pre-signed URL

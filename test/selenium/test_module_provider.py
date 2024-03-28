@@ -1925,6 +1925,13 @@ EOF
         # Ensure module version no longer exists
         assert ModuleProvider.get(module=module, name='providertodelete') is None
 
+    def assert_custom_url_input_visibility(self, should_be_shown: bool):
+        """Check custom input visibility"""
+        for element in self.selenium_instance.find_elements(By.CLASS_NAME, "settings-custom-git-provider-container"):
+            self.assert_equals(lambda: element.is_displayed(), should_be_shown)
+        for element_id in ["settings-base-url-template", "settings-clone-url-template", "settings-browse-url-template"]:
+            assert self.selenium_instance.find_element(By.ID, element_id).is_displayed() is should_be_shown
+
     @pytest.mark.parametrize('allow_custom_git_url_setting', [True, False])
     def test_git_provider_config(self, allow_custom_git_url_setting):
         """Ensure git provider configuration work as expected."""
@@ -1932,6 +1939,19 @@ EOF
         with self.update_mock(self._config_allow_custom_repo_urls_module_provider, 'new', allow_custom_git_url_setting):
 
             self.perform_admin_authentication(password='unittest-password')
+
+            ModuleProvider(
+                Module(
+                    Namespace('moduledetails'),
+                    'fullypopulated'),
+                'testprovider'
+            ).update_attributes(
+                git_provider_id=None,
+                git_path='testoriginal',
+                repo_base_url_template="https://sometestbaseurl.com",
+                repo_clone_url_template="ssh://sometestcloneurl.com",
+                repo_browse_url_template="https://sometestbaseurl.com/{tag}/{path}",
+            )
 
             self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
 
@@ -1941,12 +1961,19 @@ EOF
 
             # Check git provider dropdown
             git_provider_select_element = self.selenium_instance.find_element(By.ID, 'settings-git-provider')
+            git_provider_select_option_elements = git_provider_select_element.find_elements(By.TAG_NAME, 'option')
 
-            expected_git_providers = ['testgitprovider', 'repo_url_tests', 'repo_url_tests_uri_encoded', 'no_browse_url']
+            expected_git_providers = [
+                'testgitprovider', 'repo_url_tests', 'repo_url_tests_uri_encoded',
+                'no_browse_url', 'with_git_path_template'
+            ]
             if allow_custom_git_url_setting:
                 expected_git_providers.insert(0, 'Custom')
 
-            for option in git_provider_select_element.find_elements(By.TAG_NAME, 'option'):
+            # Ensure the list of providers in select match the expected
+            assert expected_git_providers == [element.text for element in git_provider_select_option_elements]
+
+            for option in git_provider_select_option_elements:
                 # Check option name matches expected
                 expected_name = expected_git_providers.pop(0)
                 assert option.text == expected_name
@@ -1965,8 +1992,21 @@ EOF
                 # Ensure the currently selected item is custom
                 assert git_provider_select_element.get_attribute('value') == ''
 
+            # Ensure git path is empty
+            assert self.selenium_instance.find_element(By.ID, "settings-git-path").get_attribute('value') == 'testoriginal'
+
+            # Ensure all custom URL inputs are visible, if custom git provider is allowed,
+            # and hidden, if not
+            self.assert_custom_url_input_visibility(allow_custom_git_url_setting)
+
             # Select a different git provider and save
-            git_provider_select.select_by_visible_text('testgitprovider')
+            git_provider_select.select_by_visible_text('with_git_path_template')
+
+            # Ensure custom URL elements have been hidden
+            self.assert_custom_url_input_visibility(False)
+
+            # Ensure git path has been set by git provider
+            assert self.selenium_instance.find_element(By.ID, "settings-git-path").get_attribute('value') == '/modules/{module}'
 
             try:
                 # Press Update button
@@ -1975,21 +2015,19 @@ EOF
                 self.assert_equals(lambda: self.wait_for_element(By.ID, 'settings-status-success').text, 'Settings Updated')
 
                 module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
-                assert module_provider._get_db_row()['git_provider_id'] == 1
+                # Ensure git provider has been set
+                assert module_provider._get_db_row()['git_provider_id'] == 5
+
+                # Ensure the custom URLs has been cleared
+                assert module_provider._get_db_row()['repo_base_url_template'] == None
+                assert module_provider._get_db_row()['repo_clone_url_template'] == None
+                assert module_provider._get_db_row()['repo_browse_url_template'] == None
+                assert module_provider._get_db_row()['git_path'] == "/modules/{module}"
 
                 # Reload page, assert the new git provider has been set
                 self.selenium_instance.refresh()
                 git_provider_select_element = self.selenium_instance.find_element(By.ID, 'settings-git-provider')
-                self.assert_equals(lambda: git_provider_select_element.get_attribute('value'), '1')
-
-                # If custom git urls is enabled, reset back to custom and save
-                if allow_custom_git_url_setting:
-                    git_provider_select = Select(git_provider_select_element)
-                    git_provider_select.select_by_visible_text('Custom')
-                    self.selenium_instance.find_element(By.ID, 'module-provider-settings-update').click()
-                    # Ensure the DB row is set to custom
-                    module_provider._cache_db_row = None
-                    assert module_provider._get_db_row()['git_provider_id'] == None
+                self.assert_equals(lambda: git_provider_select_element.get_attribute('value'), '5')
 
             finally:
                 # Reset git provider for module
@@ -1998,7 +2036,105 @@ EOF
                         Namespace('moduledetails'),
                         'fullypopulated'),
                     'testprovider'
-                ).update_attributes(git_provider_id=None)
+                ).update_attributes(
+                    git_provider_id=None,
+                    git_path=None,
+                    repo_base_url_template=None,
+                    repo_clone_url_template=None,
+                    repo_browse_url_template=None,
+                )
+
+    def test_custom_git_provider_custom_urls(self):
+        """Ensure setting git provider to custom and setting URLs works."""
+
+        with self.update_mock(self._config_allow_custom_repo_urls_module_provider, 'new', True):
+
+            # Set git provider ID to custom
+            ModuleProvider(
+                Module(
+                    Namespace('moduledetails'),
+                    'fullypopulated'),
+                'testprovider'
+            ).update_attributes(
+                git_provider_id=1,
+                git_path='sometest',
+                repo_base_url_template=None,
+                repo_clone_url_template=None,
+                repo_browse_url_template=None,
+            )
+
+            self.perform_admin_authentication(password='unittest-password')
+
+            self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0'))
+
+            # Click on settings tab
+            tab = self.wait_for_element(By.ID, 'module-tab-link-settings')
+            tab.click()
+
+            # Check git provider dropdown
+            git_provider_select_element = self.selenium_instance.find_element(By.ID, 'settings-git-provider')
+            git_provider_select = Select(git_provider_select_element)
+
+            assert git_provider_select.first_selected_option.text == 'testgitprovider'
+
+            # Ensure all custom URL inputs are not visible
+            self.assert_custom_url_input_visibility(False)
+
+            # Ensure git path has been correctly populated
+            assert self.selenium_instance.find_element(By.ID, "settings-git-path").get_attribute('value') == 'sometest'
+
+            # Select a different git provider and save
+            git_provider_select.select_by_visible_text('Custom')
+
+            # Ensure custom URL elements have been hidden
+            self.assert_custom_url_input_visibility(True)
+
+            # Set custom URLs
+            base_url_input = self.selenium_instance.find_element(By.ID, 'settings-base-url-template')
+            base_url_input.clear()
+            base_url_input.send_keys("https://base-example.com/somenamespace/module")
+            clone_url_input = self.selenium_instance.find_element(By.ID, 'settings-clone-url-template')
+            clone_url_input.clear()
+            clone_url_input.send_keys("ssh://git@clone-example.com/somenamespace/module.git")
+            browse_url_input = self.selenium_instance.find_element(By.ID, 'settings-browse-url-template')
+            browse_url_input.clear()
+            browse_url_input.send_keys("https://browse-example.com/somenamespace/module/{tag}/{path}")
+
+            # Ensure git path has not been changed
+            assert self.selenium_instance.find_element(By.ID, "settings-git-path").get_attribute('value') == 'sometest'
+
+            try:
+                # Press Update button
+                self.selenium_instance.find_element(By.ID, 'module-provider-settings-update').click()
+
+                self.assert_equals(lambda: self.wait_for_element(By.ID, 'settings-status-success').text, 'Settings Updated')
+
+                module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
+                assert module_provider._get_db_row()['git_provider_id'] == None
+                assert module_provider._get_db_row()['repo_base_url_template'] == "https://base-example.com/somenamespace/module"
+                assert module_provider._get_db_row()['repo_clone_url_template'] == "ssh://git@clone-example.com/somenamespace/module.git"
+                assert module_provider._get_db_row()['repo_browse_url_template'] == "https://browse-example.com/somenamespace/module/{tag}/{path}"
+                assert module_provider._get_db_row()['git_path'] == "sometest"
+
+                # Reload page, assert the new git provider has been set
+                self.selenium_instance.refresh()
+                git_provider_select_element = self.selenium_instance.find_element(By.ID, 'settings-git-provider')
+                self.assert_equals(lambda: git_provider_select_element.get_attribute('value'), '')
+
+            finally:
+                # Reset git provider for module
+                ModuleProvider(
+                    Module(
+                        Namespace('moduledetails'),
+                        'fullypopulated'),
+                    'testprovider'
+                ).update_attributes(
+                    git_provider_id=None,
+                    repo_base_url_template=None,
+                    repo_clone_url_template=None,
+                    repo_browse_url_template=None,
+                    git_path=None,
+                )
 
     def test_updating_settings_after_logging_out(self):
         """Test accessing settings tab, logging out and attempting to save the changes in the settings tab."""

@@ -595,7 +595,7 @@ class IntegrationsTab extends ModuleDetailsTab {
             let config = await getConfig();
             let loggedIn = await isLoggedIn();
 
-            if (config.ALLOW_MODULE_HOSTING) {
+            if (config.ALLOW_MODULE_HOSTING != 'disallow') {
                 $("#module-integrations-upload-container").removeClass('default-hidden');
             }
             if (!config.PUBLISH_API_KEYS_ENABLED ||
@@ -706,15 +706,17 @@ class SettingsTab extends ModuleDetailsTab {
                 let customGitProvider = $('<option></option>');
                 customGitProvider.val('');
                 customGitProvider.text('Custom');
+                customGitProvider.data('custom', true);
+                customGitProvider.data('gitPathTemplate', null);
+
+                // If the module does not use a git provider, select the 'custom' option.
                 if (!this._moduleDetails.git_provider_id) {
                     customGitProvider.attr('selected', '');
+
+                    // Enable custom git provider inputs
+                    this.updateCustomUrlVisibility(true);
                 }
                 gitProviderSelect.append(customGitProvider);
-
-                // Enable custom git provider inputs
-                $.find('.settings-custom-git-provider-container').forEach((inputContainer) => {
-                    $(inputContainer).removeClass('default-hidden');
-                });
             }
 
             // Obtain all git providers and add to select for settings
@@ -723,11 +725,24 @@ class SettingsTab extends ModuleDetailsTab {
                     let gitProviderOption = $('<option></option>');
                     gitProviderOption.val(gitProvider.id);
                     gitProviderOption.text(gitProvider.name);
+                    gitProviderOption.data('custom', false);
+                    gitProviderOption.data('gitPathTemplate', gitProvider.git_path_template);
                     if (this._moduleDetails.git_provider_id == gitProvider.id) {
                         gitProviderOption.attr('selected', '');
                     }
                     gitProviderSelect.append(gitProviderOption);
                 });
+            });
+
+            // Bind update of git provider to toggle visibility of custom URL inputs
+            gitProviderSelect.bind('change', (event) => {
+                let gitProvider = $(event.target.selectedOptions[0]);
+                this.updateCustomUrlVisibility(gitProvider.data('custom'));
+                // Update git path input, if the git provider has a template
+                let gitProviderGitPath = gitProvider.data('gitPathTemplate');
+                if (gitProviderGitPath) {
+                    $('#settings-git-path').val(gitProviderGitPath);
+                }
             });
 
             $('#settings-git-path').val(this._moduleDetails.git_path);
@@ -853,6 +868,20 @@ class SettingsTab extends ModuleDetailsTab {
             // Show settings tab
             $('#module-tab-link-settings').removeClass('default-hidden');
             resolve(true);
+        });
+    }
+
+
+    /*
+     * Update visibility of custom URL input fields
+     */
+    updateCustomUrlVisibility(visible) {
+        $.find('.settings-custom-git-provider-container').forEach((inputContainer) => {
+            if (visible) {
+                $(inputContainer).removeClass('default-hidden');
+            } else {
+                $(inputContainer).addClass('default-hidden');
+            }
         });
     }
 
@@ -2255,13 +2284,15 @@ function deleteModuleProvider(moduleDetails) {
 function updateModuleProviderSettings(moduleDetails) {
     $('#settings-status-success').addClass('default-hidden');
     $('#settings-status-error').addClass('default-hidden');
+    // Determine if custom git provider has been supplied
+    let gitProviderId = $('select[id=settings-git-provider] option').filter(':selected').val();
     $.post({
         url: `/v1/terrareg/modules/${moduleDetails.module_provider_id}/settings`,
         data: JSON.stringify({
-            git_provider_id: $('select[id=settings-git-provider] option').filter(':selected').val(),
-            repo_base_url_template: $('#settings-base-url-template').val(),
-            repo_clone_url_template: $('#settings-clone-url-template').val(),
-            repo_browse_url_template: $('#settings-browse-url-template').val(),
+            git_provider_id: gitProviderId,
+            repo_base_url_template: gitProviderId === "" ? $('#settings-base-url-template').val() : "",
+            repo_clone_url_template: gitProviderId === "" ? $('#settings-clone-url-template').val() : "",
+            repo_browse_url_template: gitProviderId === "" ? $('#settings-browse-url-template').val() : "",
             git_tag_format: $('#settings-git-tag-format').val(),
             git_path: $('#settings-git-path').val(),
             verified: $('#settings-verified').is(':checked'),

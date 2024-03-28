@@ -13,8 +13,9 @@ class ApiTerraregGitProviders(ErrorCatchingResource):
         """Return list of git providers"""
         return [
             {
-                'id': git_provider.pk,
-                'name': git_provider.name
+                "id": git_provider.pk,
+                "name": git_provider.name,
+                "git_path_template": git_provider.git_path_template,
             }
             for git_provider in terrareg.models.GitProvider.get_all()
         ]
