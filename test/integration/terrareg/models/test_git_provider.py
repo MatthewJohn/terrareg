@@ -32,6 +32,7 @@ class TestGitProvider(TerraregIntegrationTest):
     """Test GitProvider model"""
 
     _GIT_PROVIDER_DATA = {}
+    _TEST_DATA = {}
 
     def test_initialise_from_config(self, set_config, delete_existing_git_providers):
         """Test initialise_from_config"""

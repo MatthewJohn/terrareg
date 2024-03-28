@@ -421,7 +421,7 @@ class TestModuleProvider(TerraregIntegrationTest):
          'URL does not contain a host/domain'),
         ('ssh://{invalidvalue}/example',
          terrareg.errors.RepositoryUrlContainsInvalidTemplateError,
-         'Template contains unknown placeholder: invalidvalue. Valid placeholders are contain: {namespace}, {module}, {provider}, {path}, {tag} and {tag_uri_encoded}'),
+         'URL contains invalid template value. Only the following template values are allowed: {namespace}, {module}, {provider}'),
         ('ssh://{tag}/example',
          terrareg.errors.RepositoryUrlContainsInvalidTemplateError,
          'URL contains invalid template value. Only the following template values are allowed: {namespace}, {module}, {provider}'),
@@ -489,7 +489,7 @@ class TestModuleProvider(TerraregIntegrationTest):
          'Path placeholder not present in URL'),
         ('https://{invalidvalue}/{tag}/{path}/example',
          terrareg.errors.RepositoryUrlContainsInvalidTemplateError,
-         'URL contains invalid template value. Only the following template values are allowed: {namespace}, {module}, {provider}, {tag}, {path}'),
+         'Template contains unknown placeholder: invalidvalue. Valid placeholders are contain: {namespace}, {module}, {provider}, {path}, {tag} and {tag_uri_encoded}'),
     ])
     def test_update_repo_browse_url_invalid_url(self, url, expected_exception, expected_message):
         """Ensure update_repo_browse_url with invalid URLs"""
