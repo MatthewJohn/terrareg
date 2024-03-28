@@ -1354,7 +1354,7 @@
 <ul>
 <li>Fully implemented Terraform modules API</li>
 <li>Completely API driven for automating all features</li>
-<li>Host Terraform modules internally or from an exteral Git source</li>
+<li>Host Terraform modules internally or from an external Git source</li>
 <li>Analytics about the usage of modules</li>
 <li>All information about a module - README, inputs, outputs, provider requirements and managed resources</li>
 <li>Security alerts for each module, submodule and examples</li>
@@ -1362,10 +1362,10 @@
 <li>Module example source code within the UI, with automatic rewriting of 'source' arguments</li>
 <li>Interactive 'Usage builder', helping users build terraform to use the terraform modules</li>
 <li>Hooks for git SCM applications to automatically index modules</li>
-<li>Authentication via SSO (OpenIDConnect/SAML2) and Github</li>
+<li>Authentication via SSO (OpenIDConnect/SAML2) and GitHub</li>
 <li>Terraform provider support (very early alpha version)</li>
 </ul>
-<p>If you like and use this project and are happy to let us know, please raise a Github issue, create a PR or contact <a href="https://github.com/matthewjohn">MatthewJohn</a> so it can be added to the README :)</p>
+<p>If you like and use this project and are happy to let us know, please raise a GitHub issue, create a PR or contact <a href="https://github.com/matthewjohn">MatthewJohn</a> so it can be added to the README :)</p>
 <p>For a full list of issues and pull requests, please see <a href="https://gitlab.dockstudios.co.uk/pub/terrareg">https://gitlab.dockstudios.co.uk/pub/terrareg</a></p>
 <h2 id="screenshots">Screenshots</h2>
 <p><a class="glightbox" href="./docs/screenshots/homepage.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="Homepage" src="./docs/screenshots/homepage.png" /></a></p>
@@ -1444,7 +1444,7 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 
 # Without SSL cert
-PUBLIC_URL=http://localhost:5000 ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=False ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=False GIT_PROVIDER_CONFIG='[{&quot;name&quot;: &quot;Github&quot;, &quot;base_url&quot;: &quot;https://github.com/{namespace}/{module}&quot;, &quot;clone_url&quot;: &quot;ssh://git@github.com/{namespace}/{module}.git&quot;, &quot;browse_url&quot;: &quot;https://github.com/{namespace}/{module}/tree/{tag}/{path}&quot;}, {&quot;name&quot;: &quot;Bitbucket&quot;, &quot;base_url&quot;: &quot;https://bitbucket.org/{namespace}/{module}&quot;, &quot;clone_url&quot;: &quot;ssh://git@bitbucket.org/{namespace}/{module}-{provider}.git&quot;, &quot;browse_url&quot;: &quot;https://bitbucket.org/{namespace}/{module}-{provider}/src/{tag}/{path}&quot;}, {&quot;name&quot;: &quot;Gitlab&quot;, &quot;base_url&quot;: &quot;https://gitlab.com/{namespace}/{module}&quot;, &quot;clone_url&quot;: &quot;ssh://git@gitlab.com/{namespace}/{module}-{provider}.git&quot;, &quot;browse_url&quot;: &quot;https://gitlab.com/{namespace}/{module}-{provider}/-/tree/{tag}/{path}&quot;}]' SECRET_KEY=ec9b8cc5ed0404acb3983b7836844d828728c22c28ecbed9095edef9b7489e85 ADMIN_AUTHENTICATION_TOKEN=password ANALYTICS_AUTH_KEYS=xxxxxx.atlasv1.zzzzzzzzzzzzz:dev,xxxxxx.atlasv1.xxxxxxxxxx:prod VERIFIED_MODULE_NAMESPACES=hashicorp TRUSTED_NAMESPACES=test DEBUG=True AUTO_PUBLISH_MODULE_VERSIONS=False LISTEN_PORT=5001 python ./terrareg.py
+PUBLIC_URL=http://localhost:5000 ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=False ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=False GIT_PROVIDER_CONFIG='[{&quot;name&quot;: &quot;GitHub&quot;, &quot;base_url&quot;: &quot;https://github.com/{namespace}/{module}&quot;, &quot;clone_url&quot;: &quot;ssh://git@github.com/{namespace}/{module}.git&quot;, &quot;browse_url&quot;: &quot;https://github.com/{namespace}/{module}/tree/{tag}/{path}&quot;}, {&quot;name&quot;: &quot;Bitbucket&quot;, &quot;base_url&quot;: &quot;https://bitbucket.org/{namespace}/{module}&quot;, &quot;clone_url&quot;: &quot;ssh://git@bitbucket.org/{namespace}/{module}-{provider}.git&quot;, &quot;browse_url&quot;: &quot;https://bitbucket.org/{namespace}/{module}-{provider}/src/{tag}/{path}&quot;}, {&quot;name&quot;: &quot;Gitlab&quot;, &quot;base_url&quot;: &quot;https://gitlab.com/{namespace}/{module}&quot;, &quot;clone_url&quot;: &quot;ssh://git@gitlab.com/{namespace}/{module}-{provider}.git&quot;, &quot;browse_url&quot;: &quot;https://gitlab.com/{namespace}/{module}-{provider}/-/tree/{tag}/{path}&quot;}]' SECRET_KEY=ec9b8cc5ed0404acb3983b7836844d828728c22c28ecbed9095edef9b7489e85 ADMIN_AUTHENTICATION_TOKEN=password ANALYTICS_AUTH_KEYS=xxxxxx.atlasv1.zzzzzzzzzzzzz:dev,xxxxxx.atlasv1.xxxxxxxxxx:prod VERIFIED_MODULE_NAMESPACES=hashicorp TRUSTED_NAMESPACES=test DEBUG=True AUTO_PUBLISH_MODULE_VERSIONS=False LISTEN_PORT=5001 python ./terrareg.py
 
 # With SSL Cert
 # Add the following argument
@@ -1460,7 +1460,7 @@ PUBLIC_URL=http://localhost:5000 ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER=False ALLO
 <h1 id="contributors">Contributors</h1>
 <ul>
 <li>@mholttech for usage builder improvements and docker-compose dev environment</li>
-<li>@Davidsoff for implementing Github hook support</li>
+<li>@Davidsoff for implementing GitHub hook support</li>
 <li>@0xken for impleenting a custom Cherry Dark theme</li>
 <li>@chriscunningham-trivago for fixing tfswitch bug in docker build</li>
 <li>@bmaximuml for fixing typos and Dockerfile improvements</li>
