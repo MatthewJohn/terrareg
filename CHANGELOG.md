@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.4.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.4.0...v3.4.1) (2024-04-01)
+
+
+### Bug Fixes
+
+* Pin tfswitch to latest working version - v1 appears to break the installation ([35df281](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/35df2812c3e6260ff70253927a20726360004527)), closes [#515](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/515)
+
 # [3.4.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.3.0...v3.4.0) (2024-03-28)
 
 
