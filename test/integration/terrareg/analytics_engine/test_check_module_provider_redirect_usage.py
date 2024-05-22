@@ -27,7 +27,7 @@ class TestCheckModuleProviderRedirectUsage(TerraregIntegrationTest):
                 module_version=version,
                 analytics_token=token,
                 terraform_version='1.1.1',
-                user_agent='',
+                user_agent='Terraform/1.1.1',
                 auth_token=None
             )
 

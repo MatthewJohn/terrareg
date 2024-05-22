@@ -1,7 +1,7 @@
 
 import re
 import datetime
-from typing import Union, List
+from typing import Union, List, Optional
 
 import sqlalchemy
 
@@ -98,18 +98,18 @@ class AnalyticsEngine:
         module_name: str,
         provider_name: str,
         module_version,
-        analytics_token: str,
-        terraform_version: str,
-        user_agent: str,
-        auth_token: str):
+        analytics_token: Optional[str],
+        terraform_version: Optional[str],
+        user_agent: Optional[str],
+        auth_token: Optional[str]):
         """Store information about module version download in database."""
 
-        # If Terraform version not present from header,
-        # attempt to determine from user agent
-        if not terraform_version:
-            user_agent_match = re.match(r'^Terraform/(\d+\.\d+\.\d+)$', user_agent)
-            if user_agent_match:
-                terraform_version = user_agent_match.group(1)
+        # Use the X-Terraform-Version header, if the user agent matches an allowed
+        # list of user agents.
+        # If the user agent does not match any of the expected prefixes, do not
+        # record the terraform version.
+        if (not user_agent) or (not any([user_agent.startswith(prefix) for prefix in ['Terraform/', 'OpenTofu/']])):
+            terraform_version = None
 
         # Obtain environment from auth token.
         # If auth token is not provided, 
