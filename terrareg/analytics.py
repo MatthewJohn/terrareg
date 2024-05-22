@@ -70,7 +70,7 @@ class AnalyticsEngine:
         )
 
     @staticmethod
-    def get_environment_from_token(auth_token):
+    def get_environment_from_token(auth_token: Optional[str]):
         """Check if auth token matches required environment analytics tokens."""
         # If no analytics tokens have been defined, return default environment
         if not AnalyticsEngine.are_tokens_enabled():
