@@ -398,3 +398,22 @@ class Provider:
             ],
             "warnings": None
         }
+
+    def get_integrations(self):
+        """Return integration URL and details"""
+        integrations = {
+            'import': {
+                'method': 'POST',
+                'url': f'/v1/providers/{self.id}/versions',
+                'description': 'Trigger version import',
+                'notes': 'Accepts JSON body with "version" key with value of version to be imported'
+            },
+            'hooks_github': {
+                'method': None,
+                'url': f'/v1/terrareg/providers/{self.id}/hooks/github',
+                'description': 'Github hook trigger',
+                'notes': 'Only accepts `Releases` events, all other events will return an error.',
+                'coming_soon': True
+            }
+        }
+        return integrations
