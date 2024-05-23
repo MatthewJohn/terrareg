@@ -1,13 +1,101 @@
 
 const router = new Navigo("/");
 
+
+class TabFactory {
+    constructor() {
+        this._tabs = [];
+        this._tabsLookup = {};
+    }
+    registerTab(tab) {
+        if (this._tabs[tab.name] !== undefined) {
+            throw "Tab already registered";
+        }
+        this._tabsLookup[tab.name] = tab;
+        this._tabs.push(tab);
+    }
+    async renderTabs() {
+        for (const tab of this._tabs) {
+            tab.render();
+        }
+        for (const tab of this._tabs) {
+            await tab._renderPromise;
+        }
+    }
+
+    async setDefaultTab() {
+
+        // Check if tab is defined in page URL anchor and if it's
+        // a valid tab
+        let windowHashValue = $(location).attr('hash').replace('#', '');
+        if (windowHashValue && this._tabsLookup[windowHashValue] !== undefined) {
+            let tab = this._tabsLookup[windowHashValue];
+
+            // Check if tab has successfully loaded
+            let isValid = await tab.isValid();
+
+            if (isValid == true) {
+                // Load tab and return
+                selectProviderTab(tab.name, false);
+                return;
+            }
+        }
+
+        if (windowHashValue.indexOf('terrareg-anchor-') === 0) {
+            // Check for any elements that have a child element that have ID/name of the anchor
+            for (const tab of this._tabs) {
+                let elements = $.find(`#provider-tab-${tab.name} #${windowHashValue}, #provider-tab-${tab.name} [name="${windowHashValue}"]`);
+                if (elements.length) {
+                    let element = elements[0];
+
+                    // Select tab
+                    selectProviderTab(tab.name, false);
+
+                    // Scroll to element
+                    element.scrollIntoView();
+                    return;
+                }
+            }
+        }
+
+        // Iterate through all tabs and select first valid tab
+        for (const tab of this._tabs) {
+            let isValid = await tab.isValid();
+            if (isValid == true) {
+                selectProviderTab(tab.name, false);
+                return;
+            }
+        }
+    }
+}
+
+class BaseTab {
+    constructor() {
+        this._renderPromise = undefined;
+    }
+    render() {  }
+    async isValid() {
+        let result = await this._renderPromise;
+        return result;
+    }
+}
+
+class ProviderDetailsTab extends BaseTab {
+    constructor(providerDetails) {
+        super();
+        this._providerDetails = providerDetails;
+    }
+    render() { }
+}
+
+
 /*
- * Setup router and call setup page depending on the page/module type
+ * Setup router and call setup page depending on the page/provider type
  */
 function renderPage() {
     const baseRoute = "/providers/:namespace/:provider";
 
-    // Base module provider route
+    // Base provider route
     router.on({
         [baseRoute]: {
             as: "rootProvider",
@@ -16,7 +104,7 @@ function renderPage() {
             }
         }
     });
-    // Base module version route
+    // Base provider version route
     router.on({
         [`${baseRoute}/:version`]: {
             as: "rootProviderVersion",
@@ -77,24 +165,6 @@ function getCurrentObjectId(data, stopAt = undefined) {
     }
 
     return id;
-}
-
-/*
- * Generate dictionary of selected documentation from router data
- */
-function getSelectedDocumentationDetails(data) {
-    // If documentation type is not present,
-    // return overview
-    if (! data.documentationCategory && ! data.documentationSlug) {
-        return {
-            slug: 'index',
-            category: 'overview'
-        }
-    }
-    return {
-        slug: data.documentationSlug,
-        category: data.documentationCategory
-    }
 }
 
 /*
@@ -391,131 +461,168 @@ function setPageTitle(data, version) {
     document.title = `${id} - Terrareg`;
 }
 
-/*
- * Redirect user to document page
- */
-function redirectDocumentPage(providerDetails, slug, category) {
-    window.location = router.generate(
-        'docsPage',
-        {namespace: providerDetails.namespace, provider: providerDetails.name, version: providerDetails.version,
-         documentationCategory: category, documentationSlug: slug},
-        {includeRoot: true, replaceRegexGroups: false}
-    )
-}
-
-/*
- * Populate documentation menu with each available doc
- */
-function populateDocumentationMenu(providerDetails) {
-    let docCountByCategory = {
-        resources: {},
-        "data-sources": {},
-        "guides": {},
-        overview: {}
+class DocumentationTab extends ProviderDetailsTab {
+    get name() {
+        return 'documentation';
     }
-    providerDetails.docs.sort((a, b) => a.slug < b.slug).forEach((doc) => {
-        if (docCountByCategory[doc.category] !== undefined) {
-            let linkName = doc.title;
-            if (["resources", "data-sources"].indexOf(doc.category) !== -1) {
-                // If resource/data-source doesn't start with name of provider, prepend it
-                if (linkName.indexOf(providerDetails.name) !== 0) {
-                    linkName = `${providerDetails.name}_${doc.title}`;
+    constructor(providerDetails, providerVersionV2Details, routeData) {
+        super();
+        this._providerDetails = providerDetails;
+        this._providerVersionV2Details = providerVersionV2Details;
+        this._routeData = routeData;
+    }
+    async render() {
+        this._renderPromise = new Promise(async (resolve) => {
+
+            let docCountByCategory = {
+                resources: {},
+                "data-sources": {},
+                "guides": {},
+                overview: {}
+            }
+            this._providerDetails.docs.sort((a, b) => a.slug < b.slug).forEach((doc) => {
+                if (docCountByCategory[doc.category] !== undefined) {
+                    let linkName = doc.title;
+                    if (["resources", "data-sources"].indexOf(doc.category) !== -1) {
+                        // If resource/data-source doesn't start with name of provider, prepend it
+                        if (linkName.indexOf(this._providerDetails.name) !== 0) {
+                            linkName = `${this._providerDetails.name}_${doc.title}`;
+                        }
+                    }
+                    let linkDiv = $(`
+                    <a id="doclink-${doc.category}-${doc.slug}" class="navbar-item">
+                        ${linkName}
+                    </a>`);
+                    linkDiv.bind('click', () => {this.redirectDocumentPage(this._providerDetails, doc.slug, doc.category)});
+                    docCountByCategory[doc.category][doc.title] = linkDiv;
+                }
+            });
+    
+            function addDocLinksToPage(parent, docs) {
+                // Sort all keys by name and iterate over them, adding to list
+                Object.keys(docs).sort((a, b) => {a > b}).forEach((docName) => {
+                    docs[docName].insertAfter(parent);
+                });
+    
+                // If there are any docs, show the header
+                if (Object.keys(docs).length) {
+                    parent.removeClass("default-hidden");
                 }
             }
-            let linkDiv = $(`
-            <a id="doclink-${doc.category}-${doc.slug}" class="navbar-item">
-                ${linkName}
-            </a>`);
-            linkDiv.bind('click', () => {redirectDocumentPage(providerDetails, doc.slug, doc.category)});
-            docCountByCategory[doc.category][doc.title] = linkDiv;
-        }
-    });
+    
+            addDocLinksToPage($('#provider-docs-menu-guides-header'), docCountByCategory.guides);
+            addDocLinksToPage($('#provider-docs-menu-resources-header'), docCountByCategory.resources);
+            addDocLinksToPage($('#provider-docs-menu-data-sources-header'), docCountByCategory["data-sources"]);
+    
+            // Bind overview button to link to overview page
+            $('#doclink-overview-index').on('click', () => {
+                window.location = router.generate('docsOverview', {
+                    namespace: this._providerDetails.namespace,
+                    provider: this._providerDetails.name,
+                    version: this._providerDetails.version
+                });
+            });
+    
+            // Show documentation tab
+            $('#provider-tab-link-documentation').removeClass('default-hidden');
 
-    function addDocLinksToPage(parent, docs) {
-        // Sort all keys by name and iterate over them, adding to list
-        Object.keys(docs).sort((a, b) => {a > b}).forEach((docName) => {
-            docs[docName].insertAfter(parent);
+            let selectedDocumentation = this.getSelectedDocumentationDetails(this._routeData);
+            this.showSelectedDocument(this._providerVersionV2Details, selectedDocumentation);
+
+            resolve(true);
         });
-
-        // If there are any docs, show the header
-        if (Object.keys(docs).length) {
-            parent.removeClass("default-hidden");
-        }
     }
 
-    addDocLinksToPage($('#provider-docs-menu-guides-header'), docCountByCategory.guides);
-    addDocLinksToPage($('#provider-docs-menu-resources-header'), docCountByCategory.resources);
-    addDocLinksToPage($('#provider-docs-menu-data-sources-header'), docCountByCategory["data-sources"]);
-
-    // Bind overview button to link to overview page
-    $('#doclink-overview-index').on('click', () => {
-        window.location = router.generate('docsOverview', {
-            namespace: providerDetails.namespace,
-            provider: providerDetails.name,
-            version: providerDetails.version
-        });
-    });
-}
-
-/*
- * Obtain the currently selected documentation
- * and display to the user
- */
-function showSelectedDocument(providerVersionV2Details, selectedDocumentation) {
-    if (! selectedDocumentation.slug || ! selectedDocumentation.category) {
-        console.log("Invalid selected documentation");
-        return;
+    /*
+    * Redirect user to document page
+    */
+    redirectDocumentPage(providerDetails, slug, category) {
+        window.location = router.generate(
+            'docsPage',
+            {namespace: providerDetails.namespace, provider: providerDetails.name, version: providerDetails.version,
+            documentationCategory: category, documentationSlug: slug},
+            {includeRoot: true, replaceRegexGroups: false}
+        )
     }
-    // Query for documentation
-    $.ajax({
-        url: '/v2/provider-docs',
-        type: "get",
-        data: {
-            'filter[provider-version]': providerVersionV2Details.id,
-            'filter[category]': selectedDocumentation.category,
-            'filter[slug]': selectedDocumentation.slug,
-            'filter[language]': 'hcl',
-            'page[size]': 1
-        },
 
-        success: (response) => {
-            if (response.data && response.data.length) {
-                obtainDocumentation(response.data[0].id)
-            } else {
-                showDocumentationError();
+    /*
+    * Obtain the currently selected documentation
+    * and display to the user
+    */
+    showSelectedDocument(providerVersionV2Details, selectedDocumentation) {
+        if (! selectedDocumentation.slug || ! selectedDocumentation.category) {
+            console.log("Invalid selected documentation");
+            return;
+        }
+        // Query for documentation
+        $.ajax({
+            url: '/v2/provider-docs',
+            type: "get",
+            data: {
+                'filter[provider-version]': providerVersionV2Details.id,
+                'filter[category]': selectedDocumentation.category,
+                'filter[slug]': selectedDocumentation.slug,
+                'filter[language]': 'hcl',
+                'page[size]': 1
+            },
+
+            success: (response) => {
+                if (response.data && response.data.length) {
+                    this.obtainDocumentation(response.data[0].id)
+                } else {
+                    this.showDocumentationError();
+                }
+            },
+            failure: (xhr) => {
+                this.showDocumentationError();
             }
-        },
-        failure: (xhr) => {
-            showDocumentationError();
-        }
-    });
+        });
 
-    // Highlight link to documentation
-    let linkElement = $(`#doclink-${selectedDocumentation.category}-${selectedDocumentation.slug}`);
-    if (linkElement) {
-        linkElement.addClass("is-active");
+        // Highlight link to documentation
+        let linkElement = $(`#doclink-${selectedDocumentation.category}-${selectedDocumentation.slug}`);
+        if (linkElement) {
+            linkElement.addClass("is-active");
+        }
     }
-}
 
-/*
- * Show warning that documentation page does not exist
- */
-function showDocumentationError() {
-    $('#provider-doc-content').html("<h3 class='subtitle is-3'>Error</h3>This documentation page does not exist")
-}
+    /*
+    * Show warning that documentation page does not exist
+    */
+    showDocumentationError() {
+        $('#provider-doc-content').html("<h3 class='subtitle is-3'>Error</h3>This documentation page does not exist")
+    }
 
-/*
- * Obtain documentation by ID and populate documentation view
- */
-function obtainDocumentation(documentationId) {
-    let contentDiv = $('#provider-doc-content');
-    contentDiv.html('');
-    $.get(`/v2/provider-docs/${documentationId}?output=html`).then((data) => {
-        if (data.data.attributes.content) {
-            contentDiv.html(data.data.attributes.content);
-            convertImportedHtml(contentDiv, true);
+    /*
+    * Obtain documentation by ID and populate documentation view
+    */
+    obtainDocumentation(documentationId) {
+        let contentDiv = $('#provider-doc-content');
+        contentDiv.html('');
+        $.get(`/v2/provider-docs/${documentationId}?output=html`).then((data) => {
+            if (data.data.attributes.content) {
+                contentDiv.html(data.data.attributes.content);
+                convertImportedHtml(contentDiv, true);
+            }
+        })
+    }
+
+    /*
+    * Generate dictionary of selected documentation from router data
+    */
+    getSelectedDocumentationDetails(data) {
+        // If documentation type is not present,
+        // return overview
+        if (! data.documentationCategory && ! data.documentationSlug) {
+            return {
+                slug: 'index',
+                category: 'overview'
+            }
         }
-    })
+        return {
+            slug: data.documentationSlug,
+            category: data.documentationCategory
+        }
+    }
 }
 
 /*
@@ -564,6 +671,37 @@ function getRedirectUrl(data, providerDetails) {
         }
     }
     return null;
+}
+
+/*
+ * Handle tab button selection.
+ *
+ * @param tabName Name of tab to switch to
+ * @param redirect Whether to add tab anchor to page URL
+ */
+function selectProviderTab(tabName, redirect) {
+    if (redirect !== false) {
+        // Set URL anchor to selected tag
+        window.location.hash = "#" + tabName;
+    }
+
+    let tabContentId = "provider-tab-" + tabName;
+    let tabLinkId = "provider-tab-link-" + tabName;
+    let i, tabContent, tabLinks;
+
+    // Hide content of all tabs
+    $.find('.provider-tabs').forEach((div) => {
+        $(div).addClass('default-hidden');
+    });
+
+    // Remove 'active' from all tab links
+    $.find('.provider-tab-link').forEach((tabLinkDiv) => {
+        $(tabLinkDiv).removeClass('is-active');
+    });
+
+    // Show content of current tab and mark current link as active.
+    $(`#${tabContentId}`).removeClass('default-hidden');
+    $(`#${tabLinkId}`).addClass('is-active');
 }
 
 /*
@@ -622,10 +760,12 @@ async function setupBasePage(data) {
     setSourceUrl(providerDetails.source);
     // populateCustomLinks(providerDetails);
 
-    populateDocumentationMenu(providerDetails);
+    let tabFactory = new TabFactory();
 
-    let selectedDocumentation = getSelectedDocumentationDetails(data);
-    showSelectedDocument(providerVersionV2Details, selectedDocumentation);
+    tabFactory.registerTab(new DocumentationTab(providerDetails, providerVersionV2Details, data));
+
+    await tabFactory.renderTabs();
+    tabFactory.setDefaultTab();
 }
 
 function documentationcategoryToTitle(category) {
