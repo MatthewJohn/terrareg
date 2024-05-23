@@ -75,24 +75,24 @@ class TestApiProviderVersionsPost(TerraregIntegrationTest):
     def test_non_existent_namespace(self, client):
         """Test endpoint with invalid namespace"""
         with unittest.mock.patch('terrareg.csrf.check_csrf_token', unittest.mock.MagicMock(return_value=True)) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.provider_model.Provider.refresh_versions', unittest.mock.MagicMock(return_value=[])) as mock_refresh_versions:
+                unittest.mock.patch('terrareg.provider_model.Provider.index_version', unittest.mock.MagicMock(return_value=None)) as mock_index_version:
 
             res = client.post(f"/v1/providers/doesnotexist/non-existent/versions", json={"csrf_token": "test", "version": "1.2.5"})
             assert res.status_code == 404
             assert res.json == {'errors': ['Not Found']}
             mock_check_csrf.assert_called_once_with('test')
-            mock_refresh_versions.assert_not_called()
+            mock_index_version.assert_not_called()
 
     def test_non_existent_provider(self, client):
         """Test endpoint with invalid namespace"""
         with unittest.mock.patch('terrareg.csrf.check_csrf_token', unittest.mock.MagicMock(return_value=True)) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.provider_model.Provider.refresh_versions', unittest.mock.MagicMock(return_value=[])) as mock_refresh_versions:
+                unittest.mock.patch('terrareg.provider_model.Provider.index_version', unittest.mock.MagicMock(return_value=None)) as mock_index_version:
 
             res = client.post(f"/v1/providers/initial-providers/does-not-exist/versions", json={"csrf_token": "test", "version": "1.2.5"})
             assert res.status_code == 404
             assert res.json == {'errors': ['Not Found']}
             mock_check_csrf.assert_called_once_with('test')
-            mock_refresh_versions.assert_not_called()
+            mock_index_version.assert_not_called()
 
     def test_without_permissions(self, client, app_context, test_request_context):
         """Test endpoint without required permissions"""
@@ -103,7 +103,7 @@ class TestApiProviderVersionsPost(TerraregIntegrationTest):
         with app_context, test_request_context, client, \
                 unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
                 unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.provider_model.Provider.refresh_versions', unittest.mock.MagicMock(return_value=[])) as mock_refresh_versions:
+                unittest.mock.patch('terrareg.provider_model.Provider.index_version', unittest.mock.MagicMock(return_value=None)) as mock_index_version:
 
             res = client.post(f"/v1/providers/initial-providers/multiple-versions/versions", json={"csrf_token": "test", "version": "1.2.5"})
             assert res.json == {'message': "You don't have the permission to access the requested resource. "
@@ -111,7 +111,7 @@ class TestApiProviderVersionsPost(TerraregIntegrationTest):
             assert res.status_code == 403
 
             mock_auth_method.can_publish_module_version.assert_called_once_with(namespace='initial-providers')
-            mock_refresh_versions.assert_not_called()
+            mock_index_version.assert_not_called()
             mock_check_csrf.assert_not_called()
 
     def test_authenticated_with_admin(self, client):
@@ -121,29 +121,29 @@ class TestApiProviderVersionsPost(TerraregIntegrationTest):
 
         with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
                 unittest.mock.patch('terrareg.csrf.check_csrf_token', return_value=True) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.provider_model.Provider.refresh_versions', unittest.mock.MagicMock(
-                    return_value=[terrareg.provider_version_model.ProviderVersion(provider=None, version="1.2.5")])) as mock_refresh_versions:
+                unittest.mock.patch('terrareg.provider_model.Provider.index_version', unittest.mock.MagicMock(
+                    return_value=terrareg.provider_version_model.ProviderVersion(provider=None, version="1.2.5"))) as mock_index_version:
 
             res = client.post(f"/v1/providers/initial-providers/multiple-versions/versions", json={"csrf_token": "test", "version": "1.2.5"})
             assert res.status_code == 200
             assert res.json == {"versions": ["1.2.5"]}
             mock_check_csrf.assert_called_once_with('test')
-            mock_refresh_versions.assert_called_once_with(version="1.2.5")
+            mock_index_version.assert_called_once_with(version="1.2.5")
 
-    def test_refresh_versions_extraction_terrareg_exception(self, client):
-        """Test refresh_versions method with Terrareg exception raised when extracting version"""
+    def test_index_version_extraction_terrareg_exception(self, client):
+        """Test index_version method with Terrareg exception raised when extracting version"""
         mock_get_current_auth_method = unittest.mock.MagicMock(return_value=AdminSessionAuthMethod())
 
         class UnittestExtractionException(terrareg.errors.TerraregError):
             pass
 
-        def raise_refresh_versions_exception(*args, **kwargs):
+        def raise_index_version_exception(*args, **kwargs):
             """Raise exception when attempting to refresh versions"""
             raise UnittestExtractionException("Unit test generic exception")
 
         with unittest.mock.patch('terrareg.auth.AuthFactory.get_current_auth_method', mock_get_current_auth_method), \
                 unittest.mock.patch('terrareg.csrf.check_csrf_token', unittest.mock.MagicMock(return_value=True)) as mock_check_csrf, \
-                unittest.mock.patch('terrareg.provider_model.Provider.refresh_versions', unittest.mock.MagicMock(side_effect=raise_refresh_versions_exception)) as mock_refresh_versions:
+                unittest.mock.patch('terrareg.provider_model.Provider.index_version', unittest.mock.MagicMock(side_effect=raise_index_version_exception)) as mock_index_version:
 
             res = client.post(f"/v1/providers/initial-providers/multiple-versions/versions", json={"csrf_token": "test", "version": "1.2.5"})
             assert res.status_code == 500

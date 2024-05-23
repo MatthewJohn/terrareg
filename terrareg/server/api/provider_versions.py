@@ -65,7 +65,7 @@ class ApiProviderVersions(ErrorCatchingResource):
             return self._get_404_response()
 
         # Index version provided by user
-        indexed_versions = provider.refresh_versions(version=args.version)
-        if not indexed_versions:
-            return {"status": "Error", "message": "Version was not found or has already been indexed"}, 422
-        return {"versions": [v.version for v in indexed_versions]}
+        provider_version = provider.index_version(version=args.version)
+        if not provider_version:
+            return {"status": "Error", "message": "Unable to create provider version"}
+        return {"versions": [provider_version.version]}

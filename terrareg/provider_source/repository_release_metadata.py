@@ -40,6 +40,12 @@ class RepositoryReleaseMetadata:
             return match.group(1)
         return None
 
+    @classmethod
+    def version_to_tag(cls, version: str) -> str:
+        """Convert tag to version"""
+        # Since we currently support the original tagging strategy 'v{version}', simply add "v" prefix
+        return f"v{version}"
+
     @property
     def version(self) -> Union[None, str]:
         """Convert tag to version"""

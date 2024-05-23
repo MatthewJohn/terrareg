@@ -430,3 +430,15 @@ class FileUploadError(TerraregError):
     """Error whilst uploading a file"""
 
     pass
+
+
+class ProviderVersionAlreadyIndexedError(TerraregError):
+    """Provider version has already been indexed"""
+
+    pass
+
+
+class UnableToObtainReleaseError(TerraregError):
+    """Unable to find Release metadata from provider"""
+
+    pass
