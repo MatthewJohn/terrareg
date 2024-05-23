@@ -66,4 +66,6 @@ class ApiProviderVersions(ErrorCatchingResource):
 
         # Index version provided by user
         indexed_versions = provider.refresh_versions(version=args.version)
+        if not indexed_versions:
+            return {"status": "Error", "message": "Version was not found or has already been indexed"}, 422
         return {"versions": [v.version for v in indexed_versions]}

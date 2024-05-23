@@ -625,6 +625,109 @@ class DocumentationTab extends ProviderDetailsTab {
     }
 }
 
+class IntegrationsTab extends ProviderDetailsTab {
+    get name() {
+        return 'integrations';
+    }
+    async render() {
+        this._renderPromise = new Promise(async (resolve) => {
+            let config = await getConfig();
+            let loggedIn = await isLoggedIn();
+
+            // Setup callback method for indexing a provider version
+            $("#integration-index-version-button").bind("click", () => {
+                this._indexProviderVersion();
+                return false;
+            });
+
+            $.get(`/v1/terrareg/providers/${this._providerDetails.namespace}/${this._providerDetails.name}/integrations`, (integrations) => {
+                let integrationsTable = $("#integrations-table");
+                integrations.forEach((integration) => {
+                    // Create tr for integration
+                    let tr = $("<tr></tr>");
+
+                    // Create td for description and put into row
+                    let description = $("<td></td>");
+                    description.text(integration.description);
+                    if (integration.coming_soon) {
+                        description.append(" <b>(Coming soon)</b>");
+                    }
+                    tr.append(description);
+
+                    // Create TD for integration details
+                    let contentTd = $("<td></td>");
+                    let codeBlock = $("<code></code>");
+
+                    let urlCodeContent = "";
+                    // If method was provided, prepend the URL with the method
+                    if (integration.method) {
+                        urlCodeContent += integration.method + " ";
+                    }
+                    // Add URL to code block, generating from
+                    // current protocol, hostname and URL endpoint in integration.
+                    urlCodeContent += pathToUrl(integration.url);
+                    codeBlock.text(urlCodeContent);
+
+                    contentTd.append(codeBlock);
+
+                    // Add notes to TD on new line, if present.
+                    if (integration.notes) {
+                        contentTd.append("<br />" + integration.notes);
+                    }
+
+                    tr.append(contentTd);
+
+                    integrationsTable.append(tr);
+                });
+            });
+
+            // Show integrations tab link
+            $("#provider-tab-link-integrations").removeClass('default-hidden');
+
+            resolve(true);
+        });
+    }
+
+    /*
+    * Index new module provider version
+    */
+    _indexProviderVersion() {
+        let versionToIndex = $("#indexProviderVersion").val();
+
+        let inProgressMessage = $('#index-version-in-progress');
+        let successMessage = $('#index-version-success');
+        let errorMessage = $('#index-version-error');
+        // Hide success/error and show in-progress
+        successMessage.addClass('default-hidden');
+        errorMessage.addClass('default-hidden');
+        inProgressMessage.html('Indexing provider version in progress...');
+        inProgressMessage.removeClass('default-hidden');
+
+        $.ajax({
+            url: `/v1/providers/${this._providerDetails.namespace}/${this._providerDetails.name}/versions`,
+            method: 'post',
+            data: JSON.stringify({
+                version: versionToIndex,
+                csrf_token: $('#integrations-csrf-token').val(),
+            }),
+            contentType: 'application/json'
+        }).done(() => {
+            // Show success message for importing module
+            successMessage.html("Successfully indexed version");
+            successMessage.removeClass('default-hidden');
+            inProgressMessage.addClass('default-hidden');
+            errorMessage.addClass('default-hidden');
+        })
+        .fail((res) => {
+            // Render and show error
+            errorMessage.html(failedResponseToErrorString(res));
+            errorMessage.removeClass('default-hidden');
+            // Hide in-progress
+            inProgressMessage.addClass('default-hidden');
+        });
+    }
+}
+
 /*
  * Get redirect URL if URL does not match actual
  * provider details, meaning it's
@@ -763,6 +866,7 @@ async function setupBasePage(data) {
     let tabFactory = new TabFactory();
 
     tabFactory.registerTab(new DocumentationTab(providerDetails, providerVersionV2Details, data));
+    tabFactory.registerTab(new IntegrationsTab(providerDetails));
 
     await tabFactory.renderTabs();
     tabFactory.setDefaultTab();

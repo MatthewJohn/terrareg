@@ -153,7 +153,12 @@
 
 <div class="tabs">
     <ul>
-        <li id="provider-tab-link-documentation" class="provider-tab-link default-hidden"><a onclick="selectProvidereTab('documentation')">Documentation</a></li>
+        <li id="provider-tab-link-documentation" class="provider-tab-link default-hidden"><a onclick="selectProviderTab('documentation')">Documentation</a></li>
+        <li id="provider-tab-link-integrations" class="provider-tab-link default-hidden">
+            <a onclick="selectProviderTab('integrations')">
+                Integrations
+            </a>
+        </li>
     </ul>
 </div>
 
@@ -191,6 +196,40 @@
                 </div>
 
                 <div id="provider-doc-content" class="column is-four-fifths provider-doc-content">
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Integrations tab -->
+        <div id="provider-tab-integrations" class="provider-tabs default-hidden">
+            <div class="column is-three-fifths is-offset-one-fifth">
+                <p class="subtitle">
+                    Integrations
+                </p>
+
+                <table id="integrations-table" class="table">
+                </table>
+
+                <div id="index-version-in-progress" class="notification is-info default-hidden">
+                </div>
+                <div id="index-version-success" class="notification is-success default-hidden">
+                </div>
+                <div id="index-version-error" class="notification is-danger default-hidden">
+                </div>
+                <p class="subtitle">Manually index version</p>
+                <div class="field is-vertical">
+                    <label class="label">Version</label>
+                    <div class="control">
+                        <input id="indexProviderVersion" class="input is-small" type="text" size="5" placeholder="1.0.0">
+                        <input type="hidden" id="integrations-csrf-token" value="{{ csrf_token }}" />
+                    </div>
+                    <div class="control">
+                        <br />
+                        <button id="integration-index-version-button" class="button is-info is-small">
+                        Index Version
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
