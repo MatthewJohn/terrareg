@@ -33,19 +33,16 @@ For a full list of issues and pull requests, please see [https://gitlab.dockstud
 
 ## Getting started
 
-
-    # Clone the repository
-    git clone https://github.com/matthewJohn/terrareg
-    cd terrareg
-
-    # Builder docker image
-    docker build . -t terrareg:latest
-
     # Create secret key for session data
     export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex())')
 
     # Run container, specifying secret key and admin password
-    docker run -ti -p 5000:5000 -e PUBLIC_URL=http://localhost:5000 -e MIGRATE_DATABASE=True -e SECRET_KEY=$SECRET_KEY -e ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword terrareg:latest
+    docker run -ti -p 5000:5000 \
+        -e PUBLIC_URL=http://localhost:5000 \
+        -e MIGRATE_DATABASE=True \
+        -e SECRET_KEY=$SECRET_KEY \
+        -e ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword \
+        ghcr.io/matthewjohn/terrareg:latest
 
 The site can be accessed at http://localhost:5000, which will provide a 'Initial Setup' guide for getting started.
 
