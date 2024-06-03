@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.4.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.4.1...v3.4.2) (2024-05-26)
+
+
+### Bug Fixes
+
+* Ensure user-agent matches expected Terraform or OpenTofu user agents ([83ee182](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/83ee18215c818cf59151b7aabf35803f3bc96b21)), closes [#519](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/519)
+
 ## [3.4.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.4.0...v3.4.1) (2024-04-01)
 
 
