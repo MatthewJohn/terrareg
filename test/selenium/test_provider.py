@@ -60,6 +60,9 @@ class TestProvider(SeleniumTest):
         """Test page functionality on a provider with version."""
         self.selenium_instance.get(self.get_url('/providers/initial-providers/mv/1.5.0'))
 
+        # Wait for docs tab
+        self.wait_for_element(By.ID, 'provider-tab-link-documentation')
+
         # Check index of docs are shown
         docs = self.selenium_instance.find_element(By.ID, "provider-doc-content")
         assert docs.is_displayed() is True
