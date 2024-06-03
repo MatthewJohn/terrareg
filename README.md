@@ -50,6 +50,8 @@ For information about running with docker-compose, SSL certificate generation or
 
 ## Upload a terraform module:
 
+**Warning**: Terrareg downloads and analyses modules. Be careful when using untrusted modules or modules that use untrusted Terraform providers, as this can allow arbitrary code execution.
+
 ### From a git repo
 
 
