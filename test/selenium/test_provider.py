@@ -123,3 +123,46 @@ mv_some_thing
                 break
 
         self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url(href))
+
+    def test_integrations_tab(self):
+        """Ensure integrations tab is displayed correctly."""
+        self.selenium_instance.get(self.get_url('/providers/initial-providers/mv/1.5.0'))
+
+        # Wait for integrations tab button to be visible
+        integrations_tab_button = self.wait_for_element(By.ID, 'provider-tab-link-integrations')
+
+        # Ensure the integrations tab content is not visible
+        assert self.wait_for_element(By.ID, 'provider-tab-integrations', ensure_displayed=False).is_displayed() == False
+
+        # Click on integrations tab
+        integrations_tab_button.click()
+
+        integrations_tab_content = self.selenium_instance.find_element(By.ID, 'provider-tab-integrations')
+
+        # Ensure tab is displayed
+        self.assert_equals(lambda: integrations_tab_content.is_displayed(), True)
+
+        integrations_table = integrations_tab_content.find_element(By.TAG_NAME, 'table')
+        table_rows = integrations_table.find_elements(By.TAG_NAME, 'tr')
+
+        expected_integrations = [
+            [
+                'Trigger version import',
+                f'POST {self.get_url("/v1/providers/initial-providers/mv/versions")}\n' +
+                'Accepts JSON body with "version" key with value of version to be imported'
+            ],
+        ]
+
+        # Check number of rows in tab
+        assert len(table_rows) == len(expected_integrations)
+
+        for row_itx, expected_row in enumerate(expected_integrations):
+            # Find all columns (heading row uses th and subsequent rows use td)
+            row_columns = table_rows[row_itx].find_elements(By.TAG_NAME, 'td')
+
+            ## Ensure each table row has 4 columns
+            assert len(row_columns) == 2
+
+            # Check columns of row match expected text
+            row_text = [col.text for col in row_columns]
+            assert row_text == expected_row
