@@ -1373,22 +1373,21 @@
 <p><a class="glightbox" href="./docs/screenshots/module_provider.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="Module Provider" src="./docs/screenshots/module_provider.png" /></a></p>
 <p><a class="glightbox" href="./docs/screenshots/example.png" data-type="image" data-width="auto" data-height="auto" data-desc-position="bottom"><img alt="Example" src="./docs/screenshots/example.png" /></a></p>
 <h2 id="getting-started">Getting started</h2>
-<pre><code># Clone the repository
-git clone https://github.com/matthewJohn/terrareg
-cd terrareg
-
-# Builder docker image
-docker build . -t terrareg:latest
-
-# Create secret key for session data
+<pre><code># Create secret key for session data
 export SECRET_KEY=$(python -c 'import secrets; print(secrets.token_hex())')
 
 # Run container, specifying secret key and admin password
-docker run -ti -p 5000:5000 -e PUBLIC_URL=http://localhost:5000 -e MIGRATE_DATABASE=True -e SECRET_KEY=$SECRET_KEY -e ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword terrareg:latest
+docker run -ti -p 5000:5000 \
+    -e PUBLIC_URL=http://localhost:5000 \
+    -e MIGRATE_DATABASE=True \
+    -e SECRET_KEY=$SECRET_KEY \
+    -e ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword \
+    ghcr.io/matthewjohn/terrareg:latest
 </code></pre>
 <p>The site can be accessed at http://localhost:5000, which will provide a 'Initial Setup' guide for getting started.</p>
 <p>For information about running with docker-compose, SSL certificate generation or running without docker, see <a href="./docs/LOCAL_DEVELOPMENT.md">docs/LOCAL_DEVELOPMENT.md</a>.</p>
 <h2 id="upload-a-terraform-module">Upload a terraform module:</h2>
+<p><strong>Warning</strong>: Terrareg downloads and analyses modules. Be careful when using untrusted modules or modules that use untrusted Terraform providers, as this can allow arbitrary code execution.</p>
 <h3 id="from-a-git-repo">From a git repo</h3>
 <ul>
 <li>Goto http://localhost:5000</li>
