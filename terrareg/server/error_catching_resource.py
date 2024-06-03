@@ -1,11 +1,12 @@
 
-from re import L
-import traceback
+from typing import Tuple, Union, Dict
+
 from flask_restful import Resource
 
 from terrareg.server.base_handler import BaseHandler
 import terrareg.errors
 import terrareg.models
+import terrareg.provider_model
 
 
 def api_error(msg):
@@ -84,7 +85,10 @@ class ErrorCatchingResource(Resource, BaseHandler):
                             'or your browser doesn\'t understand how to supply the credentials required.')
         }, 401
 
-    def get_module_provider_by_names(self, namespace, name, provider, create=False):
+    def get_module_provider_by_names(self, namespace: str, name: str, provider: str, create: bool=False) -> Union[
+            Tuple[terrareg.models.Namespace, terrareg.models.Module, terrareg.models.ModuleProvider, None],
+            Tuple[None, None, None, Tuple[Dict[str, str], int]],
+        ]:
         """Obtain namespace, module, provider objects by name"""
         namespace_obj = terrareg.models.Namespace.get(namespace, create=create)
         if namespace_obj is None:
@@ -98,7 +102,10 @@ class ErrorCatchingResource(Resource, BaseHandler):
 
         return namespace_obj, module_obj, module_provider_obj, None
 
-    def get_module_version_by_name(self, namespace, name, provider, version, create=False):
+    def get_module_version_by_name(self, namespace: str, name: str, provider: str, version: str, create: bool=False) -> Union[
+            Tuple[terrareg.models.Namespace, terrareg.models.Module, terrareg.models.ModuleProvider, terrareg.models.ModuleVersion, None],
+            Tuple[None, None, None, None, Tuple[Dict[str, str], int]]
+        ]:
         """Obtain namespace, module, provider and module version by names"""
         namespace_obj, module_obj, module_provider_obj, error = self.get_module_provider_by_names(namespace, name, provider, create=create)
         if error:
@@ -109,3 +116,18 @@ class ErrorCatchingResource(Resource, BaseHandler):
             return namespace_obj, module_obj, module_provider_obj, None, ({'message': 'Module version does not exist'}, 400)
 
         return namespace_obj, module_obj, module_provider_obj, module_version_obj, None
+
+    def get_provider_by_names(self, namespace: str, provider: str) -> Union[
+            Tuple[terrareg.models.Namespace, terrareg.provider_model.Provider, None],
+            Tuple[None, None, Tuple[Dict[str, str], int]],
+        ]:
+        """Obtain namespace, provider objects by name"""
+        namespace_obj = terrareg.models.Namespace.get(namespace)
+        if namespace_obj is None:
+            return None, None, ({'message': 'Namespace does not exist'}, 400)
+
+        provider_obj = terrareg.provider_model.Provider.get(namespace=namespace_obj, name=provider)
+        if provider_obj is None:
+            return None, None, ({'message': 'Provider does not exist'}, 400)
+
+        return namespace_obj, provider_obj, None

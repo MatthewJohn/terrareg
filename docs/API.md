@@ -198,6 +198,18 @@ Return list of providers in namespace
 Return provider details.
 
 
+## ApiTerraregProviderIntegrations
+
+`/v1/terrareg/providers/<string:namespace>/<string:provider>/integrations`
+
+Interface to provide list of integration URLs
+
+
+#### GET
+
+Return list of integration URLs
+
+
 ## ApiProviderVersions
 
 `/v1/providers/<string:namespace>/<string:provider>/versions`
@@ -208,6 +220,16 @@ Return provider details.
 #### GET
 
 Return provider version details.
+#### POST
+
+Return provider version details.
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| version | json | str | True | `None` | Version to be indexed |
+| csrf_token | json | str | False | `None` | CSRF Token |
+
 
 
 ## ApiProviderVersionDownload
