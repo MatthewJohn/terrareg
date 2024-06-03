@@ -1,7 +1,6 @@
-
-
 from unittest import mock
 
+from flask import request
 import pytest
 from selenium.webdriver.common.by import By
 
@@ -16,15 +15,17 @@ class TestProvider(SeleniumTest):
     @classmethod
     def setup_class(cls):
         """Setup required mocks."""
-        cls._api_version_create_mock = mock.Mock(return_value={'status': 'Success'})
-        cls._api_version_publish_mock = mock.Mock(return_value={'status': 'Success'})
+        # Capture last JSON data from versions POST request
+        cls._last_api_mock_version_publish_body = None
+        def version_post_side_effect(*args, **kwargs):
+            cls._last_api_mock_version_publish_body = request.json
+            return {'status': 'Success'}
+        cls._api_version_post_mock = mock.Mock(side_effect=version_post_side_effect)
         cls._config_publish_api_keys_mock = mock.patch('terrareg.config.Config.PUBLISH_API_KEYS', [])
         cls._config_enable_access_controls = mock.patch('terrareg.config.Config.ENABLE_ACCESS_CONTROLS', False)
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
-        cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
-        cls.register_patch(mock.patch('terrareg.server.api.ApiModuleVersionCreate._post', cls._api_version_create_mock))
-        cls.register_patch(mock.patch('terrareg.server.api.ApiTerraregModuleVersionPublish._post', cls._api_version_publish_mock))
+        cls.register_patch(mock.patch('terrareg.server.api.ApiProviderVersions._post', cls._api_version_post_mock))
         cls.register_patch(cls._config_publish_api_keys_mock)
         cls.register_patch(cls._config_enable_access_controls)
 
@@ -166,3 +167,36 @@ mv_some_thing
             # Check columns of row match expected text
             row_text = [col.text for col in row_columns]
             assert row_text == expected_row
+
+    def test_integration_tab_index_version(self):
+        """Test indexing a new module version from the integration tab"""
+        self.selenium_instance.get(self.get_url('/providers/initial-providers/mv/1.5.0'))
+
+        # Wait for integrations tab button to be visible
+        integrations_tab_button = self.wait_for_element(By.ID, 'provider-tab-link-integrations')
+
+        # Ensure the integrations tab content is not visible
+        assert self.wait_for_element(By.ID, 'provider-tab-integrations', ensure_displayed=False).is_displayed() == False
+
+        # Click on integrations tab
+        integrations_tab_button.click()
+
+        integrations_tab_content = self.selenium_instance.find_element(By.ID, 'provider-tab-integrations')
+
+        # Type version number and submit form
+        integrations_tab_content.find_element(By.ID, 'indexProviderVersion').send_keys('5.2.1')
+        integrations_tab_content.find_element(By.ID, 'integration-index-version-button').click()
+
+        # Wait for success message to be displayed
+        success_message = self.wait_for_element(By.ID, 'index-version-success', parent=integrations_tab_content)
+        self.assert_equals(lambda: success_message.is_displayed(), True)
+        self.assert_equals(lambda: success_message.text, 'Successfully indexed version')
+
+        # Check error message is not displayed
+        error_message = integrations_tab_content.find_element(By.ID, 'index-version-error')
+        assert error_message.is_displayed() == False
+
+        # Ensure version create endpoint was called and publish was not
+        self._api_version_post_mock.assert_called_once_with(namespace='initial-providers', provider='mv')
+        assert "version" in TestProvider._last_api_mock_version_publish_body
+        assert TestProvider._last_api_mock_version_publish_body["version"] == "5.2.1"
