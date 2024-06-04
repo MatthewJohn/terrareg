@@ -282,10 +282,7 @@ class InputsTab extends ModuleDetailsTab {
                 inputRow.append(nameTd);
 
                 let descriptionTd = $("<td></td>");
-                descriptionTd.text(input.description);
-
-                // Replace new line characters in description with line breaks
-                descriptionTd.html(descriptionTd.html().replace(/\n/g, '<br />'));
+                descriptionTd.html(input.description);
                 inputRow.append(descriptionTd);
 
                 let typeTd = $("<td></td>");
@@ -322,9 +319,7 @@ class OutputsTab extends ModuleDetailsTab {
                 outputRow.append(nameTd);
 
                 let descriptionTd = $("<td></td>");
-                descriptionTd.text(output.description);
-                // Replace new line characters in description with line breaks
-                descriptionTd.html(descriptionTd.html().replace(/\n/g, '<br />'));
+                descriptionTd.html(output.description);
                 outputRow.append(descriptionTd);
 
                 outputTabTbody.append(outputRow);
@@ -993,7 +988,7 @@ class BaseUsageBuilderRow {
 
         let additionalHelpTd = $('<td></td>');
         additionalHelpTd.attr('style', 'width: 50%');
-        additionalHelpTd.text(this.config.additional_help ? this.config.additional_help : '');
+        additionalHelpTd.html(this.config.additional_help ? this.config.additional_help : '');
         inputRow.append(additionalHelpTd);
 
         let valueTd = $('<td></td>');
