@@ -230,6 +230,167 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
         assert res.status_code == 200
 
     @setup_test_data()
+    def test_html_output(self, client, mock_models):
+        res = client.get('/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/1.5.0?output=html')
+
+        assert res.json == {
+            "id": "moduledetails/fullypopulated/testprovider/1.5.0",
+            "namespace": "moduledetails",
+            "name": "fullypopulated",
+            "provider": "testprovider",
+            "verified": False,
+            "trusted": False,
+            "versions": ["1.2.0", "1.5.0"],
+            "module_provider_id": "moduledetails/fullypopulated/testprovider",
+            "git_provider_id": None,
+            "git_tag_format": "{version}",
+            "git_path": None,
+            "repo_base_url_template": "https://mp-base-url.com/{namespace}/{module}-{provider}",
+            "repo_clone_url_template": "ssh://mp-clone-url.com/{namespace}/{module}-{provider}",
+            "repo_browse_url_template": "https://mp-browse-url.com/{namespace}/{module}-{provider}/browse/{tag}/{path}suffix",
+            "owner": "This is the owner of the module",
+            "version": "1.5.0",
+            "description": "This is a test module version for tests.",
+            "source": "https://link-to.com/source-code-here",
+            "published_at": "2022-01-05T22:53:12",
+            "downloads": 0,
+            "internal": False,
+            "root": {
+                "path": "",
+                "readme": "# This is an exaple README!",
+                "empty": False,
+                "inputs": [
+                    {
+                        "name": "name_of_application",
+                        "type": "string",
+                        "description": "Enter the application name",
+                        "default": None,
+                        "required": True,
+                    },
+                    {
+                        "name": "string_with_default_value",
+                        "type": "string",
+                        "description": "Override the default string",
+                        "default": "this is the default",
+                        "required": False,
+                    },
+                    {
+                        "name": "example_boolean_input",
+                        "type": "bool",
+                        "description": "Override the truthful boolean",
+                        "default": True,
+                        "required": False,
+                    },
+                    {
+                        "name": "example_list_input",
+                        "type": "list",
+                        "description": "Override the stringy list",
+                        "default": ["value 1", "value 2"],
+                        "required": False,
+                    },
+                ],
+                "outputs": [
+                    {"name": "generated_name", "description": "Name with randomness"},
+                    {"name": "no_desc_output", "description": None},
+                ],
+                "dependencies": [
+                    {
+                        "name": "hashicorp-registry-module",
+                        "source": "matthewjohn/test-module/null",
+                        "version": "1.5.0",
+                    },
+                    {
+                        "name": "local-registry-module",
+                        "source": "my-registry.example.com/matthewjohn/test-module/null",
+                        "version": "2.1.3",
+                    },
+                ],
+                "provider_dependencies": [
+                    {
+                        "name": "random",
+                        "namespace": "hashicorp",
+                        "source": "",
+                        "version": ">= 5.2.1, < 6.0.0",
+                    },
+                    {
+                        "name": "unsafe",
+                        "namespace": "someothercompany",
+                        "source": "",
+                        "version": "2.0.0",
+                    },
+                ],
+                "resources": [
+                    {
+                        "type": "string",
+                        "name": "random_suffix",
+                        "provider": "random",
+                        "source": "hashicorp/random",
+                        "mode": "managed",
+                        "version": "latest",
+                        "description": None,
+                    }
+                ],
+                "modules": [
+                    {
+                        "name": "local-path-module",
+                        "source": "./modules/local-module",
+                        "version": None,
+                        "description": "A local module",
+                    },
+                    {
+                        "name": "hashicorp-registry-module",
+                        "source": "matthewjohn/test-module/null",
+                        "version": "1.5.0",
+                        "description": "A module from hashicorp",
+                    },
+                    {
+                        "name": "local-registry-module",
+                        "source": "my-registry.example.com/matthewjohn/test-module/null",
+                        "version": "2.1.3",
+                        "description": "A module from local registry",
+                    },
+                    {
+                        "name": "hashicorp-registry-module.hashicorp-sub-module",
+                        "source": "matthewjohn/test-module/null//modules/hashi-submodule",
+                        "version": "1.5.0",
+                        "description": "A module from hashicorp",
+                    },
+                    {
+                        "name": "local-path-module.local-child-module",
+                        "source": "./modules/second-local",
+                        "version": None,
+                        "description": "A local module",
+                    },
+                    {
+                        "name": "local-registry-module.alternative-sub-module",
+                        "source": "my-registry.example.com/matthewjohn/test-module/null//modules/alternative-submodule",
+                        "version": "2.1.3",
+                        "description": "A module from local registry",
+                    },
+                ],
+            },
+            "submodules": [],
+            "providers": ["testprovider"],
+            "published_at_display": "January 05, 2022",
+            "display_source_url": "https://mp-browse-url.com/moduledetails/fullypopulated-testprovider/browse/1.5.0/suffix",
+            "terraform_example_version_string": "1.5.0",
+            "terraform_example_version_comment": [],
+            "beta": False,
+            "published": True,
+            "security_failures": 0,
+            "security_results": None,
+            "additional_tab_files": {"Release Notes": "CHANGELOG.md", "License": "LICENSE"},
+            "custom_links": [],
+            "graph_url": "/modules/moduledetails/fullypopulated/testprovider/1.5.0/graph",
+            "terraform_version_constraint": ">= 1.0, < 2.0.0",
+            "module_extraction_up_to_date": True,
+            "usage_example": 'module "fullypopulated" {\n  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"\n  version = "1.5.0"\n\n  # Provide variables here\n}',
+        }
+
+
+        assert res.status_code == 200
+
+    @setup_test_data()
     def test_terraform_version_constraint(self, client, mock_models):
         """Test terraform_version_constraint attribute"""
         res = client.get('/v1/terrareg/modules/moduledetails/fullypopulated/testprovider/1.5.0')
