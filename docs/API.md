@@ -889,6 +889,12 @@ Provide variable template for module version.
 #### GET
 
 Return variable template.
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| output | args | str | False | `md` | Variable/Output description format, either "html" or "md" |
+
 
 
 ## ApiTerraregModuleVersionFile

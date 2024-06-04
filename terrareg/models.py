@@ -3693,8 +3693,7 @@ class ModuleVersion(TerraformSpecsObject):
         """Return registry path ID (with excludes version)."""
         return self._module_provider.id
 
-    @property
-    def variable_template(self):
+    def get_variable_template(self, html: bool=False):
         """Return variable template for module version."""
         raw_json = Database.decode_blob(self._get_db_row()['variable_template'])
         variables = json.loads(raw_json) if raw_json else []
@@ -3703,7 +3702,7 @@ class ModuleVersion(TerraformSpecsObject):
         for variable in variables:
             variable['required'] = variable.get('required', True)
             variable['type'] = variable.get('type', 'text')
-            variable['additional_help'] = variable.get('additional_help', '')
+            variable['additional_help'] = sanitise_html_content(variable.get('additional_help', ''))
             variable['quote_value'] = variable.get('quote_value', True)
             variable['default_value'] = variable.get('default_value', None)
 
@@ -3713,7 +3712,7 @@ class ModuleVersion(TerraformSpecsObject):
             variables = []
 
         if terrareg.config.Config().AUTOGENERATE_USAGE_BUILDER_VARIABLES:
-            for input_variable in self.get_terraform_inputs():
+            for input_variable in self.get_terraform_inputs(html=html):
                 if input_variable['name'] not in [v['name'] for v in variables]:
                     converted_type = 'text'
                     quote_value = True
