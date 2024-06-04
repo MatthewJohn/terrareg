@@ -179,6 +179,18 @@ test_data_full = {
                                 'type': 'text',
                                 'quote_value': True,
                                 'additional_help': 'Provide the name of the application'
+                            },
+                            {
+                                'name': 'variable_template_with_markdown',
+                                'type': 'text',
+                                'quote_value': True,
+                                'additional_help': 'This **is** some _markdown_'
+                            },
+                            {
+                                'name': 'variable_template_with_html',
+                                'type': 'text',
+                                'quote_value': True,
+                                'additional_help': 'This <b>is</b> some <i>html</i>'
                             }
 
                         ]),
