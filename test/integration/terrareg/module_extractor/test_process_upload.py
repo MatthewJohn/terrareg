@@ -445,13 +445,17 @@ class TestProcessUpload(TerraregIntegrationTest):
             with test_upload as upload_directory:
                 # Create main.tf
                 with open(os.path.join(upload_directory, 'main.tf'), 'w') as main_tf_fh:
-                    main_tf_fh.writelines(UploadTestModule.VALID_MAIN_TF_FILE)
+                    main_tf_fh.writelines(UploadTestModule.MAIN_TF_WITH_HTML_MARKDOWN)
 
                 with open(os.path.join(upload_directory, 'terrareg.json'), 'w') as metadata_fh:
                     metadata_fh.writelines(json.dumps({
                         'description': 'Test unittest description',
                         'owner': 'Test unittest owner',
-                        'variable_template': [{"name": "test_variable","type": "text","quote_value": True,'required': False}],
+                        'variable_template': [
+                            {"name": "test_variable","type": "text","quote_value": True,'required': False},
+                            {"name": "with_html_content","type": "text","quote_value": True,'required': False,
+                             "additional_help": "<b>Some <a href='#'>link</a></b>"},
+                        ],
                         'repo_clone_url': 'ssh://overrideurl_here.com/{namespace}/{module}-{provider}',
                         'repo_base_url': 'https://realoverride.com/blah/{namespace}-{module}-{provider}',
                         'repo_browse_url': 'https://base_url.com/{namespace}-{module}-{provider}-{tag}/{path}'
@@ -505,23 +509,105 @@ class TestProcessUpload(TerraregIntegrationTest):
         # Check attributes from terrareg
         assert module_version.description == 'Test unittest description'
         assert module_version.owner == 'Test unittest owner'
-        assert module_version.variable_template == [
+        assert module_version.get_variable_template() == [
             {
-                'name': 'test_variable',
-                'quote_value': True,
-                'type': 'text',
-                'required': False,
+                'additional_help': '',
                 'default_value': None,
-                'additional_help': ''
-            },
-            {
-                'additional_help': 'This is a test input',
-                'default_value': 'test_default_val',
-                'name': 'test_input',
+                'name': 'test_variable',
                 'quote_value': True,
                 'required': False,
                 'type': 'text'
-            }
+            },
+            {
+                'additional_help': '<b>Some <a href="#">link</a></b>',
+                'default_value': None,
+                'name': 'with_html_content',
+                'quote_value': True,
+                'required': False,
+                'type': 'text'
+            },
+            {
+                'additional_help': '<h1>Title</h1>\n'
+                                   '<h2>Sub title</h2>\n'
+                                   '\n'
+                                   '<b>Some bold text</b>\n'
+                                   '\n'
+                                   '<code>Code block</code>\n'
+                                   '\n'
+                                   '<a href="https://duckduckgo.com">Duck Duck Go</a>\n',
+                'default_value': '<b>Some bold Text</b>\n',
+                'name': 'test_input_html',
+                'quote_value': True,
+                'required': False,
+                'type': 'text'
+            },
+            {
+                'additional_help': '# This is markdown title\n'
+                                   '\n'
+                                   '## Sub title\n'
+                                   '\n'
+                                   '**Some bold text**\n'
+                                   '\n'
+                                   '`code block`\n'
+                                   '\n'
+                                   '```\n'
+                                   'Multi-line\n'
+                                   'code block\n'
+                                   '```\n'
+                                   '\n'
+                                   '[Duck Duck Go](https://duckduckgo.com)\n'
+                                   '\n',
+                'default_value': '**Some bold text**\n',
+                'name': 'test_input_markdown',
+                'quote_value': True,
+                'required': False,
+                'type': 'text'
+            },
+        ]
+
+        assert module_version.get_variable_template(html=True) == [
+            {
+                'additional_help': '',
+                'default_value': None,
+                'name': 'test_variable',
+                'quote_value': True,
+                'required': False,
+                'type': 'text'
+            },
+            {
+                'additional_help': '<b>Some <a href="#">link</a></b>',
+                'default_value': None,
+                'name': 'with_html_content',
+                'quote_value': True,
+                'required': False,
+                'type': 'text'
+                },
+            {
+                'additional_help': '<h1>Title</h1>\n'
+                                   '<h2>Sub title</h2>\n'
+                                   '\n'
+                                   '<p><b>Some bold text</b></p>\n'
+                                   '<p><code>Code block</code></p>\n'
+                                   '<p><a href="https://duckduckgo.com">Duck Duck Go</a></p>',
+                'default_value': '<b>Some bold Text</b>\n',
+                'name': 'test_input_html',
+                'quote_value': True,
+                'required': False,
+                'type': 'text'
+                },
+            {
+                'additional_help': '<h1 id="terrareg-anchor--this-is-markdown-title">This is markdown title</h1>\n'
+                                   '<h2 id="terrareg-anchor--sub-title">Sub title</h2>\n'
+                                   '<p><strong>Some bold text</strong></p>\n'
+                                   '<p><code>code block</code></p>\n'
+                                   '<pre><code>Multi-line\ncode block\n</code></pre>\n'
+                                   '<p><a href="https://duckduckgo.com">Duck Duck Go</a></p>',
+                'default_value': '**Some bold text**\n',
+                'name': 'test_input_markdown',
+                'quote_value': True,
+                'required': False,
+                'type': 'text'
+            },
         ]
 
     def test_non_root_repo_directory(self):
