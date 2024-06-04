@@ -3298,13 +3298,31 @@ module "{self.module_version.module_provider.module.name}" {{
             return content
         return None
 
-    def get_terraform_inputs(self):
+    def get_terraform_inputs(self, html: bool=False):
         """Obtain module inputs"""
-        return self.get_module_specs().get('inputs', [])
+        inputs = self.get_module_specs().get('inputs', [])
+        # Rewrite variable/output descriptions to use markdown
+        if html:
+            for input_ in inputs:
+                description = input_.get("description")
+                if description:
+                    description = convert_markdown_to_html(file_name="", markdown_html=description)
+                    description = sanitise_html_content(text=description, allow_markdown_html=True)
+                    input_["description"] = description
+        return inputs
 
-    def get_terraform_outputs(self):
+    def get_terraform_outputs(self, html: bool=False):
         """Obtain module inputs"""
-        return self.get_module_specs().get('outputs', [])
+        outputs = self.get_module_specs().get('outputs', [])
+        # Rewrite variable/output descriptions to use markdown
+        if html:
+            for output in outputs:
+                description = output.get("description")
+                if description:
+                    description = convert_markdown_to_html(file_name="", markdown_html=description)
+                    description = sanitise_html_content(text=description, allow_markdown_html=True)
+                    output["description"] = description
+        return outputs
 
     def get_terraform_resources(self):
         """Obtain module resources."""
@@ -3473,14 +3491,14 @@ module "{self.module_version.module_provider.module.name}" {{
                 return requirement["version"]
         return None
 
-    def get_api_module_specs(self):
+    def get_api_module_specs(self, html: bool=False):
         """Return module specs for API."""
         return {
             "path": self.path,
             "readme": self.get_readme_content(),
             "empty": False,
-            "inputs": self.get_terraform_inputs(),
-            "outputs": self.get_terraform_outputs(),
+            "inputs": self.get_terraform_inputs(html=html),
+            "outputs": self.get_terraform_outputs(html=html),
             "dependencies": self.get_terraform_dependencies(),
             "provider_dependencies": self.get_terraform_provider_dependencies(),
             "resources": self.get_terraform_resources()
@@ -4029,7 +4047,7 @@ class ModuleVersion(TerraformSpecsObject):
                 self._module_provider.calculate_latest_version().version == self.version):
             self._module_provider.update_attributes(latest_version_id=self.pk)
 
-    def get_api_outline(self, target_terraform_version=None):
+    def get_api_outline(self, target_terraform_version: Optional[str]=None):
         """Return dict of basic version details for API response."""
         row = self._get_db_row()
         api_outline = self._module_provider.get_api_outline()
@@ -4057,18 +4075,18 @@ class ModuleVersion(TerraformSpecsObject):
             module_version=self
         )
 
-    def get_api_details(self, target_terraform_version=None):
-        """Return dict of version details for API response."""#
+    def get_api_details(self, target_terraform_version: Optional[str]=None, html: bool=False):
+        """Return dict of version details for API response."""
         api_details = self._module_provider.get_api_details()
         api_details.update(self.get_api_outline(target_terraform_version=target_terraform_version))
         api_details.update({
-            "root": self.get_api_module_specs(),
+            "root": self.get_api_module_specs(html=html),
             "submodules": [sm.get_api_module_specs() for sm in self.get_submodules()],
             "providers": [p.name for p in self._module_provider._module.get_providers()]
         })
         return api_details
 
-    def get_terrareg_api_details(self, request_domain, target_terraform_version=None):
+    def get_terrareg_api_details(self, request_domain, target_terraform_version: Optional[str]=None, html: bool=False):
         """Return dict of version details with additional attributes used by terrareg UI."""
         # Obtain module provider terrareg API details
         api_details = self._module_provider.get_terrareg_api_details()
@@ -4078,7 +4096,7 @@ class ModuleVersion(TerraformSpecsObject):
         versions = api_details['versions']
 
         # Update with API details from the module version
-        api_details.update(self.get_api_details(target_terraform_version=target_terraform_version))
+        api_details.update(self.get_api_details(target_terraform_version=target_terraform_version, html=html))
 
         tab_files = [module_version_file.path for module_version_file in self.module_version_files]
         additional_module_tabs = json.loads(terrareg.config.Config().ADDITIONAL_MODULE_TABS)

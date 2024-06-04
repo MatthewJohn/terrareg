@@ -750,28 +750,25 @@ Interface to obtain list of providers for module.
 Return list of modules in namespace
 
 
-## ApiTerraregModuleProviderDetails
+## ApiTerraregModuleVersionDetails
 
 `/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>`
 
-Interface to obtain module provider details.
-
-
-#### GET
-
-Return details about module version.
-
-
-## ApiTerraregModuleVersionDetails
-
 `/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>`
 
-Interface to obtain module version details.
+Interface to obtain module provider/version details.
 
 
 #### GET
 
 Return details about module version.
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| target_terraform_version | args | str | False | `None` | Provide terraform version to show compatibility with search results. |
+| output | args | str | False | `md` | Variable/Output description format, either "html" or "md" |
+
 
 
 ## ApiTerraregModuleProviderVersions
