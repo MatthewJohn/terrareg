@@ -31,6 +31,7 @@ from terrareg.errors import (
     UnableToGetGlobalTerraformLockError,
     TerraformVersionSwitchError
 )
+import terrareg.terraform_product
 from terrareg.utils import PathDoesNotExistError, get_public_url_details, safe_iglob, safe_join_paths
 from terrareg.config import Config
 from terrareg.constants import EXTRACTION_VERSION
@@ -50,9 +51,10 @@ class ModuleExtractor:
         self._upload_directory = tempfile.TemporaryDirectory()  # noqa: R1732
 
     @staticmethod
-    def terraform_binary():
+    def terraform_binary() -> str:
         """Return path of terraform binary"""
-        return os.path.join(os.getcwd(), "bin", "terraform")
+        product = terrareg.terraform_product.ProductFactory.get_product()
+        return os.path.join(os.getcwd(), "bin", product.get_executable_name())
 
     @property
     def terraform_rc_file(self):
@@ -118,16 +120,25 @@ class ModuleExtractor:
                 "Unable to obtain global Terraform lock in 60 seconds"
             )
         try:
-            default_terraform_version = Config().DEFAULT_TERRAFORM_VERSION
+            config = Config()
+
+            default_terraform_version = config.DEFAULT_TERRAFORM_VERSION
             tfswitch_env = os.environ.copy()
 
             if default_terraform_version:
                 tfswitch_env["TF_VERSION"] = default_terraform_version
 
+            product = terrareg.terraform_product.ProductFactory.get_product()
+            tfswitch_env["TF_PRODUCT"] = product.get_tfswitch_product_arg()
+
+            tfswitch_args = []
+            if config.TERRAFORM_ARCHIVE_MIRROR:
+                tfswitch_args += ["--mirror", config.TERRAFORM_ARCHIVE_MIRROR]
+
             # Run tfswitch
             try:
                 subprocess.check_output(
-                    ["tfswitch", "--mirror", Config().TERRAFORM_ARCHIVE_MIRROR, "--bin", cls.terraform_binary()],
+                    ["tfswitch", "--bin", cls.terraform_binary(), *tfswitch_args],
                     env=tfswitch_env,
                     cwd=module_path
                 )
