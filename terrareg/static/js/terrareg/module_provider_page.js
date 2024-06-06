@@ -273,6 +273,7 @@ class InputsTab extends ModuleDetailsTab {
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
             let inputTab = $("#module-tab-inputs");
+            const replaceStartWhitespaceRe = new RegExp('^  ', 'mg');
             this._moduleDetails.inputs.forEach((input) => {
                 let inputRow = $(`<div id="input-${input.name}"></div>`);
 
@@ -282,9 +283,17 @@ class InputsTab extends ModuleDetailsTab {
 
                 let typeTd = $("<p></p>");
                 typeTd.text(`Type: `);
-                let typeValue = $("<code></code>");
-                typeValue.text(input.type);
-                typeTd.append(typeValue);
+                // If type contains any new line characters, use a pre-formatted block.
+                // Otherwise, use an inline code block
+                if (input.type.indexOf("\n") !== -1) {
+                    let typeValue = $("<pre></pre>");
+                    typeValue.text(input.type.replaceAll(replaceStartWhitespaceRe, ""));
+                    typeTd.append(typeValue);
+                } else {
+                    let typeValue = $("<code></code>");
+                    typeValue.text(input.type);
+                    typeTd.append(typeValue);
+                }
                 inputRow.append(typeTd);
 
                 let defaultTd = $("<p></p>");
