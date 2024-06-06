@@ -298,10 +298,17 @@ class InputsTab extends ModuleDetailsTab {
 
                 let defaultTd = $("<p></p>");
                 defaultTd.text(input.required ? "This variable is required" : "Default: ");
+                let defaultValue = JSON.stringify(input.default, null, 2);
                 if (input.required !== true) {
-                    let defaultValue = $("<code></code>");
-                    defaultValue.text(JSON.stringify(input.default));
-                    defaultTd.append(defaultValue);
+                    if (defaultValue.indexOf("\n") !== -1) {
+                        let defaultValueEl = $("<pre></pre>");
+                        defaultValueEl.text(defaultValue);
+                        defaultTd.append(defaultValueEl);
+                    } else {
+                        let defaultValueEl = $("<code></code>");
+                        defaultValueEl.text(defaultValue);
+                        defaultTd.append(defaultValueEl);
+                    }
                 }
                 inputRow.append(defaultTd);
                 inputRow.append("<br />");
