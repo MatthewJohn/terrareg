@@ -273,27 +273,41 @@ class InputsTab extends ModuleDetailsTab {
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
             let inputTab = $("#module-tab-inputs");
-            let inputTabTbody = inputTab.find("tbody");
             this._moduleDetails.inputs.forEach((input) => {
-                let inputRow = $("<tr></tr>");
+                let inputRow = $(`<div id="input-${input.name}"></div>`);
 
-                let nameTd = $("<td></td>");
+                let nameTd = $("<h4 class='subtitle is-4'></h4>");
                 nameTd.text(input.name);
                 inputRow.append(nameTd);
 
-                let descriptionTd = $("<td></td>");
-                descriptionTd.html(input.description);
-                inputRow.append(descriptionTd);
-
-                let typeTd = $("<td></td>");
-                typeTd.text(input.type);
+                let typeTd = $("<p></p>");
+                typeTd.text(`Type: `);
+                let typeValue = $("<code></code>");
+                typeValue.text(input.type);
+                typeTd.append(typeValue);
                 inputRow.append(typeTd);
 
-                let defaultTd = $("<td></td>");
-                defaultTd.text(input.required ? "Required" : JSON.stringify(input.default));
+                let defaultTd = $("<p></p>");
+                defaultTd.text(input.required ? "This variable is required" : "Default: ");
+                if (input.required !== true) {
+                    let defaultValue = $("<code></code>");
+                    defaultValue.text(JSON.stringify(input.default));
+                    defaultTd.append(defaultValue);
+                }
                 inputRow.append(defaultTd);
+                inputRow.append("<br />");
 
-                inputTabTbody.append(inputRow);
+                if (input.description && input.description.trim() != "") {
+                    let descriptionTd = $("<div><b>Description</b><br /></div>");
+                    let descriptionContent = $("<p></p>");
+                    descriptionContent.html(input.description);
+                    descriptionTd.append(descriptionContent);
+                    inputRow.append(descriptionTd);
+                    inputRow.append("<br />");
+                }
+
+                inputTab.append(inputRow);
+                inputTab.append($("<hr />"));
             });
 
             // Show tab link
