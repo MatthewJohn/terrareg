@@ -351,20 +351,29 @@ class OutputsTab extends ModuleDetailsTab {
     }
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
-            let outputTab = $("#module-tab-outputs");
-            let outputTabTbody = outputTab.find("tbody");
-            this._moduleDetails.outputs.forEach((output) => {
-                let outputRow = $("<tr></tr>");
+            let outputContent = $("#module-tab-outputs-content");
+            let outputToc = $("#module-tab-outputs-toc");
 
-                let nameTd = $("<td></td>");
+            this._moduleDetails.outputs.forEach((output) => {
+                let anchorName = `terrareg-anchor-output-${output.name}`;
+                let outputRow = $(`<div id="${anchorName}" name="${anchorName}"></div>`);
+
+                let nameTd = $("<h4 class='subtitle is-4'></h4>");
                 nameTd.text(output.name);
                 outputRow.append(nameTd);
 
-                let descriptionTd = $("<td></td>");
-                descriptionTd.html(output.description);
-                outputRow.append(descriptionTd);
+                if (output.description && output.description.trim() != "") {
+                    let descriptionTd = $("<div><b>Description</b><br /></div>");
+                    let descriptionContent = $("<p></p>");
+                    descriptionContent.html(output.description);
+                    descriptionTd.append(descriptionContent);
+                    outputRow.append(descriptionTd);
+                    outputRow.append("<br />");
+                }
 
-                outputTabTbody.append(outputRow);
+                outputToc.append($(`<a href="#${anchorName}">${output.name}</a>${output.required ? ' (required)' : ''}<br />`));
+                outputContent.append(outputRow);
+                outputContent.append($("<hr />"));
             });
             // Show tab link
             $('#module-tab-link-outputs').removeClass('default-hidden');
