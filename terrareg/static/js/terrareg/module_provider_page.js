@@ -272,9 +272,10 @@ class InputsTab extends ModuleDetailsTab {
     }
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
-            let inputTab = $("#module-tab-inputs-main");
-            let toc = $("#module-tab-inputs-toc");
-            let tocTable = $("<div></div>");
+            let requiredInputTab = $("#module-tab-inputs-required");
+            let optionalInputTab = $("#module-tab-inputs-optional");
+            let requiredToc = $("#module-tab-inputs-toc-required");
+            let optionalToc = $("#module-tab-inputs-toc-optional");
             const replaceStartWhitespaceRe = new RegExp('^  ', 'mg');
             this._moduleDetails.inputs.forEach((input) => {
                 let anchorName = `terrareg-anchor-input-${input.name}`;
@@ -325,13 +326,17 @@ class InputsTab extends ModuleDetailsTab {
                     inputRow.append("<br />");
                 }
 
-                tocTable.append($(`<a href="#${anchorName}">${input.name}</a><br />`));
+                let toc = optionalToc;
+                let inputTab = optionalInputTab;
+                if (input.required) {
+                    toc = requiredToc;
+                    inputTab = requiredInputTab;
+                }
 
+                toc.append($(`<a href="#${anchorName}">${input.name}</a>${input.required ? ' (required)' : ''}<br />`));
                 inputTab.append(inputRow);
                 inputTab.append($("<hr />"));
             });
-
-            toc.append(tocTable);
 
             // Show tab link
             $('#module-tab-link-inputs').removeClass('default-hidden');
