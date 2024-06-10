@@ -272,10 +272,13 @@ class InputsTab extends ModuleDetailsTab {
     }
     async render() {
         this._renderPromise = new Promise(async (resolve) => {
-            let inputTab = $("#module-tab-inputs");
+            let inputTab = $("#module-tab-inputs-main");
+            let toc = $("#module-tab-inputs-toc");
+            let tocTable = $("<div></div>");
             const replaceStartWhitespaceRe = new RegExp('^  ', 'mg');
             this._moduleDetails.inputs.forEach((input) => {
-                let inputRow = $(`<div id="input-${input.name}"></div>`);
+                let anchorName = `terrareg-anchor-input-${input.name}`;
+                let inputRow = $(`<div id="${anchorName}" name="${anchorName}"></div>`);
 
                 let nameTd = $("<h4 class='subtitle is-4'></h4>");
                 nameTd.text(input.name);
@@ -322,9 +325,13 @@ class InputsTab extends ModuleDetailsTab {
                     inputRow.append("<br />");
                 }
 
+                tocTable.append($(`<a href="#${anchorName}">${input.name}</a><br />`));
+
                 inputTab.append(inputRow);
                 inputTab.append($("<hr />"));
             });
+
+            toc.append(tocTable);
 
             // Show tab link
             $('#module-tab-link-inputs').removeClass('default-hidden');

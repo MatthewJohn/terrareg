@@ -252,15 +252,15 @@
 </div>
 
 <div class="columns">
-    <div class="column is-three-fifths is-offset-one-fifth">
+    <!-- <div class=""> -->
         <!-- Tab content -->
 
         <!-- README tab -->
-        <div id="module-tab-readme" class="module-tabs content default-hidden">
+        <div id="module-tab-readme" class="column is-three-fifths is-offset-one-fifth module-tabs content default-hidden">
         </div>
 
         <!-- Example files tab -->
-        <div id="module-tab-example-files" class="module-tabs default-hidden">
+        <div id="module-tab-example-files" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
             <div class="columns">
                 <div class="column is-one-fifths">
                     <nav id="example-file-list-nav" class="panel">
@@ -277,11 +277,17 @@
         </div>
 
         <!-- Inputs tab -->
-        <div id="module-tab-inputs" class="module-tabs default-hidden">
+        <div id="module-tab-inputs" class="module-tabs default-hidden columns">
+            <div id="module-tab-inputs-toc" class="column is-one-fifth">
+
+            </div>
+            <div id="module-tab-inputs-main" class="column is-three-fifths">
+
+            </div>
         </div>
 
         <!-- Outputs tab -->
-        <div id="module-tab-outputs" class="module-tabs default-hidden">
+        <div id="module-tab-outputs" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
             <table class="table module-provider-tab-content-table">
                 <thead>
                     <tr>
@@ -295,7 +301,7 @@
         </div>
 
         <!-- Providers tab -->
-        <div id="module-tab-providers" class="module-tabs default-hidden">
+        <div id="module-tab-providers" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
             <table class="table module-provider-tab-content-table">
                 <thead>
                     <tr>
@@ -311,7 +317,7 @@
         </div>
 
         <!-- Resources tab -->
-        <div id="module-tab-resources" class="module-tabs default-hidden">
+        <div id="module-tab-resources" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
 
             <button class="button is-info is-small" id="resourceDependencyGraphLink">View resource dependency graph</button>
 
@@ -333,7 +339,7 @@
         </div>
 
         <!-- Modules tab -->
-        <div id="module-tab-modules" class="module-tabs default-hidden">
+        <div id="module-tab-modules" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
 
             <table class="table module-modules-tab-content-table">
                 <thead>
@@ -349,7 +355,7 @@
         </div>
 
         <!-- Security Issues tab -->
-        <div id="module-tab-security-issues" class="module-tabs default-hidden">
+        <div id="module-tab-security-issues" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
             <div class="table-container">
                 <table id="security-issues-table" class="table display compact nowrap responsive" style="width:100%">
                     <thead>
@@ -376,7 +382,7 @@
         </div>
 
         <!-- Analytics tab -->
-        <div id="module-tab-analytics" class="module-tabs default-hidden">
+        <div id="module-tab-analytics" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
             <table id="analytics-table" class="table module-provider-tab-content-table">
                 <thead>
                     <tr>
@@ -392,7 +398,7 @@
         </div>
 
         <!-- Usage Builder tab -->
-        <div id="module-tab-usage-builder" class="module-tabs default-hidden">
+        <div id="module-tab-usage-builder" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
             <div class="notification has-text-centered">Provide values to the following inputs to generate Terraform required to use the module.</div><br />
             <form name="frm-example" id="frm-example">
                 <table id="usage-builder-table" class="table is-flex-wrap-wrap module-provider-tab-content-table" style="width: 100%;">
@@ -413,7 +419,7 @@
         </div>
 
         <!-- Integrations tab -->
-        <div id="module-tab-integrations" class="module-tabs default-hidden">
+        <div id="module-tab-integrations" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
             <p class="subtitle">
                 Integrations
             </p>
@@ -447,7 +453,7 @@
         </div>
 
         <!-- Module settings tab -->
-        <div id="module-tab-settings" class="module-tabs default-hidden">
+        <div id="module-tab-settings" class="column is-three-fifths is-offset-one-fifth module-tabs default-hidden">
             <div id="settings-module-version-card" class="card default-hidden">
                 <div class="card-content" style="background: #edf7ff">
                     <h2 class="subtitle is-h2">Module Version</h2>
@@ -670,7 +676,7 @@
             </div>
         </div>
 
-    </div>
+    <!-- </div> -->
 </div>
 
 
