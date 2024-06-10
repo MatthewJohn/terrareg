@@ -18,6 +18,7 @@ function getUserPreferences() {
         'show-unpublished-versions': getLocalStorageValue('show-unpublished-versions', false, Boolean),
         'theme': $.cookie("theme") || 'default',
         'terraform-compatibility-version': getLocalStorageValue('terraform-compatibility-version', '', String),
+        'input-output-view': getLocalStorageValue('input-output-view', 'table', String),
     }
 }
 
