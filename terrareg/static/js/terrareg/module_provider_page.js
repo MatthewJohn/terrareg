@@ -148,7 +148,7 @@ class AdditionalTab extends BaseTab {
                     return;
                 }
 
-                let tab = $(`<div id="module-tab-${this.name}" class="module-tabs content default-hidden"></div>`);
+                let tab = $(`<div id="module-tab-${this.name}" class="module-tabs content default-hidden column is-three-fifths is-offset-one-fifth"></div>`);
 
                 // Populate file conrtent
                 tab.append(fileContent);
