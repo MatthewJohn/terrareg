@@ -97,7 +97,7 @@ class TestProcessUpload(TerraregIntegrationTest):
 
         assert module_version.description == 'unittestdescription!'
         assert module_version.owner == 'unittestowner.'
-        assert module_version.variable_template == [
+        assert module_version.get_variable_template() == [
             {
                 'name': 'test_variable',
                 'quote_value': True,
@@ -151,7 +151,7 @@ class TestProcessUpload(TerraregIntegrationTest):
 
         assert module_version.description == 'unittestdescription!'
         assert module_version.owner == 'unittestowner.'
-        assert module_version.variable_template == [
+        assert module_version.get_variable_template() == [
             {
                 'name': 'test_input',
                 'quote_value': True,
@@ -191,7 +191,7 @@ class TestProcessUpload(TerraregIntegrationTest):
 
             assert module_version.description == 'unittestdescription!'
             assert module_version.owner == 'unittestowner.'
-            assert module_version.variable_template == [
+            assert module_version.get_variable_template() == [
             {
                 'name': 'test_variable',
                 'quote_value': True,
