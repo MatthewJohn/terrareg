@@ -946,7 +946,7 @@ module "text_ternal_call" {
             assert len(row_columns) == 4
 
             # Check columns of row match expected text
-            row_text = [col.text for col in row_columns]
+            row_text = [col.get_attribute("innerHTML") for col in row_columns]
             assert row_text == expected_row
 
     @pytest.mark.parametrize('url,expected_outputs', [
