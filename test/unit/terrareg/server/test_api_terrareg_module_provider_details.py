@@ -324,6 +324,19 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
         assert res.status_code == 200
 
     @setup_test_data()
+    def test_matches_terrareg_api_details_function_with_output(self, client, mock_models):
+        """Test endpoint with analytics token"""
+
+        res = client.get('/v1/terrareg/modules/testnamespace/testmodulename/testprovider?output=html')
+
+        test_namespace = terrareg.models.Namespace(name='testnamespace')
+        test_module = terrareg.models.Module(namespace=test_namespace, name='testmodulename')
+        test_module_provider = terrareg.models.ModuleProvider(module=test_module, name='testprovider')
+
+        assert res.json == test_module_provider.get_latest_version().get_terrareg_api_details(request_domain="localhost", html=True)
+        assert res.status_code == 200
+
+    @setup_test_data()
     def test_terraform_version_compatibility(self, client, mock_models):
         """Test example version comment is passed to API correctly"""
         with mock.patch("terrareg.version_constraint.VersionConstraint.is_compatible",
