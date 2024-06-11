@@ -1005,6 +1005,83 @@ module "text_ternal_call" {
             row_text = [col.get_attribute('innerHTML') for col in row_columns]
             assert row_text == expected_row
 
+    @pytest.mark.parametrize('tab, first_item', [
+        ('input', 'name_of_application'),
+        ('output', 'generated_name')
+    ])
+    def test_switch_view_types(self, tab, first_item):
+        """Test switching view types"""
+        # Open page for inputs
+
+        def assert_looks_like_table_view():
+            content = self.selenium_instance.find_element(By.ID, f'module-tab-{tab}s-content')
+            first_row = list(content.find_element(By.TAG_NAME, "table").find_element(By.TAG_NAME, "tbody").find_elements(By.TAG_NAME, "tr"))[0]
+            # Ensure first row of inputs is shown (excluding heading)
+            assert first_row.find_elements(By.TAG_NAME, "td")[0].text == first_item
+
+        def assert_looks_like_detailed_view():
+            content = self.selenium_instance.find_element(By.ID, f'module-tab-{tab}s-content')
+            # Check heading
+            assert content.find_elements(By.TAG_NAME, "h4")[0].text == first_item
+            if tab == "input":
+                assert "Type: string" in content.text
+            else:
+                assert "Description\nName with randomness" in content.text
+
+        try:
+            self.delete_cookies_and_local_storage()
+            self.selenium_instance.get(self.get_url("/modules/moduledetails/fullypopulated/testprovider/1.5.0"))
+
+            # Wait for tab button to be visible
+            tab_button = self.wait_for_element(By.ID, f'module-tab-link-{tab}s')
+
+            # Ensure the tab content is not visible
+            assert self.wait_for_element(By.ID, f'module-tab-{tab}s-left', ensure_displayed=False).is_displayed() == False
+
+            # Click on tab link
+            tab_button.click()
+
+            # Obtain tab content
+            tab_content = self.selenium_instance.find_element(By.ID, f'module-tab-{tab}s')
+
+            # Find select box for view type
+            select = Select(tab_content.find_element(By.TAG_NAME, "select"))
+
+            # Ensure selected type is default
+            assert select.first_selected_option.text == "Table View"
+
+            # Ensure the table view is activated
+            assert_looks_like_table_view()
+
+            # Select new view type
+            select.select_by_visible_text("Expanded View")
+
+            # Wait for page to re-render
+
+            assert_looks_like_detailed_view()
+
+            # Reload page and assert that the new format is kept
+            self.selenium_instance.refresh()
+
+            # Wait for outputs tab button to be visible
+            tab_button = self.wait_for_element(By.ID, f'module-tab-link-{tab}s')
+            tab_button.click()
+            assert_looks_like_detailed_view()
+
+            # Switch back to table view
+            tab_content = self.selenium_instance.find_element(By.ID, f'module-tab-{tab}s')
+            select = Select(tab_content.find_element(By.TAG_NAME, "select"))
+            select.select_by_visible_text("Table View")
+
+            assert_looks_like_table_view()
+
+            # Refresh and re-check
+            self.selenium_instance.refresh()
+            assert_looks_like_table_view()
+
+        finally:
+            self.delete_cookies_and_local_storage()
+
     @pytest.mark.parametrize('url,expected_resources', [
         # Root module
         (
