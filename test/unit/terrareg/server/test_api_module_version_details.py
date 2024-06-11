@@ -40,7 +40,7 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
                     {'name': 'example_list_input', 'type': 'list', 'description': 'Override the stringy list', 'default': ['value 1', 'value 2'], 'required': False}
                 ],
                 'outputs': [
-                    {'name': 'generated_name', 'description': 'Name with randomness'},
+                    {'name': 'generated_name', 'description': '# Name with randomness'},
                     {'name': 'no_desc_output', 'description': None}
                 ],
                 'dependencies': [
