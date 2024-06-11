@@ -115,7 +115,7 @@ class TestModuleProvider(SeleniumTest):
 
         # Ensure integrations tab link is display and tab is displayed
         self.wait_for_element(By.ID, 'module-tab-link-integrations')
-        integration_tab = self.wait_for_element(By.ID, 'module-tab-integrations')
+        self.wait_for_element(By.ID, 'module-tab-integrations')
 
         # Ensure all other tabs aren't shown
         for tab_name in ['readme', 'example-files', 'inputs', 'outputs', 'providers', 'resources', 'analytics', 'usage-builder', 'settings']:
@@ -1002,7 +1002,7 @@ module "text_ternal_call" {
             assert len(row_columns) == 2
 
             # Check columns of row match expected text
-            row_text = [col.text for col in row_columns]
+            row_text = [col.get_attribute('innerHTML') for col in row_columns]
             assert row_text == expected_row
 
     @pytest.mark.parametrize('url,expected_resources', [

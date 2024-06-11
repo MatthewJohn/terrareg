@@ -109,7 +109,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
                     {
                         "name": "string_with_default_value",
                         "type": "string",
-                        "description": "Override the default string",
+                        "description": "Override the *default* string",
                         "default": "this is the default",
                         "required": False,
                     },
@@ -129,7 +129,7 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
                     },
                 ],
                 "outputs": [
-                    {"name": "generated_name", "description": "Name with randomness"},
+                    {"name": "generated_name", "description": "# Name with randomness"},
                     {"name": "no_desc_output", "description": None},
                 ],
                 "dependencies": [
@@ -263,34 +263,34 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
                     {
                         "name": "name_of_application",
                         "type": "string",
-                        "description": "Enter the application name",
+                        "description": "<p>Enter the application name</p>",
                         "default": None,
                         "required": True,
                     },
                     {
                         "name": "string_with_default_value",
                         "type": "string",
-                        "description": "Override the default string",
+                        "description": "<p>Override the <em>default</em> string</p>",
                         "default": "this is the default",
                         "required": False,
                     },
                     {
                         "name": "example_boolean_input",
                         "type": "bool",
-                        "description": "Override the truthful boolean",
+                        "description": "<p>Override the truthful boolean</p>",
                         "default": True,
                         "required": False,
                     },
                     {
                         "name": "example_list_input",
                         "type": "list",
-                        "description": "Override the stringy list",
+                        "description": "<p>Override the stringy list</p>",
                         "default": ["value 1", "value 2"],
                         "required": False,
                     },
                 ],
                 "outputs": [
-                    {"name": "generated_name", "description": "Name with randomness"},
+                    {"name": "generated_name", "description": '<h1 id="terrareg-anchor--name-with-randomness">Name with randomness</h1>'},
                     {"name": "no_desc_output", "description": None},
                 ],
                 "dependencies": [
