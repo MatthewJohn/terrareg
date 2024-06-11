@@ -13,9 +13,12 @@ class TabFactory {
         this._tabsLookup[tab.name] = tab;
         this._tabs.push(tab);
     }
+    getTabByName(tab) {
+        return this._tabsLookup[tab]
+    }
     async renderTabs() {
         for (const tab of this._tabs) {
-            tab.render();
+            tab.render(this);
         }
         for (const tab of this._tabs) {
             await tab._renderPromise;
@@ -72,7 +75,7 @@ class BaseTab {
     constructor() {
         this._renderPromise = undefined;
     }
-    render() {  }
+    render(tabFactory) {  }
     async isValid() {
         let result = await this._renderPromise;
         return result;
@@ -84,7 +87,7 @@ class ModuleDetailsTab extends BaseTab {
         super();
         this._moduleDetails = moduleDetails;
     }
-    render() { }
+    render(tabFactory) { }
 }
 
 
@@ -96,7 +99,7 @@ class ReadmeTab extends BaseTab {
     get name() {
         return 'readme';
     }
-    render() {
+    render(tabFactory) {
         this._renderPromise = new Promise((resolve) => {
             if (!this._readmeUrl) {
                 resolve(false);
@@ -136,7 +139,7 @@ class AdditionalTab extends BaseTab {
     get name() {
         return this._name;
     }
-    render() {
+    render(tabFactory) {
         this._renderPromise = new Promise((resolve) => {
             if (!this._fileUrl) {
                 resolve(false);
@@ -182,7 +185,7 @@ class AnalyticsTab extends ModuleDetailsTab {
     get name() {
         return 'analytics';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
 
             // Check if analytics are disabled
@@ -230,7 +233,7 @@ class ExampleFilesTab extends ModuleDetailsTab {
     get name() {
         return 'example-files';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
             $.get(`/v1/terrareg/modules/${this._moduleDetails.id}/examples/filelist/${this._exampleDetails.path}`, (data) => {
                 if (!data.length) {
@@ -270,7 +273,7 @@ class InputsTab extends ModuleDetailsTab {
     get name() {
         return 'inputs';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
             // Clear out existing content after re-rendering
             let inputLeft = $("#module-tab-inputs-left");
@@ -280,8 +283,12 @@ class InputsTab extends ModuleDetailsTab {
 
             inputLeft.append(getInputOutputViewSelect((ev) => {
                 localStorage.setItem("input-output-view", ev.target.value);
-                // Re-render page
-                this.render();
+                // Re-render this page and outputs tab
+                this.render(tabFactory);
+                let outputTab = tabFactory.getTabByName("outputs")
+                if (outputTab !== undefined) {
+                    outputTab.render(tabFactory);
+                }
             }));
             inputLeft.append($("<hr />"));
 
@@ -406,7 +413,7 @@ class OutputsTab extends ModuleDetailsTab {
     get name() {
         return 'outputs';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
             // Clear out existing content after re-rendering
             let outputLeft = $("#module-tab-outputs-left");
@@ -417,7 +424,11 @@ class OutputsTab extends ModuleDetailsTab {
             outputLeft.append(getInputOutputViewSelect((ev) => {
                 localStorage.setItem("input-output-view", ev.target.value);
                 // Re-render page
-                this.render();
+                this.render(tabFactory);
+                let inputTab = tabFactory.getTabByName("inputs")
+                if (inputTab !== undefined) {
+                    inputTab.render(tabFactory);
+                }
             }));
             outputLeft.append($("<hr />"));
             if (getUserPreferences()["input-output-view"] === "expanded") {
@@ -482,7 +493,7 @@ class ModulesTab extends ModuleDetailsTab {
     get name() {
         return 'modules';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
             let modulesTab = $("#module-tab-modules");
             let modulesTabTbody = modulesTab.find("tbody");
@@ -515,7 +526,7 @@ class ProvidersTab extends ModuleDetailsTab {
     get name() {
         return 'providers';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
             let providerTab = $("#module-tab-providers");
             let providerTabTbody = providerTab.find("tbody");
@@ -552,7 +563,7 @@ class SecurityIssuesTab extends ModuleDetailsTab {
     get name() {
         return 'security-issues';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
             if (this._moduleDetails.security_results) {
                 let tfsecTab = $("#module-tab-security-issues");
@@ -679,7 +690,7 @@ class ResourcesTab extends ModuleDetailsTab {
     get name() {
         return 'resources';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
             // Populate link to resources graph
             $('#resourceDependencyGraphLink').on("click", () => {window.location.href = this._graphUrl});
@@ -731,7 +742,7 @@ class IntegrationsTab extends ModuleDetailsTab {
     get name() {
         return 'integrations';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
             let config = await getConfig();
             let loggedIn = await isLoggedIn();
@@ -807,7 +818,7 @@ class SettingsTab extends ModuleDetailsTab {
     get name() {
         return 'settings';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
 
             let userPermissions = await isLoggedIn();
@@ -1573,7 +1584,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
     get name() {
         return 'usage-builder';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
             let usageBuilderTable = $('#usageBuilderTable');
 

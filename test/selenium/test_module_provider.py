@@ -1014,19 +1014,36 @@ module "text_ternal_call" {
         # Open page for inputs
 
         def assert_looks_like_table_view():
-            content = self.selenium_instance.find_element(By.ID, f'module-tab-{tab}s-content')
-            first_row = list(content.find_element(By.TAG_NAME, "table").find_element(By.TAG_NAME, "tbody").find_elements(By.TAG_NAME, "tr"))[0]
-            # Ensure first row of inputs is shown (excluding heading)
-            assert first_row.find_elements(By.TAG_NAME, "td")[0].text == first_item
+            """Check both inputs and outputs tab look correct"""
+            for tab_to_check in ["inputs", "outputs"]:
+                tab_button = self.wait_for_element(By.ID, f'module-tab-link-{tab_to_check}')
+                tab_button.click()
+
+                content = self.selenium_instance.find_element(By.ID, f'module-tab-{tab_to_check}-content')
+                first_row = list(content.find_element(By.TAG_NAME, "table").find_element(By.TAG_NAME, "tbody").find_elements(By.TAG_NAME, "tr"))[0]
+                # Ensure first row of inputs is shown (excluding heading)
+                assert first_row.find_elements(By.TAG_NAME, "td")[0].text == ("name_of_application" if tab_to_check == "inputs" else "generated_name")
+
+            # Return to main tab
+            tab_button = self.selenium_instance.find_element(By.ID, f'module-tab-link-{tab}s')
+            tab_button.click()
 
         def assert_looks_like_detailed_view():
-            content = self.selenium_instance.find_element(By.ID, f'module-tab-{tab}s-content')
-            # Check heading
-            assert content.find_elements(By.TAG_NAME, "h4")[0].text == first_item
-            if tab == "input":
-                assert "Type: string" in content.text
-            else:
-                assert "Description\nName with randomness" in content.text
+            for tab_to_check in ["inputs", "outputs"]:
+                tab_button = self.wait_for_element(By.ID, f'module-tab-link-{tab_to_check}')
+                tab_button.click()
+
+                content = self.selenium_instance.find_element(By.ID, f'module-tab-{tab_to_check}-content')
+                # Check heading
+                assert content.find_elements(By.TAG_NAME, "h4")[0].text == ("name_of_application" if tab_to_check == "inputs" else "generated_name")
+                if tab_to_check == "inputs":
+                    assert "Type: string" in content.text
+                else:
+                    assert "Description\nName with randomness" in content.text
+
+            # Return to main tab
+            tab_button = self.selenium_instance.find_element(By.ID, f'module-tab-link-{tab}s')
+            tab_button.click()
 
         try:
             self.delete_cookies_and_local_storage()
