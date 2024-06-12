@@ -3302,26 +3302,28 @@ module "{self.module_version.module_provider.module.name}" {{
         """Obtain module inputs"""
         inputs = self.get_module_specs().get('inputs', [])
         # Rewrite variable/output descriptions to use markdown
-        if html:
-            for input_ in inputs:
-                description = input_.get("description")
-                if description:
+        for input_ in inputs:
+            description = input_.get("description")
+            if description:
+                if html:
                     description = convert_markdown_to_html(file_name="", markdown_html=description)
-                    description = sanitise_html_content(text=description, allow_markdown_html=True)
-                    input_["description"] = description
+                # Always santise HTML
+                description = sanitise_html_content(text=description, allow_markdown_html=True)
+                input_["description"] = description
         return inputs
 
     def get_terraform_outputs(self, html: bool=False):
         """Obtain module inputs"""
         outputs = self.get_module_specs().get('outputs', [])
         # Rewrite variable/output descriptions to use markdown
-        if html:
-            for output in outputs:
-                description = output.get("description")
-                if description:
+        for output in outputs:
+            description = output.get("description")
+            if description:
+                if html:
                     description = convert_markdown_to_html(file_name="", markdown_html=description)
-                    description = sanitise_html_content(text=description, allow_markdown_html=True)
-                    output["description"] = description
+                # Always santise HTML
+                description = sanitise_html_content(text=description, allow_markdown_html=True)
+                output["description"] = description
         return outputs
 
     def get_terraform_resources(self):
