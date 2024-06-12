@@ -281,8 +281,11 @@ class InputsTab extends ModuleDetailsTab {
             inputLeft.html("");
             inputContent.html("");
 
-            inputLeft.append(getInputOutputViewSelect((ev) => {
-                localStorage.setItem("input-output-view", ev.target.value);
+            let userPreferences = await getUserPreferences();
+
+            inputLeft.append(getInputOutputViewSelect(userPreferences["ui-details-view"], (ev) => {
+                setUiDetailsView(ev.target.value);
+
                 // Re-render this page and outputs tab
                 this.render(tabFactory);
                 let outputTab = tabFactory.getTabByName("outputs")
@@ -292,7 +295,7 @@ class InputsTab extends ModuleDetailsTab {
             }));
             inputLeft.append($("<hr />"));
 
-            if (getUserPreferences()["input-output-view"] === "expanded") {
+            if (userPreferences["ui-details-view"] === "expanded") {
 
                 let requiredInputTab = $("<div id=\"module-tab-inputs-required\"></div>");
                 let optionalInputTab = $("<div id=\"module-tab-inputs-optional\"></div>");
@@ -427,8 +430,11 @@ class OutputsTab extends ModuleDetailsTab {
             outputLeft.html("");
             outputContent.html("");
 
-            outputLeft.append(getInputOutputViewSelect((ev) => {
-                localStorage.setItem("input-output-view", ev.target.value);
+            let userPreferences = await getUserPreferences();
+
+            outputLeft.append(getInputOutputViewSelect(userPreferences["ui-details-view"], (ev) => {
+                setUiDetailsView(ev.target.value);
+
                 // Re-render page
                 this.render(tabFactory);
                 let inputTab = tabFactory.getTabByName("inputs")
@@ -437,7 +443,8 @@ class OutputsTab extends ModuleDetailsTab {
                 }
             }));
             outputLeft.append($("<hr />"));
-            if (getUserPreferences()["input-output-view"] === "expanded") {
+
+            if (userPreferences["ui-details-view"] === "expanded") {
                 this._moduleDetails.outputs.forEach((output) => {
                     let outputRow = $(`<div></div>`);
                     let anchorName = `terrareg-anchor-output-${output.name.replace(/[^A-Aa-z]/g, '')}`;
@@ -1722,10 +1729,9 @@ ${outputTf}
 /*
  *
  */
-function getInputOutputViewSelect(callback) {
+function getInputOutputViewSelect(currentValue, callback) {
     let outerDiv = $("<div class=\"control select\"></div>");
     let select = $("<select></select>");
-    let currentValue = getUserPreferences()["input-output-view"];
     select.append($(`<option value="table" ${currentValue == "table" ? "selected" : ""}>Table View</select>`));
     select.append($(`<option value="expanded" ${currentValue == "expanded" ? "selected" : ""}>Expanded View</select>`));
     select.on("change", callback);

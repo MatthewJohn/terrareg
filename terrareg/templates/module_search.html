@@ -189,8 +189,8 @@
         }
     }
 
-    function loadSearchUserPreferences() {
-        let userPreferences = getUserPreferences();
+    async function loadSearchUserPreferences() {
+        let userPreferences = await getUserPreferences();
         $('#search-terraform-version').val(userPreferences['terraform-compatibility-version']);
     }
 
