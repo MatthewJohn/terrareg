@@ -301,8 +301,10 @@ class InputsTab extends ModuleDetailsTab {
 
                 const replaceStartWhitespaceRe = new RegExp('^  ', 'mg');
                 this._moduleDetails.inputs.forEach((input) => {
-                    let anchorName = `terrareg-anchor-input-${input.name}`;
-                    let inputRow = $(`<div id="${anchorName}" name="${anchorName}"></div>`);
+                    let inputRow = $(`<div></div>`);
+                    let anchorName = `terrareg-anchor-input-${input.name.replace(/[^A-Aa-z]/g, '')}`;
+                    inputRow.attr('id', anchorName);
+                    inputRow.attr('name', anchorName);
 
                     let nameTd = $("<h4 class='subtitle is-4'></h4>");
                     nameTd.text(input.name);
@@ -356,7 +358,11 @@ class InputsTab extends ModuleDetailsTab {
                         inputTab = requiredInputTab;
                     }
 
-                    toc.append($(`<a href="#${anchorName}">${input.name}</a>${input.required ? ' (required)' : ''}<br />`));
+                    let tocLink = $("<a></a>");
+                    tocLink.attr('href', `#${anchorName}`);
+                    tocLink.text(input.name);
+                    toc.append(tocLink);
+                    toc.append(`${input.required ? ' (required)' : ''}<br />`);
                     inputTab.append(inputRow);
                     inputTab.append($("<hr />"));
                 });
@@ -433,8 +439,10 @@ class OutputsTab extends ModuleDetailsTab {
             outputLeft.append($("<hr />"));
             if (getUserPreferences()["input-output-view"] === "expanded") {
                 this._moduleDetails.outputs.forEach((output) => {
-                    let anchorName = `terrareg-anchor-output-${output.name}`;
-                    let outputRow = $(`<div id="${anchorName}" name="${anchorName}"></div>`);
+                    let outputRow = $(`<div></div>`);
+                    let anchorName = `terrareg-anchor-output-${output.name.replace(/[^A-Aa-z]/g, '')}`;
+                    outputRow.attr('id', anchorName);
+                    outputRow.attr('name', anchorName);
 
                     let nameTd = $("<h4 class='subtitle is-4'></h4>");
                     nameTd.text(output.name);
@@ -449,7 +457,11 @@ class OutputsTab extends ModuleDetailsTab {
                         outputRow.append("<br />");
                     }
 
-                    outputLeft.append($(`<a href="#${anchorName}">${output.name}</a>${output.required ? ' (required)' : ''}<br />`));
+                    let tocLink = $("<a></a>");
+                    tocLink.attr('href', `#${anchorName}`);
+                    tocLink.text(output.name);
+                    outputLeft.append(tocLink);
+                    outputLeft.append("<br />");
                     outputContent.append(outputRow);
                     outputContent.append($("<hr />"));
                 });
