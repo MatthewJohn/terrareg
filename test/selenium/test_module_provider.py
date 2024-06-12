@@ -2462,12 +2462,21 @@ EOF
                                            'use the version drop-down above.')
 
     @pytest.mark.parametrize('url', [
+        '/modules/javascriptinjection/modulename/testprovider',
         '/modules/javascriptinjection/modulename/testprovider/1.5.0',
         '/modules/javascriptinjection/modulename/testprovider/1.5.0/submodule/modules/example-submodule1',
         '/modules/javascriptinjection/modulename/testprovider/1.5.0/example/examples/test-example'
     ])
-    def test_injected_html(self, url):
+    @pytest.mark.parametrize('local_storage', [
+        {"input-output-view": "expanded"},
+        {"input-output-view": "table"},
+    ])
+    def test_injected_html(self, url, local_storage):
         """Check for any injected HTML from module."""
+        self.selenium_instance.get(self.get_url("/"))
+        for k, v in local_storage.items():
+            self.selenium_instance.execute_script("window.localStorage.setItem(arguments[0], arguments[1]);", k, v)
+
         self.selenium_instance.get(self.get_url(url))
 
         # Wait for tabs to be displayed
@@ -2503,6 +2512,7 @@ EOF
                 'injectedAdditionalTabsMarkDown']:
 
             with pytest.raises(selenium.common.exceptions.NoSuchElementException):
+                print(f"Checking for {injected_element}")
                 self.selenium_instance.find_element(By.ID, injected_element)
 
     @pytest.mark.parametrize('enable_beta,enable_unpublished,expected_versions', [
