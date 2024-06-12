@@ -16,6 +16,7 @@ import selenium.common
 from PIL import Image
 import imagehash
 
+import terrareg.config
 from terrareg.database import Database
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from test import mock_create_audit_event, skipif_unless_ci
@@ -46,6 +47,7 @@ class TestModuleProvider(SeleniumTest):
         cls._config_terraform_example_version_template = mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major_plus_one}.0.0, unittest')
         cls._config_disable_analytics = mock.patch('terrareg.config.Config.DISABLE_ANALYTICS', False)
         cls._config_allow_forceful_module_provider_redirect_deletion = mock.patch('terrareg.config.Config.ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION', True)
+        cls._config_default_ui_details_view = mock.patch('terrareg.config.Config.DEFAULT_UI_DETAILS_VIEW', terrareg.config.DefaultUiInputOutputView.TABLE)
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
@@ -59,6 +61,7 @@ class TestModuleProvider(SeleniumTest):
         cls.register_patch(cls._config_terraform_example_version_template)
         cls.register_patch(cls._config_disable_analytics)
         cls.register_patch(cls._config_allow_forceful_module_provider_redirect_deletion)
+        cls.register_patch(cls._config_default_ui_details_view)
 
         super(TestModuleProvider, cls).setup_class()
 
@@ -1005,11 +1008,15 @@ module "text_ternal_call" {
             row_text = [col.get_attribute('innerHTML') for col in row_columns]
             assert row_text == expected_row
 
-    @pytest.mark.parametrize('tab, first_item', [
-        ('input', 'name_of_application'),
-        ('output', 'generated_name')
+    @pytest.mark.parametrize('tab', [
+        'input',
+        'output',
     ])
-    def test_switch_view_types(self, tab, first_item):
+    @pytest.mark.parametrize('default_config_view', [
+        terrareg.config.DefaultUiInputOutputView.TABLE,
+        terrareg.config.DefaultUiInputOutputView.EXPANDED,
+    ])
+    def test_switch_view_types(self, tab, default_config_view):
         """Test switching view types"""
         # Open page for inputs
 
@@ -1045,59 +1052,67 @@ module "text_ternal_call" {
             tab_button = self.selenium_instance.find_element(By.ID, f'module-tab-link-{tab}s')
             tab_button.click()
 
-        try:
-            self.delete_cookies_and_local_storage()
-            self.selenium_instance.get(self.get_url("/modules/moduledetails/fullypopulated/testprovider/1.5.0"))
+        with self.update_mock(self._config_default_ui_details_view, 'new', default_config_view):
+            try:
+                self.delete_cookies_and_local_storage()
+                self.selenium_instance.get(self.get_url("/modules/moduledetails/fullypopulated/testprovider/1.5.0"))
 
-            # Wait for tab button to be visible
-            tab_button = self.wait_for_element(By.ID, f'module-tab-link-{tab}s')
+                # Wait for tab button to be visible
+                tab_button = self.wait_for_element(By.ID, f'module-tab-link-{tab}s')
 
-            # Ensure the tab content is not visible
-            assert self.wait_for_element(By.ID, f'module-tab-{tab}s-left', ensure_displayed=False).is_displayed() == False
+                # Ensure the tab content is not visible
+                assert self.wait_for_element(By.ID, f'module-tab-{tab}s-left', ensure_displayed=False).is_displayed() == False
 
-            # Click on tab link
-            tab_button.click()
+                # Click on tab link
+                tab_button.click()
 
-            # Obtain tab content
-            tab_content = self.selenium_instance.find_element(By.ID, f'module-tab-{tab}s')
+                # Obtain tab content
+                tab_content = self.selenium_instance.find_element(By.ID, f'module-tab-{tab}s')
 
-            # Find select box for view type
-            select = Select(tab_content.find_element(By.TAG_NAME, "select"))
+                # Find select box for view type
+                select = Select(tab_content.find_element(By.TAG_NAME, "select"))
 
-            # Ensure selected type is default
-            assert select.first_selected_option.text == "Table View"
+                if default_config_view is terrareg.config.DefaultUiInputOutputView.TABLE:
+                    # Ensure selected type is default
+                    assert select.first_selected_option.text == "Table View"
 
-            # Ensure the table view is activated
-            assert_looks_like_table_view()
+                    # Ensure the table view is activated
+                    assert_looks_like_table_view()
+                else:
+                    # Ensure selected type is default
+                    assert select.first_selected_option.text == "Expanded View"
 
-            # Select new view type
-            select.select_by_visible_text("Expanded View")
+                    # Ensure the table view is activated
+                    assert_looks_like_detailed_view()
 
-            # Wait for page to re-render
+                # Select new view type
+                select.select_by_visible_text("Expanded View")
 
-            assert_looks_like_detailed_view()
+                # Wait for page to re-render
 
-            # Reload page and assert that the new format is kept
-            self.selenium_instance.refresh()
+                assert_looks_like_detailed_view()
 
-            # Wait for outputs tab button to be visible
-            tab_button = self.wait_for_element(By.ID, f'module-tab-link-{tab}s')
-            tab_button.click()
-            assert_looks_like_detailed_view()
+                # Reload page and assert that the new format is kept
+                self.selenium_instance.refresh()
 
-            # Switch back to table view
-            tab_content = self.selenium_instance.find_element(By.ID, f'module-tab-{tab}s')
-            select = Select(tab_content.find_element(By.TAG_NAME, "select"))
-            select.select_by_visible_text("Table View")
+                # Wait for outputs tab button to be visible
+                tab_button = self.wait_for_element(By.ID, f'module-tab-link-{tab}s')
+                tab_button.click()
+                assert_looks_like_detailed_view()
 
-            assert_looks_like_table_view()
+                # Switch back to table view
+                tab_content = self.selenium_instance.find_element(By.ID, f'module-tab-{tab}s')
+                select = Select(tab_content.find_element(By.TAG_NAME, "select"))
+                select.select_by_visible_text("Table View")
 
-            # Refresh and re-check
-            self.selenium_instance.refresh()
-            assert_looks_like_table_view()
+                assert_looks_like_table_view()
 
-        finally:
-            self.delete_cookies_and_local_storage()
+                # Refresh and re-check
+                self.selenium_instance.refresh()
+                assert_looks_like_table_view()
+
+            finally:
+                self.delete_cookies_and_local_storage()
 
     @pytest.mark.parametrize('url,expected_resources', [
         # Root module

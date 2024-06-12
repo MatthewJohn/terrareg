@@ -12,22 +12,27 @@ function getLocalStorageValue(key, defaultValue, type) {
     return value;
 }
 
-function getUserPreferences() {
+async function getUserPreferences() {
+    let config = await getConfig();
     return {
         'show-beta-versions': getLocalStorageValue('show-beta-versions', false, Boolean),
         'show-unpublished-versions': getLocalStorageValue('show-unpublished-versions', false, Boolean),
         'theme': $.cookie("theme") || 'default',
         'terraform-compatibility-version': getLocalStorageValue('terraform-compatibility-version', '', String),
-        'input-output-view': getLocalStorageValue('input-output-view', 'table', String),
+        'ui-details-view': getLocalStorageValue('ui-details-view', config.DEFAULT_UI_DETAILS_VIEW, String),
     }
+}
+
+function setUiDetailsView(newValue) {
+    localStorage.setItem("ui-details-view", newValue);
 }
 
 function userPreferencesUpdateTerraformCompatibilityVersion(newVersion) {
     localStorage.setItem('terraform-compatibility-version', newVersion);
 }
 
-function userPreferencesModalShow() {
-    let currentPreferences = getUserPreferences();
+async function userPreferencesModalShow() {
+    let currentPreferences = await getUserPreferences();
     $('#user-preferences-show-beta').prop('checked', currentPreferences["show-beta-versions"]);
     $('#user-preferences-show-unpublished').prop('checked', currentPreferences["show-unpublished-versions"]);
     $('#user-preferences-theme').val(currentPreferences["theme"]);
