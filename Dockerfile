@@ -40,7 +40,7 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     rm /tmp/infracost.tar.gz'
 
 # Download tfswitch
-RUN bash -c 'curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/master/install.sh | bash /dev/stdin 0.13.1308'
+RUN bash -c 'curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/master/install.sh | bash /dev/stdin 1.0.0'
 
 # Install go
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
