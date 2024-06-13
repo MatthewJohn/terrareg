@@ -219,11 +219,11 @@ terraregModuleDetailsPromiseSingleton = [];
 async function getModuleDetails(module_id) {
     // Create promise if it hasn't already been defined
     if (terraregModuleDetailsPromiseSingleton[module_id] === undefined) {
+        let userPreferences = await getUserPreferences();
         terraregModuleDetailsPromiseSingleton[module_id] = new Promise((resolve, reject) => {
-            let userPreferences = getUserPreferences();
             let terraformVersionConstraintQueryString = (
                 userPreferences['terraform-compatibility-version'] ?
-                `?target_terraform_version=${userPreferences['terraform-compatibility-version']}` :
+                `?target_terraform_version=${userPreferences['terraform-compatibility-version']}&output=html` :
                 ''
             );
 
@@ -251,7 +251,7 @@ function getUsageBuilderVariables(moduleId) {
             // Perform request to obtain usage builder variables details
             $.ajax({
                 type: "GET",
-                url: `/v1/terrareg/modules/${moduleId}/variable_template`,
+                url: `/v1/terrareg/modules/${moduleId}/variable_template?output=html`,
                 success: function (data) {
                     resolve(data);
                 },

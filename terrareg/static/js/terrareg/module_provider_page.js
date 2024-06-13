@@ -13,9 +13,12 @@ class TabFactory {
         this._tabsLookup[tab.name] = tab;
         this._tabs.push(tab);
     }
+    getTabByName(tab) {
+        return this._tabsLookup[tab]
+    }
     async renderTabs() {
         for (const tab of this._tabs) {
-            tab.render();
+            tab.render(this);
         }
         for (const tab of this._tabs) {
             await tab._renderPromise;
@@ -72,7 +75,7 @@ class BaseTab {
     constructor() {
         this._renderPromise = undefined;
     }
-    render() {  }
+    render(tabFactory) {  }
     async isValid() {
         let result = await this._renderPromise;
         return result;
@@ -84,7 +87,7 @@ class ModuleDetailsTab extends BaseTab {
         super();
         this._moduleDetails = moduleDetails;
     }
-    render() { }
+    render(tabFactory) { }
 }
 
 
@@ -96,7 +99,7 @@ class ReadmeTab extends BaseTab {
     get name() {
         return 'readme';
     }
-    render() {
+    render(tabFactory) {
         this._renderPromise = new Promise((resolve) => {
             if (!this._readmeUrl) {
                 resolve(false);
@@ -136,7 +139,7 @@ class AdditionalTab extends BaseTab {
     get name() {
         return this._name;
     }
-    render() {
+    render(tabFactory) {
         this._renderPromise = new Promise((resolve) => {
             if (!this._fileUrl) {
                 resolve(false);
@@ -148,7 +151,7 @@ class AdditionalTab extends BaseTab {
                     return;
                 }
 
-                let tab = $(`<div id="module-tab-${this.name}" class="module-tabs content default-hidden"></div>`);
+                let tab = $(`<div id="module-tab-${this.name}" class="module-tabs content default-hidden column is-three-fifths is-offset-one-fifth"></div>`);
 
                 // Populate file conrtent
                 tab.append(fileContent);
@@ -182,7 +185,7 @@ class AnalyticsTab extends ModuleDetailsTab {
     get name() {
         return 'analytics';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
 
             // Check if analytics are disabled
@@ -230,7 +233,7 @@ class ExampleFilesTab extends ModuleDetailsTab {
     get name() {
         return 'example-files';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
             $.get(`/v1/terrareg/modules/${this._moduleDetails.id}/examples/filelist/${this._exampleDetails.path}`, (data) => {
                 if (!data.length) {
@@ -270,34 +273,143 @@ class InputsTab extends ModuleDetailsTab {
     get name() {
         return 'inputs';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
-            let inputTab = $("#module-tab-inputs");
-            let inputTabTbody = inputTab.find("tbody");
-            this._moduleDetails.inputs.forEach((input) => {
-                let inputRow = $("<tr></tr>");
+            // Clear out existing content after re-rendering
+            let inputLeft = $("#module-tab-inputs-left");
+            let inputContent = $("#module-tab-inputs-content");
+            inputLeft.html("");
+            inputContent.html("");
 
-                let nameTd = $("<td></td>");
-                nameTd.text(input.name);
-                inputRow.append(nameTd);
+            let userPreferences = await getUserPreferences();
 
-                let descriptionTd = $("<td></td>");
-                descriptionTd.text(input.description);
+            inputLeft.append(getInputOutputViewSelect(userPreferences["ui-details-view"], (ev) => {
+                setUiDetailsView(ev.target.value);
 
-                // Replace new line characters in description with line breaks
-                descriptionTd.html(descriptionTd.html().replace(/\n/g, '<br />'));
-                inputRow.append(descriptionTd);
+                // Re-render this page and outputs tab
+                this.render(tabFactory);
+                let outputTab = tabFactory.getTabByName("outputs")
+                if (outputTab !== undefined) {
+                    outputTab.render(tabFactory);
+                }
+            }));
+            inputLeft.append($("<hr />"));
 
-                let typeTd = $("<td></td>");
-                typeTd.text(input.type);
-                inputRow.append(typeTd);
+            if (userPreferences["ui-details-view"] === "expanded") {
 
-                let defaultTd = $("<td></td>");
-                defaultTd.text(input.required ? "Required" : JSON.stringify(input.default));
-                inputRow.append(defaultTd);
+                let requiredInputTab = $("<div id=\"module-tab-inputs-required\"></div>");
+                let optionalInputTab = $("<div id=\"module-tab-inputs-optional\"></div>");
+                let requiredToc = $("<div id=\"module-tab-inputs-toc-required\"</div>");
+                let optionalToc = $("<div id=\"module-tab-inputs-toc-optional\"></div>");
 
-                inputTabTbody.append(inputRow);
-            });
+                const replaceStartWhitespaceRe = new RegExp('^  ', 'mg');
+                this._moduleDetails.inputs.forEach((input) => {
+                    let inputRow = $(`<div></div>`);
+                    let anchorName = `terrareg-anchor-input-${input.name.replace(/[^A-Aa-z]/g, '')}`;
+                    inputRow.attr('id', anchorName);
+                    inputRow.attr('name', anchorName);
+
+                    let nameTd = $("<h4 class='subtitle is-4'></h4>");
+                    nameTd.text(input.name);
+                    inputRow.append(nameTd);
+
+                    let typeTd = $("<p></p>");
+                    typeTd.text(`Type: `);
+                    // If type contains any new line characters, use a pre-formatted block.
+                    // Otherwise, use an inline code block
+                    if (input.type.indexOf("\n") !== -1) {
+                        let typeValue = $("<pre></pre>");
+                        typeValue.text(input.type.replaceAll(replaceStartWhitespaceRe, ""));
+                        typeTd.append(typeValue);
+                    } else {
+                        let typeValue = $("<code></code>");
+                        typeValue.text(input.type);
+                        typeTd.append(typeValue);
+                    }
+                    inputRow.append(typeTd);
+
+                    let defaultTd = $("<p></p>");
+                    defaultTd.text(input.required ? "This variable is required" : "Default: ");
+                    let defaultValue = JSON.stringify(input.default, null, 2);
+                    if (input.required !== true) {
+                        if (defaultValue.indexOf("\n") !== -1) {
+                            let defaultValueEl = $("<pre></pre>");
+                            defaultValueEl.text(defaultValue);
+                            defaultTd.append(defaultValueEl);
+                        } else {
+                            let defaultValueEl = $("<code></code>");
+                            defaultValueEl.text(defaultValue);
+                            defaultTd.append(defaultValueEl);
+                        }
+                    }
+                    inputRow.append(defaultTd);
+                    inputRow.append("<br />");
+
+                    if (input.description && input.description.trim() != "") {
+                        let descriptionTd = $("<div><b>Description</b><br /></div>");
+                        let descriptionContent = $("<p></p>");
+                        descriptionContent.html(input.description);
+                        descriptionTd.append(descriptionContent);
+                        inputRow.append(descriptionTd);
+                        inputRow.append("<br />");
+                    }
+
+                    let toc = optionalToc;
+                    let inputTab = optionalInputTab;
+                    if (input.required) {
+                        toc = requiredToc;
+                        inputTab = requiredInputTab;
+                    }
+
+                    let tocLink = $("<a></a>");
+                    tocLink.attr('href', `#${anchorName}`);
+                    tocLink.text(input.name);
+                    toc.append(tocLink);
+                    toc.append(`${input.required ? ' (required)' : ''}<br />`);
+                    inputTab.append(inputRow);
+                    inputTab.append($("<hr />"));
+                });
+
+                inputLeft.append(requiredToc);
+                inputLeft.append(optionalToc);
+                inputContent.append(requiredInputTab);
+                inputContent.append(optionalInputTab);
+            } else {
+                let inputTab = $("#module-tab-inputs-content");
+                let inputTable = $(`<table class="table module-provider-tab-content-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Type</th>
+                            <th>Default value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>`);
+                let inputTabTbody = inputTable.find("tbody");
+                this._moduleDetails.inputs.forEach((input) => {
+                    let inputRow = $("<tr></tr>");
+                    let nameTd = $("<td></td>");
+                    nameTd.text(input.name);
+                    inputRow.append(nameTd);
+
+                    let descriptionTd = $("<td></td>");
+                    descriptionTd.html(input.description);
+                    inputRow.append(descriptionTd);
+
+                    let typeTd = $("<td></td>");
+                    typeTd.text(input.type);
+                    inputRow.append(typeTd);
+ 
+                    let defaultTd = $("<td></td>");
+                    defaultTd.text(input.required ? "Required" : JSON.stringify(input.default));
+                    inputRow.append(defaultTd);
+                    inputTabTbody.append(inputRow);
+                });
+                inputTab.append(inputTable);
+            }
 
             // Show tab link
             $('#module-tab-link-inputs').removeClass('default-hidden');
@@ -310,25 +422,84 @@ class OutputsTab extends ModuleDetailsTab {
     get name() {
         return 'outputs';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
-            let outputTab = $("#module-tab-outputs");
-            let outputTabTbody = outputTab.find("tbody");
-            this._moduleDetails.outputs.forEach((output) => {
-                let outputRow = $("<tr></tr>");
+            // Clear out existing content after re-rendering
+            let outputLeft = $("#module-tab-outputs-left");
+            let outputContent = $("#module-tab-outputs-content");
+            outputLeft.html("");
+            outputContent.html("");
 
-                let nameTd = $("<td></td>");
-                nameTd.text(output.name);
-                outputRow.append(nameTd);
+            let userPreferences = await getUserPreferences();
 
-                let descriptionTd = $("<td></td>");
-                descriptionTd.text(output.description);
-                // Replace new line characters in description with line breaks
-                descriptionTd.html(descriptionTd.html().replace(/\n/g, '<br />'));
-                outputRow.append(descriptionTd);
+            outputLeft.append(getInputOutputViewSelect(userPreferences["ui-details-view"], (ev) => {
+                setUiDetailsView(ev.target.value);
 
-                outputTabTbody.append(outputRow);
-            });
+                // Re-render page
+                this.render(tabFactory);
+                let inputTab = tabFactory.getTabByName("inputs")
+                if (inputTab !== undefined) {
+                    inputTab.render(tabFactory);
+                }
+            }));
+            outputLeft.append($("<hr />"));
+
+            if (userPreferences["ui-details-view"] === "expanded") {
+                this._moduleDetails.outputs.forEach((output) => {
+                    let outputRow = $(`<div></div>`);
+                    let anchorName = `terrareg-anchor-output-${output.name.replace(/[^A-Aa-z]/g, '')}`;
+                    outputRow.attr('id', anchorName);
+                    outputRow.attr('name', anchorName);
+
+                    let nameTd = $("<h4 class='subtitle is-4'></h4>");
+                    nameTd.text(output.name);
+                    outputRow.append(nameTd);
+
+                    if (output.description && output.description.trim() != "") {
+                        let descriptionTd = $("<div><b>Description</b><br /></div>");
+                        let descriptionContent = $("<p></p>");
+                        descriptionContent.html(output.description);
+                        descriptionTd.append(descriptionContent);
+                        outputRow.append(descriptionTd);
+                        outputRow.append("<br />");
+                    }
+
+                    let tocLink = $("<a></a>");
+                    tocLink.attr('href', `#${anchorName}`);
+                    tocLink.text(output.name);
+                    outputLeft.append(tocLink);
+                    outputLeft.append("<br />");
+                    outputContent.append(outputRow);
+                    outputContent.append($("<hr />"));
+                });
+            } else {
+                let outputTab = $("#module-tab-outputs-content");
+                let outputTable = $(`<table class="table module-provider-tab-content-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>`);
+                let outputTabTbody = outputTable.find("tbody");
+                this._moduleDetails.outputs.forEach((output) => {
+                    let outputRow = $("<tr></tr>");
+                    let nameTd = $("<td></td>");
+                    nameTd.text(output.name);
+                    outputRow.append(nameTd);
+
+                    let descriptionTd = $("<td></td>");
+                    descriptionTd.html(output.description);
+                    outputRow.append(descriptionTd);
+
+                    outputTabTbody.append(outputRow);
+                });
+                outputTab.append(outputTable);
+            }
+
             // Show tab link
             $('#module-tab-link-outputs').removeClass('default-hidden');
 
@@ -341,7 +512,7 @@ class ModulesTab extends ModuleDetailsTab {
     get name() {
         return 'modules';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
             let modulesTab = $("#module-tab-modules");
             let modulesTabTbody = modulesTab.find("tbody");
@@ -374,7 +545,7 @@ class ProvidersTab extends ModuleDetailsTab {
     get name() {
         return 'providers';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
             let providerTab = $("#module-tab-providers");
             let providerTabTbody = providerTab.find("tbody");
@@ -411,7 +582,7 @@ class SecurityIssuesTab extends ModuleDetailsTab {
     get name() {
         return 'security-issues';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
             if (this._moduleDetails.security_results) {
                 let tfsecTab = $("#module-tab-security-issues");
@@ -538,7 +709,7 @@ class ResourcesTab extends ModuleDetailsTab {
     get name() {
         return 'resources';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
             // Populate link to resources graph
             $('#resourceDependencyGraphLink').on("click", () => {window.location.href = this._graphUrl});
@@ -590,7 +761,7 @@ class IntegrationsTab extends ModuleDetailsTab {
     get name() {
         return 'integrations';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
             let config = await getConfig();
             let loggedIn = await isLoggedIn();
@@ -666,7 +837,7 @@ class SettingsTab extends ModuleDetailsTab {
     get name() {
         return 'settings';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
 
             let userPermissions = await isLoggedIn();
@@ -993,7 +1164,7 @@ class BaseUsageBuilderRow {
 
         let additionalHelpTd = $('<td></td>');
         additionalHelpTd.attr('style', 'width: 50%');
-        additionalHelpTd.text(this.config.additional_help ? this.config.additional_help : '');
+        additionalHelpTd.html(this.config.additional_help ? this.config.additional_help : '');
         inputRow.append(additionalHelpTd);
 
         let valueTd = $('<td></td>');
@@ -1432,7 +1603,7 @@ class UsageBuilderTab extends ModuleDetailsTab {
     get name() {
         return 'usage-builder';
     }
-    async render() {
+    async render(tabFactory) {
         this._renderPromise = new Promise(async (resolve) => {
             let usageBuilderTable = $('#usageBuilderTable');
 
@@ -1553,6 +1724,19 @@ class UsageBuilderTab extends ModuleDetailsTab {
 ${outputTf}
 }`);
     }
+}
+
+/*
+ *
+ */
+function getInputOutputViewSelect(currentValue, callback) {
+    let outerDiv = $("<div class=\"control select\"></div>");
+    let select = $("<select></select>");
+    select.append($(`<option value="table" ${currentValue == "table" ? "selected" : ""}>Table View</select>`));
+    select.append($(`<option value="expanded" ${currentValue == "expanded" ? "selected" : ""}>Expanded View</select>`));
+    select.on("change", callback);
+    outerDiv.append(select);
+    return outerDiv;
 }
 
 /*
@@ -1687,13 +1871,13 @@ function populateVersionText(moduleDetails) {
  *
  * @param moduleDetails Terrareg module details
  */
-function populateVersionSelect(moduleDetails) {
+async function populateVersionSelect(moduleDetails) {
     let versionSelection = $("#version-select");
 
     let currentVersionFound = false;
     let currentIsLatestVersion = false;
 
-    let userPreferences = getUserPreferences();
+    let userPreferences = await getUserPreferences();
 
     $.get(`/v1/terrareg/modules/${moduleDetails.module_provider_id}/versions` +
         `?include-beta=${userPreferences["show-beta-versions"]}&` +
@@ -1995,7 +2179,7 @@ function onSubmoduleSelectChange(event) {
  */
 async function populateTerraformUsageExample(moduleDetails, submoduleDetails) {
     let config = await getConfig();
-    let userPreferences = getUserPreferences();
+    let userPreferences = await getUserPreferences();
 
     // Check if module has been published - if not, do not
     // show usage example

@@ -183,19 +183,23 @@ class TerraformIdp:
         config = terrareg.config.Config()
 
         if config.ALLOW_UNAUTHENTICATED_ACCESS:
-            print("Disabling Terraform OIDC provider due to ALLOW_UNAUTHENTICATED_ACCESS is true")
+            if config.DEBUG:
+                print("Disabling Terraform OIDC provider due to ALLOW_UNAUTHENTICATED_ACCESS is true")
             return False
 
         if not config.TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT:
-            print('Disabling Terraform OIDC provider due to missing TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT')
+            if config.DEBUG:
+                print('Disabling Terraform OIDC provider due to missing TERRAFORM_OIDC_IDP_SUBJECT_ID_HASH_SALT')
             return False
 
         if not os.path.isfile(config.TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH):
-            print('Disabling Terraform OIDC provider due to TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH not set to a present file')
+            if config.DEBUG:
+                print('Disabling Terraform OIDC provider due to TERRAFORM_OIDC_IDP_SIGNING_KEY_PATH not set to a present file')
             return False
 
         if not config.PUBLIC_URL:
-            print('Disabling Terraform OIDC provider due to missing PUBLIC_URL config')
+            if config.DEBUG:
+                print('Disabling Terraform OIDC provider due to missing PUBLIC_URL config')
             return False
         return True
 
