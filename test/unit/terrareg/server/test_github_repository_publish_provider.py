@@ -268,6 +268,7 @@ class TestApiGithubRepositoryPublishProvider(TerraregIntegrationTest):
                 rows = conn.execute(db.provider_version.select()).all()
                 assert len(rows) == pre_existing_provider_version_count
 
+    @pytest.mark.skip("Generic exceptions throw an exception in test client. See https://gitlab.dockstudios.co.uk/pub/terrareg/-/issues/526")
     def test_refresh_versions_extraction_generic_exception(self, client, test_github_provider_source, test_repository_create):
         """Test refresh_versions method with generic exception raised when extracting version"""
         self._get_current_auth_method_mock.stop()

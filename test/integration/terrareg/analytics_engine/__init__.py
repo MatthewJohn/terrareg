@@ -129,4 +129,5 @@ class AnalyticsIntegrationTest(TerraregIntegrationTest):
                 AnalyticsEngine.record_module_version_download(
                     namespace_name=namespace, module_name=module, provider_name=provider,
                     module_version=module_version, terraform_version=terraform_version,
-                    analytics_token=analytics_token, user_agent=None, auth_token=auth_token)
+                    analytics_token=analytics_token, user_agent="Terraform/{}".format(terraform_version),
+                    auth_token=auth_token)

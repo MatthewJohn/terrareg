@@ -49,7 +49,7 @@ class TestApiModuleProviderDetails(TerraregUnitTest):
                     {
                         'name': 'string_with_default_value',
                         'type': 'string',
-                        'description': 'Override the default string',
+                        'description': 'Override the *default* string',
                         'default': 'this is the default',
                         'required': False
                     },
@@ -71,7 +71,7 @@ class TestApiModuleProviderDetails(TerraregUnitTest):
                 'outputs': [
                     {
                         'name': 'generated_name',
-                        'description': 'Name with randomness'
+                        'description': '# Name with randomness'
                     },
                     {
                         'name': 'no_desc_output',

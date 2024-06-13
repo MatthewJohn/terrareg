@@ -108,7 +108,7 @@ class GithubRepositoryPublishProvider(ErrorCatchingResource):
                 versions = provider.refresh_versions(limit=1)
             except:
                 transaction.transaction.rollback()
-                return {'status': 'Error', 'message': 'An internal server error occurred'}, 500
+                raise
 
             if not versions:
                 transaction.transaction.rollback()

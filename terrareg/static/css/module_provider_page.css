@@ -33,3 +33,16 @@
 #settings-module-version-card {
     margin-bottom: 15px;
 }
+#module-tab-inputs tr {
+    border: 1px #eeeeee solid;
+}
+#module-tab-inputs th {
+    padding: 10px 5px 10px 5px;
+}
+#module-tab-inputs td {
+    border-left: 1px #eeeeee solid;
+    padding: 10px 5px 10px 5px;
+}
+#module-tab-inputs tr:nth-child(even) {
+    background-color: #fcfcfc;
+}

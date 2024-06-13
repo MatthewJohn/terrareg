@@ -1,5 +1,27 @@
 # Changelog
 
+# [3.5.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.4.2...v3.5.0) (2024-06-03)
+
+
+### Bug Fixes
+
+* Pass through exceptions from refresh_versions when publishing provider version to avoid hiding errors ([90321ab](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/90321ab03b195a07e32420330dba02d64e8d8635)), closes [#478](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/478)
+
+
+### Features
+
+* Add API endpoint to list provider integration details ([7ed205c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7ed205c1934c21b0e56bfe3c3dd201645c348ac1)), closes [#478](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/478)
+* Add integrations tab to provider page, allowing indexing of provider version from UI ([9b380a3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9b380a3fde2a3ce3505555758e7b9c7977eea534)), closes [#478](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/478)
+* Add POST method to provider versions endpoint to support indexing a single provider version ([50d1af1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/50d1af10750b55bef6c347782f028f4ce75a902b)), closes [#478](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/478)
+* Add tabbing functionality to provider page, allowing for content other than documentation ([b6fcb72](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b6fcb72d9cff7a5dbdab5d7be1503cb20b9b8288)), closes [#478](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/478)
+
+## [3.4.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.4.1...v3.4.2) (2024-05-26)
+
+
+### Bug Fixes
+
+* Ensure user-agent matches expected Terraform or OpenTofu user agents ([83ee182](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/83ee18215c818cf59151b7aabf35803f3bc96b21)), closes [#519](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/519)
+
 ## [3.4.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.4.0...v3.4.1) (2024-04-01)
 
 

@@ -151,34 +151,88 @@
     </div>
 </div>
 
-<div class="columns provider-docs">
-    <div class="column is-one-fifth provider-doc-menu">
-        <div class="navbar-item has-dropdown is-active">
+<div class="tabs">
+    <ul>
+        <li id="provider-tab-link-documentation" class="provider-tab-link default-hidden"><a onclick="selectProviderTab('documentation')">Documentation</a></li>
+        <li id="provider-tab-link-integrations" class="provider-tab-link default-hidden">
+            <a onclick="selectProviderTab('integrations')">
+                Integrations
+            </a>
+        </li>
+    </ul>
+</div>
 
-            <div class="navbar-dropdown docs-link-dropdown" style="position: relative">
-                <a id="doclink-overview-index" class="navbar-item">
-                    Overview
-                </a>
+<div class="columns">
+    <div class="column">
+        <!-- Tab content -->
 
-                <hr class="navbar-divider">
-                <div id="provider-docs-menu-guides-header" class="navbar-item default-hidden">
-                    <b>Guides</b>
+        <!-- README tab -->
+        <div id="provider-tab-documentation" class="provider-tabs content default-hidden">
+            <div class="columns provider-docs">
+                <div class="column is-one-fifth provider-doc-menu">
+                    <div class="navbar-item has-dropdown is-active">
+
+                        <div class="navbar-dropdown docs-link-dropdown" style="position: relative">
+                            <a id="doclink-overview-index" class="navbar-item">
+                                Overview
+                            </a>
+
+                            <hr class="navbar-divider">
+                            <div id="provider-docs-menu-guides-header" class="navbar-item default-hidden">
+                                <b>Guides</b>
+                            </div>
+
+                            <hr class="navbar-divider">
+                            <div id="provider-docs-menu-resources-header" class="navbar-item default-hidden">
+                                <b>Resources</b>
+                            </div>
+
+                            <hr class="navbar-divider">
+                            <div id="provider-docs-menu-data-sources-header" class="navbar-item default-hidden">
+                                <b>Data Sources</b>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <hr class="navbar-divider">
-                <div id="provider-docs-menu-resources-header" class="navbar-item default-hidden">
-                    <b>Resources</b>
-                </div>
-
-                <hr class="navbar-divider">
-                <div id="provider-docs-menu-data-sources-header" class="navbar-item default-hidden">
-                    <b>Data Sources</b>
+                <div id="provider-doc-content" class="column is-four-fifths provider-doc-content">
                 </div>
             </div>
         </div>
-    </div>
 
-    <div id="provider-doc-content" class="column is-four-fifths provider-doc-content">
+
+        <!-- Integrations tab -->
+        <div id="provider-tab-integrations" class="provider-tabs default-hidden">
+            <div class="column is-three-fifths is-offset-one-fifth">
+                <p class="subtitle">
+                    Integrations
+                </p>
+
+                <table id="integrations-table" class="table">
+                </table>
+
+                <div id="index-version-in-progress" class="notification is-info default-hidden">
+                </div>
+                <div id="index-version-success" class="notification is-success default-hidden">
+                </div>
+                <div id="index-version-error" class="notification is-danger default-hidden">
+                </div>
+                <p class="subtitle">Manually index version</p>
+                <div class="field is-vertical">
+                    <label class="label">Version</label>
+                    <div class="control">
+                        <input id="indexProviderVersion" class="input is-small" type="text" size="5" placeholder="1.0.0">
+                        <input type="hidden" id="integrations-csrf-token" value="{{ csrf_token }}" />
+                    </div>
+                    <div class="control">
+                        <br />
+                        <button id="integration-index-version-button" class="button is-info is-small">
+                        Index Version
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
