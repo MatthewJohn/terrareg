@@ -997,6 +997,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#default_ui_details_view" class="md-nav__link">
+    <span class="md-ellipsis">
+      DEFAULT_UI_DETAILS_VIEW
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#delete_externally_hosted_artifacts" class="md-nav__link">
     <span class="md-ellipsis">
       DELETE_EXTERNALLY_HOSTED_ARTIFACTS
@@ -2213,6 +2222,12 @@ Defaults to local SQLite database.</p>
 <h3 id="default_terraform_version">DEFAULT_TERRAFORM_VERSION</h3>
 <p>Default version of Terraform that will be used to extract module, if terraform required_version has not been specified.</p>
 <p>Default: <code>1.3.6</code></p>
+<h3 id="default_ui_details_view">DEFAULT_UI_DETAILS_VIEW</h3>
+<p>Default view type in UI for inputs and outputs</p>
+<p>Set to one of the following:
+ * table - show the inputs and outputs in a table
+ * expanded - shows the inputs and outputs as a list, more suitable for long descriptions and descriptions containing markdown tables</p>
+<p>Default: <code>table</code></p>
 <h3 id="delete_externally_hosted_artifacts">DELETE_EXTERNALLY_HOSTED_ARTIFACTS</h3>
 <p>Whether uploaded modules, that provide an external URL for the artifact,
 should be removed after analysis.
