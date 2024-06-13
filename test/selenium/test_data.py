@@ -3108,7 +3108,7 @@ digraph {
                                     'type': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsInputType"; document.body.appendChild(a);</script>',
                                     'description': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsInputDescription"; document.body.appendChild(a);</script>',
                                     'default': '<script>var a = document.createElement("div"); a.id = "injectedTerraformDocsInputDefault"; document.body.appendChild(a);</script>',
-                                    'required': True
+                                    'required': False
                                 }
                             ],
                             'modules': [],

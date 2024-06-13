@@ -35,12 +35,12 @@ class TestApiModuleVersionDetails(TerraregUnitTest):
                 'empty': False,
                 'inputs': [
                     {'name': 'name_of_application', 'type': 'string', 'description': 'Enter the application name', 'default': None, 'required': True},
-                    {'name': 'string_with_default_value', 'type': 'string', 'description': 'Override the default string', 'default': 'this is the default', 'required': False},
+                    {'name': 'string_with_default_value', 'type': 'string', 'description': 'Override the *default* string', 'default': 'this is the default', 'required': False},
                     {'name': 'example_boolean_input', 'type': 'bool', 'description': 'Override the truthful boolean', 'default': True, 'required': False},
                     {'name': 'example_list_input', 'type': 'list', 'description': 'Override the stringy list', 'default': ['value 1', 'value 2'], 'required': False}
                 ],
                 'outputs': [
-                    {'name': 'generated_name', 'description': 'Name with randomness'},
+                    {'name': 'generated_name', 'description': '# Name with randomness'},
                     {'name': 'no_desc_output', 'description': None}
                 ],
                 'dependencies': [

@@ -45,5 +45,6 @@ class ApiTerraregConfig(ErrorCatchingResource):
             'SAML_LOGIN_TEXT': config.SAML2_LOGIN_TEXT,
             'ADMIN_LOGIN_ENABLED': terrareg.auth.AdminApiKeyAuthMethod.is_enabled(),
             'AUTO_CREATE_NAMESPACE': config.AUTO_CREATE_NAMESPACE,
-            'AUTO_CREATE_MODULE_PROVIDER': config.AUTO_CREATE_MODULE_PROVIDER
+            'AUTO_CREATE_MODULE_PROVIDER': config.AUTO_CREATE_MODULE_PROVIDER,
+            'DEFAULT_UI_DETAILS_VIEW': config.DEFAULT_UI_DETAILS_VIEW.value,
         }

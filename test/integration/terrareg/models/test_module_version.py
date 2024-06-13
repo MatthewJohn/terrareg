@@ -575,7 +575,17 @@ class TestModuleVersion(TerraregIntegrationTest):
         # Ensure when the auto-generated usage builder is disabled, only the pre-defined
         # variables in the module version are returned
         with unittest.mock.patch('terrareg.config.Config.AUTOGENERATE_USAGE_BUILDER_VARIABLES', False):
-            assert module_version.variable_template == [
+            assert module_version.get_variable_template() == [
+                {
+                    'additional_help': 'Provide the name of the application',
+                    'name': 'name_of_application',
+                    'quote_value': True,
+                    'type': 'text',
+                    'default_value': None,
+                    'required': True
+                }
+            ]
+            assert module_version.get_variable_template(html=True) == [
                 {
                     'additional_help': 'Provide the name of the application',
                     'name': 'name_of_application',
@@ -589,7 +599,7 @@ class TestModuleVersion(TerraregIntegrationTest):
         # Ensure when auto-generated usage builder is enabled, the missing required variables
         # are populated in the variable template
         with unittest.mock.patch('terrareg.config.Config.AUTOGENERATE_USAGE_BUILDER_VARIABLES', True):
-            assert module_version.variable_template ==  [
+            assert module_version.get_variable_template() ==  [
                 {
                     'additional_help': 'Provide the name of the application',
                     'name': 'name_of_application',
@@ -599,7 +609,7 @@ class TestModuleVersion(TerraregIntegrationTest):
                     'required': True
                 },
                 {
-                    'additional_help': 'Override the default string',
+                    'additional_help': 'Override the *default* string',
                     'default_value': 'this is the default',
                     'name': 'string_with_default_value',
                     'quote_value': True,
@@ -608,7 +618,7 @@ class TestModuleVersion(TerraregIntegrationTest):
                 },
                 {
                     'additional_help': 'Override the default string',
-                    'default_value': None,
+                    'default_value': 'Default with _markdown_!',
                     'name': 'undocumented_required_variable',
                     'quote_value': True,
                     'required': True,
@@ -632,8 +642,60 @@ class TestModuleVersion(TerraregIntegrationTest):
                 },
                 {
                     'additional_help': 'Override the stringy list',
-                    'default_value': ['value 1',
-                                    'value 2'],
+                    'default_value': ['value 1', 'value 2'],
+                    'name': 'example_list_input',
+                    'quote_value': True,
+                    'required': False,
+                    'type': 'text'
+                }
+            ]
+            
+            # Test variable template with HTML
+            assert module_version.get_variable_template(html=True) ==  [
+                {
+                    # Values obtained from terrareg.json should converted to HTML
+                    'additional_help': 'Provide the name of the application',
+                    'name': 'name_of_application',
+                    'quote_value': True,
+                    'type': 'text',
+                    'default_value': None,
+                    'required': True
+                },
+                {
+                    'additional_help': '<p>Override the <em>default</em> string</p>',
+                    'default_value': 'this is the default',
+                    'name': 'string_with_default_value',
+                    'quote_value': True,
+                    'required': False,
+                    'type': 'text'
+                },
+                {
+                    'additional_help': '<p>Override the default string</p>',
+                    'default_value': 'Default with _markdown_!',
+                    'name': 'undocumented_required_variable',
+                    'quote_value': True,
+                    'required': True,
+                    'type': 'text'
+                },
+                {
+                    'additional_help': '<p>required boolean variable</p>',
+                    'default_value': None,
+                    'name': 'example_boolean_input',
+                    'quote_value': False,
+                    'required': True,
+                    'type': 'boolean'
+                },
+                {
+                    'additional_help': '<p>A required list</p>',
+                    'default_value': None,
+                    'name': 'required_list_variable',
+                    'quote_value': True,
+                    'required': True,
+                    'type': 'list'
+                },
+                {
+                    'additional_help': '<p>Override the stringy list</p>',
+                    'default_value': ['value 1', 'value 2'],
                     'name': 'example_list_input',
                     'quote_value': True,
                     'required': False,

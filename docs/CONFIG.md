@@ -285,6 +285,19 @@ Default version of Terraform that will be used to extract module, if terraform r
 Default: `1.3.6`
 
 
+### DEFAULT_UI_DETAILS_VIEW
+
+
+Default view type in UI for inputs and outputs
+
+Set to one of the following:
+ * table - show the inputs and outputs in a table
+ * expanded - shows the inputs and outputs as a list, more suitable for long descriptions and descriptions containing markdown tables
+
+
+Default: `table`
+
+
 ### DELETE_EXTERNALLY_HOSTED_ARTIFACTS
 
 

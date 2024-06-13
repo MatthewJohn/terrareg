@@ -69,16 +69,13 @@ class ErrorCatchingResource(Resource, BaseHandler):
         try:
             return self._delete(*args, **kwargs)
         except terrareg.errors.TerraregError as exc:
-            return {
-                "status": "Error",
-                "message": str(exc)
-            }, 500
+            return api_error(str(exc)), 500
 
-    def _get_404_response(self):
+    def _get_404_response(self) -> Tuple[Dict[str, str], int]:
         """Return common 404 error"""
         return {'errors': ['Not Found']}, 404
 
-    def _get_401_response(self):
+    def _get_401_response(self) -> Tuple[Dict[str, str], int]:
         """Return standardised 401."""
         return {'message': ('The server could not verify that you are authorized to access the URL requested. '
                             'You either supplied the wrong credentials (e.g. a bad password), '

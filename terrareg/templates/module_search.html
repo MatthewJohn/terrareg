@@ -189,8 +189,8 @@
         }
     }
 
-    function loadSearchUserPreferences() {
-        let userPreferences = getUserPreferences();
+    async function loadSearchUserPreferences() {
+        let userPreferences = await getUserPreferences();
         $('#search-terraform-version').val(userPreferences['terraform-compatibility-version']);
     }
 
@@ -202,12 +202,12 @@
         performSearch(currentSearchMeta?.current_offset);
     }
 
-    $(document).ready(function () {
+    $(document).ready(async function () {
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
         const searchQuery = urlParams.get('q');
 
-        loadSearchUserPreferences();
+        await loadSearchUserPreferences();
 
         if (searchQuery) {
             $('#search-query-string').val(searchQuery);

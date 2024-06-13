@@ -599,14 +599,14 @@ cNnPcrQ=
                                 {
                                     'name': 'name_of_application',
                                     'type': 'string',
-                                    'description': 'Enter the application name',
+                                    'description': 'Enter the overriden name',
                                     'default': None,
                                     'required': True
                                 },
                                 {
                                     'name': 'string_with_default_value',
                                     'type': 'string',
-                                    'description': 'Override the default string',
+                                    'description': 'Override the *default* string',
                                     'default': 'this is the default',
                                     'required': False
                                 },
@@ -614,7 +614,7 @@ cNnPcrQ=
                                     'name': 'undocumented_required_variable',
                                     'type': 'string',
                                     'description': 'Override the default string',
-                                    'default': None,
+                                    'default': 'Default with _markdown_!',
                                     'required': True
                                 },
                                 {
@@ -643,7 +643,7 @@ cNnPcrQ=
                             'outputs': [
                                 {
                                     'name': 'generated_name',
-                                    'description': 'Name with randomness'
+                                    'description': 'Name with *randomness*'
                                 },
                                 {
                                     'name': 'no_desc_output',
