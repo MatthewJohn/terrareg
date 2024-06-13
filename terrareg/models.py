@@ -3307,7 +3307,7 @@ module "{self.module_version.module_provider.module.name}" {{
             if description:
                 if html:
                     description = convert_markdown_to_html(file_name="", markdown_html=description)
-                # Always santise HTML
+                # Always sanitise HTML
                 description = sanitise_html_content(text=description, allow_markdown_html=True)
                 input_["description"] = description
         return inputs
@@ -3321,7 +3321,7 @@ module "{self.module_version.module_provider.module.name}" {{
             if description:
                 if html:
                     description = convert_markdown_to_html(file_name="", markdown_html=description)
-                # Always santise HTML
+                # Always sanitise HTML
                 description = sanitise_html_content(text=description, allow_markdown_html=True)
                 output["description"] = description
         return outputs
