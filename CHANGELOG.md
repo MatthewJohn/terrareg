@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.6.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.6.0...v3.6.1) (2024-06-14)
+
+
+### Bug Fixes
+
+* Update terraform switch to 1.0.0. ([957f258](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/957f258258ac633400328b2858e2b5c52aeea1b6)), closes [#515](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/515)
+
 # [3.6.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.5.0...v3.6.0) (2024-06-13)
 
 
