@@ -471,6 +471,50 @@ class TestProvider(TerraregIntegrationTest):
                 for provider_version_id in created_version_mapping.values():
                     conn.execute(db.provider_version.delete(db.provider_version.c.id==provider_version_id))
 
+    def test_index_version(self, mock_provider_source_class, test_provider, test_gpg_key, test_namespace):
+        """Test index_version method with version"""
+        try:
+            with unittest.mock.patch(
+                        'terrareg.provider_extractor.ProviderExtractor.obtain_gpg_key',
+                        unittest.mock.MagicMock(return_value=test_gpg_key)) as mock_obtain_gpg_key, \
+                    unittest.mock.patch('terrareg.provider_extractor.ProviderExtractor.process_version', unittest.mock.MagicMock()) as mock_process_version:
+
+                created_version = test_provider.index_version(version="1.5.0")
+
+                mock_obtain_gpg_key.assert_has_calls(calls=[
+                        unittest.mock.call(provider=test_provider, release_metadata=mock_provider_source_class.NEW_RELEASES[1], namespace=test_namespace),
+                    ]
+                )
+                mock_process_version.assert_has_calls(calls=[
+                        unittest.mock.call(),
+                    ]
+                )
+
+                assert isinstance(created_version, terrareg.provider_version_model.ProviderVersion)
+                assert created_version.version == "1.5.0"
+        finally:
+            db = terrareg.database.Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
+
+    def test_index_version_with_version_not_found(self, mock_provider_source_class, test_provider, test_gpg_key, test_namespace):
+        """Test refresh_versions method with version that does not exist"""
+        try:
+            with unittest.mock.patch(
+                        'terrareg.provider_extractor.ProviderExtractor.obtain_gpg_key',
+                        unittest.mock.MagicMock(return_value=test_gpg_key)) as mock_obtain_gpg_key, \
+                    unittest.mock.patch('terrareg.provider_extractor.ProviderExtractor.process_version', unittest.mock.MagicMock()) as mock_process_version:
+
+                with pytest.raises(terrareg.errors.UnableToObtainReleaseError):
+                    test_provider.index_version(version="2.3.0")
+
+                mock_obtain_gpg_key.assert_not_called()
+                mock_process_version.assert_not_called()
+        finally:
+            db = terrareg.database.Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
+
     def test_refresh_versions(self, mock_provider_source_class, test_provider, test_gpg_key, test_namespace):
         """Test refresh_versions method"""
 
@@ -494,8 +538,39 @@ class TestProvider(TerraregIntegrationTest):
                 )
 
                 assert len(created_versions) == 2
+                expected_version = ["1.0.0", "1.5.0"]
                 for created_version in created_versions:
                     assert isinstance(created_version, terrareg.provider_version_model.ProviderVersion)
+                    assert created_version.version == expected_version.pop(0)
+        finally:
+            db = terrareg.database.Database.get()
+            with db.get_connection() as conn:
+                conn.execute(db.provider_version.delete(db.provider_version.c.provider_id==test_provider.pk))
+
+    def test_refresh_versions_with_limit(self, mock_provider_source_class, test_provider, test_gpg_key, test_namespace):
+        """Test refresh_versions method with limit"""
+        try:
+            with unittest.mock.patch(
+                        'terrareg.provider_extractor.ProviderExtractor.obtain_gpg_key',
+                        unittest.mock.MagicMock(return_value=test_gpg_key)) as mock_obtain_gpg_key, \
+                    unittest.mock.patch('terrareg.provider_extractor.ProviderExtractor.process_version', unittest.mock.MagicMock()) as mock_process_version:
+
+                created_versions = test_provider.refresh_versions(limit=1)
+
+                mock_obtain_gpg_key.assert_has_calls(calls=[
+                        unittest.mock.call(provider=test_provider, release_metadata=mock_provider_source_class.NEW_RELEASES[0], namespace=test_namespace),
+                    ]
+                )
+                mock_process_version.assert_has_calls(calls=[
+                        unittest.mock.call(),
+                    ]
+                )
+
+                assert len(created_versions) == 1
+                expected_version = ["1.0.0"]
+                for created_version in created_versions:
+                    assert isinstance(created_version, terrareg.provider_version_model.ProviderVersion)
+                    assert created_version.version == expected_version.pop(0)
         finally:
             db = terrareg.database.Database.get()
             with db.get_connection() as conn:

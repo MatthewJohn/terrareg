@@ -217,6 +217,10 @@ class Server(BaseHandler):
             '/v1/providers/<string:namespace>/<string:provider>/<string:version>'
         )
         self._api.add_resource(
+            ApiTerraregProviderIntegrations,
+            '/v1/terrareg/providers/<string:namespace>/<string:provider>/integrations'
+        )
+        self._api.add_resource(
             ApiProviderVersions,
             '/v1/providers/<string:namespace>/<string:provider>/versions'
         )
@@ -516,12 +520,9 @@ class Server(BaseHandler):
             '/v1/terrareg/modules/<string:namespace>/<string:name>'
         )
         self._api.add_resource(
-            ApiTerraregModuleProviderDetails,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>'
-        )
-        self._api.add_resource(
             ApiTerraregModuleVersionDetails,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>'
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>',
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>',
         )
         self._api.add_resource(
             ApiTerraregModuleProviderVersions,

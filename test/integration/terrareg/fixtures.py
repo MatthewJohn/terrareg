@@ -99,6 +99,12 @@ def mock_provider_source_class():
             """Return mocked method to obtain new releases"""
             return MockProviderSource.NEW_RELEASES
 
+        def get_release(self, provider, version):
+            """Mocked method to obtain release"""
+            for release in self.NEW_RELEASES:
+                if release.version == version:
+                    return release
+
     try:
         yield MockProviderSource
     finally:

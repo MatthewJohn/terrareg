@@ -1,8 +1,7 @@
 
 import os
-from re import A
 import time
-from typing import Dict, Union, List, Tuple
+from typing import Dict, Union, List, Tuple, Optional
 from urllib.parse import parse_qs
 
 from cryptography.hazmat.primitives import serialization
@@ -314,6 +313,45 @@ class GithubProviderSource(BaseProviderSource):
             archive_url=archive_url,
             release_artifacts=release_artifacts,
         )
+
+    def get_release(self, provider: 'terrareg.provider_model.Provider', version: str) -> Optional[Union[
+            'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
+            'terrareg.provider_version_model.ProviderVersion',
+        ]]:
+        """Get release information for a given version"""
+        access_token = self._get_access_token_for_provider(provider=provider)
+        tag = terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata.version_to_tag(version)
+
+        # Obtain release ID
+        repository = provider.repository
+        release_res = requests.get(
+            f"{self._api_url}/repos/{repository.owner}/{repository.name}/releases/tags/{tag}",
+            headers={
+                "X-GitHub-Api-Version": "2022-11-28",
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"Bearer {access_token}"
+            }
+        )
+
+        if release_res.status_code != 200:
+            print(f"Invalid response code from github: {release_res.status_code}")
+            return None
+        release = release_res.json()
+
+        release_metadata = self._process_release(
+            provider=provider,
+            repository=repository,
+            access_token=access_token,
+            github_release_metadata=release
+        )
+        if release_metadata is None:
+            print("Could not obtain release information")
+            return None
+        elif isinstance(release_metadata, terrareg.provider_version_model.ProviderVersion):
+            return release_metadata
+        else:
+            return release_metadata
+
 
     def get_new_releases(self, provider: 'terrareg.provider_model.Provider') -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:
         """Obtain all repository releases that aren't associated with a pre-existing release"""

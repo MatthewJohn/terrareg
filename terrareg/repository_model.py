@@ -1,6 +1,6 @@
 
 import re
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Optional
 
 import sqlalchemy
 
@@ -205,6 +205,16 @@ class Repository:
 
         # Remove cached DB row
         self._cache_db_row = None
+
+    def get_release(self, provider: 'terrareg.provider_model.Provider', version: str) -> Optional[Union[
+            'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
+            'terrareg.provider_version_model.ProviderVersion',
+        ]]:
+        """Get release information for a given version"""
+        return self.provider_source.get_release(
+            provider=provider,
+            version=version
+        )
 
     def get_new_releases(self, provider: 'terrareg.provider_model.Provider') -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:
         """Obtain all repository releases that aren't associated with a pre-existing release"""

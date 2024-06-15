@@ -1,5 +1,62 @@
 # Changelog
 
+## [3.6.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.6.0...v3.6.1) (2024-06-14)
+
+
+### Bug Fixes
+
+* Update terraform switch to 1.0.0. ([957f258](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/957f258258ac633400328b2858e2b5c52aeea1b6)), closes [#515](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/515)
+
+# [3.6.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.5.0...v3.6.0) (2024-06-13)
+
+
+### Bug Fixes
+
+* Disable logging around disabling OIDC, unless debug is enabled ([ef0885a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ef0885aa787d84c49332eca08be755754c20ba1c)), closes [#527](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/527)
+* Handle multi-line types in new display of input variables ([fdcbbaf](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fdcbbaf173ea00243c6d93ae66c79892c85f07e3)), closes [#527](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/527)
+* Improve formatting of tables in inputs tab ([08cc3e9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/08cc3e91adf39abb5059a87061f03cc69f6b6655)), closes [#527](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/527)
+* Improve handling of multi-line default values in input variables for module provider ([f041908](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f041908ff2270bb0d5f1818892dbb0172ac3fb40)), closes [#527](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/527)
+* Split required and optional inputs in inputs tab ([f7ef44c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/f7ef44c7eca02ea526a29aff14a6db7756ce4b71)), closes [#527](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/527)
+
+
+### Features
+
+* Add support for rendering input/output descriptions as markdown. ([9171cb7](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9171cb75b55bbbf668d3e1b386d95b8b7e50479b)), closes [#527](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/527)
+* Add support for switching between table and expanded view in inputs and outputs ([cdd9fda](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/cdd9fdaba631be49ac57620253ad4475a28710e6)), closes [#527](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/527)
+* Add UI support for markdown in input/output descriptions ([4f49257](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4f49257eb39b9ec979a3d4ed1c11e4cb026822c4)), closes [#527](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/527)
+* Allow setting default input/output UI view type system-wide ([8375e1d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8375e1d998893ef43bcd9e742984065cc2d32218)), closes [#527](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/527)
+* Update output table to no longer use a table and use full page content for description ([a710e9b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a710e9b07216269a84811117115ff3e0fb5e008a)), closes [#527](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/527)
+* Update usage builder variables API endpoint to support HTML descriptions ([d743030](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/d74303030ddde49dc7dccced0959b42a6913a5d4)), closes [#527](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/527)
+
+# [3.5.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.4.2...v3.5.0) (2024-06-03)
+
+
+### Bug Fixes
+
+* Pass through exceptions from refresh_versions when publishing provider version to avoid hiding errors ([90321ab](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/90321ab03b195a07e32420330dba02d64e8d8635)), closes [#478](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/478)
+
+
+### Features
+
+* Add API endpoint to list provider integration details ([7ed205c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/7ed205c1934c21b0e56bfe3c3dd201645c348ac1)), closes [#478](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/478)
+* Add integrations tab to provider page, allowing indexing of provider version from UI ([9b380a3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9b380a3fde2a3ce3505555758e7b9c7977eea534)), closes [#478](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/478)
+* Add POST method to provider versions endpoint to support indexing a single provider version ([50d1af1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/50d1af10750b55bef6c347782f028f4ce75a902b)), closes [#478](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/478)
+* Add tabbing functionality to provider page, allowing for content other than documentation ([b6fcb72](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/b6fcb72d9cff7a5dbdab5d7be1503cb20b9b8288)), closes [#478](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/478)
+
+## [3.4.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.4.1...v3.4.2) (2024-05-26)
+
+
+### Bug Fixes
+
+* Ensure user-agent matches expected Terraform or OpenTofu user agents ([83ee182](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/83ee18215c818cf59151b7aabf35803f3bc96b21)), closes [#519](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/519)
+
+## [3.4.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.4.0...v3.4.1) (2024-04-01)
+
+
+### Bug Fixes
+
+* Pin tfswitch to latest working version - v1 appears to break the installation ([35df281](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/35df2812c3e6260ff70253927a20726360004527)), closes [#515](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/515)
+
 # [3.4.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.3.0...v3.4.0) (2024-03-28)
 
 

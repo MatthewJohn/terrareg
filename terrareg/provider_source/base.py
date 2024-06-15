@@ -1,5 +1,5 @@
 
-from typing import Dict, Union, List, Tuple
+from typing import Dict, Union, List, Tuple, Optional
 import json
 
 import terrareg.database
@@ -68,6 +68,13 @@ class BaseProviderSource:
 
     def refresh_namespace_repositories(self, namespace: 'terrareg.models.Namespace') -> None:
         """Refresh list of repositories for namespace"""
+        raise NotImplementedError
+
+    def get_release(self, provider: 'terrareg.provider_model.Provider', version: str) -> Optional[Union[
+            'terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata',
+            'terrareg.provider_version_model.ProviderVersion',
+        ]]:
+        """Get release information for a given version"""
         raise NotImplementedError
 
     def get_new_releases(self, provider: 'terrareg.provider_model.Provider') -> List['terrareg.provider_source.repository_release_metadata.RepositoryReleaseMetadata']:

@@ -11,7 +11,12 @@ from typing import Optional, Union, List
 import sqlalchemy
 
 import terrareg.database
-from terrareg.errors import CouldNotFindGpgKeyForProviderVersionError, DuplicateProviderError, InvalidModuleProviderNameError, InvalidRepositoryNameError, MissingSignureArtifactError, NoGithubAppInstallationError, NonExistentNamespaceError, ProviderNameNotPermittedError, TerraregError
+from terrareg.errors import (
+    CouldNotFindGpgKeyForProviderVersionError, DuplicateProviderError, InvalidModuleProviderNameError,
+    InvalidRepositoryNameError, MissingSignureArtifactError, NoGithubAppInstallationError,
+    NonExistentNamespaceError, ProviderNameNotPermittedError, TerraregError,
+    ProviderVersionAlreadyIndexedError, UnableToObtainReleaseError
+)
 import terrareg.config
 import terrareg.provider_tier
 import terrareg.audit
@@ -316,11 +321,45 @@ class Provider:
         # Obtain latest row
         return terrareg.provider_version_model.ProviderVersion(provider=self, version=rows[0]['version'])
 
+    def index_version(self, version: str) -> 'terrareg.provider_version_model.ProviderVersion':
+        """Index single version of a provider and create new provider version"""
+        repository = self.repository
+        release_metadata = repository.get_release(provider=self, version=version)
+
+        if isinstance(release_metadata, terrareg.provider_version_model.ProviderVersion):
+            raise ProviderVersionAlreadyIndexedError("Provider version is already indexed")
+
+        if not release_metadata:
+            raise UnableToObtainReleaseError(f"Could not get release information for version: {version}")
+
+        gpg_key = terrareg.provider_extractor.ProviderExtractor.obtain_gpg_key(
+            provider=self,
+            release_metadata=release_metadata,
+            namespace=self.namespace
+        )
+
+        provider_version = terrareg.provider_version_model.ProviderVersion(provider=self, version=release_metadata.version)
+
+        with terrareg.database.Database.get_new_transaction_or_nested() as transaction:
+            try:
+                with provider_version.create_extraction_wrapper(git_tag=release_metadata.tag, gpg_key=gpg_key):
+                    provider_extractor = terrareg.provider_extractor.ProviderExtractor(
+                        provider_version=provider_version,
+                        release_metadata=release_metadata
+                    )
+                    provider_extractor.process_version()
+                transaction.commit()
+            except Exception:
+                transaction.rollback()
+                raise
+
+        return provider_version
+
     def refresh_versions(self, limit: Union[int, None]=None) -> List['terrareg.provider_version_model.ProviderVersion']:
         """
         Refresh versions from provider source and create new provider versions
 
-        Optional limit to determine the maximum number of releases to attempt to index
+        Optionally provide limit to determine the maximum number of releases to attempt to index.
         """
         repository = self.repository
 
@@ -356,8 +395,14 @@ class Provider:
                         provider_extractor.process_version()
                     transaction.commit()
                 except TerraregError:
+                    # Only rollback on an internal exception
+                    # so that we can continue with next release
                     transaction.rollback()
                     continue
+
+                except Exception:
+                    transaction.rollback()
+                    raise
 
             provider_versions.append(provider_version)
             if limit and len(provider_versions) >= limit:
@@ -394,3 +439,22 @@ class Provider:
             ],
             "warnings": None
         }
+
+    def get_integrations(self):
+        """Return integration URL and details"""
+        integrations = {
+            'import': {
+                'method': 'POST',
+                'url': f'/v1/providers/{self.id}/versions',
+                'description': 'Trigger version import',
+                'notes': 'Accepts JSON body with "version" key with value of version to be imported'
+            },
+            'hooks_github': {
+                'method': None,
+                'url': f'/v1/terrareg/providers/{self.id}/hooks/github',
+                'description': 'Github hook trigger',
+                'notes': 'Only accepts `Releases` events, all other events will return an error.',
+                'coming_soon': True
+            }
+        }
+        return integrations

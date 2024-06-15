@@ -198,6 +198,18 @@ Return list of providers in namespace
 Return provider details.
 
 
+## ApiTerraregProviderIntegrations
+
+`/v1/terrareg/providers/<string:namespace>/<string:provider>/integrations`
+
+Interface to provide list of integration URLs
+
+
+#### GET
+
+Return list of integration URLs
+
+
 ## ApiProviderVersions
 
 `/v1/providers/<string:namespace>/<string:provider>/versions`
@@ -208,6 +220,16 @@ Return provider details.
 #### GET
 
 Return provider version details.
+#### POST
+
+Return provider version details.
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| version | json | str | True | `None` | Version to be indexed |
+| csrf_token | json | str | False | `None` | CSRF Token |
+
 
 
 ## ApiProviderVersionDownload
@@ -728,28 +750,25 @@ Interface to obtain list of providers for module.
 Return list of modules in namespace
 
 
-## ApiTerraregModuleProviderDetails
+## ApiTerraregModuleVersionDetails
 
 `/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>`
 
-Interface to obtain module provider details.
-
-
-#### GET
-
-Return details about module version.
-
-
-## ApiTerraregModuleVersionDetails
-
 `/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>`
 
-Interface to obtain module version details.
+Interface to obtain module provider/version details.
 
 
 #### GET
 
 Return details about module version.
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| target_terraform_version | args | str | False | `None` | Provide terraform version to show compatibility with search results. |
+| output | args | str | False | `md` | Variable/Output description format, either "html" or "md" |
+
 
 
 ## ApiTerraregModuleProviderVersions
@@ -898,6 +917,12 @@ Provide variable template for module version.
 #### GET
 
 Return variable template.
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| output | args | str | False | `md` | Variable/Output description format, either "html" or "md" |
+
 
 
 ## ApiTerraregModuleVersionFile

@@ -36,7 +36,6 @@ from .terrareg_is_authenticated import ApiTerraregIsAuthenticated
 from .terrareg_module_provider_analytics_token_versions import ApiTerraregModuleProviderAnalyticsTokenVersions
 from .terrareg_module_provider_create import ApiTerraregModuleProviderCreate
 from .terrareg_module_provider_delete import ApiTerraregModuleProviderDelete
-from .terrareg_module_provider_details import ApiTerraregModuleProviderDetails
 from .terrareg_module_provider_integrations import ApiTerraregModuleProviderIntegrations
 from .terrareg_module_provider_settings import ApiTerraregModuleProviderSettings
 from .terrareg_module_provider_versions import ApiTerraregModuleProviderVersions
@@ -76,6 +75,7 @@ from .provider_version_download import ApiProviderVersionDownload
 from .provider_versions import ApiProviderVersions
 from .provider_search import ApiProviderSearch
 from .terrareg_provider_search_filters import ApiTerraregProviderSearchFilters
+from .terrareg_provider_integrations import ApiTerraregProviderIntegrations
 
 from .terraform.v2.gpg_keys import ApiGpgKeys
 from .terraform.v2.gpg_key import ApiGpgKey
