@@ -1,4 +1,4 @@
-
+from typing import List, Tuple, Sequence
 import re
 import xml.etree.ElementTree as etree
 
@@ -6,6 +6,7 @@ from markdown import Markdown
 from markdown.treeprocessors import Treeprocessor
 from markdown.preprocessors import Preprocessor
 from markdown.htmlparser import HTMLExtractor
+from markdown.postprocessors import Postprocessor
 # Avoid overlap with markdown method
 import markdown.extensions as markdown_extensions
 
@@ -127,6 +128,28 @@ class HTMLExtractorWithAttribs(HTMLExtractor):
         return super(HTMLExtractorWithAttribs, self).get_starttag_text()
 
 
+class CodeBlockClassCheck(Postprocessor):
+    """Remove any classes from code blocks that are not language-* classes"""
+
+    def __init__(self, md):
+        self._md = md
+
+    def run(self, text: str) -> str:
+        print(text)
+        root = etree.fromstring(text)
+        for code_block in root.findall('.//code'):
+            print('Found codee block')
+            print(dir(code_block))
+            if classes := code_block.attrib.get('class', ''):
+                result_classes = ''
+                for class_ in classes.split(' '):
+                    if class_.startswith('language-'):
+                        result_classes.append(class_)
+                code_block.attrib['class'] = result_classes
+        return self._md.serialise(root)
+
+
+
 class HtmlBlockPreprocessorWithAttribs(Preprocessor):
     """Preprocessor to override HtmlBlockPreprocessor, using HTMLExtractorWithAttribs"""
 
@@ -145,6 +168,7 @@ class TerraregMarkdownExtension(markdown_extensions.Extension):
         """Register processors"""
         # Replace raw HTML preprocessor
         md.preprocessors.register(HtmlBlockPreprocessorWithAttribs(md), 'html_block', 20)
+        md.postprocessors.register(CodeBlockClassCheck(md), 'codeblockclasscheck', 21)
         md.treeprocessors.register(LinkAnchorReplacement(md), 'linkanchorreplacement', 1)
         md.treeprocessors.register(ImageSourceCheck(md), 'imagesourcecheck', 19)
 
