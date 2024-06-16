@@ -211,7 +211,7 @@ build-pr-image:
   tags: [nomad]
 
   rules:
-    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == 'push'
 
   # Use docker without docker-in-docker, as we're
   # passing through the docker socket
@@ -273,6 +273,22 @@ stop_review:
     - apk add idn2-utils
     - ./gitlab-terraform destroy
   allow_failure: true
+
+deploy_main_demo:
+  extends: deploy_review
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+  environment:
+    name: main-demo
+    auto_stop_in: never
+    url: $DYNAMIC_ENVIRONMENT_URL
+    on_stop: stop_main_demo
+
+stop_main_demo:
+  extends: stop_review
+  environment:
+    name: main-demo
+    action: stop
 
 release:
   stage: deploy
