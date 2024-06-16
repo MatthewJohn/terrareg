@@ -2414,9 +2414,9 @@ class ModuleProvider(object):
         return self.get_tag_regex(self.git_ref_format)
 
     @property
-    def archive_git_path(self):
+    def archive_git_path(self) -> bool:
         """Return whether archives should only contain the contents of the git_path of the repo"""
-        return self._get_db_row()['archive_git_path']
+        return bool(self._get_db_row()['archive_git_path'])
 
     @property
     def git_path(self):
@@ -3066,6 +3066,7 @@ class ModuleProvider(object):
             "git_provider_id": git_provider.pk if git_provider else None,
             "git_tag_format": self.git_tag_format,
             "git_path": self.git_path,
+            "archive_git_path": self.archive_git_path,
             "repo_base_url_template": self._get_db_row()['repo_base_url_template'],
             "repo_clone_url_template": self._get_db_row()['repo_clone_url_template'],
             "repo_browse_url_template": self._get_db_row()['repo_browse_url_template']

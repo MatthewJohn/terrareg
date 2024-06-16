@@ -553,6 +553,18 @@
                                 Defaults to the root of the repository.<br />
                             </div>
 
+                            <div id="settings-section-archive-git-path" class="field default-hidden">
+                                <label class="label">Only include git path in archive</label>
+                                <div class="control">
+                                    <input type="checkbox" value="true" id="settings-archive-git-path" />
+                                </div>
+                                This determines whether the generated archives only contain the contents of the <code>Git path</code>.<br />
+                                This is only used for providing modules from archives rather than using Git repository redirects.<br />
+                                This can be used if the source directory contains other content that you do no wish to distribute to users.<br />
+                                Ensure that there are no depdencies on Terraform outside of the "Git path", as this will not be available to users.<br />
+                                Note: This has no affect on uploaded archives.
+                            </div>
+
                             <div class="field">
                                 <div class="control">
                                     <button id="module-provider-settings-update" class="button is-link">Update</button>

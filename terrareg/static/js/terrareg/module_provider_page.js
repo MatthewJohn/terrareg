@@ -858,8 +858,20 @@ class SettingsTab extends ModuleDetailsTab {
                 return;
             }
 
+            let config = await getConfig();
+
             if (this._moduleDetails.verified) {
                 $('#settings-verified').attr('checked', true);
+            }
+
+            // Only show "archive git path" if module hosting is enforced,
+            // as this will use git path for indexing and serve via modules
+            if (config.ALLOW_MODULE_HOSTING == "enforce") {
+                $('#settings-section-archive-git-path').removeClass("default-hidden");
+            }
+
+            if (this._moduleDetails.archive_git_path) {
+                $('#settings-archive-git-path').attr('checked', true);
             }
 
             // Check if namespace is auto-verified and, if so, show message
@@ -870,7 +882,6 @@ class SettingsTab extends ModuleDetailsTab {
             });
 
             // Setup git providers
-            let config = await getConfig();
             let gitProviderSelect = $('#settings-git-provider');
 
             if (config.ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER) {
@@ -2479,6 +2490,7 @@ function updateModuleProviderSettings(moduleDetails) {
             repo_browse_url_template: gitProviderId === "" ? $('#settings-browse-url-template').val() : "",
             git_tag_format: $('#settings-git-tag-format').val(),
             git_path: $('#settings-git-path').val(),
+            archive_git_path: $('#settings-archive-git-path').is(':checked'),
             verified: $('#settings-verified').is(':checked'),
             csrf_token: $('#settings-csrf-token').val()
         }),
