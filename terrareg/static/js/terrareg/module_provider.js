@@ -223,14 +223,14 @@ async function getModuleDetails(module_id) {
         terraregModuleDetailsPromiseSingleton[module_id] = new Promise((resolve, reject) => {
             let terraformVersionConstraintQueryString = (
                 userPreferences['terraform-compatibility-version'] ?
-                `?target_terraform_version=${userPreferences['terraform-compatibility-version']}&output=html` :
+                `&target_terraform_version=${userPreferences['terraform-compatibility-version']}` :
                 ''
             );
 
             // Perform request to obtain module details
             $.ajax({
                 type: "GET",
-                url: `/v1/terrareg/modules/${module_id}${terraformVersionConstraintQueryString}`,
+                url: `/v1/terrareg/modules/${module_id}?output=html${terraformVersionConstraintQueryString}`,
                 success: function (data) {
                     resolve(data);
                 },
