@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.6.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.6.1...v3.6.2) (2024-06-17)
+
+
+### Bug Fixes
+
+* Fix bug where HTML is only rendered in inputs/outputs when terraform compatibility is configured ([09b9e39](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/09b9e3948dfdf0313cab2bf868c74922bfba09f4)), closes [#527](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/527)
+
 ## [3.6.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.6.0...v3.6.1) (2024-06-14)
 
 
