@@ -622,6 +622,20 @@ class Config:
         return os.environ.get('TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '{major}.{minor}.{patch}')
 
     @property
+    def TERRAFORM_EXAMPLE_VERSION_TEMPLATE_PRE_MAJOR(self):
+        """
+        Template of version number string to be used in Terraform examples in the UI for pre-1.0.0 releases.
+
+        See `TERRAFORM_EXAMPLE_VERSION_TEMPLATE` for expected value types.
+
+        Since semantic versioning denotes that releases prior to 1.0.0 may release breaking changes, this can be configured to provide example containts that pin more aggressively.
+
+        *The configuration defaults to the configured value of `TERRAFORM_EXAMPLE_VERSION_TEMPLATE`*
+        """
+        return os.environ.get('TERRAFORM_EXAMPLE_VERSION_TEMPLATE_PRE_MAJOR', self.TERRAFORM_EXAMPLE_VERSION_TEMPLATE)
+
+
+    @property
     def AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION(self):
         """
         Whether to automatically generate module provider descriptions, if they are not provided in terrareg metadata file of the module.

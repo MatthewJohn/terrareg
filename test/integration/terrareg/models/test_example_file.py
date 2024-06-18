@@ -44,9 +44,9 @@ class TestExampleFile(TerraregIntegrationTest):
         file_list = sorted(file_list)
         assert [file.file_name for file in file_list] == ['main.tf', 'data.tf', 'outputs.tf', 'variables.tf']
 
-    @pytest.mark.parametrize('file_content,example_analytics_token,expected_output', [
+    @pytest.mark.parametrize('file_content,example_analytics_token,expected_output, version', [
         # Test empty file
-        ('', '', ''),
+        ('', '', '', '1.0.0'),
 
         # Basic call to example module (bit cyclic, so won't happen in real life)
         (
@@ -61,7 +61,8 @@ module "test-module" {
     source  = "example.com/unittest-example-analytics__moduledetails/readme-tests/provider//examples/testreadmeexample"
     version = ">= 1.0.0, < 1.1.0"
 }
-"""
+""",
+            '1.0.0'
         ),
 
         # Basic call to root module
@@ -81,7 +82,8 @@ module "test-module" {
 
     some_attribute = "test"
 }
-"""
+""",
+            '1.0.0'
         ),
         # Test leading indentation
         (
@@ -98,7 +100,8 @@ module "test-module" {
         version = ">= 1.0.0, < 1.1.0"
         some_attribute = "test"
 }
-"""
+""",
+            '1.0.0'
         ),
         # Test trailing key indentation
         (
@@ -115,7 +118,8 @@ module "test-module" {
   version        = ">= 1.0.0, < 1.1.0"
   some_attribute = "test"
 }
-"""
+""",
+            '1.0.0'
         ),
         # Without analytics token set
         (
@@ -132,17 +136,43 @@ module "test-module" {
   version = ">= 1.0.0, < 1.1.0"
   some_attribute = "test"
 }
-"""
-        )
+""",
+            '1.0.0'
+        ),
+        # Test with pre-1.0.0 version
+        (
+            """
+module "test-module" {
+  source = "../../"
+  some_attribute = "test"
+}
+""",
+            '',
+            """
+module "test-module" {
+  source  = "example.com/moduledetails/readme-tests-pre-major/provider"
+  version = ">= 0.5.4, < 0.5.5"
+  some_attribute = "test"
+}
+""",
+            '0.5.4'
+        ),
     ])
-    def test_source_replacement_in_file_content(self, file_content, example_analytics_token, expected_output):
+    def test_source_replacement_in_file_content(self, file_content, example_analytics_token, expected_output, version):
         """Test source replacement in example file content."""
 
-        module_version = ModuleVersion(ModuleProvider(Module(Namespace('moduledetails'), 'readme-tests'), 'provider'), '1.0.0')
+        if version == '1.0.0':
+            module_name = 'readme-tests'
+        else:
+            module_name = 'readme-tests-pre-major'
+
+        module_version = ModuleVersion(ModuleProvider(Module(Namespace('moduledetails'), module_name), 'provider'), version)
         example = Example(module_version, 'examples/testreadmeexample')
         example_file = ExampleFile(example, 'examples/testreadmeexample/main.tf')
         example_file.update_attributes(content=file_content)
 
         with unittest.mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major}.{minor_plus_one}.0'), \
+                unittest.mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE_PRE_MAJOR',
+                                    '>= {major}.{minor}.{patch}, < {major}.{minor}.{patch_plus_one}'), \
                 unittest.mock.patch('terrareg.config.Config.EXAMPLE_ANALYTICS_TOKEN', example_analytics_token):
             assert example_file.get_content(server_hostname='example.com') == expected_output
