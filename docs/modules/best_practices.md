@@ -6,6 +6,42 @@ Terrareg has been extensively tested with Terraform modules of all shapes and si
 
 However, to get the _most_ out of Terrareg, there are some practices/guides that will help.
 
+## Markdown
+
+Markdown files can be indexed and shown as tabs.
+
+The README.md in a root module, sub-modules and examples are indexed by default.
+
+Additional markdown files can be indexed and shown as tabs using [ADDITIONAL_MODULE_TABS](../CONFIG.md#additional_module_tabs)
+
+Code blocks are shown with syntax highlighting, with the following supported languages:
+
+ * `hcl`
+ * `css`
+ * `bash`
+ * `batch`
+ * `docker`
+ * `hcl`
+ * `plsql`
+ * `powershell`
+ * `python`
+ * `sql`
+
+Auto-detection of languages is used, but it's safest to write with language-helper markup, e.g.:
+````
+```hcl
+terraform {
+  required_version = "0.1.2
+}
+```
+
+```bash
+#!/bin/bash
+
+echo Some bash script
+```
+````
+
 ## Terrareg metadata file
 
 A metadata file can be provided each an uploaded module's archive to provide additional metadata to terrareg.
