@@ -610,7 +610,11 @@ class TestProcessUpload(TerraregIntegrationTest):
             },
         ]
 
-    def test_non_root_repo_directory(self):
+    @pytest.mark.parametrize('archive_git_path', [
+        True,
+        False
+    ])
+    def test_non_root_repo_directory(self, archive_git_path):
         """Test uploading a module within a sub-directory of a module."""
         test_upload = UploadTestModule()
 
@@ -619,15 +623,15 @@ class TestProcessUpload(TerraregIntegrationTest):
         module_provider = ModuleProvider.get(module=module, name='test', create=True)
 
         module_provider.update_git_provider(GitProvider(2))
-        module_provider.update_git_path('subdirectory/in/repo')
+        module_provider.update_git_path('subdirectory/in/{namespace}-{module}-{provider}')
+        module_provider.update_archive_git_path(archive_git_path)
 
         module_version = ModuleVersion(module_provider=module_provider, version='1.1.0')
         module_version.prepare_module()
 
         with test_upload as zip_file:
             with test_upload as upload_directory:
-
-                module_dir = os.path.join(upload_directory, 'subdirectory/in/repo')
+                module_dir = os.path.join(upload_directory, 'subdirectory/in/testprocessupload-git-path-test')
                 os.makedirs(module_dir)
 
                 # Create main.tf
@@ -664,6 +668,37 @@ class TestProcessUpload(TerraregIntegrationTest):
 
             UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
+            # Check contents of archive
+            file_storage = terrareg.file_storage.FileStorageFactory().get_file_storage()
+            zip_file = file_storage.read_file(module_version.archive_path_zip, bytes_mode=True)
+            with zipfile.ZipFile(zip_file) as z:
+                zip_contents = [
+                    fileobj.filename
+                    for fileobj in z.infolist()
+                    if not fileobj.is_dir()
+                ]
+
+                if archive_git_path:
+                    assert zip_contents == [
+                        'README.md',
+                        'modules/testmodule2/main.tf',
+                        'modules/testmodule1/main.tf',
+                        'terrareg.json',
+                        'main.tf',
+                        'examples/testexample2/main.tf',
+                        'examples/testexample1/main.tf',
+                    ]
+                else:
+                    assert zip_contents == [
+                        'subdirectory/in/testprocessupload-git-path-test/README.md',
+                        'subdirectory/in/testprocessupload-git-path-test/modules/testmodule2/main.tf',
+                        'subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/main.tf',
+                        'subdirectory/in/testprocessupload-git-path-test/terrareg.json',
+                        'subdirectory/in/testprocessupload-git-path-test/main.tf',
+                        'subdirectory/in/testprocessupload-git-path-test/examples/testexample2/main.tf',
+                        'subdirectory/in/testprocessupload-git-path-test/examples/testexample1/main.tf',
+                    ]
+
         # Ensure README is present in module version
         assert module_version.get_readme_content() == UploadTestModule.TEST_README_CONTENT
 
@@ -699,6 +734,18 @@ class TestProcessUpload(TerraregIntegrationTest):
         # Check attributes from terrareg
         assert module_version.description == 'Test unittest description'
         assert module_version.owner == 'Test unittest owner'
+
+        with mock.patch('terrareg.config.Config.ALLOW_MODULE_HOSTING', terrareg.config.ModuleHostingMode.ENFORCE):
+            if archive_git_path:
+                assert module_version.get_source_download_url(request_domain='localhost', direct_http_request=True) == 'https://localhost:443/v1/terrareg/modules/testprocessupload/git-path/test/1.1.0/source.zip'
+            else:
+                assert module_version.get_source_download_url(request_domain='localhost', direct_http_request=True) == 'https://localhost:443/v1/terrareg/modules/testprocessupload/git-path/test/1.1.0/source.zip//subdirectory/in/testprocessupload-git-path-test'
+
+        # Using git path, URL should always contain the sub-path
+        if archive_git_path:
+            assert module_version.get_source_download_url(request_domain='localhost', direct_http_request=True) == 'git::ssh://clone-url.com/testprocessupload/git-path-test//subdirectory/in/testprocessupload-git-path-test?ref=1.1.0'
+        else:
+            assert module_version.get_source_download_url(request_domain='localhost', direct_http_request=True) == 'git::ssh://clone-url.com/testprocessupload/git-path-test//subdirectory/in/testprocessupload-git-path-test?ref=1.1.0'
 
     def test_uploading_module_with_invalid_terraform(self):
         """Test uploading a module with invalid terraform."""
