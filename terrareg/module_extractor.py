@@ -67,6 +67,12 @@ class ModuleExtractor:
     @property
     def archive_source_directory(self):
         """Return directory that is used for generating the archives"""
+        # If the module provider is configured to only archive the git_path
+        # of the source, limit to only this path
+        if self._module_version.module_provider.archive_git_path:
+            return self.module_directory
+
+        # Otherwise, return the root of the repository
         return self.extract_directory
 
     @property
@@ -824,14 +830,3 @@ class GitModuleExtractor(ModuleExtractor):
         self._clone_repository()
 
         super(GitModuleExtractor, self).process_upload()
-
-    @property
-    def archive_source_directory(self):
-        """Return directory that is used for generating the archives"""
-        # If the module provider is configured to only archive the git_path
-        # of the source, limit to only this path
-        if self._module_version.module_provider.archive_git_path:
-            return self.module_directory
-
-        # Otherwise, return the root of the repository
-        return self.extract_directory

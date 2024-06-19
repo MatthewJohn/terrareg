@@ -864,12 +864,6 @@ class SettingsTab extends ModuleDetailsTab {
                 $('#settings-verified').attr('checked', true);
             }
 
-            // Only show "archive git path" if module hosting is enforced,
-            // as this will use git path for indexing and serve via modules
-            if (config.ALLOW_MODULE_HOSTING == "enforce") {
-                $('#settings-section-archive-git-path').removeClass("default-hidden");
-            }
-
             if (this._moduleDetails.archive_git_path) {
                 $('#settings-archive-git-path').attr('checked', true);
             }
