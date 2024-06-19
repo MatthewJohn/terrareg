@@ -1,5 +1,12 @@
 # Changelog
 
+# [3.7.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.6.2...v3.7.0) (2024-06-19)
+
+
+### Features
+
+* Support syntax highlighting in code blocks in README and other markdown ([a32c66a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a32c66a3bf59c5583d77379180c9bc863460ebdd)), closes [#529](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/529)
+
 ## [3.6.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.6.1...v3.6.2) (2024-06-17)
 
 
