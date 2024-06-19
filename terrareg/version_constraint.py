@@ -160,10 +160,17 @@ class VersionConstraint:
 
                 if version_match_sem == target_version_sem:
                     return VersionCompatibilityType.INCOMPATIBLE
-
-            # If an unknown comparison is found, return error
             else:
-                return VersionCompatibilityType.ERROR
+                # Attempt to match just the string
+                version_match_sem, _, _ = cls.version_string_to_sem_version(constraint_part)
+                if not version_match_sem:
+                    return VersionCompatibilityType.ERROR
+
+                if version_match_sem != target_version_sem:
+                    return VersionCompatibilityType.INCOMPATIBLE
+
+                has_upper_bounds = True
+                has_lower_bounds = True
 
         # If either upper or lower bound was not found,
         # return implicitly compatible, otherwise,
