@@ -72,8 +72,8 @@ class ModuleExtractor:
     @property
     def module_directory(self):
         """Return path of module directory, based on configured git path."""
-        if self._module_version.git_path:
-            return safe_join_paths(self._extract_directory.name, self._module_version.git_path)
+        if self._module_version.module_provider.git_path:
+            return safe_join_paths(self._extract_directory.name, self._module_version.module_provider.git_path)
         else:
             return self._extract_directory.name
 
@@ -449,7 +449,9 @@ terraform {{
             published=False,
             git_sha=git_sha,
             internal=terrareg_metadata.get('internal', False),
-            extraction_version=EXTRACTION_VERSION
+            extraction_version=EXTRACTION_VERSION,
+            git_path=self._module_version.module_provider.git_path,
+            archive_git_path=self._module_version.module_provider.archive_git_path,
         )
 
     def _process_submodule(self, submodule: 'terrareg.models.BaseSubmodule'):

@@ -3697,9 +3697,14 @@ class ModuleVersion(TerraformSpecsObject):
         return ''
 
     @property
-    def git_path(self):
+    def git_path(self) -> Optional[str]:
         """Return path of module within git"""
-        return self._module_provider.git_path
+        return self._get_db_row()['git_path']
+
+    @property
+    def archive_git_path(self) -> bool:
+        """Return whether archives should only contain the contents of the git_path of the repo"""
+        return bool(self._get_db_row()['archive_git_path'])
 
     @property
     def id(self):
