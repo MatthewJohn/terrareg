@@ -938,6 +938,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#markdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      Markdown
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#terrareg-metadata-file" class="md-nav__link">
     <span class="md-ellipsis">
       Terrareg metadata file
@@ -1312,6 +1321,36 @@
 <h1 id="module-best-practices">Module best practices</h1>
 <p>Terrareg has been extensively tested with Terraform modules of all shapes and sizes, meaning that it should be able to provide valuable information without any modification to modules before indexing.</p>
 <p>However, to get the <em>most</em> out of Terrareg, there are some practices/guides that will help.</p>
+<h2 id="markdown">Markdown</h2>
+<p>Markdown files can be indexed and shown as tabs.</p>
+<p>The README.md in a root module, sub-modules and examples are indexed by default.</p>
+<p>Additional markdown files can be indexed and shown as tabs using <a href="../../CONFIG/#additional_module_tabs">ADDITIONAL_MODULE_TABS</a></p>
+<p>Code blocks are shown with syntax highlighting, with the following supported languages:</p>
+<ul>
+<li><code>hcl</code></li>
+<li><code>css</code></li>
+<li><code>bash</code></li>
+<li><code>batch</code></li>
+<li><code>docker</code></li>
+<li><code>hcl</code></li>
+<li><code>plsql</code></li>
+<li><code>powershell</code></li>
+<li><code>python</code></li>
+<li><code>sql</code></li>
+</ul>
+<p>Auto-detection of languages is used, but it's safest to write with language-helper markup, e.g.:</p>
+<pre><code>```hcl
+terraform {
+  required_version = &quot;0.1.2
+}
+```
+
+```bash
+#!/bin/bash
+
+echo Some bash script
+```
+</code></pre>
 <h2 id="terrareg-metadata-file">Terrareg metadata file</h2>
 <p>A metadata file can be provided each an uploaded module's archive to provide additional metadata to terrareg.</p>
 <p>This should be called <code>terrareg.json</code> or <code>.terrareg.json</code> and be placed in the root of the module.</p>
