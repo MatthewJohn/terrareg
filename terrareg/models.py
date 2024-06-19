@@ -3916,7 +3916,7 @@ class ModuleVersion(TerraformSpecsObject):
 
         return None
 
-    def get_source_download_url(self, request_domain: str, direct_http_request: bool, path: Optional[bool]=None):
+    def get_source_download_url(self, request_domain: str, direct_http_request: bool, path: Optional[str]=None):
         """Return URL to download source file."""
         rendered_url = None
 
@@ -3938,12 +3938,12 @@ class ModuleVersion(TerraformSpecsObject):
             # Check if git_path has been set and prepend to path, if set.
             path = os.path.join(self.git_path or '', path or '')
 
-            # Remove any trailing slashes from path
-            if path and path.endswith('/'):
-                path = path[:-1]
-
-            # Check if path is present for module (only used for submodules)
+            # Check if path is present for module
             if path:
+
+                # Remove any trailing slashes from path
+                path = path.lstrip('/').rstrip('/')
+
                 rendered_url = '{rendered_url}//{path}'.format(
                     rendered_url=rendered_url,
                     path=path)
@@ -3964,6 +3964,25 @@ class ModuleVersion(TerraformSpecsObject):
         # If a git URL is not present, revert to using built-in module hosting
         if config.ALLOW_MODULE_HOSTING is not terrareg.config.ModuleHostingMode.DISALLOW:
             url = '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
+
+            # If archive does not contain just the git_path,
+            # check if git_path has been set and prepend to path, if set.
+            if not self.archive_git_path:
+                path = os.path.join(self.git_path or '', path or '')
+
+            # Check if path is present for module
+            if path:
+                # Remove any trailing slashes from path
+                path = path.lstrip('/').rstrip('/')
+
+                rendered_url = '{rendered_url}//{path}'.format(
+                    rendered_url=rendered_url,
+                    path=path)
+            if path:
+                url = '{url}//{path}'.format(
+                    url=url,
+                    path=path
+                )
 
             # If authentication is required, generate pre-signed URL
             if not config.ALLOW_UNAUTHENTICATED_ACCESS:
