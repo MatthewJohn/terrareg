@@ -803,6 +803,7 @@ Handle update to settings.
 | repo_browse_url_template | json | str | False | `None` | Templated URL for browsing repository. |
 | git_tag_format | json | str | False | `None` | Module provider git tag format. |
 | git_path | json | str | False | `None` | Path within git repository that the module exists. |
+| archive_git_path | json | boolean | False | `False` | Whether to generate module archives from the git_path directory. Otherwise, archives are generated from the root |
 | csrf_token | json | str | False | `None` | CSRF token |
 
 
@@ -839,6 +840,7 @@ Handle update to settings.
 | repo_browse_url_template | json | str | False | `None` | Templated URL for browsing repository. |
 | git_tag_format | json | str | False | `None` | Module provider git tag format. |
 | git_path | json | str | False | `None` | Path within git repository that the module exists. |
+| archive_git_path | json | boolean | False | `None` | Whether to generate module archives from the git_path directory. Otherwise, archives are generated from the root |
 | verified | json | boolean | False | `None` | Whether module provider is marked as verified. |
 | namespace | json | str | False | `None` | Name of new namespace to move module/module provider to a new namespace |
 | module | json | str | False | `None` | New name of module |
