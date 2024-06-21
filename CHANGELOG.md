@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.7.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.7.0...v3.7.1) (2024-06-21)
+
+
+### Bug Fixes
+
+* Fix matching terraform module version constraint that is just the version number ([96c502d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/96c502df28da7b49c212b3727836bf7fe03a53dd)), closes [#530](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/530)
+
 # [3.7.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.6.2...v3.7.0) (2024-06-19)
 
 
