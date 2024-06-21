@@ -628,7 +628,7 @@ class Config:
 
         See `TERRAFORM_EXAMPLE_VERSION_TEMPLATE` for expected value types.
 
-        Since semantic versioning denotes that releases prior to 1.0.0 may release breaking changes, this can be configured to provide example containts that pin more aggressively.
+        Since semantic versioning denotes that releases prior to 1.0.0 may release breaking changes, this can be configured to provide example constraints that pin more aggressively.
 
         *The configuration defaults to the configured value of `TERRAFORM_EXAMPLE_VERSION_TEMPLATE`*
         """
