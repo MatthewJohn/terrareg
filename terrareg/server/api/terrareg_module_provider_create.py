@@ -19,7 +19,7 @@ class ApiTerraregModuleProviderCreate(ErrorCatchingResource):
             request_kwarg_map={'namespace': 'namespace'})]
 
     def _post_arg_parser(self):
-        """Return arg parrser for POST request"""
+        """Return arg parser for POST request"""
         parser = reqparse.RequestParser()
         parser.add_argument(
             'git_provider_id', type=str,
