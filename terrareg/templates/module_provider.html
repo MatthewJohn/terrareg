@@ -545,12 +545,23 @@
                             </div>
 
                             <div class="field">
-                                <label class="label">Git path</label>
+                                <label class="label">Module path</label>
                                 <div class="control">
                                     <input placeholder="/" class="input" type="text" id="settings-git-path">
                                 </div>
-                                Set the path within the repository that the module exists.<br />
-                                Defaults to the root of the repository.<br />
+                                Set the path within the repository/archive that the module exists.<br />
+                                Defaults to the root of the repository/archive.<br />
+                            </div>
+
+                            <div id="settings-section-archive-git-path" class="field">
+                                <label class="label">Only include module path in archive</label>
+                                <div class="control">
+                                    <input type="checkbox" value="true" id="settings-archive-git-path" />
+                                </div>
+                                This determines whether the generated archives only contain the contents of the <code>Module path</code>.<br />
+                                This is only used for providing modules from archives rather than using Git repository redirects.<br />
+                                This can be used if the source directory contains other content that you do no wish to distribute to users.<br />
+                                Ensure that there are no depdencies on Terraform outside of the "Module path", as this will not be available to users.<br />
                             </div>
 
                             <div class="field">

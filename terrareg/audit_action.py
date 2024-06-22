@@ -16,6 +16,7 @@ class AuditAction(Enum):
     MODULE_PROVIDER_UPDATE_GIT_TAG_FORMAT = "module_provider_update_git_tag_format"
     MODULE_PROVIDER_UPDATE_GIT_PROVIDER = "module_provider_update_git_provider"
     MODULE_PROVIDER_UPDATE_GIT_PATH = "module_provider_update_git_path"
+    MODULE_PROVIDER_UPDATE_ARCHIVE_GIT_PATH = "module_provider_update_archive_git_path"
     MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BASE_URL = "module_provider_update_git_custom_base_url"
     MODULE_PROVIDER_UPDATE_GIT_CUSTOM_CLONE_URL = "module_provider_update_git_custom_clone_url"
     MODULE_PROVIDER_UPDATE_GIT_CUSTOM_BROWSE_URL = "module_provider_update_git_custom_browse_url"
