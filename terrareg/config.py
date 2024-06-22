@@ -26,6 +26,12 @@ class ModuleHostingMode(Enum):
     ENFORCE = "enforce"
 
 
+class DefaultUiInputOutputView(Enum):
+    """Default input/output view in UI"""
+    TABLE = "table"
+    EXPANDED = "expanded"
+
+
 class Product(Enum):
     """Type of product"""
     TERRAFORM = "terraform"
@@ -215,6 +221,17 @@ class Config:
         This also sets `ALLOW_UNIDENTIFIED_DOWNLOADS` to True
         """
         return self.convert_boolean(os.environ.get('DISABLE_ANALYTICS', 'False'))
+
+    @property
+    def DEFAULT_UI_DETAILS_VIEW(self):
+        """
+        Default view type in UI for inputs and outputs
+
+        Set to one of the following:
+         * table - show the inputs and outputs in a table
+         * expanded - shows the inputs and outputs as a list, more suitable for long descriptions and descriptions containing markdown tables
+        """
+        return DefaultUiInputOutputView(os.environ.get('DEFAULT_UI_DETAILS_VIEW', DefaultUiInputOutputView.TABLE.value).lower())
 
     @property
     def ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION(self):

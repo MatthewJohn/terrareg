@@ -16,6 +16,7 @@ import selenium.common
 from PIL import Image
 import imagehash
 
+import terrareg.config
 from terrareg.database import Database
 from terrareg.user_group_namespace_permission_type import UserGroupNamespacePermissionType
 from test import mock_create_audit_event, skipif_unless_ci
@@ -46,6 +47,7 @@ class TestModuleProvider(SeleniumTest):
         cls._config_terraform_example_version_template = mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major_plus_one}.0.0, unittest')
         cls._config_disable_analytics = mock.patch('terrareg.config.Config.DISABLE_ANALYTICS', False)
         cls._config_allow_forceful_module_provider_redirect_deletion = mock.patch('terrareg.config.Config.ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION', True)
+        cls._config_default_ui_details_view = mock.patch('terrareg.config.Config.DEFAULT_UI_DETAILS_VIEW', terrareg.config.DefaultUiInputOutputView.TABLE)
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
@@ -59,6 +61,7 @@ class TestModuleProvider(SeleniumTest):
         cls.register_patch(cls._config_terraform_example_version_template)
         cls.register_patch(cls._config_disable_analytics)
         cls.register_patch(cls._config_allow_forceful_module_provider_redirect_deletion)
+        cls.register_patch(cls._config_default_ui_details_view)
 
         super(TestModuleProvider, cls).setup_class()
 
@@ -115,7 +118,7 @@ class TestModuleProvider(SeleniumTest):
 
         # Ensure integrations tab link is display and tab is displayed
         self.wait_for_element(By.ID, 'module-tab-link-integrations')
-        integration_tab = self.wait_for_element(By.ID, 'module-tab-integrations')
+        self.wait_for_element(By.ID, 'module-tab-integrations')
 
         # Ensure all other tabs aren't shown
         for tab_name in ['readme', 'example-files', 'inputs', 'outputs', 'providers', 'resources', 'analytics', 'usage-builder', 'settings']:
@@ -896,10 +899,10 @@ module "text_ternal_call" {
         (
             '/modules/moduledetails/fullypopulated/testprovider/1.5.0',
             [
-                ['name_of_application', 'Enter the application name\nThis should be a real name\n\nDouble line break', 'string', 'Required'],
-                ['string_with_default_value', 'Override the default string', 'string', '"this is the default"'],
-                ['example_boolean_input', 'Override the truthful boolean', 'bool', 'true'],
-                ['example_list_input', 'Override the stringy list', 'list', '["value 1","value 2"]']
+                ['name_of_application', '<p>Enter the application name\nThis should be a real name</p>\n<p>Double line break</p>', 'string', 'Required'],
+                ['string_with_default_value', '<p>Override the default string</p>', 'string', '"this is the default"'],
+                ['example_boolean_input', '<p>Override the truthful boolean</p>', 'bool', 'true'],
+                ['example_list_input', '<p>Override the stringy list</p>', 'list', '["value 1","value 2"]']
             ]
         ),
         # Module example
@@ -946,7 +949,7 @@ module "text_ternal_call" {
             assert len(row_columns) == 4
 
             # Check columns of row match expected text
-            row_text = [col.text for col in row_columns]
+            row_text = [col.get_attribute("innerHTML") for col in row_columns]
             assert row_text == expected_row
 
     @pytest.mark.parametrize('url,expected_outputs', [
@@ -954,7 +957,7 @@ module "text_ternal_call" {
         (
             '/modules/moduledetails/fullypopulated/testprovider/1.5.0',
             [
-                ['generated_name', 'Name with randomness\nThis random will not change.\n\nDouble line break'],
+                ['generated_name', '<p>Name with randomness\nThis random will not change.</p>\n<p>Double line break</p>'],
                 ['no_desc_output', '']
             ]
         ),
@@ -1002,8 +1005,114 @@ module "text_ternal_call" {
             assert len(row_columns) == 2
 
             # Check columns of row match expected text
-            row_text = [col.text for col in row_columns]
+            row_text = [col.get_attribute('innerHTML') for col in row_columns]
             assert row_text == expected_row
+
+    @pytest.mark.parametrize('tab', [
+        'input',
+        'output',
+    ])
+    @pytest.mark.parametrize('default_config_view', [
+        terrareg.config.DefaultUiInputOutputView.TABLE,
+        terrareg.config.DefaultUiInputOutputView.EXPANDED,
+    ])
+    def test_switch_view_types(self, tab, default_config_view):
+        """Test switching view types"""
+        # Open page for inputs
+
+        def assert_looks_like_table_view():
+            """Check both inputs and outputs tab look correct"""
+            for tab_to_check in ["inputs", "outputs"]:
+                tab_button = self.wait_for_element(By.ID, f'module-tab-link-{tab_to_check}')
+                tab_button.click()
+
+                content = self.selenium_instance.find_element(By.ID, f'module-tab-{tab_to_check}-content')
+                first_row = list(content.find_element(By.TAG_NAME, "table").find_element(By.TAG_NAME, "tbody").find_elements(By.TAG_NAME, "tr"))[0]
+                # Ensure first row of inputs is shown (excluding heading)
+                assert first_row.find_elements(By.TAG_NAME, "td")[0].text == ("name_of_application" if tab_to_check == "inputs" else "generated_name")
+
+            # Return to main tab
+            tab_button = self.selenium_instance.find_element(By.ID, f'module-tab-link-{tab}s')
+            tab_button.click()
+
+        def assert_looks_like_detailed_view():
+            for tab_to_check in ["inputs", "outputs"]:
+                tab_button = self.wait_for_element(By.ID, f'module-tab-link-{tab_to_check}')
+                tab_button.click()
+
+                content = self.selenium_instance.find_element(By.ID, f'module-tab-{tab_to_check}-content')
+                # Check heading
+                assert content.find_elements(By.TAG_NAME, "h4")[0].text == ("name_of_application" if tab_to_check == "inputs" else "generated_name")
+                if tab_to_check == "inputs":
+                    assert "Type: string" in content.text
+                else:
+                    assert "Description\nName with randomness" in content.text
+
+            # Return to main tab
+            tab_button = self.selenium_instance.find_element(By.ID, f'module-tab-link-{tab}s')
+            tab_button.click()
+
+        with self.update_mock(self._config_default_ui_details_view, 'new', default_config_view):
+            try:
+                self.delete_cookies_and_local_storage()
+                self.selenium_instance.get(self.get_url("/modules/moduledetails/fullypopulated/testprovider/1.5.0"))
+
+                # Wait for tab button to be visible
+                tab_button = self.wait_for_element(By.ID, f'module-tab-link-{tab}s')
+
+                # Ensure the tab content is not visible
+                assert self.wait_for_element(By.ID, f'module-tab-{tab}s-left', ensure_displayed=False).is_displayed() == False
+
+                # Click on tab link
+                tab_button.click()
+
+                # Obtain tab content
+                tab_content = self.selenium_instance.find_element(By.ID, f'module-tab-{tab}s')
+
+                # Find select box for view type
+                select = Select(tab_content.find_element(By.TAG_NAME, "select"))
+
+                if default_config_view is terrareg.config.DefaultUiInputOutputView.TABLE:
+                    # Ensure selected type is default
+                    assert select.first_selected_option.text == "Table View"
+
+                    # Ensure the table view is activated
+                    assert_looks_like_table_view()
+                else:
+                    # Ensure selected type is default
+                    assert select.first_selected_option.text == "Expanded View"
+
+                    # Ensure the table view is activated
+                    assert_looks_like_detailed_view()
+
+                # Select new view type
+                select.select_by_visible_text("Expanded View")
+
+                # Wait for page to re-render
+
+                assert_looks_like_detailed_view()
+
+                # Reload page and assert that the new format is kept
+                self.selenium_instance.refresh()
+
+                # Wait for outputs tab button to be visible
+                tab_button = self.wait_for_element(By.ID, f'module-tab-link-{tab}s')
+                tab_button.click()
+                assert_looks_like_detailed_view()
+
+                # Switch back to table view
+                tab_content = self.selenium_instance.find_element(By.ID, f'module-tab-{tab}s')
+                select = Select(tab_content.find_element(By.TAG_NAME, "select"))
+                select.select_by_visible_text("Table View")
+
+                assert_looks_like_table_view()
+
+                # Refresh and re-check
+                self.selenium_instance.refresh()
+                assert_looks_like_table_view()
+
+            finally:
+                self.delete_cookies_and_local_storage()
 
     @pytest.mark.parametrize('url,expected_resources', [
         # Root module
@@ -2368,12 +2477,21 @@ EOF
                                            'use the version drop-down above.')
 
     @pytest.mark.parametrize('url', [
+        '/modules/javascriptinjection/modulename/testprovider',
         '/modules/javascriptinjection/modulename/testprovider/1.5.0',
         '/modules/javascriptinjection/modulename/testprovider/1.5.0/submodule/modules/example-submodule1',
         '/modules/javascriptinjection/modulename/testprovider/1.5.0/example/examples/test-example'
     ])
-    def test_injected_html(self, url):
+    @pytest.mark.parametrize('local_storage', [
+        {"input-output-view": "expanded"},
+        {"input-output-view": "table"},
+    ])
+    def test_injected_html(self, url, local_storage):
         """Check for any injected HTML from module."""
+        self.selenium_instance.get(self.get_url("/"))
+        for k, v in local_storage.items():
+            self.selenium_instance.execute_script("window.localStorage.setItem(arguments[0], arguments[1]);", k, v)
+
         self.selenium_instance.get(self.get_url(url))
 
         # Wait for tabs to be displayed
@@ -2409,6 +2527,7 @@ EOF
                 'injectedAdditionalTabsMarkDown']:
 
             with pytest.raises(selenium.common.exceptions.NoSuchElementException):
+                print(f"Checking for {injected_element}")
                 self.selenium_instance.find_element(By.ID, injected_element)
 
     @pytest.mark.parametrize('enable_beta,enable_unpublished,expected_versions', [

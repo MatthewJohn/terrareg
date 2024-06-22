@@ -38,6 +38,88 @@ output "test_output" {
 }
 """
 
+    MAIN_TF_WITH_HTML_MARKDOWN = """
+variable "test_input_markdown" {
+    description = <<EOF
+# This is markdown title
+
+## Sub title
+
+**Some bold text**
+
+`code block`
+
+```
+Multi-line
+code block
+```
+
+[Duck Duck Go](https://duckduckgo.com)
+
+EOF
+
+  default = <<EOF
+**Some bold text**
+EOF
+}
+
+variable "test_input_html" {
+  description = <<EOF
+<h1>Title</h1>
+<h2>Sub title</h2>
+
+<b>Some bold text</b>
+
+<code>Code block</code>
+
+<a href="https://duckduckgo.com">Duck Duck Go</a>
+EOF
+  default = <<EOF
+<b>Some bold Text</b>
+EOF
+}
+
+output "test_output_markdown" {
+    description = <<EOF
+# This is markdown title
+
+## Sub title
+
+**Some bold text**
+
+`code block`
+
+```
+Multi-line
+code block
+```
+
+[Duck Duck Go](https://duckduckgo.com)
+
+EOF
+
+  value = <<EOF
+**Some bold text**
+EOF
+}
+
+output "test_output_html" {
+  description = <<EOF
+<h1>Title</h1>
+<h2>Sub title</h2>
+
+<b>Some bold text</b>
+
+<code>Code block</code>
+
+<a href="https://duckduckgo.com">Duck Duck Go</a>
+EOF
+  value = <<EOF
+<b>Some bold Text</b>
+EOF
+}
+"""
+
     INVALID_MAIN_TF_FILE = """
 var "test" {
 
