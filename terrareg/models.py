@@ -3845,7 +3845,12 @@ class ModuleVersion(TerraformSpecsObject):
             # Default minus_one values to 0, if they are already 0
             kwargs['{}_minus_one'.format(i)] = val - 1 if val > 0 else 0
 
-        # Return formatted example template
+        # Return formatted example template.
+        # Use pre-major configuration for releases < 1.0.0
+        if semantic_version.Version(version_string=self._version) < semantic_version.Version(version_string="1.0.0"):
+            return terrareg.config.Config().TERRAFORM_EXAMPLE_VERSION_TEMPLATE_PRE_MAJOR.format(
+                **kwargs
+            )
         return terrareg.config.Config().TERRAFORM_EXAMPLE_VERSION_TEMPLATE.format(
             **kwargs
         )

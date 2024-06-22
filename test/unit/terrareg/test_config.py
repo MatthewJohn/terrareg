@@ -62,6 +62,7 @@ class TestConfig:
         ('SSL_CERT_PRIVATE_KEY', None),
         ('SSL_CERT_PUBLIC_KEY', None),
         ('TERRAFORM_EXAMPLE_VERSION_TEMPLATE', None),
+        ('TERRAFORM_EXAMPLE_VERSION_TEMPLATE_PRE_MAJOR', None),
         ('TRUSTED_NAMESPACE_LABEL', None),
         ('VERIFIED_MODULE_LABEL', None),
         ('INFRACOST_API_KEY', None),
