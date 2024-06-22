@@ -1101,18 +1101,17 @@ module &quot;test-usage3&quot; {
         module = Module(namespace=namespace, name=module_name)
         module_provider = ModuleProvider.get(module=module, name='test')
         assert module_provider is not None
+        module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
+        assert module_version is not None
 
-        module_provider.update_git_path(git_path)
+        module_version.update_attributes(git_path=git_path)
 
         try:
-            module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
-            assert module_version is not None
-
             kwargs = {'path': path} if path else {}
             assert module_version.get_source_browse_url(**kwargs) == expected_browse_url
 
         finally:
-            module_provider.update_git_path(None)
+            module_version.update_attributes(git_path=None)
 
     @pytest.mark.parametrize('module_name,module_version,path,expected_browse_url', [
         # Test no browse URL in any configuration
@@ -1664,13 +1663,12 @@ module &quot;test-usage3&quot; {
         namespace = Namespace(name='repo_url_tests')
         module = Module(namespace=namespace, name=module_name)
         module_provider = ModuleProvider.get(module=module, name='test')
-        module_provider.update_git_path(git_path)
+        assert module_provider is not None
+        module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
+        assert module_version is not None
+        module_version.update_attributes(git_path=git_path)
 
         try:
-            assert module_provider is not None
-            module_version = ModuleVersion.get(module_provider=module_provider, version=module_version)
-            assert module_version is not None
-
             mock_generate_presigned_key = unittest.mock.MagicMock(return_value='unittest-presign-key')
             with unittest.mock.patch('terrareg.presigned_url.TerraformSourcePresignedUrl.generate_presigned_key', mock_generate_presigned_key), \
                     unittest.mock.patch('terrareg.config.Config.ALLOW_UNAUTHENTICATED_ACCESS', allow_unauthenticated_access):
@@ -1691,7 +1689,7 @@ module &quot;test-usage3&quot; {
                 mock_generate_presigned_key.assert_not_called()
 
         finally:
-            module_provider.update_git_path(None)
+            module_version.update_attributes(git_path=None)
 
     @pytest.mark.parametrize('published,beta,is_latest_version,expected_value', [
         # Latest published non-beta
