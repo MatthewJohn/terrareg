@@ -287,6 +287,9 @@ class TestModuleSearch(SeleniumTest):
         # Click update
         self.selenium_instance.find_element(By.ID, 'search-options-update-button').click()
 
+        # Wait for page to show version constraints on results
+        self.wait_for_element(By.CLASS_NAME, "card-terraform-version-compatibility")
+
         # Reload page
         self.selenium_instance.get(self.get_url('/search/modules?q='))
         # Check terraform version is still present
@@ -296,5 +299,4 @@ class TestModuleSearch(SeleniumTest):
         # Open user preferences and check terraform version
         self.selenium_instance.find_element(By.ID, 'navbar-user-preferences-link').click()
         # Check user input for terraform version constraint
-        version_constraint_input = self.wait_for_element(By.ID, 'user-preferences-terraform-compatibility-version')
-        assert version_constraint_input.get_attribute("value") == "5.2.6-unittest"
+        self.assert_equals(lambda x: self.wait_for_element(By.ID, 'user-preferences-terraform-compatibility-version').get_attribute("value"), "5.2.6-unittest")
