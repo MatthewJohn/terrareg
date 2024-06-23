@@ -121,24 +121,24 @@
         });
     }
 
-    function displayModuleResults(results) {
+    async function displayModuleResults(results) {
         // Clear reuslts panel before adding results
         $('#results-modules-content').html('');
 
         // Iterate through modules
-        results.forEach((module) => {
-            createSearchResultBox('results-modules-content', 'module', module);
-        });
+        for (let module of results) {
+            await createSearchResultBox('results-modules-content', 'module', module);
+        }
     }
 
-    function displayProviderResults(results) {
+    async function displayProviderResults(results) {
         // Clear reuslts panel before adding results
         $('#results-providers-content').html('');
 
         // Iterate through modules
-        results.forEach((provider) => {
-            createSearchResultBox('results-providers-content', 'provider', provider);
-        });
+        for (let provider of results) {
+            await createSearchResultBox('results-providers-content', 'provider', provider);
+        }
     }
 
     function redirectModuleResults() {
