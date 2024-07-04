@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.7.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.7.0...v3.7.1) (2024-06-21)
+
+
+### Bug Fixes
+
+* Fix matching terraform module version constraint that is just the version number ([96c502d](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/96c502df28da7b49c212b3727836bf7fe03a53dd)), closes [#530](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/530)
+
+# [3.7.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.6.2...v3.7.0) (2024-06-19)
+
+
+### Features
+
+* Support syntax highlighting in code blocks in README and other markdown ([a32c66a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a32c66a3bf59c5583d77379180c9bc863460ebdd)), closes [#529](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/529)
+
+## [3.6.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.6.1...v3.6.2) (2024-06-17)
+
+
+### Bug Fixes
+
+* Fix bug where HTML is only rendered in inputs/outputs when terraform compatibility is configured ([09b9e39](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/09b9e3948dfdf0313cab2bf868c74922bfba09f4)), closes [#527](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/527)
+
 ## [3.6.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.6.0...v3.6.1) (2024-06-14)
 
 
