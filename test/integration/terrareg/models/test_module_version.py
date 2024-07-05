@@ -15,6 +15,7 @@ from terrareg.models import Example, ExampleFile, Module, Namespace, ModuleProvi
 import terrareg.config
 import terrareg.errors
 from test.integration.terrareg import TerraregIntegrationTest
+from test.integration.terrareg.module_extractor import UploadTestModule
 
 class TestModuleVersion(TerraregIntegrationTest):
 
@@ -1018,12 +1019,38 @@ module &quot;test-usage3&quot; {
 
     def test_git_path(self):
         """Test git_path property"""
-        # Ensure the git_path from the module provider is returned
-        with unittest.mock.patch('terrareg.models.ModuleProvider.git_path', 'unittest-git-path'):
-            module_provider = ModuleProvider.get(Module(Namespace('moduledetails'), 'git-path'), 'provider')
-            module_version = ModuleVersion.get(module_provider, '1.0.0')
-            assert module_version.git_path == 'unittest-git-path'
+        # Create module provider with git path
+        module = Module(Namespace('moduledetails'), 'git-path')
+        module_provider = ModuleProvider.create(module=module, name='testgitpath')
+        module_version = None
+        try:
+            module_provider.update_git_path("/unit-test-git-path")
 
+            # Create module version.
+            module_version = ModuleVersion(module_provider=module_provider, version='1.0.0')
+            module_version.prepare_module()
+            test_upload = UploadTestModule()
+            with test_upload as zip_file:
+                with test_upload as upload_dir:
+                    os.mkdir(os.path.join(upload_dir, "unit-test-git-path"))
+                    with open(os.path.join(upload_dir, "unit-test-git-path", "test.tf"), "w") as fh:
+                        fh.write(test_upload.VALID_MAIN_TF_FILE)
+                UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
+
+            # Ensure git path is copied to version
+            assert module_version.git_path == "unit-test-git-path"
+
+            # Update git path in module provider and ensure the git path of the module version is
+            # still the original
+            module_provider.update_git_path("new/unittest/git/path")
+
+            module_version = ModuleVersion.get(module_provider=module_provider, version='1.0.0')
+            assert module_version.git_path == "unit-test-git-path"
+
+        finally:
+            if module_version:
+                module_version.delete()
+            module_provider.delete()
 
     @pytest.mark.parametrize('module_name,module_version,git_path,path,expected_browse_url', [
         # Test no browse URL in any configuration
