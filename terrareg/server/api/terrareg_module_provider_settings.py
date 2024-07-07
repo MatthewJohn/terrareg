@@ -20,8 +20,8 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         )
     ]
 
-    def _post(self, namespace, name, provider):
-        """Handle update to settings."""
+    def _post_arg_parser(self):
+        """Return arg parser for POST request"""
         parser = reqparse.RequestParser()
         parser.add_argument(
             'git_provider_id', type=str,
@@ -66,6 +66,14 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             location='json'
         )
         parser.add_argument(
+            'archive_git_path', type=inputs.boolean,
+            required=False,
+            default=None,
+            help=('Whether to generate module archives from the git_path directory. '
+                  'Otherwise, archives are generated from the root'),
+            location='json'
+        )
+        parser.add_argument(
             'verified', type=inputs.boolean,
             required=False,
             default=None,
@@ -100,7 +108,11 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
             location='json',
             default=None
         )
+        return parser
 
+    def _post(self, namespace, name, provider):
+        """Handle update to settings."""
+        parser = self._post_arg_parser()
         args = parser.parse_args()
 
         terrareg.csrf.check_csrf_token(args.csrf_token)
@@ -170,6 +182,11 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         if git_path is not None:
             module_provider.update_git_path(git_path=git_path)
 
+        # Update archive_git_path if specified
+        if args.archive_git_path is not None:
+            module_provider.update_archive_git_path(archive_git_path=args.archive_git_path)
+
+        # Update verified if specified
         if args.verified is not None:
             module_provider.update_verified(verified=args.verified)
 

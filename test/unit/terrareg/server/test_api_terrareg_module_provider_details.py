@@ -50,6 +50,7 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'security_failures': 0,
             'security_results': None,
             'git_path': None,
+            'archive_git_path': False,
             'additional_tab_files': {},
             'graph_url': '/modules/testnamespace/lonelymodule/testprovider/1.0.0/graph',
             'module_extraction_up_to_date': True,
@@ -175,6 +176,7 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
                 'security_failures': expected_security_issues,
                 'security_results': expected_security_results,
                 'git_path': None,
+                'archive_git_path': False,
                 'additional_tab_files': {},
                 'graph_url': '/modules/testnamespace/withsecurityissues/testprovider/1.0.0/graph',
                 'module_extraction_up_to_date': True,
@@ -223,7 +225,8 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'repo_browse_url_template': None,
             'repo_clone_url_template': None,
             'versions': [],
-            'git_path': None
+            'git_path': None,
+            'archive_git_path': False,
         }
 
         assert res.status_code == 200
@@ -250,7 +253,8 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'repo_browse_url_template': 'https://custom-localhost.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
             'repo_clone_url_template': 'ssh://custom-localhost.com/{namespace}/{module}-{provider}',
             'versions': [],
-            'git_path': None
+            'git_path': None,
+            'archive_git_path': False,
         }
 
         assert res.status_code == 200
@@ -278,7 +282,8 @@ class TestApiTerraregModuleProviderDetails(TerraregUnitTest):
             'repo_browse_url_template': None,
             'repo_clone_url_template': None,
             'versions': [],
-            'git_path': None
+            'git_path': None,
+            'archive_git_path': False,
         }
 
         assert res.status_code == 200

@@ -31,8 +31,8 @@ class CommonBaseSubmodule(TerraregIntegrationTest):
     ])
     def test_git_path(self, provider_git_path, module_path, expected_path):
         provider = ModuleProvider.get(Module(Namespace('moduledetails'), 'git-path'), 'provider')
-        provider.update_git_path(provider_git_path)
         version = ModuleVersion.get(provider, '1.0.0')
+        version.update_attributes(git_path=provider_git_path)
         submodule = self.SUBMODULE_CLASS.create(version, module_path)
 
         try:

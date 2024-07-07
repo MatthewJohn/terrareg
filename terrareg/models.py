@@ -2414,6 +2414,11 @@ class ModuleProvider(object):
         return self.get_tag_regex(self.git_ref_format)
 
     @property
+    def archive_git_path(self) -> bool:
+        """Return whether archives should only contain the contents of the git_path of the repo"""
+        return bool(self._get_db_row()['archive_git_path'])
+
+    @property
     def git_path(self):
         """Return path of module within git"""
         row_value = self._get_db_row()['git_path']
@@ -2627,6 +2632,19 @@ class ModuleProvider(object):
         if self._get_db_row()['git_provider_id']:
             return GitProvider.get(id=self._get_db_row()['git_provider_id'])
         return None
+
+    def update_archive_git_path(self, archive_git_path):
+        """Set archive_git_path value"""
+        original_value = self._get_db_row()['archive_git_path']
+        if original_value != archive_git_path:
+            terrareg.audit.AuditEvent.create_audit_event(
+                action=terrareg.audit_action.AuditAction.MODULE_PROVIDER_UPDATE_ARCHIVE_GIT_PATH,
+                object_type=self.__class__.__name__,
+                object_id=self.id,
+                old_value=original_value,
+                new_value=archive_git_path
+            )
+        self.update_attributes(archive_git_path=archive_git_path)
 
     def get_git_clone_url(self):
         """Return URL to perform git clone"""
@@ -3048,6 +3066,7 @@ class ModuleProvider(object):
             "git_provider_id": git_provider.pk if git_provider else None,
             "git_tag_format": self.git_tag_format,
             "git_path": self.git_path,
+            "archive_git_path": self.archive_git_path,
             "repo_base_url_template": self._get_db_row()['repo_base_url_template'],
             "repo_clone_url_template": self._get_db_row()['repo_clone_url_template'],
             "repo_browse_url_template": self._get_db_row()['repo_browse_url_template']
@@ -3678,9 +3697,14 @@ class ModuleVersion(TerraformSpecsObject):
         return ''
 
     @property
-    def git_path(self):
+    def git_path(self) -> Optional[str]:
         """Return path of module within git"""
-        return self._module_provider.git_path
+        return self._get_db_row()['git_path']
+
+    @property
+    def archive_git_path(self) -> bool:
+        """Return whether archives should only contain the contents of the git_path of the repo"""
+        return bool(self._get_db_row()['archive_git_path'])
 
     @property
     def id(self):
@@ -3897,7 +3921,7 @@ class ModuleVersion(TerraformSpecsObject):
 
         return None
 
-    def get_source_download_url(self, request_domain: str, direct_http_request: bool, path: Optional[bool]=None):
+    def get_source_download_url(self, request_domain: str, direct_http_request: bool, path: Optional[str]=None):
         """Return URL to download source file."""
         rendered_url = None
 
@@ -3919,12 +3943,12 @@ class ModuleVersion(TerraformSpecsObject):
             # Check if git_path has been set and prepend to path, if set.
             path = os.path.join(self.git_path or '', path or '')
 
-            # Remove any trailing slashes from path
-            if path and path.endswith('/'):
-                path = path[:-1]
-
-            # Check if path is present for module (only used for submodules)
+            # Check if path is present for module
             if path:
+
+                # Remove any trailing slashes from path
+                path = path.lstrip('/').rstrip('/')
+
                 rendered_url = '{rendered_url}//{path}'.format(
                     rendered_url=rendered_url,
                     path=path)
@@ -3945,6 +3969,25 @@ class ModuleVersion(TerraformSpecsObject):
         # If a git URL is not present, revert to using built-in module hosting
         if config.ALLOW_MODULE_HOSTING is not terrareg.config.ModuleHostingMode.DISALLOW:
             url = '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
+
+            # If archive does not contain just the git_path,
+            # check if git_path has been set and prepend to path, if set.
+            if not self.archive_git_path:
+                path = os.path.join(self.git_path or '', path or '')
+
+            # Check if path is present for module
+            if path:
+                # Remove any trailing slashes from path
+                path = path.lstrip('/').rstrip('/')
+
+                rendered_url = '{rendered_url}//{path}'.format(
+                    rendered_url=rendered_url,
+                    path=path)
+            if path:
+                url = '{url}//{path}'.format(
+                    url=url,
+                    path=path
+                )
 
             # If authentication is required, generate pre-signed URL
             if not config.ALLOW_UNAUTHENTICATED_ACCESS:
