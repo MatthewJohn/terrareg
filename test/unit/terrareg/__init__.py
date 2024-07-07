@@ -271,7 +271,9 @@ def mock_module_version(request):
             'published': unittest_data.get('published', False),
             'beta': unittest_data.get('beta', False),
             'module_details_id': unittest_data.get('module_details_id', None),
-            'extraction_version': unittest_data.get('extraction_version', EXTRACTION_VERSION)
+            'extraction_version': unittest_data.get('extraction_version', EXTRACTION_VERSION),
+            'git_path': unittest_data.get('git_path', None),
+            'archive_git_path': unittest_data.get('archive_git_path', False),
         }
     mock_method(request, 'terrareg.models.ModuleVersion._get_db_row', _get_db_row)
 
@@ -385,7 +387,8 @@ def mock_module_provider(request):
             'repo_browse_url_template': data.get('repo_browse_url_template', None),
             'git_provider_id': data.get('git_provider_id', None),
             'git_tag_format': data.get('git_tag_format', None),
-            'git_path': data.get('git_path', None)
+            'git_path': data.get('git_path', None),
+            'archive_git_path': data.get('archive_git_path', False),
         }
     mock_method(request, 'terrareg.models.ModuleProvider._get_db_row', _get_db_row)
 
