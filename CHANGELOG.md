@@ -1,5 +1,22 @@
 # Changelog
 
+# [3.8.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.7.1...v3.8.0) (2024-07-07)
+
+
+### Bug Fixes
+
+* Ensure archive-based uploads use the git_path in the same was as git-based indexing is handled. ([18f0f7f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/18f0f7f9499fd80a937328a8325aea4ed3440d3c)), closes [#513](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/513)
+* Fix use of git_path for archive-based responses and git-based responses when downloading a module version. ([9fc6381](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9fc63813cdcd7e52e87f203f859b997c4dd673ad)), closes [#513](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/513)
+* Store git_path and archive_git_path in module version. ([9cfcc0c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9cfcc0c1f628e98dd4890da9a59befc00b68c6b2)), closes [#513](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/513)
+* Throw error when git_path cannot be found during extraction ([063a0f0](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/063a0f002eaa7abaadc4d5a82762e9bc5b3a90e7)), closes [#513](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/513)
+* Update description of git_path and archive_git_path to ensure it makes sense with new behavior ([2104038](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2104038e85c224b9e596d9ec038a2c8b27d32a81)), closes [#513](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/513)
+
+
+### Features
+
+* Add configuration to module settings to set whether archives only contain contents of git path ([4bf64b6](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4bf64b65712584fb6aa28171e0fe18e602a7b19c)), closes [#513](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/513)
+* Add module provider configuration to limit generated archives to only the git_path of the repository. ([36a463f](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/36a463f9369071c650ab97c8aa55d45b6133530f)), closes [#513](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/513)
+
 ## [3.7.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.7.0...v3.7.1) (2024-06-21)
 
 
