@@ -2240,6 +2240,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="POST">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      Arguments
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
       </ul>
@@ -2287,6 +2302,21 @@
       POST
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="POST">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      Arguments
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -2436,7 +2466,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_10" class="md-nav__link">
+  <a href="#arguments_12" class="md-nav__link">
     <span class="md-ellipsis">
       Arguments
     </span>
@@ -2571,7 +2601,7 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#arguments_11" class="md-nav__link">
+  <a href="#arguments_13" class="md-nav__link">
     <span class="md-ellipsis">
       Arguments
     </span>
@@ -4172,6 +4202,85 @@ Providing these values will return an object with a meta object and a list of na
 <p>Provide interface to create module provider.</p>
 <h4 id="post_7">POST</h4>
 <p>Handle update to settings.</p>
+<h5 id="arguments_10">Arguments</h5>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Location (JSON POST body or query string argument)</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Help</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>git_provider_id</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>ID of the git provider to associate to module provider.</td>
+</tr>
+<tr>
+<td>repo_base_url_template</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>Templated base git URL.</td>
+</tr>
+<tr>
+<td>repo_clone_url_template</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>Templated git clone URL.</td>
+</tr>
+<tr>
+<td>repo_browse_url_template</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>Templated URL for browsing repository.</td>
+</tr>
+<tr>
+<td>git_tag_format</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>Module provider git tag format.</td>
+</tr>
+<tr>
+<td>git_path</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>Path within git repository that the module exists.</td>
+</tr>
+<tr>
+<td>archive_git_path</td>
+<td>json</td>
+<td>boolean</td>
+<td>False</td>
+<td><code>False</code></td>
+<td>Whether to generate module archives from the git_path directory. Otherwise, archives are generated from the root</td>
+</tr>
+<tr>
+<td>csrf_token</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>CSRF token</td>
+</tr>
+</tbody>
+</table>
 <h2 id="apiterraregmoduleproviderdelete">ApiTerraregModuleProviderDelete</h2>
 <p><code>/v1/terrareg/modules/&lt;string:namespace&gt;/&lt;string:name&gt;/&lt;string:provider&gt;/delete</code></p>
 <p>Provide interface to delete module provider.</p>
@@ -4182,6 +4291,117 @@ Providing these values will return an object with a meta object and a list of na
 <p>Provide interface to update module provider settings.</p>
 <h4 id="post_8">POST</h4>
 <p>Handle update to settings.</p>
+<h5 id="arguments_11">Arguments</h5>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Location (JSON POST body or query string argument)</th>
+<th>Type</th>
+<th>Required</th>
+<th>Default</th>
+<th>Help</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>git_provider_id</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>ID of the git provider to associate to module provider.</td>
+</tr>
+<tr>
+<td>repo_base_url_template</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>Templated base git repository URL.</td>
+</tr>
+<tr>
+<td>repo_clone_url_template</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>Templated git clone URL.</td>
+</tr>
+<tr>
+<td>repo_browse_url_template</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>Templated URL for browsing repository.</td>
+</tr>
+<tr>
+<td>git_tag_format</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>Module provider git tag format.</td>
+</tr>
+<tr>
+<td>git_path</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>Path within git repository that the module exists.</td>
+</tr>
+<tr>
+<td>archive_git_path</td>
+<td>json</td>
+<td>boolean</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>Whether to generate module archives from the git_path directory. Otherwise, archives are generated from the root</td>
+</tr>
+<tr>
+<td>verified</td>
+<td>json</td>
+<td>boolean</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>Whether module provider is marked as verified.</td>
+</tr>
+<tr>
+<td>namespace</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>Name of new namespace to move module/module provider to a new namespace</td>
+</tr>
+<tr>
+<td>module</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>New name of module</td>
+</tr>
+<tr>
+<td>provider</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>New provider for module</td>
+</tr>
+<tr>
+<td>csrf_token</td>
+<td>json</td>
+<td>str</td>
+<td>False</td>
+<td><code>None</code></td>
+<td>CSRF token</td>
+</tr>
+</tbody>
+</table>
 <h2 id="apiterraregmoduleproviderintegrations">ApiTerraregModuleProviderIntegrations</h2>
 <p><code>/v1/terrareg/modules/&lt;string:namespace&gt;/&lt;string:name&gt;/&lt;string:provider&gt;/integrations</code></p>
 <p>Interface to provide list of integration URLs</p>
@@ -4212,7 +4432,7 @@ Providing these values will return an object with a meta object and a list of na
 <p>Provide variable template for module version.</p>
 <h4 id="get_51">GET</h4>
 <p>Return variable template.</p>
-<h5 id="arguments_10">Arguments</h5>
+<h5 id="arguments_12">Arguments</h5>
 <table>
 <thead>
 <tr>
@@ -4263,7 +4483,7 @@ This deprecation is still in discussion.</p>
 <p>Provide interface to import/index version for git-backed modules.</p>
 <h4 id="post_13">POST</h4>
 <p>Handle creation of module version.</p>
-<h5 id="arguments_11">Arguments</h5>
+<h5 id="arguments_13">Arguments</h5>
 <table>
 <thead>
 <tr>
