@@ -1,5 +1,12 @@
 # Changelog
 
+# [3.9.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.8.0...v3.9.0) (2024-07-21)
+
+
+### Features
+
+* Add ability to customise module call version template for pre-1.0.0 module releases ([5cecd20](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5cecd201b94d730acb18f99fe385874b8a20504e)), closes [#525](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/525)
+
 # [3.8.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.7.1...v3.8.0) (2024-07-07)
 
 
