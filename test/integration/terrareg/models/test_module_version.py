@@ -362,23 +362,37 @@ class TestModuleVersion(TerraregIntegrationTest):
             namespace.delete()
 
     @pytest.mark.parametrize('template,version,published,expected_string', [
-        ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '0.0.0', True, '>= 0.0.0'),
+        # NOTE: All releases are persisted between tests
+
+        # Ensure _minus_one does not underflow
+        ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '0.0.0', True, '>= 0.0.0 PRE MAJOR'),
+
+        # Test pre-1.0.0 releases to ensure it uses the PRE_MAJOR config
+        ('>= {major}.{minor}.{patch}', '0.0.1', True, '>= 0.0.1 PRE MAJOR'),
+        ('>= {major}.{minor}.{patch}', '0.1.0', True, '>= 0.1.0 PRE MAJOR'),
+        ('>= {major}.{minor}.{patch}', '0.1.5', True, '>= 0.1.5 PRE MAJOR'),
+
         ('= {major}.{minor}.{patch}', '1.5.0', True, '= 1.5.0'),
         ('<= {major_plus_one}.{minor_plus_one}.{patch_plus_one}', '1.5.0', True, '<= 2.6.1'),
         ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '4.3.2', True, '>= 3.2.1'),
-        ('< {major_plus_one}.0.0', '10584.321.564', True, '< 10585.0.0'),
-        # Test older version to ensure it is shown as specific version
-        ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '0.0.1', True, '0.0.1'),
+
+        # Test older version to ensure it is pinned to specific version
+        ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '0.0.2', True, '0.0.2'),
+
         # Test that beta version returns the version and
         # ignores the version template
         ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '5.6.23-beta', False, '5.6.23-beta'),
         ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '5.6.24-beta', True, '5.6.24-beta'),
         # Non-published version
         ('>= {major_minus_one}.{minor_minus_one}.{patch_minus_one}', '5.6.25', False, '5.6.25'),
+
+        # Test high version
+        ('< {major_plus_one}.0.0', '10584.321.564', True, '< 10585.0.0'),
     ])
     def test_get_terraform_example_version_string(self, template, version, published, expected_string):
         """Test get_terraform_example_version_string method"""
-        with unittest.mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', template):
+        with unittest.mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', template), \
+                unittest.mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE_PRE_MAJOR', f"{template} PRE MAJOR"):
             namespace = Namespace.get(name='test', create=True)
             module = Module(namespace=namespace, name='test')
             module_provider = ModuleProvider.get(module=module, name='test', create=True)
