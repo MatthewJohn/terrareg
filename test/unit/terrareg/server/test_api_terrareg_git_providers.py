@@ -22,7 +22,8 @@ class TestApiTerraregGitProviders(TerraregUnitTest):
         assert res.status_code == 200
         assert res.json == [
             {'id': 1, 'name': 'testgitprovider', 'git_path_template': None},
-            {'id': 2, 'name': 'second-git-provider', 'git_path_template': '/modules/{module}/'}
+            {'id': 2, 'name': 'second-git-provider', 'git_path_template': '/modules/{module}/'},
+            {'git_path_template': '/modules/{module}/', 'id': 3, 'name': 'third-git-provider'},
         ]
 
     def test_unauthenticated(self, client, mock_models):

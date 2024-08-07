@@ -17,6 +17,13 @@ test_git_providers = {
         'browse_url_template': 'https://localhost2.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
         'clone_url_template': 'ssh://localhost2.com/{namespace}/{module}-{provider}',
         'git_path_template': '/modules/{module}/'
+    },
+    3: {
+        'name': 'third-git-provider',
+        'base_url_template': 'https://localhost2.example/{namespace}-{module}-{provider}',
+        'browse_url_template': 'https://localhost2.com/{namespace}/{module}-{provider}/browse/{tag}/{path}',
+        'clone_url_template': 'https://localhost2.com/{namespace}/{module}-{provider}',
+        'git_path_template': '/modules/{module}/'
     }
 }
 
@@ -738,9 +745,22 @@ test_data_full = {
                     'git_tag_format': 'v{version}',
                     'versions': {}
                 },
+                'useshttpsgitprovider': {
+                    'id': 31,
+                    'git_provider_id': 3,
+                    'git_tag_format': 'v{version}',
+                    'versions': {}
+                },
                 'usesgitproviderwithversions': {
                     'id': 19,
                     'git_provider_id': 1,
+                    'git_tag_format': 'v{version}',
+                    'latest_version': '2.2.2',
+                    'versions': {'2.2.2': {'published': True}, '2.1.0': {'published': True}}
+                },
+                'useshttpsgitproviderwithversions': {
+                    'id': 32,
+                    'git_provider_id': 3,
                     'git_tag_format': 'v{version}',
                     'latest_version': '2.2.2',
                     'versions': {'2.2.2': {'published': True}, '2.1.0': {'published': True}}

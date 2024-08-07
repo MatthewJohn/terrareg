@@ -1,4 +1,5 @@
 
+from typing import Optional
 from enum import Enum
 import os
 import tempfile
@@ -195,6 +196,22 @@ class Config:
         set or left empty.
         """
         return os.environ.get('SSL_CERT_PUBLIC_KEY', None)
+
+    @property
+    def UPSTREAM_GIT_CREDENTIALS_USERNAME(self) -> Optional[str]:
+        """
+        Username for upstream git repositories.
+        This is used when indexing a module version, as Terrareg clones the repository.
+        """
+        return os.environ.get("UPSTREAM_GIT_CREDENTIALS_USERNAME")
+
+    @property
+    def UPSTREAM_GIT_CREDENTIALS_PASSWORD(self) -> Optional[str]:
+        """
+        Password for upstream git repositories.
+        This is used when indexing a module version, as Terrareg clones the repository.
+        """
+        return os.environ.get("UPSTREAM_GIT_CREDENTIALS_PASSWORD")
 
     @property
     def ALLOW_UNIDENTIFIED_DOWNLOADS(self):
