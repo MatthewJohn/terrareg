@@ -14,6 +14,7 @@ import datetime
 import re
 import glob
 import pathlib
+import urllib.parse
 
 from werkzeug.utils import secure_filename
 import magic
@@ -796,6 +797,19 @@ class GitModuleExtractor(ModuleExtractor):
         env['GIT_SSH_COMMAND'] = 'ssh -o StrictHostKeyChecking=accept-new'
 
         git_url = self._module_version._module_provider.get_git_clone_url()
+
+        # Add credentials to URL, if using http(s) and configured in
+        # config
+        config = Config()
+        if config.UPSTREAM_GIT_CREDENTIALS_USERNAME or config.UPSTREAM_GIT_CREDENTIALS_PASSWORD:
+            parsed_url = urllib.parse.urlparse(git_url)
+            # Only inject credentials if the protocol is http or https
+            if parsed_url.scheme.lower() in ['http', 'https']:
+                # Obtain previous domain from netloc, stripping out any credentials
+                domain = parsed_url.netloc.split('@')[-1]
+                # Replace netloc with username/password prepended authentication
+                parsed_url = parsed_url._replace(netloc=f'{config.UPSTREAM_GIT_CREDENTIALS_USERNAME or ""}:{config.UPSTREAM_GIT_CREDENTIALS_PASSWORD or ""}@' + domain)
+                git_url = urllib.parse.urlunparse(parsed_url)
 
         try:
             subprocess.check_output([
