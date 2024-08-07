@@ -758,6 +758,13 @@ test_data_full = {
                     'latest_version': '2.2.2',
                     'versions': {'2.2.2': {'published': True}, '2.1.0': {'published': True}}
                 },
+                'useshttpsgitproviderwithversions': {
+                    'id': 32,
+                    'git_provider_id': 3,
+                    'git_tag_format': 'v{version}',
+                    'latest_version': '2.2.2',
+                    'versions': {'2.2.2': {'published': True}, '2.1.0': {'published': True}}
+                },
                 'nogittagformat': {
                     'id': 30,
                     'git_provider_id': 1,
