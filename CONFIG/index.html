@@ -1627,6 +1627,24 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#upstream_git_credentials_password" class="md-nav__link">
+    <span class="md-ellipsis">
+      UPSTREAM_GIT_CREDENTIALS_PASSWORD
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upstream_git_credentials_username" class="md-nav__link">
+    <span class="md-ellipsis">
+      UPSTREAM_GIT_CREDENTIALS_USERNAME
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#verified_module_label" class="md-nav__link">
     <span class="md-ellipsis">
       VERIFIED_MODULE_LABEL
@@ -2682,6 +2700,14 @@ this value may need to be increased.</p>
 <p>However, if the DATA_DIRECTORY is configured to 's3', this path must be changed to a local directory.</p>
 <p>In most situations, the path can be set to a temporary directory.</p>
 <p>Default: <code>./data/UPLOAD</code></p>
+<h3 id="upstream_git_credentials_password">UPSTREAM_GIT_CREDENTIALS_PASSWORD</h3>
+<p>Password for upstream git repositories.
+This is used when indexing a module version, as Terrareg clones the repository.</p>
+<p>Default: ``</p>
+<h3 id="upstream_git_credentials_username">UPSTREAM_GIT_CREDENTIALS_USERNAME</h3>
+<p>Username for upstream git repositories.
+This is used when indexing a module version, as Terrareg clones the repository.</p>
+<p>Default: ``</p>
 <h3 id="verified_module_label">VERIFIED_MODULE_LABEL</h3>
 <p>Custom name for 'verified module' in UI.</p>
 <p>Default: <code>Verified</code></p>
