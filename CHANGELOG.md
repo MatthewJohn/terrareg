@@ -1,5 +1,12 @@
 # Changelog
 
+# [3.10.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.9.0...v3.10.0) (2024-08-09)
+
+
+### Features
+
+* Add support for basic authentication when indexing git repositories over http/https ([fead9ef](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fead9ef2f901301892a9d5ad152e54dbf77499c8)), closes [#535](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/535)
+
 # [3.9.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.8.0...v3.9.0) (2024-07-21)
 
 
