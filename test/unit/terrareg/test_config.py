@@ -99,6 +99,8 @@ class TestConfig:
         ('PROVIDER_CATEGORIES', None),
         ('PROVIDER_SOURCES', None),
         ('SITE_WARNING', None),
+        ('UPSTREAM_GIT_CREDENTIALS_USERNAME', None),
+        ('UPSTREAM_GIT_CREDENTIALS_PASSWORD', None),
     ])
     def test_string_configs(self, config_name, override_expected_value):
         """Test string configs to ensure they are overridden with environment variables."""

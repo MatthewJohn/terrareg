@@ -1232,6 +1232,26 @@ In most situations, the path can be set to a temporary directory.
 Default: `./data/UPLOAD`
 
 
+### UPSTREAM_GIT_CREDENTIALS_PASSWORD
+
+
+Password for upstream git repositories.
+This is used when indexing a module version, as Terrareg clones the repository.
+
+
+Default: ``
+
+
+### UPSTREAM_GIT_CREDENTIALS_USERNAME
+
+
+Username for upstream git repositories.
+This is used when indexing a module version, as Terrareg clones the repository.
+
+
+Default: ``
+
+
 ### VERIFIED_MODULE_LABEL
 
 Custom name for 'verified module' in UI.

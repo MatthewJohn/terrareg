@@ -453,7 +453,9 @@ class TestApiTerraregModuleVersionDetails(TerraregUnitTest):
                 'staticrepourl',
                 'placeholdercloneurl',
                 'usesgitprovider',
+                'useshttpsgitprovider',
                 'usesgitproviderwithversions',
+                'useshttpsgitproviderwithversions',
                 'nogittagformat',
                 'complexgittagformat',
                 'norepourl'
