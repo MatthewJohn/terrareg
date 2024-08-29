@@ -96,6 +96,7 @@
 
           $(document).ready(() => {
             setupPageLogin();
+            populateVersionText();
           });
         </script>
 
@@ -237,7 +238,7 @@
         <footer class="footer">
           <div class="content has-text-centered">
             <p>
-              Made with <span class="icon"><i class="far fa-heart"></i></span> - <a href="https://gitlab.dockstudios.co.uk/pub/terrareg">Terrareg</a>
+              Made with <span class="icon"><i class="far fa-heart"></i></span> - <a href="https://gitlab.dockstudios.co.uk/pub/terrareg">Terrareg</a><span id="terrareg-version"></span>
             </p>
 
             <p id="provider-tos">
