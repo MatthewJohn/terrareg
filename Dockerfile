@@ -1,5 +1,7 @@
 FROM python:3.12-slim
 
+ARG VERSION
+
 WORKDIR /
 
 RUN apt-get update && \
@@ -92,6 +94,7 @@ COPY alembic.ini .
 COPY terrareg.py .
 COPY terrareg terrareg
 COPY scripts scripts
+RUN echo "$VERSION" > terrareg/version.txt
 
 # Copy licenses for JS/CSS
 RUN mkdir licenses/static

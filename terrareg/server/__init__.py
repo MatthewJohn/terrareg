@@ -670,6 +670,11 @@ class Server(BaseHandler):
             '/v1/terrareg/auth/admin/is_authenticated'
         )
 
+        self._api.add_resource(
+            ApiTerraregVersion,
+            '/v1/terrareg/version'
+        )
+
         # Health-check endpoint
         self._api.add_resource(
             ApiTerraregHealth,
