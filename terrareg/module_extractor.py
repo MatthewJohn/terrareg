@@ -676,7 +676,7 @@ terraform {{
 
         # Ensure base directory exists
         if not os.path.isdir(self.module_directory):
-            raise PathDoesNotExistError(f"Base module could not be found (git path: {self._module_version.git_path})")
+            raise PathDoesNotExistError(f"Base module could not be found (git path: {self._module_version.module_provider.git_path})")
 
         # Generate the archive, unless the module has a git clone URL and
         # the config for deleting externally hosted artifacts is enabled.
