@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.10.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.10.0...v3.10.1) (2024-09-04)
+
+
+### Bug Fixes
+
+* Fix error thrown when git path cannot be found during module indexing ([2b4d159](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2b4d159ee3aa7518cb3de045929b73205415dc17)), closes [#535](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/535)
+
 # [3.10.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.9.0...v3.10.0) (2024-08-09)
 
 
