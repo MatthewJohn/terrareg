@@ -1,6 +1,5 @@
 
 from typing import Union, Tuple
-from distutils.dir_util import copy_tree
 from glob import glob
 import json
 import re
