@@ -1,4 +1,4 @@
-image: python:3.10
+image: python:3.12
 
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.
@@ -136,9 +136,9 @@ spell-checker:
 
 test-docker-image:
   stage: test
-  # Use python:3.10, as it's already used
+  # Use python:3.12, as it's already used
   # by build and comes with curl
-  image: python:3.10
+  image: python:3.12
   extends: .limit_release_and_non_pushes
   services:
     - name: terrareg-image:v${CI_COMMIT_SHORT_SHA}
@@ -154,9 +154,9 @@ test-docker-image:
 
 test-docker-image-waitress:
   stage: test
-  # Use python:3.10, as it's already used
+  # Use python:3.12, as it's already used
   # by build and comes with curl
-  image: python:3.10
+  image: python:3.12
   extends: .limit_release_and_non_pushes
   services:
     - name: terrareg-image:v${CI_COMMIT_SHORT_SHA}
@@ -312,7 +312,7 @@ release:
 
 generate-docs:
   stage: deploy
-  image: python:3.10
+  image: python:3.12
   variables:
     GITHUB_TOKEN: $GH_DEPLOY_TOKEN
   script:
