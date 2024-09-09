@@ -118,7 +118,7 @@ class TestInitialSetup(SeleniumTest):
 
         # Click link to login
         login_card_content.find_element(By.TAG_NAME, 'a').click()
-        assert self.selenium_instance.current_url == self.get_url('/login')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/login'))
 
         # Login as admin
         self.perform_admin_authentication('admin-setup-password')
@@ -135,7 +135,7 @@ class TestInitialSetup(SeleniumTest):
 
         # Click link to create module
         create_module_card_content.find_element(By.TAG_NAME, 'a').click()
-        assert self.selenium_instance.current_url == self.get_url('/create-namespace?initial_setup=1')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/create-namespace?initial_setup=1'))
 
         # Fill out namespace form and click create
         self.selenium_instance.find_element(By.ID, 'namespace-name').send_keys('unittestnamespace')
@@ -157,7 +157,7 @@ class TestInitialSetup(SeleniumTest):
 
         # Click link to create module
         create_module_card_content.find_element(By.TAG_NAME, 'a').click()
-        assert self.selenium_instance.current_url == self.get_url('/create-module?initial_setup=1')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/create-module?initial_setup=1'))
 
         # Fill out form to create module and submit
         self.selenium_instance.find_element(By.ID, 'create-module-module').send_keys('setupmodulename')

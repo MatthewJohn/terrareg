@@ -110,7 +110,7 @@ class TestModuleSearch(SeleniumTest):
         self.wait_for_element(By.ID, "contributed-providersearch.mixedsearch-result.1.0.0")
         button = self.selenium_instance.find_element(By.XPATH, ".//button[text()='View all provider results']")
         button.click()
-        assert self.selenium_instance.current_url == self.get_url('/search/providers?q=mixed')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/search/providers?q=mixed'))
 
     def test_module_results_button(self):
         """Check link to provider results"""
@@ -119,4 +119,4 @@ class TestModuleSearch(SeleniumTest):
         self.wait_for_element(By.ID, "contributed-providersearch.mixedsearch-result.1.0.0")
         button = self.selenium_instance.find_element(By.XPATH, ".//button[text()='View all module results']")
         button.click()
-        assert self.selenium_instance.current_url == self.get_url('/search/modules?q=mixed')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/search/modules?q=mixed'))

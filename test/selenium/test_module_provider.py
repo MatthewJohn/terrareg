@@ -1778,7 +1778,7 @@ EOF
 
         # Wait and ensure page has not changed
         sleep(0.2)
-        assert self.selenium_instance.current_url == self.get_url('/modules/moduledetails/fullypopulated/testprovider/2.5.5#settings')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/fullypopulated/testprovider/2.5.5#settings'))
 
         # Ensure module version still exists
         module_version._cache_db_row = None
@@ -1792,7 +1792,7 @@ EOF
         delete_button.click()
 
         # Ensure user is redirected to module page
-        assert self.selenium_instance.current_url == self.get_url('/modules/moduledetails/fullypopulated/testprovider')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/fullypopulated/testprovider'))
 
         # Ensure module version no longer exists
         assert ModuleVersion.get(module_provider=module_provider, version='2.5.5') is None
@@ -2035,7 +2035,7 @@ EOF
 
         # Wait and ensure page has not changed and settings tab is still displayed
         sleep(0.2)
-        assert self.selenium_instance.current_url == self.get_url('/modules/moduledetails/fullypopulated/providertodelete#settings')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/fullypopulated/providertodelete#settings'))
         self.wait_for_element(By.ID, 'module-tab-link-settings')
 
         # Ensure module version still exists
@@ -2050,7 +2050,7 @@ EOF
         delete_button.click()
 
         # Ensure user is redirected to module page
-        assert self.selenium_instance.current_url == self.get_url('/modules/moduledetails/fullypopulated/providertodelete')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/fullypopulated/providertodelete'))
 
         # Ensure warning about non-existent module provider is displayed
         self.assert_equals(
