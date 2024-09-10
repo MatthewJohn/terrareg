@@ -170,20 +170,6 @@ test-docker-image-waitress:
     # Curl the terrareg homepage and ensure the title is displayed
     - http_proxy= curl http://terrareg:5000 | grep 'Home - Terrareg'
 
-
-build-wheel:
-  stage: build
-  extends: [.before_script_python, .limit_release_and_non_pushes]
-  script:
-    - python setup.py bdist_wheel
-    # an alternative approach is to install and run:
-    - pip install dist/*
-      #- pip install --proxy=$http_proxy -r requirements.txt
-    # run the command here
-  artifacts:
-    paths:
-      - dist/*.whl
-
 build-docker-image:
   stage: build
   image: docker:latest
