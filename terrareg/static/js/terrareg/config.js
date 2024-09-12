@@ -169,3 +169,14 @@ function convertImportedHtml(element, forceHcl=false) {
         }
     }
 }
+
+/*
+ * Populates version content from data from version endpoint
+ */
+function populateVersionText() {
+    $.get('/v1/terrareg/version').then((data) => {
+        if (data.version) {
+            $('#terrareg-version').text(` (${data.version})`);
+        }
+    })
+}

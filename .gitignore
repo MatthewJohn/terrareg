@@ -12,3 +12,4 @@ terrareg.env
 .env
 certs/*
 node_modules/
+terrareg/version.txt

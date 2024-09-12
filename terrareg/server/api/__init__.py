@@ -76,6 +76,7 @@ from .provider_versions import ApiProviderVersions
 from .provider_search import ApiProviderSearch
 from .terrareg_provider_search_filters import ApiTerraregProviderSearchFilters
 from .terrareg_provider_integrations import ApiTerraregProviderIntegrations
+from .terrareg_version import ApiTerraregVersion
 
 from .terraform.v2.gpg_keys import ApiGpgKeys
 from .terraform.v2.gpg_key import ApiGpgKey

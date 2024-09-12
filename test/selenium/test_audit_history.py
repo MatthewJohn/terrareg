@@ -131,8 +131,7 @@ class TestAuditHistory(SeleniumTest):
 
         user_groups_button.click()
 
-        assert self.selenium_instance.current_url == self.get_url(
-            '/audit-history')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/audit-history'))
 
     @staticmethod
     def _ensure_audit_row_is_like(row, audit_item):
