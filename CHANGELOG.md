@@ -1,5 +1,19 @@
 # Changelog
 
+# [3.11.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.10.1...v3.11.0) (2024-09-12)
+
+
+### Bug Fixes
+
+* Add setuptools requirement ([9fa81e2](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/9fa81e247fbb9b569dbdcb989ad49acf6fd7a1f1)), closes [#541](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/541)
+* Remove unused import which was causing a build error ([5edb778](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5edb7782d0b75b075dfe0183857b95c6a01ec226)), closes [#539](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/539)
+
+
+### Features
+
+* Add API endpoint to provide version of Terrareg ([0ab040a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0ab040a111da0b6d35ca589fd002fadbec238faf)), closes [#539](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/539)
+* Add version to footer of UI ([d76a11a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/d76a11a13561ccd8bb3bf4f66f960e175f2cb585)), closes [#539](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/539)
+
 ## [3.10.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.10.0...v3.10.1) (2024-09-04)
 
 
