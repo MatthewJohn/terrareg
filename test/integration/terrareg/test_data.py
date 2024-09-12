@@ -680,17 +680,35 @@ cNnPcrQ=
             }},
             'readme-tests': { 'provider': {
                 'id': 58,
-                'versions': {'1.0.0': {
-                    'published': True,
-                    'readme_content': None,
-                    'examples': {
-                        'examples/testreadmeexample': {
-                            'example_files': {
-                                'examples/testreadmeexample/main.tf': ''
+                'versions': {
+                    '1.0.0': {
+                        'published': True,
+                        'readme_content': None,
+                        'examples': {
+                            'examples/testreadmeexample': {
+                                'example_files': {
+                                    'examples/testreadmeexample/main.tf': ''
+                                }
                             }
                         }
                     }
-                }}
+                }
+            }},
+            'readme-tests-pre-major': { 'provider': {
+                'id': 61,
+                'versions': {
+                    '0.5.4': {
+                        'published': True,
+                        'readme_content': None,
+                        'examples': {
+                            'examples/testreadmeexample': {
+                                'example_files': {
+                                    'examples/testreadmeexample/main.tf': ''
+                                }
+                            }
+                        }
+                    }
+                }
             }},
             'git-path': {'provider': {
                 'id': 59,

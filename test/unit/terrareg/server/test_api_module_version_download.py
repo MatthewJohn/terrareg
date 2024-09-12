@@ -135,6 +135,10 @@ For example:
         ('moduleextraction', 'gitextraction', 'usesgitproviderwithversions', '2.2.2', '2.2.2', 'git::ssh://localhost.com/moduleextraction/gitextraction-usesgitproviderwithversions?ref=v2.2.2'),
         ('moduleextraction', 'gitextraction', 'usesgitproviderwithversions', '2.1.0', '2.1.0', 'git::ssh://localhost.com/moduleextraction/gitextraction-usesgitproviderwithversions?ref=v2.1.0'),
         ('moduleextraction', 'gitextraction', 'usesgitproviderwithversions', None, '2.2.2', 'git::ssh://localhost.com/moduleextraction/gitextraction-usesgitproviderwithversions?ref=v2.2.2'),
+        # Git provider with ssh
+        ('moduleextraction', 'gitextraction', 'useshttpsgitproviderwithversions', '2.2.2', '2.2.2', 'git::https://localhost2.com/moduleextraction/gitextraction-useshttpsgitproviderwithversions?ref=v2.2.2'),
+        ('moduleextraction', 'gitextraction', 'useshttpsgitproviderwithversions', '2.1.0', '2.1.0', 'git::https://localhost2.com/moduleextraction/gitextraction-useshttpsgitproviderwithversions?ref=v2.1.0'),
+        ('moduleextraction', 'gitextraction', 'useshttpsgitproviderwithversions', None, '2.2.2', 'git::https://localhost2.com/moduleextraction/gitextraction-useshttpsgitproviderwithversions?ref=v2.2.2'),
 
         ## Custom git URL
         ('moduleextraction', 'gitextraction', 'placeholdercloneurl', '5.2.3', '5.2.3', 'git::ssh://git@localhost:7999/moduleextraction/gitextraction-placeholdercloneurl.git?ref=v5.2.3'),

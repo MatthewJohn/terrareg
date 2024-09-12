@@ -14,6 +14,7 @@ import datetime
 import re
 import glob
 import pathlib
+import urllib.parse
 
 from werkzeug.utils import secure_filename
 import magic
@@ -67,10 +68,21 @@ class ModuleExtractor:
         return self._extract_directory.name
 
     @property
+    def archive_source_directory(self):
+        """Return directory that is used for generating the archives"""
+        # If the module provider is configured to only archive the git_path
+        # of the source, limit to only this path
+        if self._module_version.module_provider.archive_git_path:
+            return self.module_directory
+
+        # Otherwise, return the root of the repository
+        return self.extract_directory
+
+    @property
     def module_directory(self):
         """Return path of module directory, based on configured git path."""
-        if self._module_version.git_path:
-            return safe_join_paths(self._extract_directory.name, self._module_version.git_path)
+        if self._module_version.module_provider.git_path:
+            return safe_join_paths(self._extract_directory.name, self._module_version.module_provider.git_path)
         else:
             return self._extract_directory.name
 
@@ -375,12 +387,11 @@ terraform {{
                 return None
             return tarinfo
 
-
         # Create tar.gz
         with tempfile.TemporaryDirectory(suffix='generate-archive') as temp_dir:
             tar_file_path = os.path.join(temp_dir, self._module_version.archive_name_tar_gz)
             with tarfile.open(tar_file_path, "w:gz") as tar:
-                tar.add(self.extract_directory, arcname='', recursive=True, filter=tar_filter)
+                tar.add(self.archive_source_directory, arcname='', recursive=True, filter=tar_filter)
 
             # Add tar file to file storage
             file_storage.upload_file(tar_file_path, self._module_version.base_directory, self._module_version.archive_name_tar_gz)
@@ -395,7 +406,7 @@ terraform {{
             zip_file_path = os.path.join(temp_dir, self._module_version.archive_name_zip)
             subprocess.call(
                 ['zip', '-r', zip_file_path, '--exclude=./.git/*', '.'],
-                cwd=self.extract_directory
+                cwd=self.archive_source_directory
             )
             file_storage.upload_file(zip_file_path, self._module_version.base_directory, self._module_version.archive_name_zip)
 
@@ -456,7 +467,9 @@ terraform {{
             published=False,
             git_sha=git_sha,
             internal=terrareg_metadata.get('internal', False),
-            extraction_version=EXTRACTION_VERSION
+            extraction_version=EXTRACTION_VERSION,
+            git_path=self._module_version.module_provider.git_path,
+            archive_git_path=self._module_version.module_provider.archive_git_path,
         )
 
     def _process_submodule(self, submodule: 'terrareg.models.BaseSubmodule'):
@@ -671,6 +684,11 @@ terraform {{
 
     def process_upload(self):
         """Handle data extraction from module source."""
+
+        # Ensure base directory exists
+        if not os.path.isdir(self.module_directory):
+            raise PathDoesNotExistError(f"Base module could not be found (git path: {self._module_version.module_provider.git_path})")
+
         # Generate the archive, unless the module has a git clone URL and
         # the config for deleting externally hosted artifacts is enabled.
         # Always perform this first before making any modifications to the repo
@@ -790,6 +808,19 @@ class GitModuleExtractor(ModuleExtractor):
         env['GIT_SSH_COMMAND'] = 'ssh -o StrictHostKeyChecking=accept-new'
 
         git_url = self._module_version._module_provider.get_git_clone_url()
+
+        # Add credentials to URL, if using http(s) and configured in
+        # config
+        config = Config()
+        if config.UPSTREAM_GIT_CREDENTIALS_USERNAME or config.UPSTREAM_GIT_CREDENTIALS_PASSWORD:
+            parsed_url = urllib.parse.urlparse(git_url)
+            # Only inject credentials if the protocol is http or https
+            if parsed_url.scheme.lower() in ['http', 'https']:
+                # Obtain previous domain from netloc, stripping out any credentials
+                domain = parsed_url.netloc.split('@')[-1]
+                # Replace netloc with username/password prepended authentication
+                parsed_url = parsed_url._replace(netloc=f'{config.UPSTREAM_GIT_CREDENTIALS_USERNAME or ""}:{config.UPSTREAM_GIT_CREDENTIALS_PASSWORD or ""}@' + domain)
+                git_url = urllib.parse.urlunparse(parsed_url)
 
         try:
             subprocess.check_output([

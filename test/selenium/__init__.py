@@ -197,7 +197,7 @@ class SeleniumTest(BaseTest):
         if parent is None:
             parent = self.selenium_instance
 
-        max_attempts = 5
+        max_attempts = 10
         for itx in range(max_attempts):
             try:
                 # Attempt to find element

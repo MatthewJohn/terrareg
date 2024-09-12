@@ -1113,6 +1113,21 @@ For more information, see Terraform documentation: https://www.terraform.io/lang
 Default: `{major}.{minor}.{patch}`
 
 
+### TERRAFORM_EXAMPLE_VERSION_TEMPLATE_PRE_MAJOR
+
+
+Template of version number string to be used in Terraform examples in the UI for pre-1.0.0 releases.
+
+See `TERRAFORM_EXAMPLE_VERSION_TEMPLATE` for expected value types.
+
+Since semantic versioning denotes that releases prior to 1.0.0 may release breaking changes, this can be configured to provide example constraints that pin more aggressively.
+
+*The configuration defaults to the configured value of `TERRAFORM_EXAMPLE_VERSION_TEMPLATE`*
+
+
+Default: `{major}.{minor}.{patch}`
+
+
 ### TERRAFORM_OIDC_IDP_SESSION_EXPIRY
 
 
@@ -1228,6 +1243,26 @@ In most situations, the path can be set to a temporary directory.
 
 
 Default: `./data/UPLOAD`
+
+
+### UPSTREAM_GIT_CREDENTIALS_PASSWORD
+
+
+Password for upstream git repositories.
+This is used when indexing a module version, as Terrareg clones the repository.
+
+
+Default: ``
+
+
+### UPSTREAM_GIT_CREDENTIALS_USERNAME
+
+
+Username for upstream git repositories.
+This is used when indexing a module version, as Terrareg clones the repository.
+
+
+Default: ``
 
 
 ### VERIFIED_MODULE_LABEL

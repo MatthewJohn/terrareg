@@ -1778,7 +1778,7 @@ EOF
 
         # Wait and ensure page has not changed
         sleep(0.2)
-        assert self.selenium_instance.current_url == self.get_url('/modules/moduledetails/fullypopulated/testprovider/2.5.5#settings')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/fullypopulated/testprovider/2.5.5#settings'))
 
         # Ensure module version still exists
         module_version._cache_db_row = None
@@ -1792,19 +1792,20 @@ EOF
         delete_button.click()
 
         # Ensure user is redirected to module page
-        assert self.selenium_instance.current_url == self.get_url('/modules/moduledetails/fullypopulated/testprovider')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/fullypopulated/testprovider'))
 
         # Ensure module version no longer exists
         assert ModuleVersion.get(module_provider=module_provider, version='2.5.5') is None
 
     def test_git_path_setting(self):
-        """Test setting git tag in module provider settings."""
+        """Test setting git path in module provider settings."""
         self.perform_admin_authentication(password='unittest-password')
 
         # Ensure user is redirected to module page
         self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider#settings'))
+        self.wait_for_element(By.ID, 'module-tab-link-settings')
 
-        settings_input = self._get_settings_field_by_label('Git path')
+        settings_input = self._get_settings_field_by_label('Module path')
         assert settings_input.get_attribute('value') == ''
 
         # Enter git path
@@ -1815,13 +1816,42 @@ EOF
         assert module_provider.git_path == 'test/sub/directory'
 
         self.selenium_instance.refresh()
-        settings_input = self._get_settings_field_by_label('Git path')
+        self.wait_for_element(By.ID, 'module-tab-link-settings')
+        settings_input = self._get_settings_field_by_label('Module path')
         assert settings_input.get_attribute('value') == 'test/sub/directory'
         settings_input.clear()
 
         self._click_save_settings()
         module_provider._cache_db_row = None
         assert module_provider.git_path == None
+
+    def test_archive_git_path_setting(self):
+        """Test setting archive git path in module provider settings."""
+        self.perform_admin_authentication(password='unittest-password')
+
+        # Ensure user is redirected to module page
+        self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider#settings'))
+        self.wait_for_element(By.ID, 'module-tab-link-settings')
+
+        settings_input = self._get_settings_field_by_label('Only include module path in archive')
+        assert settings_input.get_attribute('checked') == None
+
+        # Enter git path
+        settings_input.click()
+        self._click_save_settings()
+
+        module_provider = ModuleProvider(Module(Namespace('moduledetails'), 'fullypopulated'), 'testprovider')
+        assert module_provider.archive_git_path is True
+
+        self.selenium_instance.refresh()
+        self.wait_for_element(By.ID, 'module-tab-link-settings')
+        settings_input = self._get_settings_field_by_label('Only include module path in archive')
+        assert settings_input.get_attribute('checked') == 'true'
+        settings_input.click()
+
+        self._click_save_settings()
+        module_provider._cache_db_row = None
+        assert module_provider.archive_git_path is False
 
     def test_updating_module_name(self):
         """Test changing module name in module provider settings"""
@@ -2005,7 +2035,7 @@ EOF
 
         # Wait and ensure page has not changed and settings tab is still displayed
         sleep(0.2)
-        assert self.selenium_instance.current_url == self.get_url('/modules/moduledetails/fullypopulated/providertodelete#settings')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/fullypopulated/providertodelete#settings'))
         self.wait_for_element(By.ID, 'module-tab-link-settings')
 
         # Ensure module version still exists
@@ -2020,7 +2050,7 @@ EOF
         delete_button.click()
 
         # Ensure user is redirected to module page
-        assert self.selenium_instance.current_url == self.get_url('/modules/moduledetails/fullypopulated/providertodelete')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/modules/moduledetails/fullypopulated/providertodelete'))
 
         # Ensure warning about non-existent module provider is displayed
         self.assert_equals(

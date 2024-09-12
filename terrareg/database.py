@@ -454,6 +454,7 @@ class Database():
             sqlalchemy.Column('repo_browse_url_template', sqlalchemy.String(URL_COLUMN_SIZE)),
             sqlalchemy.Column('git_tag_format', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('git_path', sqlalchemy.String(URL_COLUMN_SIZE)),
+            sqlalchemy.Column('archive_git_path', sqlalchemy.Boolean, default=False),
             sqlalchemy.Column('verified', sqlalchemy.Boolean),
             sqlalchemy.Column(
                 'git_provider_id',
@@ -503,6 +504,8 @@ class Database():
             ),
             sqlalchemy.Column('version', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('git_sha', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
+            sqlalchemy.Column('git_path', sqlalchemy.String(URL_COLUMN_SIZE)),
+            sqlalchemy.Column('archive_git_path', sqlalchemy.Boolean, default=False),
             sqlalchemy.Column(
                 'module_details_id',
                 sqlalchemy.ForeignKey(

@@ -102,7 +102,7 @@ class TestEditNamespace(SeleniumTest):
             delete_button.click()
 
             # Ensure user is still on namespace edit page
-            assert self.selenium_instance.current_url == self.get_url("/edit-namespace/test-deletion")
+            self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/edit-namespace/test-deletion"))
 
             # Ensure error is correctly shown
             error = self.selenium_instance.find_element(By.ID, "delete-error")
@@ -132,7 +132,7 @@ class TestEditNamespace(SeleniumTest):
         delete_button.click()
 
         # Ensure user is still on namespace edit page
-        assert self.selenium_instance.current_url == self.get_url("/edit-namespace/initial-providers")
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url("/edit-namespace/initial-providers"))
 
         # Ensure error is correctly shown
         error = self.selenium_instance.find_element(By.ID, "delete-error")

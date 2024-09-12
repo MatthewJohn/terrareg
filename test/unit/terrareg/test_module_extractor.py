@@ -27,7 +27,8 @@ class TestGitModuleExtractor(TerraregUnitTest):
         ('placeholdercloneurl', 'ssh://git@localhost:7999/moduleextraction/gitextraction-placeholdercloneurl.git', 'v4.3.2'),
         ('usesgitprovider', 'ssh://localhost.com/moduleextraction/gitextraction-usesgitprovider', 'v4.3.2'),
         ('nogittagformat', 'ssh://localhost.com/moduleextraction/gitextraction-nogittagformat', '4.3.2'),
-        ('complexgittagformat', 'ssh://localhost.com/moduleextraction/gitextraction-complexgittagformat', 'unittest4.3.2value')
+        ('complexgittagformat', 'ssh://localhost.com/moduleextraction/gitextraction-complexgittagformat', 'unittest4.3.2value'),
+        ('useshttpsgitprovider', 'https://localhost2.com/moduleextraction/gitextraction-useshttpsgitprovider', 'v4.3.2'),
     ])
     @setup_test_data()
     def test__clone_repository(self, module_provider_name, expected_git_url, expected_git_tag, mock_models):
@@ -52,6 +53,42 @@ class TestGitModuleExtractor(TerraregUnitTest):
             stderr=subprocess.STDOUT,
             env=unittest.mock.ANY,
             timeout=300)
+        assert check_call_mock.call_args.kwargs['env']['GIT_SSH_COMMAND'] == 'ssh -o StrictHostKeyChecking=accept-new'
+
+    @pytest.mark.parametrize('upstream_git_credentials_username, upstream_git_credentials_password, expected_url', [
+        (None, None, 'https://localhost2.com/moduleextraction/gitextraction-useshttpsgitprovider'),
+        ('justusername', None, 'https://justusername:@localhost2.com/moduleextraction/gitextraction-useshttpsgitprovider'),
+        (None, 'just-password', 'https://:just-password@localhost2.com/moduleextraction/gitextraction-useshttpsgitprovider'),
+        ('someusername123', 'somepassword123', 'https://someusername123:somepassword123@localhost2.com/moduleextraction/gitextraction-useshttpsgitprovider'),
+    ])
+    @setup_test_data()
+    def test__clone_repository_global_credentials(self, upstream_git_credentials_username, upstream_git_credentials_password, expected_url, mock_models):
+        """Test _clone_repository with global credentials set, checking credential injecting"""
+        namespace = terrareg.models.Namespace(name='moduleextraction')
+        module = terrareg.models.Module(namespace=namespace, name='gitextraction')
+        module_provider = terrareg.models.ModuleProvider(module=module, name='useshttpsgitprovider')
+        module_version = terrareg.models.ModuleVersion(module_provider=module_provider, version='4.3.2')
+
+        check_call_mock = unittest.mock.MagicMock()
+        module_extractor = GitModuleExtractor(module_version=module_version)
+        with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', check_call_mock), \
+                unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_USERNAME', upstream_git_credentials_username), \
+                unittest.mock.patch('terrareg.config.Config.UPSTREAM_GIT_CREDENTIALS_PASSWORD', upstream_git_credentials_password):
+            with module_extractor as me:
+                me._clone_repository()
+
+        check_call_mock.assert_called_with(
+            [
+                'git', 'clone',
+                '--single-branch',
+                '--branch', 'v4.3.2',
+                expected_url,
+                module_extractor.extract_directory
+            ],
+            stderr=subprocess.STDOUT,
+            env=unittest.mock.ANY,
+            timeout=300
+        )
         assert check_call_mock.call_args.kwargs['env']['GIT_SSH_COMMAND'] == 'ssh -o StrictHostKeyChecking=accept-new'
 
     @setup_test_data()

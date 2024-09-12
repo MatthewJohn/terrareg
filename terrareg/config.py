@@ -1,4 +1,5 @@
 
+from typing import Optional
 from enum import Enum
 import os
 import tempfile
@@ -201,6 +202,22 @@ class Config:
         set or left empty.
         """
         return os.environ.get('SSL_CERT_PUBLIC_KEY', None)
+
+    @property
+    def UPSTREAM_GIT_CREDENTIALS_USERNAME(self) -> Optional[str]:
+        """
+        Username for upstream git repositories.
+        This is used when indexing a module version, as Terrareg clones the repository.
+        """
+        return os.environ.get("UPSTREAM_GIT_CREDENTIALS_USERNAME")
+
+    @property
+    def UPSTREAM_GIT_CREDENTIALS_PASSWORD(self) -> Optional[str]:
+        """
+        Password for upstream git repositories.
+        This is used when indexing a module version, as Terrareg clones the repository.
+        """
+        return os.environ.get("UPSTREAM_GIT_CREDENTIALS_PASSWORD")
 
     @property
     def ALLOW_UNIDENTIFIED_DOWNLOADS(self):
@@ -626,6 +643,20 @@ class Config:
 
         """
         return os.environ.get('TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '{major}.{minor}.{patch}')
+
+    @property
+    def TERRAFORM_EXAMPLE_VERSION_TEMPLATE_PRE_MAJOR(self):
+        """
+        Template of version number string to be used in Terraform examples in the UI for pre-1.0.0 releases.
+
+        See `TERRAFORM_EXAMPLE_VERSION_TEMPLATE` for expected value types.
+
+        Since semantic versioning denotes that releases prior to 1.0.0 may release breaking changes, this can be configured to provide example constraints that pin more aggressively.
+
+        *The configuration defaults to the configured value of `TERRAFORM_EXAMPLE_VERSION_TEMPLATE`*
+        """
+        return os.environ.get('TERRAFORM_EXAMPLE_VERSION_TEMPLATE_PRE_MAJOR', self.TERRAFORM_EXAMPLE_VERSION_TEMPLATE)
+
 
     @property
     def AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION(self):

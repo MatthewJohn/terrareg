@@ -81,7 +81,7 @@ class TestUserGroup(SeleniumTest):
 
         user_groups_button.click()
 
-        assert self.selenium_instance.current_url == self.get_url('/user-groups')
+        self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/user-groups'))
 
     @pytest.mark.parametrize('is_site_admin', [
         True,
