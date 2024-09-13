@@ -710,19 +710,22 @@ class Config:
         """
         Set additional markdown files from a module to be displayed in the UI.
 
-        Value must be a JSON array of objects.
-        Each object of the array defines an additional tab in the module.
-        The object defines the name of the tab and a list of files in the repository.
-        e.g. `[["Tab 1 Name", ["file-to-use.md", "alternate-file-to-use.md"]], ["tab 2", ["tab_2_file.md"]]]`
+        Value must be a JSON array of arrays.
+        Each child array is should have exactly two elements:
+         * The name of the tab
+         * An array of files to search for in a repository.
+
+        When a module is indexed, Terrareg will search for the source for each of the tabs.
+        It will search through each of the files in the list until it finds a file and it will use this file (only).
 
         The tabs will be displayed in order of their placement in the outer list.
-        If multiple files are provided, the first file found in the repository will be used for the tab content.
+        If multiple files are provided (even if multiple files are present in the repo), the **first file found** in the repository will be used for the tab content.
 
         Filenames with an extension `.md` will be treated as markdown. All other files will be treated as plain-text.
 
         E.g.
         ```
-        [["Release Notes": ["RELEASE_NOTES.md", "CHANGELOG.md"]], ["Development Guidelines", ["CONTRIBUTING.md"]], ["License", ["LICENSE"]]]
+        [["Release Notes", ["RELEASE_NOTES.md", "CHANGELOG.md"]], ["Development Guidelines", ["CONTRIBUTING.md"]], ["License", ["LICENSE"]]]
         ```
         """
         return os.environ.get('ADDITIONAL_MODULE_TABS', '[["Release Notes", ["RELEASE_NOTES.md", "CHANGELOG.md"]], ["License", ["LICENSE"]]]')

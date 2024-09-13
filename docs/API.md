@@ -1261,6 +1261,18 @@ Interface to return whether user is authenticated as an admin.
 Return information about current user.
 
 
+## ApiTerraregVersion
+
+`/v1/terrareg/version`
+
+Interface to obtain version of Terrareg.
+
+
+#### GET
+
+Return version
+
+
 ## ApiTerraregHealth
 
 `/v1/terrareg/health`
