@@ -1,5 +1,18 @@
 # Changelog
 
+# [3.12.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.11.0...v3.12.0) (2024-09-16)
+
+
+### Bug Fixes
+
+* Bump tfswitch version to 1.2.2 to support opentofu ([d1e2cd3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/d1e2cd304b8ea369a645f84098cba43aafb8319b)), closes [#520](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/520)
+* Update environment variable used for tfswitch to ensure only default terraform version is set ([678b4db](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/678b4db19a515205ef046169db97cdba249d8f3d)), closes [#520](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/520)
+
+
+### Features
+
+* Add support for OpenTofu ([03f20e9](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/03f20e9fe45dccf0a64da4b7d716fc7c598453f6)), closes [#520](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/520)
+
 # [3.11.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.10.1...v3.11.0) (2024-09-12)
 
 
