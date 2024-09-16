@@ -33,6 +33,12 @@ class DefaultUiInputOutputView(Enum):
     EXPANDED = "expanded"
 
 
+class Product(Enum):
+    """Type of product"""
+    TERRAFORM = "terraform"
+    OPENTOFU = "opentofu"
+
+
 class Config:
 
     @property
@@ -913,11 +919,22 @@ class Config:
         return os.environ.get("DEFAULT_TERRAFORM_VERSION", "1.3.6")
 
     @property
+    def PRODUCT(self):
+        """
+        Product to use when performing module extraction
+
+        Options: terraform, opentofu
+        """
+        return Product(os.environ.get('PRODUCT', Product.TERRAFORM.value).lower())
+
+    @property
     def TERRAFORM_ARCHIVE_MIRROR(self):
         """
-        Mirror for obtaining version list and downloading Terraform
+        Mirror for obtaining version list and downloading Terraform.
+
+        Defaults to default mirror used by tfswitch
         """
-        return os.environ.get("TERRAFORM_ARCHIVE_MIRROR", "https://releases.hashicorp.com/terraform")
+        return os.environ.get("TERRAFORM_ARCHIVE_MIRROR", "")
 
     @property
     def MANAGE_TERRAFORM_RC_FILE(self):

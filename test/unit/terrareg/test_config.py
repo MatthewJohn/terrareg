@@ -167,6 +167,7 @@ class TestConfig:
         ('SERVER', terrareg.config.ServerType, terrareg.config.ServerType.BUILTIN),
         ('ALLOW_MODULE_HOSTING', terrareg.config.ModuleHostingMode, terrareg.config.ModuleHostingMode.ALLOW),
         ('DEFAULT_UI_DETAILS_VIEW', terrareg.config.DefaultUiInputOutputView, terrareg.config.DefaultUiInputOutputView.TABLE),
+        ('PRODUCT', terrareg.config.Product, terrareg.config.Product.TERRAFORM),
     ])
     def test_enum_configs(self, config_name, enum, expected_default):
         """Test enum configs to ensure they are overridden with environment variables."""

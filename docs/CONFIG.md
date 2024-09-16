@@ -790,6 +790,17 @@ A common configuration may require a 'groups' scope to be added to the list of s
 Default: `['openid', 'profile']`
 
 
+### PRODUCT
+
+
+Product to use when performing module extraction
+
+Options: terraform, opentofu
+
+
+Default: `terraform`
+
+
 ### PROVIDER_CATEGORIES
 
 
@@ -1073,10 +1084,12 @@ Default: ``
 ### TERRAFORM_ARCHIVE_MIRROR
 
 
-Mirror for obtaining version list and downloading Terraform
+Mirror for obtaining version list and downloading Terraform.
+
+Defaults to default mirror used by tfswitch
 
 
-Default: `https://releases.hashicorp.com/terraform`
+Default: ``
 
 
 ### TERRAFORM_EXAMPLE_VERSION_TEMPLATE
