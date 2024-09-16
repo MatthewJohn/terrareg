@@ -138,7 +138,7 @@ class ModuleExtractor:
             tfswitch_env = os.environ.copy()
 
             if default_terraform_version:
-                tfswitch_env["TF_VERSION"] = default_terraform_version
+                tfswitch_env["TF_DEFAULT_VERSION"] = default_terraform_version
 
             product = terrareg.terraform_product.ProductFactory.get_product()
             tfswitch_env["TF_PRODUCT"] = product.get_tfswitch_product_arg()

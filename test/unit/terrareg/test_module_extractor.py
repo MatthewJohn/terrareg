@@ -424,7 +424,7 @@ terraform {
             mock_lock.acquire.assert_called_once_with(blocking=True, timeout=60)
             expected_bin = f"{os.getcwd()}/bin/" + ('terraform' if config_product is terrareg.config.Product.TERRAFORM else 'tofu')
             expected_env = os.environ.copy()
-            expected_env['TF_VERSION'] = "unittest-tf-version"
+            expected_env['TF_DEFAULT_VERSION'] = "unittest-tf-version"
             expected_env['TF_PRODUCT'] = 'terraform' if config_product is terrareg.config.Product.TERRAFORM else 'opentofu'
             check_output_mock.assert_called_once_with(
                 ["tfswitch", "--bin", expected_bin, "--mirror", "https://localhost-archive/mirror/terraform"],
