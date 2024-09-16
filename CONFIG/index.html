@@ -1321,6 +1321,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#product" class="md-nav__link">
+    <span class="md-ellipsis">
+      PRODUCT
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#provider_categories" class="md-nav__link">
     <span class="md-ellipsis">
       PROVIDER_CATEGORIES
@@ -2495,6 +2504,10 @@ then the git tag will be used as a fallback.</p>
 that the user is a member of.</p>
 <p>A common configuration may require a 'groups' scope to be added to the list of scopes.</p>
 <p>Default: <code>['openid', 'profile']</code></p>
+<h3 id="product">PRODUCT</h3>
+<p>Product to use when performing module extraction</p>
+<p>Options: terraform, opentofu</p>
+<p>Default: <code>terraform</code></p>
 <h3 id="provider_categories">PROVIDER_CATEGORIES</h3>
 <p>JSON list of provider categories.</p>
 <p>Must be a list of objects, with the following attributes:</p>
@@ -2629,8 +2642,9 @@ This value must be set to the path of the key within the container.</p>
 set or left empty.</p>
 <p>Default: ``</p>
 <h3 id="terraform_archive_mirror">TERRAFORM_ARCHIVE_MIRROR</h3>
-<p>Mirror for obtaining version list and downloading Terraform</p>
-<p>Default: <code>https://releases.hashicorp.com/terraform</code></p>
+<p>Mirror for obtaining version list and downloading Terraform.</p>
+<p>Defaults to default mirror used by tfswitch</p>
+<p>Default: ``</p>
 <h3 id="terraform_example_version_template">TERRAFORM_EXAMPLE_VERSION_TEMPLATE</h3>
 <p>Template of version number string to be used in Terraform examples in the UI.
 This is used by the snippet example of a Terraform module and the 'resource builder' example.</p>
