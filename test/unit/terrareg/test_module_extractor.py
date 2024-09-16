@@ -16,6 +16,7 @@ from test.unit.terrareg import (
 )
 from terrareg.module_extractor import GitModuleExtractor, ModuleExtractor
 import terrareg.models
+import terrareg.config
 
 
 class TestGitModuleExtractor(TerraregUnitTest):
@@ -253,36 +254,46 @@ class TestGitModuleExtractor(TerraregUnitTest):
         with unittest.mock.patch('terrareg.config.Config.AUTOGENERATE_MODULE_PROVIDER_DESCRIPTION', False):
             assert module_extractor._extract_description(test_text) == None
 
-    def test_run_tf_init(self):
+    @pytest.mark.parametrize('config_product, expected_binary', [
+        (terrareg.config.Product.TERRAFORM, 'terraform'),
+        (terrareg.config.Product.OPENTOFU, 'tofu'),
+    ])
+    def test_run_tf_init(self, config_product, expected_binary):
         """Test running terraform init"""
         with unittest.mock.patch('terrareg.module_extractor.subprocess.check_call', unittest.mock.MagicMock()) as check_output_mock, \
-                unittest.mock.patch("terrareg.module_extractor.ModuleExtractor._create_terraform_rc_file", unittest.mock.MagicMock()) as mock_create_terraform_rc_file:
+                unittest.mock.patch("terrareg.module_extractor.ModuleExtractor._create_terraform_rc_file", unittest.mock.MagicMock()) as mock_create_terraform_rc_file, \
+                unittest.mock.patch('terrareg.config.Config.PRODUCT', config_product):
 
             module_extractor = GitModuleExtractor(module_version=None)
 
             assert module_extractor._run_tf_init(module_path='/tmp/mock-patch/to/module') is True
 
             check_output_mock.assert_called_once_with(
-                [os.path.join(os.getcwd(), 'bin', 'terraform'), 'init'],
+                [os.path.join(os.getcwd(), 'bin', expected_binary), 'init'],
                 cwd='/tmp/mock-patch/to/module'
             )
             mock_create_terraform_rc_file.assert_called_once_with()
 
-    def test_run_tf_init_error(self):
+    @pytest.mark.parametrize('config_product, expected_binary', [
+        (terrareg.config.Product.TERRAFORM, 'terraform'),
+        (terrareg.config.Product.OPENTOFU, 'tofu'),
+    ])
+    def test_run_tf_init_error(self, config_product, expected_binary):
         """Test running terraform init with error returned"""
 
         def raise_exception(*args, **kwargs):
             raise subprocess.CalledProcessError(cmd="test", returncode=2)
 
         with unittest.mock.patch('terrareg.module_extractor.subprocess.check_call', unittest.mock.MagicMock(side_effect=raise_exception)) as mock_check_call, \
-                unittest.mock.patch("terrareg.module_extractor.ModuleExtractor._create_terraform_rc_file", unittest.mock.MagicMock()) as mock_create_terraform_rc_file:
+                unittest.mock.patch("terrareg.module_extractor.ModuleExtractor._create_terraform_rc_file", unittest.mock.MagicMock()) as mock_create_terraform_rc_file, \
+                unittest.mock.patch('terrareg.config.Config.PRODUCT', config_product):
 
             module_extractor = GitModuleExtractor(module_version=None)
 
             assert module_extractor._run_tf_init(module_path='/tmp/mock-patch/to/module') is False
 
             mock_check_call.assert_called_once_with(
-                [os.path.join(os.getcwd(), 'bin', 'terraform'), 'init'],
+                [os.path.join(os.getcwd(), 'bin', expected_binary), 'init'],
                 cwd='/tmp/mock-patch/to/module'
             )
             mock_create_terraform_rc_file.assert_called_once_with()
@@ -391,7 +402,11 @@ terraform {
                 shutil.rmtree(temp_dir)
 
 
-    def test_switch_terraform_versions(self):
+    @pytest.mark.parametrize('config_product', [
+        terrareg.config.Product.TERRAFORM,
+        terrareg.config.Product.OPENTOFU,
+    ])
+    def test_switch_terraform_versions(self, config_product):
         """Test switching terraform versions."""
         module_extractor = GitModuleExtractor(module_version=None)
         mock_lock = unittest.mock.MagicMock()
@@ -400,16 +415,19 @@ terraform {
         with unittest.mock.patch('terrareg.module_extractor.ModuleExtractor.TERRAFORM_LOCK', mock_lock), \
                 unittest.mock.patch('terrareg.module_extractor.subprocess.check_output', unittest.mock.MagicMock()) as check_output_mock, \
                 unittest.mock.patch('terrareg.config.Config.DEFAULT_TERRAFORM_VERSION', 'unittest-tf-version'), \
-                unittest.mock.patch('terrareg.config.Config.TERRAFORM_ARCHIVE_MIRROR', 'https://localhost-archive/mirror/terraform'):
+                unittest.mock.patch('terrareg.config.Config.TERRAFORM_ARCHIVE_MIRROR', 'https://localhost-archive/mirror/terraform'), \
+                unittest.mock.patch('terrareg.config.Config.PRODUCT', config_product):
 
             with module_extractor._switch_terraform_versions(module_path='/tmp/mock-patch/to/module'):
                 pass
 
             mock_lock.acquire.assert_called_once_with(blocking=True, timeout=60)
+            expected_bin = f"{os.getcwd()}/bin/" + ('terraform' if config_product is terrareg.config.Product.TERRAFORM else 'tofu')
             expected_env = os.environ.copy()
-            expected_env['TF_VERSION'] = "unittest-tf-version"
+            expected_env['TF_DEFAULT_VERSION'] = "unittest-tf-version"
+            expected_env['TF_PRODUCT'] = 'terraform' if config_product is terrareg.config.Product.TERRAFORM else 'opentofu'
             check_output_mock.assert_called_once_with(
-                ["tfswitch", "--mirror", "https://localhost-archive/mirror/terraform", "--bin", f"{os.getcwd()}/bin/terraform"],
+                ["tfswitch", "--bin", expected_bin, "--mirror", "https://localhost-archive/mirror/terraform"],
                 env=expected_env,
                 cwd="/tmp/mock-patch/to/module"
             )
@@ -446,17 +464,22 @@ terraform {
             mock_lock.acquire.assert_called_once_with(blocking=True, timeout=60)
             check_output_mock.assert_not_called()
 
-    def test_get_graph_data(self):
+    @pytest.mark.parametrize('config_product, expected_binary', [
+        (terrareg.config.Product.TERRAFORM, 'terraform'),
+        (terrareg.config.Product.OPENTOFU, 'tofu'),
+    ])
+    def test_get_graph_data(self, config_product, expected_binary):
         """Test call to terraform graph to generate graph output"""
         module_extractor = GitModuleExtractor(module_version=None)
 
         with unittest.mock.patch('terrareg.module_extractor.subprocess.check_output',
-                                 unittest.mock.MagicMock(return_value="Output graph data".encode("utf-8"))) as mock_check_output:
+                                 unittest.mock.MagicMock(return_value="Output graph data".encode("utf-8"))) as mock_check_output, \
+                unittest.mock.patch('terrareg.config.Config.PRODUCT', config_product):
 
             module_extractor._get_graph_data(module_path='/tmp/mock-patch/to/module')
 
             mock_check_output.assert_called_once_with(
-                [os.getcwd() + '/bin/terraform', 'graph'],
+                [f'{os.getcwd()}/bin/{expected_binary}', 'graph'],
                 cwd='/tmp/mock-patch/to/module'
             )
 
