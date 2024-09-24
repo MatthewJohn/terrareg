@@ -17,7 +17,7 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     else \
       arch=amd64; \
     fi; \
-    wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-linux-${arch}.tar.gz && tar -zxvf terraform-docs-v0.16.0-linux-${arch}.tar.gz && chmod +x terraform-docs && mv terraform-docs /usr/local/bin/ && rm terraform-docs-v0.16.0-linux-${arch}.tar.gz'
+    wget https://github.com/terraform-docs/terraform-docs/releases/download/v0.19.0/terraform-docs-v0.19.0-linux-${arch}.tar.gz && tar -zxvf terraform-docs-v0.19.0-linux-${arch}.tar.gz && chmod +x terraform-docs && mv terraform-docs /usr/local/bin/ && rm terraform-docs-v0.19.0-linux-${arch}.tar.gz'
 
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     then \
