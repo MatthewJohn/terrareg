@@ -370,6 +370,45 @@ class Config:
         return os.environ.get('VERIFIED_MODULE_LABEL', 'Verified')
 
     @property
+    def TAGS(self):
+        """
+        List of tags available to modules. In future, this will be extended to providers.
+
+        Set to a JSON list of `Tag` objects.
+
+        #### Tag Objects
+
+        Each `Tag` object can/must have the following keys:
+
+         * `id` (required) - Must be an alphanumeric string. This will identify the tag and should avoid being changed. This will be used when defining tags in the terraeg.json config of a module.
+         * `label` (required) - The visual label that is shown inside Terrareg. Can only contain alphanumeric characters, whitespace, dashes and underscores.
+         * `type` (required) - Must be either 'flag', which indicates the label is either present or not. Or 'value', which means the modules can provide a value to the label.
+         * `default_namespaces` (optional) - A list of strings that represents namespaces that the label will be applied to automatically for each of the modules within them. This is only applicable to 'flag' type tags. (Default: `[]`)
+         * `color` (optional) - Color of label in UI. Defaults to `yellow`. Available values: `red`, `yellow`, `green`, `blue`. (Default `yellow`)
+         * `allowed_module_provider` (optional) - A boolean to define whether the tag can be applied to module providers via the UI/API. (Default: `true`)
+         * `allowed_module_version` (optional) - A boolean to define whether the tag can be applied to specific module verisons via the UI/API. (Default: `false`)
+         * `allowed_in_terrareg_config` (optiona) - A boolean to define whether the tag can be specified inside the terrareg.json configuration file of a module. This can only be used when `allowed_module_version` is enabled. (Default: `false`)
+         * `values` (required/optional) - A list of possible values for the tag `TagValue` objects (see below) for the tag. This can *only* be used when tag `type` is `value`. If set, only the values provided will be available to set the value to. Otherwise, the user can provide any value to the tag.
+
+        #### TagValue object
+
+        Each `TagValue` object must contain the following keys:
+
+         * `value` (required) - Must be an alphanumeric string. This will identify the tag and should avoid being changed. This will be used when defining tags in the terraeg.json config of a module.
+         * `label` (required) - The visual label that is shown inside Terrareg. Can only contain alphanumeric characters, whitespace, dashes and underscores.
+
+
+        An example value of the TAGS configuration:
+        ```
+        [
+            {"id": "database", label": "Database Module", "type": "flag"},
+            {"id": "internal-cluster-compatibility", "label": "Internal Cluseter Verison Capabaility", "type": "value", "allowed_in_module_version: true, "allowed_in_terrareg_config": true, "values": [{"value": "old", "label": "Old Stack"}, {"value": "new", "label": "New Stack"}]}
+        ]
+        ```
+        """
+        return os.environ.get("TAGS", '[]')
+
+    @property
     def DISABLE_TERRAREG_EXCLUSIVE_LABELS(self):
         """
         Whether to disable 'terrareg exclusive' labels from feature tabs in UI.
