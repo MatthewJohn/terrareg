@@ -2810,7 +2810,7 @@ class ModuleProvider(object):
                 # TypeError is thrown when port is None when trying to convert to an int
                 pass
 
-            repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe=r'\{\}/:@%?=')
+            repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe=r'\{\}/:@%?=&')
 
         original_value = self._get_db_row()['repo_clone_url_template']
         if original_value != repo_clone_url_template:
@@ -2878,7 +2878,7 @@ class ModuleProvider(object):
                 # TypeError is thrown when port is None when trying to convert to an int
                 pass
 
-            repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe=r'\{\}/:@%?=')
+            repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe=r'\{\}/:@%?=&')
 
         original_value = self._get_db_row()['repo_browse_url_template']
         if original_value != repo_browse_url_template:
@@ -2939,7 +2939,7 @@ class ModuleProvider(object):
                 # TypeError is thrown when port is None when trying to convert to an int
                 pass
 
-            repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe=r'\{\}/:@%?=')
+            repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe=r'\{\}/:@%?=&')
 
         original_value = self._get_db_row()['repo_base_url_template']
         if original_value != repo_base_url_template:
