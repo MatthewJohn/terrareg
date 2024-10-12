@@ -482,11 +482,11 @@ class DocumentationTab extends ProviderDetailsTab {
             }
             this._providerDetails.docs.sort((a, b) => a.slug < b.slug).forEach((doc) => {
                 if (docCountByCategory[doc.category] !== undefined) {
-                    let linkName = doc.title;
+                    let linkName = doc.slug;
                     if (["resources", "data-sources"].indexOf(doc.category) !== -1) {
                         // If resource/data-source doesn't start with name of provider, prepend it
                         if (linkName.indexOf(this._providerDetails.name) !== 0) {
-                            linkName = `${this._providerDetails.name}_${doc.title}`;
+                            linkName = `${this._providerDetails.name}_${doc.slug}`;
                         }
                     }
                     let linkDiv = $(`
