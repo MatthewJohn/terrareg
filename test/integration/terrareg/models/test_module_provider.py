@@ -575,6 +575,8 @@ class TestModuleProvider(TerraregIntegrationTest):
         '{major}.{patch}',
         '{minor}.{patch}',
         'releases/v{minor}.{patch}-testing',
+        # Special characters
+        'my-module@v{version}',
         # Unsetting value
         None,
         ''
