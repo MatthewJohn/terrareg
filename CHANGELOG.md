@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.12.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.12.1...v3.12.2) (2024-11-01)
+
+
+### Bug Fixes
+
+* Allow ampersands in templated URLs for module provider, allowing query string delimiter to not be escaped ([c688aa2](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c688aa2e325cc0973d8ea7bcdfa3ee570064182e)), closes [#546](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/546)
+
 ## [3.12.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.12.0...v3.12.1) (2024-11-01)
 
 
