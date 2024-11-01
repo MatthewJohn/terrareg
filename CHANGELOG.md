@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.12.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.12.0...v3.12.1) (2024-11-01)
+
+
+### Bug Fixes
+
+* Add @ as safe character in git tag parsing ([0c40868](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0c40868c05d840660f7f8ef20a5ece708b4d2829)), closes [#549](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/549)
+
 # [3.12.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.11.0...v3.12.0) (2024-09-16)
 
 
