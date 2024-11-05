@@ -3968,12 +3968,14 @@ class ModuleVersion(TerraformSpecsObject):
 
         # If a git URL is not present, revert to using built-in module hosting
         if config.ALLOW_MODULE_HOSTING is not terrareg.config.ModuleHostingMode.DISALLOW:
-            url = '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
+            url = f'/v1/terrareg/modules/{self.id}'
 
             # If authentication is required, generate pre-signed URL
             if not config.ALLOW_UNAUTHENTICATED_ACCESS:
                 presign_key = TerraformSourcePresignedUrl.generate_presigned_key(url=url)
                 url = f'{url}/{presign_key}'
+            
+            url += f'/{self.archive_name_zip}'
 
             # If archive does not contain just the git_path,
             # check if git_path has been set and prepend to path, if set.

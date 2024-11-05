@@ -24,8 +24,8 @@ class ApiModuleVersionSourceDownload(ErrorCatchingResource):
             presign = request.args.get("presign", presign)
             # If path ends with the presign key, remove it
             path = request.path
-            if presign and path.endswith(f'/{presign}'):
-                path = path[:-len(f'/{presign}')]
+            if presign and path.endswith(f'/{presign}/source.zip'):
+                path = path[:-len(f'/{presign}/source.zip')]
 
             try:
                 TerraformSourcePresignedUrl.validate_presigned_key(url=path, payload=presign)
