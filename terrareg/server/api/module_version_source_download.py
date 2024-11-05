@@ -13,7 +13,7 @@ import terrareg.file_storage
 class ApiModuleVersionSourceDownload(ErrorCatchingResource):
     """Return source package of module version"""
 
-    def _get(self, namespace, name, provider, version):
+    def _get(self, namespace, name, provider, version, presign=None):
         """Return static file."""
         config = terrareg.config.Config()
         if config.ALLOW_MODULE_HOSTING is terrareg.config.ModuleHostingMode.DISALLOW:
@@ -21,8 +21,14 @@ class ApiModuleVersionSourceDownload(ErrorCatchingResource):
 
         # If authentication is required, check pre-signed URL
         if not config.ALLOW_UNAUTHENTICATED_ACCESS:
+            presign = request.args.get("presign", presign)
+            # If path ends with the presign key, remove it
+            path = request.path
+            if presign and path.endswith(f'/{presign}'):
+                path = path[:-len(f'/{presign}')]
+
             try:
-                TerraformSourcePresignedUrl.validate_presigned_key(url=request.path, payload=request.args.get("presign"))
+                TerraformSourcePresignedUrl.validate_presigned_key(url=path, payload=presign)
             except InvalidPresignedUrlKeyError as exc:
                 return {'message': str(exc)}, 403
 
@@ -33,5 +39,6 @@ class ApiModuleVersionSourceDownload(ErrorCatchingResource):
         file_storage = terrareg.file_storage.FileStorageFactory().get_file_storage()
         return send_file(
             file_storage.read_file(os.path.join(module_version.base_directory, module_version.archive_name_zip), bytes_mode=True),
-            download_name=module_version.archive_name_zip
+            download_name=module_version.archive_name_zip,
+            mimetype='application/zip'
         )

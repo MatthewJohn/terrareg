@@ -3973,7 +3973,7 @@ class ModuleVersion(TerraformSpecsObject):
             # If authentication is required, generate pre-signed URL
             if not config.ALLOW_UNAUTHENTICATED_ACCESS:
                 presign_key = TerraformSourcePresignedUrl.generate_presigned_key(url=url)
-                url = f'{url}?presign={presign_key}&'
+                url = f'{url}/{presign_key}'
 
             # If archive does not contain just the git_path,
             # check if git_path has been set and prepend to path, if set.
