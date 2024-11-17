@@ -101,14 +101,18 @@ class AnalyticsEngine:
         analytics_token: Optional[str],
         terraform_version: Optional[str],
         user_agent: Optional[str],
-        auth_token: Optional[str]):
+        auth_token: Optional[str],
+        ignore_user_agent: bool=False):
         """Store information about module version download in database."""
 
         # Use the X-Terraform-Version header, if the user agent matches an allowed
         # list of user agents.
         # If the user agent does not match any of the expected prefixes, do not
         # record the terraform version.
-        if (not user_agent) or (not any([user_agent.startswith(prefix) for prefix in ['Terraform/', 'OpenTofu/']])):
+        # The user agent can optionally be completely ignored, for example, when the
+        # analytics endpoint is called directly, so the Terraform version is specifically
+        # provided by the user and the user agent will likely be something other than Terraform.
+        if (not ignore_user_agent) and ((not user_agent) or (not any([user_agent.startswith(prefix) for prefix in ['Terraform/', 'OpenTofu/']]))):
             terraform_version = None
 
         # Obtain environment from auth token.
