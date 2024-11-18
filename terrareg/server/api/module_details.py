@@ -1,6 +1,7 @@
 
 from flask_restful import reqparse
 
+import terrareg.analytics
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.models
 import terrareg.module_search
@@ -24,7 +25,7 @@ class ApiModuleDetails(ErrorCatchingResource):
         )
         args = parser.parse_args()
 
-        namespace, _ = terrareg.models.Namespace.extract_analytics_token(namespace)
+        namespace, _ = terrareg.analytics.AnalyticsEngine.extract_analytics_token(namespace)
 
         search_results = terrareg.module_search.ModuleSearch.search_module_providers(
             offset=args.offset,
