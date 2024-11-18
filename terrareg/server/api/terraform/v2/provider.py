@@ -32,7 +32,7 @@ class ApiV2Provider(ErrorCatchingResource):
 
         args = self._get_arg_parser().parse_args()
 
-        namespace, _ = terrareg.models.Namespace.extract_analytics_token(namespace)
+        namespace, _ = terrareg.analytics.AnalyticsEngine.extract_analytics_token(namespace)
 
         namespace_obj = terrareg.models.Namespace.get(name=namespace)
         if namespace_obj is None:

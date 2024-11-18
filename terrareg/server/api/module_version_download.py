@@ -18,7 +18,8 @@ class ApiModuleVersionDownload(ErrorCatchingResource):
 
     def _get(self, namespace, name, provider, version=None):
         """Provide download header for location to download source."""
-        namespace, analytics_token = terrareg.models.Namespace.extract_analytics_token(namespace)
+        namespace, analytics_token = terrareg.analytics.AnalyticsEngine.extract_analytics_token(namespace)
+        analytics_token = terrareg.analytics.AnalyticsEngine.sanitise_analytics_token(analytics_token)
 
         # If a version has been provided, get the exact version
         if version:

@@ -51,6 +51,12 @@ class ApiTerraregModuleVersionAnalytics(ErrorCatchingResource):
             if error:
                 return self._get_404_response()
 
+        auth_method = terrareg.auth.AuthFactory().get_current_auth_method()
+
+        # Silenty return early if auth method ignores recording analytics
+        if not auth_method.should_record_terraform_analytics():
+            return {}
+
         parser = self._post_arg_parser()
         args = parser.parse_args()
 
@@ -58,17 +64,22 @@ class ApiTerraregModuleVersionAnalytics(ErrorCatchingResource):
 
         # Determine if auth method ignores recording analytics
         if not auth_method.should_record_terraform_analytics():
-            pass
-        else:
-            terrareg.analytics.AnalyticsEngine.record_module_version_download(
-                namespace_name=namespace,
-                module_name=name,
-                provider_name=provider,
-                module_version=module_version,
-                analytics_token=args.analytics_token,
-                terraform_version=args.terraform_version,
-                user_agent=None,
-                auth_token=auth_method.get_terraform_auth_token(),
-                ignore_user_agent=True,
-            )
+            return {}
+
+        analytics_token = terrareg.analytics.AnalyticsEngine.sanitise_analytics_token(args.analytics_token)
+        if analytics_token is None:
+            return {"errors": ["Invalid analytics token"]}, 400
+
+        terrareg.analytics.AnalyticsEngine.record_module_version_download(
+            namespace_name=namespace,
+            module_name=name,
+            provider_name=provider,
+            module_version=module_version,
+            analytics_token=analytics_token,
+            terraform_version=args.terraform_version,
+            user_agent=None,
+            auth_token=auth_method.get_terraform_auth_token(),
+            ignore_user_agent=True,
+        )
+
         return {}

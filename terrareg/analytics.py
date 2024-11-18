@@ -92,6 +92,38 @@ class AnalyticsEngine:
         # Default to returning when not using a valid environment
         return None
 
+    @classmethod
+    def extract_analytics_token(cls, namespace: str):
+        """Extract analytics token from start of namespace."""
+        namespace_split = re.split(r'__', namespace)
+
+        # If there are two values in the split,
+        # return first as analytics token and
+        # second as namespace
+        if len(namespace_split) == 2:
+            sanitised_token = cls.sanitise_analytics_token(namespace_split[1])
+            return namespace_split[1], sanitised_token
+
+        # If there were not two element (more or less),
+        # return original value
+        return namespace, None
+
+    @staticmethod
+    def sanitise_analytics_token(analytics_token: str) -> Optional[str]:
+        """Sanitise analytics token"""
+        # Return none for any empty strings
+        if not analytics_token:
+            return None
+
+        # Check if analytics token is the example provided
+        # in the config
+        if analytics_token == terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN:
+            # Return None for analytics token, acting like one has
+            # not been provided.
+            return None
+
+        return analytics_token
+
     @staticmethod
     def record_module_version_download(
         namespace_name: str,
