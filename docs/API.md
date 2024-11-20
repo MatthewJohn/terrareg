@@ -637,6 +637,30 @@ total unique analytics tokens per module
 
 
 
+## ApiTerraregModuleVersionAnalytics
+
+`/v1/terrareg/analytics/<string:namespace>/<string:name>/<string:provider>/<string:version>`
+
+Provide endpoint for interacting with module version analytics.
+
+
+#### POST
+
+
+Submit analytics for module version.
+
+Used as an alternative to passing analytics in module source URL.
+The module execution can perform a http request to this endpoint to register analytics for a module usage.
+
+##### Arguments
+
+| Argument | Location (JSON POST body or query string argument) | Type | Required | Default | Help |
+|----------|----------------------------------------------------|------|----------|---------|------|
+| analytics_token | json | str | True | `None` | Analytics token to register. |
+| terraform_version | json | str | False | `None` | Version of Terraform used. |
+
+
+
 ## ApiTerraregModuleProviderAnalyticsTokenVersions
 
 `/v1/terrareg/analytics/<string:namespace>/<string:name>/<string:provider>/token_versions`

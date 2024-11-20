@@ -48,6 +48,7 @@ class TestModuleProvider(SeleniumTest):
         cls._config_disable_analytics = mock.patch('terrareg.config.Config.DISABLE_ANALYTICS', False)
         cls._config_allow_forceful_module_provider_redirect_deletion = mock.patch('terrareg.config.Config.ALLOW_FORCEFUL_MODULE_PROVIDER_REDIRECT_DELETION', True)
         cls._config_default_ui_details_view = mock.patch('terrareg.config.Config.DEFAULT_UI_DETAILS_VIEW', terrareg.config.DefaultUiInputOutputView.TABLE)
+        cls._config_example_analytics_token = mock.patch('terrareg.config.Config.EXAMPLE_ANALYTICS_TOKEN', 'example-analytics-token')
 
         cls.register_patch(mock.patch('terrareg.config.Config.ADMIN_AUTHENTICATION_TOKEN', 'unittest-password'))
         cls.register_patch(mock.patch('terrareg.config.Config.ADDITIONAL_MODULE_TABS', '[["License", ["first-file", "LICENSE", "second-file"]], ["Changelog", ["CHANGELOG.md"]], ["doesnotexist", ["DOES_NOT_EXIST"]]]'))
@@ -62,6 +63,7 @@ class TestModuleProvider(SeleniumTest):
         cls.register_patch(cls._config_disable_analytics)
         cls.register_patch(cls._config_allow_forceful_module_provider_redirect_deletion)
         cls.register_patch(cls._config_default_ui_details_view)
+        cls.register_patch(cls._config_example_analytics_token)
 
         super(TestModuleProvider, cls).setup_class()
 
@@ -3042,9 +3044,16 @@ Consider re-indexing this module version to enable all features.
         res = requests.get(self.get_url(ProviderLogo(provider).source))
         assert res.status_code == 200
 
-    def test_analytics_disabled(self):
+    @pytest.mark.parametrize('disable_analytics, example_analytics_token', [
+        # Disbale analytics entirely
+        (True, 'example-analytics-token'),
+        # Do not show examples of analytics in UI
+        (False, ''),
+    ])
+    def test_disable_analytics(self, disable_analytics, example_analytics_token):
         """Test module provider page with analytics disabled."""
-        with self.update_mock(self._config_disable_analytics, 'new', True):
+        with self.update_multiple_mocks((self._config_disable_analytics, 'new', disable_analytics),
+                                        (self._config_example_analytics_token, 'new', example_analytics_token)):
             self.selenium_instance.get(self.get_url("/modules/moduledetails/fullypopulated/testprovider/1.5.0"))
 
             # Wait for README tab link
@@ -3088,9 +3097,9 @@ module "fullypopulated" {
 }
 """.strip()
 
-            # Ensure analytics tab is not shown
+            # Ensure analytics tab is not shown when analytics are completely disabled
             analytics_tab_link = self.selenium_instance.find_element(By.ID, "module-tab-link-analytics")
-            assert analytics_tab_link.is_displayed() == False
+            assert analytics_tab_link.is_displayed() == (not disable_analytics)
 
             # Check example file content
             self.selenium_instance.get(self.get_url('/modules/moduledetails/fullypopulated/testprovider/1.5.0/example/examples/test-example'))
