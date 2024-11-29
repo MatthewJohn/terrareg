@@ -819,7 +819,7 @@ class TestModuleProvider(SeleniumTest):
 This is an example README!
 Following this example module call:
 module "test_example_call" {
-  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"
+  source  = "localhost/example-analytics-token__moduledetails/fullypopulated/testprovider"
   version = ">= 1.5.0, < 2.0.0, unittest"
 
   name = "example-name"
@@ -1670,7 +1670,7 @@ module "text_ternal_call" {
         expected_main_tf_content = f"""
 # Call root module
 module "{example_root_module_call_name}" {{
-  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"
+  source  = "localhost/example-analytics-token__moduledetails/fullypopulated/testprovider"
   {expected_version_comment}version = "{expected_version_string}"
 }}""".strip()
         assert file_tab_content.find_element(By.ID, 'example-file-content').text == expected_main_tf_content
@@ -1704,7 +1704,7 @@ module "{example_root_module_call_name}" {{
         expected_main_tf_content = f"""
 # Call root module
 module "root" {{
-  source  = "localhost/my-tf-application__moduledetails/fullypopulated/testprovider"
+  source  = "localhost/example-analytics-token__moduledetails/fullypopulated/testprovider"
   version = ">= 1.5.0, < 2.0.0, unittest"
 }}
 """.strip()
@@ -2941,7 +2941,7 @@ various &lt; characters that could be escaped.</pre>
 
         assert self.selenium_instance.find_element(By.ID, "usage-example-terraform").text == f"""
 module "{expected_module_name}" {{
-  source  = "localhost/my-tf-application__{expected_module_path}"{expected_comment}
+  source  = "localhost/example-analytics-token__{expected_module_path}"{expected_comment}
   version = "{expected_module_version_constraint}"
 
   # Provide variables here
