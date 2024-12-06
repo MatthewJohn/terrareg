@@ -1,5 +1,6 @@
 from flask_restful import reqparse
 
+import terrareg.analytics
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.models
 import terrareg.csrf
@@ -18,7 +19,7 @@ class ApiProviderVersions(ErrorCatchingResource):
     def _get(self, namespace, provider):
         """Return provider version details."""
 
-        namespace, _ = terrareg.models.Namespace.extract_analytics_token(namespace)
+        namespace, _ = terrareg.analytics.AnalyticsEngine.extract_analytics_token(namespace)
 
         namespace_obj = terrareg.models.Namespace.get(name=namespace)
         if namespace_obj is None:
@@ -54,7 +55,7 @@ class ApiProviderVersions(ErrorCatchingResource):
 
         terrareg.csrf.check_csrf_token(args.csrf_token)
 
-        namespace, _ = terrareg.models.Namespace.extract_analytics_token(namespace)
+        namespace, _ = terrareg.analytics.AnalyticsEngine.extract_analytics_token(namespace)
 
         namespace_obj = terrareg.models.Namespace.get(name=namespace)
         if namespace_obj is None:

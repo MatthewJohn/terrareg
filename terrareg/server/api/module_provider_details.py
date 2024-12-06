@@ -1,4 +1,5 @@
 
+import terrareg.analytics
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.models
 import terrareg.auth_wrapper
@@ -11,7 +12,7 @@ class ApiModuleProviderDetails(ErrorCatchingResource):
     def _get(self, namespace, name, provider):
         """Return list of version."""
 
-        namespace, _ = terrareg.models.Namespace.extract_analytics_token(namespace)
+        namespace, _ = terrareg.analytics.AnalyticsEngine.extract_analytics_token(namespace)
         _, _, module_provider, error = self.get_module_provider_by_names(namespace, name, provider)
         if error:
             return self._get_404_response()

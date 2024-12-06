@@ -486,6 +486,10 @@ class Server(BaseHandler):
             '/v1/terrareg/analytics/global/usage_stats'
         )
         self._api.add_resource(
+            ApiTerraregModuleVersionAnalytics,
+            '/v1/terrareg/analytics/<string:namespace>/<string:name>/<string:provider>/<string:version>'
+        )
+        self._api.add_resource(
             ApiTerraregModuleProviderAnalyticsTokenVersions,
             '/v1/terrareg/analytics/<string:namespace>/<string:name>/<string:provider>/token_versions'
         )

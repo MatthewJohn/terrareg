@@ -2194,7 +2194,7 @@ async function populateTerraformUsageExample(moduleDetails, submoduleDetails) {
 
     // If analytics is disabled, hide the instruction to replace
     // the analytics token
-    if (config.DISABLE_ANALYTICS) {
+    if (config.DISABLE_ANALYTICS || !config.EXAMPLE_ANALYTICS_TOKEN) {
         $('#usage-example-analytics-token-instruction').addClass('default-hidden');
     }
 

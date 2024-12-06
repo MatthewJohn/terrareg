@@ -1,6 +1,4 @@
 
-from lib2to3.pgen2 import grammar
-from operator import mod
 import unittest.mock
 
 import pytest

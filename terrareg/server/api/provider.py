@@ -1,4 +1,5 @@
 
+import terrareg.analytics
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.models
 import terrareg.auth_wrapper
@@ -13,7 +14,7 @@ class ApiProvider(ErrorCatchingResource):
     def _get(self, namespace, provider, version=None):
         """Return provider details."""
 
-        namespace, _ = terrareg.models.Namespace.extract_analytics_token(namespace)
+        namespace, _ = terrareg.analytics.AnalyticsEngine.extract_analytics_token(namespace)
 
         namespace_obj = terrareg.models.Namespace.get(name=namespace)
         if namespace_obj is None:

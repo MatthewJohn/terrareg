@@ -395,6 +395,8 @@ an analytics token has not been provided.
 If analytics tokens are required, this stops users from accidentally using the example placeholder in
 Terraform projects.
 
+If removed, examples of using an analytics token is removed from the UI.
+
 
 Default: `my-tf-application`
 

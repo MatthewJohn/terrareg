@@ -913,28 +913,6 @@ class Namespace(object):
             return res.scalar()
 
     @staticmethod
-    def extract_analytics_token(namespace: str):
-        """Extract analytics token from start of namespace."""
-        namespace_split = re.split(r'__', namespace)
-
-        # If there are two values in the split,
-        # return first as analytics token and
-        # second as namespace
-        if len(namespace_split) == 2:
-            # Check if analytics token is the example provided
-            # in the config
-            if namespace_split[0] == terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN:
-                # Return None for analytics token, acting like one has
-                # not been provided.
-                return namespace_split[1], None
-
-            return namespace_split[1], namespace_split[0]
-
-        # If there were not two element (more or less),
-        # return original value
-        return namespace, None
-
-    @staticmethod
     def get_all(only_published=False, limit=None, offset=0,
                 resource_type: 'terrareg.registry_resource_type.RegistryResourceType'=None) -> List['terrareg.result_data.ResultData']:
         """Return all namespaces."""
