@@ -53,7 +53,7 @@ class ApiTerraregModuleVersionAnalytics(ErrorCatchingResource):
 
         auth_method = terrareg.auth.AuthFactory().get_current_auth_method()
 
-        # Silenty return early if auth method ignores recording analytics
+        # Silently return early if auth method ignores recording analytics
         if not auth_method.should_record_terraform_analytics():
             return {}
 
