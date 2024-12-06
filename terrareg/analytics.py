@@ -101,7 +101,7 @@ class AnalyticsEngine:
         # return first as analytics token and
         # second as namespace
         if len(namespace_split) == 2:
-            sanitised_token = cls.sanitise_analytics_token(namespace_split[1])
+            sanitised_token = cls.sanitise_analytics_token(namespace_split[0])
             return namespace_split[1], sanitised_token
 
         # If there were not two element (more or less),
