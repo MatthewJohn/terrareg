@@ -1,5 +1,17 @@
 # Changelog
 
+# [3.13.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.12.2...v3.13.0) (2024-12-07)
+
+
+### Bug Fixes
+
+* Fix browser console errors in module provider page ([a372be7](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a372be7269159c78419a99dec52c10862e806421))
+
+
+### Features
+
+* Add API endpoint to manually register analytics ([52ac3a4](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/52ac3a4a6c6df01ebcba35d069441c8eade0ce53)), closes [#548](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/548)
+
 ## [3.12.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.12.1...v3.12.2) (2024-11-01)
 
 
