@@ -92,6 +92,38 @@ class AnalyticsEngine:
         # Default to returning when not using a valid environment
         return None
 
+    @classmethod
+    def extract_analytics_token(cls, namespace: str):
+        """Extract analytics token from start of namespace."""
+        namespace_split = re.split(r'__', namespace)
+
+        # If there are two values in the split,
+        # return first as analytics token and
+        # second as namespace
+        if len(namespace_split) == 2:
+            sanitised_token = cls.sanitise_analytics_token(namespace_split[0])
+            return namespace_split[1], sanitised_token
+
+        # If there were not two element (more or less),
+        # return original value
+        return namespace, None
+
+    @staticmethod
+    def sanitise_analytics_token(analytics_token: str) -> Optional[str]:
+        """Sanitise analytics token"""
+        # Return none for any empty strings
+        if not analytics_token:
+            return None
+
+        # Check if analytics token is the example provided
+        # in the config
+        if analytics_token == terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN:
+            # Return None for analytics token, acting like one has
+            # not been provided.
+            return None
+
+        return analytics_token
+
     @staticmethod
     def record_module_version_download(
         namespace_name: str,
@@ -101,14 +133,18 @@ class AnalyticsEngine:
         analytics_token: Optional[str],
         terraform_version: Optional[str],
         user_agent: Optional[str],
-        auth_token: Optional[str]):
+        auth_token: Optional[str],
+        ignore_user_agent: bool=False):
         """Store information about module version download in database."""
 
         # Use the X-Terraform-Version header, if the user agent matches an allowed
         # list of user agents.
         # If the user agent does not match any of the expected prefixes, do not
         # record the terraform version.
-        if (not user_agent) or (not any([user_agent.startswith(prefix) for prefix in ['Terraform/', 'OpenTofu/']])):
+        # The user agent can optionally be completely ignored, for example, when the
+        # analytics endpoint is called directly, so the Terraform version is specifically
+        # provided by the user and the user agent will likely be something other than Terraform.
+        if (not ignore_user_agent) and ((not user_agent) or (not any([user_agent.startswith(prefix) for prefix in ['Terraform/', 'OpenTofu/']]))):
             terraform_version = None
 
         # Obtain environment from auth token.

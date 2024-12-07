@@ -18,7 +18,7 @@ class ApiProviderVersionDownload(ErrorCatchingResource):
     def _get(self, namespace, provider, version, os, arch):
         """Return provider details."""
 
-        namespace, _ = terrareg.models.Namespace.extract_analytics_token(namespace)
+        namespace, _ = terrareg.analytics.AnalyticsEngine.extract_analytics_token(namespace)
 
         namespace_obj = terrareg.models.Namespace.get(name=namespace)
 
