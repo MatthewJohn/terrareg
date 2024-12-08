@@ -22,10 +22,16 @@ class ApiModuleVersionSourceDownload(ErrorCatchingResource):
         # If authentication is required, check pre-signed URL
         if not config.ALLOW_UNAUTHENTICATED_ACCESS:
             presign = request.args.get("presign", presign)
+
+            path = flask.request.path
+            path_parts = path.split('/')
+            # Remove last section of path (i.e. the file name)
+            del path_parts[-1]
+
             # If path ends with the presign key, remove it
-            path = request.path
-            if presign and path.endswith(f'/{presign}/source.zip'):
-                path = path[:-len(f'/{presign}/source.zip')]
+            if presign and path_parts[-1] == presign:
+                del path_parts[-1]
+            path = '/'.join(path_parts)
 
             try:
                 TerraformSourcePresignedUrl.validate_presigned_key(url=path, payload=presign)
