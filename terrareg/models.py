@@ -3946,31 +3946,28 @@ class ModuleVersion(TerraformSpecsObject):
 
         # If a git URL is not present, revert to using built-in module hosting
         if config.ALLOW_MODULE_HOSTING is not terrareg.config.ModuleHostingMode.DISALLOW:
-            url = '/v1/terrareg/modules/{0}/{1}'.format(self.id, self.archive_name_zip)
+            url = f'/v1/terrareg/modules/{self.id}'
+
+            # If authentication is required, generate pre-signed URL
+            if not config.ALLOW_UNAUTHENTICATED_ACCESS:
+                presign_key = TerraformSourcePresignedUrl.generate_presigned_key(url=url)
+                url = f'{url}/{presign_key}'
+            
+            url += f'/{self.archive_name_zip}'
 
             # If archive does not contain just the git_path,
             # check if git_path has been set and prepend to path, if set.
             if not self.archive_git_path:
                 path = os.path.join(self.git_path or '', path or '')
 
-            # Check if path is present for module
-            if path:
-                # Remove any trailing slashes from path
-                path = path.lstrip('/').rstrip('/')
+                # Check if path is present for module
+                if path:
+                    # Remove any trailing slashes from path
+                    path = path.lstrip('/').rstrip('/')
 
-                rendered_url = '{rendered_url}//{path}'.format(
-                    rendered_url=rendered_url,
-                    path=path)
-            if path:
-                url = '{url}//{path}'.format(
-                    url=url,
-                    path=path
-                )
-
-            # If authentication is required, generate pre-signed URL
-            if not config.ALLOW_UNAUTHENTICATED_ACCESS:
-                presign_key = TerraformSourcePresignedUrl.generate_presigned_key(url=url)
-                url = f'{url}?presign={presign_key}'
+                    url = '{url}//{path}'.format(
+                        url=url,
+                        path=path)
 
             # If request is a direct HTTP request,
             # i.e. Terraform has been configured with a HTTP URL
