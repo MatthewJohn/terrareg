@@ -1680,7 +1680,7 @@ module &quot;test-usage3&quot; {
     @pytest.mark.parametrize('module_name, module_version, git_path, expected_source_download_url, allow_unauthenticated_access, expect_presigned, should_prefix_domain', [
         # Test no clone URL in any configuration, defaulting to source archive download
         ('no-git-provider', '1.0.0', None, '/v1/terrareg/modules/repo_url_tests/no-git-provider/test/1.0.0/source.zip', True, False, True),
-        ('no-git-provider', '1.0.0', None, '/v1/terrareg/modules/repo_url_tests/no-git-provider/test/1.0.0/source.zip?presign=unittest-presign-key', False, True, True),
+        ('no-git-provider', '1.0.0', None, '/v1/terrareg/modules/repo_url_tests/no-git-provider/test/1.0.0/unittest-presign-key/source.zip', False, True, True),
         # Test clone URL only configured in module version, with public access allowed/disabled
         ('no-git-provider', '1.4.0', None, 'git::ssh://mv-clone-url.com/repo_url_tests/no-git-provider-test?ref=1.4.0', True, False, False),
         ('no-git-provider', '1.4.0', None, 'git::ssh://mv-clone-url.com/repo_url_tests/no-git-provider-test?ref=1.4.0', True, False, False),
@@ -1725,7 +1725,7 @@ module &quot;test-usage3&quot; {
                     ) == expected_source_download_url
 
             if expect_presigned:
-                mock_generate_presigned_key.assert_called_once_with(url='/v1/terrareg/modules/repo_url_tests/no-git-provider/test/1.0.0/source.zip')
+                mock_generate_presigned_key.assert_called_once_with(url='/v1/terrareg/modules/repo_url_tests/no-git-provider/test/1.0.0')
             else:
                 mock_generate_presigned_key.assert_not_called()
 
