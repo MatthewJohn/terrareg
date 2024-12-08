@@ -28,7 +28,7 @@ class ApiModuleVersionSourceDownload(ErrorCatchingResource):
             # Remove last section of path (i.e. the file name)
             del path_parts[-1]
 
-            # If path ends with the presign key, remove it
+            # If path ends with the pre-sign key, remove it
             if presign and path_parts[-1] == presign:
                 del path_parts[-1]
             path = '/'.join(path_parts)
