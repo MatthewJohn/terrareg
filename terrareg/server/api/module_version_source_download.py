@@ -1,10 +1,10 @@
 
 
 import os
-from flask import send_file, request
+import flask
 
 from terrareg.errors import InvalidPresignedUrlKeyError
-from terrareg.presigned_url import TerraformSourcePresignedUrl
+import terrareg.presigned_url
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 import terrareg.config
 import terrareg.file_storage
@@ -21,7 +21,7 @@ class ApiModuleVersionSourceDownload(ErrorCatchingResource):
 
         # If authentication is required, check pre-signed URL
         if not config.ALLOW_UNAUTHENTICATED_ACCESS:
-            presign = request.args.get("presign", presign)
+            presign = flask.request.args.get("presign", presign)
 
             path = flask.request.path
             path_parts = path.split('/')
@@ -34,7 +34,7 @@ class ApiModuleVersionSourceDownload(ErrorCatchingResource):
             path = '/'.join(path_parts)
 
             try:
-                TerraformSourcePresignedUrl.validate_presigned_key(url=path, payload=presign)
+                terrareg.presigned_url.TerraformSourcePresignedUrl.validate_presigned_key(url=path, payload=presign)
             except InvalidPresignedUrlKeyError as exc:
                 return {'message': str(exc)}, 403
 
@@ -43,7 +43,7 @@ class ApiModuleVersionSourceDownload(ErrorCatchingResource):
             return error
 
         file_storage = terrareg.file_storage.FileStorageFactory().get_file_storage()
-        return send_file(
+        return flask.send_file(
             file_storage.read_file(os.path.join(module_version.base_directory, module_version.archive_name_zip), bytes_mode=True),
             download_name=module_version.archive_name_zip,
             mimetype='application/zip'
