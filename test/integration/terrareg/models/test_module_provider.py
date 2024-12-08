@@ -391,6 +391,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         'ssh://github.com/example/blah.git',
         'ssh://github.com:7999/example/blah.git',
         'ssh://github.com:7999/{namespace}/{provider}-{module}.git',
+        'https://dev.azure.com/{namespace}?module={module}&provider={provider}',
     ])
     def test_update_repo_clone_url_template(self, url):
         """Ensure update_repo_clone_url_template successfully updates path"""
@@ -450,6 +451,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         'https://github.com/example/blah/{tag}/{path}',
         'http://github.com/example/blah/{tag}/{path}',
         'https://github.com:7999/{namespace}/{provider}-{module}/{tag}/{path}',
+        'https://dev.azure.com/{namespace}/team/_git/{provider}-{module}?version=GT{tag}&path={path}'
     ])
     def test_update_repo_browse_url_template(self, url):
         """Ensure update_repo_browse_url_template successfully updates path"""
@@ -512,6 +514,7 @@ class TestModuleProvider(TerraregIntegrationTest):
         'https://github.com/example/blah',
         'http://github.com/example/blah',
         'https://github.com:7999/{namespace}/{provider}-{module}',
+        'https://dev.azure.com/{namespace}/team/_git/{provider}-{module}?version=GT'
     ])
     def test_update_repo_base_url_template(self, url):
         """Ensure update_repo_base_url_template successfully updates path"""
@@ -575,6 +578,8 @@ class TestModuleProvider(TerraregIntegrationTest):
         '{major}.{patch}',
         '{minor}.{patch}',
         'releases/v{minor}.{patch}-testing',
+        # Special characters
+        'my-module@v{version}',
         # Unsetting value
         None,
         ''

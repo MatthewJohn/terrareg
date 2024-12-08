@@ -1,5 +1,31 @@
 # Changelog
 
+# [3.13.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.12.2...v3.13.0) (2024-12-07)
+
+
+### Bug Fixes
+
+* Fix browser console errors in module provider page ([a372be7](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a372be7269159c78419a99dec52c10862e806421))
+
+
+### Features
+
+* Add API endpoint to manually register analytics ([52ac3a4](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/52ac3a4a6c6df01ebcba35d069441c8eade0ce53)), closes [#548](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/548)
+
+## [3.12.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.12.1...v3.12.2) (2024-11-01)
+
+
+### Bug Fixes
+
+* Allow ampersands in templated URLs for module provider, allowing query string delimiter to not be escaped ([c688aa2](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c688aa2e325cc0973d8ea7bcdfa3ee570064182e)), closes [#546](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/546)
+
+## [3.12.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.12.0...v3.12.1) (2024-11-01)
+
+
+### Bug Fixes
+
+* Add @ as safe character in git tag parsing ([0c40868](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0c40868c05d840660f7f8ef20a5ece708b4d2829)), closes [#549](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/549)
+
 # [3.12.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.11.0...v3.12.0) (2024-09-16)
 
 

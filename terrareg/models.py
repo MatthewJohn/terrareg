@@ -913,28 +913,6 @@ class Namespace(object):
             return res.scalar()
 
     @staticmethod
-    def extract_analytics_token(namespace: str):
-        """Extract analytics token from start of namespace."""
-        namespace_split = re.split(r'__', namespace)
-
-        # If there are two values in the split,
-        # return first as analytics token and
-        # second as namespace
-        if len(namespace_split) == 2:
-            # Check if analytics token is the example provided
-            # in the config
-            if namespace_split[0] == terrareg.config.Config().EXAMPLE_ANALYTICS_TOKEN:
-                # Return None for analytics token, acting like one has
-                # not been provided.
-                return namespace_split[1], None
-
-            return namespace_split[1], namespace_split[0]
-
-        # If there were not two element (more or less),
-        # return original value
-        return namespace, None
-
-    @staticmethod
     def get_all(only_published=False, limit=None, offset=0,
                 resource_type: 'terrareg.registry_resource_type.RegistryResourceType'=None) -> List['terrareg.result_data.ResultData']:
         """Return all namespaces."""
@@ -2716,7 +2694,7 @@ class ModuleProvider(object):
     def update_git_tag_format(self, git_tag_format):
         """Update git_tag_format."""
         if git_tag_format:
-            sanitised_git_tag_format = urllib.parse.quote(git_tag_format, safe=r'/{}')
+            sanitised_git_tag_format = urllib.parse.quote(git_tag_format, safe=r'/{}@')
 
             # If tag format was provided, ensured it can be passed with 'format'
             try:
@@ -2810,7 +2788,7 @@ class ModuleProvider(object):
                 # TypeError is thrown when port is None when trying to convert to an int
                 pass
 
-            repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe=r'\{\}/:@%?=')
+            repo_clone_url_template = urllib.parse.quote(repo_clone_url_template, safe=r'\{\}/:@%?=&')
 
         original_value = self._get_db_row()['repo_clone_url_template']
         if original_value != repo_clone_url_template:
@@ -2878,7 +2856,7 @@ class ModuleProvider(object):
                 # TypeError is thrown when port is None when trying to convert to an int
                 pass
 
-            repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe=r'\{\}/:@%?=')
+            repo_browse_url_template = urllib.parse.quote(repo_browse_url_template, safe=r'\{\}/:@%?=&')
 
         original_value = self._get_db_row()['repo_browse_url_template']
         if original_value != repo_browse_url_template:
@@ -2939,7 +2917,7 @@ class ModuleProvider(object):
                 # TypeError is thrown when port is None when trying to convert to an int
                 pass
 
-            repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe=r'\{\}/:@%?=')
+            repo_base_url_template = urllib.parse.quote(repo_base_url_template, safe=r'\{\}/:@%?=&')
 
         original_value = self._get_db_row()['repo_base_url_template']
         if original_value != repo_base_url_template:
