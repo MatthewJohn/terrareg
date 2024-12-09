@@ -590,7 +590,8 @@ class Server(BaseHandler):
         )
         self._api.add_resource(
             ApiModuleVersionSourceDownload,
-            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/source.zip'
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/source.zip',
+            '/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/<string:presign>/source.zip'
         )
         self._api.add_resource(
             ApiTerraregModuleVersionPublish,
