@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.13.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.13.0...v3.13.1) (2024-12-09)
+
+
+### Bug Fixes
+
+* Fix authentication when downloading modules that use archives and use a sub-path, when anonymous access is disabled ([599261b](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/599261b6006758e346f395ca839ea5dd6041f9c3)), closes [#547](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/547)
+* Fix supplying module download redirects that contain an encryption key and a path (for modules that use git path and not archive_git_path) ([5cff918](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/5cff918505065d3aae9bee48f26c600190ba1faa)), closes [#547](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/547)
+* Move presign key for downloading source zip file into path, rather than query string argument ([15e0915](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/15e09156f778528371005742cd86678df64e1d77)), closes [#547](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/547)
+* Switch path arguments for source download URL, so that the 'file' (final path section) is source.zip ([947cedf](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/947cedf6cce8589d9d1bd94ab43c379350ec33ab)), closes [#547](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/547)
+
 # [3.13.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.12.2...v3.13.0) (2024-12-07)
 
 
