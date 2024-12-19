@@ -5,7 +5,7 @@ import os
 import random
 import socketserver
 import string
-from tempfile import mktemp
+from tempfile import NamedTemporaryFile
 import threading
 from time import sleep
 from unittest import mock
@@ -58,7 +58,7 @@ rRlOyaZdt0v73oeYBWECQQDc7n98Cx6G1Nt2/87o6UaYzW5N4SfWCPTaiS9/inpQ
 yzEmVAlL/QfgkKm+0zsa8czkSwNjtBz9vOIffCxtZmlf
 -----END RSA PRIVATE KEY-----
 """.strip()
-        cls.signing_key_path = mktemp()
+        cls.signing_key_path = NamedTemporaryFile().name
         with open(cls.signing_key_path, "w") as signing_key_fh:
             signing_key_fh.write(signing_rsa_key)
 
