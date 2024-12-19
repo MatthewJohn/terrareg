@@ -1,7 +1,7 @@
 
 from datetime import datetime, timedelta
 import os
-from tempfile import mktemp
+from tempfile import NamedTemporaryFile
 from unittest import mock
 import pytest
 import sqlalchemy
@@ -29,7 +29,7 @@ class TestAuthorizationCodeDatabase(TerraregIntegrationTest):
         # Ensure value does not already exist
         with pytest.raises(KeyError):
             db['testcode']
-        
+
         db['testcode'] = {'this': 'that'}
 
         database = Database.get()
@@ -44,7 +44,7 @@ class TestAuthorizationCodeDatabase(TerraregIntegrationTest):
                 ("testcode", b'{"this": "that"}')
             ]
 
-        
+
     def test_upserting_data(self):
         """Test updating value in database"""
         db = AuthorizationCodeDatabase()
@@ -52,7 +52,7 @@ class TestAuthorizationCodeDatabase(TerraregIntegrationTest):
         # Ensure value does not already exist
         with pytest.raises(KeyError):
             db['testcode']
-        
+
         db['testcode'] = {'this': 'that'}
 
         database = Database.get()
@@ -168,7 +168,7 @@ class TestAccessTokenDatabase(TerraregIntegrationTest):
         # Ensure value does not already exist
         with pytest.raises(KeyError):
             db['testcode']
-        
+
         db['testcode'] = {'this': 'that'}
 
         database = Database.get()
@@ -183,7 +183,7 @@ class TestAccessTokenDatabase(TerraregIntegrationTest):
                 ("testcode", b'{"this": "that"}')
             ]
 
-        
+
     def test_upserting_data(self):
         """Test updating value in database"""
         db = AccessTokenDatabase()
@@ -191,7 +191,7 @@ class TestAccessTokenDatabase(TerraregIntegrationTest):
         # Ensure value does not already exist
         with pytest.raises(KeyError):
             db['testcode']
-        
+
         db['testcode'] = {'this': 'that'}
 
         database = Database.get()
@@ -308,7 +308,7 @@ class TestSubjectIdentifierDatabase(TerraregIntegrationTest):
         # Ensure value does not already exist
         with pytest.raises(KeyError):
             db['testcode']
-        
+
         db['testcode'] = {'this': 'that'}
 
         database = Database.get()
@@ -330,7 +330,7 @@ class TestSubjectIdentifierDatabase(TerraregIntegrationTest):
         # Ensure value does not already exist
         with pytest.raises(KeyError):
             db['testcode']
-        
+
         db['testcode'] = {'this': 'that'}
 
         database = Database.get()
@@ -497,7 +497,7 @@ rRlOyaZdt0v73oeYBWECQQDc7n98Cx6G1Nt2/87o6UaYzW5N4SfWCPTaiS9/inpQ
 yzEmVAlL/QfgkKm+0zsa8czkSwNjtBz9vOIffCxtZmlf
 -----END RSA PRIVATE KEY-----
 """.strip()
-        signing_key_path = mktemp()
+        signing_key_path = signing_key_path = NamedTemporaryFile().name
         with open(signing_key_path, "w") as signing_key_fh:
             signing_key_fh.write(signing_rsa_key)
 
