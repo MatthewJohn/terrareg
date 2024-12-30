@@ -2,7 +2,7 @@
 import os
 import shutil
 import subprocess
-import tempfile
+from tempfile import NamedTemporaryFile
 from unittest.main import MODULE_EXAMPLES
 import unittest.mock
 
@@ -509,7 +509,7 @@ terraform {
     def test_create_terraform_rc_file(self, public_url, manage_terraform_rc_file, should_create_file, should_contain_credentials_block):
         """Test terraform RC file"""
         # Create temporary file and remove
-        temp_file = tempfile.mktemp()
+        temp_file = NamedTemporaryFile().name
         # os.unlink(temp_file)
 
         with unittest.mock.patch("terrareg.module_extractor.ModuleExtractor.terraform_rc_file", temp_file), \
