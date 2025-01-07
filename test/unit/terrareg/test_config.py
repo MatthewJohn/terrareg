@@ -44,7 +44,7 @@ class TestConfig:
         if config not in cls.tested_variables:
             cls.tested_variables.append(config)
 
-    @pytest.mark.parametrize('config_name,override_expected_value', [
+    @pytest.mark.parametrize('config_name, override_expected_value', [
         ('ADMIN_AUTHENTICATION_TOKEN', None),
         ('ANALYTICS_TOKEN_DESCRIPTION', None),
         ('ANALYTICS_TOKEN_PHRASE', None),
@@ -105,8 +105,23 @@ class TestConfig:
     def test_string_configs(self, config_name, override_expected_value):
         """Test string configs to ensure they are overridden with environment variables."""
         self.register_checked_config(config_name)
-        with unittest.mock.patch('os.environ', {config_name: 'unittest-value'}):
-            assert getattr(terrareg.config.Config(), config_name) == (override_expected_value if override_expected_value is not None else 'unittest-value')
+        with unittest.mock.patch('os.environ', {config_name: "unittest-value"}):
+            assert getattr(terrareg.config.Config(), config_name) == (override_expected_value if override_expected_value is not None else "unittest-value")
+
+    @pytest.mark.parametrize("config_name", [
+       "EXAMPLE_ANALYTICS_TOKEN"
+    ])
+    @pytest.mark.parametrize('empty_string_value', [
+        # String used for conversion
+        "EMPTY",
+
+        ""
+    ])
+    def test_empty_string(self, config_name, empty_string_value):
+        """Test string configs that support empty strings"""
+        self.register_checked_config(config_name)
+        with unittest.mock.patch("os.environ", {config_name: empty_string_value}):
+            assert getattr(terrareg.config.Config(), config_name) == ""
 
     @pytest.mark.parametrize('config_name, test_value, test_expected', [
         ('SENTRY_TRACES_SAMPLE_RATE', '1.523', 1.523)
