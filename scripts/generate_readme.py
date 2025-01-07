@@ -13,12 +13,18 @@ sys.path.append('.')
 from terrareg.config import Config
 from terrareg.server.error_catching_resource import ErrorCatchingResource
 from terrareg.server import Server
+import terrareg.errors
 
 
 valid_config_re = re.compile(r'^[A-Z]')
 strip_leading_space_re = re.compile(r'^        ', re.MULTILINE)
 
 config_contents = ""
+
+EMPTY_STRING_NOTE = """
+
+Note: This config can be set to "EMPTY" to set it to an empty string, if empty strings are not supported by your orchestrator.
+"""
 
 for prop in dir(Config):
 
@@ -45,6 +51,15 @@ for prop in dir(Config):
     else:
         documented_default_value = default_value
 
+    # Determine if variable uses _convert_string_value
+    empty_string_note = ""
+    with unittest.mock.patch("os.environ", {prop: "EMPTY"}):
+        try:
+            if getattr(Config(), prop) == "":
+                empty_string_note = EMPTY_STRING_NOTE
+        except (ValueError, terrareg.errors.InvalidBooleanConfigurationError):
+            pass
+
     if type(documented_default_value) is str and os.getcwd() in documented_default_value:
         documented_default_value = documented_default_value.replace(os.getcwd(), '.')
 
@@ -54,14 +69,16 @@ for prop in dir(Config):
     config_contents += """
 ### {name}
 
-{description}
+{description}{empty_string_note}
 
 Default: `{documented_default_value}`
 
 """.format(
     name=prop,
     description=description,
-    documented_default_value=documented_default_value)
+    documented_default_value=documented_default_value,
+    empty_string_note=empty_string_note,
+)
 
 with open('docs/CONFIG.md.in', 'r') as readme_in:
     readme_template = ''.join(readme_in.readlines())

@@ -325,9 +325,9 @@ class Config:
         If analytics tokens are required, this stops users from accidentally using the example placeholder in
         Terraform projects.
 
-        If removed, examples of using an analytics token is removed from the UI.
+        If removed set to an empty string, examples of using an analytics token is removed from the UI.
         """
-        return os.environ.get('EXAMPLE_ANALYTICS_TOKEN', 'my-tf-application')
+        return self.convert_string(os.environ.get('EXAMPLE_ANALYTICS_TOKEN', 'my-tf-application'))
 
     @property
     def ALLOWED_PROVIDERS(self):
@@ -1159,6 +1159,12 @@ class Config:
     def GO_PACKAGE_CACHE_DIRECTORY(self):
         """Directory to cache go packages"""
         return os.environ.get("GO_PACKAGE_CACHE_DIRECTORY", os.path.join(tempfile.gettempdir(), "terrareg-go-package-cache"))
+
+    def convert_string(self, string: str):
+        """Convert string environment variable, handling empty string values"""
+        if string == "EMPTY":
+            return ""
+        return string
 
     def convert_boolean(self, string):
         """Convert boolean environment variable to boolean."""

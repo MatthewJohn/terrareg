@@ -395,7 +395,10 @@ an analytics token has not been provided.
 If analytics tokens are required, this stops users from accidentally using the example placeholder in
 Terraform projects.
 
-If removed, examples of using an analytics token is removed from the UI.
+If removed set to an empty string, examples of using an analytics token is removed from the UI.
+
+
+Note: This config can be set to "EMPTY" to set it to an empty string, if empty strings are not supported by your orchestrator.
 
 
 Default: `my-tf-application`
