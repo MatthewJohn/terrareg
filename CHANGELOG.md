@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.13.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.13.1...v3.13.2) (2025-01-07)
+
+
+### Bug Fixes
+
+* Support 'EMPTY' string as an alternative for passing empty string value as environment variable for EXAMPLE_ANALYTICS_TOKEN ([047f7a4](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/047f7a49d01123e4302d4b2c8a7332f9a98ce85b)), closes [#548](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/548)
+
 ## [3.13.1](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.13.0...v3.13.1) (2024-12-09)
 
 
