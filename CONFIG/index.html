@@ -2305,7 +2305,8 @@ Group mappings can be setup in the settings page, providing SSO users and groups
 an analytics token has not been provided.
 If analytics tokens are required, this stops users from accidentally using the example placeholder in
 Terraform projects.</p>
-<p>If removed, examples of using an analytics token is removed from the UI.</p>
+<p>If removed set to an empty string, examples of using an analytics token is removed from the UI.</p>
+<p>Note: This config can be set to "EMPTY" to set it to an empty string, if empty strings are not supported by your orchestrator.</p>
 <p>Default: <code>my-tf-application</code></p>
 <h3 id="example_file_extensions">EXAMPLE_FILE_EXTENSIONS</h3>
 <p>Comma-separated list of file extensions to be extracted/shown in example file lists.</p>
