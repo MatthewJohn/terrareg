@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.13.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.13.2...v3.13.3) (2025-01-09)
+
+
+### Bug Fixes
+
+* Remove deprecated 'version' key from docker-compose configuration ([8e9f257](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8e9f257a08dae6b3e6a089b061400f74a083e27d)), closes [#553](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/553)
+
 ## [3.13.2](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.13.1...v3.13.2) (2025-01-07)
 
 
