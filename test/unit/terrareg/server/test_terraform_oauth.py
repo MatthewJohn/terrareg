@@ -1,6 +1,6 @@
 
 import os
-from tempfile import mktemp
+from tempfile import NamedTemporaryFile
 from unittest import mock
 from urllib.parse import urlencode
 
@@ -35,7 +35,7 @@ rRlOyaZdt0v73oeYBWECQQDc7n98Cx6G1Nt2/87o6UaYzW5N4SfWCPTaiS9/inpQ
 yzEmVAlL/QfgkKm+0zsa8czkSwNjtBz9vOIffCxtZmlf
 -----END RSA PRIVATE KEY-----
 """.strip()
-    signing_key_path = mktemp()
+    signing_key_path = NamedTemporaryFile().name
     with open(signing_key_path, "w") as signing_key_fh:
         signing_key_fh.write(signing_rsa_key)
 
