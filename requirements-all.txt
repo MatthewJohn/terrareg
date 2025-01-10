@@ -6,7 +6,7 @@ attrs==21.4.0
 beautifulsoup4==4.11.1
 bleach==5.0.1
 blinker==1.5
-certifi==2023.7.22.1
+certifi==2024.12.14
 cffi==1.15.1
 charset-normalizer==2.1.1
 click==8.1.3
