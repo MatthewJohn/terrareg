@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.13.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.13.3...v3.13.4) (2025-01-20)
+
+
+### Bug Fixes
+
+* Fix typo in EXAMPLE.env ([973e029](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/973e029375c5500a15153094399342f450dcefaf)), closes [#554](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/554)
+* Remove extra entrypoint in dockerfile.tests ([fbb3077](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fbb307731163adc7f677fd46c50f32c711aca325)), closes [#555](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/555)
+
 ## [3.13.3](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.13.2...v3.13.3) (2025-01-09)
 
 
