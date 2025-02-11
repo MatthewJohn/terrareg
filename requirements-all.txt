@@ -2,7 +2,7 @@ alembic==1.9.0
 aniso8601==9.0.1
 annotated-types==0.5.0
 async-generator==1.10
-attrs==21.4.0
+attrs==25.1.0
 beautifulsoup4==4.11.1
 bleach==5.0.1
 blinker==1.5
