@@ -99,6 +99,20 @@ def static_page_auth_required(f):
 
     return decorated_function
 
+def handle_terraform_get(f):
+    """Wrapper method to ensure user is authenticated, when required, to view static pages."""
+    @wraps(f)
+    def decorated_function(self, namespace, name, provider, version=None):
+        # Check if used by terraform and return module download API
+        if request.args.get("terraform-get") == "1":
+            # Convert name 'latest' for version to None
+            if version == 'latest':
+                version = None
+            return ApiModuleVersionDownload().get(namespace=namespace, name=name, provider=provider, version=version)
+        return f(self, *args, **kwargs)
+
+    return decorated_function
+
 class Server(BaseHandler):
     """Manage web server and route requests"""
 
@@ -901,18 +915,11 @@ class Server(BaseHandler):
                 module_providers=module_providers
             )
 
+    @handle_terraform_get
     @static_page_auth_required
     @catch_name_exceptions
     def _view_serve_module_provider(self, namespace, name, provider, version=None):
         """Render view for displaying module provider information"""
-
-        # Check if used by terraform and return module download API
-        if request.args.get("terraform-get") == "1":
-            # Convert name 'latest' for version to None
-            if version == 'latest':
-                version = None
-            return ApiModuleVersionDownload().get(namespace=namespace, name=name, provider=provider, version=version)
-
         namespace_obj = terrareg.models.Namespace.get(namespace)
         if namespace_obj is None:
             return self._namespace_404(
