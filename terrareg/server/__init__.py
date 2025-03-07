@@ -89,6 +89,29 @@ def catch_name_exceptions(f):
             ), 400
     return decorated_function
 
+def static_page_auth_required(f):
+    """Wrapper method to ensure user is authenticated, when required, to view static pages."""
+    @wraps(f)
+    def decorated_function(self, *args, **kwargs):
+        if not terrareg.auth.AuthFactory().get_current_auth_method().can_access_read_api():
+            return redirect('/login')
+        return f(self, *args, **kwargs)
+
+    return decorated_function
+
+def handle_terraform_get(f):
+    """Wrapper method to ensure user is authenticated, when required, to view static pages."""
+    @wraps(f)
+    def decorated_function(self, namespace, name, provider, version=None):
+        # Check if used by terraform and return module download API
+        if request.args.get("terraform-get") == "1":
+            # Convert name 'latest' for version to None
+            if version == 'latest':
+                version = None
+            return ApiModuleVersionDownload().get(namespace=namespace, name=name, provider=provider, version=version)
+        return f(self, namespace=namespace, name=name, provider=provider, version=version)
+
+    return decorated_function
 
 class Server(BaseHandler):
     """Manage web server and route requests"""
@@ -734,6 +757,7 @@ class Server(BaseHandler):
             module_provider_name=module_provider_name
         ), 404
 
+    @static_page_auth_required
     def _view_serve_static_index(self):
         """Serve static index"""
         return self._render_template('index.html')
@@ -759,6 +783,7 @@ class Server(BaseHandler):
         session.modified = True
         return redirect('/')
 
+    @static_page_auth_required
     def _view_serve_create_module(self):
         """Provide view to create module provider."""
         return self._render_template(
@@ -768,28 +793,33 @@ class Server(BaseHandler):
             ALLOW_CUSTOM_GIT_URL_MODULE_VERSION=terrareg.config.Config().ALLOW_CUSTOM_GIT_URL_MODULE_VERSION
         )
 
+    @static_page_auth_required
     def _view_serve_create_provider(self):
         """Provide view to create provider."""
         return self._render_template(
             'create_provider.html'
         )
 
+    @static_page_auth_required
     def _view_serve_create_namespace(self):
         """Provide view to create namespace."""
         return self._render_template(
             'create_namespace.html'
         )
 
+    @static_page_auth_required
     def _view_serve_edit_namespace(self, namespace):
         """Provide view for editing namespace"""
         return self._render_template(
             'edit_namespace.html'
         )
 
+    @static_page_auth_required
     def _view_serve_initial_setup(self):
         """Render view for initial setup."""
         return self._render_template('initial_setup.html')
 
+    @static_page_auth_required
     def _view_serve_graph(self, namespace, name, provider, version, submodule_path=None, example_path=None):
         """Render view for graph"""
         namespace_obj = terrareg.models.Namespace.get(namespace)
@@ -836,6 +866,7 @@ class Server(BaseHandler):
 
         return self._render_template("graph.html", current_module=current_module)
 
+    @static_page_auth_required
     def _view_serve_module_namespace_list(self):
         """Render view for display module."""
         return self._render_template(
@@ -843,6 +874,7 @@ class Server(BaseHandler):
             selected_type="module"
         )
 
+    @static_page_auth_required
     def _view_serve_provider_namespace_list(self):
         """Render view for display module."""
         return self._render_template(
@@ -850,6 +882,7 @@ class Server(BaseHandler):
             selected_type="provider"
         )
 
+    @static_page_auth_required
     @catch_name_exceptions
     def _view_serve_namespace(self, namespace):
         """Render view for namespace."""
@@ -859,6 +892,7 @@ class Server(BaseHandler):
             namespace=namespace
         )
 
+    @static_page_auth_required
     @catch_name_exceptions
     def _view_serve_module(self, namespace, name):
         """Render view for display module."""
@@ -881,17 +915,11 @@ class Server(BaseHandler):
                 module_providers=module_providers
             )
 
+    @handle_terraform_get
+    @static_page_auth_required
     @catch_name_exceptions
     def _view_serve_module_provider(self, namespace, name, provider, version=None):
         """Render view for displaying module provider information"""
-
-        # Check if used by terraform and return module download API
-        if request.args.get("terraform-get") == "1":
-            # Convert name 'latest' for version to None
-            if version == 'latest':
-                version = None
-            return ApiModuleVersionDownload().get(namespace=namespace, name=name, provider=provider, version=version)
-
         namespace_obj = terrareg.models.Namespace.get(namespace)
         if namespace_obj is None:
             return self._namespace_404(
@@ -919,6 +947,7 @@ class Server(BaseHandler):
 
         return self._render_template('module_provider.html')
 
+    @static_page_auth_required
     @catch_name_exceptions
     def _view_serve_submodule(self, namespace, name, provider, version, submodule_path):
         """Review view for displaying submodule"""
@@ -946,6 +975,7 @@ class Server(BaseHandler):
 
         return self._render_template('module_provider.html')
 
+    @static_page_auth_required
     @catch_name_exceptions
     def _view_serve_example(self, namespace, name, provider, version, submodule_path):
         """Review view for displaying example"""
@@ -973,6 +1003,7 @@ class Server(BaseHandler):
 
         return self._render_template('module_provider.html')
 
+    @static_page_auth_required
     @catch_name_exceptions
     def _view_serve_provider(self, namespace, provider, version=None, doc_category=None, doc_slug=None):
         """Render view for provider"""
@@ -1000,18 +1031,22 @@ class Server(BaseHandler):
             provider=provider_obj
         )
 
+    @static_page_auth_required
     def _view_serve_search(self):
         """Search based on input."""
         return self._render_template('search.html')
 
+    @static_page_auth_required
     def _view_serve_module_search(self):
         """Search modules based on input."""
         return self._render_template('module_search.html')
 
+    @static_page_auth_required
     def _view_serve_provider_search(self):
         """Serve provider search page"""
         return self._render_template("provider_search.html")
 
+    @static_page_auth_required
     def _view_serve_user_groups(self):
         """Page to view/modify user groups and permissions."""
         if not terrareg.auth.AuthFactory().get_current_auth_method().is_admin():
@@ -1023,6 +1058,7 @@ class Server(BaseHandler):
             ), 403
         return self._render_template('user_groups.html')
 
+    @static_page_auth_required
     def _view_serve_audit_history(self):
         """Page to view/modify user groups and permissions."""
         if not terrareg.auth.AuthFactory().get_current_auth_method().is_admin():
