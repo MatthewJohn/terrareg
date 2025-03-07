@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.13.5](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.13.4...v3.13.5) (2025-03-07)
+
+
+### Bug Fixes
+
+* Enforce authentication server-side before returning state HTML files ([d662189](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/d66218909ea7d3fa0823d1f175f97980064d47cd)), closes [#560](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/560)
+
 ## [3.13.4](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.13.3...v3.13.4) (2025-01-20)
 
 
