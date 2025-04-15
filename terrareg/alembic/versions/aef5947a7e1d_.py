@@ -51,9 +51,9 @@ def upgrade():
     sa.Column('repo_clone_url_template', sa.String(length=1024), nullable=True),
     sa.Column('repo_browse_url_template', sa.String(length=1024), nullable=True),
     sa.Column('published_at', sa.DateTime(), nullable=True),
-    sa.Column('readme_content', sa.BLOB(), nullable=True),
-    sa.Column('module_details', sa.BLOB(), nullable=True),
-    sa.Column('variable_template', sa.BLOB(), nullable=True),
+    sa.Column('readme_content', sa.BLOB().with_variant(sa.LargeBinary(), "postgresql"), nullable=True),
+    sa.Column('module_details', sa.BLOB().with_variant(sa.LargeBinary(), "postgresql"), nullable=True),
+    sa.Column('variable_template', sa.BLOB().with_variant(sa.LargeBinary(), "postgresql"), nullable=True),
     sa.Column('published', sa.Boolean(), nullable=True),
     sa.ForeignKeyConstraint(['module_provider_id'], ['module_provider.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
@@ -75,8 +75,8 @@ def upgrade():
     sa.Column('type', sa.String(length=1024), nullable=True),
     sa.Column('path', sa.String(length=1024), nullable=True),
     sa.Column('name', sa.String(length=1024), nullable=True),
-    sa.Column('readme_content', sa.BLOB(), nullable=True),
-    sa.Column('module_details', sa.BLOB(), nullable=True),
+    sa.Column('readme_content', sa.BLOB().with_variant(sa.LargeBinary(), "postgresql"), nullable=True),
+    sa.Column('module_details', sa.BLOB().with_variant(sa.LargeBinary(), "postgresql"), nullable=True),
     sa.ForeignKeyConstraint(['parent_module_version'], ['module_version.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
