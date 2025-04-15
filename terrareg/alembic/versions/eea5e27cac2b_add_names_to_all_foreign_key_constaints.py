@@ -64,7 +64,7 @@ def upgrade():
         try:
             with op.batch_alter_table(foreign_key['table'], schema=None) as batch_op:
                 # Use the default mysql name
-                batch_op.drop_constraint(foreign_key['old_name'], type_='foreignkey')
+                # batch_op.drop_constraint(foreign_key['old_name'], type_='foreignkey')
                 batch_op.create_foreign_key(
                     foreign_key['new_name'], foreign_key['other_table'],
                     foreign_key['columns'], foreign_key['other_columns'],
