@@ -124,11 +124,15 @@ def upgrade():
     sa.ForeignKeyConstraint(['provider_version_id'], ['provider_version.id'], name='fk_provider_version_documentation_provider_version_id', onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
-    op.add_column('namespace', sa.Column('namespace_type', Enum('NONE', 'GITHUB_USER', 'GITHUB_ORGANISATION', name='namespacetype'), nullable=True))
+    namespace_type_enum = Enum('NONE', 'GITHUB_USER', 'GITHUB_ORGANISATION', name='namespacetype')
     bind = op.get_bind()
+    if op.get_bind().engine.name == 'postgresql':
+        namespace_type_enum.create(bind, checkfirst=True)
+    op.add_column('namespace', sa.Column('namespace_type', namespace_type_enum, nullable=True))
+
     bind.execute("UPDATE namespace SET namespace_type='NONE'")
     with op.batch_alter_table("namespace") as batch_op:
-        batch_op.alter_column("namespace_type", nullable=False, existing_type=Enum('NONE', 'GITHUB_USER', 'GITHUB_ORGANISATION', name='namespacetype'))
+        batch_op.alter_column("namespace_type", nullable=False, existing_type=namespace_type_enum)
 
     op.add_column('session', sa.Column('provider_source_auth', sa.LargeBinary(length=16777215).with_variant(mysql.MEDIUMBLOB(), 'mysql'), nullable=True))
 
