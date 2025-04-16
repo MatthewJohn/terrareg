@@ -139,7 +139,8 @@ alembic upgrade head
 
 ```
 # Install dev requirements
-pip install -r requirements-dev.txt
+pip install poetry
+poetry install --no-root --with=dev
 
 # Run all tests
 pytest
