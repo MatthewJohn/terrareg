@@ -66,3 +66,13 @@ dependencies = [
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "7.4.3"
+pytest-cov = "3.0.0"
+selenium = "4.6.1"
+pyvirtualdisplay = "3.0"
+pillow = "10.0.1"
+imagehash = "4.3.1"
+numpy = ">=1.22.2"
+
