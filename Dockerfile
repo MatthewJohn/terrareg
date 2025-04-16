@@ -70,8 +70,9 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     rm /tmp/tfplugindocs.zip'
 
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+COPY pyproject.toml poetry.lock .
+RUN pip install poetry
+RUN poetry install --no-root
 
 RUN mkdir bin licenses
 
