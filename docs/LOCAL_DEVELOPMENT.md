@@ -93,10 +93,11 @@ brew install libmagic
 sudo apt-get install libmagic1
 
 # Install depdencies:
-pip install -r requirements.txt
+pip install poetry
+poetry install --no-root --with=dev
 
 # Initialise database and start server:
-alembic upgrade head
+poetry run alembic upgrade head
 
 # Set random admin authentication token - the password used for authenticating as the built-in admin user
 export ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword
@@ -112,7 +113,7 @@ wget https://github.com/aquasecurity/tfsec/releases/download/v1.26.0/tfsec-linux
 wget https://github.com/infracost/infracost/releases/download/v0.10.10/infracost-linux-${arch}.tar.gz && tar -zxvf infracost-linux-${arch}.tar.gz infracost-linux-${arch} && mv infracost-linux-${arch} ./bin/infracost && chmod +x ./bin/infracost && rm infracost-linux-${arch}.tar.gz
 
 # Run the server
-python ./terrareg.py
+poetry run python ./terrareg.py
 ```
 
 The site can be accessed at http://localhost:5000
@@ -123,16 +124,16 @@ Once changes are made to a
 
 ```
 # Ensure database is up-to-date before generating schema migrations
-alembic upgrade head
+poetry run alembic upgrade head
 
 # Generate migration
-alembic revision --autogenerate
+poetry run alembic revision --autogenerate
 ```
 
 ## Applying DB changes
 
 ```
-alembic upgrade head
+poetry run alembic upgrade head
 ```
 
 ## Running tests
@@ -143,13 +144,13 @@ pip install poetry
 poetry install --no-root --with=dev
 
 # Run all tests
-pytest
+poetry run pytest
 
 # Running unit/integration/selenium tests individually
-pytest ./test/unit
-pytest ./test/integration
-pytest ./test/selenium
+poetry run pytest ./test/unit
+poetry run pytest ./test/integration
+poetry run pytest ./test/selenium
 
 # Running a specific test
-pytest -k test_setup_page
+poetry run pytest -k test_setup_page
 ```
