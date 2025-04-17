@@ -6,7 +6,7 @@ set -x
 # Check if database upgrades are to be performed
 if [ "${MIGRATE_DATABASE}" == "True" ]
 then
-    alembic upgrade head
+    poetry run alembic upgrade head
 fi
 
 # Check whether to upgrade database and exit
@@ -26,4 +26,4 @@ then
 fi
 
 # Run main executable
-python ./terrareg.py
+poetry run python ./terrareg.py
