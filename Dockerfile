@@ -74,7 +74,6 @@ COPY pyproject.toml poetry.lock .
 RUN pip install poetry
 RUN poetry config virtualenvs.in-project true
 RUN poetry install --no-root
-ENV PATH="/app/.venv/bin:$PATH"
 
 RUN mkdir bin licenses
 

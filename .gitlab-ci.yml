@@ -67,6 +67,8 @@ cache:
 
 .test_image:
   image: terrareg-test-image:v${CI_COMMIT_SHORT_SHA}
+  before_script:
+    - ln -s /app/.venv .venv
 
 unit-integration-selenium-tests:
   stage: test
