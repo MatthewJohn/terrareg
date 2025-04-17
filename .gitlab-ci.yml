@@ -62,6 +62,7 @@ cache:
     - python --version  # For debugging
     - apt-get update && apt-get install --assume-yes pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 libgraphviz-dev && apt-get clean all
     - pip install poetry
+    - poetry config virtualenvs.create false
     - poetry install --no-root
 
 .test_image:
@@ -299,6 +300,7 @@ generate-docs:
     GITHUB_TOKEN: $GH_DEPLOY_TOKEN
   script:
     - pip install poetry
+    - poetry config virtualenvs.create false
     - poetry install --no-root --only=docs
     - git remote remove origin
     - git remote add origin https://$GITHUB_TOKEN@gitlab.dockstudios.co.uk/pub/terrareg.git
