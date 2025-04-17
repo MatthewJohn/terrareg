@@ -84,7 +84,7 @@ unit-integration-selenium-tests:
     # Perform database migration
     - poetry run alembic upgrade head
     # Run integration tests
-    - http_proxy= HTTP_PROXY= poetry run coverage run -m pytest --verbose --junitxml=./pytest-report.xml ./test || http_proxy= HTTP_PROXY= pytest --verbose --last-failed --last-failed-no-failures=none ./test
+    - http_proxy= HTTP_PROXY= poetry run coverage run -m pytest --verbose --junitxml=./pytest-report.xml ./test || http_proxy= HTTP_PROXY= poetry run pytest --verbose --last-failed --last-failed-no-failures=none ./test
     - poetry run coverage report --include='./terrareg/*'
     - poetry run coverage xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
@@ -118,7 +118,7 @@ mysql-integration-selenium-tests:
     # Perform database migration
     - poetry run alembic upgrade head
     # Run integration tests
-    - http_proxy= HTTP_PROXY= poetry run coverage run -m pytest --verbose --junitxml=./pytest-report.xml ./test/integration ./test/selenium || http_proxy= HTTP_PROXY= pytest --verbose --last-failed --last-failed-no-failures=none ./test/integration ./test/selenium
+    - http_proxy= HTTP_PROXY= poetry run coverage run -m pytest --verbose --junitxml=./pytest-report.xml ./test/integration ./test/selenium || http_proxy= HTTP_PROXY= poetry run pytest --verbose --last-failed --last-failed-no-failures=none ./test/integration ./test/selenium
     - poetry run coverage report --include='./terrareg/*'
     - poetry run coverage xml
   artifacts:
