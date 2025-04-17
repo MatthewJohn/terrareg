@@ -73,7 +73,7 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock .
 RUN pip install poetry
 RUN poetry config virtualenvs.in-project true
-RUN poetry install --no-root
+RUN POETRY_INSTALLER_MAX_WORKERS=${POETRY_INSTALLER_MAX_WORKERS:-4} poetry install --no-root
 
 RUN mkdir bin licenses
 

@@ -203,7 +203,7 @@ build-pr-image:
   image: docker:latest
 
   script:
-    - docker build -f Dockerfile -t $TF_VAR_docker_image --build-arg http_proxy=$NOMAD_PROXY --build-arg HTTP_PROXY=$NOMAD_PROXY --build-arg https_proxy=$NOMAD_PROXY --build-arg HTTPS_PROXY=$NOMAD_PROXY .
+    - docker build -f Dockerfile -t $TF_VAR_docker_image --build-arg POETRY_INSTALLER_MAX_WORKERS=1 --build-arg http_proxy=$NOMAD_PROXY --build-arg HTTP_PROXY=$NOMAD_PROXY --build-arg https_proxy=$NOMAD_PROXY --build-arg HTTPS_PROXY=$NOMAD_PROXY .
 
 deploy_review:
   stage: deploy
