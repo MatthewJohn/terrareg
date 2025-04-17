@@ -72,7 +72,9 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
 WORKDIR /app
 COPY pyproject.toml poetry.lock .
 RUN pip install poetry
+RUN poetry config virtualenvs.in-project true
 RUN poetry install --no-root
+ENV PATH="/app/.venv/bin:$PATH"
 
 RUN apt-get update
 RUN apt-get update && \
@@ -100,7 +102,6 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
 # Install packages for spell checking
 RUN apt-get update && apt-get install -y hunspell-en-gb python3-enchant pylint && apt-get clean all
 
-RUN poetry config virtualenvs.create false
 RUN poetry install --no-root --with=dev
 
 ENV RUNNING_IN_DOCKER=1
