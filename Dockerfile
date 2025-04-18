@@ -1,7 +1,6 @@
 FROM python:3.12-slim
 
 ARG VERSION
-ARG PYPI_PROXY
 
 WORKDIR /
 
@@ -72,10 +71,13 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
 
 WORKDIR /app
 COPY pyproject.toml poetry.lock .
-RUN pip install poetry
+ARG PYPI_PROXY=https://pypi.org/simple
+RUN pip install poetry --index=$PYPI_PROXY
 RUN poetry config virtualenvs.in-project true
-RUN PYPI_PROXY=$PYPI_PROXY bash -c 'if [ "$PYPI_PROXY" != "" ]; then poetry source add --priority=primary packages $PYPI_PROXY; fi'
-RUN POETRY_INSTALLER_MAX_WORKERS=${POETRY_INSTALLER_MAX_WORKERS:-4} https_proxy= http_proxy= poetry install --no-root
+
+RUN poetry source add --priority=primary packages $PYPI_PROXY
+ARG POETRY_INSTALLER_MAX_WORKERS=4
+RUN https_proxy= http_proxy= poetry install --no-root
 
 RUN mkdir bin licenses
 

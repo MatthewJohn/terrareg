@@ -70,10 +70,6 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     rm /tmp/tfplugindocs.zip'
 
 WORKDIR /app
-COPY pyproject.toml poetry.lock .
-RUN pip install poetry
-RUN poetry config virtualenvs.in-project true
-RUN poetry install --no-root
 
 RUN apt-get update
 RUN apt-get update && \
@@ -101,6 +97,14 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
 # Install packages for spell checking
 RUN apt-get update && apt-get install -y hunspell-en-gb python3-enchant pylint && apt-get clean all
 
+COPY pyproject.toml poetry.lock .
+ARG PYPI_PROXY=https://pypi.org/simple
+RUN pip install poetry --index=$PYPI_PROXY
+RUN poetry config virtualenvs.in-project true
+
+RUN poetry source add --priority=primary packages $PYPI_PROXY
+ARG POETRY_INSTALLER_MAX_WORKERS=4
+RUN https_proxy= http_proxy= poetry install --no-root
 RUN poetry install --no-root --with=dev
 
 ENV RUNNING_IN_DOCKER=1
