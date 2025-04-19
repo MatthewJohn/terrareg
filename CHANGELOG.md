@@ -1,5 +1,22 @@
 # Changelog
 
+# [4.0.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.13.5...v4.0.0) (2025-04-19)
+
+
+* feat(build)!: Switch to Poetry for dependency management ([4365ac1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/4365ac1a5954973de1383fad33295e711577c0f0)), closes [#565](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/565)
+
+
+### BREAKING CHANGES
+
+* Moving package management to poetry, meaning that binaries/scripts must be executed with `poetry run`.
+This may break integrations where scripts are being run within the container.
+Ensure any pre-existing configuration that executes scripts within the container are prepended with `poetry run`.
+NOTE: The use of requirements-*.txt files is now **deprecated** and will be removed in future minor/patch versions.
+
+Merge branch '565-move-from-pip-file-to-alternative-depdency-locking' into 'main'
+
+Resolve "Move from pip file to alternative dependency locking"
+
 ## [3.13.5](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.13.4...v3.13.5) (2025-03-07)
 
 

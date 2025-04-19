@@ -70,13 +70,26 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     rm /tmp/tfplugindocs.zip'
 
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+COPY pyproject.toml poetry.lock .
+ARG PYPI_PROXY
+RUN if test ! -z "$PYPI_PROXY"; then pip_args="--index=$PYPI_PROXY --trusted-host=$(echo $PYPI_PROXY | sed 's#https*://##g' | sed 's#/.*##g')"; else pip_args=""; fi; \
+    http_proxy= https_proxy="" pip install poetry $pip_args
+RUN poetry config virtualenvs.in-project true
+
+RUN if test ! -z "$PYPI_PROXY"; then \
+      poetry source add --priority=primary packages $PYPI_PROXY; \
+      http_proxy= https_proxy= poetry lock; \
+    fi
+ARG POETRY_INSTALLER_MAX_WORKERS=4
+RUN https_proxy= http_proxy= poetry install --no-root
 
 RUN mkdir bin licenses
 
 # Create licenses for python packages
-RUN pip install pip-licenses && pip-licenses --with-system --with-license-file --format=plain-vertical > licenses/LICENSES.python && pip uninstall --yes pip-licenses
+RUN if test ! -z "$PYPI_PROXY"; then pip_args="--index=$PYPI_PROXY --trusted-host=$(echo $PYPI_PROXY | sed 's#https*://##g' | sed 's#/.*##g')"; else pip_args=""; fi; \
+  http_proxy= https_proxy= pip install pip-licenses $pip_args && \
+  pip-licenses --with-system --with-license-file --format=plain-vertical > licenses/LICENSES.python && \
+  pip uninstall --yes pip-licenses
 # Copy licenses for deb packages
 RUN mkdir licenses/deb
 RUN bash -c 'pushd /usr/share/doc; for i in *; do mkdir /app/licenses/deb/$i; cp $i/{LICENSE,NOTICE,copyright} /app/licenses/deb/$i/; done; rmdir /app/licenses/deb/*; popd'
