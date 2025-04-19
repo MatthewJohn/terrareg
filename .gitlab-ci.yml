@@ -60,16 +60,15 @@ cache:
 .before_script_python:
   before_script:
     - python --version  # For debugging
-      #- pip install --proxy=$http_proxy virtualenv
     - apt-get update && apt-get install --assume-yes pkg-config libxml2-dev libxmlsec1-dev libxmlsec1-openssl xmlsec1 libgraphviz-dev && apt-get clean all
-    - pip install virtualenv
-    - virtualenv venv
-    - source venv/bin/activate
-    - pip install -r requirements.txt
-      #- pip install --proxy=$http_proxy -r requirements.txt
+    - pip install poetry
+    - poetry config virtualenvs.create false
+    - poetry install --no-root
 
 .test_image:
   image: terrareg-test-image:v${CI_COMMIT_SHORT_SHA}
+  before_script:
+    - ln -s /app/.venv .venv
 
 unit-integration-selenium-tests:
   stage: test
@@ -83,11 +82,11 @@ unit-integration-selenium-tests:
     MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
   script:
     # Perform database migration
-    - alembic upgrade head
+    - poetry run alembic upgrade head
     # Run integration tests
-    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose --junitxml=./pytest-report.xml ./test || http_proxy= HTTP_PROXY= pytest --verbose --last-failed --last-failed-no-failures=none ./test
-    - coverage report --include='./terrareg/*'
-    - coverage xml
+    - http_proxy= HTTP_PROXY= poetry run coverage run -m pytest --verbose --junitxml=./pytest-report.xml ./test || http_proxy= HTTP_PROXY= poetry run pytest --verbose --last-failed --last-failed-no-failures=none ./test
+    - poetry run coverage report --include='./terrareg/*'
+    - poetry run coverage xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     reports:
@@ -117,11 +116,11 @@ mysql-integration-selenium-tests:
     MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
   script:
     # Perform database migration
-    - alembic upgrade head
+    - poetry run alembic upgrade head
     # Run integration tests
-    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose --junitxml=./pytest-report.xml ./test/integration ./test/selenium || http_proxy= HTTP_PROXY= pytest --verbose --last-failed --last-failed-no-failures=none ./test/integration ./test/selenium
-    - coverage report --include='./terrareg/*'
-    - coverage xml
+    - http_proxy= HTTP_PROXY= poetry run coverage run -m pytest --verbose --junitxml=./pytest-report.xml ./test/integration ./test/selenium || http_proxy= HTTP_PROXY= poetry run pytest --verbose --last-failed --last-failed-no-failures=none ./test/integration ./test/selenium
+    - poetry run coverage report --include='./terrareg/*'
+    - poetry run coverage xml
   artifacts:
     reports:
       junit: pytest-report.xml
@@ -204,7 +203,7 @@ build-pr-image:
   image: docker:latest
 
   script:
-    - docker build -f Dockerfile -t $TF_VAR_docker_image --build-arg http_proxy=$NOMAD_PROXY --build-arg HTTP_PROXY=$NOMAD_PROXY --build-arg https_proxy=$NOMAD_PROXY --build-arg HTTPS_PROXY=$NOMAD_PROXY .
+    - docker build -f Dockerfile -t $TF_VAR_docker_image --build-arg PYPI_PROXY=$INTERNAL_PYPI_PROXY --build-arg POETRY_INSTALLER_MAX_WORKERS=1 --build-arg http_proxy=$NOMAD_PROXY --build-arg HTTP_PROXY=$NOMAD_PROXY --build-arg https_proxy=$NOMAD_PROXY --build-arg HTTPS_PROXY=$NOMAD_PROXY .
 
 deploy_review:
   stage: deploy
@@ -302,7 +301,9 @@ generate-docs:
   variables:
     GITHUB_TOKEN: $GH_DEPLOY_TOKEN
   script:
-    - pip install -r requirements-docs.txt
+    - pip install poetry
+    - poetry config virtualenvs.create false
+    - poetry install --no-root --only=docs
     - git remote remove origin
     - git remote add origin https://$GITHUB_TOKEN@gitlab.dockstudios.co.uk/pub/terrareg.git
     # Ensure gh-pages branch is up-to-date
@@ -311,7 +312,7 @@ generate-docs:
     - git reset --hard origin/gh-pages
     - git checkout -
     # Generate docs
-    - mkdocs gh-deploy
+    - poetry run mkdocs gh-deploy
   rules:
     - if: '$CI_COMMIT_REF_NAME != "main"'
       when: never
