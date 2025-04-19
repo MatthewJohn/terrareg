@@ -148,11 +148,11 @@ postgres-integration-selenium-tests:
     POSTGRES_DATABASE: terrareg
   script:
     # Perform database migration
-    - alembic upgrade head
+    - poetry run alembic upgrade head
     # Run integration tests
-    - http_proxy= HTTP_PROXY= coverage run -m pytest --verbose --junitxml=./pytest-report.xml ./test/integration ./test/selenium || http_proxy= HTTP_PROXY= pytest --verbose --last-failed --last-failed-no-failures=none ./test/integration ./test/selenium
-    - coverage report --include='./terrareg/*'
-    - coverage xml
+    - http_proxy= HTTP_PROXY= poetry run coverage run -m pytest --verbose --junitxml=./pytest-report.xml ./test/integration ./test/selenium || http_proxy= HTTP_PROXY= poetry run pytest --verbose --last-failed --last-failed-no-failures=none ./test/integration ./test/selenium
+    - poetry run coverage report --include='./terrareg/*'
+    - poetry run coverage xml
   artifacts:
     reports:
       junit: pytest-report.xml
