@@ -41,7 +41,7 @@ def upgrade():
     # Create new table for module_details
     op.create_table(
         'module_details',
-        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('id', sa.Integer(), nullable=False, autoincrement=True),
         sa.Column('readme_content', sa.LargeBinary(length=16777215).with_variant(mysql.MEDIUMBLOB(), 'mysql'), nullable=True),
         sa.Column('terraform_docs', sa.LargeBinary(length=16777215).with_variant(mysql.MEDIUMBLOB(), 'mysql'), nullable=True),
         sa.PrimaryKeyConstraint('id')
