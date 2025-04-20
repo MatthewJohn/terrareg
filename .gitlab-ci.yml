@@ -138,7 +138,7 @@ postgres-integration-selenium-tests:
       command: ["server", "/data", "--console-address", ":9001"]
   variables:
     # Set database url for integration tests
-    INTEGRATION_DATABASE_URL: mysql+mysqlconnector://root:${MYSQL_ROOT_PASSWORD}@mysql/${MYSQL_DATABASE}
+    INTEGRATION_DATABASE_URL: postgresql+psycopg2://terrareg:terrareg@postgres/terrareg
     # Set datbase URL for schema migration
     DATABASE_URL: postgresql+psycopg2://terrareg:terrareg@postgres/terrareg
     MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
