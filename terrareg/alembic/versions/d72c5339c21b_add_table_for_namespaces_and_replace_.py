@@ -44,7 +44,7 @@ def upgrade():
                 ),
                 namespace_name=namespace_name,
             )
-            created_namespaces[namespace_name] = namespace_insert_res.lastrowid
+            created_namespaces[namespace_name] = namespace_insert_res.inserted_primary_key[0]
 
         # Update module provider namespace ID
         c.execute(

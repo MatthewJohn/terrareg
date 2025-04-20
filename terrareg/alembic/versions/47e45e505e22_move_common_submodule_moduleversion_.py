@@ -30,7 +30,7 @@ def migrate_data_to_module_details(c, source_table):
                 VALUES(:readme_content, :module_details)
             """),
             readme_content=readme_content, module_details=module_details)
-        module_details_id = insert_res.lastrowid
+        module_details_id = insert_res.inserted_primary_key[0]
 
         # Update module_version with new inserted ID
         c.execute(sa.sql.text(f"""UPDATE {source_table} SET module_details_id=:module_details_id WHERE id=:source_id"""),

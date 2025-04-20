@@ -1394,7 +1394,7 @@ class GpgKey:
         )
         with db.get_connection() as conn:
             res = conn.execute(gpg_key_insert)
-        return res.lastrowid
+        return res.inserted_primary_key[0]
 
     @property
     def pk(self):
