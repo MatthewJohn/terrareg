@@ -555,8 +555,15 @@ class AnalyticsEngine:
             help='Analytics tokens used in a module provider'
         )
         db = Database.get()
+        query = AnalyticsEngine.get_global_module_usage_base_query(include_empty_auth_token=True)
+        query = query.order_by(
+            db.namespace.c.namespace.asc(),
+            db.module_provider.c.module.asc(),
+            db.module_provider.c.provider.asc(),
+            db.analytics.c.analytics_token.asc(),
+        )
         with db.get_connection() as conn:
-            rows = conn.execute(AnalyticsEngine.get_global_module_usage_base_query(include_empty_auth_token=True)).fetchall()
+            rows = conn.execute(query).fetchall()
         for row in rows:
             module_provider_usage_metric.add_data_row(
                 value='1',
