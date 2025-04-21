@@ -154,3 +154,13 @@ poetry run pytest ./test/selenium
 # Running a specific test
 poetry run pytest -k test_setup_page
 ```
+
+### Additional debug
+
+ * `DEBUG` can be enabled to show additional information:
+   * SQL query debug from SQLalchemy
+   * Show exceptions in API/UI
+
+```
+DEBUG=true poetry run pytest
+```
