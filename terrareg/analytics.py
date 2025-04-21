@@ -232,7 +232,8 @@ class AnalyticsEngine:
             sqlalchemy.func.count(),
             select.c.namespace,
             select.c.module,
-            select.c.provider
+            select.c.provider,
+            select.c.id
         ).select_from(
             select
         ).group_by(
