@@ -284,14 +284,14 @@ class Database():
         return cls._INSTANCE
 
     @classmethod
-    def get_meta(cls):
+    def get_meta(cls) -> sqlalchemy.MetaData:
         """Return meta object"""
         if cls._META is None:
             cls._META = sqlalchemy.MetaData()
         return cls._META
 
     @classmethod
-    def get_engine(cls):
+    def get_engine(cls) -> sqlalchemy.engine.Engine:
         """Get singleton instance of engine."""
         if cls._ENGINE is None:
             cls._ENGINE = sqlalchemy.create_engine(
