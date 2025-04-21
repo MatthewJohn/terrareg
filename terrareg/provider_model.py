@@ -280,7 +280,7 @@ class Provider:
     def get_all_versions(self) -> List['terrareg.provider_version_model.ProviderVersion']:
         """Return list of all provider versions"""
         db = terrareg.database.Database.get()
-        select = db.provider_version.select(
+        select = sqlalchemy.select(
             db.provider_version.c.version
         ).where(
             db.provider_version.c.provider_id==self.pk
