@@ -214,8 +214,11 @@ class AnalyticsEngine:
 
         # Group select by analytics token and module provider ID
         select = select.group_by(
+            db.module_provider.c.id,
+            db.namespace.c.namespace,
+            db.module_provider.c.module,
+            db.module_provider.c.provider,
             db.analytics.c.analytics_token,
-            db.module_provider.c.id
         )
         return select
 
@@ -237,7 +240,10 @@ class AnalyticsEngine:
         ).select_from(
             select
         ).group_by(
-            select.c.id
+            select.c.id,
+            select.c.namespace,
+            select.c.module,
+            select.c.provider,
         )
 
         with db.get_connection() as conn:
