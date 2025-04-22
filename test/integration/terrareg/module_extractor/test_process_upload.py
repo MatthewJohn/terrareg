@@ -1981,7 +1981,7 @@ terraform {
                         mock.patch('terrareg.config.Config.DATA_DIRECTORY', temp_dir):
                     UploadTestModule.upload_module_version(module_version=module_version, zip_file=zip_file)
 
-                    terraform_arch = "linux_amd64" if platform.uname().processor == "x86_64" else "linux_arm64"
+                    terraform_arch = "linux_amd64" if platform.uname().machine == "x86_64" else "linux_arm64"
 
                     # Ensure the module version terraform_version argument is correct
                     assert module_version.module_details.terraform_version == {
