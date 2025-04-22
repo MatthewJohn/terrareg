@@ -29,7 +29,7 @@ def upgrade():
     try:
         with op.batch_alter_table('analytics', schema=None, naming_convention=naming_convention) as batch_op:
             # Use the default mysql name
-            # batch_op.drop_constraint('analytics_ibfk_1', type_='foreignkey')
+            batch_op.drop_constraint('analytics_ibfk_1', type_='foreignkey')
             batch_op.create_foreign_key('fk_analytics_parent_module_version_module_version_id', 'module_version', ['parent_module_version'], ['id'], onupdate='CASCADE', ondelete='NO ACTION')
     except ValueError:
         # Catch "No such constraint: 'analytics_ibfk_1'" error from SQLite
