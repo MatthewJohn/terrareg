@@ -144,7 +144,7 @@ class TestProviderVersionDocumentation(TerraregIntegrationTest):
                 filename="some-testfile.md",
                 documentation_type=terrareg.provider_documentation_type.ProviderDocumentationType.GUIDE
             ))
-            pk = db_res.lastrowid
+            pk = db_res.inserted_primary_key[0]
         
         res = terrareg.provider_version_documentation_model.ProviderVersionDocumentation.get_by_pk(pk=pk)
         assert isinstance(res, terrareg.provider_version_documentation_model.ProviderVersionDocumentation)
