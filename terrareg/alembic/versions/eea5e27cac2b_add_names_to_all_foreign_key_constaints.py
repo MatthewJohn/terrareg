@@ -8,6 +8,8 @@ Create Date: 2022-06-25 11:55:38.389322
 from alembic import op
 import sqlalchemy as sa
 
+from terrareg.alembic.versions import constraint_exists
+
 
 # revision identifiers, used by Alembic.
 revision = 'eea5e27cac2b'
@@ -64,7 +66,8 @@ def upgrade():
         try:
             with op.batch_alter_table(foreign_key['table'], schema=None) as batch_op:
                 # Use the default mysql name
-                batch_op.drop_constraint(foreign_key['old_name'], type_='foreignkey')
+                if constraint_exists(op.get_bind(), foreign_key['table'], foreign_key['old_name']):
+                    batch_op.drop_constraint(foreign_key['old_name'], type_='foreignkey')
                 batch_op.create_foreign_key(
                     foreign_key['new_name'], foreign_key['other_table'],
                     foreign_key['columns'], foreign_key['other_columns'],
@@ -82,8 +85,9 @@ def upgrade():
 
 def downgrade():
     for foreign_key in foreign_keys:
-        with op.batch_alter_table('analytics', schema=None) as batch_op:
-            batch_op.drop_constraint(foreign_key['new_name'], type_='foreignkey')
+        with op.batch_alter_table(foreign_key['table_name'], schema=None) as batch_op:
+            if constraint_exists(op.get_bind(), foreign_key['old_name'], foreign_key['new_name']):
+                batch_op.drop_constraint(foreign_key['new_name'], type_='foreignkey')
             # Use default mysql name when downgrading - this will still allow the SQLite upgrade
             # to happen, but without the catch
             batch_op.create_foreign_key(

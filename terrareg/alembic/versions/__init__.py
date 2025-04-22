@@ -33,3 +33,33 @@ def update_enum(table: str, column: str, enum_name: str, old_enum_values: List[s
         op.execute(f'DROP TYPE {temp_type_name}')
     else:
         raise Exception("Invalid Database engine")
+
+def constraint_exists(conn, table_name, constraint_name):
+    dialect = conn.dialect.name
+
+    if dialect == 'postgresql':
+        result = conn.execute(sa.text("""
+            SELECT 1
+            FROM information_schema.table_constraints
+            WHERE table_name = :table_name
+              AND constraint_name = :constraint_name
+        """), {'table_name': table_name, 'constraint_name': constraint_name})
+        return result.scalar() is not None
+
+    elif dialect == 'mysql':
+        result = conn.execute(sa.text("""
+            SELECT 1
+            FROM information_schema.table_constraints
+            WHERE table_name = :table_name
+              AND constraint_name = :constraint_name
+              AND constraint_schema = DATABASE()
+        """), {'table_name': table_name, 'constraint_name': constraint_name})
+        return result.scalar() is not None
+
+    elif dialect == 'sqlite':
+        # SQLite doesn’t support named foreign keys; you can’t drop them directly.
+        # Best workaround: assume it doesn’t exist or refactor the table entirely.
+        return False
+
+    else:
+        raise NotImplementedError(f"Unsupported DB dialect: {dialect}")
