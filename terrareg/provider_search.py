@@ -63,6 +63,10 @@ class ProviderSearch:
         # Group by module provider ID
         select = select.group_by(
             db.provider.c.id,
+            db.provider_version.c.id,
+            db.namespace.c.id,
+            provider_name,
+            db.provider_category.c.slug.label('provider_category_slug'),
         ).order_by(
             # Order by relevancy, then by name
             sqlalchemy.desc(relevance),
