@@ -2,6 +2,7 @@
 import datetime
 
 import sqlalchemy
+from sqlalchemy import func
 
 from terrareg.database import Database
 import terrareg.auth
@@ -28,7 +29,7 @@ class AuditEvent:
         if query:
             filtered = filtered.where(
                 sqlalchemy.or_(
-                    db.audit_history.c.username.like(f'%{query}%'),
+                    func.lower(db.audit_history.c.username).like(f'%{query.lower()}%'),
                     action_cast.like(f'%{query}%'),
                     db.audit_history.c.object_id.like(f'%{query}%'),
                     db.audit_history.c.old_value.like(f'%{query}%'),
