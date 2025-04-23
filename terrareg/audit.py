@@ -21,13 +21,15 @@ class AuditEvent:
         )
         filtered = db_query
 
+        action_cast = sqlalchemy.cast(db.audit_history.c.action, sqlalchemy.CHAR)
+
         # If query string has been provided,
         # match any rows where any of the columns match
         if query:
             filtered = filtered.where(
                 sqlalchemy.or_(
                     db.audit_history.c.username.like(f'%{query}%'),
-                    db.audit_history.c.action.like(f'%{query}%'),
+                    action_cast.like(f'%{query}%'),
                     db.audit_history.c.object_id.like(f'%{query}%'),
                     db.audit_history.c.old_value.like(f'%{query}%'),
                     db.audit_history.c.new_value.like(f'%{query}%')
@@ -40,8 +42,8 @@ class AuditEvent:
         # If ordering by action, which is an enum, cast column
         # to char, as enum is ordered by the order of the enum definitions, not
         # alphabetically
-        if order_by_column == db.audit_history.c.action:
-            order_by_column = order_by_column.cast(sqlalchemy.CHAR)
+        if order_by_column == action_cast:
+            order_by_column = action_cast
 
         # Create query with ordering, limit and offset applied
         filtered_limit = filtered.order_by(
