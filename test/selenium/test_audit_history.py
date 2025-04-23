@@ -24,7 +24,7 @@ class TestAuditHistory(SeleniumTest):
         'namespace_create': [
             'test-event-admin', AuditAction.NAMESPACE_CREATE, 'Namespace', 'test-namespace', None, None,
             datetime(year=2020, month=11, day=27,
-                     hour=19, minute=14, second=10)
+                     hour=19, minute=14, second=0)
         ],
         'module_provider_create': [
             'test-event-admin', AuditAction.MODULE_PROVIDER_CREATE, 'ModuleProvider', 'test-namespace/test-module/provider', None, None,
