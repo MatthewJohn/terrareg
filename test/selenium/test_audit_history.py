@@ -253,6 +253,9 @@ class TestAuditHistory(SeleniumTest):
 
         rows = self._get_audit_rows(audit_table)
 
+        with Database.get().get_connection() as conn:
+            db_dialect = conn.engine.name
+
         column_headers = [
             r for r in audit_table.find_elements(By.TAG_NAME, 'th')]
         for column_itx, expected_rows in [
@@ -260,7 +263,7 @@ class TestAuditHistory(SeleniumTest):
             (0, [self._AUDIT_DATA['user_group_delete'],
                  self._AUDIT_DATA['user_group_create']]),
 
-            # Sort by username
+            # Sort by username. Ignore first row, as this is related to the admin login (via selenium)
             (1, [None, self._AUDIT_DATA['module_provider_update_git_custom_clone_url'],
                  self._AUDIT_DATA['module_version_delete'], self._AUDIT_DATA['module_version_publish']]),
             # Sort by username reversed
@@ -275,11 +278,24 @@ class TestAuditHistory(SeleniumTest):
                  self._AUDIT_DATA['user_login_9'],
                  self._AUDIT_DATA['user_login_8']]),
 
-            # Sort by object
-            (3, [None, self._AUDIT_DATA['namespace_create']]),
-            # Sort by object reversed
-            (3, [self._AUDIT_DATA['user_login_9'],
-                 self._AUDIT_DATA['user_login_8']])
+            # Sort by object - handling differences in how empty values are handled (for user login with empty object).
+            # MySQL orderes empty values as highest in descending, whilst postgres handles as lowest
+            (3, [
+                    None, self._AUDIT_DATA['namespace_create']
+                ] if db_dialect != "postgresql" else [
+                    self._AUDIT_DATA['namespace_create']
+                ]
+            ),
+            # Sort by object reversed - handling differences in how empty values and non-alphanumeric characters are handled.
+            # Postgres orderes empty values and non-alphanumeric as lowest in descending, whilst MySQL does not.
+            (3, [
+                    self._AUDIT_DATA['user_login_9'],
+                    self._AUDIT_DATA['user_login_8']
+                ] if db_dialect != "postgresql" else [
+                    None, self._AUDIT_DATA['user_group_delete'],
+                    self._AUDIT_DATA['user_group_create']
+                ]
+            )
         ]:
             print(f'Testing column sorting: {column_itx}')
 

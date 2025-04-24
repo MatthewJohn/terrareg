@@ -48,6 +48,8 @@ class AuditEvent:
             order_by_column = action_cast
         elif order_by_column == db.audit_history.c.username:
             order_by_column = username
+        elif order_by_column != db.audit_history.c.timestamp:
+            order_by_column = func.lower(order_by_column)
 
         # Create query with ordering, limit and offset applied
         filtered_limit = filtered.order_by(
