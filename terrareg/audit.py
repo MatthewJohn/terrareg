@@ -22,7 +22,7 @@ class AuditEvent:
         )
         filtered = db_query
 
-        action_cast = sqlalchemy.cast(db.audit_history.c.action, sqlalchemy.CHAR)
+        action_cast = sqlalchemy.cast(db.audit_history.c.action, sqlalchemy.String)
         username = func.lower(db.audit_history.c.username)
 
         # If query string has been provided,
