@@ -97,8 +97,8 @@ class TestModuleSearch(SeleniumTest):
         """Check next and previous buttons."""
         self.selenium_instance.get(self.get_url('/search/modules?q=modulesearch'))
 
-        result_cards = self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')
-        assert len(result_cards) == 4
+        # Ensure 4 results are found
+        self.assert_equals(lambda: len(self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')), 4)
 
         # Ensure both buttons are disabled
         self.selenium_instance.find_element(By.ID, 'nextButton').is_enabled() == False
