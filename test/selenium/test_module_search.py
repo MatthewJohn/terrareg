@@ -35,21 +35,21 @@ class TestModuleSearch(SeleniumTest):
 
         expected_card_headings = [
             'modulesearch-trusted / mixedsearch-trusted-result',
-            'modulesearch-trusted / mixedsearch-trusted-second-result',
             'modulesearch-trusted / mixedsearch-trusted-result-multiversion',
             'modulesearch-trusted / mixedsearch-trusted-result-verified',
+            'modulesearch-trusted / mixedsearch-trusted-second-result',
         ]
         expected_card_links = [
             '/modules/modulesearch-trusted/mixedsearch-trusted-result/aws',
-            '/modules/modulesearch-trusted/mixedsearch-trusted-second-result/datadog',
             '/modules/modulesearch-trusted/mixedsearch-trusted-result-multiversion/null',
             '/modules/modulesearch-trusted/mixedsearch-trusted-result-verified/gcp',
+            '/modules/modulesearch-trusted/mixedsearch-trusted-second-result/datadog',
         ]
         expected_card_provider_text = [
             'Provider: aws',
-            'Provider: datadog',
             'Provider: null',
             'Provider: gcp',
+            'Provider: datadog',
         ]
         for card in result_cards:
             heading = card.find_element(By.CLASS_NAME, 'module-card-title')
@@ -136,9 +136,7 @@ class TestModuleSearch(SeleniumTest):
                     By.CLASS_NAME, 'card')[0].find_element(
                         By.CLASS_NAME, 'module-card-title').text,
             # Handle differences in module search result ordering for Postgres vs other engines
-            ('modulesearch-trusted / mixedsearch-trusted-result-multiversion'
-             if db_dialect == "postgresql" else
-             'modulesearch-trusted / mixedsearch-trusted-second-result')
+            'modulesearch-trusted / mixedsearch-trusted-result-multiversion'
         )
 
         # Ensure that all cards have been updated
@@ -158,9 +156,7 @@ class TestModuleSearch(SeleniumTest):
                 By.ID, 'results').find_elements(
                     By.CLASS_NAME, 'card')[0].find_element(
                         By.CLASS_NAME, 'module-card-title').text,
-            ('modulesearch / contributedmodule-differentprovider'
-             if db_dialect == "postgresql" else
-             'modulesearch / contributedmodule-oneversion')
+            'modulesearch / contributedmodule-differentprovider'
         )
 
         # Ensure that all of the original cards are displayed
@@ -228,21 +224,21 @@ class TestModuleSearch(SeleniumTest):
 
     @pytest.mark.parametrize('input_terraform_version, expected_compatibility_text', [
         ('2.5.0', [
-            'Compatible',
+            # First item has no entry, due to invalid version constraint
+            None,
             'Compatible',
             'Implicitly compatible',
             'No version constraint defined',
-            # Final item has no entry, due to invalid version constraint
-            None,
+            'Compatible',
         ]),
 
         ('0.5.0', [
-            'Incompatible',
+            # First item has no entry, due to invalid version constraint
+            None,
             'Incompatible',
             'Incompatible',
             'No version constraint defined',
-            # Final item has no entry, due to invalid version constraint
-            None,
+            'Incompatible',
         ])
     ])
     def test_terraform_version_compatibility(self, input_terraform_version, expected_compatibility_text):
