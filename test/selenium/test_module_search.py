@@ -8,6 +8,7 @@ from selenium.webdriver.common.by import By
 import selenium
 
 from test.selenium import SeleniumTest
+import terrareg.database
 from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
 
 class TestModuleSearch(SeleniumTest):
@@ -127,12 +128,17 @@ class TestModuleSearch(SeleniumTest):
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'prevButton').is_enabled(), True)
 
         # Wait again for first card to update
+        with terrareg.database.Database.get().get_connection() as conn:
+            db_dialect = conn.engine.name
         self.assert_equals(
             lambda: self.selenium_instance.find_element(
                 By.ID, 'results').find_elements(
                     By.CLASS_NAME, 'card')[0].find_element(
                         By.CLASS_NAME, 'module-card-title').text,
-            'modulesearch-trusted / mixedsearch-trusted-second-result'
+            # Handle differences in module search result ordering for Postgres vs other engines
+            ('modulesearch-trusted / mixedsearch-trusted-result-multiversion'
+             if db_dialect == "postgresql" else
+             'modulesearch-trusted / mixedsearch-trusted-second-result')
         )
 
         # Ensure that all cards have been updated
@@ -152,7 +158,9 @@ class TestModuleSearch(SeleniumTest):
                 By.ID, 'results').find_elements(
                     By.CLASS_NAME, 'card')[0].find_element(
                         By.CLASS_NAME, 'module-card-title').text,
-            'modulesearch / contributedmodule-oneversion'
+            ('modulesearch / contributedmodule-differentprovider'
+             if db_dialect == "postgresql" else
+             'modulesearch / contributedmodule-oneversion')
         )
 
         # Ensure that all of the original cards are displayed
