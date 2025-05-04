@@ -91,9 +91,9 @@ class TestModuleSearch(SeleniumTest):
             {"link": "/modules/modulesearch-contributed/mixedsearch-result/aws", "text": "modulesearch-contributed / mixedsearch-result"},
             {"link": "/modules/modulesearch-contributed/mixedsearch-result-multiversion/aws", "text": "modulesearch-contributed / mixedsearch-result-multiversion"},
             {"link": "/modules/modulesearch-trusted/mixedsearch-trusted-result/aws", "text": "modulesearch-trusted / mixedsearch-trusted-result"},
-            {"link": "/modules/modulesearch-trusted/mixedsearch-trusted-second-result/datadog", "text": "modulesearch-trusted / mixedsearch-trusted-second-result"},
             {"link": "/modules/modulesearch-trusted/mixedsearch-trusted-result-multiversion/null", "text": "modulesearch-trusted / mixedsearch-trusted-result-multiversion"},
-            {"link": "/modules/modulesearch-trusted/mixedsearch-trusted-result-verified/gcp", "text": "modulesearch-trusted / mixedsearch-trusted-result-verified"}
+            {"link": "/modules/modulesearch-trusted/mixedsearch-trusted-result-verified/gcp", "text": "modulesearch-trusted / mixedsearch-trusted-result-verified"},
+            {"link": "/modules/modulesearch-trusted/mixedsearch-trusted-second-result/datadog", "text": "modulesearch-trusted / mixedsearch-trusted-second-result"},
         ]
         for card in self.selenium_instance.find_element(By.ID, "results-modules-content").find_elements(By.CLASS_NAME, "result-box"):
             card_details = module_cards.pop(0)

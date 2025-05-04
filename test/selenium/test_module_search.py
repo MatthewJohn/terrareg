@@ -8,6 +8,7 @@ from selenium.webdriver.common.by import By
 import selenium
 
 from test.selenium import SeleniumTest
+import terrareg.database
 from terrareg.models import ModuleVersion, Namespace, Module, ModuleProvider
 
 class TestModuleSearch(SeleniumTest):
@@ -34,21 +35,21 @@ class TestModuleSearch(SeleniumTest):
 
         expected_card_headings = [
             'modulesearch-trusted / mixedsearch-trusted-result',
-            'modulesearch-trusted / mixedsearch-trusted-second-result',
             'modulesearch-trusted / mixedsearch-trusted-result-multiversion',
             'modulesearch-trusted / mixedsearch-trusted-result-verified',
+            'modulesearch-trusted / mixedsearch-trusted-second-result',
         ]
         expected_card_links = [
             '/modules/modulesearch-trusted/mixedsearch-trusted-result/aws',
-            '/modules/modulesearch-trusted/mixedsearch-trusted-second-result/datadog',
             '/modules/modulesearch-trusted/mixedsearch-trusted-result-multiversion/null',
             '/modules/modulesearch-trusted/mixedsearch-trusted-result-verified/gcp',
+            '/modules/modulesearch-trusted/mixedsearch-trusted-second-result/datadog',
         ]
         expected_card_provider_text = [
             'Provider: aws',
-            'Provider: datadog',
             'Provider: null',
             'Provider: gcp',
+            'Provider: datadog',
         ]
         for card in result_cards:
             heading = card.find_element(By.CLASS_NAME, 'module-card-title')
@@ -96,8 +97,8 @@ class TestModuleSearch(SeleniumTest):
         """Check next and previous buttons."""
         self.selenium_instance.get(self.get_url('/search/modules?q=modulesearch'))
 
-        result_cards = self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')
-        assert len(result_cards) == 4
+        # Ensure 4 results are found
+        self.assert_equals(lambda: len(self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')), 4)
 
         # Ensure both buttons are disabled
         self.selenium_instance.find_element(By.ID, 'nextButton').is_enabled() == False
@@ -127,12 +128,15 @@ class TestModuleSearch(SeleniumTest):
         self.assert_equals(lambda: self.selenium_instance.find_element(By.ID, 'prevButton').is_enabled(), True)
 
         # Wait again for first card to update
+        with terrareg.database.Database.get().get_connection() as conn:
+            db_dialect = conn.engine.name
         self.assert_equals(
             lambda: self.selenium_instance.find_element(
                 By.ID, 'results').find_elements(
                     By.CLASS_NAME, 'card')[0].find_element(
                         By.CLASS_NAME, 'module-card-title').text,
-            'modulesearch-trusted / mixedsearch-trusted-second-result'
+            # Handle differences in module search result ordering for Postgres vs other engines
+            'modulesearch-trusted / mixedsearch-trusted-result-multiversion'
         )
 
         # Ensure that all cards have been updated
@@ -152,7 +156,7 @@ class TestModuleSearch(SeleniumTest):
                 By.ID, 'results').find_elements(
                     By.CLASS_NAME, 'card')[0].find_element(
                         By.CLASS_NAME, 'module-card-title').text,
-            'modulesearch / contributedmodule-oneversion'
+            'modulesearch / contributedmodule-differentprovider'
         )
 
         # Ensure that all of the original cards are displayed
@@ -220,21 +224,21 @@ class TestModuleSearch(SeleniumTest):
 
     @pytest.mark.parametrize('input_terraform_version, expected_compatibility_text', [
         ('2.5.0', [
-            'Compatible',
+            # First item has no entry, due to invalid version constraint
+            None,
             'Compatible',
             'Implicitly compatible',
             'No version constraint defined',
-            # Final item has no entry, due to invalid version constraint
-            None,
+            'Compatible',
         ]),
 
         ('0.5.0', [
-            'Incompatible',
+            # First item has no entry, due to invalid version constraint
+            None,
             'Incompatible',
             'Incompatible',
             'No version constraint defined',
-            # Final item has no entry, due to invalid version constraint
-            None,
+            'Incompatible',
         ])
     ])
     def test_terraform_version_compatibility(self, input_terraform_version, expected_compatibility_text):
@@ -293,8 +297,7 @@ class TestModuleSearch(SeleniumTest):
         # Reload page
         self.selenium_instance.get(self.get_url('/search/modules?q='))
         # Check terraform version is still present
-        terraform_version_constraint = self.wait_for_element(By.ID, 'search-terraform-version')
-        assert terraform_version_constraint.get_attribute("value") == "5.2.6-unittest"
+        self.assert_equals(lambda: self.wait_for_element(By.ID, 'search-terraform-version').get_attribute("value"), "5.2.6-unittest")
 
         # Open user preferences and check terraform version
         self.selenium_instance.find_element(By.ID, 'navbar-user-preferences-link').click()

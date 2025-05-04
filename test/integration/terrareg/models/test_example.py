@@ -297,7 +297,9 @@ module &quot;test-usage3&quot; {
         """Test get_readme_html method of example, ensuring it replaces example source and converts from markdown to HTML."""
 
         with unittest.mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major_plus_one}.0.0'), \
-                unittest.mock.patch('terrareg.config.Config.EXAMPLE_ANALYTICS_TOKEN', example_analytics_token):
+                unittest.mock.patch('terrareg.config.Config.EXAMPLE_ANALYTICS_TOKEN', example_analytics_token), \
+                unittest.mock.patch('terrareg.config.Config.PUBLIC_URL', None), \
+                unittest.mock.patch('terrareg.config.Config.DOMAIN_NAME', None):
             module_version = ModuleVersion(ModuleProvider(Module(Namespace('moduledetails'), 'readme-tests'), 'provider'), '1.0.0')
             example = Example(module_version=module_version, module_path='examples/testreadmeexample')
             # Set README in module version

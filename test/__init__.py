@@ -6,6 +6,7 @@ import os
 import unittest.mock
 
 import pytest
+from sqlalchemy import text
 
 import terrareg.models
 from terrareg.models import (
@@ -407,6 +408,15 @@ class BaseTest:
                             user_group=user_group,
                             namespace=namespace,
                             permission_type=UserGroupNamespacePermissionType(permission_type))
+ 
+        # Reset all sequences in postgres, as it cannot handle inserting custom values into fields that
+        # normally use sequences
+        with Database.get_engine().connect() as conn:
+            if conn.engine.name == "postgresql":
+                for table in ['namespace', 'module_provider', 'module_version', 'module_details']:
+                    conn.execute(
+                        text(f"SELECT setval('{table}_id_seq', (SELECT COALESCE(MAX(id), 1) FROM {table}))")
+                    )
 
     def _test_unauthenticated_read_api_endpoint_test(self, request_callback):
         """Check unauthenticated read API endpoint access"""

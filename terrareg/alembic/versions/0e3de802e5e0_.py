@@ -17,7 +17,7 @@ branch_labels = None
 depends_on = None
 
 def MediumBlob():
-    return sa.BLOB().with_variant(sqlalchemy.dialects.mysql.MEDIUMBLOB(), "mysql")
+    return sa.BLOB().with_variant(sqlalchemy.dialects.mysql.MEDIUMBLOB(), "mysql").with_variant(sa.LargeBinary(), "postgresql")
 
 def upgrade():
     with op.batch_alter_table('module_version') as batch_op:

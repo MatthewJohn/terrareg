@@ -214,8 +214,11 @@ class AnalyticsEngine:
 
         # Group select by analytics token and module provider ID
         select = select.group_by(
+            db.module_provider.c.id,
+            db.namespace.c.namespace,
+            db.module_provider.c.module,
+            db.module_provider.c.provider,
             db.analytics.c.analytics_token,
-            db.module_provider.c.id
         )
         return select
 
@@ -232,11 +235,15 @@ class AnalyticsEngine:
             sqlalchemy.func.count(),
             select.c.namespace,
             select.c.module,
-            select.c.provider
+            select.c.provider,
+            select.c.id
         ).select_from(
             select
         ).group_by(
-            select.c.id
+            select.c.id,
+            select.c.namespace,
+            select.c.module,
+            select.c.provider,
         )
 
         with db.get_connection() as conn:
@@ -548,8 +555,15 @@ class AnalyticsEngine:
             help='Analytics tokens used in a module provider'
         )
         db = Database.get()
+        query = AnalyticsEngine.get_global_module_usage_base_query(include_empty_auth_token=True)
+        query = query.order_by(
+            db.namespace.c.namespace.asc(),
+            db.module_provider.c.module.asc(),
+            db.module_provider.c.provider.asc(),
+            db.analytics.c.analytics_token.asc(),
+        )
         with db.get_connection() as conn:
-            rows = conn.execute(AnalyticsEngine.get_global_module_usage_base_query(include_empty_auth_token=True)).fetchall()
+            rows = conn.execute(query).fetchall()
         for row in rows:
             module_provider_usage_metric.add_data_row(
                 value='1',

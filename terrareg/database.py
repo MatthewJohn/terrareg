@@ -284,14 +284,14 @@ class Database():
         return cls._INSTANCE
 
     @classmethod
-    def get_meta(cls):
+    def get_meta(cls) -> sqlalchemy.MetaData:
         """Return meta object"""
         if cls._META is None:
             cls._META = sqlalchemy.MetaData()
         return cls._META
 
     @classmethod
-    def get_engine(cls):
+    def get_engine(cls) -> sqlalchemy.engine.Engine:
         """Get singleton instance of engine."""
         if cls._ENGINE is None:
             cls._ENGINE = sqlalchemy.create_engine(
@@ -320,7 +320,7 @@ class Database():
 
         self._terraform_idp_authorization_code = sqlalchemy.Table(
             'terraform_idp_authorization_code', meta,
-            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
             sqlalchemy.Column('key', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False, unique=True),
             sqlalchemy.Column('data', Database.medium_blob()),
             sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
@@ -328,7 +328,7 @@ class Database():
 
         self._terraform_idp_access_token = sqlalchemy.Table(
             'terraform_idp_access_token', meta,
-            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
             sqlalchemy.Column('key', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False, unique=True),
             sqlalchemy.Column('data', Database.medium_blob()),
             sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
@@ -336,7 +336,7 @@ class Database():
 
         self._terraform_idp_subject_identifier = sqlalchemy.Table(
             'terraform_idp_subject_identifier', meta,
-            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
             sqlalchemy.Column('key', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False, unique=True),
             sqlalchemy.Column('data', Database.medium_blob()),
             sqlalchemy.Column('expiry', sqlalchemy.DateTime, nullable=False)
@@ -344,7 +344,7 @@ class Database():
 
         self._user_group = sqlalchemy.Table(
             'user_group', meta,
-            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False, unique=True),
             sqlalchemy.Column('site_admin', sqlalchemy.Boolean, default=False, nullable=False)
         )
@@ -386,7 +386,7 @@ class Database():
 
         self._namespace = sqlalchemy.Table(
             'namespace', meta,
-            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
             sqlalchemy.Column('namespace', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
             sqlalchemy.Column('display_name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('namespace_type', sqlalchemy.Enum(NamespaceType), nullable=False, default=NamespaceType.NONE)
@@ -394,7 +394,7 @@ class Database():
 
         self._namespace_redirect = sqlalchemy.Table(
             'namespace_redirect', meta,
-            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
             sqlalchemy.Column(
                 'namespace_id',
@@ -409,7 +409,7 @@ class Database():
 
         self._module_provider_redirect = sqlalchemy.Table(
             'module_provider_redirect', meta,
-            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
             # Original module name/provider
             sqlalchemy.Column('module', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
             sqlalchemy.Column('provider', sqlalchemy.String(GENERAL_COLUMN_SIZE), nullable=False),
@@ -480,7 +480,7 @@ class Database():
 
         self._module_details = sqlalchemy.Table(
             'module_details', meta,
-            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
             sqlalchemy.Column('readme_content', Database.medium_blob()),
             sqlalchemy.Column('terraform_docs', Database.medium_blob()),
             sqlalchemy.Column('tfsec', Database.medium_blob()),
@@ -604,7 +604,7 @@ class Database():
         # Additional files for module provider (e.g. additional README files)
         self._module_version_file = sqlalchemy.Table(
             'module_version_file', meta,
-            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
             sqlalchemy.Column(
                 'module_version_id',
                 sqlalchemy.ForeignKey(
@@ -649,7 +649,7 @@ class Database():
 
         self._provider_category = sqlalchemy.Table(
             'provider_category', meta,
-            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('slug', sqlalchemy.String(GENERAL_COLUMN_SIZE), unique=True),
             sqlalchemy.Column('user_selectable', sqlalchemy.Boolean, default=True),
@@ -657,7 +657,7 @@ class Database():
 
         self._repository = sqlalchemy.Table(
             'repository', meta,
-            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
             sqlalchemy.Column('provider_id', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('owner', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('name', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
@@ -805,7 +805,7 @@ class Database():
 
         self._audit_history = sqlalchemy.Table(
             'audit_history', meta,
-            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True),
+            sqlalchemy.Column('id', sqlalchemy.Integer, primary_key=True, autoincrement=True),
             sqlalchemy.Column('timestamp', sqlalchemy.DateTime),
             sqlalchemy.Column('username', sqlalchemy.String(GENERAL_COLUMN_SIZE)),
             sqlalchemy.Column('action', sqlalchemy.Enum(AuditAction)),

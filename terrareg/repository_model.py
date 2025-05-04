@@ -62,7 +62,7 @@ class Repository:
                 clone_url=clone_url,
                 logo_url=logo_url
             ))
-            return res.lastrowid
+            return res.inserted_primary_key[0]
 
     @classmethod
     def get_repositories_by_owner_list(cls, owners: List[str]) -> List['Repository']:

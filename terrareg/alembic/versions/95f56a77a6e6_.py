@@ -21,7 +21,10 @@ def upgrade():
     op.add_column('module_version', sa.Column('beta', sa.BOOLEAN(), nullable=True))
 
     # Set any pre-existing rows to beta 0
-    op.execute("""UPDATE module_version set beta=0""")
+    false_value = "0"
+    if op.get_bind().engine.name == 'postgresql':
+        false_value = "false"
+    op.execute(f"""UPDATE module_version set beta={false_value}""")
 
     # Disable nullable flag in column
     with op.batch_alter_table('module_version', schema=None) as batch_op:

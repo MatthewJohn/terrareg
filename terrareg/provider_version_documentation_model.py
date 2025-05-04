@@ -93,7 +93,7 @@ class ProviderVersionDocumentation:
         )
         with db.get_connection() as conn:
             res = conn.execute(insert)
-            return res.lastrowid
+            return res.inserted_primary_key[0]
 
     @classmethod
     def get_by_pk(cls, pk: int):

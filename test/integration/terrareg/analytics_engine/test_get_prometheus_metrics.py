@@ -69,15 +69,15 @@ module_version_minor_count 3
 module_version_patch_count 2
 # HELP module_provider_usage Analytics tokens used in a module provider
 # TYPE module_provider_usage counter
+module_provider_usage{module_provider_id="secondnamespace/othernamespacemodule/anotherprovider", analytics_token="duplicate-application"} 1
+module_provider_usage{module_provider_id="testnamespace/noanalyticstoken/testprovider", analytics_token="withoutanalytics"} 1
+module_provider_usage{module_provider_id="testnamespace/publishedmodule/secondprovider", analytics_token="duplicate-application"} 1
+module_provider_usage{module_provider_id="testnamespace/publishedmodule/secondprovider", analytics_token="test-app-using-second-module"} 1
 module_provider_usage{module_provider_id="testnamespace/publishedmodule/testprovider", analytics_token="application-using-old-version"} 1
 module_provider_usage{module_provider_id="testnamespace/publishedmodule/testprovider", analytics_token="duplicate-application"} 1
-module_provider_usage{module_provider_id="testnamespace/publishedmodule/secondprovider", analytics_token="duplicate-application"} 1
-module_provider_usage{module_provider_id="testnamespace/secondmodule/testprovider", analytics_token="duplicate-application"} 1
-module_provider_usage{module_provider_id="secondnamespace/othernamespacemodule/anotherprovider", analytics_token="duplicate-application"} 1
 module_provider_usage{module_provider_id="testnamespace/publishedmodule/testprovider", analytics_token="second-application"} 1
-module_provider_usage{module_provider_id="testnamespace/publishedmodule/secondprovider", analytics_token="test-app-using-second-module"} 1
-module_provider_usage{module_provider_id="testnamespace/secondmodule/testprovider", analytics_token="test-app-using-second-module"} 1
 module_provider_usage{module_provider_id="testnamespace/publishedmodule/testprovider", analytics_token="test-application"} 1
 module_provider_usage{module_provider_id="testnamespace/publishedmodule/testprovider", analytics_token="without-analytics-key"} 1
-module_provider_usage{module_provider_id="testnamespace/noanalyticstoken/testprovider", analytics_token="withoutanalytics"} 1
+module_provider_usage{module_provider_id="testnamespace/secondmodule/testprovider", analytics_token="duplicate-application"} 1
+module_provider_usage{module_provider_id="testnamespace/secondmodule/testprovider", analytics_token="test-app-using-second-module"} 1
 """.strip()

@@ -124,7 +124,8 @@ class ApiTerraregModuleProviderSettings(ErrorCatchingResource):
         # If git provider ID has been specified,
         # validate it and update attribute of module provider.
         if args.git_provider_id is not None:
-            git_provider = terrareg.models.GitProvider.get(id=args.git_provider_id)
+            git_provider = terrareg.models.GitProvider.get(id=args.git_provider_id) if args.git_provider_id else None
+
             # If a non-empty git provider ID was provided and none
             # were returned, return an error about invalid
             # git provider ID

@@ -174,5 +174,7 @@ module "test-module" {
         with unittest.mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE', '>= {major}.{minor}.{patch}, < {major}.{minor_plus_one}.0'), \
                 unittest.mock.patch('terrareg.config.Config.TERRAFORM_EXAMPLE_VERSION_TEMPLATE_PRE_MAJOR',
                                     '>= {major}.{minor}.{patch}, < {major}.{minor}.{patch_plus_one}'), \
-                unittest.mock.patch('terrareg.config.Config.EXAMPLE_ANALYTICS_TOKEN', example_analytics_token):
+                unittest.mock.patch('terrareg.config.Config.EXAMPLE_ANALYTICS_TOKEN', example_analytics_token), \
+                unittest.mock.patch('terrareg.config.Config.DOMAIN_NAME', None), \
+                unittest.mock.patch('terrareg.config.Config.PUBLIC_URL', None):
             assert example_file.get_content(server_hostname='example.com') == expected_output
