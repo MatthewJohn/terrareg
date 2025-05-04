@@ -297,8 +297,7 @@ class TestModuleSearch(SeleniumTest):
         # Reload page
         self.selenium_instance.get(self.get_url('/search/modules?q='))
         # Check terraform version is still present
-        terraform_version_constraint = self.wait_for_element(By.ID, 'search-terraform-version')
-        assert terraform_version_constraint.get_attribute("value") == "5.2.6-unittest"
+        self.assert_equals(lambda: self.wait_for_element(By.ID, 'search-terraform-version').get_attribute("value"), "5.2.6-unittest")
 
         # Open user preferences and check terraform version
         self.selenium_instance.find_element(By.ID, 'navbar-user-preferences-link').click()
