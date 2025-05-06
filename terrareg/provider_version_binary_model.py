@@ -86,7 +86,7 @@ class ProviderVersionBinary:
         )
         with db.get_connection() as conn:
             res = conn.execute(insert)
-            return res.lastrowid
+            return res.inserted_primary_key[0]
 
     @classmethod
     def get(cls,

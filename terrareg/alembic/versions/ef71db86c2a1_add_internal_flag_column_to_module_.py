@@ -25,14 +25,19 @@ def upgrade():
 
     # Iterate through all module providers, updating latest version ID
     c = op.get_bind()
-    res = c.execute("""
+    false_value = "0"
+    true_value = "1"
+    if op.get_bind().engine.name == 'postgresql':
+        false_value = "false"
+        true_value = "true"
+    res = c.execute(f"""
         SELECT
             module_version.id AS module_version_id,
             module_version.version as version,
             module_provider.id AS module_provider_id
         FROM module_version
         INNER JOIN module_provider ON module_provider.id=module_version.module_provider_id
-        WHERE module_version.beta=0 AND module_version.published=1
+        WHERE module_version.beta={false_value} AND module_version.published={true_value}
     """)
     latest_versions = {}
     for row in res:
@@ -65,7 +70,7 @@ def upgrade():
     op.add_column('module_version', sa.Column('internal', sa.BOOLEAN(), nullable=True))
 
     # Set any pre-existing rows to internal false
-    op.execute("""UPDATE module_version set internal=0""")
+    op.execute(f"""UPDATE module_version set internal={false_value}""")
 
     # Disable nullable flag in column
     with op.batch_alter_table('module_version', schema=None) as batch_op:

@@ -241,7 +241,8 @@ def mock_module_version(request):
         module_provider_data['versions'][self._version] = {
             'beta': False,
             'internal': False,
-            'published': False
+            'published': False,
+            'git_sha': None,
         }
         
         return previous_published
@@ -274,6 +275,7 @@ def mock_module_version(request):
             'extraction_version': unittest_data.get('extraction_version', EXTRACTION_VERSION),
             'git_path': unittest_data.get('git_path', None),
             'archive_git_path': unittest_data.get('archive_git_path', False),
+            'git_sha': unittest_data.get('git_sha'),
         }
     mock_method(request, 'terrareg.models.ModuleVersion._get_db_row', _get_db_row)
 

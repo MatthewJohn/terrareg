@@ -125,6 +125,37 @@ mysql-integration-selenium-tests:
     reports:
       junit: pytest-report.xml
 
+postgres-integration-selenium-tests:
+  stage: test
+  extends: [.test_image, .limit_release_and_non_pushes]
+  #needs:
+  #  - unit-integration-selenium-tests
+  services:
+    - name: postgres:17.4
+      alias: postgres
+    - name: minio/minio
+      alias: minio
+      command: ["server", "/data", "--console-address", ":9001"]
+  variables:
+    # Set database url for integration tests
+    INTEGRATION_DATABASE_URL: postgresql+psycopg2://terrareg:terrareg@postgres/terrareg
+    # Set datbase URL for schema migration
+    DATABASE_URL: postgresql+psycopg2://terrareg:terrareg@postgres/terrareg
+    MINIO_ACCESS_KEY: $AWS_ACCESS_KEY_ID
+    MINIO_SECRET_KEY: $AWS_SECRET_ACCESS_KEY
+    POSTGRES_USER: terrareg
+    POSTGRES_PASSWORD: terrareg
+    POSTGRES_DATABASE: terrareg
+  script:
+    # Perform database migration
+    - poetry run alembic upgrade head
+    # Run integration tests
+    - http_proxy= HTTP_PROXY= poetry run coverage run -m pytest --verbose --junitxml=./pytest-report.xml ./test/integration ./test/selenium || http_proxy= HTTP_PROXY= poetry run pytest --verbose --last-failed --last-failed-no-failures=none ./test/integration ./test/selenium
+    - poetry run coverage report --include='./terrareg/*'
+    - poetry run coverage xml
+  artifacts:
+    reports:
+      junit: pytest-report.xml
 
 spell-checker:
   stage: test

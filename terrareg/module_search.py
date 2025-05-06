@@ -69,9 +69,13 @@ class ModuleSearch(object):
             db.module_version.c.published == True,
             db.module_version.c.beta == False
         ).group_by(
-            db.module_provider.c.id
+            db.module_provider.c.id,
+            db.module_version.c.id,
+            db.namespace.c.id,
         ).order_by(
-            sqlalchemy.desc(relevance)
+            sqlalchemy.desc(relevance),
+            db.module_provider.c.module,
+            db.module_provider.c.provider,
         )
 
         return select

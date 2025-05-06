@@ -371,7 +371,7 @@ curl -X POST {publish_api_key_argument}\\
         self.assert_equals(lambda: self.selenium_instance.current_url, self.get_url('/initial-setup'))
 
         # Check page title
-        assert self.selenium_instance.title == 'Initial Setup - Terrareg'
+        self.assert_equals(lambda: self.selenium_instance.title, 'Initial Setup - Terrareg')
 
         # STEP 1 - Auth environment variables
         self._test_auth_vars_step()
