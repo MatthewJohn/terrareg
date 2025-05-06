@@ -1,5 +1,37 @@
 # Changelog
 
+# [4.1.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.0.0...v4.1.0) (2025-05-06)
+
+
+### Bug Fixes
+
+* Add columns to group by for module search for tables that are included in the select ([96a531e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/96a531e440af8c134e0f8687046c9fac00cdb136)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* Cast action enum to a string to fix ordering of action in audit ([e81fd5e](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e81fd5e2a11dcd86102b2b4cad364515bee089b6)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* **db:** Fix enum migrations for Postgres ([2354fb3](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2354fb335a72c05c01d3bd7fffda2ad44f35e871)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* **db:** Handle constraints not existing (by checking if they exist) ([60e7d11](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/60e7d11345df81a263c4568a7300cf3e8016f1e7)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* **db:** Mark all 'id' columns as incremental, ensuring that incrementing IDs are used in Postgres ([ccba696](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/ccba6962f1167df33776f0582fb412a5a75f4564)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* Ensure audit action column is cast where performing string comparison ([48149fc](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/48149fcd959b34bf74975295181f0d9b43a39036)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* Fix enum creation for Postgres, as the Enum must be created beforehand ([e5b4d54](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/e5b4d541fecf88350bae9b0b51480bd33570dafa)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* Fix non-consistent ordering of results in Postgresl in search when relevant scores are the same. ([58086a5](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/58086a5fb617651dff871943376495dcd6176beb)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* Fix provider search base query to include all columns in WHERE clause in the GROUP BY clause ([0eba7dc](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/0eba7dc852ede848488abb3660cf5f8a75c05970)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* Fix sql query, where table is being selected, which treats first argument as a where clause, resulting in the column being added to "WHERE" without an operator. ([c787ab1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/c787ab1b9c3bff0279e2b82ae23ab3204d222ac5)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* Handle differences in true/false values in Postgres for DB migration scripts ([180cdaa](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/180cdaa6146879fb1255d45166c4be4470b86f25)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* Handle git_provider_id being an empty string and do not treat as a set value in create module provider endpoint ([8387d66](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8387d663718360446cf4c35faa16ceb9a1917045)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* Include all selected fields that are grouped by in analytics base and module usage count queries ([a31e8d1](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/a31e8d1e7b6d4b48ea5967b2d736a2bf47c0e52d)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* Include ID column in analytics query, as this is used in the group_by, meaning it must be included in the selected fields, otherwise Postgres will throw an error ([8878ff6](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/8878ff6375074217193ce30c4f3b834f836b823a)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* Lower-case all remaining non-timestamp fields when ordering audit data. Update tests to expect the fact that the engines still don't match. ([2231ba7](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/2231ba733a7f593e263a9006c6ea2796a8059c47)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* Only attempt to resolve GitRepository when updating module provider if the git provider ID is non-empty ([376bf6a](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/376bf6a4231fc7a526466319e08395251e29c39d)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* Order rows returned for prometheus metrics ([fc3c1db](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/fc3c1db06edb178457d96b46379d32285ebb876c)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* Perform lower-case comparison of username in audit filtering ([43cf696](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/43cf6966c4c328c4cb87f480a626b7c86317db72)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* Replace use of `lastrowid` with `inserted_primary_key` when obtaining primary key values of inserted rows. ([bc00185](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/bc0018563f9c39e368514b3f171ce837f36c7664)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* Update DB migrations to use LargeBinary as variant to "blob" for Postgresql as blob is not available for Postgresql ([0173908](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/01739087a2038f9d768d9e83292730f5489ae248)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+
+
+### Features
+
+* Add package for postgresql connector ([74c792c](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/74c792c33edc3c691eb18cc05f24060dfb404f75)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+* **database:** Add support for Postgres server ([1197088](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/1197088b4b912f9e0b0e83304ac1d68f7bc5a54a)), closes [#562](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/562)
+
 # [4.0.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v3.13.5...v4.0.0) (2025-04-19)
 
 
