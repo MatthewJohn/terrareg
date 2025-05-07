@@ -249,9 +249,11 @@ Default: `Contributed`
 URL for database.
 Defaults to local SQLite database.
 
-To setup SQLite database, use `sqlite:///<path to SQLite DB>`
+For SQLite database, use `sqlite:///<path to SQLite DB>`
 
-To setup MySQL, use `mysql+mysqlconnector://<user>:<password>@<host>[:<port>]/<database>`
+For MySQL, use `mysql+mysqlconnector://<user>:<password>@<host>[:<port>]/<database>`
+
+For Postgeres, use `postgresql+psycopg2://<user>:<password>@<host>[:<port>]/<database>`
 
 
 Default: `sqlite:///modules.db`
