@@ -11,6 +11,15 @@ If only one of these methods is to be used, the other can be disabled:
  * [ALLOW_MODULE_HOSTING](../CONFIG.md#allow_module_hosting) - enables/disables hosting module source code
  * [ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER](../CONFIG.md#allow_custom_git_url_module_provider) and [ALLOW_CUSTOM_GIT_URL_MODULE_VERSION](../CONFIG.md#allow_custom_git_url_module_version) - enables disables setting git URLs on modules/within metadata file.
 
+The logic of how a module is uploaded/served can be seen with the following:
+
+|| Index (Upload) method || Terraform download method || Instructions ||
+|| Archive (zip) upload  || Zip archive || `ALLOW_MODULE_HOSTING` must be set to `true` or `enforce`. ||
+|| Archive (zip) upload  || Git         || Not available ||
+|| Git repo              || Zip archive || `ALLOW_MODULE_HOSTING` must be set to `enforce`. `DELETE_EXTERNALLY_HOSTED_ARTIFACTS` must be disabled. ||
+|| Git repo              || Git         || `ALLOW_MODULE_HOSTING` must be set to `true` or `false` ||
+
+See below for how the different module hosting/indexing methods work.
 
 ## Module hosting
 
@@ -21,6 +30,13 @@ Modules are stored in Terrareg in the [DATA_DIRECTORY](../CONFIG.md#data_directo
 When a module is used in Terraform, Terraform obtains the module source code directly from Terrareg.
 
 Since there is not currently any global authentication to access modules in the registry, this means modules can be downloaded anonymously.
+
+### Excluding files from module archives
+
+Files in uploaded archives/Git repositories can be excluded from module archives during indexing.
+A `.tfignore` file can be placed at the root of the repository/uploaded archive. The file should contain patterns similar to .gitignore ignore syntax.
+
+This file has not affect when hosting repositories via Git URLs.
 
 ## Git-based
 
