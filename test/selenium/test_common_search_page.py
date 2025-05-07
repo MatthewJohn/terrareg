@@ -82,8 +82,11 @@ class TestModuleSearch(SeleniumTest):
         ]
         for card in self.selenium_instance.find_element(By.ID, "results-providers-content").find_elements(By.CLASS_NAME, "result-box"):
             card_details = provider_cards.pop(0)
+            card_asserted = False
             for link in card.find_elements(By.TAG_NAME, "a"):
                 assert link.get_attribute("href") == self.get_url(card_details["link"])
+                card_asserted = True
+            assert card_asserted
             assert card.find_element(By.CLASS_NAME, "module-card-title").text == card_details["text"]
 
         # Check module cards
@@ -97,9 +100,12 @@ class TestModuleSearch(SeleniumTest):
         ]
         for card in self.selenium_instance.find_element(By.ID, "results-modules-content").find_elements(By.CLASS_NAME, "result-box"):
             card_details = module_cards.pop(0)
+            card_asserted = False
             for link in card.find_elements(By.TAG_NAME, "a"):
                 if "provider-logo-link" not in link.get_attribute("class"):
                     assert link.get_attribute("href") == self.get_url(card_details["link"])
+                    card_asserted = True
+            assert card_asserted
             assert card.find_element(By.CLASS_NAME, "module-card-title").text == card_details["text"]
 
 
