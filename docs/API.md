@@ -1033,6 +1033,8 @@ Handle creation of module version.
 
 `/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/source.zip`
 
+`/v1/terrareg/modules/<string:namespace>/<string:name>/<string:provider>/<string:version>/<string:presign>/source.zip`
+
 Return source package of module version
 
 
