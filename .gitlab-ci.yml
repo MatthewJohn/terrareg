@@ -56,8 +56,6 @@ cache:
     HTTP_PROXY: $NOMAD_PROXY
     HTTPS_PROXY: $NOMAD_PROXY
     no_proxy: $NOMAD_NO_PROXY
-  except:
-    - "renovate/*"
 
 .before_script_python:
   before_script:
@@ -229,7 +227,9 @@ build-pr-image:
   tags: [nomad]
 
   rules:
-    - if: $CI_PIPELINE_SOURCE == 'push'
+    - if: '$CI_COMMIT_REF_NAME =~ /renovate\//'
+      when: never
+    - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
 
   # Use docker without docker-in-docker, as we're
   # passing through the docker socket
@@ -244,7 +244,10 @@ deploy_review:
   tags: [nomad]
   needs: [ build-pr-image ]
   rules:
+    - if: '$CI_COMMIT_REF_NAME =~ /renovate\//'
+      when: never
     - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
+
   image:
     name: hashicorp/terraform:1.5
     entrypoint: ["/bin/sh", "-c"]
