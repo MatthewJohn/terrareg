@@ -56,6 +56,8 @@ cache:
     HTTP_PROXY: $NOMAD_PROXY
     HTTPS_PROXY: $NOMAD_PROXY
     no_proxy: $NOMAD_NO_PROXY
+  except:
+    - "renovate/*"
 
 .before_script_python:
   before_script:
