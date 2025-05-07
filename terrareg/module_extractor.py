@@ -20,6 +20,7 @@ from werkzeug.utils import secure_filename
 import magic
 from bs4 import BeautifulSoup
 import markdown
+import pathspec
 
 import terrareg.models
 from terrareg.database import Database
@@ -43,6 +44,7 @@ class ModuleExtractor:
     """Provide extraction method of modules."""
 
     TERRAREG_METADATA_FILES = ['terrareg.json', '.terrareg.json']
+    IGNORE_FILE = ".tfignore"
     TERRAFORM_LOCK = threading.Lock()
 
     def __init__(self, module_version: 'terrareg.models.ModuleVersion'):
@@ -368,6 +370,14 @@ terraform {{
                 module_version_file = terrareg.models.ModuleVersionFile.create(module_version=self._module_version, path=file_name)
                 module_version_file.update_attributes(content=file_content)
 
+    def _get_pathspec_filter(self) -> Optional[pathspec.PathSpec]:
+        """Obtain pathspec filter, if it exists"""
+        ignore_file = safe_join_paths(self.archive_source_directory, self.IGNORE_FILE)
+        if os.path.isfile(ignore_file):
+            with open(ignore_file, "r") as fh:
+                return pathspec.PathSpec.from_lines(pathspec.patterns.GitWildMatchPattern, fh)
+        return None
+
     def _generate_archive(self):
         """Generate archive of extracted module"""
         # Create data directory path.
@@ -380,11 +390,25 @@ terraform {{
 
         file_storage.make_directory(self._module_version.base_directory)
 
-        def tar_filter(tarinfo):
+        pathspec_filter = self._get_pathspec_filter()
+
+        zip_excludes = []
+
+        def tar_filter(tarinfo: tarfile.TarInfo):
             """Filter files being added to tar archive"""
             # Do not include .git directory in archive
             if tarinfo.name == ".git":
                 return None
+
+            if tarinfo.name == self.IGNORE_FILE:
+                return None
+
+            # Check if file is part of ignore pattern
+            if pathspec_filter and pathspec_filter.match_file(tarinfo.name):
+                # Add file to exlcude list, to be used to exclude from zip generation
+                zip_excludes.append(tarinfo.name)
+                return None
+
             return tarinfo
 
         # Create tar.gz
@@ -397,15 +421,26 @@ terraform {{
             file_storage.upload_file(tar_file_path, self._module_version.base_directory, self._module_version.archive_name_tar_gz)
 
             # Create zip
-            # Use 'cwd' to ensure zip file is generated with directory structure
-            # from the root of the module.
             # Use subprocess to execute zip, rather than shutil.make_archive,
             # as make_archive is not thread-safe and changes the CWD of the main
             # process.
-            # Exclude .git directory from archive
             zip_file_path = os.path.join(temp_dir, self._module_version.archive_name_zip)
             subprocess.call(
-                ['zip', '-r', zip_file_path, '--exclude=./.git/*', '.'],
+                [
+                    'zip',
+                    '-r', zip_file_path,
+                    # Exclude .git directory from archive
+                    '--exclude=./.git/*',
+                    f'--exclude={self.IGNORE_FILE}'
+                ] + [
+                    f"--exclude={exclude_file}"
+                    for exclude_file in zip_excludes
+                    # for arg in ("--exclude", exclude_file)
+                ] + [
+                    '.'
+                ],
+                # Use 'cwd' to ensure zip file is generated with directory structure
+                # from the root of the module.
                 cwd=self.archive_source_directory
             )
             file_storage.upload_file(zip_file_path, self._module_version.base_directory, self._module_version.archive_name_zip)
