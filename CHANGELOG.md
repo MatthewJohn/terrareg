@@ -1,5 +1,12 @@
 # Changelog
 
+# [4.2.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.1.0...v4.2.0) (2025-05-08)
+
+
+### Features
+
+* Add support for .tfignore file to ignore files in module archives when supplying modules as archives ([73d7d95](https://gitlab.dockstudios.co.uk/pub/terrareg/commit/73d7d9566dd6a05db48760acbf8bc16d3e3f907f)), closes [#561](https://gitlab.dockstudios.co.uk/pub/terrareg/issues/561)
+
 # [4.1.0](https://gitlab.dockstudios.co.uk/pub/terrareg/compare/v4.0.0...v4.1.0) (2025-05-06)
 
 
