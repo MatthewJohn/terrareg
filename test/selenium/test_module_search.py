@@ -119,6 +119,7 @@ class TestModuleSearch(SeleniumTest):
         first_page_cards = []
         for card in self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card'):
             first_page_cards.append(card.find_element(By.CLASS_NAME, 'module-card-title').text)
+        assert len(first_page_cards) == 10
 
         # Select next page
         self.selenium_instance.find_element(By.ID, 'nextButton').click()
