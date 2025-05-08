@@ -614,7 +614,11 @@ class TestProcessUpload(TerraregIntegrationTest):
         True,
         False
     ])
-    def test_non_root_repo_directory(self, archive_git_path):
+    @pytest.mark.parametrize('create_ignore_file', [
+        True,
+        False,
+    ])
+    def test_non_root_repo_directory(self, archive_git_path: bool, create_ignore_file: bool):
         """Test uploading a module within a sub-directory of a module."""
         test_upload = UploadTestModule()
 
@@ -647,8 +651,26 @@ class TestProcessUpload(TerraregIntegrationTest):
                         }))
 
                     # Create README
-                    with open(os.path.join(module_dir, 'README.md'), 'w') as main_tf_fh:
-                        main_tf_fh.writelines(UploadTestModule.TEST_README_CONTENT)
+                    with open(os.path.join(module_dir, 'README.md'), 'w') as readme_fh:
+                        readme_fh.writelines(UploadTestModule.TEST_README_CONTENT)
+
+                    # Ignore file
+                    if create_ignore_file:
+                        with open(os.path.join(module_dir if archive_git_path else upload_directory, '.tfignore'), 'w') as tfignore_fh:
+                            tfignore_fh.writelines("""
+# Ignore file in root
+some_file_to_ignore_in_root.txt
+
+# A file in a module directory
+modules/testmodule1/file_to_ignore.txt
+subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/file_to_ignore.txt
+
+**/glob_ignore_file.*
+""")
+
+                    # File to ignore
+                    with open(os.path.join(module_dir, "some_file_to_ignore_in_root.txt"), "a"):
+                        pass
 
                     os.mkdir(os.path.join(module_dir, 'modules'))
 
@@ -658,6 +680,13 @@ class TestProcessUpload(TerraregIntegrationTest):
                         os.mkdir(root_dir)
                         with open(os.path.join(root_dir, 'main.tf'), 'w') as main_tf_fh:
                             main_tf_fh.writelines(UploadTestModule.SUB_MODULE_MAIN_TF.format(itx=itx))
+
+                        # File to ignore
+                        with open(os.path.join(root_dir, "file_to_ignore.txt"), "a"):
+                            pass
+                        # File to ignore with glob
+                        with open(os.path.join(root_dir, "glob_ignore_file.txt"), "a"):
+                            pass
 
                     os.mkdir(os.path.join(module_dir, 'examples'))
 
@@ -681,26 +710,42 @@ class TestProcessUpload(TerraregIntegrationTest):
                     ]
 
                     if archive_git_path:
-                        assert sorted(zip_contents) == [
-                            'README.md',
-                            'examples/testexample1/main.tf',
-                            'examples/testexample2/main.tf',
-                            'main.tf',
-                            'modules/testmodule1/main.tf',
-                            'modules/testmodule2/main.tf',
-                            'terrareg.json'
-                        ]
+                        assert sorted(zip_contents) == sorted(
+                            [
+                                'README.md',
+                                'examples/testexample1/main.tf',
+                                'examples/testexample2/main.tf',
+                                'main.tf',
+                                'modules/testmodule1/main.tf',
+                                'modules/testmodule2/main.tf',
+                                'modules/testmodule2/file_to_ignore.txt',
+                                'terrareg.json'
+                            ] + ([
+                                'some_file_to_ignore_in_root.txt',
+                                'modules/testmodule1/file_to_ignore.txt',
+                                'modules/testmodule1/glob_ignore_file.txt',
+                                'modules/testmodule2/glob_ignore_file.txt',
+                            ] if not create_ignore_file else [])
+                        )
 
                     else:
-                        assert sorted(zip_contents) == [
-                            'subdirectory/in/testprocessupload-git-path-test/README.md',
-                            'subdirectory/in/testprocessupload-git-path-test/examples/testexample1/main.tf',
-                            'subdirectory/in/testprocessupload-git-path-test/examples/testexample2/main.tf',
-                            'subdirectory/in/testprocessupload-git-path-test/main.tf',
-                            'subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/main.tf',
-                            'subdirectory/in/testprocessupload-git-path-test/modules/testmodule2/main.tf',
-                            'subdirectory/in/testprocessupload-git-path-test/terrareg.json'
-                        ]
+                        assert sorted(zip_contents) == sorted(
+                            [
+                                'subdirectory/in/testprocessupload-git-path-test/README.md',
+                                'subdirectory/in/testprocessupload-git-path-test/examples/testexample1/main.tf',
+                                'subdirectory/in/testprocessupload-git-path-test/examples/testexample2/main.tf',
+                                'subdirectory/in/testprocessupload-git-path-test/main.tf',
+                                'subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/main.tf',
+                                'subdirectory/in/testprocessupload-git-path-test/modules/testmodule2/main.tf',
+                                'subdirectory/in/testprocessupload-git-path-test/modules/testmodule2/file_to_ignore.txt',
+                                'subdirectory/in/testprocessupload-git-path-test/terrareg.json'
+                            ] + ([
+                                'subdirectory/in/testprocessupload-git-path-test/some_file_to_ignore_in_root.txt',
+                                'subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/file_to_ignore.txt',
+                                'subdirectory/in/testprocessupload-git-path-test/modules/testmodule1/glob_ignore_file.txt',
+                                'subdirectory/in/testprocessupload-git-path-test/modules/testmodule2/glob_ignore_file.txt',
+                            ] if not create_ignore_file else [])
+                        )
 
 
             # Ensure README is present in module version
@@ -1717,7 +1762,7 @@ resource "aws_s3_bucket" "test" {
         namespace = Namespace(name='testprocessupload')
         module = Module(namespace=namespace, name='test-module')
         module_provider = ModuleProvider.get(module=module, name='badupload')
-        
+
         assert module_provider is None
 
     def test_uploading_module_with_custom_tab_files(self):
@@ -1791,7 +1836,7 @@ resource "aws_s3_bucket" "test" {
             def __init__(self, source):
                 self._source = source
                 self.filename = 'upload.zip'
-            
+
             def save(self, dest):
                 shutil.copy(self._source, dest)
 

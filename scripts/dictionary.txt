@@ -145,3 +145,4 @@ prepending
 FH
 netloc
 opentofu
+pathspec
