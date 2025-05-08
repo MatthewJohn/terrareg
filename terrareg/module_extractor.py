@@ -405,7 +405,7 @@ terraform {{
 
             # Check if file is part of ignore pattern
             if pathspec_filter and pathspec_filter.match_file(tarinfo.name):
-                # Add file to exlcude list, to be used to exclude from zip generation
+                # Add file to exclude list, to be used to exclude from zip generation
                 zip_excludes.append(tarinfo.name)
                 return None
 
