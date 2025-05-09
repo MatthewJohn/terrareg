@@ -1257,6 +1257,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Running tests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#additional-debug" class="md-nav__link">
+    <span class="md-ellipsis">
+      Additional debug
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1398,10 +1413,11 @@ brew install libmagic
 sudo apt-get install libmagic1
 
 # Install depdencies:
-pip install -r requirements.txt
+pip install poetry
+poetry install --no-root --with=dev
 
 # Initialise database and start server:
-alembic upgrade head
+poetry run alembic upgrade head
 
 # Set random admin authentication token - the password used for authenticating as the built-in admin user
 export ADMIN_AUTHENTICATION_TOKEN=MySuperSecretPassword
@@ -1417,34 +1433,43 @@ wget https://github.com/aquasecurity/tfsec/releases/download/v1.26.0/tfsec-linux
 wget https://github.com/infracost/infracost/releases/download/v0.10.10/infracost-linux-${arch}.tar.gz &amp;&amp; tar -zxvf infracost-linux-${arch}.tar.gz infracost-linux-${arch} &amp;&amp; mv infracost-linux-${arch} ./bin/infracost &amp;&amp; chmod +x ./bin/infracost &amp;&amp; rm infracost-linux-${arch}.tar.gz
 
 # Run the server
-python ./terrareg.py
+poetry run python ./terrareg.py
 </code></pre>
 <p>The site can be accessed at http://localhost:5000</p>
 <h2 id="generating-db-changes">Generating DB changes</h2>
 <p>Once changes are made to a</p>
 <pre><code># Ensure database is up-to-date before generating schema migrations
-alembic upgrade head
+poetry run alembic upgrade head
 
 # Generate migration
-alembic revision --autogenerate
+poetry run alembic revision --autogenerate
 </code></pre>
 <h2 id="applying-db-changes">Applying DB changes</h2>
-<pre><code>alembic upgrade head
+<pre><code>poetry run alembic upgrade head
 </code></pre>
 <h2 id="running-tests">Running tests</h2>
 <pre><code># Install dev requirements
-pip install -r requirements-dev.txt
+pip install poetry
+poetry install --no-root --with=dev
 
 # Run all tests
-pytest
+poetry run pytest
 
 # Running unit/integration/selenium tests individually
-pytest ./test/unit
-pytest ./test/integration
-pytest ./test/selenium
+poetry run pytest ./test/unit
+poetry run pytest ./test/integration
+poetry run pytest ./test/selenium
 
 # Running a specific test
-pytest -k test_setup_page
+poetry run pytest -k test_setup_page
+</code></pre>
+<h3 id="additional-debug">Additional debug</h3>
+<ul>
+<li><code>DEBUG</code> can be enabled to show additional information:</li>
+<li>SQL query debug from SQLalchemy</li>
+<li>Show exceptions in API/UI</li>
+</ul>
+<pre><code>DEBUG=true poetry run pytest
 </code></pre>
 
 

@@ -902,6 +902,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Module hosting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#excluding-files-from-module-archives" class="md-nav__link">
+    <span class="md-ellipsis">
+      Excluding files from module archives
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1254,11 +1269,22 @@
 <li><a href="../../CONFIG/#allow_module_hosting">ALLOW_MODULE_HOSTING</a> - enables/disables hosting module source code</li>
 <li><a href="../../CONFIG/#allow_custom_git_url_module_provider">ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER</a> and <a href="../../CONFIG/#allow_custom_git_url_module_version">ALLOW_CUSTOM_GIT_URL_MODULE_VERSION</a> - enables disables setting git URLs on modules/within metadata file.</li>
 </ul>
+<p>The logic of how a module is uploaded/served can be seen with the following:</p>
+<p>|| Index (Upload) method || Terraform download method || Instructions ||
+|| Archive (zip) upload  || Zip archive || <code>ALLOW_MODULE_HOSTING</code> must be set to <code>true</code> or <code>enforce</code>. ||
+|| Archive (zip) upload  || Git         || Not available ||
+|| Git repo              || Zip archive || <code>ALLOW_MODULE_HOSTING</code> must be set to <code>enforce</code>. <code>DELETE_EXTERNALLY_HOSTED_ARTIFACTS</code> must be disabled. ||
+|| Git repo              || Git         || <code>ALLOW_MODULE_HOSTING</code> must be set to <code>true</code> or <code>false</code> ||</p>
+<p>See below for how the different module hosting/indexing methods work.</p>
 <h2 id="module-hosting">Module hosting</h2>
 <p>Modules are indexed by uploading a zip/tar archive of the code to the upload endpoint.</p>
 <p>Modules are stored in Terrareg in the <a href="../../CONFIG/#data_directory">DATA_DIRECTORY</a> - it is important to ensure this path is mounted to persistent storage, so that the data is not lost between container rebuilds/upgrades.</p>
 <p>When a module is used in Terraform, Terraform obtains the module source code directly from Terrareg.</p>
 <p>Since there is not currently any global authentication to access modules in the registry, this means modules can be downloaded anonymously.</p>
+<h3 id="excluding-files-from-module-archives">Excluding files from module archives</h3>
+<p>Files in uploaded archives/Git repositories can be excluded from module archives during indexing.
+A <code>.tfignore</code> file can be placed at the root of the repository/uploaded archive. The file should contain patterns similar to .gitignore ignore syntax.</p>
+<p>This file has not affect when hosting repositories via Git URLs.</p>
 <h2 id="git-based">Git-based</h2>
 <p>Git can be used as the source for modules.</p>
 <p>Each module can be configured with a repository clone url.</p>
