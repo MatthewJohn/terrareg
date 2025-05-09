@@ -155,7 +155,7 @@ For licenses of third party software and libraries used in this project, see [LI
 
  * @mholttech for usage builder improvements and docker-compose dev environment
  * @Davidsoff for implementing GitHub hook support
- * @0xken for impleenting a custom Cherry Dark theme
+ * @0xken for implementing a custom Cherry Dark theme
  * @chriscunningham-trivago for fixing tfswitch bug in docker build
  * @bmaximuml for fixing typos and Dockerfile improvements
  * @cayce-hengeveld for grammar fixes
