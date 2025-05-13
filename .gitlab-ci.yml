@@ -339,7 +339,7 @@ generate-docs:
   script:
     - pip install poetry
     - poetry config virtualenvs.create false
-    - poetry install --no-root --only=docs
+    - poetry install --no-root --with=docs
     - git remote remove origin
     - git remote add origin https://$GITHUB_TOKEN@gitlab.dockstudios.co.uk/pub/terrareg.git
     # Ensure gh-pages branch is up-to-date
