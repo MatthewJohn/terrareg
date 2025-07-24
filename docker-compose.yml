@@ -13,7 +13,7 @@ services:
       - dockerProxy
       
   traefik:
-    image: traefik:v2.8
+    image: traefik:v3.5
     restart: always
     container_name: "${DOCKER_NAME}_traefik"
     command:
