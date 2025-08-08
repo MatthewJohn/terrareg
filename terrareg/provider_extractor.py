@@ -8,7 +8,7 @@ import contextlib
 from io import BytesIO
 import os
 import tempfile
-import tarfile
+import tarsafe
 import hashlib
 
 import frontmatter
@@ -133,7 +133,7 @@ class ProviderExtractor:
 
             # Extract archive
             archive_fh = BytesIO(archive_data)
-            with tarfile.open(fileobj=archive_fh, mode="r:gz") as tar:
+            with tarsafe.open(fileobj=archive_fh, mode="r:gz") as tar:
                 tar.extractall(path=source_dir)
 
             # If the repository provider uses a sub-directory for the source,

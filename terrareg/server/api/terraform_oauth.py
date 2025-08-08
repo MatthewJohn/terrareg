@@ -52,6 +52,9 @@ def authorization_endpoints():
     # Otherwise, redirect user to login page
     else:
         url = flask.request.path + f'?{urlencode(dict(flask.request.args))}'
+        # Ensure url is a relative path
+        if not url.startswith('/'):
+            url = '/' + url.lstrip('/')
         return redirect(f"/login?redirect={quote_plus(url)}", 302)
 
 

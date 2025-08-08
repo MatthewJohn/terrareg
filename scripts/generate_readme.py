@@ -83,7 +83,7 @@ Default: `{documented_default_value}`
 with open('docs/CONFIG.md.in', 'r') as readme_in:
     readme_template = ''.join(readme_in.readlines())
 
-template = jinja2.Template(readme_template)
+template = jinja2.Template(readme_template, autoescape=True)
 readme_out = template.render(CONFIG_CONTENTS=config_contents)
 
 with open('docs/CONFIG.md', 'w') as readme:
