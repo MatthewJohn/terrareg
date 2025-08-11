@@ -101,7 +101,7 @@ COPY pyproject.toml poetry.lock .
 ARG PYPI_PROXY
 RUN if test ! -z "$PYPI_PROXY"; then pip_args="--index=$PYPI_PROXY --trusted-host=$(echo $PYPI_PROXY | sed 's#https*://##g' | sed 's#/.*##g')"; else pip_args=""; fi; \
   http_proxy= https_proxy= pip install poetry $pip_args
-RUN poetry config virtualenvs.in-project false
+RUN poetry config virtualenvs.in-project true
 RUN poetry config installer.no-binary lxml,xmlsec
 
 RUN if test ! -z "$PYPI_PROXY"; then \
