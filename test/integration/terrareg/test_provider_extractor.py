@@ -5,9 +5,9 @@ import json
 import os
 from re import L
 from subprocess import check_output
-import tarsafe
 from tempfile import TemporaryDirectory
 import unittest.mock
+import tarfile
 import base64
 
 from typing import ContextManager
@@ -500,7 +500,7 @@ aec01bca39c7f614bc263e299a1fcdd09da3073369756efa6bced80531a45657  ./requirements
             with open(os.path.join(base_archive_dir, "subdir", "test_subdir_file.txt"), "w") as fh:
                 fh.write("Test subdir file")
             
-            with tarsafe.open(fileobj=test_tar_gz, mode="w:gz") as tar:
+            with tarfile.open(fileobj=test_tar_gz, mode="w:gz") as tar:
                 tar.add(temp_dir, recursive=True, arcname="")
 
         test_tar_gz.seek(0)

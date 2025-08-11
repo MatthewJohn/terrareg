@@ -8,7 +8,7 @@ import contextlib
 from io import BytesIO
 import os
 import tempfile
-import tarsafe
+import tarfile
 import hashlib
 
 import frontmatter
@@ -133,8 +133,12 @@ class ProviderExtractor:
 
             # Extract archive
             archive_fh = BytesIO(archive_data)
-            with tarsafe.open(fileobj=archive_fh, mode="r:gz") as tar:
-                tar.extractall(path=source_dir)
+            with tarfile.open(fileobj=archive_fh, mode="r:gz") as tar:
+                for entry in tar:
+                #GOOD: Check that entry is safe
+                    if os.path.isabs(entry.name) or ".." in entry.name:
+                        raise ValueError("Illegal tar archive entry")
+                    tar.extract(entry, path=source_dir)
 
             # If the repository provider uses a sub-directory for the source,
             # obtain this
