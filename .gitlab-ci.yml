@@ -1,4 +1,4 @@
-image: python:3.12
+image: python:3.13
 
 # Change pip's cache directory to be inside the project directory since we can
 # only cache local items.
@@ -102,7 +102,7 @@ mysql-integration-selenium-tests:
   needs:
     - unit-integration-selenium-tests
   services:
-    - name: mariadb:10.8
+    - name: mariadb:10.11
       alias: mysql
     - name: minio/minio
       alias: minio
@@ -131,7 +131,7 @@ postgres-integration-selenium-tests:
   #needs:
   #  - unit-integration-selenium-tests
   services:
-    - name: postgres:17.4
+    - name: postgres:17.6
       alias: postgres
     - name: minio/minio
       alias: minio
@@ -168,7 +168,7 @@ test-docker-image:
   stage: test
   # Use python:3.12, as it's already used
   # by build and comes with curl
-  image: python:3.12
+  image: python:3.13
   extends: .limit_release_and_non_pushes
   services:
     - name: terrareg-image:v${CI_COMMIT_SHORT_SHA}
@@ -186,7 +186,7 @@ test-docker-image-waitress:
   stage: test
   # Use python:3.12, as it's already used
   # by build and comes with curl
-  image: python:3.12
+  image: python:3.13
   extends: .limit_release_and_non_pushes
   services:
     - name: terrareg-image:v${CI_COMMIT_SHORT_SHA}
@@ -249,7 +249,7 @@ deploy_review:
     - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
 
   image:
-    name: hashicorp/terraform:1.5
+    name: hashicorp/terraform:1.13
     entrypoint: ["/bin/sh", "-c"]
   environment:
     name: review/$CI_COMMIT_REF_NAME
@@ -279,7 +279,7 @@ stop_review:
     - if: $CI_PIPELINE_SOURCE == 'push' && $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH
       when: manual
   image:
-    name: hashicorp/terraform:1.5
+    name: hashicorp/terraform:1.13
     entrypoint: ["/bin/sh", "-c"]
   variables:
     GIT_STRATEGY: none
@@ -333,7 +333,7 @@ release:
 
 generate-docs:
   stage: deploy
-  image: python:3.12
+  image: python:3.13
   variables:
     GITHUB_TOKEN: $GH_DEPLOY_TOKEN
   script:
