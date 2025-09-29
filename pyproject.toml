@@ -79,7 +79,7 @@ version = "2.1.0"
 [tool.poetry.group.dev.dependencies]
 pytest = "7.4.3"
 pytest-cov = "3.0.0"
-selenium = "4.34.1"
+selenium = "4.6.1"
 pyvirtualdisplay = "3.0"
 pillow = "10.3.0"
 imagehash = "4.3.1"
