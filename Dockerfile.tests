@@ -82,7 +82,7 @@ RUN apt-get update && \
 # Install firefox and geckodriver
 # Add unstable repo to allow for installation of newer firefox packages
 RUN bash -c 'echo deb https://deb.debian.org/debian unstable main >> /etc/apt/sources.list'
-RUN apt-get update && apt-get install -y gnome-browser-connector firefox && apt-get clean all
+RUN apt-get update && apt-get install -y firefox && apt-get clean all
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
   then \
   arch=linux-aarch64; \
