@@ -264,6 +264,14 @@ class TestModuleSearch(SeleniumTest):
             # Click update
             self.selenium_instance.find_element(By.ID, 'search-options-update-button').click()
 
+            # Wait until cards have version constraints
+            self.assert_equals(
+                lambda: len(
+                    self.selenium_instance.find_element(By.ID, 'results')
+                        .find_elements(By.CLASS_NAME, 'card-terraform-version-compatibility')
+                ),
+                4
+            )
             result_cards = self.selenium_instance.find_element(By.ID, 'results').find_elements(By.CLASS_NAME, 'card')
             def get_result_card_compatibility_text(result_card):
                 try:
