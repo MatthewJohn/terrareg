@@ -10,8 +10,6 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/terrareg/terrareg/internal/config"
-	"github.com/terrareg/terrareg/internal/interfaces/http/handler/terraform/v1"
-	"github.com/terrareg/terrareg/internal/interfaces/http/handler/terraform/v2"
 	terrareg_middleware "github.com/terrareg/terrareg/internal/interfaces/http/middleware"
 )
 
@@ -195,10 +193,10 @@ func (s *Server) setupRoutes() {
 	})
 
 	// Authentication endpoints
-	r.Get("/openid/login", s.handleOIDCLogin)
-	r.Get("/openid/callback", s.handleOIDCCallback)
-	r.Get("/saml/login", s.handleSAMLLogin)
-	r.Get("/saml/metadata", s.handleSAMLMetadata)
+	s.router.Get("/openid/login", s.handleOIDCLogin)
+	s.router.Get("/openid/callback", s.handleOIDCCallback)
+	s.router.Get("/saml/login", s.handleSAMLLogin)
+	s.router.Get("/saml/metadata", s.handleSAMLMetadata)
 
 	// Provider source endpoints (GitHub, GitLab, etc.)
 	s.router.Get("/{provider_source}/login", s.handleProviderSourceLogin)
