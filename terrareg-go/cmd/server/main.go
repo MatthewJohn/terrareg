@@ -7,8 +7,8 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/terrareg/terrareg/internal/config"
+	"github.com/terrareg/terrareg/internal/infrastructure/container"
 	"github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb"
-	"github.com/terrareg/terrareg/internal/interfaces/http"
 )
 
 func main() {
@@ -53,15 +53,16 @@ func main() {
 		}
 	}
 
-	// TODO: Initialize repositories, services, and application layer
-	// This will be implemented in Phase 2+
-
-	// Create HTTP server
-	server := http.NewServer(cfg, logger)
+	// Initialize dependency injection container
+	logger.Info().Msg("Initializing application container")
+	c, err := container.NewContainer(cfg, logger, db)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Failed to initialize container")
+	}
 
 	// Start server
 	logger.Info().Int("port", cfg.ListenPort).Msg("Starting HTTP server")
-	if err := server.Start(); err != nil {
+	if err := c.Server.Start(); err != nil {
 		logger.Fatal().Err(err).Msg("HTTP server failed")
 	}
 }

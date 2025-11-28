@@ -10,22 +10,28 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/terrareg/terrareg/internal/config"
+	"github.com/terrareg/terrareg/internal/interfaces/http/handler/terrareg"
 	terrareg_middleware "github.com/terrareg/terrareg/internal/interfaces/http/middleware"
+	"github.com/terrareg/terrareg/internal/interfaces/http/template"
 )
 
 // Server represents the HTTP server
 type Server struct {
-	router *chi.Mux
-	config *config.Config
-	logger zerolog.Logger
+	router           *chi.Mux
+	config           *config.Config
+	logger           zerolog.Logger
+	namespaceHandler *terrareg.NamespaceHandler
+	templateRenderer *template.Renderer
 }
 
 // NewServer creates a new HTTP server
-func NewServer(cfg *config.Config, logger zerolog.Logger) *Server {
+func NewServer(cfg *config.Config, logger zerolog.Logger, namespaceHandler *terrareg.NamespaceHandler, templateRenderer *template.Renderer) *Server {
 	s := &Server{
-		router: chi.NewRouter(),
-		config: cfg,
-		logger: logger,
+		router:           chi.NewRouter(),
+		config:           cfg,
+		logger:           logger,
+		namespaceHandler: namespaceHandler,
+		templateRenderer: templateRenderer,
 	}
 
 	s.setupMiddleware()
@@ -324,7 +330,20 @@ func (s *Server) handleNamespaceProviders(w http.ResponseWriter, r *http.Request
 func (s *Server) handleProviderDetails(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleProviderVersions(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleProviderDownload(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
+	// Return public configuration - only non-sensitive config values
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"public_url":                           s.config.PublicURL,
+		"allow_module_hosting":                 s.config.AllowModuleHosting,
+		"allow_provider_hosting":               true,  // TODO: Add to config
+		"analytics_token_phrase":               "",    // TODO: Add to config
+		"enable_access_controls":               s.config.EnableAccessControls,
+		"enable_security_scanning":             false, // TODO: Add to config
+		"terraform_example_version_template":   "",    // TODO: Add to config
+		"allow_custom_git_url_module_source":   false, // TODO: Add to config
+		"allow_custom_git_url_provider_source": false, // TODO: Add to config
+	})
+}
 func (s *Server) handleGitProviders(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleGlobalStatsSummary(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleGlobalUsageStats(w http.ResponseWriter, r *http.Request) {}
@@ -334,7 +353,9 @@ func (s *Server) handleModuleVersionAnalytics(w http.ResponseWriter, r *http.Req
 func (s *Server) handleAnalyticsTokenVersions(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleInitialSetup(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleInitialSetupPost(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleNamespaceList(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleNamespaceList(w http.ResponseWriter, r *http.Request) {
+	s.namespaceHandler.HandleNamespaceList(w, r)
+}
 func (s *Server) handleNamespaceCreate(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleNamespaceGet(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleNamespaceUpdate(w http.ResponseWriter, r *http.Request) {}
@@ -402,7 +423,20 @@ func (s *Server) handleProviderSourceRefreshNamespace(w http.ResponseWriter, r *
 func (s *Server) handleProviderSourcePublishProvider(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleGitHubWebhook(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleBitBucketWebhook(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
+	// Render the index page
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	data := map[string]interface{}{
+		// Add any additional data needed for the index page
+	}
+
+	if err := s.templateRenderer.Render(w, "index.html", data); err != nil {
+		s.logger.Error().Err(err).Msg("Failed to render index template")
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+}
 func (s *Server) handleLoginPage(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleInitialSetupPage(w http.ResponseWriter, r *http.Request) {}
