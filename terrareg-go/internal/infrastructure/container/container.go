@@ -4,6 +4,7 @@ import (
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
+	"github.com/terrareg/terrareg/internal/application/query/analytics"
 	"github.com/terrareg/terrareg/internal/application/query/module"
 	"github.com/terrareg/terrareg/internal/config"
 	moduleRepo "github.com/terrareg/terrareg/internal/domain/module/repository"
@@ -26,9 +27,14 @@ type Container struct {
 
 	// Queries
 	ListNamespacesQuery *module.ListNamespacesQuery
+	ListModulesQuery    *module.ListModulesQuery
+	SearchModulesQuery  *module.SearchModulesQuery
+	GlobalStatsQuery    *analytics.GlobalStatsQuery
 
 	// Handlers
 	NamespaceHandler *terrareg.NamespaceHandler
+	ModuleHandler    *terrareg.ModuleHandler
+	AnalyticsHandler *terrareg.AnalyticsHandler
 
 	// Template renderer
 	TemplateRenderer *template.Renderer
@@ -51,9 +57,14 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 
 	// Initialize queries
 	c.ListNamespacesQuery = module.NewListNamespacesQuery(c.NamespaceRepo)
+	c.ListModulesQuery = module.NewListModulesQuery(c.ModuleProviderRepo)
+	c.SearchModulesQuery = module.NewSearchModulesQuery(c.ModuleProviderRepo)
+	c.GlobalStatsQuery = analytics.NewGlobalStatsQuery(c.NamespaceRepo, c.ModuleProviderRepo)
 
 	// Initialize handlers
 	c.NamespaceHandler = terrareg.NewNamespaceHandler(c.ListNamespacesQuery)
+	c.ModuleHandler = terrareg.NewModuleHandler(c.ListModulesQuery, c.SearchModulesQuery)
+	c.AnalyticsHandler = terrareg.NewAnalyticsHandler(c.GlobalStatsQuery)
 
 	// Initialize template renderer
 	templateRenderer, err := template.NewRenderer(cfg)
@@ -63,7 +74,7 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.TemplateRenderer = templateRenderer
 
 	// Initialize HTTP server
-	c.Server = http.NewServer(cfg, logger, c.NamespaceHandler, c.TemplateRenderer)
+	c.Server = http.NewServer(cfg, logger, c.NamespaceHandler, c.ModuleHandler, c.AnalyticsHandler, c.TemplateRenderer)
 
 	return c, nil
 }

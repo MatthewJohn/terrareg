@@ -21,16 +21,20 @@ type Server struct {
 	config           *config.Config
 	logger           zerolog.Logger
 	namespaceHandler *terrareg.NamespaceHandler
+	moduleHandler    *terrareg.ModuleHandler
+	analyticsHandler *terrareg.AnalyticsHandler
 	templateRenderer *template.Renderer
 }
 
 // NewServer creates a new HTTP server
-func NewServer(cfg *config.Config, logger zerolog.Logger, namespaceHandler *terrareg.NamespaceHandler, templateRenderer *template.Renderer) *Server {
+func NewServer(cfg *config.Config, logger zerolog.Logger, namespaceHandler *terrareg.NamespaceHandler, moduleHandler *terrareg.ModuleHandler, analyticsHandler *terrareg.AnalyticsHandler, templateRenderer *template.Renderer) *Server {
 	s := &Server{
 		router:           chi.NewRouter(),
 		config:           cfg,
 		logger:           logger,
 		namespaceHandler: namespaceHandler,
+		moduleHandler:    moduleHandler,
+		analyticsHandler: analyticsHandler,
 		templateRenderer: templateRenderer,
 	}
 
@@ -315,9 +319,15 @@ func respondError(w http.ResponseWriter, err error, status int) {
 // All other handlers are stubs for now - they will be implemented in Phase 2+
 // This allows the server to compile and run
 
-func (s *Server) handleModuleList(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleSearch(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleNamespaceModules(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleModuleList(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleList(w, r)
+}
+func (s *Server) handleModuleSearch(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleSearch(w, r)
+}
+func (s *Server) handleNamespaceModules(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleNamespaceModules(w, r)
+}
 func (s *Server) handleModuleDetails(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleProviderDetails(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleVersions(w http.ResponseWriter, r *http.Request) {}
@@ -345,10 +355,16 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	})
 }
 func (s *Server) handleGitProviders(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleGlobalStatsSummary(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleGlobalStatsSummary(w http.ResponseWriter, r *http.Request) {
+	s.analyticsHandler.HandleGlobalStatsSummary(w, r)
+}
 func (s *Server) handleGlobalUsageStats(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleMostRecentlyPublished(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleMostDownloadedThisWeek(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleMostRecentlyPublished(w http.ResponseWriter, r *http.Request) {
+	s.analyticsHandler.HandleMostRecentlyPublished(w, r)
+}
+func (s *Server) handleMostDownloadedThisWeek(w http.ResponseWriter, r *http.Request) {
+	s.analyticsHandler.HandleMostDownloadedThisWeek(w, r)
+}
 func (s *Server) handleModuleVersionAnalytics(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleAnalyticsTokenVersions(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleInitialSetup(w http.ResponseWriter, r *http.Request) {}
