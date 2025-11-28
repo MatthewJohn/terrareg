@@ -1,0 +1,225 @@
+{% extends 'template.html' %}
+
+{% block title %}Search{% endblock %}
+
+{% block header %}
+
+<style>
+    .result-box {
+        max-width: 300px;
+        margin-top: 30px;
+        margin-left: 20px;
+    }
+    .result-box > .card-content {
+        padding: 15px;
+    }
+</style>
+
+<script>
+
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    const searchQuery = urlParams.get('q');
+
+    async function createSearchResultBox(parent_id, type, details) {
+
+        let provider_logos = await getProviderLogos();
+
+        let display_published = timeDifference(new Date(details.published_at));
+        let provider_logo_html = '';
+
+        let namespaceDisplayName = details.namespace;
+        let namespaceDetails = await getNamespaceDetails(details.namespace);
+        if (namespaceDetails.display_name) {
+            namespaceDisplayName = namespaceDetails.display_name;
+        }
+
+        let linkBase = type == 'module' ? 'modules' : 'providers'
+        let link = null;
+        if (type == 'module') {
+            link = `/modules/${details.namespace}/${details.name}/${details.provider}`;
+        } else {
+            link = `/providers/${details.namespace}/${details.name}`;
+        }
+
+        let providerName = type == "module" ? details.provider : details.name;
+        if (type == "module" && provider_logos[details.provider] !== undefined) {
+            let provider_logo_details = provider_logos[details.provider];
+            provider_logo_html = `
+                <a class="provider-logo-link" href="${provider_logo_details.link}">
+                    <img style="margin-right: 5px" height="25" width="25" alt="${provider_logo_details.alt}" src="${provider_logo_details.source}" />
+                </a>
+            `;
+            addProviderLogoTos(providerName);
+        } else if (type == "provider" && details.logo_url) {
+            provider_logo_html = `
+                <a href="${link}">
+                    <img style="margin-right: 5px" height="25" width="25" src="${details.logo_url}" />
+                </a>
+            `;
+        }
+
+        // Replace slashes in ID with full stops
+        let card_id = details.id.replace(/\//g, '.');
+
+        // Add module to search results
+        let result_card = $(
+            `
+            <div id="${card_id}" class="is-one-third card result-box">
+                <header class="card-header">
+                    ${type == 'module' ? `
+                    <a class="module-provider-card-provider-text" href="${link}">
+                        <button class="card-header-icon" aria-label="more options">
+                            Provider: ${details.provider}
+                        </button>
+                    </a>
+                    ` : ''}
+                </header>
+                <a href="${link}">
+                    <div class="card-content">
+                        <div class="content">
+                            ${provider_logo_html}
+                            <a class="module-card-title" href="${link}">${namespaceDisplayName} / ${details.name}</a>
+                        </div>
+                    </div>
+                    <footer class="card-footer">
+                        <p class="card-footer-item card-last-updated">${details.published_at ? ('Last updated: ' + display_published) : ''}</p>
+                    </footer>
+                </a>
+            </div>
+            `
+        );
+        $(`#${parent_id}`).append(result_card);
+        if (type == 'module') {
+            addModuleLabels(details, $(result_card.find('.card-header-title')[0]));
+        } else {
+            addProviderLabels(details, $(result_card.find('.card-header-title')[0]));
+        }
+    }
+
+    function performModuleSearch() {
+        return new Promise((resolve, reject) => {
+            // Perform AJAX query to obtain results
+            $.get(`/v1/modules/search?` +
+                `q=${encodeURIComponent(searchQuery)}&` +
+                'include_count=true&limit=6'
+            ).then((data) => {
+                resolve(data.modules);
+            })
+        });
+    }
+
+    async function performProviderSearch() {
+        return new Promise((resolve, reject) => {
+            // Perform AJAX query to obtain results
+            $.get(`/v1/providers/search?` +
+                `q=${encodeURIComponent(searchQuery)}&` +
+                'include_count=true&limit=6'
+            ).then((data) => {
+                resolve(data.providers);
+            })
+        });
+    }
+
+    async function displayModuleResults(results) {
+        // Clear reuslts panel before adding results
+        $('#results-modules-content').html('');
+
+        // Iterate through modules
+        for (let module of results) {
+            await createSearchResultBox('results-modules-content', 'module', module);
+        }
+    }
+
+    async function displayProviderResults(results) {
+        // Clear reuslts panel before adding results
+        $('#results-providers-content').html('');
+
+        // Iterate through modules
+        for (let provider of results) {
+            await createSearchResultBox('results-providers-content', 'provider', provider);
+        }
+    }
+
+    function redirectModuleResults() {
+        window.location.href = `/search/modules?q=${searchQuery}`;
+    }
+
+    function redirectProviderResults() {
+        window.location.href = `/search/providers?q=${searchQuery}`;
+    }
+
+    $(document).ready(async function () {
+        if (searchQuery) {
+            $('#navBarSearchInput').val(searchQuery);
+        }
+        let moduleResults = await performModuleSearch();
+        let providerResults = await performProviderSearch();
+
+        // If both module and providers return results,
+        // show the top overview
+        if (moduleResults.length && providerResults.length) {
+            displayModuleResults(moduleResults);
+            displayProviderResults(providerResults);
+
+        // Otherwise, redirect to either module or provider search, if either
+        // yielded results
+        } else if (moduleResults.length) {
+            redirectModuleResults();
+
+        } else if (providerResults.length) {
+            redirectProviderResults();
+        } else {
+            // Otherwise, display no results
+            $('#no-results').removeClass('default-hidden');
+        }
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li id="searchBreadcrumb"><a href="/modules/search">Search</a></li>
+        <li id="searchQueryBreadcrumbParent"><a id="searchQueryBreadcrumb" href=""></a></li>
+    </ul>
+</nav>
+
+
+<div class="columns">
+    <div class="column is-offset-one-fifth is-three-fifths">
+        <section id="search-results-header">
+            <span id="result-count"></span> 
+        </section>
+
+        <div id="no-results" class="default-hidden">There are no results</div>
+
+        <section id="results-providers">
+            <h3 class="subtitle is-3">
+                Providers
+            </h3>
+            <div id="results-providers-content" class="columns is-centered is-multiline">
+            </div>
+            <div>
+                <br />
+                <button class="button is-link" onclick="redirectProviderResults();">View all provider results</button>
+            </div>
+        </section>
+        <hr />
+        <section id="results-modules">
+            <h3 class="subtitle is-3">
+                Modules
+            </h3>
+            <div id="results-modules-content" class="columns is-centered is-multiline">
+            </div>
+            <div>
+                <br />
+                <button class="button is-link" onclick="redirectModuleResults();">View all module results</button>
+            </div>
+        </section>
+
+    </div>
+</div>
+
+{% endblock %}

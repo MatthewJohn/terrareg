@@ -1,0 +1,151 @@
+{% extends 'template.html' %}
+
+{% block title %}{{ namespace }}{% endblock %}
+
+{% block header %}
+<script>
+    let currentSearchMeta = undefined;
+
+    function prevResults(type, namespace) {
+        if (currentSearchMeta && currentSearchMeta.prev_offset !== undefined) {
+            getResults(type, namespace, currentSearchMeta.prev_offset);
+        }
+    }
+    function nextResults(type, namespace) {
+        if (currentSearchMeta && currentSearchMeta.next_offset !== undefined) {
+            getResults(type, namespace, currentSearchMeta.next_offset);
+        }
+    }
+    function getResults(type, namespace, offset) {
+        $.get(`/v1/terrareg/${type}/${namespace}?offset=${offset}`, function(data) {
+
+            // Update current meta data
+            currentSearchMeta = data.meta;
+
+            // Clear any existing modules
+            $('#module-list-table').html('');
+
+            // Disable/activate next/previous buttons
+            $('#prevButton').prop('disabled', (data.meta.prev_offset === undefined));
+            $('#nextButton').prop('disabled', (data.meta.next_offset === undefined));
+
+            // If there are no results, hide the list table and show error about
+            // no modules
+            let rows = [];
+            if (type == 'modules') {
+                rows = data.modules;
+            } else {
+                rows = data.providers;
+            }
+            if (rows.length == 0) {
+                $('#result-list').addClass('default-hidden')
+                $('#no-results').removeClass('default-hidden');
+            }
+
+            // Add each of the modules to the page
+            $.each(rows, (itx, row) => {
+                createSearchResultCard('module-list-table', type == 'providers' ? 'provider' : 'module', row);
+            });
+        }).fail(() => {
+            // Check for non-existent namespace
+            $('#result-list').addClass('default-hidden')
+            $('#namespace-does-not-exist').removeClass('default-hidden');
+
+            $('#prevButton').hide();
+            $('#nextButton').hide();
+        });
+    }
+
+    async function showEditbutton(namespace) {
+        let permissions = await isLoggedIn();
+        // If user is logged in and either site admin or has
+        // full permissions on namespace, show edit button
+        if (permissions.site_admin ||
+            permissions.namespace_permissions[namespace] == "FULL"
+        ) {
+            $('#edit-namespace').removeClass('default-hidden');
+            $('#edit-namespace-link').attr('href', `/edit-namespace/${namespace}`);
+        }
+    }
+
+    function bindButtons(type, namespace) {
+        $('#prevButton').on('click', () => {prevResults(type, namespace)});
+        $('#nextButton').on('click', () => {nextResults(type, namespace)})
+    }
+
+    function setupBreadcrumbs(type, namespace) {
+        let urlFragment = '';
+        let typeName = '';
+        if (type == 'modules') {
+            typeName = 'Modules'
+        } else if (type == 'providers') {
+            typeName = 'Providers'
+        }
+        const breadcrumbUl = $('#breadcrumbUl');
+        const rootBreadcrumb = $(`<li><a href="/${type}">${typeName}</a></li>`);
+        breadcrumbUl.append(rootBreadcrumb);
+        const namespaceBreadcrumb = $(`<li class="is-active"><a href="/${type}/${namespace}">${namespace}</a></li>`);
+        breadcrumbUl.append(namespaceBreadcrumb);
+    }
+
+    function setupNoResultsText(type) {
+        $('#no-results').text(`There are no ${type} in this namespace`);
+    }
+
+    $(document).ready(function() {
+        const router = new Navigo("/");
+
+        const baseRoute = "/modules/:namespace";
+
+        // Handle namespace route
+        router.on("/:type/:namespace", function ({ data }) {
+            if (["modules", "providers"].indexOf(data.type) === -1) {
+                // Invalid type
+                return;
+            }
+            let namespace = data.namespace;
+            let type = data.type;
+            showEditbutton(namespace);
+            bindButtons(type, namespace);
+            setupBreadcrumbs(type, namespace);
+            setupNoResultsText(type);
+            getResults(type, namespace, 0);
+        });
+
+        router.resolve();
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul id="breadcrumbUl">
+    </ul>
+</nav>
+
+<div id="edit-namespace" class="columns default-hidden">
+    <div class="column is-offset-four-fifths is-one-fifth">
+        <a id="edit-namespace-link" class="button is-warning">Edit Namespace</a>
+    </div>
+</div>
+
+<div class="columns">
+    <div id="namespace-does-not-exist" class="column is-three-fifths is-offset-one-fifth default-hidden">
+        This namespace does not exist
+    </div>
+    <div id="no-results" class="column is-three-fifths is-offset-one-fifth default-hidden">
+    </div>
+    <div id="result-list" class="column is-three-fifths is-offset-one-fifth">
+
+        <section id="module-list-table">
+        </section>
+        <section>
+            <button class="button" id="prevButton">Prev</button>
+            <button class="button" id="nextButton">Next</button>
+        </section>
+
+    </div>
+</div>
+
+{% endblock %}

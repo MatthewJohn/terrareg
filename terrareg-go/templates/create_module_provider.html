@@ -1,0 +1,209 @@
+{% extends 'template.html' %}
+
+{% block title %}Create Module{% endblock %}
+
+{% block header %}
+<script>
+    function createModuleProvider() {
+        if (! $('#create-module-form')[0].reportValidity()) {
+            return;
+        }
+        $.post({
+            url: '/v1/terrareg/modules/' +
+                $('#create-module-namespace').val() + '/' +
+                $('#create-module-module').val() + '/' +
+                $('#create-module-provider').val() + '/create',
+            data: JSON.stringify({
+                git_provider_id: $('select[id=create-module-git-provider] option').filter(':selected').val(),
+                repo_base_url_template: $('#create-module-base-url-template').val(),
+                repo_clone_url_template: $('#create-module-clone-url-template').val(),
+                repo_browse_url_template: $('#create-module-browse-url-template').val(),
+                git_tag_format: $('#create-module-git-tag-format').val(),
+                git_path: $('#create-module-git-path').val(),
+                csrf_token: '{{ csrf_token }}'
+            }),
+            contentType: 'application/json'
+        }).done((res) => {
+            // Obtain get parameters from URL
+            const urlParams = getUrlParams();
+            // If parameter from initial setup page is present,
+            // redirect user back to initial setup
+            if (urlParams.initial_setup) {
+                window.location.href = '/initial-setup';
+            } else {
+                window.location.href = `/modules/${res.id}`;
+            }
+        }).fail((res) => {
+            $('#create-error').html(failedResponseToErrorString(res));
+            $('#create-error').css('display', 'block');
+            $(window).scrollTop($('#create-error').offset().top);
+        });
+    }
+
+    function toggleCustomModuleProviderInputs(select) {
+        let selectedOption = select.selectedOptions[0];
+        let display = (selectedOption.dataset.customProvider == "yes");
+
+        // Set git path from git provider
+        $('#create-module-git-path').val(selectedOption.dataset.gitPath);
+
+        // Iterate through each of the custom input containers
+        $('.create-module-custom-field-container').each((itx, html_div) => {
+            let div = $(html_div);
+            if (display) {
+                // Show container
+                div.show();
+            } else {
+                // Set input value to empty string
+                div.find('input').each((itx, input_div) => {
+                    $(input_div).val('');
+                })
+                // Hide container
+                div.hide();
+            }
+        });
+    }
+
+    // Obtain list of module providers
+    isLoggedIn().then((auth) => {
+        $.get('/v1/terrareg/namespaces').then((data) => {
+            data.forEach((namespace) => {
+                if (auth.site_admin || auth.namespace_permissions[namespace.name] == 'FULL') {
+                    $('#create-module-namespace').append($(`<option value="${namespace.name}">${namespace.display_name || namespace.name}</option>`))
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        <li class="is-active"><a href="/create-module">Create Module</a></li>
+    </ul>
+</nav>
+
+<div class="columns">
+    <div class="column is-one-third is-offset-one-third">
+
+        <div class="field is-vertical">
+            <div id="create-error" style="display: none" class="notification is-danger">
+            </div>
+            <form id="create-module-form" onsubmit="event.preventDefault(); createModuleProvider();">
+                <div class="field">
+                    <label class="label">Namespace</label>
+                    <div class="control select">
+                        <select id="create-module-namespace">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Module Name</label>
+                    <div class="control">
+                    <input required id="create-module-module" class="input" type="text" placeholder="my-module">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Provider</label>
+                    <div class="control">
+                    <input required id="create-module-provider" class="input" type="text" placeholder="e.g. aws, null...">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Git Repository Provider</label>
+                    <div class="control select">
+                        <select id="create-module-git-provider" onchange="toggleCustomModuleProviderInputs(this);">
+
+                            {% if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER or ALLOW_CUSTOM_GIT_URL_MODULE_VERSION %}
+                            <option value="" selected data-custom-provider="yes" data-git-path="">
+                                Custom
+                            </option>
+                            {% endif %}
+
+                            {% for git_provider in git_providers %}
+                            <option value="{{ git_provider.pk }}" data-custom-provider="no" data-git-path="{{ git_provider.git_path_template or '' }}">
+
+                                {{ git_provider.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                {% if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER %}
+                <div id="create-module-base-url-template-container" class="field create-module-custom-field-container">
+                    <label class="label">Custom Repository base URL</label>
+                    <div class="control">
+                        <input placeholder="https://github.com/my-team/my-module-provider" class="input" type="text" id="create-module-base-url-template">
+                    </div>
+                    This URL must be valid for browsing the base of the repository.<br />
+                    It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                    E.g. <code>https://github.com/{namespace}/{module}-{provider}</code><br />
+                    NOTE: Setting this field will override the repository provider configuration.
+                </div>
+                <div id="create-module-clone-url-template-container" class="field create-module-custom-field-container">
+                    <label class="label">Custom Repository Clone URL</label>
+                    <div class="control">
+                        <input placeholder="ssh://git@github.com/my-team/my-module-provider.git" class="input" type="text" id="create-module-clone-url-template">
+                    </div>
+                    This URL must be valid for cloning the repository.<br />
+                    It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                    E.g. <code>ssh://git@github.com/{namespace}/{module}-{provider}.git</code><br />
+                    NOTE: Setting this field will override the repository provider configuration.
+                </div>
+                <div id="create-module-browse-url-template-container" class="field create-module-custom-field-container">
+                    <label class="label">Custom Repository source browse URL</label>
+                    <div class="control">
+                        <input placeholder="https://github.com/my-team/my-module-provider/tree/{tag}/{path}" class="input" type="text" id="create-module-browse-url-template">
+                    </div>
+                    This URL must be valid for browsing the source code of the repository at a particular tag/path.<br />
+                    It may include templated values, such as: <code>{namespace}</code>, <code>{module}</code>, <code>{provider}</code>.<br />
+                    It must include the following template values: <code>{tag}</code> and <code>{path}</code><br />
+                    E.g. <code>https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}</code><br />
+                    NOTE: Setting this field will override the repository provider configuration.
+                </div>
+                {% endif %}
+
+                <div class="field">
+                    <label class="label">Git tag format</label>
+                    <div class="control">
+                        <input required placeholder="v{version}" class="input" type="text" id="create-module-git-tag-format" value="v{version}">
+                    </div>
+                    This value will be converted to the expected git tag for a module version.<br />
+                    The <code>{version}</code> placeholder will be used to generated the git tag when translating the module version to a git tag.<br />
+                    For example, using <code>v{version}</code> will translate to a git tag 'v1.1.1' for module version '1.1.1'
+                    <br />
+                    If the git tagging format in use does not contain a full semantic version, use placeholders <code>{major}</code>, <code>{minor}</code> and <code>{patch}</code><br />
+                    to indicate which values are present in the tag - any missing values will be assumed to be '0'.<br />
+                    For example a git tag format of <code>v{major}.{minor}</code> would interpret a tag <code>v1.2</code> as a module version <code>1.2.0</code>,<br />
+                    where as a git tag format <code>v{major}.{patch}</code> would generate a version <code>v1.0.2</code>.<br />
+                    <br />
+                    Note that if the <code>{version}</code> placeholder is not used, the module version import API must be provided with the <code>git_tag</code> argument and indexing with <code>version</code> argument is disabled.
+                </div>
+
+                <div class="field">
+                    <label class="label">Git path</label>
+                    <div class="control">
+                        <input placeholder="/" class="input" type="text" id="create-module-git-path">
+                    </div>
+                    Set the path within the repository that the module exists.<br />
+                    Defaults to the root of the repository.<br />
+                </div>
+
+                <div class="field">
+                    <div class="control">
+                    <button class="button is-link">Create</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+    </div>
+</nav>
+
+{% endblock %}

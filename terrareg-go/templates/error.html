@@ -1,0 +1,33 @@
+{% extends 'template.html' %}
+
+{% block title %}Error{% endblock %}
+
+{% block content %}
+
+<nav class="breadcrumb" aria-label="breadcrumbs">
+    <ul>
+        {% if not root_bread_brumb %}
+        <li><a href="/modules">Modules</a></li>
+        {% else %}
+        <li class="is-active"><a href="#">{{ root_bread_brumb }}</a></li>
+        {% endif %}
+        {% if namespace %}<li><a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></li>{% endif %}
+        {% if module %}<li><a href="/modules/{{ namespace.name }}/{{ module.name }}">{{ module.name }}</a></li>{% endif %}
+        {% if module_provider_name %}<li class="is-active"><a href="#">{{ module_provider_name }}</a></li>{% endif %}
+    </ul>
+</nav>
+
+
+<div class="columns is-centered" style="background-color: #f9f9f9; padding-top: 30px; padding-bottom: 30px;">
+    <div class="column is-two-fifths">
+        <p id="error-title" class="title is-4">
+            {{ error_title }}
+        </p>
+        <br />
+        <p id="error-content" class="subtitle is-5">
+            {{ error_description }}
+        </p>
+    </div>
+</div>
+
+{% endblock %}
