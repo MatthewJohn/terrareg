@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM golang:1.25.4-trixie
 
 WORKDIR /
 
@@ -45,16 +45,16 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
 RUN bash -c 'curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/master/install.sh | bash /dev/stdin 1.2.2'
 
 # Install go
-RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
-    then \
-      arch=arm64; \
-    else \
-      arch=amd64; \
-    fi; \
-    wget https://go.dev/dl/go1.20.10.linux-${arch}.tar.gz -O /tmp/go.tar.gz && \
-    tar -zxvf /tmp/go.tar.gz -C /usr/local && \
-    rm /tmp/go.tar.gz'
-ENV PATH=$PATH:/usr/local/go/bin
+# RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
+#     then \
+#       arch=arm64; \
+#     else \
+#       arch=amd64; \
+#     fi; \
+#     wget https://go.dev/dl/go1.20.10.linux-${arch}.tar.gz -O /tmp/go.tar.gz && \
+#     tar -zxvf /tmp/go.tar.gz -C /usr/local && \
+#     rm /tmp/go.tar.gz'
+# ENV PATH=$PATH:/usr/local/go/bin
 
 # Install github.com/hashicorp/terraform-plugin-docs
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
@@ -71,46 +71,46 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
 
 WORKDIR /app
 
-RUN apt-get update
-RUN apt-get update && \
-    apt-get install -y fonts-liberation xdg-utils \
-                       software-properties-common curl unzip wget \
-                       xvfb && \
-    apt-get clean all
+# RUN apt-get update
+# RUN apt-get update && \
+#     apt-get install -y fonts-liberation xdg-utils \
+#                        software-properties-common curl unzip wget \
+#                        xvfb && \
+#     apt-get clean all
 
 
-# Install firefox and geckodriver
-# Add unstable repo to allow for installation of newer firefox packages
-RUN bash -c 'echo deb https://deb.debian.org/debian unstable main >> /etc/apt/sources.list'
-RUN apt-get update && apt-get install -y firefox && apt-get clean all
-RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
-    then \
-      arch=linux-aarch64; \
-    else \
-      arch=linux64; \
-    fi; \
-    wget https://github.com/mozilla/geckodriver/releases/download/v0.33.0/geckodriver-v0.33.0-${arch}.tar.gz -O /tmp/geckodriver.tar.gz && \
-    tar -xzf /tmp/geckodriver.tar.gz -C /usr/local/bin/ && \
-    chmod +x /usr/local/bin/geckodriver && \
-    rm /tmp/geckodriver.tar.gz'
+# # Install firefox and geckodriver
+# # Add unstable repo to allow for installation of newer firefox packages
+# RUN bash -c 'echo deb https://deb.debian.org/debian unstable main >> /etc/apt/sources.list'
+# RUN apt-get update && apt-get install -y firefox && apt-get clean all
+# RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
+#     then \
+#       arch=linux-aarch64; \
+#     else \
+#       arch=linux64; \
+#     fi; \
+#     wget https://github.com/mozilla/geckodriver/releases/download/v0.33.0/geckodriver-v0.33.0-${arch}.tar.gz -O /tmp/geckodriver.tar.gz && \
+#     tar -xzf /tmp/geckodriver.tar.gz -C /usr/local/bin/ && \
+#     chmod +x /usr/local/bin/geckodriver && \
+#     rm /tmp/geckodriver.tar.gz'
 
-# Install packages for spell checking
-RUN apt-get update && apt-get install -y hunspell-en-gb python3-enchant pylint && apt-get clean all
+# # Install packages for spell checking
+# RUN apt-get update && apt-get install -y hunspell-en-gb python3-enchant pylint && apt-get clean all
 
-COPY pyproject.toml poetry.lock .
-ARG PYPI_PROXY
-RUN if test ! -z "$PYPI_PROXY"; then pip_args="--index=$PYPI_PROXY --trusted-host=$(echo $PYPI_PROXY | sed 's#https*://##g' | sed 's#/.*##g')"; else pip_args=""; fi; \
-    http_proxy= https_proxy= pip install poetry $pip_args
-RUN poetry config virtualenvs.in-project true
+# COPY pyproject.toml poetry.lock .
+# ARG PYPI_PROXY
+# RUN if test ! -z "$PYPI_PROXY"; then pip_args="--index=$PYPI_PROXY --trusted-host=$(echo $PYPI_PROXY | sed 's#https*://##g' | sed 's#/.*##g')"; else pip_args=""; fi; \
+#     http_proxy= https_proxy= pip install poetry $pip_args
+# RUN poetry config virtualenvs.in-project true
 
-RUN if test ! -z "$PYPI_PROXY"; then \
-      poetry source add --priority=primary packages $PYPI_PROXY; \
-      http_proxy= https_proxy= poetry lock; \
-    fi
-ARG POETRY_INSTALLER_MAX_WORKERS=4
-RUN https_proxy= http_proxy= poetry install --no-root --with=dev
+# RUN if test ! -z "$PYPI_PROXY"; then \
+#       poetry source add --priority=primary packages $PYPI_PROXY; \
+#       http_proxy= https_proxy= poetry lock; \
+#     fi
+# ARG POETRY_INSTALLER_MAX_WORKERS=4
+# RUN https_proxy= http_proxy= poetry install --no-root --with=dev
 
-ENV RUNNING_IN_DOCKER=1
+# ENV RUNNING_IN_DOCKER=1
 
 COPY . .
 
