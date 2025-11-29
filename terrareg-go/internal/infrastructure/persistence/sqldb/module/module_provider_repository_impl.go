@@ -196,7 +196,14 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 	// Apply ordering
 	orderBy := "module_provider.module"
 	if query.OrderBy != "" {
-		orderBy = query.OrderBy
+		// Ensure column names are qualified with table name to avoid ambiguity
+		if query.OrderBy == "id" {
+			orderBy = "module_provider.id"
+		} else if query.OrderBy == "namespace" {
+			orderBy = "namespace.namespace"
+		} else {
+			orderBy = query.OrderBy
+		}
 	}
 	orderDir := "ASC"
 	if query.OrderDir != "" {
