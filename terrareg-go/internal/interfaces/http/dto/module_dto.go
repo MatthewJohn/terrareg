@@ -33,3 +33,10 @@ type PaginationMeta struct {
 	Offset     int `json:"offset"`
 	TotalCount int `json:"total_count"`
 }
+
+// ModuleProviderCreateRequest represents a request to create a module provider
+type ModuleProviderCreateRequest struct {
+	Namespace string `json:"namespace" binding:"required"`
+	Module    string `json:"module" binding:"required"`
+	Provider  string `json:"provider" binding:"required"`
+}
