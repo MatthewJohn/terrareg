@@ -372,7 +372,9 @@ func (s *Server) handleInitialSetupPost(w http.ResponseWriter, r *http.Request) 
 func (s *Server) handleNamespaceList(w http.ResponseWriter, r *http.Request) {
 	s.namespaceHandler.HandleNamespaceList(w, r)
 }
-func (s *Server) handleNamespaceCreate(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleNamespaceCreate(w http.ResponseWriter, r *http.Request) {
+	s.namespaceHandler.HandleNamespaceCreate(w, r)
+}
 func (s *Server) handleNamespaceGet(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleNamespaceUpdate(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleTerraregNamespaceModules(w http.ResponseWriter, r *http.Request) {}
@@ -440,18 +442,11 @@ func (s *Server) handleProviderSourcePublishProvider(w http.ResponseWriter, r *h
 func (s *Server) handleGitHubWebhook(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleBitBucketWebhook(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
-	// Render the index page
+	// Serve the index template as a static file
+	// The Jinja2 templates are incompatible with Go templates, but the frontend
+	// is JavaScript-based and calls API endpoints for data, so we just serve the HTML
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-	data := map[string]interface{}{
-		// Add any additional data needed for the index page
-	}
-
-	if err := s.templateRenderer.Render(w, "index.html", data); err != nil {
-		s.logger.Error().Err(err).Msg("Failed to render index template")
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
+	http.ServeFile(w, r, "templates/index.html")
 }
 func (s *Server) handleLoginPage(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {}

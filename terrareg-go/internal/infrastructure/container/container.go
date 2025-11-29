@@ -4,6 +4,7 @@ import (
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
+	"github.com/terrareg/terrareg/internal/application/command/namespace"
 	"github.com/terrareg/terrareg/internal/application/query/analytics"
 	"github.com/terrareg/terrareg/internal/application/query/module"
 	"github.com/terrareg/terrareg/internal/config"
@@ -24,6 +25,9 @@ type Container struct {
 	// Repositories
 	NamespaceRepo      moduleRepo.NamespaceRepository
 	ModuleProviderRepo moduleRepo.ModuleProviderRepository
+
+	// Commands
+	CreateNamespaceCmd *namespace.CreateNamespaceCommand
 
 	// Queries
 	ListNamespacesQuery *module.ListNamespacesQuery
@@ -55,6 +59,9 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.NamespaceRepo = modulePersistence.NewNamespaceRepository(db.DB)
 	c.ModuleProviderRepo = modulePersistence.NewModuleProviderRepository(db.DB, c.NamespaceRepo)
 
+	// Initialize commands
+	c.CreateNamespaceCmd = namespace.NewCreateNamespaceCommand(c.NamespaceRepo)
+
 	// Initialize queries
 	c.ListNamespacesQuery = module.NewListNamespacesQuery(c.NamespaceRepo)
 	c.ListModulesQuery = module.NewListModulesQuery(c.ModuleProviderRepo)
@@ -62,7 +69,7 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.GlobalStatsQuery = analytics.NewGlobalStatsQuery(c.NamespaceRepo, c.ModuleProviderRepo)
 
 	// Initialize handlers
-	c.NamespaceHandler = terrareg.NewNamespaceHandler(c.ListNamespacesQuery)
+	c.NamespaceHandler = terrareg.NewNamespaceHandler(c.ListNamespacesQuery, c.CreateNamespaceCmd)
 	c.ModuleHandler = terrareg.NewModuleHandler(c.ListModulesQuery, c.SearchModulesQuery)
 	c.AnalyticsHandler = terrareg.NewAnalyticsHandler(c.GlobalStatsQuery)
 
