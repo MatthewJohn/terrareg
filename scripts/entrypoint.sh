@@ -26,4 +26,4 @@ then
 fi
 
 # Run main executable
-poetry run python ./terrareg.py
+./terrareg-go/server

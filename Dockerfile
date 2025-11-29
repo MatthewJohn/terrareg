@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM golang:1.25.4-trixie
 
 ARG VERSION
 
@@ -44,17 +44,17 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
 # Download tfswitch
 RUN bash -c 'curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/master/install.sh | bash /dev/stdin 1.2.2'
 
-# Install go
-RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
-    then \
-      arch=arm64; \
-    else \
-      arch=amd64; \
-    fi; \
-    wget https://go.dev/dl/go1.20.10.linux-${arch}.tar.gz -O /tmp/go.tar.gz && \
-    tar -zxvf /tmp/go.tar.gz -C /usr/local && \
-    rm /tmp/go.tar.gz'
-ENV PATH=$PATH:/usr/local/go/bin
+# # Install go
+# RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
+#     then \
+#       arch=arm64; \
+#     else \
+#       arch=amd64; \
+#     fi; \
+#     wget https://go.dev/dl/go1.20.10.linux-${arch}.tar.gz -O /tmp/go.tar.gz && \
+#     tar -zxvf /tmp/go.tar.gz -C /usr/local && \
+#     rm /tmp/go.tar.gz'
+# ENV PATH=$PATH:/usr/local/go/bin
 
 # Install github.com/hashicorp/terraform-plugin-docs
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
@@ -70,29 +70,40 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
     rm /tmp/tfplugindocs.zip'
 
 WORKDIR /app
-COPY pyproject.toml poetry.lock .
-ARG PYPI_PROXY
-RUN if test ! -z "$PYPI_PROXY"; then pip_args="--index=$PYPI_PROXY --trusted-host=$(echo $PYPI_PROXY | sed 's#https*://##g' | sed 's#/.*##g')"; else pip_args=""; fi; \
-    http_proxy= https_proxy="" pip install poetry $pip_args
-RUN poetry config virtualenvs.in-project true
+# COPY pyproject.toml poetry.lock .
+# ARG PYPI_PROXY
+# RUN if test ! -z "$PYPI_PROXY"; then pip_args="--index=$PYPI_PROXY --trusted-host=$(echo $PYPI_PROXY | sed 's#https*://##g' | sed 's#/.*##g')"; else pip_args=""; fi; \
+#     http_proxy= https_proxy="" pip install poetry $pip_args
+# RUN poetry config virtualenvs.in-project true
 
-RUN if test ! -z "$PYPI_PROXY"; then \
-      poetry source add --priority=primary packages $PYPI_PROXY; \
-      http_proxy= https_proxy= poetry lock; \
-    fi
-ARG POETRY_INSTALLER_MAX_WORKERS=4
-RUN https_proxy= http_proxy= poetry install --no-root
+# RUN if test ! -z "$PYPI_PROXY"; then \
+#       poetry source add --priority=primary packages $PYPI_PROXY; \
+#       http_proxy= https_proxy= poetry lock; \
+#     fi
+# ARG POETRY_INSTALLER_MAX_WORKERS=4
+# RUN https_proxy= http_proxy= poetry install --no-root
+WORKDIR /app/terrareg-go
+# Copy go.mod and go.sum first for dependency caching
+COPY terrareg-go/go.mod go.sum ./
+
+# Download dependencies (cached unless mod files change)
+RUN go mod download
+
+# Copy the rest of the source code
+COPY . /app
+RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/server/main.go
+WORKDIR /app
 
 RUN mkdir bin licenses
 
 # Create licenses for python packages
-RUN if test ! -z "$PYPI_PROXY"; then pip_args="--index=$PYPI_PROXY --trusted-host=$(echo $PYPI_PROXY | sed 's#https*://##g' | sed 's#/.*##g')"; else pip_args=""; fi; \
-  http_proxy= https_proxy= pip install pip-licenses $pip_args && \
-  pip-licenses --with-system --with-license-file --format=plain-vertical > licenses/LICENSES.python && \
-  pip uninstall --yes pip-licenses
+# RUN if test ! -z "$PYPI_PROXY"; then pip_args="--index=$PYPI_PROXY --trusted-host=$(echo $PYPI_PROXY | sed 's#https*://##g' | sed 's#/.*##g')"; else pip_args=""; fi; \
+#   http_proxy= https_proxy= pip install pip-licenses $pip_args && \
+#   pip-licenses --with-system --with-license-file --format=plain-vertical > licenses/LICENSES.python && \
+#   pip uninstall --yes pip-licenses
 # Copy licenses for deb packages
-RUN mkdir licenses/deb
-RUN bash -c 'pushd /usr/share/doc; for i in *; do mkdir /app/licenses/deb/$i; cp $i/{LICENSE,NOTICE,copyright} /app/licenses/deb/$i/; done; rmdir /app/licenses/deb/*; popd'
+# RUN mkdir licenses/deb
+# RUN bash -c 'pushd /usr/share/doc; for i in *; do mkdir /app/licenses/deb/$i; cp $i/{LICENSE,NOTICE,copyright} /app/licenses/deb/$i/; done; rmdir /app/licenses/deb/*; popd'
 # Get licenses for installed binaries
 RUN mkdir licenses/terraform-docs && wget https://github.com/terraform-docs/terraform-docs/raw/master/LICENSE -O ./licenses/terraform-docs/LICENSE
 RUN mkdir licenses/tfsec && wget https://github.com/aquasecurity/tfsec/raw/master/LICENSE -O ./licenses/tfsec/LICENSE
