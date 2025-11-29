@@ -328,12 +328,24 @@ func (s *Server) handleModuleSearch(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleNamespaceModules(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleNamespaceModules(w, r)
 }
-func (s *Server) handleModuleDetails(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleProviderDetails(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleVersions(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleDownload(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleVersionDetails(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleDownloadsSummary(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleModuleDetails(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleDetails(w, r)
+}
+func (s *Server) handleModuleProviderDetails(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleProviderDetails(w, r)
+}
+func (s *Server) handleModuleVersions(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleVersions(w, r)
+}
+func (s *Server) handleModuleDownload(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleDownload(w, r)
+}
+func (s *Server) handleModuleVersionDetails(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleVersionDetails(w, r)
+}
+func (s *Server) handleModuleDownloadsSummary(w http.ResponseWriter, r *http.Request) {
+	s.analyticsHandler.HandleModuleDownloadsSummary(w, r)
+}
 func (s *Server) handleProviderList(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleProviderSearch(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleNamespaceProviders(w http.ResponseWriter, r *http.Request) {}
@@ -384,16 +396,24 @@ func (s *Server) handleTerraregModuleProviderVersions(w http.ResponseWriter, r *
 func (s *Server) handleModuleProviderCreate(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleProviderCreate(w, r)
 }
-func (s *Server) handleModuleProviderDelete(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleProviderSettings(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleProviderSettingsUpdate(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleModuleProviderDelete(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleProviderDelete(w, r)
+}
+func (s *Server) handleModuleProviderSettings(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleProviderSettingsGet(w, r)
+}
+func (s *Server) handleModuleProviderSettingsUpdate(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleProviderSettingsUpdate(w, r)
+}
 func (s *Server) handleModuleProviderIntegrations(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleProviderRedirects(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleProviderRedirectDelete(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleVersionUpload(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleVersionCreate(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleVersionImport(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleVersionPublish(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleModuleVersionPublish(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleVersionPublish(w, r)
+}
 func (s *Server) handleModuleVersionDelete(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleVersionReadmeHTML(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleVersionVariableTemplate(w http.ResponseWriter, r *http.Request) {}
