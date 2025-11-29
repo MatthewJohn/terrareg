@@ -34,6 +34,7 @@ type ModuleProviderRepository interface {
 type ModuleSearchQuery struct {
 	Query      string
 	Namespace  *string
+	Module     *string
 	Provider   *string
 	Verified   *bool
 	Limit      int

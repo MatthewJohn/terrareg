@@ -179,6 +179,10 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 		db = db.Where("namespace.namespace = ?", *query.Namespace)
 	}
 
+	if query.Module != nil {
+		db = db.Where("module_provider.module = ?", *query.Module)
+	}
+
 	if query.Provider != nil {
 		db = db.Where("module_provider.provider = ?", *query.Provider)
 	}
