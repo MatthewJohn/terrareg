@@ -57,6 +57,31 @@ cache:
     HTTPS_PROXY: $NOMAD_PROXY
     no_proxy: $NOMAD_NO_PROXY
 
+.pr_deployment_golang:
+  variables:
+    # Configure base domain that the
+    # environments will be using
+    APP_DOMAIN: gitlab-pr.dockstudios.co.uk
+
+    # State variable, which will isolate the
+    # state based on the branch name
+    TF_STATE_NAME: ${CI_COMMIT_REF_SLUG}-golang
+
+    # Populate the terraform pull_request
+    # variable that will be passed to the
+    # deployment terraform
+    TF_VAR_pull_request: ${CI_COMMIT_REF_SLUG}-golang
+    # Variable for docker tag
+    TF_VAR_docker_image: "terrareg-golang:v${CI_COMMIT_SHORT_SHA}"
+    TF_VAR_http_proxy: $NOMAD_PROXY
+    TF_VAR_no_proxy: $NOMAD_NO_PROXY
+
+    http_proxy: $NOMAD_PROXY
+    https_proxy: $NOMAD_PROXY
+    HTTP_PROXY: $NOMAD_PROXY
+    HTTPS_PROXY: $NOMAD_PROXY
+    no_proxy: $NOMAD_NO_PROXY
+
 .before_script_python:
   before_script:
     - python --version  # For debugging
@@ -236,7 +261,25 @@ build-pr-image:
   image: docker:latest
 
   script:
-    - docker build -f Dockerfile -t $TF_VAR_docker_image --build-arg PYPI_PROXY=$INTERNAL_PYPI_PROXY --build-arg POETRY_INSTALLER_MAX_WORKERS=1 --build-arg http_proxy=$NOMAD_PROXY --build-arg HTTP_PROXY=$NOMAD_PROXY --build-arg https_proxy=$NOMAD_PROXY --build-arg HTTPS_PROXY=$NOMAD_PROXY .
+    - cd terrareg-go; docker build -f Dockerfile -t $TF_VAR_docker_image --build-arg PYPI_PROXY=$INTERNAL_PYPI_PROXY --build-arg POETRY_INSTALLER_MAX_WORKERS=1 --build-arg http_proxy=$NOMAD_PROXY --build-arg HTTP_PROXY=$NOMAD_PROXY --build-arg https_proxy=$NOMAD_PROXY --build-arg HTTPS_PROXY=$NOMAD_PROXY .
+
+build-golang-pr-image:
+  stage: build
+  extends: .pr_deployment_golang
+  # Use tags to limit to the nomad runner
+  tags: [nomad]
+
+  rules:
+    - if: '$CI_COMMIT_REF_NAME =~ /renovate\//'
+      when: never
+    - if: $CI_PIPELINE_SOURCE == 'push'
+
+  # Use docker without docker-in-docker, as we're
+  # passing through the docker socket
+  image: docker:latest
+
+  script:
+    - cd terrareg-go; docker build -f Dockerfile -t $TF_VAR_docker_image --build-arg PYPI_PROXY=$INTERNAL_PYPI_PROXY --build-arg POETRY_INSTALLER_MAX_WORKERS=1 --build-arg http_proxy=$NOMAD_PROXY --build-arg HTTP_PROXY=$NOMAD_PROXY --build-arg https_proxy=$NOMAD_PROXY --build-arg HTTPS_PROXY=$NOMAD_PROXY .
 
 deploy_review:
   stage: deploy
