@@ -381,7 +381,9 @@ func (s *Server) handleTerraregNamespaceModules(w http.ResponseWriter, r *http.R
 func (s *Server) handleTerraregModuleProviders(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleTerraregModuleVersionDetails(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleTerraregModuleProviderVersions(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleProviderCreate(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleModuleProviderCreate(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleProviderCreate(w, r)
+}
 func (s *Server) handleModuleProviderDelete(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleProviderSettings(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleProviderSettingsUpdate(w http.ResponseWriter, r *http.Request) {}
