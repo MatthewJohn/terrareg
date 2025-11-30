@@ -54,7 +54,8 @@ type Config struct {
 	SentryTracesSampleRate       float64
 
 	// Session settings
-	SessionExpiry time.Duration
+	SessionExpiry         time.Duration
+	AdminSessionExpiryMins int
 
 	// Provider source settings
 	ProviderSources map[string]ProviderSourceConfig
@@ -107,7 +108,8 @@ func New() (*Config, error) {
 		SentryTracesSampleRate:      getEnvFloat("SENTRY_TRACES_SAMPLE_RATE", 0.1),
 
 		// Session
-		SessionExpiry: time.Duration(getEnvInt("SESSION_EXPIRY_MINS", 60)) * time.Minute,
+		SessionExpiry:          time.Duration(getEnvInt("SESSION_EXPIRY_MINS", 60)) * time.Minute,
+		AdminSessionExpiryMins: getEnvInt("ADMIN_SESSION_EXPIRY_MINS", 60),
 
 		ProviderSources: make(map[string]ProviderSourceConfig),
 	}
