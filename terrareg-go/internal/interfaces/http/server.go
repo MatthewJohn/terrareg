@@ -498,24 +498,99 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	http.ServeFile(w, r, "templates/index.html")
 }
-func (s *Server) handleLoginPage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleInitialSetupPage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleCreateNamespacePage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleEditNamespacePage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleCreateModulePage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleCreateProviderPage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleUserGroupsPage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleAuditHistoryPage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleSearchPage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleSearchPage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderSearchPage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModulesPage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleNamespacePage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModulePage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleProviderPage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleSubmodulePage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleExamplePage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleGraphPage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProvidersPage(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderPage(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleLoginPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/login.html")
+}
+func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
+	// Clear session cookies
+	http.SetCookie(w, &http.Cookie{
+		Name:   "session_id",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:   "is_admin_authenticated",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	})
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+func (s *Server) handleInitialSetupPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/initial_setup.html")
+}
+func (s *Server) handleCreateNamespacePage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/create_namespace.html")
+}
+func (s *Server) handleEditNamespacePage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/namespace.html")
+}
+func (s *Server) handleCreateModulePage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/create_module_provider.html")
+}
+func (s *Server) handleCreateProviderPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/create_provider.html")
+}
+func (s *Server) handleUserGroupsPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/user_groups.html")
+}
+func (s *Server) handleAuditHistoryPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/audit_history.html")
+}
+func (s *Server) handleSearchPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/search.html")
+}
+func (s *Server) handleModuleSearchPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/module_search.html")
+}
+func (s *Server) handleProviderSearchPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/provider_search.html")
+}
+func (s *Server) handleModulesPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/module.html")
+}
+func (s *Server) handleNamespacePage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/namespace.html")
+}
+func (s *Server) handleModulePage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/module.html")
+}
+func (s *Server) handleModuleProviderPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/module_provider.html")
+}
+func (s *Server) handleSubmodulePage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/submodule.html")
+}
+func (s *Server) handleExamplePage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/example.html")
+}
+func (s *Server) handleGraphPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/graph.html")
+}
+func (s *Server) handleProvidersPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/provider.html")
+}
+func (s *Server) handleProviderPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "templates/provider.html")
+}
