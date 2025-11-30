@@ -46,6 +46,8 @@ type Container struct {
 	PublishModuleVersionCmd         *moduleCmd.PublishModuleVersionCommand
 	UpdateModuleProviderSettingsCmd *moduleCmd.UpdateModuleProviderSettingsCommand
 	DeleteModuleProviderCmd         *moduleCmd.DeleteModuleProviderCommand
+	UploadModuleVersionCmd          *moduleCmd.UploadModuleVersionCommand
+	ImportModuleVersionCmd          *moduleCmd.ImportModuleVersionCommand
 	RecordModuleDownloadCmd         *analyticsCmd.RecordModuleDownloadCommand
 	CreateAdminSessionCmd           *authCmd.CreateAdminSessionCommand
 
@@ -106,6 +108,8 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.PublishModuleVersionCmd = moduleCmd.NewPublishModuleVersionCommand(c.ModuleProviderRepo)
 	c.UpdateModuleProviderSettingsCmd = moduleCmd.NewUpdateModuleProviderSettingsCommand(c.ModuleProviderRepo)
 	c.DeleteModuleProviderCmd = moduleCmd.NewDeleteModuleProviderCommand(c.ModuleProviderRepo)
+	c.UploadModuleVersionCmd = moduleCmd.NewUploadModuleVersionCommand(c.ModuleProviderRepo, cfg)
+	c.ImportModuleVersionCmd = moduleCmd.NewImportModuleVersionCommand(c.ModuleProviderRepo)
 	c.RecordModuleDownloadCmd = analyticsCmd.NewRecordModuleDownloadCommand(c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.CreateAdminSessionCmd = authCmd.NewCreateAdminSessionCommand(c.SessionRepo, cfg)
 
@@ -142,6 +146,8 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 		c.PublishModuleVersionCmd,
 		c.UpdateModuleProviderSettingsCmd,
 		c.DeleteModuleProviderCmd,
+		c.UploadModuleVersionCmd,
+		c.ImportModuleVersionCmd,
 	)
 	c.AnalyticsHandler = terrareg.NewAnalyticsHandler(
 		c.GlobalStatsQuery,
@@ -173,7 +179,7 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.TemplateRenderer = templateRenderer
 
 	// Initialize HTTP server
-	c.Server = http.NewServer(cfg, logger, c.NamespaceHandler, c.ModuleHandler, c.AnalyticsHandler, c.ProviderHandler, c.AuthHandler, c.TemplateRenderer)
+	c.Server = http.NewServer(cfg, logger, c.NamespaceHandler, c.ModuleHandler, c.AnalyticsHandler, c.ProviderHandler, c.AuthHandler, c.AuthMiddleware, c.TemplateRenderer)
 
 	return c, nil
 }
