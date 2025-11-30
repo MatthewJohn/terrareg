@@ -25,11 +25,12 @@ type Server struct {
 	analyticsHandler *terrareg.AnalyticsHandler
 	providerHandler  *terrareg.ProviderHandler
 	authHandler      *terrareg.AuthHandler
+	authMiddleware   *terrareg_middleware.AuthMiddleware
 	templateRenderer *template.Renderer
 }
 
 // NewServer creates a new HTTP server
-func NewServer(cfg *config.Config, logger zerolog.Logger, namespaceHandler *terrareg.NamespaceHandler, moduleHandler *terrareg.ModuleHandler, analyticsHandler *terrareg.AnalyticsHandler, providerHandler *terrareg.ProviderHandler, authHandler *terrareg.AuthHandler, templateRenderer *template.Renderer) *Server {
+func NewServer(cfg *config.Config, logger zerolog.Logger, namespaceHandler *terrareg.NamespaceHandler, moduleHandler *terrareg.ModuleHandler, analyticsHandler *terrareg.AnalyticsHandler, providerHandler *terrareg.ProviderHandler, authHandler *terrareg.AuthHandler, authMiddleware *terrareg_middleware.AuthMiddleware, templateRenderer *template.Renderer) *Server {
 	s := &Server{
 		router:           chi.NewRouter(),
 		config:           cfg,
@@ -39,6 +40,7 @@ func NewServer(cfg *config.Config, logger zerolog.Logger, namespaceHandler *terr
 		analyticsHandler: analyticsHandler,
 		providerHandler:  providerHandler,
 		authHandler:      authHandler,
+		authMiddleware:   authMiddleware,
 		templateRenderer: templateRenderer,
 	}
 
@@ -123,30 +125,30 @@ func (s *Server) setupRoutes() {
 
 			// Namespaces
 			r.Get("/namespaces", s.handleNamespaceList)
-			r.Post("/namespaces", s.handleNamespaceCreate)
+			r.With(s.authMiddleware.RequireAuth).Post("/namespaces", s.handleNamespaceCreate)
 			r.Get("/namespaces/{namespace}", s.handleNamespaceGet)
-			r.Post("/namespaces/{namespace}", s.handleNamespaceUpdate)
+			r.With(s.authMiddleware.RequireAuth).Post("/namespaces/{namespace}", s.handleNamespaceUpdate)
 
 			// Modules
 			r.Get("/modules/{namespace}", s.handleTerraregNamespaceModules)
 			r.Get("/modules/{namespace}/{name}", s.handleTerraregModuleProviders)
 			r.Get("/modules/{namespace}/{name}/{provider}", s.handleTerraregModuleVersionDetails)
 			r.Get("/modules/{namespace}/{name}/{provider}/versions", s.handleTerraregModuleProviderVersions)
-			r.Post("/modules/{namespace}/{name}/{provider}/create", s.handleModuleProviderCreate)
-			r.Delete("/modules/{namespace}/{name}/{provider}/delete", s.handleModuleProviderDelete)
+			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/create", s.handleModuleProviderCreate)
+			r.With(s.authMiddleware.RequireAuth).Delete("/modules/{namespace}/{name}/{provider}/delete", s.handleModuleProviderDelete)
 			r.Get("/modules/{namespace}/{name}/{provider}/settings", s.handleModuleProviderSettings)
-			r.Post("/modules/{namespace}/{name}/{provider}/settings", s.handleModuleProviderSettingsUpdate)
+			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/settings", s.handleModuleProviderSettingsUpdate)
 			r.Get("/modules/{namespace}/{name}/{provider}/integrations", s.handleModuleProviderIntegrations)
 			r.Get("/modules/{namespace}/{name}/{provider}/redirects", s.handleModuleProviderRedirects)
-			r.Delete("/modules/{namespace}/{name}/{provider}/redirects/{redirect_id}", s.handleModuleProviderRedirectDelete)
+			r.With(s.authMiddleware.RequireAuth).Delete("/modules/{namespace}/{name}/{provider}/redirects/{redirect_id}", s.handleModuleProviderRedirectDelete)
 
 			// Module versions
 			r.Get("/modules/{namespace}/{name}/{provider}/{version}", s.handleTerraregModuleVersionDetails)
-			r.Post("/modules/{namespace}/{name}/{provider}/{version}/upload", s.handleModuleVersionUpload)
-			r.Post("/modules/{namespace}/{name}/{provider}/{version}/import", s.handleModuleVersionCreate)
-			r.Post("/modules/{namespace}/{name}/{provider}/import", s.handleModuleVersionImport)
-			r.Post("/modules/{namespace}/{name}/{provider}/{version}/publish", s.handleModuleVersionPublish)
-			r.Delete("/modules/{namespace}/{name}/{provider}/{version}/delete", s.handleModuleVersionDelete)
+			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/{version}/upload", s.handleModuleVersionUpload)
+			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/{version}/import", s.handleModuleVersionCreate)
+			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/import", s.handleModuleVersionImport)
+			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/{version}/publish", s.handleModuleVersionPublish)
+			r.With(s.authMiddleware.RequireAuth).Delete("/modules/{namespace}/{name}/{provider}/{version}/delete", s.handleModuleVersionDelete)
 			r.Get("/modules/{namespace}/{name}/{provider}/{version}/readme_html", s.handleModuleVersionReadmeHTML)
 			r.Get("/modules/{namespace}/{name}/{provider}/{version}/variable_template", s.handleModuleVersionVariableTemplate)
 			r.Get("/modules/{namespace}/{name}/{provider}/{version}/files/{path}", s.handleModuleVersionFile)
@@ -181,12 +183,12 @@ func (s *Server) setupRoutes() {
 			r.Get("/audit-history", s.handleAuditHistory)
 
 			// User groups
-			r.Get("/user-groups", s.handleUserGroupList)
-			r.Post("/user-groups", s.handleUserGroupCreate)
-			r.Get("/user-groups/{group}", s.handleUserGroupDetails)
-			r.Delete("/user-groups/{group}", s.handleUserGroupDelete)
-			r.Get("/user-groups/{group}/permissions/{namespace}", s.handleUserGroupNamespacePermissions)
-			r.Post("/user-groups/{group}/permissions/{namespace}", s.handleUserGroupNamespacePermissionsUpdate)
+			r.With(s.authMiddleware.RequireAuth).Get("/user-groups", s.handleUserGroupList)
+			r.With(s.authMiddleware.RequireAuth).Post("/user-groups", s.handleUserGroupCreate)
+			r.With(s.authMiddleware.RequireAuth).Get("/user-groups/{group}", s.handleUserGroupDetails)
+			r.With(s.authMiddleware.RequireAuth).Delete("/user-groups/{group}", s.handleUserGroupDelete)
+			r.With(s.authMiddleware.RequireAuth).Get("/user-groups/{group}/permissions/{namespace}", s.handleUserGroupNamespacePermissions)
+			r.With(s.authMiddleware.RequireAuth).Post("/user-groups/{group}/permissions/{namespace}", s.handleUserGroupNamespacePermissionsUpdate)
 
 			// Auth
 			r.Post("/auth/admin/login", s.handleAdminLogin)
@@ -432,9 +434,13 @@ func (s *Server) handleModuleProviderSettingsUpdate(w http.ResponseWriter, r *ht
 func (s *Server) handleModuleProviderIntegrations(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleProviderRedirects(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleProviderRedirectDelete(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleVersionUpload(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleModuleVersionUpload(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleVersionUpload(w, r)
+}
 func (s *Server) handleModuleVersionCreate(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleVersionImport(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleModuleVersionImport(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleVersionImport(w, r)
+}
 func (s *Server) handleModuleVersionPublish(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleVersionPublish(w, r)
 }
