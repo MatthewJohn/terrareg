@@ -23,11 +23,13 @@ type Server struct {
 	namespaceHandler *terrareg.NamespaceHandler
 	moduleHandler    *terrareg.ModuleHandler
 	analyticsHandler *terrareg.AnalyticsHandler
+	providerHandler  *terrareg.ProviderHandler
+	authHandler      *terrareg.AuthHandler
 	templateRenderer *template.Renderer
 }
 
 // NewServer creates a new HTTP server
-func NewServer(cfg *config.Config, logger zerolog.Logger, namespaceHandler *terrareg.NamespaceHandler, moduleHandler *terrareg.ModuleHandler, analyticsHandler *terrareg.AnalyticsHandler, templateRenderer *template.Renderer) *Server {
+func NewServer(cfg *config.Config, logger zerolog.Logger, namespaceHandler *terrareg.NamespaceHandler, moduleHandler *terrareg.ModuleHandler, analyticsHandler *terrareg.AnalyticsHandler, providerHandler *terrareg.ProviderHandler, authHandler *terrareg.AuthHandler, templateRenderer *template.Renderer) *Server {
 	s := &Server{
 		router:           chi.NewRouter(),
 		config:           cfg,
@@ -35,6 +37,8 @@ func NewServer(cfg *config.Config, logger zerolog.Logger, namespaceHandler *terr
 		namespaceHandler: namespaceHandler,
 		moduleHandler:    moduleHandler,
 		analyticsHandler: analyticsHandler,
+		providerHandler:  providerHandler,
+		authHandler:      authHandler,
 		templateRenderer: templateRenderer,
 	}
 
@@ -346,12 +350,32 @@ func (s *Server) handleModuleVersionDetails(w http.ResponseWriter, r *http.Reque
 func (s *Server) handleModuleDownloadsSummary(w http.ResponseWriter, r *http.Request) {
 	s.analyticsHandler.HandleModuleDownloadsSummary(w, r)
 }
-func (s *Server) handleProviderList(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderSearch(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleNamespaceProviders(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderDetails(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderVersions(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderDownload(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleProviderList(w http.ResponseWriter, r *http.Request) {
+	s.providerHandler.HandleProviderList(w, r)
+}
+
+func (s *Server) handleProviderSearch(w http.ResponseWriter, r *http.Request) {
+	s.providerHandler.HandleProviderSearch(w, r)
+}
+
+func (s *Server) handleNamespaceProviders(w http.ResponseWriter, r *http.Request) {
+	s.providerHandler.HandleNamespaceProviders(w, r)
+}
+
+func (s *Server) handleProviderDetails(w http.ResponseWriter, r *http.Request) {
+	s.providerHandler.HandleProviderDetails(w, r)
+}
+
+func (s *Server) handleProviderVersions(w http.ResponseWriter, r *http.Request) {
+	s.providerHandler.HandleProviderVersions(w, r)
+}
+
+func (s *Server) handleProviderDownload(w http.ResponseWriter, r *http.Request) {
+	// TODO: Implement provider download handler
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"error": "Provider downloads not yet implemented",
+	})
+}
 func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	// Return public configuration - only non-sensitive config values
 	respondJSON(w, http.StatusOK, map[string]interface{}{
@@ -440,8 +464,12 @@ func (s *Server) handleUserGroupDetails(w http.ResponseWriter, r *http.Request) 
 func (s *Server) handleUserGroupDelete(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleUserGroupNamespacePermissions(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleUserGroupNamespacePermissionsUpdate(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleAdminLogin(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleIsAuthenticated(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleAdminLogin(w http.ResponseWriter, r *http.Request) {
+	s.authHandler.HandleAdminLogin(w, r)
+}
+func (s *Server) handleIsAuthenticated(w http.ResponseWriter, r *http.Request) {
+	s.authHandler.HandleIsAuthenticated(w, r)
+}
 func (s *Server) handleV2ProviderDetails(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleV2ProviderDownloadsSummary(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleV2ProviderDocs(w http.ResponseWriter, r *http.Request) {}
