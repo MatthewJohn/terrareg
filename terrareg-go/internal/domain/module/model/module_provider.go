@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/terrareg/terrareg/internal/domain/git/model"
 	"github.com/terrareg/terrareg/internal/domain/shared"
 )
 
@@ -18,6 +19,7 @@ type ModuleProvider struct {
 	verified  bool
 
 	// Git configuration
+	gitProvider           *model.GitProvider
 	gitProviderID         *int
 	repoBaseURLTemplate   *string
 	repoCloneURLTemplate  *string
@@ -303,6 +305,14 @@ func (mp *ModuleProvider) IsVerified() bool {
 
 func (mp *ModuleProvider) GitProviderID() *int {
 	return mp.gitProviderID
+}
+
+func (mp *ModuleProvider) SetGitProvider(gitProvider *model.GitProvider) {
+	mp.gitProvider = gitProvider
+}
+
+func (mp *ModuleProvider) GitProvider() *model.GitProvider {
+	return mp.gitProvider
 }
 
 func (mp *ModuleProvider) RepoBaseURLTemplate() *string {

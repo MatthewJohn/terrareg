@@ -60,6 +60,8 @@ type Container struct {
 	GetModuleVersionQuery          *module.GetModuleVersionQuery
 	GetModuleDownloadQuery         *module.GetModuleDownloadQuery
 	GetModuleProviderSettingsQuery *module.GetModuleProviderSettingsQuery
+	GetSubmodulesQuery             *module.GetSubmodulesQuery
+	GetExamplesQuery               *module.GetExamplesQuery
 	GlobalStatsQuery               *analyticsQuery.GlobalStatsQuery
 	GetDownloadSummaryQuery        *analyticsQuery.GetDownloadSummaryQuery
 	GetMostRecentlyPublishedQuery  *analyticsQuery.GetMostRecentlyPublishedQuery
@@ -109,7 +111,7 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.UpdateModuleProviderSettingsCmd = moduleCmd.NewUpdateModuleProviderSettingsCommand(c.ModuleProviderRepo)
 	c.DeleteModuleProviderCmd = moduleCmd.NewDeleteModuleProviderCommand(c.ModuleProviderRepo)
 	c.UploadModuleVersionCmd = moduleCmd.NewUploadModuleVersionCommand(c.ModuleProviderRepo, cfg)
-	c.ImportModuleVersionCmd = moduleCmd.NewImportModuleVersionCommand(c.ModuleProviderRepo)
+	c.ImportModuleVersionCmd = moduleCmd.NewImportModuleVersionCommand(c.ModuleProviderRepo, cfg)
 	c.RecordModuleDownloadCmd = analyticsCmd.NewRecordModuleDownloadCommand(c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.CreateAdminSessionCmd = authCmd.NewCreateAdminSessionCommand(c.SessionRepo, cfg)
 
@@ -122,6 +124,8 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.GetModuleVersionQuery = module.NewGetModuleVersionQuery(c.ModuleProviderRepo)
 	c.GetModuleDownloadQuery = module.NewGetModuleDownloadQuery(c.ModuleProviderRepo)
 	c.GetModuleProviderSettingsQuery = module.NewGetModuleProviderSettingsQuery(c.ModuleProviderRepo)
+	c.GetSubmodulesQuery = module.NewGetSubmodulesQuery(c.ModuleProviderRepo, cfg)
+	c.GetExamplesQuery = module.NewGetExamplesQuery(c.ModuleProviderRepo, cfg)
 	c.GlobalStatsQuery = analyticsQuery.NewGlobalStatsQuery(c.NamespaceRepo, c.ModuleProviderRepo)
 	c.GetDownloadSummaryQuery = analyticsQuery.NewGetDownloadSummaryQuery(c.AnalyticsRepo)
 	c.GetMostRecentlyPublishedQuery = analyticsQuery.NewGetMostRecentlyPublishedQuery(c.AnalyticsRepo)
@@ -142,6 +146,8 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 		c.GetModuleVersionQuery,
 		c.GetModuleDownloadQuery,
 		c.GetModuleProviderSettingsQuery,
+		c.GetSubmodulesQuery,
+		c.GetExamplesQuery,
 		c.CreateModuleProviderCmd,
 		c.PublishModuleVersionCmd,
 		c.UpdateModuleProviderSettingsCmd,

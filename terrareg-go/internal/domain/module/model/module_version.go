@@ -185,6 +185,11 @@ func (mv *ModuleVersion) SetMetadata(owner, description *string) {
 	mv.updatedAt = time.Now()
 }
 
+func (mv *ModuleVersion) SetDetails(details *ModuleDetails) {
+	mv.details = details
+	mv.updatedAt = time.Now()
+}
+
 // SetVariableTemplate sets the variable template
 func (mv *ModuleVersion) SetVariableTemplate(template []byte) {
 	mv.variableTemplate = template
