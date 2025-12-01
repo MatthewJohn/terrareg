@@ -11,6 +11,7 @@ import (
 
 	"github.com/terrareg/terrareg/internal/config"
 	"github.com/terrareg/terrareg/internal/domain/module/repository"
+	"github.com/terrareg/terrareg/internal/domain/module/service"
 )
 
 // UploadModuleVersionCommand handles uploading module source code
@@ -82,8 +83,21 @@ func (c *UploadModuleVersionCommand) Execute(ctx context.Context, req UploadModu
 		return fmt.Errorf("failed to extract module: %w", err)
 	}
 
+	// Parse the module to extract metadata
+	parser := service.NewModuleParser()
+	parseResult, err := parser.ParseModule(extractDir)
+	if err != nil {
+		// Log the error but don't fail - parsing is optional
+		// In production, this would be logged properly
+		_ = err
+	}
+
+	// Update version metadata if parsing succeeded
+	if parseResult != nil && parseResult.Description != "" {
+		version.SetMetadata(nil, &parseResult.Description)
+	}
+
 	// Publish the module version
-	// In the future, this would parse terraform files, README, etc.
 	if err := version.Publish(); err != nil {
 		return fmt.Errorf("failed to publish version: %w", err)
 	}

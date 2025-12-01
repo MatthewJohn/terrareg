@@ -449,10 +449,14 @@ func (s *Server) handleModuleVersionReadmeHTML(w http.ResponseWriter, r *http.Re
 func (s *Server) handleModuleVersionVariableTemplate(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleVersionFile(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleVersionSourceDownload(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleVersionSubmodules(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleModuleVersionSubmodules(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleGetSubmodules(w, r)
+}
 func (s *Server) handleSubmoduleDetails(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleSubmoduleReadmeHTML(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleVersionExamples(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleModuleVersionExamples(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleGetExamples(w, r)
+}
 func (s *Server) handleExampleDetails(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleExampleReadmeHTML(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleExampleFileList(w http.ResponseWriter, r *http.Request) {}

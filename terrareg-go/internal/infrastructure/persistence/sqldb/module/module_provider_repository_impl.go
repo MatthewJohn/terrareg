@@ -12,6 +12,7 @@ import (
 	"github.com/terrareg/terrareg/internal/domain/module/repository"
 	"github.com/terrareg/terrareg/internal/domain/shared"
 	"github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb"
+	gitmapper "github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb/git"
 )
 
 // ModuleProviderRepositoryImpl implements ModuleProviderRepository using GORM
@@ -104,6 +105,7 @@ func (r *ModuleProviderRepositoryImpl) FindByID(ctx context.Context, id int) (*m
 
 	err := r.db.WithContext(ctx).
 		Preload("Namespace").
+		Preload("GitProvider").
 		First(&dbModel, id).Error
 
 	if err != nil {
@@ -124,6 +126,7 @@ func (r *ModuleProviderRepositoryImpl) FindByNamespaceModuleProvider(ctx context
 		Joins("JOIN namespace ON namespace.id = module_provider.namespace_id").
 		Where("namespace.namespace = ? AND module_provider.module = ? AND module_provider.provider = ?", namespace, module, provider).
 		Preload("Namespace").
+		Preload("GitProvider").
 		First(&dbModel).Error
 
 	if err != nil {
@@ -167,7 +170,8 @@ func (r *ModuleProviderRepositoryImpl) FindByNamespace(ctx context.Context, name
 func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query repository.ModuleSearchQuery) (*repository.ModuleSearchResult, error) {
 	db := r.db.WithContext(ctx).
 		Joins("JOIN namespace ON namespace.id = module_provider.namespace_id").
-		Preload("Namespace")
+		Preload("Namespace").
+		Preload("GitProvider")
 
 	// Apply filters
 	if query.Query != "" {
@@ -295,6 +299,11 @@ func (r *ModuleProviderRepositoryImpl) toDomain(db *sqldb.ModuleProviderDB) (*mo
 		now,
 		now,
 	)
+
+	if db.GitProvider != nil {
+		gitProvider := gitmapper.FromDBGitProvider(db.GitProvider)
+		mp.SetGitProvider(gitProvider)
+	}
 
 	// Load versions
 	versions, err := r.loadVersions(context.Background(), db.ID)
