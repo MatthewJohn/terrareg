@@ -1,10 +1,12 @@
 package storage
 
 import (
+	"archive/zip"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // LocalStorage implements the StorageService interface for the local filesystem.

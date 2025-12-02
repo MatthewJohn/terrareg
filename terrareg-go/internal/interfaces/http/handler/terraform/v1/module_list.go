@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -63,9 +64,9 @@ func toModuleProviderResponse(mp *model.ModuleProvider) dto.ModuleProviderRespon
 
 	var description *string
 	if latest := mp.GetLatestVersion(); latest != nil && latest.Details() != nil {
-		desc := latest.Details().Description()
-		if desc != "" {
-			description = &desc
+		desc := latest.Description()
+		if desc != nil && *desc != "" {
+			description = desc
 		}
 	}
 
@@ -76,7 +77,6 @@ func toModuleProviderResponse(mp *model.ModuleProvider) dto.ModuleProviderRespon
 	if nsName != "" {
 		owner = &nsName
 	}
-
 
 	// Dummy values for fields not yet fully implemented or easily accessible from ModuleProvider
 	src := "github.com/some/repo" // Placeholder for source
