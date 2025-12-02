@@ -22,4 +22,7 @@ type ProviderRepository interface {
 
 	// FindVersionByProviderAndVersion retrieves a specific version
 	FindVersionByProviderAndVersion(ctx context.Context, providerID int, version string) (*provider.ProviderVersion, error)
+
+	// Save persists a provider aggregate to the database
+	Save(ctx context.Context, provider *provider.Provider) error
 }

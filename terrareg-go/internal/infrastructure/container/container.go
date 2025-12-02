@@ -8,6 +8,7 @@ import (
 	authCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/auth"
 	moduleCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/namespace"
+	providerCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/provider"
 	analyticsQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/analytics"
 	authQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
@@ -21,12 +22,12 @@ import (
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/git"
 
+	providerRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/parser"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	analyticsPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/analytics"
 	authPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/auth"
 	modulePersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
-	providerPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/provider"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/storage"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http"
 	v1 "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1"
@@ -66,6 +67,14 @@ type Container struct {
 	ImportModuleVersionCmd          *moduleCmd.ImportModuleVersionCommand
 	RecordModuleDownloadCmd         *analyticsCmd.RecordModuleDownloadCommand
 	CreateAdminSessionCmd           *authCmd.CreateAdminSessionCommand
+
+	// Provider Commands
+	CreateOrUpdateProviderCmd *providerCmd.CreateOrUpdateProviderCommand
+	PublishProviderVersionCmd *providerCmd.PublishProviderVersionCommand
+	ManageGPGKeyCmd           *providerCmd.ManageGPGKeyCommand
+
+	// Provider Queries
+	GetProviderVersionQuery *providerQuery.GetProviderVersionQuery
 
 	// Queries
 	ListNamespacesQuery            *module.ListNamespacesQuery
@@ -119,7 +128,7 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.NamespaceRepo = modulePersistence.NewNamespaceRepository(db.DB)
 	c.ModuleProviderRepo = modulePersistence.NewModuleProviderRepository(db.DB, c.NamespaceRepo)
 	c.AnalyticsRepo = analyticsPersistence.NewAnalyticsRepository(db.DB)
-	c.ProviderRepo = providerPersistence.NewProviderRepository(db.DB)
+	c.ProviderRepo = providerRepository.NewProviderRepository()
 	c.SessionRepo = authPersistence.NewSessionRepository(db.DB)
 
 	// Initialize infrastructure services
@@ -167,6 +176,11 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.SearchProvidersQuery = providerQuery.NewSearchProvidersQuery(c.ProviderRepo)
 	c.GetProviderQuery = providerQuery.NewGetProviderQuery(c.ProviderRepo)
 	c.GetProviderVersionsQuery = providerQuery.NewGetProviderVersionsQuery(c.ProviderRepo)
+	c.GetProviderVersionQuery = providerQuery.NewGetProviderVersionQuery(c.ProviderRepo)
+	c.GetProviderVersionQuery = providerQuery.NewGetProviderVersionQuery(c.ProviderRepo)
+	c.CreateOrUpdateProviderCmd = providerCmd.NewCreateOrUpdateProviderCommand(c.ProviderRepo, c.NamespaceRepo)
+	c.PublishProviderVersionCmd = providerCmd.NewPublishProviderVersionCommand(c.ProviderRepo, c.NamespaceRepo)
+	c.ManageGPGKeyCmd = providerCmd.NewManageGPGKeyCommand(c.ProviderRepo, c.NamespaceRepo)
 	c.CheckSessionQuery = authQuery.NewCheckSessionQuery(c.SessionRepo)
 
 	// Initialize handlers
@@ -200,6 +214,10 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 		c.SearchProvidersQuery,
 		c.GetProviderQuery,
 		c.GetProviderVersionsQuery,
+		c.GetProviderVersionQuery,
+		c.CreateOrUpdateProviderCmd,
+		c.PublishProviderVersionCmd,
+		c.ManageGPGKeyCmd,
 	)
 	c.AuthHandler = terrareg.NewAuthHandler(
 		c.CreateAdminSessionCmd,
