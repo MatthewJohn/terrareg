@@ -39,11 +39,11 @@ func NewUploadModuleVersionCommand(
 
 // UploadModuleVersionRequest represents the upload request
 type UploadModuleVersionRequest struct {
-	Namespace string
-	Module    string
-	Provider  string
-	Version   string
-	Source    io.Reader
+	Namespace  string
+	Module     string
+	Provider   string
+	Version    string
+	Source     io.Reader
 	SourceSize int64
 }
 
@@ -90,8 +90,7 @@ func (c *UploadModuleVersionCommand) Execute(ctx context.Context, req UploadModu
 	}
 
 	// Parse the module to extract metadata
-	parser := service.NewModuleParser()
-	parseResult, err := parser.ParseModule(extractDir)
+	parseResult, err := c.moduleParser.ParseModule(extractDir)
 	if err != nil {
 		// Log the error but don't fail - parsing is optional
 		// In production, this would be logged properly

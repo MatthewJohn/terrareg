@@ -15,10 +15,12 @@ import (
 	providerQuery "github.com/terrareg/terrareg/internal/application/query/provider"
 	"github.com/terrareg/terrareg/internal/config"
 	authRepo "github.com/terrareg/terrareg/internal/domain/auth/repository"
+	gitService "github.com/terrareg/terrareg/internal/domain/git/service"
 	moduleRepo "github.com/terrareg/terrareg/internal/domain/module/repository"
 	moduleService "github.com/terrareg/terrareg/internal/domain/module/service" // Alias for the new module service
 	providerRepo "github.com/terrareg/terrareg/internal/domain/provider/repository"
 	"github.com/terrareg/terrareg/internal/infrastructure/git"
+
 	"github.com/terrareg/terrareg/internal/infrastructure/parser"
 	"github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb"
 	analyticsPersistence "github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb/analytics"
@@ -27,6 +29,7 @@ import (
 	providerPersistence "github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb/provider"
 	"github.com/terrareg/terrareg/internal/infrastructure/storage"
 	"github.com/terrareg/terrareg/internal/interfaces/http"
+	v1 "github.com/terrareg/terrareg/internal/interfaces/http/handler/terraform/v1"
 	"github.com/terrareg/terrareg/internal/interfaces/http/handler/terrareg"
 	terrareg_middleware "github.com/terrareg/terrareg/internal/interfaces/http/middleware"
 	"github.com/terrareg/terrareg/internal/interfaces/http/template"
@@ -46,7 +49,7 @@ type Container struct {
 	SessionRepo        authRepo.SessionRepository
 
 	// Infrastructure Services
-	GitClient      GitClient
+	GitClient      gitService.GitClient
 	StorageService moduleService.StorageService
 	ModuleParser   moduleService.ModuleParser
 
@@ -73,6 +76,7 @@ type Container struct {
 	GetModuleVersionQuery          *module.GetModuleVersionQuery
 	GetModuleDownloadQuery         *module.GetModuleDownloadQuery
 	GetModuleProviderSettingsQuery *module.GetModuleProviderSettingsQuery
+	ListModuleVersionsQuery       *module.ListModuleVersionsQuery
 	GetSubmodulesQuery             *module.GetSubmodulesQuery
 	GetExamplesQuery               *module.GetExamplesQuery
 	GlobalStatsQuery               *analyticsQuery.GlobalStatsQuery
@@ -91,7 +95,7 @@ type Container struct {
 	AnalyticsHandler         *terrareg.AnalyticsHandler
 	ProviderHandler          *terrareg.ProviderHandler
 	AuthHandler              *terrareg.AuthHandler
-	TerraformV1ModuleHandler *terraregV1ModHandler.TerraformV1ModuleHandler // New V1 Terraform Module Handler
+	TerraformV1ModuleHandler *v1.TerraformV1ModuleHandler // New V1 Terraform Module Handler
 
 	// Middleware
 	AuthMiddleware *terrareg_middleware.AuthMiddleware
@@ -138,7 +142,7 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.PublishModuleVersionCmd = moduleCmd.NewPublishModuleVersionCommand(c.ModuleProviderRepo)
 	c.UpdateModuleProviderSettingsCmd = moduleCmd.NewUpdateModuleProviderSettingsCommand(c.ModuleProviderRepo)
 	c.DeleteModuleProviderCmd = moduleCmd.NewDeleteModuleProviderCommand(c.ModuleProviderRepo)
-	c.UploadModuleVersionCmd = moduleCmd.NewUploadModuleVersionCommand(c.ModuleProviderRepo, cfg)
+	c.UploadModuleVersionCmd = moduleCmd.NewUploadModuleVersionCommand(c.ModuleProviderRepo, c.ModuleParser, c.StorageService, cfg)
 	c.ImportModuleVersionCmd = moduleCmd.NewImportModuleVersionCommand(c.ModuleImporterService)
 	c.RecordModuleDownloadCmd = analyticsCmd.NewRecordModuleDownloadCommand(c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.CreateAdminSessionCmd = authCmd.NewCreateAdminSessionCommand(c.SessionRepo, cfg)
@@ -202,7 +206,7 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 		c.CheckSessionQuery,
 		cfg,
 	)
-	c.TerraformV1ModuleHandler = terraregV1ModHandler.NewTerraformV1ModuleHandler(c.ListModulesQuery, c.SearchModulesQuery, c.GetModuleProviderQuery, c.ListModuleVersionsQuery, c.GetModuleDownloadQuery, c.GetModuleVersionQuery) // Instantiate the new handler
+	c.TerraformV1ModuleHandler = v1.NewTerraformV1ModuleHandler(c.ListModulesQuery, c.SearchModulesQuery, c.GetModuleProviderQuery, c.ListModuleVersionsQuery, c.GetModuleDownloadQuery, c.GetModuleVersionQuery) // Instantiate the new handler
 
 	// Initialize middleware
 	c.AuthMiddleware = terrareg_middleware.NewAuthMiddleware(cfg, c.CheckSessionQuery)

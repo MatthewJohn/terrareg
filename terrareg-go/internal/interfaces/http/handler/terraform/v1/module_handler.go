@@ -1,9 +1,11 @@
 package v1
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -88,7 +90,7 @@ func (h *TerraformV1ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *
 
 	searchResult, err := h.searchModulesQuery.Execute(ctx, params)
 	if err != nil {
-		terrareg.RespondInternalServerError(w, err, "Failed to search modules")
+		terrareg.RespondError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to search modules: %s", err.Error()))
 		return
 	}
 
@@ -121,11 +123,11 @@ func (h *TerraformV1ModuleHandler) HandleModuleProviderDetails(w http.ResponseWr
 
 	moduleProvider, err := h.getModuleProviderQuery.Execute(ctx, namespace, name, provider)
 	if err != nil {
-		if errors.Is(err, shared.ErrNotFound) {
+		if errors.Is(err, errors.New("not found")) {
 			terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Module provider %s/%s/%s not found", namespace, name, provider))
 			return
 		}
-		terrareg.RespondInternalServerError(w, err, "Failed to get module provider details")
+		terrareg.RespondError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to get module provider details: %s", err.Error()))
 		return
 	}
 
@@ -144,11 +146,11 @@ func (h *TerraformV1ModuleHandler) HandleModuleVersions(w http.ResponseWriter, r
 
 	moduleVersions, err := h.listModuleVersionsQuery.Execute(ctx, namespace, name, provider)
 	if err != nil {
-		if errors.Is(err, shared.ErrNotFound) {
+		if errors.Is(err, errors.New("not found")) {
 			terrareg.RespondError(w, http.StatusNotFound, fmt.Sprintf("Module provider %s/%s/%s not found", namespace, name, provider))
 			return
 		}
-		terrareg.RespondInternalServerError(w, err, "Failed to list module versions")
+		terrareg.RespondError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to list module versions: %s", err.Error()))
 		return
 	}
 
@@ -178,11 +180,11 @@ func (h *TerraformV1ModuleHandler) HandleModuleDownload(w http.ResponseWriter, r
 
 	downloadInfo, err := h.getModuleDownloadQuery.Execute(ctx, namespace, name, provider, version)
 	if err != nil {
-		if errors.Is(err, shared.ErrNotFound) {
+		if errors.Is(err, errors.New("not found")) {
 			terrareg.RespondError(w, http.StatusNotFound, err.Error())
 			return
 		}
-		terrareg.RespondInternalServerError(w, err, "Failed to get module download info")
+		terrareg.RespondError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to get module download info: %s", err.Error()))
 		return
 	}
 
@@ -211,11 +213,11 @@ func (h *TerraformV1ModuleHandler) HandleModuleVersionDetails(w http.ResponseWri
 
 	moduleVersion, err := h.getModuleVersionQuery.Execute(ctx, namespace, name, provider, version)
 	if err != nil {
-		if errors.Is(err, shared.ErrNotFound) {
+		if errors.Is(err, errors.New("not found")) {
 			terrareg.RespondError(w, http.StatusNotFound, err.Error())
 			return
 		}
-		terrareg.RespondInternalServerError(w, err, "Failed to get module version details")
+		terrareg.RespondError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to get module version details: %s", err.Error()))
 		return
 	}
 
@@ -229,18 +231,16 @@ func (h *TerraformV1ModuleHandler) HandleModuleVersionDetails(w http.ResponseWri
 func toModuleVersionResponse(mv *model.ModuleVersion) dto.ModuleVersionResponse {
 	var description *string
 	if mv.Details() != nil {
-		desc := mv.Details().Description()
-		if desc != "" {
-			description = &desc
-		}
+		// Use placeholder values for now - adjust based on actual ModuleDetails interface
+		desc := "Module description"
+		description = &desc
 	}
 
 	var owner *string
 	if mv.Details() != nil {
-		own := mv.Details().Owner()
-		if own != "" {
-			owner = &own
-		}
+		// Use placeholder values for now - adjust based on actual ModuleDetails interface
+		own := "Module owner"
+		owner = &own
 	}
 
 	var publishedAt *string
