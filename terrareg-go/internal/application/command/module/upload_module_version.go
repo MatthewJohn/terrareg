@@ -17,16 +17,22 @@ import (
 // UploadModuleVersionCommand handles uploading module source code
 type UploadModuleVersionCommand struct {
 	moduleProviderRepo repository.ModuleProviderRepository
+	moduleParser       service.ModuleParser
+	storageService     service.StorageService
 	config             *config.Config
 }
 
 // NewUploadModuleVersionCommand creates a new command
 func NewUploadModuleVersionCommand(
 	moduleProviderRepo repository.ModuleProviderRepository,
+	moduleParser service.ModuleParser,
+	storageService service.StorageService,
 	config *config.Config,
 ) *UploadModuleVersionCommand {
 	return &UploadModuleVersionCommand{
 		moduleProviderRepo: moduleProviderRepo,
+		moduleParser:       moduleParser,
+		storageService:     storageService,
 		config:             config,
 	}
 }

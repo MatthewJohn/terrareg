@@ -11,16 +11,21 @@ import (
 	analyticsQuery "github.com/terrareg/terrareg/internal/application/query/analytics"
 	authQuery "github.com/terrareg/terrareg/internal/application/query/auth"
 	"github.com/terrareg/terrareg/internal/application/query/module"
+	moduleQuery "github.com/terrareg/terrareg/internal/application/query/module"
 	providerQuery "github.com/terrareg/terrareg/internal/application/query/provider"
 	"github.com/terrareg/terrareg/internal/config"
 	authRepo "github.com/terrareg/terrareg/internal/domain/auth/repository"
 	moduleRepo "github.com/terrareg/terrareg/internal/domain/module/repository"
+	moduleService "github.com/terrareg/terrareg/internal/domain/module/service" // Alias for the new module service
 	providerRepo "github.com/terrareg/terrareg/internal/domain/provider/repository"
+	"github.com/terrareg/terrareg/internal/infrastructure/git"
+	"github.com/terrareg/terrareg/internal/infrastructure/parser"
 	"github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb"
 	analyticsPersistence "github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb/analytics"
 	authPersistence "github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb/auth"
 	modulePersistence "github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb/module"
 	providerPersistence "github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb/provider"
+	"github.com/terrareg/terrareg/internal/infrastructure/storage"
 	"github.com/terrareg/terrareg/internal/interfaces/http"
 	"github.com/terrareg/terrareg/internal/interfaces/http/handler/terrareg"
 	terrareg_middleware "github.com/terrareg/terrareg/internal/interfaces/http/middleware"
@@ -39,6 +44,14 @@ type Container struct {
 	AnalyticsRepo      analyticsCmd.AnalyticsRepository
 	ProviderRepo       providerRepo.ProviderRepository
 	SessionRepo        authRepo.SessionRepository
+
+	// Infrastructure Services
+	GitClient      GitClient
+	StorageService moduleService.StorageService
+	ModuleParser   moduleService.ModuleParser
+
+	// Domain Services
+	ModuleImporterService *moduleService.ModuleImporterService
 
 	// Commands
 	CreateNamespaceCmd              *namespace.CreateNamespaceCommand
@@ -73,11 +86,12 @@ type Container struct {
 	CheckSessionQuery              *authQuery.CheckSessionQuery
 
 	// Handlers
-	NamespaceHandler *terrareg.NamespaceHandler
-	ModuleHandler    *terrareg.ModuleHandler
-	AnalyticsHandler *terrareg.AnalyticsHandler
-	ProviderHandler  *terrareg.ProviderHandler
-	AuthHandler      *terrareg.AuthHandler
+	NamespaceHandler         *terrareg.NamespaceHandler
+	ModuleHandler            *terrareg.ModuleHandler
+	AnalyticsHandler         *terrareg.AnalyticsHandler
+	ProviderHandler          *terrareg.ProviderHandler
+	AuthHandler              *terrareg.AuthHandler
+	TerraformV1ModuleHandler *terraregV1ModHandler.TerraformV1ModuleHandler // New V1 Terraform Module Handler
 
 	// Middleware
 	AuthMiddleware *terrareg_middleware.AuthMiddleware
@@ -104,6 +118,20 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.ProviderRepo = providerPersistence.NewProviderRepository(db.DB)
 	c.SessionRepo = authPersistence.NewSessionRepository(db.DB)
 
+	// Initialize infrastructure services
+	c.GitClient = git.NewGitClientImpl()
+	c.StorageService = storage.NewLocalStorage()
+	c.ModuleParser = parser.NewModuleParserImpl(c.StorageService)
+
+	// Initialize domain services
+	c.ModuleImporterService = moduleService.NewModuleImporterService(
+		c.ModuleProviderRepo,
+		c.GitClient,
+		c.StorageService,
+		c.ModuleParser,
+		cfg,
+	)
+
 	// Initialize commands
 	c.CreateNamespaceCmd = namespace.NewCreateNamespaceCommand(c.NamespaceRepo)
 	c.CreateModuleProviderCmd = moduleCmd.NewCreateModuleProviderCommand(c.NamespaceRepo, c.ModuleProviderRepo)
@@ -111,7 +139,7 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.UpdateModuleProviderSettingsCmd = moduleCmd.NewUpdateModuleProviderSettingsCommand(c.ModuleProviderRepo)
 	c.DeleteModuleProviderCmd = moduleCmd.NewDeleteModuleProviderCommand(c.ModuleProviderRepo)
 	c.UploadModuleVersionCmd = moduleCmd.NewUploadModuleVersionCommand(c.ModuleProviderRepo, cfg)
-	c.ImportModuleVersionCmd = moduleCmd.NewImportModuleVersionCommand(c.ModuleProviderRepo, cfg)
+	c.ImportModuleVersionCmd = moduleCmd.NewImportModuleVersionCommand(c.ModuleImporterService)
 	c.RecordModuleDownloadCmd = analyticsCmd.NewRecordModuleDownloadCommand(c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.CreateAdminSessionCmd = authCmd.NewCreateAdminSessionCommand(c.SessionRepo, cfg)
 
@@ -120,12 +148,13 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.ListModulesQuery = module.NewListModulesQuery(c.ModuleProviderRepo)
 	c.SearchModulesQuery = module.NewSearchModulesQuery(c.ModuleProviderRepo)
 	c.GetModuleProviderQuery = module.NewGetModuleProviderQuery(c.ModuleProviderRepo)
-	c.ListModuleProvidersQuery = module.NewListModuleProvidersQuery(c.ModuleProviderRepo)
-	c.GetModuleVersionQuery = module.NewGetModuleVersionQuery(c.ModuleProviderRepo)
-	c.GetModuleDownloadQuery = module.NewGetModuleDownloadQuery(c.ModuleProviderRepo)
-	c.GetModuleProviderSettingsQuery = module.NewGetModuleProviderSettingsQuery(c.ModuleProviderRepo)
-	c.GetSubmodulesQuery = module.NewGetSubmodulesQuery(c.ModuleProviderRepo, cfg)
-	c.GetExamplesQuery = module.NewGetExamplesQuery(c.ModuleProviderRepo, cfg)
+	c.ListModuleProvidersQuery = moduleQuery.NewListModuleProvidersQuery(c.ModuleProviderRepo)
+	c.GetModuleVersionQuery = moduleQuery.NewGetModuleVersionQuery(c.ModuleProviderRepo)
+	c.ListModuleVersionsQuery = moduleQuery.NewListModuleVersionsQuery(c.ModuleProviderRepo) // New query
+	c.GetModuleDownloadQuery = moduleQuery.NewGetModuleDownloadQuery(c.ModuleProviderRepo)
+	c.GetModuleProviderSettingsQuery = moduleQuery.NewGetModuleProviderSettingsQuery(c.ModuleProviderRepo)
+	c.GetSubmodulesQuery = moduleQuery.NewGetSubmodulesQuery(c.ModuleProviderRepo, c.ModuleParser, cfg)
+	c.GetExamplesQuery = moduleQuery.NewGetExamplesQuery(c.ModuleProviderRepo, c.ModuleParser, cfg)
 	c.GlobalStatsQuery = analyticsQuery.NewGlobalStatsQuery(c.NamespaceRepo, c.ModuleProviderRepo)
 	c.GetDownloadSummaryQuery = analyticsQuery.NewGetDownloadSummaryQuery(c.AnalyticsRepo)
 	c.GetMostRecentlyPublishedQuery = analyticsQuery.NewGetMostRecentlyPublishedQuery(c.AnalyticsRepo)
@@ -173,6 +202,7 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 		c.CheckSessionQuery,
 		cfg,
 	)
+	c.TerraformV1ModuleHandler = terraregV1ModHandler.NewTerraformV1ModuleHandler(c.ListModulesQuery, c.SearchModulesQuery, c.GetModuleProviderQuery, c.ListModuleVersionsQuery, c.GetModuleDownloadQuery, c.GetModuleVersionQuery) // Instantiate the new handler
 
 	// Initialize middleware
 	c.AuthMiddleware = terrareg_middleware.NewAuthMiddleware(cfg, c.CheckSessionQuery)
@@ -185,7 +215,18 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.TemplateRenderer = templateRenderer
 
 	// Initialize HTTP server
-	c.Server = http.NewServer(cfg, logger, c.NamespaceHandler, c.ModuleHandler, c.AnalyticsHandler, c.ProviderHandler, c.AuthHandler, c.AuthMiddleware, c.TemplateRenderer)
+	c.Server = http.NewServer(
+		cfg,
+		logger,
+		c.NamespaceHandler,
+		c.ModuleHandler,
+		c.AnalyticsHandler,
+		c.ProviderHandler,
+		c.AuthHandler,
+		c.AuthMiddleware,
+		c.TemplateRenderer,
+		c.TerraformV1ModuleHandler, // Pass the new handler to the server constructor
+	)
 
 	return c, nil
 }

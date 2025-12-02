@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/terrareg/terrareg/internal/config"
+	tfv1ModuleHandler "github.com/terrareg/terrareg/internal/interfaces/http/handler/terraform/v1" // New import
 	"github.com/terrareg/terrareg/internal/interfaces/http/handler/terrareg"
 	terrareg_middleware "github.com/terrareg/terrareg/internal/interfaces/http/middleware"
 	"github.com/terrareg/terrareg/internal/interfaces/http/template"
@@ -17,31 +18,44 @@ import (
 
 // Server represents the HTTP server
 type Server struct {
-	router           *chi.Mux
-	config           *config.Config
-	logger           zerolog.Logger
-	namespaceHandler *terrareg.NamespaceHandler
-	moduleHandler    *terrareg.ModuleHandler
-	analyticsHandler *terrareg.AnalyticsHandler
-	providerHandler  *terrareg.ProviderHandler
-	authHandler      *terrareg.AuthHandler
-	authMiddleware   *terrareg_middleware.AuthMiddleware
-	templateRenderer *template.Renderer
+	router                 *chi.Mux
+	config                 *config.Config
+	logger                 zerolog.Logger
+	namespaceHandler       *terrareg.NamespaceHandler
+	moduleHandler          *terrareg.ModuleHandler
+	analyticsHandler       *terrareg.AnalyticsHandler
+	providerHandler        *terrareg.ProviderHandler
+	authHandler            *terrareg.AuthHandler
+	authMiddleware         *terrareg_middleware.AuthMiddleware
+	templateRenderer       *template.Renderer
+	terraformV1ModuleHandler *tfv1ModuleHandler.TerraformV1ModuleHandler // New field
 }
 
 // NewServer creates a new HTTP server
-func NewServer(cfg *config.Config, logger zerolog.Logger, namespaceHandler *terrareg.NamespaceHandler, moduleHandler *terrareg.ModuleHandler, analyticsHandler *terrareg.AnalyticsHandler, providerHandler *terrareg.ProviderHandler, authHandler *terrareg.AuthHandler, authMiddleware *terrareg_middleware.AuthMiddleware, templateRenderer *template.Renderer) *Server {
+func NewServer(
+	cfg *config.Config,
+	logger zerolog.Logger,
+	namespaceHandler *terrareg.NamespaceHandler,
+	moduleHandler *terrareg.ModuleHandler,
+	analyticsHandler *terrareg.AnalyticsHandler,
+	providerHandler *terrareg.ProviderHandler,
+	authHandler *terrareg.AuthHandler,
+	authMiddleware *terrareg_middleware.AuthMiddleware,
+	templateRenderer *template.Renderer,
+	terraformV1ModuleHandler *tfv1ModuleHandler.TerraformV1ModuleHandler, // New parameter
+) *Server {
 	s := &Server{
-		router:           chi.NewRouter(),
-		config:           cfg,
-		logger:           logger,
-		namespaceHandler: namespaceHandler,
-		moduleHandler:    moduleHandler,
-		analyticsHandler: analyticsHandler,
-		providerHandler:  providerHandler,
-		authHandler:      authHandler,
-		authMiddleware:   authMiddleware,
-		templateRenderer: templateRenderer,
+		router:                   chi.NewRouter(),
+		config:                   cfg,
+		logger:                   logger,
+		namespaceHandler:         namespaceHandler,
+		moduleHandler:            moduleHandler,
+		analyticsHandler:         analyticsHandler,
+		providerHandler:          providerHandler,
+		authHandler:              authHandler,
+		authMiddleware:           authMiddleware,
+		templateRenderer:         templateRenderer,
+		terraformV1ModuleHandler: terraformV1ModuleHandler, // Assign new handler
 	}
 
 	s.setupMiddleware()
@@ -82,15 +96,15 @@ func (s *Server) setupRoutes() {
 	// Terraform Registry API v1
 	s.router.Route("/v1", func(r chi.Router) {
 		// Modules
-		r.Get("/modules", s.handleModuleList)
-		r.Get("/modules/search", s.handleModuleSearch)
+		r.Get("/modules", s.terraformV1ModuleHandler.HandleModuleList) // Use the new handler
+		r.Get("/modules/search", s.terraformV1ModuleHandler.HandleModuleSearch) // Use the new handler
 		r.Get("/modules/{namespace}", s.handleNamespaceModules)
 		r.Get("/modules/{namespace}/{name}", s.handleModuleDetails)
-		r.Get("/modules/{namespace}/{name}/{provider}", s.handleModuleProviderDetails)
-		r.Get("/modules/{namespace}/{name}/{provider}/versions", s.handleModuleVersions)
-		r.Get("/modules/{namespace}/{name}/{provider}/download", s.handleModuleDownload)
-		r.Get("/modules/{namespace}/{name}/{provider}/{version}", s.handleModuleVersionDetails)
-		r.Get("/modules/{namespace}/{name}/{provider}/{version}/download", s.handleModuleDownload)
+		r.Get("/modules/{namespace}/{name}/{provider}", s.terraformV1ModuleHandler.HandleModuleProviderDetails) // Use the new handler
+		r.Get("/modules/{namespace}/{name}/{provider}/versions", s.terraformV1ModuleHandler.HandleModuleVersions) // Use the new handler
+		r.Get("/modules/{namespace}/{name}/{provider}/download", s.terraformV1ModuleHandler.HandleModuleDownload) // Use the new handler
+		r.Get("/modules/{namespace}/{name}/{provider}/{version}", s.terraformV1ModuleHandler.HandleModuleVersionDetails) // Use the new handler
+		r.Get("/modules/{namespace}/{name}/{provider}/{version}/download", s.terraformV1ModuleHandler.HandleModuleDownload) // Use the new handler
 		r.Get("/modules/{namespace}/{name}/{provider}/downloads/summary", s.handleModuleDownloadsSummary)
 
 		// Providers
@@ -325,29 +339,11 @@ func respondError(w http.ResponseWriter, err error, status int) {
 // All other handlers are stubs for now - they will be implemented in Phase 2+
 // This allows the server to compile and run
 
-func (s *Server) handleModuleList(w http.ResponseWriter, r *http.Request) {
-	s.moduleHandler.HandleModuleList(w, r)
-}
-func (s *Server) handleModuleSearch(w http.ResponseWriter, r *http.Request) {
-	s.moduleHandler.HandleModuleSearch(w, r)
-}
 func (s *Server) handleNamespaceModules(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleNamespaceModules(w, r)
 }
 func (s *Server) handleModuleDetails(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleDetails(w, r)
-}
-func (s *Server) handleModuleProviderDetails(w http.ResponseWriter, r *http.Request) {
-	s.moduleHandler.HandleModuleProviderDetails(w, r)
-}
-func (s *Server) handleModuleVersions(w http.ResponseWriter, r *http.Request) {
-	s.moduleHandler.HandleModuleVersions(w, r)
-}
-func (s *Server) handleModuleDownload(w http.ResponseWriter, r *http.Request) {
-	s.moduleHandler.HandleModuleDownload(w, r)
-}
-func (s *Server) handleModuleVersionDetails(w http.ResponseWriter, r *http.Request) {
-	s.moduleHandler.HandleModuleVersionDetails(w, r)
 }
 func (s *Server) handleModuleDownloadsSummary(w http.ResponseWriter, r *http.Request) {
 	s.analyticsHandler.HandleModuleDownloadsSummary(w, r)
