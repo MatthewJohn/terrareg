@@ -76,7 +76,7 @@ type Container struct {
 	GetModuleVersionQuery          *module.GetModuleVersionQuery
 	GetModuleDownloadQuery         *module.GetModuleDownloadQuery
 	GetModuleProviderSettingsQuery *module.GetModuleProviderSettingsQuery
-	ListModuleVersionsQuery       *module.ListModuleVersionsQuery
+	ListModuleVersionsQuery        *module.ListModuleVersionsQuery
 	GetSubmodulesQuery             *module.GetSubmodulesQuery
 	GetExamplesQuery               *module.GetExamplesQuery
 	GlobalStatsQuery               *analyticsQuery.GlobalStatsQuery

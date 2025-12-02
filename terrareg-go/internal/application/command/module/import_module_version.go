@@ -3,20 +3,20 @@ package module
 import (
 	"context"
 
-	"github.com/terrareg/terrareg/internal/domain/module/service"
+	moduleService "github.com/terrareg/terrareg/internal/domain/module/service"
 )
 
 // ImportModuleVersionCommand handles importing module versions from Git
 type ImportModuleVersionCommand struct {
-	moduleImporter *service.ModuleImporterService
+	moduleImporterService *moduleService.ModuleImporterService
 }
 
 // NewImportModuleVersionCommand creates a new command
 func NewImportModuleVersionCommand(
-	moduleImporter *service.ModuleImporterService,
+	moduleImporterService *moduleService.ModuleImporterService,
 ) *ImportModuleVersionCommand {
 	return &ImportModuleVersionCommand{
-		moduleImporter: moduleImporter,
+		moduleImporterService: moduleImporterService,
 	}
 }
 
@@ -31,12 +31,12 @@ type ImportModuleVersionRequest struct {
 
 // Execute imports a module version from Git
 func (c *ImportModuleVersionCommand) Execute(ctx context.Context, req ImportModuleVersionRequest) error {
-	importReq := service.ImportModuleVersionRequest{
+	importReq := moduleService.ImportModuleVersionRequest{
 		Namespace: req.Namespace,
 		Module:    req.Module,
 		Provider:  req.Provider,
 		Version:   req.Version,
 		GitTag:    req.GitTag,
 	}
-	return c.moduleImporter.ImportModuleVersion(ctx, importReq)
+	return c.moduleImporterService.ImportModuleVersion(ctx, importReq)
 }
