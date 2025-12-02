@@ -88,15 +88,11 @@ WORKDIR /app/terrareg-go
 COPY terrareg-go/go.mod terrareg-go/go.sum ./
 
 # Download dependencies (cached unless mod files change)
-
-RUN git config --global http.proxy "$http_proxy"; \
-    go mod download; \
-    git config --global "";
+RUN http_proxy=$http_proxy https_proxy=$http_proxy go mod download
 
 # Copy the rest of the source code
 COPY . /app
-RUN git config --global http.proxy "$http_proxy"; \
-    CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/server/main.go; \
+RUN http_proxy=$http_proxy https_proxy=$http_proxy CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/server/main.go; \
     git config --global "";
 WORKDIR /app
 
