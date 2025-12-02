@@ -82,6 +82,7 @@ WORKDIR /app
 #     fi
 # ARG POETRY_INSTALLER_MAX_WORKERS=4
 # RUN https_proxy= http_proxy= poetry install --no-root
+RUN mkdir /app/terrareg-go
 WORKDIR /app/terrareg-go
 # Copy go.mod and go.sum first for dependency caching
 COPY terrareg-go/go.mod go.sum ./
