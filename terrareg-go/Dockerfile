@@ -1,4 +1,4 @@
-FROM golang:1.25.4-trixie
+FROM python:3.12-slim
 
 ARG VERSION
 
@@ -44,17 +44,17 @@ RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
 # Download tfswitch
 RUN bash -c 'curl -L https://raw.githubusercontent.com/warrensbox/terraform-switcher/master/install.sh | bash /dev/stdin 1.2.2'
 
-# # Install go
-# RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
-#     then \
-#       arch=arm64; \
-#     else \
-#       arch=amd64; \
-#     fi; \
-#     wget https://go.dev/dl/go1.20.10.linux-${arch}.tar.gz -O /tmp/go.tar.gz && \
-#     tar -zxvf /tmp/go.tar.gz -C /usr/local && \
-#     rm /tmp/go.tar.gz'
-# ENV PATH=$PATH:/usr/local/go/bin
+# Install go
+RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
+    then \
+      arch=arm64; \
+    else \
+      arch=amd64; \
+    fi; \
+    wget https://go.dev/dl/go1.20.10.linux-${arch}.tar.gz -O /tmp/go.tar.gz && \
+    tar -zxvf /tmp/go.tar.gz -C /usr/local && \
+    rm /tmp/go.tar.gz'
+ENV PATH=$PATH:/usr/local/go/bin
 
 # Install github.com/hashicorp/terraform-plugin-docs
 RUN bash -c 'if [ "$(uname -m)" == "aarch64" ]; \
@@ -87,11 +87,16 @@ WORKDIR /app/terrareg-go
 COPY terrareg-go/go.mod go.sum ./
 
 # Download dependencies (cached unless mod files change)
-RUN go mod download
+
+RUN git config --global http.proxy "$http_proxy"; \
+    go mod download; \
+    git config --global "";
 
 # Copy the rest of the source code
 COPY . /app
-RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/server/main.go
+RUN git config --global http.proxy "$http_proxy"; \
+    CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/server/main.go; \
+    git config --global "";
 WORKDIR /app
 
 RUN mkdir bin licenses
