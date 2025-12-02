@@ -6,8 +6,8 @@ import (
 
 	"gorm.io/gorm"
 
-	analyticsCmd "github.com/terrareg/terrareg/internal/application/command/analytics"
-	"github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb"
+	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
 // AnalyticsRepositoryImpl implements the analytics repository

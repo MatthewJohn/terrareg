@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/terrareg/terrareg/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 )
 
 // ModuleVersion is an entity within the ModuleProvider aggregate

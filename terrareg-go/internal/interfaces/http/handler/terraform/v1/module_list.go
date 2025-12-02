@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/terrareg/terrareg/internal/application/query/module"
-	"github.com/terrareg/terrareg/internal/domain/module/model"
-	"github.com/terrareg/terrareg/internal/interfaces/http/dto"
-	"github.com/terrareg/terrareg/internal/interfaces/http/handler/terrareg" // For respondJSON and respondError
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg" // For respondJSON and respondError
 )
 
 // ModuleListHandler handles the HTTP request to list all modules

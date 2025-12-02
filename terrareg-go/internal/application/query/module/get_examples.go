@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/terrareg/terrareg/internal/config"
-	"github.com/terrareg/terrareg/internal/domain/module/repository"
-	"github.com/terrareg/terrareg/internal/domain/module/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 )
 
 // GetExamplesQuery retrieves examples for a module version

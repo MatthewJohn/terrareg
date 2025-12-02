@@ -5,7 +5,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/terrareg/terrareg/internal/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 )
 
 // Renderer handles HTML template rendering

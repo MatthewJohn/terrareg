@@ -1,7 +1,7 @@
 package analytics
 
 import (
-	analyticsCmd "github.com/terrareg/terrareg/internal/application/command/analytics"
+	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
 )
 
 // Type aliases for analytics types from command package

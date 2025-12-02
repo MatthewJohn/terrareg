@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/terrareg/terrareg/internal/domain/provider"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 )
 
 // ProviderRepository defines the interface for provider persistence

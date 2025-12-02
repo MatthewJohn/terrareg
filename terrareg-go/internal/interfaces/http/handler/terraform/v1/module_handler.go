@@ -9,10 +9,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/terrareg/terrareg/internal/application/query/module"
-	"github.com/terrareg/terrareg/internal/domain/module/model"
-	"github.com/terrareg/terrareg/internal/interfaces/http/dto"
-	"github.com/terrareg/terrareg/internal/interfaces/http/handler/terrareg" // For respondJSON and respondError
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg" // For respondJSON and respondError
 )
 
 // TerraformV1ModuleHandler groups all /v1/modules handlers

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	authQuery "github.com/terrareg/terrareg/internal/application/query/auth"
-	"github.com/terrareg/terrareg/internal/config"
+	authQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/auth"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 )
 
 // contextKey is a custom type for context keys

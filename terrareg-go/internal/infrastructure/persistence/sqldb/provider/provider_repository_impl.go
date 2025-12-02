@@ -7,8 +7,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/terrareg/terrareg/internal/domain/provider"
-	"github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
 // ProviderRepositoryImpl implements the provider repository using GORM

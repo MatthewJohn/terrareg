@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/terrareg/terrareg/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 )
 
 // NamespaceType represents the type of namespace

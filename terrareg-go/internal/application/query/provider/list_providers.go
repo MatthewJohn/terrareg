@@ -3,8 +3,8 @@ package provider
 import (
 	"context"
 
-	"github.com/terrareg/terrareg/internal/domain/provider"
-	providerRepo "github.com/terrareg/terrareg/internal/domain/provider/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
+	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
 )
 
 // ListProvidersQuery handles listing all providers

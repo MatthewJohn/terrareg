@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/terrareg/terrareg/internal/config"
-	"github.com/terrareg/terrareg/internal/domain/module/repository"
-	"github.com/terrareg/terrareg/internal/domain/module/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 )
 
 // UploadModuleVersionCommand handles uploading module source code

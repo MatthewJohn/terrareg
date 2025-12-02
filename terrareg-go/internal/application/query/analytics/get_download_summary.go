@@ -3,7 +3,7 @@ package analytics
 import (
 	"context"
 
-	analyticsCmd "github.com/terrareg/terrareg/internal/application/command/analytics"
+	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
 )
 
 // GetDownloadSummaryQuery handles retrieving download summary
