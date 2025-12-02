@@ -85,7 +85,7 @@ WORKDIR /app
 RUN mkdir /app/terrareg-go
 WORKDIR /app/terrareg-go
 # Copy go.mod and go.sum first for dependency caching
-COPY terrareg-go/go.mod go.sum ./
+COPY terrareg-go/go.mod terrareg-go/go.sum ./
 
 # Download dependencies (cached unless mod files change)
 
