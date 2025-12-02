@@ -1,0 +1,276 @@
+package parser
+
+import (
+	"encoding/json"
+	"fmt"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
+	"github.com/terrareg/terrareg/internal/domain/module/service"
+)
+
+// ModuleParserImpl implements the service.ModuleParser interface.
+type ModuleParserImpl struct {
+	storageService service.StorageService
+}
+
+// NewModuleParserImpl creates a new ModuleParserImpl.
+func NewModuleParserImpl(storageService service.StorageService) *ModuleParserImpl {
+	return &ModuleParserImpl{
+		storageService: storageService,
+	}
+}
+
+// ParseModule parses a module directory and extracts metadata.
+func (p *ModuleParserImpl) ParseModule(modulePath string) (*service.ParseResult, error) {
+	result := &service.ParseResult{}
+
+	// Check if module directory exists
+	_, err := p.storageService.Stat(modulePath)
+	if err != nil {
+		return nil, fmt.Errorf("module directory does not exist or is inaccessible: %s, error: %w", modulePath, err)
+	}
+
+	// Extract README content
+	readmeContent, err := p.extractReadme(modulePath)
+	if err == nil {
+		result.ReadmeContent = readmeContent
+		result.Description = p.extractDescriptionFromReadme(readmeContent)
+	}
+
+	// Run terraform-docs to extract variables, outputs, etc.
+	cmd := exec.Command("terraform-docs", "json", modulePath)
+	output, err := cmd.Output()
+	if err == nil {
+		result.RawTerraformDocs = output
+		var tfdocs TerraformDocs
+		if err := json.Unmarshal(output, &tfdocs); err == nil {
+			for _, input := range tfdocs.Inputs {
+				result.Variables = append(result.Variables, service.Variable{
+					Name:        input.Name,
+					Type:        input.Type,
+					Description: input.Description,
+					Default:     input.Default,
+					Required:    input.Required,
+				})
+			}
+			for _, out := range tfdocs.Outputs {
+				result.Outputs = append(result.Outputs, service.Output{
+					Name:        out.Name,
+					Description: out.Description,
+				})
+			}
+			for _, provider := range tfdocs.Providers {
+				result.ProviderVersions = append(result.ProviderVersions, service.ProviderVersion{
+					Name:    provider.Name,
+					Version: provider.Version,
+				})
+			}
+			for _, resource := range tfdocs.Resources {
+				result.Resources = append(result.Resources, service.Resource{
+					Type: resource.Type,
+					Name: resource.Name,
+				})
+			}
+			if tfdocs.Header != "" && result.Description == "" {
+				result.Description = tfdocs.Header
+			}
+		}
+	} else {
+		// Log the error but don't fail, terraform-docs might not be installed or module might be invalid
+		fmt.Printf("warning: terraform-docs failed for %s: %v\n", modulePath, err)
+		if exitError, ok := err.(*exec.ExitError); ok {
+			fmt.Printf("stderr: %s\n", exitError.Stderr)
+		}
+	}
+
+	// TODO: Parse terrareg metadata files
+	// TODO: Extract provider requirements
+	// TODO: Detect submodules
+	// TODO: Detect examples
+
+	return result, nil
+}
+
+// TerraformDocs represents the structure of the terraform-docs JSON output
+type TerraformDocs struct {
+	Header  string `json:"header"`
+	Inputs  []struct {
+		Name        string      `json:"name"`
+		Type        string      `json:"type"`
+		Description string      `json:"description"`
+		Default     interface{} `json:"default"`
+		Required    bool        `json:"required"`
+	} `json:"inputs"`
+	Outputs []struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	} `json:"outputs"`
+	Providers []struct {
+		Name    string `json:"name"`
+		Version string `json:"version"`
+	} `json:"providers"`
+	Resources []struct {
+		Type string `json:"type"`
+		Name string `json:"name"`
+	} `json:"resources"`
+	Footer string `json:"footer"`
+}
+
+// extractReadme reads the README.md file from the module directory
+func (p *ModuleParserImpl) extractReadme(modulePath string) (string, error) {
+	readmePath := filepath.Join(modulePath, "README.md")
+
+	content, err := p.storageService.ReadFile(readmePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read README: %w", err)
+	}
+
+	return string(content), nil
+}
+
+// extractDescriptionFromReadme extracts a description from README content
+func (p *ModuleParserImpl) extractDescriptionFromReadme(readmeContent string) string {
+	if readmeContent == "" {
+		return ""
+	}
+
+	lines := strings.Split(readmeContent, "\n")
+
+	for _, line := range lines {
+		// Skip empty lines and headers
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		// Skip lines with unwanted content
+		if strings.Contains(line, "http://") ||
+			strings.Contains(line, "https://") ||
+			strings.Contains(line, "@") {
+			continue
+		}
+
+		// Extract description from sentences, limiting length
+		description := ""
+		sentences := strings.Split(line, ". ")
+
+		for _, sentence := range sentences {
+			sentence = strings.TrimSpace(sentence)
+			newDescription := description
+			if description != "" {
+				newDescription += ". "
+			}
+			newDescription += sentence
+
+			// Limit description length (matching Python logic)
+			if (newDescription != "" && len(newDescription) >= 80) ||
+				(description == "" && len(newDescription) >= 130) {
+				break
+			}
+			description = newDescription
+		}
+
+		if description != "" {
+			return description
+		}
+	}
+
+	return ""
+}
+
+// DetectSubmodules finds submodules in the module directory
+func (p *ModuleParserImpl) DetectSubmodules(modulePath string) ([]string, error) {
+	var submodules []string
+
+	entries, err := p.storageService.ReadDir(modulePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read module directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		// Skip hidden directories and examples
+		if strings.HasPrefix(entry.Name(), ".") || entry.Name() == "examples" {
+			continue
+		}
+
+		submodulePath := filepath.Join(modulePath, entry.Name())
+
+		// Check if this directory contains .tf files
+		hasTerraformFiles, err := p.hasTerraformFiles(submodulePath)
+		if err != nil {
+			continue
+		}
+
+		if hasTerraformFiles {
+			submodules = append(submodules, entry.Name())
+		}
+	}
+
+	return submodules, nil
+}
+
+// DetectExamples finds example directories in the module
+func (p *ModuleParserImpl) DetectExamples(modulePath string) ([]string, error) {
+	var examples []string
+
+	examplesPath := filepath.Join(modulePath, "examples")
+
+	// Check if examples directory exists
+	_, err := p.storageService.Stat(examplesPath)
+	if err != nil {
+		// No examples directory, return empty list
+		return examples, nil
+	}
+
+	entries, err := p.storageService.ReadDir(examplesPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read examples directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		// Skip hidden directories
+		if strings.HasPrefix(entry.Name(), ".") {
+			continue
+		}
+
+		examplePath := filepath.Join(examplesPath, entry.Name())
+
+		// Check if this directory contains .tf files
+		hasTerraformFiles, err := p.hasTerraformFiles(examplePath)
+		if err != nil {
+			continue
+		}
+
+		if hasTerraformFiles {
+			examples = append(examples, entry.Name())
+		}
+	}
+
+	return examples, nil
+}
+
+// hasTerraformFiles checks if a directory contains any .tf files
+func (p *ModuleParserImpl) hasTerraformFiles(dirPath string) (bool, error) {
+	entries, err := p.storageService.ReadDir(dirPath)
+	if err != nil {
+		return false, err
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".tf") {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
