@@ -8,11 +8,11 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/terrareg/terrareg/internal/domain/module/model"
-	"github.com/terrareg/terrareg/internal/domain/module/repository"
-	"github.com/terrareg/terrareg/internal/domain/shared"
-	"github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb"
-	gitmapper "github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb/git"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
+	gitmapper "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/git"
 )
 
 // ModuleProviderRepositoryImpl implements ModuleProviderRepository using GORM

@@ -1,8 +1,8 @@
 package git
 
 import (
-	gitmodel "github.com/terrareg/terrareg/internal/domain/git/model"
-	"github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb"
+	gitmodel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
 func FromDBGitProvider(db *sqldb.GitProviderDB) *gitmodel.GitProvider {

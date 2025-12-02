@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/terrareg/terrareg/internal/domain/auth"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 )
 
 // SessionRepository defines the interface for session persistence

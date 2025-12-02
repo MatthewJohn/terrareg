@@ -3,7 +3,7 @@ package module
 import (
 	"context"
 
-	moduleService "github.com/terrareg/terrareg/internal/domain/module/service"
+	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 )
 
 // ImportModuleVersionCommand handles importing module versions from Git

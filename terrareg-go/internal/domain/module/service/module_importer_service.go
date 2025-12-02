@@ -7,10 +7,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/terrareg/terrareg/internal/config"
-	gitService "github.com/terrareg/terrareg/internal/domain/git/service" // Added import with alias
-	"github.com/terrareg/terrareg/internal/domain/module/model"
-	"github.com/terrareg/terrareg/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service" // Added import with alias
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 )
 
 // ModuleImporterService handles the business logic for importing module versions.

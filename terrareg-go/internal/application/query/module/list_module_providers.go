@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/terrareg/terrareg/internal/domain/module/model"
-	"github.com/terrareg/terrareg/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 )
 
 // ListModuleProvidersQuery handles listing all providers for a specific module

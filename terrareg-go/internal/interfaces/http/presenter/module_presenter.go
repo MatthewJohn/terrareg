@@ -3,8 +3,8 @@ package presenter
 import (
 	"fmt"
 
-	"github.com/terrareg/terrareg/internal/domain/module/model"
-	"github.com/terrareg/terrareg/internal/interfaces/http/dto"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 )
 
 // ModulePresenter converts module domain models to DTOs

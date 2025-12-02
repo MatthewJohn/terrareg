@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/terrareg/terrareg/internal/domain/module/model"
-	"github.com/terrareg/terrareg/internal/domain/module/repository"
-	"github.com/terrareg/terrareg/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 )
 
 // ListModuleVersionsQuery handles retrieving all versions for a specific module provider

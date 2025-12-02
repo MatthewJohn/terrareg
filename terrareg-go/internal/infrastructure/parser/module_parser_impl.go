@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/terrareg/terrareg/internal/domain/module/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 )
 
 // ModuleParserImpl implements the service.ModuleParser interface.

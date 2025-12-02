@@ -3,8 +3,8 @@ package auth
 import (
 	"context"
 
-	"github.com/terrareg/terrareg/internal/domain/auth"
-	authRepo "github.com/terrareg/terrareg/internal/domain/auth/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
+	authRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 )
 
 // CheckSessionQuery handles checking if a session is valid

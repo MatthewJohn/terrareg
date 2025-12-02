@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/terrareg/terrareg/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 )
 
 // RecordModuleDownloadCommand handles recording module downloads for analytics

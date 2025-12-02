@@ -3,7 +3,7 @@ package dto
 import (
 	"fmt"
 
-	"github.com/terrareg/terrareg/internal/domain/provider"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 )
 
 // ProviderListResponse represents the provider list API response

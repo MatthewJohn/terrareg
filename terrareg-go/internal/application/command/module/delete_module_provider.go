@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/terrareg/terrareg/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 )
 
 // DeleteModuleProviderCommand handles deleting a module provider

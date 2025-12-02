@@ -9,11 +9,11 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/zerolog"
 
-	"github.com/terrareg/terrareg/internal/config"
-	tfv1ModuleHandler "github.com/terrareg/terrareg/internal/interfaces/http/handler/terraform/v1" // New import
-	"github.com/terrareg/terrareg/internal/interfaces/http/handler/terrareg"
-	terrareg_middleware "github.com/terrareg/terrareg/internal/interfaces/http/middleware"
-	"github.com/terrareg/terrareg/internal/interfaces/http/template"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	tfv1ModuleHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1" // New import
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
+	terrareg_middleware "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/template"
 )
 
 // Server represents the HTTP server

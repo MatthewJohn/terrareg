@@ -6,9 +6,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/terrareg/terrareg/internal/config"
-	"github.com/terrareg/terrareg/internal/infrastructure/container"
-	"github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/container"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module github.com/terrareg/terrareg
+module github.com/matthewjohn/terrareg/terrareg-go
 
 go 1.20
 

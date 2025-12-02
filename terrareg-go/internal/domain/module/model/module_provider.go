@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/terrareg/terrareg/internal/domain/git/model"
-	"github.com/terrareg/terrareg/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 )
 
 // ModuleProvider is the aggregate root for a module provider

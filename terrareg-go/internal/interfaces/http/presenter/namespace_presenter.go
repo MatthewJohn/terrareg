@@ -1,8 +1,8 @@
 package presenter
 
 import (
-	"github.com/terrareg/terrareg/internal/domain/module/model"
-	"github.com/terrareg/terrareg/internal/interfaces/http/dto"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 )
 
 // NamespacePresenter converts domain models to DTOs

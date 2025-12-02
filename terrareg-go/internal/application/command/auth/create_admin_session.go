@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/terrareg/terrareg/internal/config"
-	"github.com/terrareg/terrareg/internal/domain/auth"
-	authRepo "github.com/terrareg/terrareg/internal/domain/auth/repository"
-	authPersistence "github.com/terrareg/terrareg/internal/infrastructure/persistence/sqldb/auth"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
+	authRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
+	authPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/auth"
 )
 
 // CreateAdminSessionCommand handles creating admin sessions

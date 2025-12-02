@@ -3,7 +3,7 @@ package analytics
 import (
 	"context"
 
-	moduleRepo "github.com/terrareg/terrareg/internal/domain/module/repository"
+	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 )
 
 // GlobalStatsQuery handles getting global statistics
