@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	authQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/auth"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
+	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 )
 
@@ -14,22 +16,25 @@ import (
 type contextKey string
 
 const (
-	userContextKey      contextKey = "user"
-	isAdminContextKey   contextKey = "is_admin"
-	sessionIDContextKey contextKey = "session_id"
+	authMethodContextKey   contextKey = "auth_method"
+	userContextKey         contextKey = "user"
+	isAdminContextKey      contextKey = "is_admin"
+	sessionIDContextKey    contextKey = "session_id"
+	namespaceContextKey    contextKey = "namespace"
+	permissionsContextKey  contextKey = "permissions"
 )
 
 // AuthMiddleware provides authentication middleware
 type AuthMiddleware struct {
-	config            *config.Config
-	checkSessionQuery *authQuery.CheckSessionQuery
+	config     *config.Config
+	authFactory *authservice.AuthFactory
 }
 
 // NewAuthMiddleware creates a new auth middleware
-func NewAuthMiddleware(cfg *config.Config, checkSessionQuery *authQuery.CheckSessionQuery) *AuthMiddleware {
+func NewAuthMiddleware(cfg *config.Config, authFactory *authservice.AuthFactory) *AuthMiddleware {
 	return &AuthMiddleware{
-		config:            cfg,
-		checkSessionQuery: checkSessionQuery,
+		config:     cfg,
+		authFactory: authFactory,
 	}
 }
 
@@ -37,43 +42,42 @@ func NewAuthMiddleware(cfg *config.Config, checkSessionQuery *authQuery.CheckSes
 func (m *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		authenticated := false
 
-		// Check for API key in Authorization header
-		authHeader := r.Header.Get("Authorization")
-		if authHeader != "" {
-			// Bearer token authentication
-			if strings.HasPrefix(authHeader, "Bearer ") {
-				token := strings.TrimPrefix(authHeader, "Bearer ")
-				// Check if token matches admin auth token
-				if m.config.AdminAuthenticationToken != "" && token == m.config.AdminAuthenticationToken {
-					authenticated = true
-					ctx = context.WithValue(ctx, isAdminContextKey, true)
-				}
+		// Extract headers and form data for authentication
+		headers := make(map[string]string)
+		formData := make(map[string]string)
+		queryParams := make(map[string]string)
+
+		// Copy all headers
+		for name, values := range r.Header {
+			if len(values) > 0 {
+				headers[name] = values[0]
 			}
 		}
 
-		// Check for session cookie if not already authenticated
-		if !authenticated {
-			sessionCookie, err := r.Cookie("session_id")
-			if err == nil {
-				// Validate session
-				session, err := m.checkSessionQuery.Execute(ctx, sessionCookie.Value)
-				if err == nil && session != nil && !session.IsExpired() {
-					// Check for admin authentication cookie
-					adminCookie, _ := r.Cookie("is_admin_authenticated")
-					if adminCookie != nil && adminCookie.Value == "true" {
-						authenticated = true
-						ctx = context.WithValue(ctx, isAdminContextKey, true)
-						ctx = context.WithValue(ctx, sessionIDContextKey, session.ID)
-					}
-				}
+		// Copy query parameters
+		for name, values := range r.URL.Query() {
+			if len(values) > 0 {
+				queryParams[name] = values[0]
 			}
 		}
 
-		if !authenticated {
+		// Use AuthFactory to authenticate the request
+		authResponse, err := m.authFactory.AuthenticateRequest(ctx, headers, formData, queryParams)
+		if err != nil || authResponse == nil || !authResponse.Success {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
+		}
+
+		// Set authentication context
+		ctx = context.WithValue(ctx, authMethodContextKey, authResponse.AuthMethod)
+		ctx = context.WithValue(ctx, userContextKey, authResponse.Username)
+		ctx = context.WithValue(ctx, isAdminContextKey, authResponse.IsAdmin)
+		ctx = context.WithValue(ctx, permissionsContextKey, authResponse.Permissions)
+
+		// Set session ID if available
+		if authResponse.SessionID != nil {
+			ctx = context.WithValue(ctx, sessionIDContextKey, *authResponse.SessionID)
 		}
 
 		next.ServeHTTP(w, r.WithContext(ctx))
@@ -85,16 +89,37 @@ func (m *AuthMiddleware) OptionalAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// Try to authenticate via session cookie
-		sessionCookie, err := r.Cookie("session_id")
-		if err == nil {
-			session, err := m.checkSessionQuery.Execute(ctx, sessionCookie.Value)
-			if err == nil && session != nil && !session.IsExpired() {
-				adminCookie, _ := r.Cookie("is_admin_authenticated")
-				if adminCookie != nil && adminCookie.Value == "true" {
-					ctx = context.WithValue(ctx, isAdminContextKey, true)
-					ctx = context.WithValue(ctx, sessionIDContextKey, session.ID)
-				}
+		// Extract headers and form data for authentication
+		headers := make(map[string]string)
+		formData := make(map[string]string)
+		queryParams := make(map[string]string)
+
+		// Copy all headers
+		for name, values := range r.Header {
+			if len(values) > 0 {
+				headers[name] = values[0]
+			}
+		}
+
+		// Copy query parameters
+		for name, values := range r.URL.Query() {
+			if len(values) > 0 {
+				queryParams[name] = values[0]
+			}
+		}
+
+		// Use AuthFactory to authenticate the request (optional)
+		authResponse, err := m.authFactory.AuthenticateRequest(ctx, headers, formData, queryParams)
+		if err == nil && authResponse != nil && authResponse.Success {
+			// Set authentication context if successful
+			ctx = context.WithValue(ctx, authMethodContextKey, authResponse.AuthMethod)
+			ctx = context.WithValue(ctx, userContextKey, authResponse.Username)
+			ctx = context.WithValue(ctx, isAdminContextKey, authResponse.IsAdmin)
+			ctx = context.WithValue(ctx, permissionsContextKey, authResponse.Permissions)
+
+			// Set session ID if available
+			if authResponse.SessionID != nil {
+				ctx = context.WithValue(ctx, sessionIDContextKey, *authResponse.SessionID)
 			}
 		}
 
@@ -102,9 +127,15 @@ func (m *AuthMiddleware) OptionalAuth(next http.Handler) http.Handler {
 	})
 }
 
+// GetAuthMethodFromContext retrieves the auth method from the request context
+func GetAuthMethodFromContext(ctx context.Context) (auth.AuthMethodType, bool) {
+	authMethod, ok := ctx.Value(authMethodContextKey).(auth.AuthMethodType)
+	return authMethod, ok
+}
+
 // GetUserFromContext retrieves the user from the request context
-func GetUserFromContext(ctx context.Context) (interface{}, bool) {
-	user, ok := ctx.Value(userContextKey).(interface{})
+func GetUserFromContext(ctx context.Context) (string, bool) {
+	user, ok := ctx.Value(userContextKey).(string)
 	return user, ok
 }
 
@@ -121,6 +152,159 @@ func GetSessionIDFromContext(ctx context.Context) string {
 		return ""
 	}
 	return sessionID
+}
+
+// GetPermissionsFromContext retrieves user permissions from context
+func GetPermissionsFromContext(ctx context.Context) (map[string]string, bool) {
+	permissions, ok := ctx.Value(permissionsContextKey).(map[string]string)
+	return permissions, ok
+}
+
+// CheckNamespacePermission checks if the current user has permission for a namespace
+func (m *AuthMiddleware) CheckNamespacePermission(ctx context.Context, permissionType, namespace string) bool {
+	permissions, ok := GetPermissionsFromContext(ctx)
+	if !ok {
+		return false
+	}
+
+	// Check if user is admin
+	if GetIsAdminFromContext(ctx) {
+		return true
+	}
+
+	// Check specific namespace permission
+	storedPermission, exists := permissions[namespace]
+	if !exists {
+		return false
+	}
+
+	// Check permission hierarchy
+	switch permissionType {
+	case "READ":
+		return storedPermission == "READ" || storedPermission == "MODIFY" || storedPermission == "FULL"
+	case "MODIFY":
+		return storedPermission == "MODIFY" || storedPermission == "FULL"
+	case "FULL":
+		return storedPermission == "FULL"
+	default:
+		return false
+	}
+}
+
+// RequireAdmin is a middleware that requires admin authentication
+func (m *AuthMiddleware) RequireAdmin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		// Extract headers and form data for authentication
+		headers := make(map[string]string)
+		formData := make(map[string]string)
+		queryParams := make(map[string]string)
+
+		// Copy all headers
+		for name, values := range r.Header {
+			if len(values) > 0 {
+				headers[name] = values[0]
+			}
+		}
+
+		// Copy query parameters
+		for name, values := range r.URL.Query() {
+			if len(values) > 0 {
+				queryParams[name] = values[0]
+			}
+		}
+
+		// Use AuthFactory to authenticate the request
+		authResponse, err := m.authFactory.AuthenticateRequest(ctx, headers, formData, queryParams)
+		if err != nil || authResponse == nil || !authResponse.Success || !authResponse.IsAdmin {
+			http.Error(w, "Admin access required", http.StatusForbidden)
+			return
+		}
+
+		// Set authentication context
+		ctx = context.WithValue(ctx, authMethodContextKey, authResponse.AuthMethod)
+		ctx = context.WithValue(ctx, userContextKey, authResponse.Username)
+		ctx = context.WithValue(ctx, isAdminContextKey, authResponse.IsAdmin)
+		ctx = context.WithValue(ctx, permissionsContextKey, authResponse.Permissions)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// RequireNamespacePermission creates middleware that requires specific namespace permission
+func (m *AuthMiddleware) RequireNamespacePermission(permissionType, namespace string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			// Extract headers and form data for authentication
+			headers := make(map[string]string)
+			formData := make(map[string]string)
+			queryParams := make(map[string]string)
+
+			// Copy all headers
+			for name, values := range r.Header {
+				if len(values) > 0 {
+					headers[name] = values[0]
+				}
+			}
+
+			// Copy query parameters
+			for name, values := range r.URL.Query() {
+				if len(values) > 0 {
+					queryParams[name] = values[0]
+				}
+			}
+
+			// Use AuthFactory to authenticate the request
+			authResponse, err := m.authFactory.AuthenticateRequest(ctx, headers, formData, queryParams)
+			if err != nil || authResponse == nil || !authResponse.Success {
+				http.Error(w, "Authentication required", http.StatusUnauthorized)
+				return
+			}
+
+			// Check namespace permission
+			if !m.checkNamespacePermissionInResponse(authResponse, permissionType, namespace) {
+				http.Error(w, "Insufficient permissions", http.StatusForbidden)
+				return
+			}
+
+			// Set authentication context
+			ctx = context.WithValue(ctx, authMethodContextKey, authResponse.AuthMethod)
+			ctx = context.WithValue(ctx, userContextKey, authResponse.Username)
+			ctx = context.WithValue(ctx, isAdminContextKey, authResponse.IsAdmin)
+			ctx = context.WithValue(ctx, permissionsContextKey, authResponse.Permissions)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// checkNamespacePermissionInResponse checks permission in an authentication response
+func (m *AuthMiddleware) checkNamespacePermissionInResponse(authResponse *model.AuthenticationResponse, permissionType, namespace string) bool {
+	// Check if user is admin
+	if authResponse.IsAdmin {
+		return true
+	}
+
+	// Check specific namespace permission
+	storedPermission, exists := authResponse.Permissions[namespace]
+	if !exists {
+		return false
+	}
+
+	// Check permission hierarchy
+	switch permissionType {
+	case "READ":
+		return storedPermission == "READ" || storedPermission == "MODIFY" || storedPermission == "FULL"
+	case "MODIFY":
+		return storedPermission == "MODIFY" || storedPermission == "FULL"
+	case "FULL":
+		return storedPermission == "FULL"
+	default:
+		return false
+	}
 }
 
 // SetUserInContext sets the user in the request context
