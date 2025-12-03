@@ -21,21 +21,31 @@ func NewUserGroupRepository(db *gorm.DB) repository.UserGroupRepository {
 	}
 }
 
-// Create creates a new user group
+// Save saves a user group (creates or updates)
+func (r *UserGroupRepositoryImpl) Save(ctx context.Context, userGroup *auth.UserGroup) error {
+	if userGroup.ID == 0 {
+		// Create new user group
+		dbUserGroup := &sqldb.UserGroupDB{
+			Name:      userGroup.Name,
+			SiteAdmin: userGroup.SiteAdmin,
+		}
+
+		result := r.db.WithContext(ctx).Create(dbUserGroup)
+		if result.Error != nil {
+			return result.Error
+		}
+
+		userGroup.ID = dbUserGroup.ID
+		return nil
+	} else {
+		// Update existing user group
+		return r.Update(ctx, userGroup)
+	}
+}
+
+// Create creates a new user group (alias for Save when ID is 0)
 func (r *UserGroupRepositoryImpl) Create(ctx context.Context, userGroup *auth.UserGroup) error {
-	dbUserGroup := &sqldb.UserGroupDB{
-		Name:        userGroup.Name,
-		SiteAdmin:   userGroup.SiteAdmin,
-		Description: userGroup.Description,
-	}
-
-	result := r.db.WithContext(ctx).Create(dbUserGroup)
-	if result.Error != nil {
-		return result.Error
-	}
-
-	userGroup.ID = dbUserGroup.ID
-	return nil
+	return r.Save(ctx, userGroup)
 }
 
 // FindByID finds a user group by ID
@@ -47,10 +57,9 @@ func (r *UserGroupRepositoryImpl) FindByID(ctx context.Context, id int) (*auth.U
 	}
 
 	return &auth.UserGroup{
-		ID:          dbUserGroup.ID,
-		Name:        dbUserGroup.Name,
-		SiteAdmin:   dbUserGroup.SiteAdmin,
-		Description: dbUserGroup.Description,
+		ID:        dbUserGroup.ID,
+		Name:      dbUserGroup.Name,
+		SiteAdmin: dbUserGroup.SiteAdmin,
 	}, nil
 }
 
@@ -63,20 +72,18 @@ func (r *UserGroupRepositoryImpl) FindByName(ctx context.Context, name string) (
 	}
 
 	return &auth.UserGroup{
-		ID:          dbUserGroup.ID,
-		Name:        dbUserGroup.Name,
-		SiteAdmin:   dbUserGroup.SiteAdmin,
-		Description: dbUserGroup.Description,
+		ID:        dbUserGroup.ID,
+		Name:      dbUserGroup.Name,
+		SiteAdmin: dbUserGroup.SiteAdmin,
 	}, nil
 }
 
 // Update updates a user group
 func (r *UserGroupRepositoryImpl) Update(ctx context.Context, userGroup *auth.UserGroup) error {
 	dbUserGroup := &sqldb.UserGroupDB{
-		ID:          userGroup.ID,
-		Name:        userGroup.Name,
-		SiteAdmin:   userGroup.SiteAdmin,
-		Description: userGroup.Description,
+		ID:        userGroup.ID,
+		Name:      userGroup.Name,
+		SiteAdmin: userGroup.SiteAdmin,
 	}
 
 	return r.db.WithContext(ctx).Save(dbUserGroup).Error
@@ -87,10 +94,10 @@ func (r *UserGroupRepositoryImpl) Delete(ctx context.Context, id int) error {
 	return r.db.WithContext(ctx).Delete(&sqldb.UserGroupDB{}, id).Error
 }
 
-// List returns all user groups
-func (r *UserGroupRepositoryImpl) List(ctx context.Context) ([]*auth.UserGroup, error) {
+// List returns user groups with offset and limit
+func (r *UserGroupRepositoryImpl) List(ctx context.Context, offset, limit int) ([]*auth.UserGroup, error) {
 	var dbUserGroups []sqldb.UserGroupDB
-	err := r.db.WithContext(ctx).Find(&dbUserGroups).Error
+	err := r.db.WithContext(ctx).Offset(offset).Limit(limit).Find(&dbUserGroups).Error
 	if err != nil {
 		return nil, err
 	}
@@ -98,10 +105,9 @@ func (r *UserGroupRepositoryImpl) List(ctx context.Context) ([]*auth.UserGroup, 
 	userGroups := make([]*auth.UserGroup, len(dbUserGroups))
 	for i, dbUserGroup := range dbUserGroups {
 		userGroups[i] = &auth.UserGroup{
-			ID:          dbUserGroup.ID,
-			Name:        dbUserGroup.Name,
-			SiteAdmin:   dbUserGroup.SiteAdmin,
-			Description: dbUserGroup.Description,
+			ID:        dbUserGroup.ID,
+			Name:      dbUserGroup.Name,
+			SiteAdmin: dbUserGroup.SiteAdmin,
 		}
 	}
 
@@ -119,10 +125,9 @@ func (r *UserGroupRepositoryImpl) FindSiteAdminGroups(ctx context.Context) ([]*a
 	userGroups := make([]*auth.UserGroup, len(dbUserGroups))
 	for i, dbUserGroup := range dbUserGroups {
 		userGroups[i] = &auth.UserGroup{
-			ID:          dbUserGroup.ID,
-			Name:        dbUserGroup.Name,
-			SiteAdmin:   dbUserGroup.SiteAdmin,
-			Description: dbUserGroup.Description,
+			ID:        dbUserGroup.ID,
+			Name:      dbUserGroup.Name,
+			SiteAdmin: dbUserGroup.SiteAdmin,
 		}
 	}
 
@@ -139,8 +144,7 @@ func (r *UserGroupRepositoryImpl) GetNamespacePermissions(ctx context.Context, u
 
 	permissions := make([]auth.NamespacePermission, len(dbPermissions))
 	for i, dbPerm := range dbPermissions {
-		permissions[i] = &UserGroupNamespacePermission{
-			ID:             dbPerm.ID,
+		permissions[i] = auth.NamespacePermission{
 			UserGroupID:    dbPerm.UserGroupID,
 			NamespaceID:    dbPerm.NamespaceID,
 			PermissionType: auth.PermissionType(dbPerm.PermissionType),
@@ -158,22 +162,114 @@ func (r *UserGroupRepositoryImpl) GetGroupsForUser(ctx context.Context, userID s
 	return []*auth.UserGroup{}, nil
 }
 
-// CreateNamespacePermission creates a new namespace permission for a user group
-func (r *UserGroupRepositoryImpl) CreateNamespacePermission(ctx context.Context, userGroupID, namespaceID int, permissionType auth.PermissionType) error {
+// AddNamespacePermission adds a namespace permission for a user group (implements interface)
+func (r *UserGroupRepositoryImpl) AddNamespacePermission(ctx context.Context, userGroupID, namespaceID int, permissionType auth.PermissionType) error {
 	dbPermission := &sqldb.UserGroupNamespacePermissionDB{
 		UserGroupID:    userGroupID,
 		NamespaceID:    namespaceID,
-		PermissionType: string(permissionType),
+		PermissionType: sqldb.UserGroupNamespacePermissionType(permissionType),
 	}
 
 	return r.db.WithContext(ctx).Create(dbPermission).Error
 }
 
-// DeleteNamespacePermission deletes a namespace permission for a user group
-func (r *UserGroupRepositoryImpl) DeleteNamespacePermission(ctx context.Context, userGroupID, namespaceID int) error {
+// CreateNamespacePermission creates a new namespace permission for a user group (alias for AddNamespacePermission)
+func (r *UserGroupRepositoryImpl) CreateNamespacePermission(ctx context.Context, userGroupID, namespaceID int, permissionType auth.PermissionType) error {
+	return r.AddNamespacePermission(ctx, userGroupID, namespaceID, permissionType)
+}
+
+// RemoveNamespacePermission removes a namespace permission for a user group (implements interface)
+func (r *UserGroupRepositoryImpl) RemoveNamespacePermission(ctx context.Context, userGroupID, namespaceID int) error {
 	return r.db.WithContext(ctx).
 		Where("user_group_id = ? AND namespace_id = ?", userGroupID, namespaceID).
 		Delete(&sqldb.UserGroupNamespacePermissionDB{}).Error
+}
+
+// DeleteNamespacePermission deletes a namespace permission for a user group (alias for RemoveNamespacePermission)
+func (r *UserGroupRepositoryImpl) DeleteNamespacePermission(ctx context.Context, userGroupID, namespaceID int) error {
+	return r.RemoveNamespacePermission(ctx, userGroupID, namespaceID)
+}
+
+// Count returns the total number of user groups
+func (r *UserGroupRepositoryImpl) Count(ctx context.Context) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&sqldb.UserGroupDB{}).Count(&count).Error
+	return count, err
+}
+
+// HasNamespacePermission checks if a user group has a specific namespace permission
+func (r *UserGroupRepositoryImpl) HasNamespacePermission(ctx context.Context, userGroupID, namespaceID int, permissionType auth.PermissionType) (bool, error) {
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&sqldb.UserGroupNamespacePermissionDB{}).
+		Where("user_group_id = ? AND namespace_id = ? AND permission_type = ?", userGroupID, namespaceID, string(permissionType)).
+		Count(&count).Error
+	return count > 0, err
+}
+
+// GetHighestNamespacePermission gets the highest permission level for a user group in a namespace
+func (r *UserGroupRepositoryImpl) GetHighestNamespacePermission(ctx context.Context, userGroupID, namespaceID int) (auth.PermissionType, error) {
+	var dbPerm sqldb.UserGroupNamespacePermissionDB
+	err := r.db.WithContext(ctx).
+		Where("user_group_id = ? AND namespace_id = ?", userGroupID, namespaceID).
+		Order("CASE permission_type WHEN 'FULL' THEN 1 WHEN 'MODIFY' THEN 2 WHEN 'READ' THEN 3 END").
+		First(&dbPerm).Error
+
+	if err != nil {
+		return "", err
+	}
+
+	return auth.PermissionType(dbPerm.PermissionType), nil
+}
+
+// FindGroupsByNamespace finds all groups that have permissions for a specific namespace
+func (r *UserGroupRepositoryImpl) FindGroupsByNamespace(ctx context.Context, namespaceID int) ([]*auth.UserGroup, error) {
+	var dbUserGroups []sqldb.UserGroupDB
+	err := r.db.WithContext(ctx).
+		Joins("INNER JOIN user_group_namespace_permissions ON user_groups.id = user_group_namespace_permissions.user_group_id").
+		Where("user_group_namespace_permissions.namespace_id = ?", namespaceID).
+		Distinct().
+		Find(&dbUserGroups).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	userGroups := make([]*auth.UserGroup, len(dbUserGroups))
+	for i, dbUserGroup := range dbUserGroups {
+		userGroups[i] = &auth.UserGroup{
+			ID:        dbUserGroup.ID,
+			Name:      dbUserGroup.Name,
+			SiteAdmin: dbUserGroup.SiteAdmin,
+		}
+	}
+
+	return userGroups, nil
+}
+
+// SearchByName searches user groups by name pattern
+func (r *UserGroupRepositoryImpl) SearchByName(ctx context.Context, query string, offset, limit int) ([]*auth.UserGroup, error) {
+	var dbUserGroups []sqldb.UserGroupDB
+	err := r.db.WithContext(ctx).
+		Where("name ILIKE ?", "%"+query+"%").
+		Offset(offset).
+		Limit(limit).
+		Find(&dbUserGroups).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	userGroups := make([]*auth.UserGroup, len(dbUserGroups))
+	for i, dbUserGroup := range dbUserGroups {
+		userGroups[i] = &auth.UserGroup{
+			ID:        dbUserGroup.ID,
+			Name:      dbUserGroup.Name,
+			SiteAdmin: dbUserGroup.SiteAdmin,
+		}
+	}
+
+	return userGroups, nil
 }
 
 // WithTransaction returns a new repository instance that works within the given transaction
@@ -185,15 +281,9 @@ func (r *UserGroupRepositoryImpl) WithTransaction(tx interface{}) repository.Use
 
 // UserGroupNamespacePermission implements the NamespacePermission interface
 type UserGroupNamespacePermission struct {
-	ID             int
 	UserGroupID    int
 	NamespaceID    int
 	PermissionType auth.PermissionType
-}
-
-// GetID returns the permission ID
-func (p *UserGroupNamespacePermission) GetID() int {
-	return p.ID
 }
 
 // GetUserGroupID returns the user group ID

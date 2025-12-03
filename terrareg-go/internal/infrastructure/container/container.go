@@ -32,10 +32,10 @@ import (
 	modulePersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/storage"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http"
+	terraformHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform"
 	v1 "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1"
 	v2 "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v2"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
-	terraformHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform"
 	terrareg_middleware "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/template"
 )
@@ -47,14 +47,14 @@ type Container struct {
 	DB     *sqldb.Database
 
 	// Repositories
-	NamespaceRepo                    moduleRepo.NamespaceRepository
-	ModuleProviderRepo               moduleRepo.ModuleProviderRepository
-	AnalyticsRepo                    analyticsCmd.AnalyticsRepository
-	ProviderRepo                     providerRepo.ProviderRepository
-	SessionRepo                      authRepo.SessionRepository
-	UserGroupRepo                    authRepo.UserGroupRepository
+	NamespaceRepo                     moduleRepo.NamespaceRepository
+	ModuleProviderRepo                moduleRepo.ModuleProviderRepository
+	AnalyticsRepo                     analyticsCmd.AnalyticsRepository
+	ProviderRepo                      providerRepo.ProviderRepository
+	SessionRepo                       authRepo.SessionRepository
+	UserGroupRepo                     authRepo.UserGroupRepository
 	TerraformIdpAuthorizationCodeRepo authRepo.TerraformIdpAuthorizationCodeRepository
-	TerraformIdpAccessTokenRepo      authRepo.TerraformIdpAccessTokenRepository
+	TerraformIdpAccessTokenRepo       authRepo.TerraformIdpAccessTokenRepository
 	TerraformIdpSubjectIdentifierRepo authRepo.TerraformIdpSubjectIdentifierRepository
 
 	// Infrastructure Services
@@ -63,10 +63,10 @@ type Container struct {
 	ModuleParser   moduleService.ModuleParser
 
 	// Domain Services
-	ModuleImporterService      *moduleService.ModuleImporterService
-	AuthFactory                *authservice.AuthFactory
-	SessionService             *authservice.SessionService
-	TerraformIdpService        *authservice.TerraformIdpService
+	ModuleImporterService *moduleService.ModuleImporterService
+	AuthFactory           *authservice.AuthFactory
+	SessionService        *authservice.SessionService
+	TerraformIdpService   *authservice.TerraformIdpService
 
 	// Commands
 	CreateNamespaceCmd              *namespace.CreateNamespaceCommand
@@ -80,9 +80,9 @@ type Container struct {
 	CreateAdminSessionCmd           *authCmd.CreateAdminSessionCommand
 
 	// Terraform Authentication Commands
-	AuthenticateOIDCTokenCmd         *terraformCmd.AuthenticateOIDCTokenCommand
-	ValidateTokenCmd                 *terraformCmd.ValidateTokenCommand
-	GetUserCmd                       *terraformCmd.GetUserCommand
+	AuthenticateOIDCTokenCmd *terraformCmd.AuthenticateOIDCTokenCommand
+	ValidateTokenCmd         *terraformCmd.ValidateTokenCommand
+	GetUserCmd               *terraformCmd.GetUserCommand
 
 	// Provider Commands
 	CreateOrUpdateProviderCmd *providerCmd.CreateOrUpdateProviderCommand
@@ -115,19 +115,19 @@ type Container struct {
 	CheckSessionQuery              *authQuery.CheckSessionQuery
 
 	// Handlers
-	NamespaceHandler         *terrareg.NamespaceHandler
-	ModuleHandler            *terrareg.ModuleHandler
-	AnalyticsHandler         *terrareg.AnalyticsHandler
-	ProviderHandler          *terrareg.ProviderHandler
-	AuthHandler              *terrareg.AuthHandler
-	TerraformV1ModuleHandler *v1.TerraformV1ModuleHandler // New V1 Terraform Module Handler
+	NamespaceHandler           *terrareg.NamespaceHandler
+	ModuleHandler              *terrareg.ModuleHandler
+	AnalyticsHandler           *terrareg.AnalyticsHandler
+	ProviderHandler            *terrareg.ProviderHandler
+	AuthHandler                *terrareg.AuthHandler
+	TerraformV1ModuleHandler   *v1.TerraformV1ModuleHandler // New V1 Terraform Module Handler
 	TerraformV2ProviderHandler *v2.TerraformV2ProviderHandler
 	TerraformV2CategoryHandler *v2.TerraformV2CategoryHandler
-	TerraformV2GPGHandler *v2.TerraformV2GPGHandler
+	TerraformV2GPGHandler      *v2.TerraformV2GPGHandler
 
 	// Terraform Authentication Handlers
-	TerraformAuthHandler *terraformHandler.TerraformAuthHandler
-	TerraformIDPHandler  *terraformHandler.TerraformIDPHandler
+	TerraformAuthHandler        *terraformHandler.TerraformAuthHandler
+	TerraformIDPHandler         *terraformHandler.TerraformIDPHandler
 	TerraformStaticTokenHandler *terraformHandler.TerraformStaticTokenHandler
 
 	// Middleware
@@ -283,7 +283,7 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.TerraformStaticTokenHandler = terraformHandler.NewTerraformStaticTokenHandler()
 
 	// Initialize middleware
-	c.AuthMiddleware = terrareg_middleware.NewAuthMiddleware(cfg, c.CheckSessionQuery)
+	c.AuthMiddleware = terrareg_middleware.NewAuthMiddleware(cfg, c.AuthFactory)
 
 	// Initialize template renderer
 	templateRenderer, err := template.NewRenderer(cfg)

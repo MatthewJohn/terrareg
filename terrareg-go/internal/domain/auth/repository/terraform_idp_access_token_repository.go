@@ -36,13 +36,13 @@ func (r *TerraformIdpAccessTokenRepositoryImpl) Create(ctx context.Context, key 
 		Expiry: expiry,
 	}
 
-	return r.db.WithContext(ctx).Create(accessToken).Error
+	return r.db.GetDB().WithContext(ctx).Create(accessToken).Error
 }
 
 // FindByKey retrieves an access token by key if it hasn't expired
 func (r *TerraformIdpAccessTokenRepositoryImpl) FindByKey(ctx context.Context, key string) (*sqldb.TerraformIDPAccessTokenDB, error) {
 	var accessToken sqldb.TerraformIDPAccessTokenDB
-	err := r.db.WithContext(ctx).
+	err := r.db.GetDB().WithContext(ctx).
 		Where("key = ? AND expiry > ?", key, time.Now()).
 		First(&accessToken).
 		Error
@@ -56,7 +56,7 @@ func (r *TerraformIdpAccessTokenRepositoryImpl) FindByKey(ctx context.Context, k
 
 // DeleteByKey removes an access token by key
 func (r *TerraformIdpAccessTokenRepositoryImpl) DeleteByKey(ctx context.Context, key string) error {
-	return r.db.WithContext(ctx).
+	return r.db.GetDB().WithContext(ctx).
 		Where("key = ?", key).
 		Delete(&sqldb.TerraformIDPAccessTokenDB{}).
 		Error
@@ -64,7 +64,7 @@ func (r *TerraformIdpAccessTokenRepositoryImpl) DeleteByKey(ctx context.Context,
 
 // DeleteExpired removes all expired access tokens and returns the count of deleted records
 func (r *TerraformIdpAccessTokenRepositoryImpl) DeleteExpired(ctx context.Context) (int64, error) {
-	result := r.db.WithContext(ctx).
+	result := r.db.GetDB().WithContext(ctx).
 		Where("expiry <= ?", time.Now()).
 		Delete(&sqldb.TerraformIDPAccessTokenDB{})
 

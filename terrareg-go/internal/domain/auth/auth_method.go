@@ -37,18 +37,18 @@ type AuthMethod interface {
 type AuthMethodType string
 
 const (
-	AuthMethodNotAuthenticated                 AuthMethodType = "NOT_AUTHENTICATED"
+	AuthMethodNotAuthenticated                AuthMethodType = "NOT_AUTHENTICATED"
 	AuthMethodAdminSession                    AuthMethodType = "ADMIN_SESSION"
 	AuthMethodAdminApiKey                     AuthMethodType = "ADMIN_API_KEY"
-	AuthMethodSAML                           AuthMethodType = "SAML"
+	AuthMethodSAML                            AuthMethodType = "SAML"
 	AuthMethodOpenIDConnect                   AuthMethodType = "OPENID_CONNECT"
 	AuthMethodGitHub                          AuthMethodType = "GITHUB"
 	AuthMethodTerraformOIDC                   AuthMethodType = "TERRAFORM_OIDC"
 	AuthMethodTerraformAnalyticsAuthKey       AuthMethodType = "TERRAFORM_ANALYTICS_AUTH_KEY"
 	AuthMethodTerraformIgnoreAnalyticsAuthKey AuthMethodType = "TERRAFORM_IGNORE_ANALYTICS_AUTH_KEY"
 	AuthMethodTerraformInternalExtraction     AuthMethodType = "TERRAFORM_INTERNAL_EXTRACTION"
-	AuthMethodUploadApiKey                   AuthMethodType = "UPLOAD_API_KEY"
-	AuthMethodPublishApiKey                  AuthMethodType = "PUBLISH_API_KEY"
+	AuthMethodUploadApiKey                    AuthMethodType = "UPLOAD_API_KEY"
+	AuthMethodPublishApiKey                   AuthMethodType = "PUBLISH_API_KEY"
 )
 
 // BaseAuthMethod provides common functionality for authentication methods

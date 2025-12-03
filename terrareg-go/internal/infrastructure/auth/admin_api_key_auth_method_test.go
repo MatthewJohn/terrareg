@@ -3,6 +3,8 @@ package auth
 import (
 	"context"
 	"testing"
+
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 )
 
 func TestNewAdminApiKeyAuthMethod(t *testing.T) {
@@ -12,8 +14,8 @@ func TestNewAdminApiKeyAuthMethod(t *testing.T) {
 		t.Fatal("NewAdminApiKeyAuthMethod returned nil")
 	}
 
-	if authMethod.GetProviderType() != AuthMethodAdminApiKey {
-		t.Errorf("Expected provider type %v, got %v", AuthMethodAdminApiKey, authMethod.GetProviderType())
+	if authMethod.GetProviderType() != auth.AuthMethodAdminApiKey {
+		t.Errorf("Expected provider type %v, got %v", auth.AuthMethodAdminApiKey, authMethod.GetProviderType())
 	}
 
 	if authMethod.CheckAuthState() {

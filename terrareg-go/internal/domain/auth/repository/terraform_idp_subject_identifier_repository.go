@@ -36,13 +36,13 @@ func (r *TerraformIdpSubjectIdentifierRepositoryImpl) Create(ctx context.Context
 		Expiry: expiry,
 	}
 
-	return r.db.WithContext(ctx).Create(subjectIdentifier).Error
+	return r.db.GetDB().WithContext(ctx).Create(subjectIdentifier).Error
 }
 
 // FindByKey retrieves a subject identifier by key if it hasn't expired
 func (r *TerraformIdpSubjectIdentifierRepositoryImpl) FindByKey(ctx context.Context, key string) (*sqldb.TerraformIDPSubjectIdentifierDB, error) {
 	var subjectIdentifier sqldb.TerraformIDPSubjectIdentifierDB
-	err := r.db.WithContext(ctx).
+	err := r.db.GetDB().WithContext(ctx).
 		Where("key = ? AND expiry > ?", key, time.Now()).
 		First(&subjectIdentifier).
 		Error
@@ -56,7 +56,7 @@ func (r *TerraformIdpSubjectIdentifierRepositoryImpl) FindByKey(ctx context.Cont
 
 // DeleteByKey removes a subject identifier by key
 func (r *TerraformIdpSubjectIdentifierRepositoryImpl) DeleteByKey(ctx context.Context, key string) error {
-	return r.db.WithContext(ctx).
+	return r.db.GetDB().WithContext(ctx).
 		Where("key = ?", key).
 		Delete(&sqldb.TerraformIDPSubjectIdentifierDB{}).
 		Error
@@ -64,7 +64,7 @@ func (r *TerraformIdpSubjectIdentifierRepositoryImpl) DeleteByKey(ctx context.Co
 
 // DeleteExpired removes all expired subject identifiers and returns the count of deleted records
 func (r *TerraformIdpSubjectIdentifierRepositoryImpl) DeleteExpired(ctx context.Context) (int64, error) {
-	result := r.db.WithContext(ctx).
+	result := r.db.GetDB().WithContext(ctx).
 		Where("expiry <= ?", time.Now()).
 		Delete(&sqldb.TerraformIDPSubjectIdentifierDB{})
 
