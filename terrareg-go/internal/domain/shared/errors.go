@@ -13,9 +13,10 @@ var (
 	ErrForbidden        = errors.New("forbidden")
 	ErrInvalidVersion   = errors.New("invalid version")
 	ErrInvalidName      = errors.New("invalid name")
-	ErrInvalidNamespace = errors.New("invalid namespace")
-	ErrInvalidProvider  = errors.New("invalid provider")
-	ErrDomainViolation  = errors.New("domain rule violation")
+	ErrInvalidNamespace     = errors.New("invalid namespace")
+	ErrInvalidProvider      = errors.New("invalid provider")
+	ErrInvalidCategorySlug  = errors.New("invalid category slug")
+	ErrDomainViolation      = errors.New("domain rule violation")
 )
 
 // DomainError represents a domain-specific error

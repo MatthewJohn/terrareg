@@ -12,14 +12,13 @@ import (
 
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/service"
 )
 
 var (
-	ErrSAMLNotConfigured    = errors.New("SAML provider not configured")
-	ErrSAMLInvalidResponse  = errors.New("invalid SAML response")
-	ErrSAMLAuthentication = errors.New("SAML authentication failed")
+	ErrSAMLNotConfigured   = errors.New("SAML provider not configured")
+	ErrSAMLInvalidResponse = errors.New("invalid SAML response")
+	ErrSAMLAuthentication  = errors.New("SAML authentication failed")
 )
 
 // SAMLProvider implements SAML2 authentication
@@ -31,21 +30,21 @@ type SAMLProvider struct {
 
 // SAMLConfig holds SAML configuration
 type SAMLConfig struct {
-	EntityID          string
-	KeyFile           string
-	CertificateFile   string
-	AllowIDPInitiated bool
-	SSOURL           string
-	SLOURL           string
-	NameIDFormat      string
-	AttributeMapping  map[string]string
-	SessionTimeout    time.Duration
+	EntityID           string
+	KeyFile            string
+	CertificateFile    string
+	AllowIDPInitiated  bool
+	SSOURL             string
+	SLOURL             string
+	NameIDFormat       string
+	AttributeMapping   map[string]string
+	SessionTimeout     time.Duration
 	ServiceProviderURL string
 }
 
 // SAMLAuthRequest represents a SAML authentication request
 type SAMLAuthRequest struct {
-	IDP     string
+	IDP      string
 	Redirect string
 }
 
@@ -57,13 +56,13 @@ func NewSAMLProvider(config SAMLConfig) (*SAMLProvider, error) {
 
 	// Create SAML service provider
 	opts := samlsp.Options{
-		URL:               *mustParseURL(config.ServiceProviderURL),
+		URL:                *mustParseURL(config.ServiceProviderURL),
 		Key:                config.KeyFile,
-		Certificate:         config.CertificateFile,
-		AllowIDPInitiated:    config.AllowIDPInitiated,
-		SignRequest:         true,
-		SignResponse:        true,
-		DefaultRedirectURI:   config.SSOURL,
+		Certificate:        config.CertificateFile,
+		AllowIDPInitiated:  config.AllowIDPInitiated,
+		SignRequest:        true,
+		SignResponse:       true,
+		DefaultRedirectURI: config.SSOURL,
 	}
 
 	sp, err := samlsp.New(opts)

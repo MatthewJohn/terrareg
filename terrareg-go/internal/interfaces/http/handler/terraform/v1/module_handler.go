@@ -261,4 +261,43 @@ func toModuleVersionResponse(mv *model.ModuleVersion) dto.ModuleVersionResponse 
 	}
 }
 
-// Other handler dispatch methods will be added here
+// toModuleProviderResponse converts a domain ModuleProvider model to a DTO
+func toModuleProviderResponse(mp *model.ModuleProvider) dto.ModuleProviderResponse {
+	response := dto.ModuleProviderResponse{
+		ID:        fmt.Sprintf("%d", mp.ID()),
+		Namespace: mp.Namespace().Name(),
+		Name:      mp.Module(),
+		Provider:  mp.Provider(),
+		Verified:  mp.IsVerified(),
+	}
+
+	// Add latest version info if available
+	if latestVersion := mp.GetLatestVersion(); latestVersion != nil {
+		version := latestVersion.Version().String()
+		response.Version = &version
+
+		// Add published date
+		if publishedAt := latestVersion.PublishedAt(); publishedAt != nil {
+			publishedStr := publishedAt.Format(time.RFC3339)
+			response.PublishedAt = &publishedStr
+		}
+
+		// Add description and owner from version itself (not from details)
+		if latestVersion.Description() != nil {
+			response.Description = latestVersion.Description()
+		}
+		if latestVersion.Owner() != nil {
+			response.Owner = latestVersion.Owner()
+		}
+	}
+
+	// Add source URL if available (need to check if there's a getter method)
+	// For now, leave source as nil since it requires additional implementation
+
+	return response
+}
+
+// HandleModuleVersionList is an alias for HandleModuleVersions for consistency
+func (h *TerraformV1ModuleHandler) HandleModuleVersionList(w http.ResponseWriter, r *http.Request) {
+	h.HandleModuleVersions(w, r)
+}

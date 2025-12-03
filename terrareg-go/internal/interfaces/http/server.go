@@ -11,6 +11,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	tfv1ModuleHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1" // New import
+	tfv2ProviderHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v2"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 	terrareg_middleware "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/template"
@@ -29,6 +30,9 @@ type Server struct {
 	authMiddleware         *terrareg_middleware.AuthMiddleware
 	templateRenderer       *template.Renderer
 	terraformV1ModuleHandler *tfv1ModuleHandler.TerraformV1ModuleHandler // New field
+	terraformV2ProviderHandler *tfv2ProviderHandler.TerraformV2ProviderHandler
+	terraformV2CategoryHandler *tfv2ProviderHandler.TerraformV2CategoryHandler
+	terraformV2GPGHandler *tfv2ProviderHandler.TerraformV2GPGHandler
 }
 
 // NewServer creates a new HTTP server
@@ -43,6 +47,9 @@ func NewServer(
 	authMiddleware *terrareg_middleware.AuthMiddleware,
 	templateRenderer *template.Renderer,
 	terraformV1ModuleHandler *tfv1ModuleHandler.TerraformV1ModuleHandler, // New parameter
+	terraformV2ProviderHandler *tfv2ProviderHandler.TerraformV2ProviderHandler,
+	terraformV2CategoryHandler *tfv2ProviderHandler.TerraformV2CategoryHandler,
+	terraformV2GPGHandler *tfv2ProviderHandler.TerraformV2GPGHandler,
 ) *Server {
 	s := &Server{
 		router:                   chi.NewRouter(),
@@ -56,6 +63,9 @@ func NewServer(
 		authMiddleware:           authMiddleware,
 		templateRenderer:         templateRenderer,
 		terraformV1ModuleHandler: terraformV1ModuleHandler, // Assign new handler
+		terraformV2ProviderHandler: terraformV2ProviderHandler,
+		terraformV2CategoryHandler: terraformV2CategoryHandler,
+		terraformV2GPGHandler: terraformV2GPGHandler,
 	}
 
 	s.setupMiddleware()
@@ -212,14 +222,24 @@ func (s *Server) setupRoutes() {
 
 	// Terraform Registry API v2
 	s.router.Route("/v2", func(r chi.Router) {
-		r.Get("/providers/{namespace}/{provider}", s.handleV2ProviderDetails)
-		r.Get("/providers/{provider_id}/downloads/summary", s.handleV2ProviderDownloadsSummary)
+		// Provider endpoints
+		r.Get("/providers/{namespace}/{provider}", s.terraformV2ProviderHandler.HandleProviderDetails)
+		r.Get("/providers/{namespace}/{provider}/versions", s.terraformV2ProviderHandler.HandleProviderVersions)
+		r.Get("/providers/{namespace}/{provider}/{version}", s.terraformV2ProviderHandler.HandleProviderVersion)
+		r.Get("/providers/{namespace}/{provider}/{version}/download/{os}/{arch}", s.terraformV2ProviderHandler.HandleProviderDownload)
+		r.Get("/providers/{provider_id}/downloads/summary", s.terraformV2ProviderHandler.HandleProviderDownloadsSummary)
+
+		// Provider docs (placeholder - can be implemented later)
 		r.Get("/provider-docs", s.handleV2ProviderDocs)
 		r.Get("/provider-docs/{doc_id}", s.handleV2ProviderDoc)
-		r.Get("/gpg-keys", s.handleV2GPGKeys)
-		r.Post("/gpg-keys", s.handleV2GPGKeyCreate)
-		r.Get("/gpg-keys/{namespace}/{key_id}", s.handleV2GPGKey)
-		r.Get("/categories", s.handleV2Categories)
+
+		// GPG keys
+		r.Get("/gpg-keys", s.terraformV2GPGHandler.HandleListGPGKeys)
+		r.Post("/gpg-keys", s.terraformV2GPGHandler.HandleCreateGPGKey)
+		r.Get("/gpg-keys/{namespace}/{key_id}", s.terraformV2GPGHandler.HandleGetGPGKey)
+
+		// Categories
+		r.Get("/categories", s.terraformV2CategoryHandler.HandleListCategories)
 	})
 
 	// Authentication endpoints

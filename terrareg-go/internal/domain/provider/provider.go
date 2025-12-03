@@ -58,8 +58,11 @@ func NewProviderBinary(versionID int, operatingSystem, architecture, fileName, f
 func (b *ProviderBinary) ID() int               { return b.id }
 func (b *ProviderBinary) VersionID() int       { return b.versionID }
 func (b *ProviderBinary) OperatingSystem() string { return b.operatingSystem }
+func (b *ProviderBinary) OS() string            { return b.operatingSystem }
 func (b *ProviderBinary) Architecture() string   { return b.architecture }
+func (b *ProviderBinary) Arch() string          { return b.architecture }
 func (b *ProviderBinary) FileName() string      { return b.fileName }
+func (b *ProviderBinary) Filename() string      { return b.fileName }
 func (b *ProviderBinary) FileSize() int64        { return b.fileSize }
 func (b *ProviderBinary) FileHash() string       { return b.fileHash }
 func (b *ProviderBinary) DownloadURL() string    { return b.downloadURL }
@@ -183,6 +186,7 @@ type ProviderVersion struct {
 	publishedAt      *time.Time
 	gpgKeyID         int
 	protocolVersions []string
+	binaries         []*ProviderBinary
 }
 
 // NewProviderVersion creates a new ProviderVersion instance
@@ -205,6 +209,7 @@ func NewProviderVersion(
 		publishedAt:      publishedAt,
 		gpgKeyID:         gpgKeyID,
 		protocolVersions: protocolVersions,
+		binaries:         make([]*ProviderBinary, 0),
 	}
 }
 
@@ -217,3 +222,4 @@ func (pv *ProviderVersion) Beta() bool                { return pv.beta }
 func (pv *ProviderVersion) PublishedAt() *time.Time   { return pv.publishedAt }
 func (pv *ProviderVersion) GPGKeyID() int             { return pv.gpgKeyID }
 func (pv *ProviderVersion) ProtocolVersions() []string { return pv.protocolVersions }
+func (pv *ProviderVersion) Binaries() []*ProviderBinary { return pv.binaries }
