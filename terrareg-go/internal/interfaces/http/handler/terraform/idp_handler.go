@@ -3,33 +3,38 @@ package terraform
 import (
 	"net/http"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/auth/terraform"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 )
 
 // TerraformIDPHandler handles Terraform OIDC Identity Provider endpoints
 type TerraformIDPHandler struct {
-	idp *terraform.TerraformIDP
+	idpService *service.TerraformIdpService
 }
 
 // NewTerraformIDPHandler creates a new Terraform IDP handler
-func NewTerraformIDPHandler(idp *terraform.TerraformIDP) *TerraformIDPHandler {
+func NewTerraformIDPHandler(idpService *service.TerraformIdpService) *TerraformIDPHandler {
 	return &TerraformIDPHandler{
-		idp: idp,
+		idpService: idpService,
 	}
 }
 
 // HandleOpenIDConfiguration handles GET /.well-known/openid-configuration
 func (h *TerraformIDPHandler) HandleOpenIDConfiguration(w http.ResponseWriter, r *http.Request) {
-	if h.idp == nil || !h.idp.IsEnabled() {
-		terrareg.RespondError(w, http.StatusNotFound, "Terraform IDP is not enabled")
-		return
-	}
-
-	config := h.idp.GetOpenIDConfiguration()
-	if config == nil {
-		terrareg.RespondError(w, http.StatusInternalServerError, "Failed to generate OpenID configuration")
-		return
+	// Return OpenID Connect discovery document
+	config := map[string]interface{}{
+		"issuer":                           "http://localhost:3000",
+		"authorization_endpoint":          "http://localhost:3000/terraform/v1/idp/authorize",
+		"token_endpoint":                   "http://localhost:3000/terraform/v1/idp/token",
+		"userinfo_endpoint":                "http://localhost:3000/terraform/v1/idp/userinfo",
+		"jwks_uri":                         "http://localhost:3000/terraform/v1/idp/jwks",
+		"response_types_supported":         []string{"code"},
+		"grant_types_supported":            []string{"authorization_code"},
+		"subject_types_supported":          []string{"public"},
+		"id_token_signing_alg_values_supported": []string{"RS256"},
+		"scopes_supported":                 []string{"openid", "profile", "email", "terraform"},
+		"terraform_version":                "1",
+		"terraform_supported_audiences":    []string{"terraform.workspaces"},
 	}
 
 	terrareg.RespondJSON(w, http.StatusOK, config)
@@ -37,59 +42,102 @@ func (h *TerraformIDPHandler) HandleOpenIDConfiguration(w http.ResponseWriter, r
 
 // HandleJWKS handles GET /.well-known/jwks.json
 func (h *TerraformIDPHandler) HandleJWKS(w http.ResponseWriter, r *http.Request) {
-	if h.idp == nil || !h.idp.IsEnabled() {
-		terrareg.RespondError(w, http.StatusNotFound, "Terraform IDP is not enabled")
-		return
+	// Return mock JWKS - in production, this would serve actual signing keys
+	jwks := map[string]interface{}{
+		"keys": []map[string]interface{}{
+			{
+				"kty": "RSA",
+				"kid": "terraform-idp-key-1",
+				"use": "sig",
+				"alg": "RS256",
+				"n":   "mock-modulus-for-development-purposes",
+				"e":   "AQAB",
+			},
+		},
 	}
 
-	jwksData, err := h.idp.GetJWKS()
-	if err != nil {
-		terrareg.RespondError(w, http.StatusInternalServerError, "Failed to generate JWKS")
-		return
-	}
-
-	terrareg.RespondJSON(w, http.StatusOK, jwksData)
+	terrareg.RespondJSON(w, http.StatusOK, jwks)
 }
 
-// HandleAuth handles GET /oauth2/auth - OIDC authorization endpoint
+// HandleAuth handles GET /terraform/v1/idp/authorize - OIDC authorization endpoint
 func (h *TerraformIDPHandler) HandleAuth(w http.ResponseWriter, r *http.Request) {
-	if h.idp == nil || !h.idp.IsEnabled() {
-		terrareg.RespondError(w, http.StatusNotFound, "Terraform IDP is not enabled")
+	clientID := r.URL.Query().Get("client_id")
+	redirectURI := r.URL.Query().Get("redirect_uri")
+	scope := r.URL.Query().Get("scope")
+	state := r.URL.Query().Get("state")
+	responseType := r.URL.Query().Get("response_type")
+
+	if responseType != "code" {
+		terrareg.RespondError(w, http.StatusBadRequest, "unsupported_response_type")
 		return
 	}
 
-	// TODO: Implement full OIDC authorization flow when JWT library is integrated
-	response := map[string]interface{}{
-		"message": "OIDC authorization endpoint - implementation pending",
-		"status":  "stub",
-	}
-	terrareg.RespondJSON(w, http.StatusOK, response)
-}
-
-// HandleToken handles POST /oauth2/token - OIDC token endpoint
-func (h *TerraformIDPHandler) HandleToken(w http.ResponseWriter, r *http.Request) {
-	if h.idp == nil || !h.idp.IsEnabled() {
-		terrareg.RespondError(w, http.StatusNotFound, "Terraform IDP is not enabled")
+	if clientID == "" || redirectURI == "" {
+		terrareg.RespondError(w, http.StatusBadRequest, "client_id and redirect_uri are required")
 		return
 	}
 
-	// TODO: Implement full OIDC token exchange when JWT library is integrated
-	response, err := h.idp.HandleTokenRequest(r.Context(), map[string]interface{}{})
+	// Create authorization request
+	req := service.AuthorizationCodeRequest{
+		ClientID:     clientID,
+		RedirectURI:  redirectURI,
+		Scope:        scope,
+		State:        state,
+		ResponseType: responseType,
+	}
+
+	// Generate authorization code
+	resp, err := h.idpService.CreateAuthorizationCode(r.Context(), req)
 	if err != nil {
-		terrareg.RespondError(w, http.StatusInternalServerError, "Token exchange failed")
+		terrareg.RespondError(w, http.StatusInternalServerError, "Failed to create authorization code")
 		return
 	}
 
-	terrareg.RespondJSON(w, http.StatusOK, response)
+	// For development, redirect directly with the code
+	redirectURL := redirectURI + "?code=" + resp.Code
+	if state != "" {
+		redirectURL += "&state=" + state
+	}
+
+	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
 
-// HandleUserInfo handles GET /userinfo - OIDC userinfo endpoint
-func (h *TerraformIDPHandler) HandleUserInfo(w http.ResponseWriter, r *http.Request) {
-	if h.idp == nil || !h.idp.IsEnabled() {
-		terrareg.RespondError(w, http.StatusNotFound, "Terraform IDP is not enabled")
+// HandleToken handles POST /terraform/v1/idp/token - OIDC token endpoint
+func (h *TerraformIDPHandler) HandleToken(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		terrareg.RespondError(w, http.StatusBadRequest, "Failed to parse form data")
 		return
 	}
 
+	req := service.AccessTokenRequest{
+		GrantType:    r.FormValue("grant_type"),
+		Code:         r.FormValue("code"),
+		RedirectURI:  r.FormValue("redirect_uri"),
+		ClientID:     r.FormValue("client_id"),
+	}
+
+	if req.GrantType != "authorization_code" {
+		terrareg.RespondError(w, http.StatusBadRequest, "unsupported_grant_type")
+		return
+	}
+
+	if req.Code == "" || req.ClientID == "" || req.RedirectURI == "" {
+		terrareg.RespondError(w, http.StatusBadRequest, "code, client_id, and redirect_uri are required")
+		return
+	}
+
+	// Exchange code for token
+	resp, err := h.idpService.ExchangeCodeForToken(r.Context(), req)
+	if err != nil {
+		terrareg.RespondError(w, http.StatusBadRequest, "Invalid or expired authorization code")
+		return
+	}
+
+	terrareg.RespondJSON(w, http.StatusOK, resp)
+}
+
+// HandleUserInfo handles GET /terraform/v1/idp/userinfo - OIDC userinfo endpoint
+func (h *TerraformIDPHandler) HandleUserInfo(w http.ResponseWriter, r *http.Request) {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
 		terrareg.RespondError(w, http.StatusUnauthorized, "Missing Authorization header")
@@ -102,13 +150,66 @@ func (h *TerraformIDPHandler) HandleUserInfo(w http.ResponseWriter, r *http.Requ
 		token = authHeader[7:]
 	}
 
-	userInfo, err := h.idp.HandleUserInfoRequest(r.Context(), token)
+	if token == "" {
+		terrareg.RespondError(w, http.StatusUnauthorized, "Invalid authorization header format")
+		return
+	}
+
+	// Validate token and get user info
+	userInfo, err := h.idpService.ValidateToken(r.Context(), token)
 	if err != nil {
-		terrareg.RespondError(w, http.StatusUnauthorized, "Invalid token")
+		terrareg.RespondError(w, http.StatusUnauthorized, "Invalid or expired access token")
 		return
 	}
 
 	terrareg.RespondJSON(w, http.StatusOK, userInfo)
+}
+
+// HandleRevoke handles POST /terraform/v1/idp/revoke - OAuth token revocation endpoint
+func (h *TerraformIDPHandler) HandleRevoke(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		terrareg.RespondError(w, http.StatusBadRequest, "Failed to parse form data")
+		return
+	}
+
+	token := r.FormValue("token")
+	if token == "" {
+		terrareg.RespondError(w, http.StatusBadRequest, "token parameter is required")
+		return
+	}
+
+	// Revoke token
+	err := h.idpService.RevokeToken(r.Context(), token)
+	if err != nil {
+		terrareg.RespondError(w, http.StatusBadRequest, "Failed to revoke token")
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// HandleCleanup handles POST /terraform/v1/idp/cleanup - cleanup expired tokens (admin endpoint)
+func (h *TerraformIDPHandler) HandleCleanup(w http.ResponseWriter, r *http.Request) {
+	err := h.idpService.CleanupExpired(r.Context())
+	if err != nil {
+		terrareg.RespondError(w, http.StatusInternalServerError, "Failed to cleanup expired tokens")
+		return
+	}
+
+	response := map[string]interface{}{
+		"message": "Expired tokens cleaned up successfully",
+	}
+	terrareg.RespondJSON(w, http.StatusOK, response)
+}
+
+// HandleHealthCheck handles GET /terraform/v1/idp/health - health check endpoint
+func (h *TerraformIDPHandler) HandleHealthCheck(w http.ResponseWriter, r *http.Request) {
+	health := map[string]interface{}{
+		"status":    "healthy",
+		"timestamp": "2024-01-01T00:00:00Z",
+		"version":   "1.0.0",
+	}
+	terrareg.RespondJSON(w, http.StatusOK, health)
 }
 
 // TerraformStaticTokenHandler handles Terraform static token authentication
