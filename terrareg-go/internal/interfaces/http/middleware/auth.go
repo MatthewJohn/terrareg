@@ -65,7 +65,7 @@ func (m *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
 					if adminCookie != nil && adminCookie.Value == "true" {
 						authenticated = true
 						ctx = context.WithValue(ctx, isAdminContextKey, true)
-						ctx = context.WithValue(ctx, sessionIDContextKey, session.ID())
+						ctx = context.WithValue(ctx, sessionIDContextKey, session.ID)
 					}
 				}
 			}
@@ -93,7 +93,7 @@ func (m *AuthMiddleware) OptionalAuth(next http.Handler) http.Handler {
 				adminCookie, _ := r.Cookie("is_admin_authenticated")
 				if adminCookie != nil && adminCookie.Value == "true" {
 					ctx = context.WithValue(ctx, isAdminContextKey, true)
-					ctx = context.WithValue(ctx, sessionIDContextKey, session.ID())
+					ctx = context.WithValue(ctx, sessionIDContextKey, session.ID)
 				}
 			}
 		}

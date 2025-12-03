@@ -17,12 +17,11 @@ import (
 	terraformCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/terraform"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	authRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/repository"
+	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service" // Alias for the new module service
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/git"
 
 	providerRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
@@ -30,7 +29,6 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	analyticsPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/analytics"
 	authPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/auth"
-	identityPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/identity"
 	modulePersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/storage"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http"
@@ -54,7 +52,7 @@ type Container struct {
 	AnalyticsRepo      analyticsCmd.AnalyticsRepository
 	ProviderRepo       providerRepo.ProviderRepository
 	SessionRepo        authRepo.SessionRepository
-	UserRepo           repository.UserRepository
+	UserGroupRepo      authRepo.UserGroupRepository
 
 	// Infrastructure Services
 	GitClient      gitService.GitClient
@@ -63,7 +61,8 @@ type Container struct {
 
 	// Domain Services
 	ModuleImporterService      *moduleService.ModuleImporterService
-	TerraformAuthService       *service.TerraformAuthServiceIntegrated
+	AuthFactory                *authservice.AuthFactory
+	SessionService             *authservice.SessionService
 
 	// Commands
 	CreateNamespaceCmd              *namespace.CreateNamespaceCommand
@@ -151,7 +150,9 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.AnalyticsRepo = analyticsPersistence.NewAnalyticsRepository(db.DB)
 	c.ProviderRepo = providerRepository.NewProviderRepository()
 	c.SessionRepo = authPersistence.NewSessionRepository(db.DB)
-	c.UserRepo = identityPersistence.NewUserRepository(db.DB)
+
+	// TODO: Initialize UserGroup repository when implementation is available
+	// c.UserGroupRepo = authPersistence.NewUserGroupRepository(db.DB)
 
 	// Initialize infrastructure services
 	c.GitClient = git.NewGitClientImpl()
@@ -166,7 +167,10 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 		c.ModuleParser,
 		cfg,
 	)
-	c.TerraformAuthService = service.NewTerraformAuthServiceIntegrated(c.UserRepo)
+
+	// Initialize auth services
+	c.SessionService = authservice.NewSessionService(c.SessionRepo, authservice.DefaultSessionConfig())
+	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo)
 
 	// Initialize commands
 	c.CreateNamespaceCmd = namespace.NewCreateNamespaceCommand(c.NamespaceRepo)
@@ -180,9 +184,9 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.CreateAdminSessionCmd = authCmd.NewCreateAdminSessionCommand(c.SessionRepo, cfg)
 
 	// Initialize Terraform authentication commands
-	c.AuthenticateOIDCTokenCmd = terraformCmd.NewAuthenticateOIDCTokenCommand(c.TerraformAuthService)
-	c.ValidateTokenCmd = terraformCmd.NewValidateTokenCommand(c.TerraformAuthService)
-	c.GetUserCmd = terraformCmd.NewGetUserCommand(c.UserRepo)
+	c.AuthenticateOIDCTokenCmd = terraformCmd.NewAuthenticateOIDCTokenCommand(c.AuthFactory)
+	c.ValidateTokenCmd = terraformCmd.NewValidateTokenCommand(c.AuthFactory)
+	c.GetUserCmd = terraformCmd.NewGetUserCommand(c.AuthFactory)
 
 	// Initialize queries
 	c.ListNamespacesQuery = module.NewListNamespacesQuery(c.NamespaceRepo)

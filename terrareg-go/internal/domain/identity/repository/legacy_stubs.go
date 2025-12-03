@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
 )
@@ -15,9 +16,11 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id int) (*model.User, error)
 	FindByUsername(ctx context.Context, username string) (*model.User, error)
 	FindByEmail(ctx context.Context, email string) (*model.User, error)
+	FindByExternalID(ctx context.Context, externalID string) (*model.User, error)
 	FindByAccessToken(ctx context.Context, token string) (*model.User, error)
 	Create(ctx context.Context, user *model.User) error
 	Update(ctx context.Context, user *model.User) error
+	Save(ctx context.Context, user *model.User) error
 	Delete(ctx context.Context, id int) error
 	List(ctx context.Context, offset, limit int) ([]*model.User, error)
 	Count(ctx context.Context) (int, error)
@@ -64,4 +67,15 @@ type Session struct {
 	ExpiresAt time.Time `json:"expires_at"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
+// IdentityRepository interface for legacy compatibility
+type IdentityRepository interface {
+	Save(ctx context.Context, identity interface{}) error
+	FindByID(ctx context.Context, id string) (interface{}, error)
+	Delete(ctx context.Context, id string) error
+	Update(ctx context.Context, identity interface{}) error
+}
+
+// Add ErrNotFound constant at package level
+var ErrNotFound = errors.New("resource not found")
 

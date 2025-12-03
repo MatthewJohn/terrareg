@@ -3,27 +3,27 @@ package terraform
 import (
 	"context"
 	"fmt"
+	"strings"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/repository"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
+	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 )
 
 // AuthenticateOIDCTokenCommand handles OIDC token authentication
 type AuthenticateOIDCTokenCommand struct {
-	terraformAuthService *service.TerraformAuthServiceIntegrated
+	authFactory *authservice.AuthFactory
 }
 
 // NewAuthenticateOIDCTokenCommand creates a new OIDC token authentication command
-func NewAuthenticateOIDCTokenCommand(terraformAuthService *service.TerraformAuthServiceIntegrated) *AuthenticateOIDCTokenCommand {
+func NewAuthenticateOIDCTokenCommand(authFactory *authservice.AuthFactory) *AuthenticateOIDCTokenCommand {
 	return &AuthenticateOIDCTokenCommand{
-		terraformAuthService: terraformAuthService,
+		authFactory: authFactory,
 	}
 }
 
 // Request represents the OIDC authentication request
 type AuthenticateOIDCTokenRequest struct {
-	AccessToken string `json:"access_token"`
+	AuthorizationHeader string `json:"authorization_header"`
 }
 
 // Response represents the OIDC authentication response
@@ -36,50 +36,73 @@ type AuthenticateOIDCTokenResponse struct {
 
 // Execute authenticates an OIDC token and returns identity information
 func (c *AuthenticateOIDCTokenCommand) Execute(ctx context.Context, req AuthenticateOIDCTokenRequest) (*AuthenticateOIDCTokenResponse, error) {
-	if req.AccessToken == "" {
-		return nil, fmt.Errorf("access token is required")
+	if req.AuthorizationHeader == "" {
+		return nil, fmt.Errorf("authorization header is required")
 	}
 
-	// Extract subject from token (this would be done by infrastructure layer)
-	// For now, assume we have a way to extract subject
-	subject := "terraform-oidc-user" // This should be extracted from JWT
+	// Create mock request headers for Terraform OIDC validation
+	headers := map[string]string{
+		"Authorization": req.AuthorizationHeader,
+	}
 
-	// Authenticate using domain service
-	user, err := c.terraformAuthService.AuthenticateOIDCIdentity(ctx, subject, req.AccessToken)
+	// Authenticate the request
+	_, err := c.authFactory.AuthenticateRequest(ctx, headers, nil, nil)
 	if err != nil {
-		return nil, fmt.Errorf("OIDC authentication failed: %w", err)
+		return nil, fmt.Errorf("authentication failed: %w", err)
 	}
 
-	// Convert user permissions to strings
-	permissions := make([]string, len(user.Permissions()))
-	for i, perm := range user.Permissions() {
-		permissions[i] = fmt.Sprintf("%s:%s:%s", perm.ResourceType(), perm.ResourceID(), perm.Action())
+	// Check if this is Terraform OIDC
+	authMethod := c.authFactory.GetCurrentAuthMethod()
+	if authMethod == nil || authMethod.GetProviderType() != auth.AuthMethodTerraformOIDC {
+		return nil, fmt.Errorf("expected Terraform OIDC authentication, got: %s", authMethod.GetProviderType())
+	}
+
+	// Validate authentication
+	if !authMethod.IsAuthenticated() {
+		return nil, fmt.Errorf("authentication failed")
+	}
+
+	// Get authentication context
+	authCtx := c.authFactory.GetCurrentAuthContext()
+	if authCtx == nil {
+		return nil, fmt.Errorf("authentication context not found")
+	}
+
+	// Convert permissions to string slice
+	permissions := make([]string, 0, len(authCtx.Permissions))
+	for namespace, permType := range authCtx.Permissions {
+		permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
+	}
+
+	// Generate identity ID
+	identityID := "terraform-oidc-user"
+	if authCtx.SessionID != nil {
+		identityID = *authCtx.SessionID
 	}
 
 	return &AuthenticateOIDCTokenResponse{
-		IdentityID:   user.ID(),
-		Subject:      user.Username(),
+		IdentityID:   identityID,
+		Subject:      authCtx.Username,
 		Permissions:  permissions,
-		IdentityType: user.AuthMethod().String(),
+		IdentityType: string(authMethod.GetProviderType()),
 	}, nil
 }
 
 // ValidateTokenCommand handles token validation
 type ValidateTokenCommand struct {
-	terraformAuthService *service.TerraformAuthServiceIntegrated
+	authFactory *authservice.AuthFactory
 }
 
 // NewValidateTokenCommand creates a new token validation command
-func NewValidateTokenCommand(terraformAuthService *service.TerraformAuthServiceIntegrated) *ValidateTokenCommand {
+func NewValidateTokenCommand(authFactory *authservice.AuthFactory) *ValidateTokenCommand {
 	return &ValidateTokenCommand{
-		terraformAuthService: terraformAuthService,
+		authFactory: authFactory,
 	}
 }
 
 // Request represents the token validation request
 type ValidateTokenRequest struct {
-	Token               string   `json:"token"`
-	TokenType           string   `json:"token_type"`
+	AuthorizationHeader string   `json:"authorization_header"`
 	RequiredPermissions []string `json:"required_permissions"`
 }
 
@@ -94,59 +117,83 @@ type ValidateTokenResponse struct {
 
 // Execute validates a token and returns validation result
 func (c *ValidateTokenCommand) Execute(ctx context.Context, req ValidateTokenRequest) (*ValidateTokenResponse, error) {
-	if req.Token == "" {
-		return &ValidateTokenResponse{Valid: false}, fmt.Errorf("token is required")
+	if req.AuthorizationHeader == "" {
+		return &ValidateTokenResponse{Valid: false}, fmt.Errorf("authorization header is required")
 	}
 
-	var user *model.User
-	var err error
-
-	switch req.TokenType {
-	case "oidc":
-		// For OIDC, we need to extract subject from token
-		subject := "terraform-oidc-user" // This should be extracted from JWT
-		user, err = c.terraformAuthService.AuthenticateOIDCIdentity(ctx, subject, req.Token)
-	case "analytics", "internal-extraction", "deployment":
-		user, err = c.terraformAuthService.AuthenticateStaticToken(ctx, req.Token, req.TokenType)
-	default:
-		return &ValidateTokenResponse{Valid: false}, fmt.Errorf("unsupported token type: %s", req.TokenType)
+	// Create mock request headers
+	headers := map[string]string{
+		"Authorization": req.AuthorizationHeader,
 	}
 
+	// Authenticate the request
+	_, err := c.authFactory.AuthenticateRequest(ctx, headers, nil, nil)
 	if err != nil {
-		return &ValidateTokenResponse{Valid: false}, nil // Don't leak error details
+		return &ValidateTokenResponse{Valid: false}, nil
+	}
+
+	// Get auth method
+	authMethod := c.authFactory.GetCurrentAuthMethod()
+	if authMethod == nil {
+		return &ValidateTokenResponse{Valid: false}, nil
+	}
+
+	// Check authentication
+	if !authMethod.IsAuthenticated() {
+		return &ValidateTokenResponse{Valid: false}, nil
+	}
+
+	// Get auth context
+	authCtx := c.authFactory.GetCurrentAuthContext()
+	if authCtx == nil {
+		return &ValidateTokenResponse{Valid: false}, nil
 	}
 
 	// Validate required permissions
 	if len(req.RequiredPermissions) > 0 {
-		if err := c.terraformAuthService.ValidatePermissions(ctx, user, req.RequiredPermissions); err != nil {
-			return &ValidateTokenResponse{Valid: false}, nil
+		for _, requiredPerm := range req.RequiredPermissions {
+			// Parse required permission format "namespace:permission_type"
+			parts := strings.SplitN(requiredPerm, ":", 2)
+			if len(parts) == 2 {
+				namespace, permType := parts[0], parts[1]
+				if !authCtx.HasPermission(namespace, permType) {
+					return &ValidateTokenResponse{Valid: false}, nil
+				}
+			}
 		}
 	}
 
-	// Convert user permissions to strings
-	permissions := make([]string, len(user.Permissions()))
-	for i, perm := range user.Permissions() {
-		permissions[i] = fmt.Sprintf("%s:%s:%s", perm.ResourceType(), perm.ResourceID(), perm.Action())
+	// Convert permissions to string slice
+	permissions := make([]string, 0, len(authCtx.Permissions))
+	for namespace, permType := range authCtx.Permissions {
+		permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
+	}
+
+	// Generate identity ID
+	identityID := "terraform-user"
+	if authCtx.SessionID != nil {
+		identityID = *authCtx.SessionID
 	}
 
 	return &ValidateTokenResponse{
 		Valid:        true,
-		IdentityID:   user.ID(),
-		Subject:      user.Username(),
+		IdentityID:   identityID,
+		Subject:      authCtx.Username,
 		Permissions:  permissions,
-		IdentityType: user.AuthMethod().String(),
+		IdentityType: string(authMethod.GetProviderType()),
 	}, nil
 }
 
-// GetUserCommand handles user retrieval
+// GetUserCommand handles user retrieval (legacy - to be removed)
+// This is kept for compatibility but should use auth context instead
 type GetUserCommand struct {
-	userRepo repository.UserRepository
+	authFactory *authservice.AuthFactory
 }
 
 // NewGetUserCommand creates a new get user command
-func NewGetUserCommand(userRepo repository.UserRepository) *GetUserCommand {
+func NewGetUserCommand(authFactory *authservice.AuthFactory) *GetUserCommand {
 	return &GetUserCommand{
-		userRepo: userRepo,
+		authFactory: authFactory,
 	}
 }
 
@@ -160,35 +207,63 @@ type GetUserResponse struct {
 	Metadata     map[string]string `json:"metadata"`
 }
 
-// Execute retrieves a user by ID
-func (c *GetUserCommand) Execute(ctx context.Context, userID string) (*GetUserResponse, error) {
-	if userID == "" {
-		return nil, fmt.Errorf("user ID is required")
+// Execute retrieves authentication context information
+func (c *GetUserCommand) Execute(ctx context.Context, identityID string) (*GetUserResponse, error) {
+	if identityID == "" {
+		return nil, fmt.Errorf("identity ID is required")
 	}
 
-	user, err := c.userRepo.FindByID(ctx, userID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user: %w", err)
+	// Get current auth context (since we don't have user lookup by ID in new system)
+	authCtx := c.authFactory.GetCurrentAuthContext()
+	if authCtx == nil {
+		return &GetUserResponse{
+			IdentityID: identityID,
+			IsValid:    false,
+		}, nil
 	}
 
-	// Convert user permissions to strings
-	permissions := make([]string, len(user.Permissions()))
-	for i, perm := range user.Permissions() {
-		permissions[i] = fmt.Sprintf("%s:%s:%s", perm.ResourceType(), perm.ResourceID(), perm.Action())
+	// Check if session ID matches (using SessionID as identity identifier)
+	sessionMatches := authCtx.SessionID != nil && *authCtx.SessionID == identityID
+	if !sessionMatches && identityID != "current-user" {
+		return &GetUserResponse{
+			IdentityID: identityID,
+			IsValid:    false,
+		}, nil
 	}
 
-	// Create metadata for Terraform users
+	authMethod := c.authFactory.GetCurrentAuthMethod()
+	if authMethod == nil {
+		return &GetUserResponse{
+			IdentityID: identityID,
+			IsValid:    false,
+		}, nil
+	}
+
+	// Convert permissions to string slice
+	permissions := make([]string, 0, len(authCtx.Permissions))
+	for namespace, permType := range authCtx.Permissions {
+		permissions = append(permissions, fmt.Sprintf("%s:%s", namespace, permType))
+	}
+
+	// Create metadata
 	metadata := make(map[string]string)
-	if user.AuthMethod() == model.AuthMethodTerraform {
-		metadata["terraform_user"] = "true"
+	metadata["auth_method"] = string(authMethod.GetProviderType())
+	if authMethod.IsAdmin() {
+		metadata["is_admin"] = "true"
+	}
+
+	// Use provided identityID or fallback to session ID
+	responseIdentityID := identityID
+	if sessionMatches && authCtx.SessionID != nil {
+		responseIdentityID = *authCtx.SessionID
 	}
 
 	return &GetUserResponse{
-		IdentityID:   user.ID(),
-		Subject:      user.Username(),
+		IdentityID:   responseIdentityID,
+		Subject:      authCtx.Username,
 		Permissions:  permissions,
-		IdentityType: user.AuthMethod().String(),
-		IsValid:      true, // Users in the system are considered valid
+		IdentityType: string(authMethod.GetProviderType()),
+		IsValid:      true,
 		Metadata:     metadata,
 	}, nil
 }

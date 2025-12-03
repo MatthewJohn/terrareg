@@ -10,7 +10,6 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/repository"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 )
 
 // IdentityRepositoryImpl implements the IdentityRepository interface using existing Terraform IDP models
@@ -206,10 +205,16 @@ func (r *IdentityRepositoryImpl) saveOIDCIdentity(ctx context.Context, identity 
 			return fmt.Errorf("failed to marshal token data: %w", err)
 		}
 
+		// Set expiry with fallback
+		expiry := time.Now().Add(time.Hour)
+		if identity.ExpiresAt() != nil {
+			expiry = *identity.ExpiresAt()
+		}
+
 		accessTokenDB := TerraformIDPAccessTokenDB{
 			Key:    identity.AccessToken(),
 			Data:   tokenDataJSON,
-			Expiry: identity.ExpiresAt() || time.Now().Add(time.Hour),
+			Expiry: expiry,
 		}
 
 		if err := r.db.WithContext(ctx).Save(&accessTokenDB).Error; err != nil {
@@ -234,11 +239,17 @@ func (r *IdentityRepositoryImpl) saveStaticTokenIdentity(ctx context.Context, id
 		return fmt.Errorf("failed to marshal token data: %w", err)
 	}
 
-	accessTokenDB := TerraformIDPAccessTokenDB{
-		Key:    identity.AccessToken(),
-		Data:   tokenDataJSON,
-		Expiry: identity.ExpiresAt() || time.Now().Add(24 * time.Hour),
-	}
+	// Set expiry with fallback
+		expiry := time.Now().Add(24 * time.Hour)
+		if identity.ExpiresAt() != nil {
+			expiry = *identity.ExpiresAt()
+		}
+
+		accessTokenDB := TerraformIDPAccessTokenDB{
+			Key:    identity.AccessToken(),
+			Data:   tokenDataJSON,
+			Expiry: expiry,
+		}
 
 	return r.db.WithContext(ctx).Save(&accessTokenDB).Error
 }
@@ -282,6 +293,12 @@ func (r *IdentityRepositoryImpl) mapAccessTokenToDomain(tokenDB *TerraformIDPAcc
 	)
 
 	return terraformIdentity, nil
+}
+
+// Update updates an identity using the existing Terraform IDP models
+func (r *IdentityRepositoryImpl) Update(ctx context.Context, identity interface{}) error {
+	// For simplicity, treat update as save for this implementation
+	return r.Save(ctx, identity)
 }
 
 // mapSubjectIdentifierToDomain converts SubjectIdentifierDB to domain model
