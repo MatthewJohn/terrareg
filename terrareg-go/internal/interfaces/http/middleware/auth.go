@@ -5,10 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
-	"time"
 
-	"github.com/go-chi/chi/v5"
-	identityService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/service"
 	authQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 )

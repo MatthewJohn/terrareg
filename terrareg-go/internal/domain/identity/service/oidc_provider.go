@@ -2,17 +2,13 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"time"
 
 	"golang.org/x/oauth2"
 	"github.com/coreos/go-oidc/v3/oidc"
-
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
 )
 
 var (
@@ -84,7 +80,7 @@ func NewOIDCProvider(config *OIDCConfig) (*OIDCProvider, error) {
 		ClientID:     config.ClientID,
 		ClientSecret: config.ClientSecret,
 		Endpoint:     provider.Endpoint(),
-		RedirectURL:  mustParse(config.RedirectURI),
+		RedirectURL:  config.RedirectURI,
 		Scopes:       config.Scopes,
 	}
 
@@ -201,14 +197,22 @@ func (o *OIDCProvider) ExchangeCodeForToken(ctx context.Context, code string) (*
 }
 
 // GetUserInfoFromToken fetches user info using access token
-func (o *OIDCProvider) GetUserInfoFromToken(ctx context.Context, accessToken string) (*OIDCUserInfo, error) {
+func (o *OIDCProvider) GetUserInfoFromToken(ctx context.Context, accessToken string) (*UserInfo, error) {
 	// Get user info from OIDC provider
-	userInfo, err := o.provider.UserInfo(ctx, oidc.UserInfoToken{AccessToken: accessToken})
+	userInfo, err := o.provider.UserInfo(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: accessToken}))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
 
-	return userInfo, nil
+	// Map OIDC user info to our UserInfo structure
+	return &UserInfo{
+		ID:          userInfo.Subject,
+		Username:    userInfo.Profile,
+		Email:       userInfo.Email,
+		DisplayName:  userInfo.Profile, // Use profile as fallback for display name
+		AvatarURL:   "", // Avatar URL not available in all OIDC implementations
+		Groups:       []string{}, // OIDC groups may not be available in all providers
+	}, nil
 }
 
 // MapUserInfo maps OIDC user info to our UserInfo structure
@@ -270,21 +274,16 @@ func (o *OIDCProvider) ProcessAuthorizationCode(ctx context.Context, code, state
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
 
-	// Map to our structure
-	mappedUserInfo, err := o.MapUserInfo(userInfo)
-	if err != nil {
-		return nil, fmt.Errorf("failed to map user info: %w", err)
-	}
-
+	// GetUserInfoFromToken already returns mapped UserInfo structure
 	return &AuthResult{
-		UserID:        mappedUserInfo.ID,
-		Username:      mappedUserInfo.Username,
-		Email:         mappedUserInfo.Email,
-		DisplayName:   mappedUserInfo.DisplayName,
+		UserID:        userInfo.ID,
+		Username:      userInfo.Username,
+		Email:         userInfo.Email,
+		DisplayName:   userInfo.DisplayName,
 		AccessToken:   tokenResponse.AccessToken,
 		RefreshToken:  tokenResponse.RefreshToken,
 		ExpiresIn:     tokenResponse.ExpiresIn,
-		ExternalID:    mappedUserInfo.ID,
+		ExternalID:    userInfo.ID,
 		AuthProviderID: o.config.IssuerURL,
 	}, nil
 }

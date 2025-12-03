@@ -12,22 +12,11 @@ import (
 
 // Using identity model errors instead of redefining here
 
-// SessionInfo represents simplified session information for identity management
-type SessionInfo struct {
-	ID         string
-	UserID     string
-	AuthMethod  model.AuthMethod
-	ExpiresAt   time.Time
-	CreatedAt   time.Time
-	IPAddress   string
-	UserAgent   string
-}
-
 // SessionManager manages user sessions
 type SessionManager struct {
 	userRepo   repository.UserRepository
 	config     SessionConfig
-	sessions   map[string]*SessionInfo // In-memory session store for Phase 4
+	sessions   map[string]*model.Session // In-memory session store for Phase 4
 }
 
 // SessionConfig holds session configuration
@@ -48,12 +37,12 @@ func NewSessionManager(userRepo repository.UserRepository, config SessionConfig)
 	return &SessionManager{
 		userRepo: userRepo,
 		config:   config,
-		sessions: make(map[string]*SessionInfo),
+		sessions: make(map[string]*model.Session),
 	}
 }
 
 // CreateSession creates a new session for a user
-func (sm *SessionManager) CreateSession(ctx context.Context, userID string, authMethod model.AuthMethod, metadata SessionMetadata) (*SessionInfo, error) {
+func (sm *SessionManager) CreateSession(ctx context.Context, userID string, authMethod model.AuthMethod, metadata SessionMetadata) (*model.Session, error) {
 	// Verify user exists and is active
 	user, err := sm.userRepo.FindByID(ctx, userID)
 	if err != nil {
@@ -75,17 +64,14 @@ func (sm *SessionManager) CreateSession(ctx context.Context, userID string, auth
 		ttl = sm.config.MaxTTL // API keys can have longer sessions
 	}
 
-	// Create session
-	now := time.Now()
-	session := &SessionInfo{
-		ID:        sessionToken,
-		UserID:    userID,
-		AuthMethod: authMethod,
-		ExpiresAt: now.Add(ttl),
-		CreatedAt: now,
-		IPAddress: metadata.IPAddress,
-		UserAgent: metadata.UserAgent,
+	// Create session using domain model constructor
+	session, err := model.NewSession(userID, authMethod, sessionToken, ttl)
+	if err != nil {
+		return nil, err
 	}
+
+	// Set metadata
+	session.SetMetadata(metadata.IPAddress, metadata.UserAgent)
 
 	// Store session in memory for Phase 4
 	// In a full implementation, this would be stored in the database
@@ -95,7 +81,7 @@ func (sm *SessionManager) CreateSession(ctx context.Context, userID string, auth
 }
 
 // ValidateSession validates a session token and returns the user
-func (sm *SessionManager) ValidateSession(ctx context.Context, sessionToken string) (*SessionInfo, *model.User, error) {
+func (sm *SessionManager) ValidateSession(ctx context.Context, sessionToken string) (*model.Session, *model.User, error) {
 	if sessionToken == "" {
 		return nil, nil, model.ErrSessionInvalid
 	}
@@ -107,16 +93,16 @@ func (sm *SessionManager) ValidateSession(ctx context.Context, sessionToken stri
 	}
 
 	// Check if session is valid
-	if time.Now().After(session.ExpiresAt) {
+	if time.Now().After(session.ExpiresAt()) {
 		// Remove expired session
 		delete(sm.sessions, sessionToken)
 		return nil, nil, model.ErrSessionExpired
 	}
 
 	// Get user
-	user, err := sm.userRepo.FindByID(ctx, session.UserID)
+	user, err := sm.userRepo.FindByID(ctx, session.UserID())
 	if err != nil {
-		return nil, nil, ErrUserNotFound
+		return nil, nil, model.ErrUserNotFound
 	}
 
 	// Check if user is active
@@ -128,7 +114,7 @@ func (sm *SessionManager) ValidateSession(ctx context.Context, sessionToken stri
 }
 
 // RefreshSession extends a session's expiration
-func (sm *SessionManager) RefreshSession(ctx context.Context, sessionToken string) (*SessionInfo, error) {
+func (sm *SessionManager) RefreshSession(ctx context.Context, sessionToken string) (*model.Session, error) {
 	if sessionToken == "" {
 		return nil, model.ErrSessionInvalid
 	}
@@ -140,13 +126,13 @@ func (sm *SessionManager) RefreshSession(ctx context.Context, sessionToken strin
 	}
 
 	// Check if session is still valid
-	if time.Now().After(session.ExpiresAt) {
+	if time.Now().After(session.ExpiresAt()) {
 		delete(sm.sessions, sessionToken)
 		return nil, model.ErrSessionExpired
 	}
 
 	// Extend session
-	session.ExpiresAt = time.Now().Add(sm.config.DefaultTTL)
+	session.Extend(sm.config.DefaultTTL)
 
 	return session, nil
 }
@@ -169,12 +155,12 @@ func (sm *SessionManager) InvalidateSession(ctx context.Context, sessionToken st
 // InvalidateAllUserSessions invalidates all sessions for a user
 func (sm *SessionManager) InvalidateAllUserSessions(ctx context.Context, userID string) error {
 	if userID == "" {
-		return ErrUserNotFound
+		return model.ErrUserNotFound
 	}
 
 	// Remove all sessions for this user
 	for token, session := range sm.sessions {
-		if session.UserID == userID {
+		if session.UserID() == userID {
 			delete(sm.sessions, token)
 		}
 	}
@@ -188,7 +174,7 @@ func (sm *SessionManager) CleanupExpiredSessions(ctx context.Context) (int, erro
 	now := time.Now()
 
 	for token, session := range sm.sessions {
-		if now.After(session.ExpiresAt) {
+		if now.After(session.ExpiresAt()) {
 			delete(sm.sessions, token)
 			count++
 		}
@@ -198,16 +184,16 @@ func (sm *SessionManager) CleanupExpiredSessions(ctx context.Context) (int, erro
 }
 
 // GetActiveUserSessions returns all active sessions for a user
-func (sm *SessionManager) GetActiveUserSessions(ctx context.Context, userID string) ([]*SessionInfo, error) {
+func (sm *SessionManager) GetActiveUserSessions(ctx context.Context, userID string) ([]*model.Session, error) {
 	if userID == "" {
-		return nil, ErrUserNotFound
+		return nil, model.ErrUserNotFound
 	}
 
-	var userSessions []*SessionInfo
+	var userSessions []*model.Session
 	now := time.Now()
 
 	for _, session := range sm.sessions {
-		if session.UserID == userID && !now.After(session.ExpiresAt) {
+		if session.UserID() == userID && !now.After(session.ExpiresAt()) {
 			userSessions = append(userSessions, session)
 		}
 	}

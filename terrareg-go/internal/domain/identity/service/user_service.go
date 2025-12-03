@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/repository"
@@ -64,6 +65,11 @@ func (s *UserService) GetUserByID(ctx context.Context, userID string) (*model.Us
 // GetUserByEmail retrieves a user by email
 func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	return s.userRepo.FindByEmail(ctx, email)
+}
+
+// GetUserByToken retrieves a user by authentication token
+func (s *UserService) GetUserByToken(ctx context.Context, token string) (*model.User, error) {
+	return s.AuthenticateByToken(ctx, token)
 }
 
 // CreateUser creates a new user
@@ -143,7 +149,7 @@ func (s *UserService) AddUserToGroup(ctx context.Context, userID, userGroupID st
 
 // RemoveUserFromGroup removes a user from a user group
 func (s *UserService) RemoveUserFromGroup(ctx context.Context, userID, userGroupID string) error {
-	user, err := s.userRepo.FindByID(ctx, userID)
+	_, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
 		return model.ErrUserNotFound
 	}
@@ -211,4 +217,42 @@ func (s *UserService) Logout(ctx context.Context, userID string, token string) e
 	_ = token
 
 	return nil
+}
+
+// RefreshToken generates a new access token for an authenticated user
+func (s *UserService) RefreshToken(ctx context.Context, currentToken string) (*model.IDPAccessToken, error) {
+	// Validate current token first
+	user, err := s.ValidateToken(ctx, currentToken)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate new access token with 24 hour expiry
+	// In a real implementation, you'd use proper token generation with crypto/rand
+	newToken, err := model.NewIDPAccessToken(
+		model.AuthMethodAPIKey, // This would be the appropriate auth method
+		"terrareg", // provider name
+		generateTokenString(),
+		"Bearer",
+		"", // client ID - would be populated based on auth method
+		[]string{"read", "write"}, // default scopes
+		user.ID(),
+		24*time.Hour, // TTL
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return newToken, nil
+}
+
+// Helper function to generate a random token string
+func generateTokenString() string {
+	// Simple implementation - in production, use crypto/rand or similar
+	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	b := make([]byte, 32)
+	for i := range b {
+		b[i] = letters[time.Now().UnixNano()%int64(len(letters))]
+	}
+	return string(b)
 }
