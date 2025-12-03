@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"time"
 
-	"terrareg/internal/domain/identity/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
 )
 
 var (

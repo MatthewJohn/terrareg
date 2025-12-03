@@ -2,7 +2,7 @@ package model
 
 import (
 	"time"
-	"terrareg/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 )
 
 // UserGroup represents a group of users for permissions management
@@ -104,7 +104,7 @@ func (ug *UserGroup) AddPermission(resourceType ResourceType, resourceID string,
 	}
 
 	permission := GroupPermission{
-		id:           shared.GenerateRandomID(),
+		id:           shared.GenerateIntID(),
 		resourceType: resourceType,
 		resourceID:   resourceID,
 		action:       action,

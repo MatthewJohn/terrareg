@@ -2,26 +2,19 @@ package service
 
 import (
 	"context"
-	"errors"
 
-	"terrareg/internal/domain/identity/model"
-	"terrareg/internal/domain/identity/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/repository"
 )
 
-var (
-	ErrAuthenticationFailed = errors.New("authentication failed")
-	ErrInvalidAuthMethod    = errors.New("invalid authentication method")
-	ErrTokenExpired        = errors.New("token expired")
-	ErrTokenInvalid        = errors.New("token invalid")
-	ErrUserNotFound        = errors.New("user not found")
-)
+// Using identity model errors instead of redefining here
 
 // Authenticator handles user authentication
 type Authenticator struct {
-	userRepo         repository.UserRepository
-	sessionRepo      repository.SessionRepository
-	sessionManager   *SessionManager
-	authProviders    map[model.AuthMethod]AuthProvider
+	userRepo       repository.UserRepository
+	sessionRepo    repository.SessionRepository
+	sessionManager *SessionManager
+	authProviders  map[model.AuthMethod]AuthProvider
 }
 
 // AuthProvider defines the interface for authentication providers
@@ -90,7 +83,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, request AuthRequest) (
 	// Get auth provider
 	provider, exists := a.authProviders[request.Method]
 	if !exists {
-		return nil, nil, ErrInvalidAuthMethod
+		return nil, nil, model.ErrInvalidAuthMethod
 	}
 
 	// Authenticate with provider
@@ -140,7 +133,7 @@ func (a *Authenticator) RefreshToken(ctx context.Context, refreshToken string, a
 	// Get auth provider
 	provider, exists := a.authProviders[authMethod]
 	if !exists {
-		return nil, nil, ErrInvalidAuthMethod
+		return nil, nil, model.ErrInvalidAuthMethod
 	}
 
 	// Refresh token with provider
@@ -210,7 +203,7 @@ func (a *Authenticator) findOrCreateUser(ctx context.Context, authResult *AuthRe
 				return user, nil
 			}
 			// User exists with different auth method - error out
-			return nil, ErrAuthenticationFailed
+			return nil, model.ErrAuthenticationFailed
 		}
 	}
 

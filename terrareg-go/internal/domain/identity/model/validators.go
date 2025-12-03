@@ -6,52 +6,7 @@ import (
 	"strings"
 )
 
-var (
-	// User validation
-	ErrUsernameRequired       = errors.New("username is required")
-	ErrUsernameInvalid        = errors.New("username is invalid")
-	ErrUsernameTooLong        = errors.New("username is too long")
-	ErrEmailRequired          = errors.New("email is required")
-	ErrEmailInvalid           = errors.New("email is invalid")
-	ErrDisplayNameRequired     = errors.New("display name is required")
-	ErrDisplayNameTooLong     = errors.New("display name is too long")
-	ErrUserAlreadyDeactivated = errors.New("user is already deactivated")
-	ErrAccessTokenRequired     = errors.New("access token is required")
-	ErrPermissionAlreadyExists = errors.New("permission already exists")
-
-	// User group validation
-	ErrGroupNameRequired      = errors.New("group name is required")
-	ErrGroupNameInvalid       = errors.New("group name is invalid")
-	ErrGroupNameTooLong      = errors.New("group name is too long")
-	ErrUserRequired          = errors.New("user is required")
-	ErrUserIDRequired        = errors.New("user ID is required")
-	ErrUserAlreadyInGroup    = errors.New("user is already in group")
-	ErrUserNotInGroup        = errors.New("user is not in group")
-
-	// Session validation
-	ErrSessionInactive        = errors.New("session is inactive")
-
-	// Permission validation
-	ErrNamespaceIDRequired   = errors.New("namespace ID is required")
-	ErrUserGroupIDRequired   = errors.New("user group ID is required")
-	ErrActionsRequired       = errors.New("actions are required")
-	ErrActionAlreadyExists   = errors.New("action already exists")
-	ErrActionNotFound        = errors.New("action not found")
-	ErrCannotRemoveAllActions = errors.New("cannot remove all actions")
-	ErrPermissionNotFound    = errors.New("permission not found")
-
-	// OAuth validation
-	ErrInvalidAuthMethod         = errors.New("invalid auth method")
-	ErrProviderNameRequired      = errors.New("provider name is required")
-	ErrSubjectIDRequired         = errors.New("subject ID is required")
-	ErrAuthorizationCodeRequired = errors.New("authorization code is required")
-	ErrAuthorizationCodeExpired   = errors.New("authorization code is expired")
-	ErrAuthorizationCodeAlreadyExchanged = errors.New("authorization code already exchanged")
-	ErrClientIDRequired          = errors.New("client ID is required")
-	ErrRedirectURIRequired       = errors.New("redirect URI is required")
-	ErrScopesRequired            = errors.New("scopes are required")
-	ErrTokenTypeRequired          = errors.New("token type is required")
-)
+// Using errors from errors.go instead of redefining here
 
 // Validation patterns
 var (

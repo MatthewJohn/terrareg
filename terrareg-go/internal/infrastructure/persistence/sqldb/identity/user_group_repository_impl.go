@@ -7,9 +7,9 @@ import (
 
 	"gorm.io/gorm"
 
-	identityModel "terrareg/internal/domain/identity/model"
-	identityRepository "terrareg/internal/domain/identity/repository"
-	"terrareg/internal/infrastructure/persistence/sqldb"
+	identityModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
+	identityRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
 var (

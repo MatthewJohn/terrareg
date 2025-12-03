@@ -2,7 +2,6 @@ package github
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -10,36 +9,35 @@ import (
 	"time"
 
 	"github.com/google/go-github/v50/github"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/service"
 	"golang.org/x/oauth2"
-	"terrareg/internal/domain/identity/model"
-	"terrareg/internal/domain/identity/service"
 )
 
 var (
-	ErrGitHubNotConfigured    = errors.New("GitHub provider not configured")
-	ErrGitHubInvalidToken    = errors.New("invalid GitHub token")
+	ErrGitHubNotConfigured  = errors.New("GitHub provider not configured")
+	ErrGitHubInvalidToken   = errors.New("invalid GitHub token")
 	ErrGitHubAuthentication = errors.New("GitHub authentication failed")
 )
 
 // GitHubProvider implements GitHub OAuth authentication
 type GitHubProvider struct {
-	client     *github.Client
+	client       *github.Client
 	oauth2Config *oauth2.Config
-	config     GitHubConfig
+	config       GitHubConfig
 }
 
 // GitHubConfig holds GitHub configuration
 type GitHubConfig struct {
-	ClientID         string
-	ClientSecret     string
-	RedirectURL      string
-	Scopes           []string
-	AuthURL          string
-	TokenURL         string
-	UserInfoURL      string
-	SessionTimeout    time.Duration
-	Organization     string // Optional: restrict to organization
-	Teams            []string // Optional: restrict to specific teams
+	ClientID       string
+	ClientSecret   string
+	RedirectURL    string
+	Scopes         []string
+	AuthURL        string
+	TokenURL       string
+	UserInfoURL    string
+	SessionTimeout time.Duration
+	Organization   string   // Optional: restrict to organization
+	Teams          []string // Optional: restrict to specific teams
 }
 
 // GitHubUser represents GitHub user information
@@ -48,7 +46,7 @@ type GitHubUser struct {
 	Login     string `json:"login"`
 	Name      string `json:"name"`
 	Email     string `json:"email"`
-	AvatarURL  string `json:"avatar_url"`
+	AvatarURL string `json:"avatar_url"`
 	Company   string `json:"company"`
 	Blog      string `json:"blog"`
 	Location  string `json:"location"`
@@ -59,8 +57,8 @@ type GitHubUser struct {
 
 // GitHubTokenResponse represents the OAuth token response from GitHub
 type GitHubTokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	TokenType    string `json:"token_type"`
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
 	Scope       string `json:"scope"`
 }
 
@@ -191,7 +189,7 @@ func (p *GitHubProvider) getUserInfo(ctx context.Context, accessToken string) (*
 		Login:     user.GetLogin(),
 		Name:      user.GetName(),
 		Email:     user.GetEmail(),
-		AvatarURL:  user.GetAvatarURL(),
+		AvatarURL: user.GetAvatarURL(),
 		Company:   user.GetCompany(),
 		Blog:      user.GetBlog(),
 		Location:  user.GetLocation(),

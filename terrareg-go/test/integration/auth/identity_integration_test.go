@@ -9,11 +9,11 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	identityModel "terrareg/internal/domain/identity/model"
-	identityRepo "terrareg/internal/domain/identity/repository"
-	identityService "terrareg/internal/domain/identity/service"
-	"terrareg/internal/infrastructure/persistence/sqldb"
-	"terrareg/internal/infrastructure/persistence/sqldb/identity"
+	identityModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
+	identityRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/repository"
+	identityService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/identity"
 )
 
 func TestIdentityIntegration(t *testing.T) {

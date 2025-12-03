@@ -2,7 +2,7 @@ package model
 
 import (
 	"time"
-	"terrareg/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 )
 
 // NamespacePermission represents a permission granted to a user group for a namespace
@@ -31,7 +31,7 @@ func NewNamespacePermission(namespaceID, userGroupID int, actions []Action, gran
 	}
 
 	return &NamespacePermission{
-		id:          shared.GenerateRandomID(),
+		id:          shared.GenerateIntID(),
 		namespaceID: namespaceID,
 		userGroupID: userGroupID,
 		grantedBy:   grantedBy,

@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
-	"terrareg/internal/domain/git/model"
 )
 
 var (
@@ -19,10 +17,10 @@ var (
 type WebhookEventType string
 
 const (
-	WebhookEventPush      WebhookEventType = "push"
-	WebhookEventRelease   WebhookEventType = "release"
-	WebhookEventPull      WebhookEventType = "pull_request"
-	WebhookEventCreate    WebhookEventType = "create"
+	WebhookEventPush    WebhookEventType = "push"
+	WebhookEventRelease WebhookEventType = "release"
+	WebhookEventPull    WebhookEventType = "pull_request"
+	WebhookEventCreate  WebhookEventType = "create"
 )
 
 // WebhookEvent represents a webhook event
@@ -39,11 +37,11 @@ type WebhookEvent struct {
 
 // WebhookResult represents the result of webhook processing
 type WebhookResult struct {
-	Success      bool
-	Message      string
-	TriggerBuild bool
+	Success          bool
+	Message          string
+	TriggerBuild     bool
 	ModuleProviderID int
-	ProviderID    int
+	ProviderID       int
 }
 
 // WebhookHandler processes webhook events from different git providers
@@ -214,7 +212,7 @@ func (ws *WebhookService) ProcessWebhook(ctx context.Context, provider, eventTyp
 	event := &WebhookEvent{
 		Type:      WebhookEventType(eventType),
 		Provider:  provider,
-		Timestamp: 0, // Would be parsed from payload
+		Timestamp: 0,   // Would be parsed from payload
 		Data:      nil, // Would be parsed from payload
 	}
 

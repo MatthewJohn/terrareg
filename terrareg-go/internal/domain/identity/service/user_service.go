@@ -4,15 +4,11 @@ import (
 	"context"
 	"errors"
 
-	"terrareg/internal/domain/identity/model"
-	"terrareg/internal/domain/identity/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/repository"
 )
 
-var (
-	ErrUserNotFound        = errors.New("user not found")
-	ErrUserAlreadyExists  = errors.New("user already exists")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-)
+// Using identity model errors instead of redefining here
 
 // UserService manages user operations
 type UserService struct {
@@ -33,13 +29,13 @@ func (s *UserService) Authenticate(ctx context.Context, username, password strin
 	// Find user by username
 	user, err := s.userRepo.FindByUsername(ctx, username)
 	if err != nil {
-		return nil, ErrUserNotFound
+		return nil, model.ErrUserNotFound
 	}
 
 	// For Phase 4, we'll implement a simple password check
 	// In a full implementation, this would use proper password hashing
 	if user == nil || !user.Active() {
-		return nil, ErrInvalidCredentials
+		return nil, model.ErrInvalidCredentials
 	}
 
 	// TODO: Implement proper password verification
@@ -57,7 +53,7 @@ func (s *UserService) AuthenticateByToken(ctx context.Context, token string) (*m
 
 	// For Phase 4, we could also check session tokens
 	// But for now, focus on API key authentication
-	return nil, ErrUserNotFound
+	return nil, model.ErrUserNotFound
 }
 
 // GetUserByID retrieves a user by ID
@@ -75,12 +71,12 @@ func (s *UserService) CreateUser(ctx context.Context, username, email, displayNa
 	// Check if user already exists
 	existingUser, err := s.userRepo.FindByUsername(ctx, username)
 	if err == nil && existingUser != nil {
-		return nil, ErrUserAlreadyExists
+		return nil, model.ErrUserAlreadyExists
 	}
 
 	existingUser, err = s.userRepo.FindByEmail(ctx, email)
 	if err == nil && existingUser != nil {
-		return nil, ErrUserAlreadyExists
+		return nil, model.ErrUserAlreadyExists
 	}
 
 	// Create new user
@@ -102,7 +98,7 @@ func (s *UserService) CreateUser(ctx context.Context, username, email, displayNa
 func (s *UserService) UpdateUser(ctx context.Context, userID, displayName, email string) (*model.User, error) {
 	user, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
-		return nil, ErrUserNotFound
+		return nil, model.ErrUserNotFound
 	}
 
 	// Update user profile
@@ -124,7 +120,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userID, displayName, email
 func (s *UserService) DeactivateUser(ctx context.Context, userID string) error {
 	user, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
-		return ErrUserNotFound
+		return model.ErrUserNotFound
 	}
 
 	return user.Deactivate()
@@ -134,7 +130,7 @@ func (s *UserService) DeactivateUser(ctx context.Context, userID string) error {
 func (s *UserService) AddUserToGroup(ctx context.Context, userID, userGroupID string) error {
 	user, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
-		return ErrUserNotFound
+		return model.ErrUserNotFound
 	}
 
 	userGroup, err := s.groupRepo.FindByID(ctx, userGroupID)
@@ -149,7 +145,7 @@ func (s *UserService) AddUserToGroup(ctx context.Context, userID, userGroupID st
 func (s *UserService) RemoveUserFromGroup(ctx context.Context, userID, userGroupID string) error {
 	user, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
-		return ErrUserNotFound
+		return model.ErrUserNotFound
 	}
 
 	userGroup, err := s.groupRepo.FindByID(ctx, userGroupID)
@@ -164,7 +160,7 @@ func (s *UserService) RemoveUserFromGroup(ctx context.Context, userID, userGroup
 func (s *UserService) CheckPermission(ctx context.Context, userID string, resourceType model.ResourceType, resourceID string, action model.Action) (bool, error) {
 	user, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
-		return false, ErrUserNotFound
+		return false, model.ErrUserNotFound
 	}
 
 	// Check direct user permissions
@@ -206,7 +202,7 @@ func (s *UserService) ValidateToken(ctx context.Context, token string) (*model.U
 func (s *UserService) Logout(ctx context.Context, userID string, token string) error {
 	user, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
-		return ErrUserNotFound
+		return model.ErrUserNotFound
 	}
 
 	// For Phase 4, we'll implement basic logout
