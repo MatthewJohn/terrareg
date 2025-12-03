@@ -12,6 +12,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	tfv1ModuleHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1" // New import
 	tfv2ProviderHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v2"
+	terraformHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 	terrareg_middleware "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/template"
@@ -33,6 +34,8 @@ type Server struct {
 	terraformV2ProviderHandler *tfv2ProviderHandler.TerraformV2ProviderHandler
 	terraformV2CategoryHandler *tfv2ProviderHandler.TerraformV2CategoryHandler
 	terraformV2GPGHandler *tfv2ProviderHandler.TerraformV2GPGHandler
+	terraformIDPHandler *terraformHandler.TerraformIDPHandler
+	terraformStaticTokenHandler *terraformHandler.TerraformStaticTokenHandler
 }
 
 // NewServer creates a new HTTP server
@@ -50,6 +53,8 @@ func NewServer(
 	terraformV2ProviderHandler *tfv2ProviderHandler.TerraformV2ProviderHandler,
 	terraformV2CategoryHandler *tfv2ProviderHandler.TerraformV2CategoryHandler,
 	terraformV2GPGHandler *tfv2ProviderHandler.TerraformV2GPGHandler,
+	terraformIDPHandler *terraformHandler.TerraformIDPHandler,
+	terraformStaticTokenHandler *terraformHandler.TerraformStaticTokenHandler,
 ) *Server {
 	s := &Server{
 		router:                   chi.NewRouter(),
@@ -66,6 +71,8 @@ func NewServer(
 		terraformV2ProviderHandler: terraformV2ProviderHandler,
 		terraformV2CategoryHandler: terraformV2CategoryHandler,
 		terraformV2GPGHandler: terraformV2GPGHandler,
+		terraformIDPHandler: terraformIDPHandler,
+		terraformStaticTokenHandler: terraformStaticTokenHandler,
 	}
 
 	s.setupMiddleware()
@@ -99,6 +106,19 @@ func (s *Server) setupMiddleware() {
 func (s *Server) setupRoutes() {
 	// Well-known endpoints
 	s.router.Get("/.well-known/terraform.json", s.handleTerraformWellKnown)
+
+	// Terraform OIDC Identity Provider endpoints
+	s.router.Get("/.well-known/openid-configuration", s.terraformIDPHandler.HandleOpenIDConfiguration)
+	s.router.Get("/.well-known/jwks.json", s.terraformIDPHandler.HandleJWKS)
+	s.router.Route("/oauth2", func(r chi.Router) {
+		r.Get("/auth", s.terraformIDPHandler.HandleAuth)
+		r.Post("/token", s.terraformIDPHandler.HandleToken)
+		r.Get("/userinfo", s.terraformIDPHandler.HandleUserInfo)
+	})
+
+	// Terraform static token validation endpoints
+	s.router.Get("/terraform/validate-token", s.terraformStaticTokenHandler.HandleValidateToken)
+	s.router.Get("/terraform/auth-status", s.terraformStaticTokenHandler.HandleAuthStatus)
 
 	// Metrics endpoint
 	s.router.Get("/metrics", s.handleMetrics)
