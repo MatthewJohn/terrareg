@@ -3,7 +3,6 @@ package middleware
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 	identityModel "terrareg/internal/domain/identity/model"
@@ -146,12 +145,6 @@ func (m *PermissionMiddleware) extractResourceID(r *http.Request, pathParams map
 	return "*"
 }
 
-// sendErrorResponse sends a JSON error response
-func sendErrorResponse(w http.ResponseWriter, statusCode int, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	w.Write([]byte(`{"error":"` + message + `"}`))
-}
 
 // Permission types for middleware
 const (
