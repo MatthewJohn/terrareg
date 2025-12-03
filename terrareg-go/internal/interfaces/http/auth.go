@@ -2,18 +2,19 @@ package http
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
-	"terrareg/internal/domain/identity"
+	identityService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/service"
 )
 
 // AuthHandler handles authentication and authorization HTTP requests
 type AuthHandler struct {
-	userService identity.UserService
+	userService identityService.UserService
 }
 
 // NewAuthHandler creates a new authentication handler
-func NewAuthHandler(userService identity.UserService) *AuthHandler {
+func NewAuthHandler(userService identityService.UserService) *AuthHandler {
 	return &AuthHandler{
 		userService: userService,
 	}
@@ -39,10 +40,10 @@ type LoginRequest struct {
 // LoginResponse represents a successful login response
 type LoginResponse struct {
 	Success      bool      `json:"success"`
-	Token        string     `json:"token,omitempty"`
-	ExpiresAt    string     `json:"expires_at,omitempty"`
-	User         *UserInfo  `json:"user,omitempty"`
-	ErrorMessage string     `json:"error,omitempty"`
+	Token        string    `json:"token,omitempty"`
+	ExpiresAt    string    `json:"expires_at,omitempty"`
+	User         *UserInfo `json:"user,omitempty"`
+	ErrorMessage string    `json:"error,omitempty"`
 }
 
 // UserInfo represents user information for API responses
@@ -120,8 +121,8 @@ func (h *AuthHandler) HandleRefreshToken(w http.ResponseWriter, r *http.Request)
 	}
 
 	sendJSONResponse(w, http.StatusOK, map[string]interface{}{
-		"success": true,
-		"token":   newToken.Token,
+		"success":    true,
+		"token":      newToken.Token,
 		"expires_at": newToken.ExpiresAt.Format(time.RFC3339),
 	})
 }
