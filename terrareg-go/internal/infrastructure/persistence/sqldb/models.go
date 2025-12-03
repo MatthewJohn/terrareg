@@ -10,6 +10,7 @@ const (
 	LargeColumnSize   = 1024
 	URLColumnSize     = 1024
 	MediumBlobSize    = (1 << 24) - 1 // 16MB - 1
+	IdentityColumnSize = 255
 )
 
 // Enum types

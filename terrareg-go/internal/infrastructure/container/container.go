@@ -14,12 +14,15 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	providerQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider"
+	terraformCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/terraform"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	authRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/repository"
 	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service" // Alias for the new module service
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/git"
 
 	providerRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
@@ -27,12 +30,14 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	analyticsPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/analytics"
 	authPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/auth"
+	identityPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/identity"
 	modulePersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/storage"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http"
 	v1 "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1"
 	v2 "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v2"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
+	terraformHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform"
 	terrareg_middleware "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/template"
 )
@@ -49,6 +54,7 @@ type Container struct {
 	AnalyticsRepo      analyticsCmd.AnalyticsRepository
 	ProviderRepo       providerRepo.ProviderRepository
 	SessionRepo        authRepo.SessionRepository
+	UserRepo           repository.UserRepository
 
 	// Infrastructure Services
 	GitClient      gitService.GitClient
@@ -56,7 +62,8 @@ type Container struct {
 	ModuleParser   moduleService.ModuleParser
 
 	// Domain Services
-	ModuleImporterService *moduleService.ModuleImporterService
+	ModuleImporterService      *moduleService.ModuleImporterService
+	TerraformAuthService       *service.TerraformAuthServiceIntegrated
 
 	// Commands
 	CreateNamespaceCmd              *namespace.CreateNamespaceCommand
@@ -68,6 +75,11 @@ type Container struct {
 	ImportModuleVersionCmd          *moduleCmd.ImportModuleVersionCommand
 	RecordModuleDownloadCmd         *analyticsCmd.RecordModuleDownloadCommand
 	CreateAdminSessionCmd           *authCmd.CreateAdminSessionCommand
+
+	// Terraform Authentication Commands
+	AuthenticateOIDCTokenCmd         *terraformCmd.AuthenticateOIDCTokenCommand
+	ValidateTokenCmd                 *terraformCmd.ValidateTokenCommand
+	GetUserCmd                       *terraformCmd.GetUserCommand
 
 	// Provider Commands
 	CreateOrUpdateProviderCmd *providerCmd.CreateOrUpdateProviderCommand
@@ -110,6 +122,11 @@ type Container struct {
 	TerraformV2CategoryHandler *v2.TerraformV2CategoryHandler
 	TerraformV2GPGHandler *v2.TerraformV2GPGHandler
 
+	// Terraform Authentication Handlers
+	TerraformAuthHandler *terraformHandler.TerraformAuthHandler
+	TerraformIDPHandler  *terraformHandler.TerraformIDPHandler
+	TerraformStaticTokenHandler *terraformHandler.TerraformStaticTokenHandler
+
 	// Middleware
 	AuthMiddleware *terrareg_middleware.AuthMiddleware
 
@@ -134,6 +151,7 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.AnalyticsRepo = analyticsPersistence.NewAnalyticsRepository(db.DB)
 	c.ProviderRepo = providerRepository.NewProviderRepository()
 	c.SessionRepo = authPersistence.NewSessionRepository(db.DB)
+	c.UserRepo = identityPersistence.NewUserRepository(db.DB)
 
 	// Initialize infrastructure services
 	c.GitClient = git.NewGitClientImpl()
@@ -148,6 +166,7 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 		c.ModuleParser,
 		cfg,
 	)
+	c.TerraformAuthService = service.NewTerraformAuthServiceIntegrated(c.UserRepo)
 
 	// Initialize commands
 	c.CreateNamespaceCmd = namespace.NewCreateNamespaceCommand(c.NamespaceRepo)
@@ -159,6 +178,11 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.ImportModuleVersionCmd = moduleCmd.NewImportModuleVersionCommand(c.ModuleImporterService)
 	c.RecordModuleDownloadCmd = analyticsCmd.NewRecordModuleDownloadCommand(c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.CreateAdminSessionCmd = authCmd.NewCreateAdminSessionCommand(c.SessionRepo, cfg)
+
+	// Initialize Terraform authentication commands
+	c.AuthenticateOIDCTokenCmd = terraformCmd.NewAuthenticateOIDCTokenCommand(c.TerraformAuthService)
+	c.ValidateTokenCmd = terraformCmd.NewValidateTokenCommand(c.TerraformAuthService)
+	c.GetUserCmd = terraformCmd.NewGetUserCommand(c.UserRepo)
 
 	// Initialize queries
 	c.ListNamespacesQuery = module.NewListNamespacesQuery(c.NamespaceRepo)
@@ -234,6 +258,13 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.TerraformV2ProviderHandler = v2.NewTerraformV2ProviderHandler(c.GetProviderQuery, c.GetProviderVersionsQuery, c.GetProviderVersionQuery, c.ListProvidersQuery)
 	c.TerraformV2CategoryHandler = v2.NewTerraformV2CategoryHandler(providerQuery.NewListUserSelectableProviderCategoriesQuery(nil)) // TODO: Add proper category repo
 	c.TerraformV2GPGHandler = v2.NewTerraformV2GPGHandler()
+
+	// Initialize Terraform authentication handlers
+	c.TerraformAuthHandler = terraformHandler.NewTerraformAuthHandler(
+		c.AuthenticateOIDCTokenCmd,
+		c.ValidateTokenCmd,
+		c.GetUserCmd,
+	)
 
 	// Initialize middleware
 	c.AuthMiddleware = terrareg_middleware.NewAuthMiddleware(cfg, c.CheckSessionQuery)
