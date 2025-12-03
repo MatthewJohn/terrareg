@@ -297,9 +297,25 @@ func (r *UserRepositoryImpl) dbToDomain(userDB *sqldb.UserDB) *identityModel.Use
 		authMethod = identityModel.AuthMethodTerraform
 	}
 
-	user, _ := identityModel.NewUser(userDB.Username, userDB.DisplayName, userDB.Email, authMethod)
-	// Note: This assumes we can access private fields or create a constructor that accepts all fields
-	// In a real implementation, we'd need to modify the User model to support reconstruction from DB
+	user, err := identityModel.ReconstructUser(
+		userDB.ID,
+		userDB.Username,
+		userDB.DisplayName,
+		userDB.Email,
+		authMethod,
+		userDB.AuthProviderID,
+		userDB.ExternalID,
+		userDB.AccessToken,
+		userDB.RefreshToken,
+		userDB.TokenExpiry,
+		userDB.LastLoginAt,
+		userDB.CreatedAt,
+		userDB.Active,
+	)
+	if err != nil {
+		// In case of error, return nil to indicate reconstruction failed
+		return nil
+	}
 
 	return user
 }

@@ -1,6 +1,8 @@
 package model
 
 import (
+	"fmt"
+	"regexp"
 	"time"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 )
@@ -101,6 +103,15 @@ func NewUser(username, displayName, email string, authMethod AuthMethod) (*User,
 	}, nil
 }
 
+// Permission constants for Terraform operations
+var (
+	PermissionReadModules     = Permission{resourceType: ResourceTypeModule, resourceID: "*", action: ActionRead}
+	PermissionReadProviders   = Permission{resourceType: ResourceTypeProvider, resourceID: "*", action: ActionRead}
+	PermissionPublishModules  = Permission{resourceType: ResourceTypeModule, resourceID: "*", action: ActionWrite}
+	PermissionPublishProviders = Permission{resourceType: ResourceTypeProvider, resourceID: "*", action: ActionWrite}
+	PermissionReadAnalytics   = Permission{resourceType: ResourceTypeNamespace, resourceID: "*", action: ActionRead}
+)
+
 // Business methods
 
 // Authenticate updates user's authentication tokens
@@ -146,6 +157,30 @@ func (u *User) AddPermission(resourceType ResourceType, resourceID string, actio
 
 	u.permissions = append(u.permissions, permission)
 	return nil
+}
+
+// AddPermissionSimple adds a permission to the user without requiring grantedBy (for service layer)
+func (u *User) AddPermissionSimple(permission Permission) {
+	// Check if permission already exists
+	for _, perm := range u.permissions {
+		if perm.resourceType == permission.resourceType &&
+		   perm.resourceID == permission.resourceID &&
+		   perm.action == permission.action {
+			return // Already exists
+		}
+	}
+
+	// Create new permission with generated ID
+	newPermission := Permission{
+		id:           shared.GenerateIntID(),
+		resourceType: permission.resourceType,
+		resourceID:   permission.resourceID,
+		action:       permission.action,
+		grantedAt:    time.Now(),
+		grantedBy:    nil, // No explicit grantor for service-added permissions
+	}
+
+	u.permissions = append(u.permissions, newPermission)
 }
 
 // HasPermission checks if user has a specific permission
@@ -226,3 +261,47 @@ func (p Permission) ResourceID() string { return p.resourceID }
 func (p Permission) Action() Action     { return p.action }
 func (p Permission) GrantedAt() time.Time { return p.grantedAt }
 func (p Permission) GrantedBy() *User   { return p.grantedBy }
+
+// ReconstructUser creates a user from database data (for repository use)
+func ReconstructUser(
+	id, username, displayName, email string,
+	authMethod AuthMethod,
+	authProviderID, externalID, accessToken, refreshToken string,
+	tokenExpiry, lastLoginAt *time.Time,
+	createdAt time.Time,
+	active bool,
+) (*User, error) {
+	if err := ValidateUsername(username); err != nil {
+		return nil, err
+	}
+	if err := ValidateEmail(email); err != nil {
+		return nil, err
+	}
+
+	return &User{
+		id:                   id,
+		username:             username,
+		displayName:          displayName,
+		email:                email,
+		authMethod:           authMethod,
+		authProviderID:       authProviderID,
+		externalID:           externalID,
+		accessToken:          accessToken,
+		refreshToken:         refreshToken,
+		accessTokenExpiry:    tokenExpiry,
+		active:               active,
+		createdAt:            createdAt,
+		lastLoginAt:          lastLoginAt,
+		permissions:          make([]Permission, 0),
+	}, nil
+}
+
+// SetAccessToken sets the access token and optionally expiry
+func (u *User) SetAccessToken(accessToken string) {
+	u.accessToken = accessToken
+}
+
+// AddPermissionFromService adds a permission using the service layer pattern
+func (u *User) AddPermissionFromService(permission Permission) {
+	u.permissions = append(u.permissions, permission)
+}
