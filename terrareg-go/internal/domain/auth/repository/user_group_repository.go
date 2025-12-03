@@ -28,6 +28,9 @@ type UserGroupRepository interface {
 	FindSiteAdminGroups(ctx context.Context) ([]*auth.UserGroup, error)
 	FindGroupsByNamespace(ctx context.Context, namespaceID int) ([]*auth.UserGroup, error)
 	SearchByName(ctx context.Context, query string, offset, limit int) ([]*auth.UserGroup, error)
+
+	// User operations (for admin session auth)
+	GetGroupsForUser(ctx context.Context, userID string) ([]*auth.UserGroup, error)
 }
 
 // UserGroupRepositoryTx extends UserGroupRepository with transaction support

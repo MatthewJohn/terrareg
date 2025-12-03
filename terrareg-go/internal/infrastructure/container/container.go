@@ -47,12 +47,15 @@ type Container struct {
 	DB     *sqldb.Database
 
 	// Repositories
-	NamespaceRepo      moduleRepo.NamespaceRepository
-	ModuleProviderRepo moduleRepo.ModuleProviderRepository
-	AnalyticsRepo      analyticsCmd.AnalyticsRepository
-	ProviderRepo       providerRepo.ProviderRepository
-	SessionRepo        authRepo.SessionRepository
-	UserGroupRepo      authRepo.UserGroupRepository
+	NamespaceRepo                    moduleRepo.NamespaceRepository
+	ModuleProviderRepo               moduleRepo.ModuleProviderRepository
+	AnalyticsRepo                    analyticsCmd.AnalyticsRepository
+	ProviderRepo                     providerRepo.ProviderRepository
+	SessionRepo                      authRepo.SessionRepository
+	UserGroupRepo                    authRepo.UserGroupRepository
+	TerraformIdpAuthorizationCodeRepo authRepo.TerraformIdpAuthorizationCodeRepository
+	TerraformIdpAccessTokenRepo      authRepo.TerraformIdpAccessTokenRepository
+	TerraformIdpSubjectIdentifierRepo authRepo.TerraformIdpSubjectIdentifierRepository
 
 	// Infrastructure Services
 	GitClient      gitService.GitClient
@@ -63,6 +66,7 @@ type Container struct {
 	ModuleImporterService      *moduleService.ModuleImporterService
 	AuthFactory                *authservice.AuthFactory
 	SessionService             *authservice.SessionService
+	TerraformIdpService        *authservice.TerraformIdpService
 
 	// Commands
 	CreateNamespaceCmd              *namespace.CreateNamespaceCommand
@@ -150,9 +154,10 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.AnalyticsRepo = analyticsPersistence.NewAnalyticsRepository(db.DB)
 	c.ProviderRepo = providerRepository.NewProviderRepository()
 	c.SessionRepo = authPersistence.NewSessionRepository(db.DB)
-
-	// TODO: Initialize UserGroup repository when implementation is available
-	// c.UserGroupRepo = authPersistence.NewUserGroupRepository(db.DB)
+	c.UserGroupRepo = authPersistence.NewUserGroupRepository(db.DB)
+	c.TerraformIdpAuthorizationCodeRepo = authPersistence.NewTerraformIdpAuthorizationCodeRepository(db.DB)
+	c.TerraformIdpAccessTokenRepo = authPersistence.NewTerraformIdpAccessTokenRepository(db.DB)
+	c.TerraformIdpSubjectIdentifierRepo = authPersistence.NewTerraformIdpSubjectIdentifierRepository(db.DB)
 
 	// Initialize infrastructure services
 	c.GitClient = git.NewGitClientImpl()
@@ -171,6 +176,11 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	// Initialize auth services
 	c.SessionService = authservice.NewSessionService(c.SessionRepo, authservice.DefaultSessionConfig())
 	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo)
+	c.TerraformIdpService = authservice.NewTerraformIdpService(
+		c.TerraformIdpAuthorizationCodeRepo,
+		c.TerraformIdpAccessTokenRepo,
+		c.TerraformIdpSubjectIdentifierRepo,
+	)
 
 	// Initialize commands
 	c.CreateNamespaceCmd = namespace.NewCreateNamespaceCommand(c.NamespaceRepo)
@@ -269,6 +279,8 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 		c.ValidateTokenCmd,
 		c.GetUserCmd,
 	)
+	c.TerraformIDPHandler = terraformHandler.NewTerraformIDPHandler(nil) // TODO: Pass actual IDP when implemented
+	c.TerraformStaticTokenHandler = terraformHandler.NewTerraformStaticTokenHandler()
 
 	// Initialize middleware
 	c.AuthMiddleware = terrareg_middleware.NewAuthMiddleware(cfg, c.CheckSessionQuery)
@@ -295,6 +307,8 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 		c.TerraformV2ProviderHandler,
 		c.TerraformV2CategoryHandler,
 		c.TerraformV2GPGHandler,
+		c.TerraformIDPHandler,
+		c.TerraformStaticTokenHandler,
 	)
 
 	return c, nil
