@@ -2,7 +2,7 @@ package model
 
 import (
 	"time"
-	"terrareg/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 )
 
 // User represents a user in the system
@@ -136,7 +136,7 @@ func (u *User) AddPermission(resourceType ResourceType, resourceID string, actio
 	}
 
 	permission := Permission{
-		id:           shared.GenerateRandomID(),
+		id:           shared.GenerateIntID(),
 		resourceType: resourceType,
 		resourceID:   resourceID,
 		action:       action,

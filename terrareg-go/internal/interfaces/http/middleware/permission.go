@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	identityModel "terrareg/internal/domain/identity/model"
-	identityService "terrareg/internal/domain/identity/service"
+	identityModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
+	identityService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/service"
 )
 
 // PermissionMiddleware handles permission-based access control

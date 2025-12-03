@@ -7,16 +7,14 @@ import (
 	"errors"
 	"time"
 
-	"terrareg/internal/domain/identity/model"
-	"terrareg/internal/domain/identity/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/repository"
 )
 
 var (
-	ErrAPIKeyNotFound     = errors.New("API key not found")
-	ErrAPIKeyExpired     = errors.New("API key has expired")
-	ErrAPIKeyDisabled    = errors.New("API key is disabled")
-	ErrInvalidAPIKey     = errors.New("invalid API key")
-	ErrTooManyAPIKeys     = errors.New("too many API keys for user")
+	ErrAPIKeyExpired  = errors.New("API key has expired")
+	ErrAPIKeyDisabled = errors.New("API key is disabled")
+	ErrTooManyAPIKeys = errors.New("too many API keys for user")
 )
 
 // APIKeyService manages API keys for authentication
@@ -27,11 +25,11 @@ type APIKeyService struct {
 
 // APIKeyConfig holds API key configuration
 type APIKeyConfig struct {
-	DefaultTTL     time.Duration
-	MaxTTL         time.Duration
-	MaxKeysPerUser  int
-	KeyLength       int
-	RequireHTTPS     bool
+	DefaultTTL        time.Duration
+	MaxTTL            time.Duration
+	MaxKeysPerUser    int
+	KeyLength         int
+	RequireHTTPS      bool
 	EnableKeyRotation bool
 }
 
@@ -39,13 +37,13 @@ type APIKeyConfig struct {
 type APIKeyInfo struct {
 	ID          string
 	UserID      string
-	Name         string
-	Key          string
+	Name        string
+	Key         string
 	Permissions []model.Permission
-	CreatedAt    time.Time
-	ExpiresAt    time.Time
+	CreatedAt   time.Time
+	ExpiresAt   time.Time
 	LastUsedAt  *time.Time
-	Enabled      bool
+	Enabled     bool
 }
 
 // NewAPIKeyService creates a new API key service
@@ -61,10 +59,10 @@ func (s *APIKeyService) GenerateAPIKey(ctx context.Context, userID, name string,
 	// Verify user exists and is active
 	user, err := s.userRepo.FindByID(ctx, userID)
 	if err != nil {
-		return nil, ErrUserNotFound
+		return nil, model.ErrUserNotFound
 	}
 	if !user.Active() {
-		return nil, ErrUserInactive
+		return nil, model.ErrUserInactive
 	}
 
 	// Generate secure random API key
@@ -78,13 +76,13 @@ func (s *APIKeyService) GenerateAPIKey(ctx context.Context, userID, name string,
 	apiKey := &APIKeyInfo{
 		ID:          generateID(),
 		UserID:      userID,
-		Name:         name,
-		Key:          key,
-		Permissions:  permissions,
-		CreatedAt:    now,
-		ExpiresAt:    now.Add(s.config.DefaultTTL),
+		Name:        name,
+		Key:         key,
+		Permissions: permissions,
+		CreatedAt:   now,
+		ExpiresAt:   now.Add(s.config.DefaultTTL),
 		LastUsedAt:  nil,
-		Enabled:      true,
+		Enabled:     true,
 	}
 
 	return apiKey, nil
@@ -93,7 +91,7 @@ func (s *APIKeyService) GenerateAPIKey(ctx context.Context, userID, name string,
 // ValidateAPIKey validates an API key and returns the associated user
 func (s *APIKeyService) ValidateAPIKey(ctx context.Context, apiKey string) (*model.User, error) {
 	if apiKey == "" {
-		return nil, ErrInvalidAPIKey
+		return nil, model.ErrInvalidAPIKey
 	}
 
 	// For Phase 4, implement basic API key validation
@@ -107,7 +105,7 @@ func (s *APIKeyService) ValidateAPIKey(ctx context.Context, apiKey string) (*mod
 	// This assumes API keys are stored as access tokens in the user model
 	user, err := s.userRepo.FindByAccessToken(ctx, apiKey)
 	if err != nil {
-		return nil, ErrAPIKeyNotFound
+		return nil, model.ErrAPIKeyNotFound
 	}
 
 	if user == nil || !user.Active() {
@@ -154,7 +152,7 @@ func (s *APIKeyService) UpdateAPIKey(ctx context.Context, apiKeyID, name string,
 func (s *APIKeyService) GetAPIKeyInfo(ctx context.Context, apiKeyID string) (*APIKeyInfo, error) {
 	// For Phase 4, return placeholder implementation
 	// In a full implementation, this would query the database
-	return nil, ErrAPIKeyNotFound
+	return nil, model.ErrAPIKeyNotFound
 }
 
 // generateSecureAPIKey generates a cryptographically secure API key

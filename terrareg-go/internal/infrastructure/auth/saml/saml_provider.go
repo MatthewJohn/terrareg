@@ -12,8 +12,8 @@ import (
 
 	"github.com/crewjam/saml"
 	"github.com/crewjam/saml/samlsp"
-	"terrareg/internal/domain/identity/model"
-	"terrareg/internal/domain/identity/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/service"
 )
 
 var (

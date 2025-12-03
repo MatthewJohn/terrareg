@@ -2,7 +2,7 @@ package model
 
 import (
 	"time"
-	"terrareg/internal/domain/shared"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 )
 
 // OAuthTokenType represents the type of OAuth token
@@ -70,7 +70,7 @@ func NewIDPSubjectIdentifier(authMethod AuthMethod, providerName, subjectID, use
 	}
 
 	return &IDPSubjectIdentifier{
-		id:           shared.GenerateRandomID(),
+		id:           shared.GenerateIntID(),
 		authMethod:   authMethod,
 		providerName: providerName,
 		subjectID:    subjectID,
@@ -105,7 +105,7 @@ func NewIDPAuthorizationCode(authMethod AuthMethod, providerName, code, clientID
 
 	now := time.Now()
 	return &IDPAuthorizationCode{
-		id:          shared.GenerateRandomID(),
+		id:          shared.GenerateIntID(),
 		authMethod:  authMethod,
 		providerName: providerName,
 		code:        code,
@@ -146,7 +146,7 @@ func NewIDPAccessToken(authMethod AuthMethod, providerName, token, tokenType, cl
 
 	now := time.Now()
 	return &IDPAccessToken{
-		id:          shared.GenerateRandomID(),
+		id:          shared.GenerateIntID(),
 		authMethod:  authMethod,
 		providerName: providerName,
 		token:       token,

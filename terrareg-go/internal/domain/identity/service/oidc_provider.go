@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"golang.org/x/oauth2"
-	"coreos/go-oidc/v3/oidc"
+	"github.com/coreos/go-oidc/v3/oidc"
 
-	"terrareg/internal/domain/identity/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
 )
 
 var (

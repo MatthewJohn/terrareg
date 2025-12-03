@@ -4,21 +4,13 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	"time"
 
-	"terrareg/internal/domain/identity/model"
-	"terrareg/internal/domain/identity/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/repository"
 )
 
-var (
-	ErrSessionNotFound       = errors.New("session not found")
-	ErrSessionExpired       = errors.New("session expired")
-	ErrSessionInvalid       = errors.New("session invalid")
-	ErrUserNotFound         = errors.New("user not found")
-	ErrInvalidCredentials   = errors.New("invalid credentials")
-	ErrUserInactive         = errors.New("user is inactive")
-)
+// Using identity model errors instead of redefining here
 
 // SessionInfo represents simplified session information for identity management
 type SessionInfo struct {
@@ -65,10 +57,10 @@ func (sm *SessionManager) CreateSession(ctx context.Context, userID string, auth
 	// Verify user exists and is active
 	user, err := sm.userRepo.FindByID(ctx, userID)
 	if err != nil {
-		return nil, ErrUserNotFound
+		return nil, model.ErrUserNotFound
 	}
 	if !user.Active() {
-		return nil, ErrUserInactive
+		return nil, model.ErrUserInactive
 	}
 
 	// Generate session token
@@ -105,20 +97,20 @@ func (sm *SessionManager) CreateSession(ctx context.Context, userID string, auth
 // ValidateSession validates a session token and returns the user
 func (sm *SessionManager) ValidateSession(ctx context.Context, sessionToken string) (*SessionInfo, *model.User, error) {
 	if sessionToken == "" {
-		return nil, nil, ErrSessionInvalid
+		return nil, nil, model.ErrSessionInvalid
 	}
 
 	// Find session
 	session, exists := sm.sessions[sessionToken]
 	if !exists {
-		return nil, nil, ErrSessionNotFound
+		return nil, nil, model.ErrSessionNotFound
 	}
 
 	// Check if session is valid
 	if time.Now().After(session.ExpiresAt) {
 		// Remove expired session
 		delete(sm.sessions, sessionToken)
-		return nil, nil, ErrSessionExpired
+		return nil, nil, model.ErrSessionExpired
 	}
 
 	// Get user
@@ -129,7 +121,7 @@ func (sm *SessionManager) ValidateSession(ctx context.Context, sessionToken stri
 
 	// Check if user is active
 	if !user.Active() {
-		return nil, nil, ErrUserInactive
+		return nil, nil, model.ErrUserInactive
 	}
 
 	return session, user, nil
@@ -138,19 +130,19 @@ func (sm *SessionManager) ValidateSession(ctx context.Context, sessionToken stri
 // RefreshSession extends a session's expiration
 func (sm *SessionManager) RefreshSession(ctx context.Context, sessionToken string) (*SessionInfo, error) {
 	if sessionToken == "" {
-		return nil, ErrSessionInvalid
+		return nil, model.ErrSessionInvalid
 	}
 
 	// Find session
 	session, exists := sm.sessions[sessionToken]
 	if !exists {
-		return nil, ErrSessionNotFound
+		return nil, model.ErrSessionNotFound
 	}
 
 	// Check if session is still valid
 	if time.Now().After(session.ExpiresAt) {
 		delete(sm.sessions, sessionToken)
-		return nil, ErrSessionExpired
+		return nil, model.ErrSessionExpired
 	}
 
 	// Extend session
@@ -162,12 +154,12 @@ func (sm *SessionManager) RefreshSession(ctx context.Context, sessionToken strin
 // InvalidateSession invalidates a session
 func (sm *SessionManager) InvalidateSession(ctx context.Context, sessionToken string) error {
 	if sessionToken == "" {
-		return ErrSessionInvalid
+		return model.ErrSessionInvalid
 	}
 
 	_, exists := sm.sessions[sessionToken]
 	if !exists {
-		return ErrSessionNotFound
+		return model.ErrSessionNotFound
 	}
 
 	delete(sm.sessions, sessionToken)

@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"terrareg/internal/domain/identity/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
 )
 
 // UserGroupRepository defines the interface for user group data access
