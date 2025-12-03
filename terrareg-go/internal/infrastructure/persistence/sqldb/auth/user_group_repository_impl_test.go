@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -37,14 +37,13 @@ func TestUserGroupRepositoryImpl_Create(t *testing.T) {
 	repo := NewUserGroupRepository(gormDB)
 
 	userGroup := &auth.UserGroup{
-		Name:        "test-group",
-		SiteAdmin:   false,
-		Description: "Test group description",
+		Name:      "test-group",
+		SiteAdmin: false,
 	}
 
 	mock.ExpectBegin()
 	mock.ExpectQuery(`INSERT INTO "user_groups"`).
-		WithArgs(userGroup.Name, userGroup.SiteAdmin, userGroup.Description).
+		WithArgs(userGroup.Name, userGroup.SiteAdmin).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectCommit()
 

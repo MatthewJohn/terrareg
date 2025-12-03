@@ -36,13 +36,13 @@ func (r *TerraformIdpAuthorizationCodeRepositoryImpl) Create(ctx context.Context
 		Expiry: expiry,
 	}
 
-	return r.db.WithContext(ctx).Create(authCode).Error
+	return r.db.GetDB().WithContext(ctx).Create(authCode).Error
 }
 
 // FindByKey retrieves an authorization code by key if it hasn't expired
 func (r *TerraformIdpAuthorizationCodeRepositoryImpl) FindByKey(ctx context.Context, key string) (*sqldb.TerraformIDPAuthorizationCodeDB, error) {
 	var authCode sqldb.TerraformIDPAuthorizationCodeDB
-	err := r.db.WithContext(ctx).
+	err := r.db.GetDB().WithContext(ctx).
 		Where("key = ? AND expiry > ?", key, time.Now()).
 		First(&authCode).
 		Error
@@ -56,7 +56,7 @@ func (r *TerraformIdpAuthorizationCodeRepositoryImpl) FindByKey(ctx context.Cont
 
 // DeleteByKey removes an authorization code by key
 func (r *TerraformIdpAuthorizationCodeRepositoryImpl) DeleteByKey(ctx context.Context, key string) error {
-	return r.db.WithContext(ctx).
+	return r.db.GetDB().WithContext(ctx).
 		Where("key = ?", key).
 		Delete(&sqldb.TerraformIDPAuthorizationCodeDB{}).
 		Error
@@ -64,7 +64,7 @@ func (r *TerraformIdpAuthorizationCodeRepositoryImpl) DeleteByKey(ctx context.Co
 
 // DeleteExpired removes all expired authorization codes and returns the count of deleted records
 func (r *TerraformIdpAuthorizationCodeRepositoryImpl) DeleteExpired(ctx context.Context) (int64, error) {
-	result := r.db.WithContext(ctx).
+	result := r.db.GetDB().WithContext(ctx).
 		Where("expiry <= ?", time.Now()).
 		Delete(&sqldb.TerraformIDPAuthorizationCodeDB{})
 

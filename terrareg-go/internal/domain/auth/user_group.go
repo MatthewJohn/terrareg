@@ -2,26 +2,22 @@ package auth
 
 import (
 	"fmt"
-	"time"
 )
 
 // UserGroup represents a group of users for permissions management
 // Matches Python's user_group table structure
 type UserGroup struct {
-	ID        int       `json:"id"`
-	Name      string    `json:"name"`
-	SiteAdmin bool      `json:"site_admin"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	SiteAdmin bool   `json:"site_admin"`
 }
 
 // NamespacePermission represents a permission granted to a user group for a namespace
 // Matches Python's user_group_namespace_permission table structure
 type NamespacePermission struct {
-	UserGroupID    int               `json:"user_group_id"`
-	NamespaceID    int               `json:"namespace_id"`
-	PermissionType PermissionType    `json:"permission_type"`
-	GrantedAt      time.Time         `json:"granted_at"`
+	UserGroupID    int            `json:"user_group_id"`
+	NamespaceID    int            `json:"namespace_id"`
+	PermissionType PermissionType `json:"permission_type"`
 }
 
 // PermissionType represents permission types for namespace access
@@ -42,8 +38,6 @@ func NewUserGroup(name string, siteAdmin bool) (*UserGroup, error) {
 	return &UserGroup{
 		Name:      name,
 		SiteAdmin: siteAdmin,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
 	}, nil
 }
 
@@ -60,7 +54,6 @@ func NewNamespacePermission(userGroupID, namespaceID int, permissionType Permiss
 		UserGroupID:    userGroupID,
 		NamespaceID:    namespaceID,
 		PermissionType: permissionType,
-		GrantedAt:      time.Now(),
 	}, nil
 }
 
@@ -73,14 +66,12 @@ func (ug *UserGroup) UpdateName(name string) error {
 	}
 
 	ug.Name = name
-	ug.UpdatedAt = time.Now()
 	return nil
 }
 
 // SetSiteAdmin updates the site admin flag
 func (ug *UserGroup) SetSiteAdmin(siteAdmin bool) {
 	ug.SiteAdmin = siteAdmin
-	ug.UpdatedAt = time.Now()
 }
 
 // HasPermission checks if this permission grants the specified access
@@ -121,17 +112,14 @@ func (np *NamespacePermission) IsHigherThan(other PermissionType) bool {
 }
 
 // Getters for UserGroup
-func (ug *UserGroup) GetID() int               { return ug.ID }
-func (ug *UserGroup) GetName() string          { return ug.Name }
-func (ug *UserGroup) IsSiteAdmin() bool        { return ug.SiteAdmin }
-func (ug *UserGroup) GetCreatedAt() time.Time  { return ug.CreatedAt }
-func (ug *UserGroup) GetUpdatedAt() time.Time  { return ug.UpdatedAt }
+func (ug *UserGroup) GetID() int        { return ug.ID }
+func (ug *UserGroup) GetName() string   { return ug.Name }
+func (ug *UserGroup) IsSiteAdmin() bool { return ug.SiteAdmin }
 
 // Getters for NamespacePermission
-func (np *NamespacePermission) GetUserGroupID() int           { return np.UserGroupID }
-func (np *NamespacePermission) GetNamespaceID() int          { return np.NamespaceID }
+func (np *NamespacePermission) GetUserGroupID() int               { return np.UserGroupID }
+func (np *NamespacePermission) GetNamespaceID() int               { return np.NamespaceID }
 func (np *NamespacePermission) GetPermissionType() PermissionType { return np.PermissionType }
-func (np *NamespacePermission) GetGrantedAt() time.Time      { return np.GrantedAt }
 
 // Permission checking helper functions
 

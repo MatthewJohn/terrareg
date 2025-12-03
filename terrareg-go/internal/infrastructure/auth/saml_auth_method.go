@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"encoding/xml"
-	"fmt"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
@@ -12,8 +11,8 @@ import (
 // SAMLAuthMethod implements authentication for SAML SSO
 type SAMLAuthMethod struct {
 	auth.BaseAuthMethod
-	samlConfig     *SAMLConfig
-	userGroupRepo  repository.UserGroupRepository
+	samlConfig      *SAMLConfig
+	userGroupRepo   repository.UserGroupRepository
 	isAuthenticated bool
 	isAdmin         bool
 	username        string
@@ -24,30 +23,30 @@ type SAMLAuthMethod struct {
 
 // SAMLConfig represents SAML configuration
 type SAMLConfig struct {
-	EntityID              string
-	SSOURL                string
-	SLOURL                string
-	Certificate           string
-	PrivateKey            string
-	IDPCertificate        string
-	IDPEntityID           string
-	AttributeMapping      map[string]string
-	GroupAttribute        string
-	NameIDFormat          string
-	SignatureAlgorithm    string
-	DigestAlgorithm       string
+	EntityID           string
+	SSOURL             string
+	SLOURL             string
+	Certificate        string
+	PrivateKey         string
+	IDPCertificate     string
+	IDPEntityID        string
+	AttributeMapping   map[string]string
+	GroupAttribute     string
+	NameIDFormat       string
+	SignatureAlgorithm string
+	DigestAlgorithm    string
 }
 
 // SAMLResponse represents a decoded SAML response
 type SAMLResponse struct {
-	XMLName      xml.Name `xml:"Response"`
-	ID           string   `xml:"ID,attr"`
-	Version      string   `xml:"Version,attr"`
-	IssueInstant string   `xml:"IssueInstant,attr"`
-	Destination  string   `xml:"Destination,attr"`
-	InResponseTo string   `xml:"InResponseTo,attr"`
-	Issuer       Issuer   `xml:"Issuer"`
-	Status       Status   `xml:"Status"`
+	XMLName      xml.Name  `xml:"Response"`
+	ID           string    `xml:"ID,attr"`
+	Version      string    `xml:"Version,attr"`
+	IssueInstant string    `xml:"IssueInstant,attr"`
+	Destination  string    `xml:"Destination,attr"`
+	InResponseTo string    `xml:"InResponseTo,attr"`
+	Issuer       Issuer    `xml:"Issuer"`
+	Status       Status    `xml:"Status"`
 	Assertion    Assertion `xml:"Assertion"`
 }
 
@@ -70,18 +69,18 @@ type StatusCode struct {
 
 // Assertion represents SAML assertion
 type Assertion struct {
-	ID           string         `xml:"ID,attr"`
-	IssueInstant string         `xml:"IssueInstant,attr"`
-	Version      string         `xml:"Version,attr"`
-	Issuer       Issuer         `xml:"Issuer"`
-	Subject      Subject        `xml:"Subject"`
-	Conditions   Conditions     `xml:"Conditions"`
-	Attribute    []Attribute    `xml:"AttributeStatement>Attribute"`
+	ID           string      `xml:"ID,attr"`
+	IssueInstant string      `xml:"IssueInstant,attr"`
+	Version      string      `xml:"Version,attr"`
+	Issuer       Issuer      `xml:"Issuer"`
+	Subject      Subject     `xml:"Subject"`
+	Conditions   Conditions  `xml:"Conditions"`
+	Attribute    []Attribute `xml:"AttributeStatement>Attribute"`
 }
 
 // Subject represents SAML subject
 type Subject struct {
-	NameID     NameID     `xml:"NameID"`
+	NameID              NameID              `xml:"NameID"`
 	SubjectConfirmation SubjectConfirmation `xml:"SubjectConfirmation"`
 }
 
@@ -93,7 +92,7 @@ type NameID struct {
 
 // SubjectConfirmation represents SAML subject confirmation
 type SubjectConfirmation struct {
-	Method           string         `xml:"Method,attr"`
+	Method                  string                  `xml:"Method,attr"`
 	SubjectConfirmationData SubjectConfirmationData `xml:"SubjectConfirmationData"`
 }
 
@@ -106,8 +105,8 @@ type SubjectConfirmationData struct {
 
 // Conditions represents SAML conditions
 type Conditions struct {
-	NotBefore    string         `xml:"NotBefore,attr"`
-	NotOnOrAfter string         `xml:"NotOnOrAfter,attr"`
+	NotBefore           string                `xml:"NotBefore,attr"`
+	NotOnOrAfter        string                `xml:"NotOnOrAfter,attr"`
 	AudienceRestriction []AudienceRestriction `xml:"AudienceRestriction"`
 }
 
@@ -123,8 +122,8 @@ type Audience struct {
 
 // Attribute represents SAML attribute
 type Attribute struct {
-	Name         string   `xml:"Name,attr"`
-	NameFormat   string   `xml:"NameFormat,attr"`
+	Name           string           `xml:"Name,attr"`
+	NameFormat     string           `xml:"NameFormat,attr"`
 	AttributeValue []AttributeValue `xml:"AttributeValue"`
 }
 
@@ -135,8 +134,8 @@ type AttributeValue struct {
 }
 
 // NewSamlAuthMethod creates a new SAML authentication method
-func NewSamlAuthMethod(samlConfig *SAMLConfig, userGroupRepo repository.UserGroupRepository) *SamlAuthMethod {
-	return &SamlAuthMethod{
+func NewSamlAuthMethod(samlConfig *SAMLConfig, userGroupRepo repository.UserGroupRepository) *SAMLAuthMethod {
+	return &SAMLAuthMethod{
 		samlConfig:      samlConfig,
 		userGroupRepo:   userGroupRepo,
 		userPermissions: make(map[string]string),
@@ -145,42 +144,42 @@ func NewSamlAuthMethod(samlConfig *SAMLConfig, userGroupRepo repository.UserGrou
 }
 
 // GetProviderType returns the authentication provider type
-func (s *SamlAuthMethod) GetProviderType() auth.AuthMethodType {
-	return auth.AuthMethodSaml
+func (s *SAMLAuthMethod) GetProviderType() auth.AuthMethodType {
+	return auth.AuthMethodSAML
 }
 
 // CheckAuthState validates the current authentication state
-func (s *SamlAuthMethod) CheckAuthState() bool {
+func (s *SAMLAuthMethod) CheckAuthState() bool {
 	return s.isAuthenticated
 }
 
 // IsBuiltInAdmin returns whether this is a built-in admin method
-func (s *SamlAuthMethod) IsBuiltInAdmin() bool {
+func (s *SAMLAuthMethod) IsBuiltInAdmin() bool {
 	return false // SAML is not built-in admin
 }
 
 // IsAuthenticated returns whether the current request is authenticated
-func (s *SamlAuthMethod) IsAuthenticated() bool {
+func (s *SAMLAuthMethod) IsAuthenticated() bool {
 	return s.isAuthenticated
 }
 
 // IsAdmin returns whether the authenticated user has admin privileges
-func (s *SamlAuthMethod) IsAdmin() bool {
+func (s *SAMLAuthMethod) IsAdmin() bool {
 	return s.isAdmin
 }
 
 // IsEnabled returns whether this authentication method is enabled
-func (s *SamlAuthMethod) IsEnabled() bool {
+func (s *SAMLAuthMethod) IsEnabled() bool {
 	return s.samlConfig != nil
 }
 
 // RequiresCSRF returns whether this authentication method requires CSRF protection
-func (s *SamlAuthMethod) RequiresCSRF() bool {
+func (s *SAMLAuthMethod) RequiresCSRF() bool {
 	return true // SAML requires CSRF protection
 }
 
 // CanPublishModuleVersion checks if the user can publish module versions to the given namespace
-func (s *SamlAuthMethod) CanPublishModuleVersion(namespace string) bool {
+func (s *SAMLAuthMethod) CanPublishModuleVersion(namespace string) bool {
 	if s.isAdmin {
 		return true
 	}
@@ -188,7 +187,7 @@ func (s *SamlAuthMethod) CanPublishModuleVersion(namespace string) bool {
 }
 
 // CanUploadModuleVersion checks if the user can upload module versions to the given namespace
-func (s *SamlAuthMethod) CanUploadModuleVersion(namespace string) bool {
+func (s *SAMLAuthMethod) CanUploadModuleVersion(namespace string) bool {
 	if s.isAdmin {
 		return true
 	}
@@ -196,7 +195,7 @@ func (s *SamlAuthMethod) CanUploadModuleVersion(namespace string) bool {
 }
 
 // CheckNamespaceAccess checks if the user has the specified permission for a namespace
-func (s *SamlAuthMethod) CheckNamespaceAccess(permissionType, namespace string) bool {
+func (s *SAMLAuthMethod) CheckNamespaceAccess(permissionType, namespace string) bool {
 	if s.isAdmin {
 		return true
 	}
@@ -223,17 +222,17 @@ func (s *SamlAuthMethod) CheckNamespaceAccess(permissionType, namespace string) 
 }
 
 // GetAllNamespacePermissions returns all namespace permissions for the user
-func (s *SamlAuthMethod) GetAllNamespacePermissions() map[string]string {
+func (s *SAMLAuthMethod) GetAllNamespacePermissions() map[string]string {
 	return s.userPermissions
 }
 
 // GetUsername returns the authenticated username
-func (s *SamlAuthMethod) GetUsername() string {
+func (s *SAMLAuthMethod) GetUsername() string {
 	return s.username
 }
 
 // GetUserGroupNames returns the names of all user groups
-func (s *SamlAuthMethod) GetUserGroupNames() []string {
+func (s *SAMLAuthMethod) GetUserGroupNames() []string {
 	names := make([]string, len(s.userGroups))
 	for i, group := range s.userGroups {
 		names[i] = group.GetName()
@@ -242,23 +241,23 @@ func (s *SamlAuthMethod) GetUserGroupNames() []string {
 }
 
 // CanAccessReadAPI returns whether the user can access read APIs
-func (s *SamlAuthMethod) CanAccessReadAPI() bool {
+func (s *SAMLAuthMethod) CanAccessReadAPI() bool {
 	return s.isAuthenticated
 }
 
 // CanAccessTerraformAPI returns whether the user can access Terraform APIs
-func (s *SamlAuthMethod) CanAccessTerraformAPI() bool {
+func (s *SAMLAuthMethod) CanAccessTerraformAPI() bool {
 	return s.isAdmin
 }
 
 // GetTerraformAuthToken returns the Terraform authentication token
-func (s *SamlAuthMethod) GetTerraformAuthToken() string {
+func (s *SAMLAuthMethod) GetTerraformAuthToken() string {
 	// SAML doesn't typically provide Terraform tokens
 	return ""
 }
 
 // GetProviderData returns provider-specific data
-func (s *SamlAuthMethod) GetProviderData() map[string]interface{} {
+func (s *SAMLAuthMethod) GetProviderData() map[string]interface{} {
 	data := make(map[string]interface{})
 	data["username"] = s.username
 	data["email"] = s.email
@@ -267,7 +266,7 @@ func (s *SamlAuthMethod) GetProviderData() map[string]interface{} {
 }
 
 // Authenticate authenticates a request using SAML response data
-func (s *SamlAuthMethod) Authenticate(ctx context.Context, headers map[string]string, cookies map[string]string) error {
+func (s *SAMLAuthMethod) Authenticate(ctx context.Context, headers map[string]string, cookies map[string]string) error {
 	// Look for SAML response in form data or headers
 	// This is a simplified implementation - in production, you would handle
 	// the complete SAML flow including redirects and POST bindings
@@ -276,6 +275,7 @@ func (s *SamlAuthMethod) Authenticate(ctx context.Context, headers map[string]st
 	if !exists {
 		// Try to get from cookies (for already authenticated sessions)
 		sessionID, exists := cookies["session_id"]
+		_ = sessionID
 		if !exists {
 			return samlErr("missing SAML response")
 		}
@@ -305,7 +305,7 @@ func (s *SamlAuthMethod) Authenticate(ctx context.Context, headers map[string]st
 }
 
 // validateSAMLResponse validates and extracts information from SAML response
-func (s *SamlAuthMethod) validateSAMLResponse(samlResponse string) (*SAMLUserInfo, error) {
+func (s *SAMLAuthMethod) validateSAMLResponse(samlResponse string) (*SAMLUserInfo, error) {
 	// This is a placeholder implementation
 	// In production, you would:
 	// 1. Base64 decode the SAML response
@@ -324,7 +324,7 @@ func (s *SamlAuthMethod) validateSAMLResponse(samlResponse string) (*SAMLUserInf
 }
 
 // simulateSamlAuthentication simulates SAML authentication for testing
-func (s *SamlAuthMethod) simulateSamlAuthentication(ctx context.Context) error {
+func (s *SAMLAuthMethod) simulateSamlAuthentication(ctx context.Context) error {
 	// Mock SAML user data for demonstration
 	s.username = "saml-user@example.com"
 	s.email = "saml-user@example.com"
@@ -341,7 +341,7 @@ func (s *SamlAuthMethod) simulateSamlAuthentication(ctx context.Context) error {
 }
 
 // processUserGroups processes SAML groups and maps to local user groups
-func (s *SamlAuthMethod) processUserGroups(ctx context.Context, samlGroups []string) error {
+func (s *SAMLAuthMethod) processUserGroups(ctx context.Context, samlGroups []string) error {
 	// This is a placeholder implementation
 	// In production, you would map SAML groups to local user groups
 	// using a mapping configuration or by matching group names
@@ -349,10 +349,9 @@ func (s *SamlAuthMethod) processUserGroups(ctx context.Context, samlGroups []str
 	// For demonstration, create mock user groups
 	for _, groupName := range samlGroups {
 		userGroup := &auth.UserGroup{
-			ID:          len(s.userGroups) + 1,
-			Name:        groupName,
-			SiteAdmin:   groupName == "terraform-admins", // Mock admin group
-			Description: fmt.Sprintf("SAML group: %s", groupName),
+			ID:        len(s.userGroups) + 1,
+			Name:      groupName,
+			SiteAdmin: groupName == "terraform-admins", // Mock admin group
 		}
 		s.userGroups = append(s.userGroups, userGroup)
 
@@ -368,7 +367,7 @@ func (s *SamlAuthMethod) processUserGroups(ctx context.Context, samlGroups []str
 }
 
 // getUserPermissions gets the user's permissions across all namespaces
-func (s *SamlAuthMethod) getUserPermissions(ctx context.Context) map[string]string {
+func (s *SAMLAuthMethod) getUserPermissions(ctx context.Context) map[string]string {
 	permissions := make(map[string]string)
 
 	if s.isAdmin {
@@ -405,13 +404,13 @@ func (s *SamlAuthMethod) getUserPermissions(ctx context.Context) map[string]stri
 
 // getNamespaceName would get the namespace name from ID
 // This is a placeholder - in a real implementation, you'd query the namespace repository
-func (s *SamlAuthMethod) getNamespaceName(namespaceID int) string {
+func (s *SAMLAuthMethod) getNamespaceName(namespaceID int) string {
 	// Placeholder implementation
 	return ""
 }
 
 // isHigherPermission checks if permission1 is higher level than permission2
-func (s *SamlAuthMethod) isHigherPermission(perm1, perm2 string) bool {
+func (s *SAMLAuthMethod) isHigherPermission(perm1, perm2 string) bool {
 	permLevels := map[string]int{
 		"READ":   1,
 		"MODIFY": 2,

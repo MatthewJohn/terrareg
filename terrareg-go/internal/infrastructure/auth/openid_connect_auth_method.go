@@ -14,9 +14,9 @@ import (
 // OpenIDConnectAuthMethod implements authentication for OpenID Connect (OIDC)
 type OpenIDConnectAuthMethod struct {
 	auth.BaseAuthMethod
-	oidcConfig     *OIDCConfig
-	userGroupRepo  repository.UserGroupRepository
-	httpClient     *http.Client
+	oidcConfig      *OIDCConfig
+	userGroupRepo   repository.UserGroupRepository
+	httpClient      *http.Client
 	isAuthenticated bool
 	isAdmin         bool
 	username        string
@@ -28,20 +28,20 @@ type OpenIDConnectAuthMethod struct {
 
 // OIDCConfig represents OpenID Connect configuration
 type OIDCConfig struct {
-	IssuerURL      string
-	ClientID       string
-	ClientSecret   string
-	RedirectURI    string
-	Scopes         []string
-	ResponseType   string
-	GrantType      string
-	TokenEndpoint  string
-	UserInfoEndpoint string
-	JWKSURL        string
+	IssuerURL             string
+	ClientID              string
+	ClientSecret          string
+	RedirectURI           string
+	Scopes                []string
+	ResponseType          string
+	GrantType             string
+	TokenEndpoint         string
+	UserInfoEndpoint      string
+	JWKSURL               string
 	AuthorizationEndpoint string
-	ClaimMapping   map[string]string
-	GroupClaim     string
-	AdminGroups    []string
+	ClaimMapping          map[string]string
+	GroupClaim            string
+	AdminGroups           []string
 }
 
 // OIDCTokenResponse represents OIDC token response
@@ -56,14 +56,14 @@ type OIDCTokenResponse struct {
 
 // OIDCUserInfo represents OIDC user information
 type OIDCUserInfo struct {
-	Sub               string            `json:"sub"`
-	Name              string            `json:"name"`
-	Email             string            `json:"email"`
-	EmailVerified     bool              `json:"email_verified"`
-	PreferredUsername string            `json:"preferred_username"`
-	GivenName         string            `json:"given_name"`
-	FamilyName        string            `json:"family_name"`
-	Groups            []string          `json:"groups,omitempty"`
+	Sub               string                 `json:"sub"`
+	Name              string                 `json:"name"`
+	Email             string                 `json:"email"`
+	EmailVerified     bool                   `json:"email_verified"`
+	PreferredUsername string                 `json:"preferred_username"`
+	GivenName         string                 `json:"given_name"`
+	FamilyName        string                 `json:"family_name"`
+	Groups            []string               `json:"groups,omitempty"`
 	RawClaims         map[string]interface{} `json:"-"`
 }
 
@@ -222,6 +222,7 @@ func (o *OpenIDConnectAuthMethod) Authenticate(ctx context.Context, headers map[
 	if !exists {
 		// Try to get from session cookies
 		sessionID, exists := cookies["session_id"]
+		_ = sessionID
 		if !exists {
 			return oidcErr("missing OIDC authorization code")
 		}
@@ -356,10 +357,9 @@ func (o *OpenIDConnectAuthMethod) processUserGroups(ctx context.Context, oidcGro
 	// Create mock user groups for demonstration
 	for _, groupName := range oidcGroups {
 		userGroup := &auth.UserGroup{
-			ID:          len(o.userGroups) + 1,
-			Name:        groupName,
-			SiteAdmin:   o.isAdmin,
-			Description: fmt.Sprintf("OIDC group: %s", groupName),
+			ID:        len(o.userGroups) + 1,
+			Name:      groupName,
+			SiteAdmin: o.isAdmin,
 		}
 		o.userGroups = append(o.userGroups, userGroup)
 	}
