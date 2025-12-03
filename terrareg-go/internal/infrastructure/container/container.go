@@ -31,6 +31,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/storage"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http"
 	v1 "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1"
+	v2 "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v2"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 	terrareg_middleware "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/template"
@@ -105,6 +106,9 @@ type Container struct {
 	ProviderHandler          *terrareg.ProviderHandler
 	AuthHandler              *terrareg.AuthHandler
 	TerraformV1ModuleHandler *v1.TerraformV1ModuleHandler // New V1 Terraform Module Handler
+	TerraformV2ProviderHandler *v2.TerraformV2ProviderHandler
+	TerraformV2CategoryHandler *v2.TerraformV2CategoryHandler
+	TerraformV2GPGHandler *v2.TerraformV2GPGHandler
 
 	// Middleware
 	AuthMiddleware *terrareg_middleware.AuthMiddleware
@@ -226,6 +230,11 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	)
 	c.TerraformV1ModuleHandler = v1.NewTerraformV1ModuleHandler(c.ListModulesQuery, c.SearchModulesQuery, c.GetModuleProviderQuery, c.ListModuleVersionsQuery, c.GetModuleDownloadQuery, c.GetModuleVersionQuery) // Instantiate the new handler
 
+	// Initialize v2 handlers
+	c.TerraformV2ProviderHandler = v2.NewTerraformV2ProviderHandler(c.GetProviderQuery, c.GetProviderVersionsQuery, c.GetProviderVersionQuery, c.ListProvidersQuery)
+	c.TerraformV2CategoryHandler = v2.NewTerraformV2CategoryHandler(providerQuery.NewListUserSelectableProviderCategoriesQuery(nil)) // TODO: Add proper category repo
+	c.TerraformV2GPGHandler = v2.NewTerraformV2GPGHandler()
+
 	// Initialize middleware
 	c.AuthMiddleware = terrareg_middleware.NewAuthMiddleware(cfg, c.CheckSessionQuery)
 
@@ -248,6 +257,9 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 		c.AuthMiddleware,
 		c.TemplateRenderer,
 		c.TerraformV1ModuleHandler, // Pass the new handler to the server constructor
+		c.TerraformV2ProviderHandler,
+		c.TerraformV2CategoryHandler,
+		c.TerraformV2GPGHandler,
 	)
 
 	return c, nil

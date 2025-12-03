@@ -36,7 +36,7 @@ func (h *ModuleListHandler) HandleListModules(w http.ResponseWriter, r *http.Req
 	// Convert domain models to DTOs for the API response
 	moduleDTOs := make([]dto.ModuleProviderResponse, len(moduleProviders))
 	for i, mp := range moduleProviders {
-		moduleDTOs[i] = toModuleProviderResponse(mp)
+		moduleDTOs[i] = convertModuleProviderToListResponse(mp)
 	}
 
 	// For the /v1/modules endpoint, the response wraps the modules in a "modules" field
@@ -47,9 +47,9 @@ func (h *ModuleListHandler) HandleListModules(w http.ResponseWriter, r *http.Req
 	terrareg.RespondJSON(w, http.StatusOK, response)
 }
 
-// toModuleProviderResponse converts a domain ModuleProvider model to a DTO.
-// This function needs to be aware of how the Terraform Registry API expects the response.
-func toModuleProviderResponse(mp *model.ModuleProvider) dto.ModuleProviderResponse {
+// convertModuleProviderToListResponse converts a domain ModuleProvider model to a DTO for listing.
+// This function is specifically for the /v1/modules list endpoint.
+func convertModuleProviderToListResponse(mp *model.ModuleProvider) dto.ModuleProviderResponse {
 	var latestVersionStr *string
 	if latest := mp.GetLatestVersion(); latest != nil {
 		str := latest.Version().String()
@@ -95,6 +95,5 @@ func toModuleProviderResponse(mp *model.ModuleProvider) dto.ModuleProviderRespon
 		PublishedAt: publishedAtStr,
 		Downloads:   downloads,
 		Version:     latestVersionStr,
-		// Versions field is not in ModuleProviderResponse DTO, it's typically for GetModuleVersions
 	}
 }

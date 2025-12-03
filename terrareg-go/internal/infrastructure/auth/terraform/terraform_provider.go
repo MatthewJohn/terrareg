@@ -12,13 +12,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/service"
 )
 
 var (
-	ErrTerraformNotConfigured    = errors.New("Terraform provider not configured")
-	ErrTerraformInvalidToken    = errors.New("invalid Terraform token")
+	ErrTerraformNotConfigured  = errors.New("Terraform provider not configured")
+	ErrTerraformInvalidToken   = errors.New("invalid Terraform token")
 	ErrTerraformAuthentication = errors.New("Terraform authentication failed")
 )
 
@@ -29,25 +28,25 @@ type TerraformProvider struct {
 
 // TerraformConfig holds Terraform configuration
 type TerraformConfig struct {
-	ClientID         string
-	ClientSecret     string
-	RedirectURL      string
-	AuthURL          string
-	TokenURL         string
-	UserInfoURL      string
-	Scopes           []string
-	SessionTimeout    time.Duration
-	StateStore       map[string]TerraformState
-	RequireHTTPS      bool
+	ClientID       string
+	ClientSecret   string
+	RedirectURL    string
+	AuthURL        string
+	TokenURL       string
+	UserInfoURL    string
+	Scopes         []string
+	SessionTimeout time.Duration
+	StateStore     map[string]TerraformState
+	RequireHTTPS   bool
 }
 
 // TerraformState represents OAuth state for Terraform
 type TerraformState struct {
-	State        string
-	ClientID     string
-	RedirectURI  string
-	Scopes       []string
-	ExpiresAt    time.Time
+	State       string
+	ClientID    string
+	RedirectURI string
+	Scopes      []string
+	ExpiresAt   time.Time
 }
 
 // TerraformUser represents Terraform user information
@@ -64,9 +63,9 @@ type TerraformUser struct {
 type TerraformTokenResponse struct {
 	AccessToken  string `json:"access_token"`
 	TokenType    string `json:"token_type"`
-	ExpiresIn   int    `json:"expires_in"`
+	ExpiresIn    int    `json:"expires_in"`
 	RefreshToken string `json:"refresh_token,omitempty"`
-	UserID      string `json:"user_id,omitempty"`
+	UserID       string `json:"user_id,omitempty"`
 }
 
 // NewTerraformProvider creates a new Terraform provider
@@ -88,16 +87,16 @@ func NewTerraformProvider(config TerraformConfig) (*TerraformProvider, error) {
 
 	return &TerraformProvider{
 		config: TerraformConfig{
-			ClientID:        config.ClientID,
-			ClientSecret:    config.ClientSecret,
-			RedirectURL:     config.RedirectURL,
-			AuthURL:         config.AuthURL,
-			TokenURL:        config.TokenURL,
-			UserInfoURL:     config.UserInfoURL,
-			Scopes:          config.Scopes,
-			SessionTimeout:   config.SessionTimeout,
-			StateStore:      make(map[string]TerraformState),
-			RequireHTTPS:     config.RequireHTTPS,
+			ClientID:       config.ClientID,
+			ClientSecret:   config.ClientSecret,
+			RedirectURL:    config.RedirectURL,
+			AuthURL:        config.AuthURL,
+			TokenURL:       config.TokenURL,
+			UserInfoURL:    config.UserInfoURL,
+			Scopes:         config.Scopes,
+			SessionTimeout: config.SessionTimeout,
+			StateStore:     make(map[string]TerraformState),
+			RequireHTTPS:   config.RequireHTTPS,
 		},
 	}, nil
 }

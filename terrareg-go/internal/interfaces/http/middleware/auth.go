@@ -14,9 +14,9 @@ import (
 type contextKey string
 
 const (
-	userContextKey        contextKey = "user"
-	isAdminContextKey     contextKey = "is_admin"
-	sessionIDContextKey   contextKey = "session_id"
+	userContextKey      contextKey = "user"
+	isAdminContextKey   contextKey = "is_admin"
+	sessionIDContextKey contextKey = "session_id"
 )
 
 // AuthMiddleware provides authentication middleware
