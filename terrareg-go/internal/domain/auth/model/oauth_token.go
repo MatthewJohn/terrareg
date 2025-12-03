@@ -2,6 +2,7 @@ package model
 
 import (
 	"time"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 )
 
@@ -17,7 +18,7 @@ const (
 // IDPSubjectIdentifier represents a subject identifier from an Identity Provider
 type IDPSubjectIdentifier struct {
 	id           int
-	authMethod   AuthMethod
+	authMethod   auth.AuthMethodType
 	providerName string
 	subjectID    string
 	userID       string
@@ -27,7 +28,7 @@ type IDPSubjectIdentifier struct {
 // IDPAuthorizationCode represents an OAuth authorization code
 type IDPAuthorizationCode struct {
 	id           int
-	authMethod   AuthMethod
+	authMethod   auth.AuthMethodType
 	providerName string
 	code         string
 	clientID     string
@@ -43,7 +44,7 @@ type IDPAuthorizationCode struct {
 // IDPAccessToken represents an OAuth access token
 type IDPAccessToken struct {
 	id           int
-	authMethod   AuthMethod
+	authMethod   auth.AuthMethodType
 	providerName string
 	token        string
 	tokenType    string
@@ -55,8 +56,8 @@ type IDPAccessToken struct {
 }
 
 // NewIDPSubjectIdentifier creates a new IDP subject identifier
-func NewIDPSubjectIdentifier(authMethod AuthMethod, providerName, subjectID, userID string) (*IDPSubjectIdentifier, error) {
-	if authMethod == AuthMethodNone || authMethod == AuthMethodAPIKey {
+func NewIDPSubjectIdentifier(authMethod auth.AuthMethodType, providerName, subjectID, userID string) (*IDPSubjectIdentifier, error) {
+	if authMethod == auth.AuthMethodNotAuthenticated {
 		return nil, ErrInvalidAuthMethod
 	}
 	if providerName == "" {
@@ -80,8 +81,8 @@ func NewIDPSubjectIdentifier(authMethod AuthMethod, providerName, subjectID, use
 }
 
 // NewIDPAuthorizationCode creates a new authorization code
-func NewIDPAuthorizationCode(authMethod AuthMethod, providerName, code, clientID, redirectURI string, scopes []string, state, userID string, ttl time.Duration) (*IDPAuthorizationCode, error) {
-	if authMethod == AuthMethodNone || authMethod == AuthMethodAPIKey {
+func NewIDPAuthorizationCode(authMethod auth.AuthMethodType, providerName, code, clientID, redirectURI string, scopes []string, state, userID string, ttl time.Duration) (*IDPAuthorizationCode, error) {
+	if authMethod == auth.AuthMethodNotAuthenticated {
 		return nil, ErrInvalidAuthMethod
 	}
 	if providerName == "" {
@@ -121,8 +122,8 @@ func NewIDPAuthorizationCode(authMethod AuthMethod, providerName, code, clientID
 }
 
 // NewIDPAccessToken creates a new access token
-func NewIDPAccessToken(authMethod AuthMethod, providerName, token, tokenType, clientID string, scopes []string, userID string, ttl time.Duration) (*IDPAccessToken, error) {
-	if authMethod == AuthMethodNone || authMethod == AuthMethodAPIKey {
+func NewIDPAccessToken(authMethod auth.AuthMethodType, providerName, token, tokenType, clientID string, scopes []string, userID string, ttl time.Duration) (*IDPAccessToken, error) {
+	if authMethod == auth.AuthMethodNotAuthenticated || authMethod == auth.AuthMethodAdminApiKey {
 		return nil, ErrInvalidAuthMethod
 	}
 	if providerName == "" {
@@ -207,35 +208,35 @@ func (at *IDPAccessToken) HasScope(scope string) bool {
 }
 
 // Getters for IDPSubjectIdentifier
-func (idp *IDPSubjectIdentifier) ID() int           { return idp.id }
-func (idp *IDPSubjectIdentifier) AuthMethod() AuthMethod { return idp.authMethod }
-func (idp *IDPSubjectIdentifier) ProviderName() string { return idp.providerName }
-func (idp *IDPSubjectIdentifier) SubjectID() string    { return idp.subjectID }
-func (idp *IDPSubjectIdentifier) UserID() string       { return idp.userID }
-func (idp *IDPSubjectIdentifier) CreatedAt() time.Time { return idp.createdAt }
+func (idp *IDPSubjectIdentifier) ID() int                 { return idp.id }
+func (idp *IDPSubjectIdentifier) AuthMethod() auth.AuthMethodType { return idp.authMethod }
+func (idp *IDPSubjectIdentifier) ProviderName() string     { return idp.providerName }
+func (idp *IDPSubjectIdentifier) SubjectID() string        { return idp.subjectID }
+func (idp *IDPSubjectIdentifier) UserID() string           { return idp.userID }
+func (idp *IDPSubjectIdentifier) CreatedAt() time.Time     { return idp.createdAt }
 
 // Getters for IDPAuthorizationCode
-func (ac *IDPAuthorizationCode) ID() int           { return ac.id }
-func (ac *IDPAuthorizationCode) AuthMethod() AuthMethod { return ac.authMethod }
-func (ac *IDPAuthorizationCode) ProviderName() string { return ac.providerName }
-func (ac *IDPAuthorizationCode) Code() string        { return ac.code }
-func (ac *IDPAuthorizationCode) ClientID() string    { return ac.clientID }
-func (ac *IDPAuthorizationCode) RedirectURI() string { return ac.redirectURI }
-func (ac *IDPAuthorizationCode) Scopes() []string   { return ac.scopes }
-func (ac *IDPAuthorizationCode) State() string       { return ac.state }
-func (ac *IDPAuthorizationCode) UserID() string       { return ac.userID }
-func (ac *IDPAuthorizationCode) CreatedAt() time.Time { return ac.createdAt }
-func (ac *IDPAuthorizationCode) ExpiresAt() time.Time { return ac.expiresAt }
-func (ac *IDPAuthorizationCode) Exchanged() bool     { return ac.exchanged }
+func (ac *IDPAuthorizationCode) ID() int                 { return ac.id }
+func (ac *IDPAuthorizationCode) AuthMethod() auth.AuthMethodType { return ac.authMethod }
+func (ac *IDPAuthorizationCode) ProviderName() string     { return ac.providerName }
+func (ac *IDPAuthorizationCode) Code() string             { return ac.code }
+func (ac *IDPAuthorizationCode) ClientID() string         { return ac.clientID }
+func (ac *IDPAuthorizationCode) RedirectURI() string      { return ac.redirectURI }
+func (ac *IDPAuthorizationCode) Scopes() []string         { return ac.scopes }
+func (ac *IDPAuthorizationCode) State() string            { return ac.state }
+func (ac *IDPAuthorizationCode) UserID() string           { return ac.userID }
+func (ac *IDPAuthorizationCode) CreatedAt() time.Time     { return ac.createdAt }
+func (ac *IDPAuthorizationCode) ExpiresAt() time.Time     { return ac.expiresAt }
+func (ac *IDPAuthorizationCode) Exchanged() bool          { return ac.exchanged }
 
 // Getters for IDPAccessToken
-func (at *IDPAccessToken) ID() int           { return at.id }
-func (at *IDPAccessToken) AuthMethod() AuthMethod { return at.authMethod }
-func (at *IDPAccessToken) ProviderName() string { return at.providerName }
-func (at *IDPAccessToken) Token() string       { return at.token }
-func (at *IDPAccessToken) TokenType() string  { return at.tokenType }
-func (at *IDPAccessToken) ClientID() string  { return at.clientID }
-func (at *IDPAccessToken) UserID() string     { return at.userID }
-func (at *IDPAccessToken) Scopes() []string   { return at.scopes }
-func (at *IDPAccessToken) CreatedAt() time.Time { return at.createdAt }
-func (at *IDPAccessToken) ExpiresAt() time.Time { return at.expiresAt }
+func (at *IDPAccessToken) ID() int                 { return at.id }
+func (at *IDPAccessToken) AuthMethod() auth.AuthMethodType { return at.authMethod }
+func (at *IDPAccessToken) ProviderName() string     { return at.providerName }
+func (at *IDPAccessToken) Token() string            { return at.token }
+func (at *IDPAccessToken) TokenType() string        { return at.tokenType }
+func (at *IDPAccessToken) ClientID() string         { return at.clientID }
+func (at *IDPAccessToken) UserID() string           { return at.userID }
+func (at *IDPAccessToken) Scopes() []string         { return at.scopes }
+func (at *IDPAccessToken) CreatedAt() time.Time     { return at.createdAt }
+func (at *IDPAccessToken) ExpiresAt() time.Time     { return at.expiresAt }

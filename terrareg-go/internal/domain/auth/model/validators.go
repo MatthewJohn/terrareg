@@ -68,10 +68,10 @@ func ValidateGroupName(name string) error {
 	return nil
 }
 
-// ValidateAction validates an action
-func ValidateAction(action Action) error {
+// ValidateAction validates an action (using PermissionType)
+func ValidateAction(action string) error {
 	switch action {
-	case ActionRead, ActionWrite, ActionAdmin:
+	case "READ", "MODIFY", "FULL":
 		return nil
 	default:
 		return errors.New("invalid action")
@@ -79,9 +79,9 @@ func ValidateAction(action Action) error {
 }
 
 // ValidateResourceType validates a resource type
-func ValidateResourceType(resourceType ResourceType) error {
+func ValidateResourceType(resourceType string) error {
 	switch resourceType {
-	case ResourceTypeNamespace, ResourceTypeModule, ResourceTypeProvider:
+	case "namespace", "module", "provider":
 		return nil
 	default:
 		return errors.New("invalid resource type")
@@ -89,9 +89,9 @@ func ValidateResourceType(resourceType ResourceType) error {
 }
 
 // ValidateAuthMethod validates an auth method
-func ValidateAuthMethod(authMethod AuthMethod) error {
+func ValidateAuthMethod(authMethod string) error {
 	switch authMethod {
-	case AuthMethodNone, AuthMethodSAML, AuthMethodOIDC, AuthMethodGitHub, AuthMethodAPIKey, AuthMethodTerraform:
+	case "NOT_AUTHENTICATED", "SAML", "OPENID_CONNECT", "GITHUB", "ADMIN_API_KEY", "TERRAFORM_OIDC":
 		return nil
 	default:
 		return errors.New("invalid auth method")
