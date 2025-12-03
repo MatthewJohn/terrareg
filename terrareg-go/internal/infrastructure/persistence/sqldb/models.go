@@ -508,6 +508,55 @@ func (ProviderVersionBinaryDB) TableName() string {
 	return "provider_version_binary"
 }
 
+// UserDB represents users (derived from auth data and session storage)
+type UserDB struct {
+	ID             string    `gorm:"type:varchar(128);primaryKey"`
+	Username       string    `gorm:"type:varchar(128);not null"`
+	DisplayName    string    `gorm:"type:varchar(128)"`
+	Email          string    `gorm:"type:varchar(128)"`
+	AuthMethod      string    `gorm:"type:varchar(50);not null"`
+	AuthProviderID  string    `gorm:"type:varchar(128)"`
+	ExternalID      string    `gorm:"type:varchar(128)"`
+	AccessToken     string    `gorm:"type:varchar(1024)"`
+	RefreshToken    string    `gorm:"type:varchar(1024)"`
+	TokenExpiry    *time.Time
+	Active         bool      `gorm:"default:true;not null"`
+	CreatedAt      time.Time `gorm:"not null"`
+	LastLoginAt    *time.Time
+}
+
+func (UserDB) TableName() string {
+	return "user"
+}
+
+// UserGroupMemberDB represents user-group membership
+type UserGroupMemberDB struct {
+	UserGroupID int    `gorm:"primaryKey;not null"`
+	UserID      string `gorm:"type:varchar(128);primaryKey;not null"`
+	JoinedAt    time.Time `gorm:"not null"`
+
+	UserGroup UserGroupDB `gorm:"foreignKey:UserGroupID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+}
+
+func (UserGroupMemberDB) TableName() string {
+	return "user_group_member"
+}
+
+// UserPermissionDB represents direct user permissions (inherited from group membership)
+type UserPermissionDB struct {
+	ID           int        `gorm:"primaryKey;autoIncrement"`
+	UserID       string     `gorm:"type:varchar(128);not null"`
+	ResourceType  string     `gorm:"type:varchar(50);not null"`
+	ResourceID    string     `gorm:"type:varchar(128);not null"`
+	Action        string     `gorm:"type:varchar(50);not null"`
+	GrantedBy     string     `gorm:"type:varchar(128)"`
+	GrantedAt     time.Time   `gorm:"not null"`
+}
+
+func (UserPermissionDB) TableName() string {
+	return "user_permission"
+}
+
 // AuditHistoryDB represents audit trail
 type AuditHistoryDB struct {
 	ID         int         `gorm:"primaryKey;autoIncrement"`
