@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	identityModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
+	identityErrors "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
 	identityService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/service"
 )
 
@@ -32,7 +33,7 @@ func (m *PermissionMiddleware) RequirePermission(resourceType identityModel.Reso
 			}
 
 			// Extract resource ID from URL path
-			resourceID := m.extractResourceID(r, chi.URLParam(r, "*"))
+			resourceID := m.extractResourceID(r)
 
 			// Check permission
 			hasPermission, err := m.userService.CheckPermission(r.Context(), user.ID(), resourceType, resourceID, action)
@@ -87,8 +88,7 @@ func (m *PermissionMiddleware) OptionalAuth(next http.Handler) http.Handler {
 
 // RequireAdmin creates middleware that requires admin privileges
 func (m *PermissionMiddleware) RequireAdmin(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			user, err := m.getUserFromContext(r.Context())
 			if err != nil {
 				sendErrorResponse(w, http.StatusUnauthorized, "authentication required")
@@ -109,20 +109,19 @@ func (m *PermissionMiddleware) RequireAdmin(next http.Handler) http.Handler {
 
 			next.ServeHTTP(w, r)
 		})
-	}
 }
 
 // getUserFromContext extracts user from request context
 func (m *PermissionMiddleware) getUserFromContext(ctx context.Context) (*identityModel.User, error) {
 	user, ok := ctx.Value("user").(*identityModel.User)
 	if !ok {
-		return nil, ErrUserNotInContext
+		return nil, identityErrors.ErrUserNotInContext
 	}
 	return user, nil
 }
 
 // extractResourceID extracts resource ID from request
-func (m *PermissionMiddleware) extractResourceID(r *http.Request, pathParams map[string]string) string {
+func (m *PermissionMiddleware) extractResourceID(r *http.Request) string {
 	// Try to extract ID from common patterns
 	if id := chi.URLParam(r, "id"); id != "" {
 		return id
@@ -152,12 +151,6 @@ const (
 	ResourceTypeModule    = "module"
 	ResourceTypeProvider  = "provider"
 )
-
-// GetUserFromContext helper function to get user from context
-func GetUserFromContext(ctx context.Context) (*identityModel.User, bool) {
-	user, ok := ctx.Value("user").(*identityModel.User)
-	return user, ok
-}
 
 // GetUserIDFromContext helper function to get user ID from context
 func GetUserIDFromContext(ctx context.Context) (string, bool) {

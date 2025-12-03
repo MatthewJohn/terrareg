@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
 )
 
 var (

@@ -6,8 +6,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
-)
+	)
 
 var (
 	ErrSAMLRequired      = errors.New("SAML configuration required")
@@ -57,7 +56,7 @@ func NewSAMLProvider(config *SAMLConfig) (*SAMLProvider, error) {
 }
 
 // Authenticate handles SAML authentication (simplified implementation)
-func (s *SAMLProvider) Authenticate(ctx context.Context, request service.AuthRequest) (*service.AuthResult, error) {
+func (s *SAMLProvider) Authenticate(ctx context.Context, request AuthRequest) (*AuthResult, error) {
 	// SAML authentication is typically initiated via redirect
 	// This is a placeholder implementation
 	// In a real implementation, this would:
@@ -69,7 +68,7 @@ func (s *SAMLProvider) Authenticate(ctx context.Context, request service.AuthReq
 
 	// For Phase 4, we'll return a mock result if a specific token is provided
 	if request.Token == "mock_saml_token" {
-		return &service.AuthResult{
+		return &AuthResult{
 			UserID:      "saml_user_123",
 			Username:    "saml_user",
 			Email:       "user@example.com",
@@ -86,11 +85,11 @@ func (s *SAMLProvider) Authenticate(ctx context.Context, request service.AuthReq
 }
 
 // GetUserInfo fetches user information from SAML IdP
-func (s *SAMLProvider) GetUserInfo(ctx context.Context, token string) (*service.UserInfo, error) {
+func (s *SAMLProvider) GetUserInfo(ctx context.Context, token string) (*UserInfo, error) {
 	// For SAML, this would typically make a request to the IdP
 	// For Phase 4, this is a simplified implementation
 	if token == "mock_saml_token" {
-		return &service.UserInfo{
+		return &UserInfo{
 			ID:          "saml_12345",
 			Username:    "saml_user",
 			Email:       "user@example.com",
@@ -104,7 +103,7 @@ func (s *SAMLProvider) GetUserInfo(ctx context.Context, token string) (*service.
 }
 
 // RefreshToken refreshes an access token
-func (s *SAMLProvider) RefreshToken(ctx context.Context, refreshToken string) (*service.AuthResult, error) {
+func (s *SAMLProvider) RefreshToken(ctx context.Context, refreshToken string) (*AuthResult, error) {
 	// SAML doesn't typically use refresh tokens
 	// This would return an error or require re-authentication
 	return nil, errors.New("SAML does not support token refresh")
@@ -139,12 +138,12 @@ func (s *SAMLProvider) GetMetadataURL() string {
 }
 
 // ProcessResponse processes SAML response (placeholder)
-func (s *SAMLProvider) ProcessResponse(ctx context.Context, samlResponse, state string) (*service.AuthResult, error) {
+func (s *SAMLProvider) ProcessResponse(ctx context.Context, samlResponse, state string) (*AuthResult, error) {
 	// This would process the SAML assertion from the IdP response
 	// Extract user attributes and map to AuthResult
 	// For Phase 4, this is simplified
 	if samlResponse == "mock_saml_response" {
-		return &service.AuthResult{
+		return &AuthResult{
 			UserID:      "saml_user_123",
 			Username:    "saml_user",
 			Email:       "user@example.com",
