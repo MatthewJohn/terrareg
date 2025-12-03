@@ -13,7 +13,10 @@ import (
 // Matches Python's TerraformOidcAuthMethod exactly
 type TerraformOidcAuthMethod struct {
 	auth.BaseAuthMethod
-	idp TerraformIDP
+	idp             TerraformIDP
+	isAuthenticated bool
+	validation      *TerraformTokenValidation
+	userinfo        *TerraformUserinfoResponse
 }
 
 // TerraformIDP interface for Terraform identity provider
@@ -51,9 +54,46 @@ func NewTerraformOidcAuthMethod(idp TerraformIDP) *TerraformOidcAuthMethod {
 // CheckAuthState checks if the current request has valid Terraform OIDC authentication
 // Matches Python's implementation - validates Authorization header
 func (t *TerraformOidcAuthMethod) CheckAuthState() bool {
-	// This would be called in the context of an HTTP request
-	// For now, return true if IDP is enabled
-	return t.IsEnabled()
+	return t.isAuthenticated
+}
+
+// Authenticate authenticates a request using Terraform OIDC (implements AuthMethod interface)
+func (t *TerraformOidcAuthMethod) Authenticate(ctx context.Context, headers map[string]string, cookies map[string]string) error {
+	if !t.IsEnabled() {
+		return terraformOidcErr("IDP not enabled")
+	}
+
+	// Extract Authorization header
+	authHeader, exists := headers["Authorization"]
+	if !exists {
+		return terraformOidcErr("missing authorization header")
+	}
+
+	// Remove "Bearer " prefix
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+	if token == authHeader {
+		return terraformOidcErr("invalid authorization header format")
+	}
+
+	// Validate access token
+	validation, err := t.idp.ValidateAccessToken(token)
+	if err != nil {
+		return terraformOidcErr("token validation failed: " + err.Error())
+	}
+
+	if !validation.Valid {
+		return terraformOidcErr("invalid access token")
+	}
+
+	// Store validation result
+	t.validation = validation
+	t.isAuthenticated = true
+
+	// Optional: Handle userinfo request if needed
+	// In a full implementation, you might call userinfo endpoint
+	// t.userinfo, err = t.idp.HandleUserinfoRequest(nil, headers)
+
+	return nil
 }
 
 // AuthenticateRequest authenticates a Terraform request
@@ -140,7 +180,7 @@ func (t *TerraformOidcAuthMethod) IsAdmin() bool {
 
 // IsAuthenticated checks if the authentication method is authenticated
 func (t *TerraformOidcAuthMethod) IsAuthenticated() bool {
-	return true // If we get here, authentication succeeded
+	return t.isAuthenticated
 }
 
 // IsEnabled checks if this authentication method is enabled
@@ -184,14 +224,22 @@ func (t *TerraformOidcAuthMethod) GetAllNamespacePermissions() map[string]string
 
 // GetUsername returns the authenticated username
 func (t *TerraformOidcAuthMethod) GetUsername() string {
-	// Return generic Terraform CLI username like Python
+	// Return username from validation or userinfo, fallback to generic name
+	if t.validation != nil && t.validation.Username != "" {
+		return t.validation.Username
+	}
+	if t.userinfo != nil && t.userinfo.Username != "" {
+		return t.userinfo.Username
+	}
 	return "Terraform CLI User"
 }
 
 // GetUserGroupNames returns the user groups the user belongs to
 func (t *TerraformOidcAuthMethod) GetUserGroupNames() []string {
-	// In practice, this would be populated from user group memberships
-	// For now, return empty list
+	// Return groups from userinfo if available
+	if t.userinfo != nil && len(t.userinfo.Groups) > 0 {
+		return t.userinfo.Groups
+	}
 	return []string{}
 }
 
@@ -209,8 +257,8 @@ func (t *TerraformOidcAuthMethod) CanAccessTerraformAPI() bool {
 
 // GetTerraformAuthToken returns the Terraform auth token
 func (t *TerraformOidcAuthMethod) GetTerraformAuthToken() string {
-	// In a real implementation, this would return a token
-	// For now, return empty string
+	// Terraform OIDC doesn't use traditional tokens
+	// It validates the Authorization header directly
 	return ""
 }
 
@@ -275,4 +323,18 @@ func (m *MockTerraformIDP) ValidateAccessToken(token string) (*TerraformTokenVal
 		Username: "terraform-cli",
 		Expiry:   0, // No expiry for mock
 	}, nil
+}
+
+// terraformOidcErr creates a formatted error message for Terraform OIDC authentication
+func terraformOidcErr(message string) error {
+	return &TerraformOidcError{Message: message}
+}
+
+// TerraformOidcError represents a Terraform OIDC authentication error
+type TerraformOidcError struct {
+	Message string
+}
+
+func (e *TerraformOidcError) Error() string {
+	return "Terraform OIDC authentication failed: " + e.Message
 }

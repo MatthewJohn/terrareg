@@ -66,12 +66,11 @@ func (h *TerraformAuthHandler) HandleValidateToken(w http.ResponseWriter, r *htt
 		return
 	}
 
-	// If no token type provided, check Authorization header
-	if req.Token == "" && req.TokenType == "" {
+	// If no authorization header provided, check it
+	if req.AuthorizationHeader == "" {
 		authHeader := r.Header.Get("Authorization")
-		if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
-			req.Token = strings.TrimPrefix(authHeader, "Bearer ")
-			req.TokenType = "oidc" // Default to OIDC for Bearer tokens
+		if authHeader != "" {
+			req.AuthorizationHeader = authHeader
 		}
 	}
 
@@ -157,7 +156,6 @@ func (h *TerraformAuthHandler) HandleTerraformOIDCAuth(w http.ResponseWriter, r 
 	responseType := r.URL.Query().Get("response_type")
 	clientID := r.URL.Query().Get("client_id")
 	redirectURI := r.URL.Query().Get("redirect_uri")
-	scope := r.URL.Query().Get("scope")
 	state := r.URL.Query().Get("state")
 
 	// Validate required parameters
@@ -202,7 +200,6 @@ func (h *TerraformAuthHandler) HandleTerraformToken(w http.ResponseWriter, r *ht
 
 	grantType := r.FormValue("grant_type")
 	code := r.FormValue("code")
-	clientID := r.FormValue("client_id")
 
 	// Validate required parameters
 	if grantType == "" || code == "" {
@@ -216,7 +213,7 @@ func (h *TerraformAuthHandler) HandleTerraformToken(w http.ResponseWriter, r *ht
 
 	// Authenticate the OIDC token using the integrated system
 	authReq := terraform.AuthenticateOIDCTokenRequest{
-		AccessToken: accessToken,
+		AuthorizationHeader: accessToken,
 	}
 
 	resp, err := h.authenticateOIDCCommand.Execute(r.Context(), authReq)
