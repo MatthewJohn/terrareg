@@ -83,7 +83,6 @@ type Container struct {
 	UploadModuleVersionCmd          *moduleCmd.UploadModuleVersionCommand
 	ImportModuleVersionCmd          *moduleCmd.ImportModuleVersionCommand
 	RecordModuleDownloadCmd         *analyticsCmd.RecordModuleDownloadCommand
-	CreateAdminSessionCmd           *authCmd.CreateAdminSessionCommand
 	AdminLoginCmd                   *authCmd.AdminLoginCommand
 
 	// Terraform Authentication Commands
@@ -213,7 +212,6 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	c.UploadModuleVersionCmd = moduleCmd.NewUploadModuleVersionCommand(c.ModuleProviderRepo, c.ModuleParser, c.StorageService, cfg)
 	c.ImportModuleVersionCmd = moduleCmd.NewImportModuleVersionCommand(c.ModuleImporterService)
 	c.RecordModuleDownloadCmd = analyticsCmd.NewRecordModuleDownloadCommand(c.ModuleProviderRepo, c.AnalyticsRepo)
-	c.CreateAdminSessionCmd = authCmd.NewCreateAdminSessionCommand(c.SessionRepo, cfg)
 
 	// Initialize admin login command
 	c.AdminLoginCmd = authCmd.NewAdminLoginCommand(c.AuthFactory, c.SessionService, cfg)
@@ -298,7 +296,6 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	)
 	c.AuthHandler = terrareg.NewAuthHandler(
 		c.AdminLoginCmd,
-		c.CreateAdminSessionCmd,
 		c.CheckSessionQuery,
 		c.CookieSessionService,
 		cfg,
