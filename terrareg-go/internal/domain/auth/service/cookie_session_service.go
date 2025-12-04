@@ -14,6 +14,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/security/csrf"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 )
 
 // SessionData represents the data stored in the encrypted session cookie
@@ -38,6 +39,7 @@ type CookieSessionService struct {
 	csrfService *security.CSRFService
 	config      *config.Config
 	cipher      *SessionCipher
+	urlService  *service.URLService
 }
 
 // NewCookieSessionService creates a new cookie session service
@@ -45,6 +47,7 @@ func NewCookieSessionService(
 	sessionRepo repository.SessionRepository,
 	csrfService *security.CSRFService,
 	config *config.Config,
+	urlService *service.URLService,
 ) (*CookieSessionService, error) {
 	if config.SecretKey == "" {
 		return nil, fmt.Errorf("secret key is required for session encryption")
@@ -60,6 +63,7 @@ func NewCookieSessionService(
 		csrfService: csrfService,
 		config:      config,
 		cipher:      cipher,
+		urlService:  urlService,
 	}, nil
 }
 
@@ -224,4 +228,77 @@ func (s *CookieSessionService) getSessionSecure() bool {
 	// Default to true unless explicitly configured otherwise
 	// In a real implementation, this might be based on environment or config
 	return true
+}
+
+// SetBasicSessionCookie sets a basic session_id cookie for compatibility
+// This method centralizes session_id cookie management used across auth methods
+// Uses centralized HTTPS detection via URL service following DDD principles
+func (s *CookieSessionService) SetBasicSessionCookie(w http.ResponseWriter, sessionID string, expiry time.Time) {
+	// Use URL service for HTTPS detection - this centralizes URL logic
+	isHTTPS := s.urlService.IsHTTPS(nil)
+
+	cookie := &http.Cookie{
+		Name:     "session_id",
+		Value:    sessionID,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   isHTTPS,
+		SameSite: http.SameSiteLaxMode,
+		Expires:  expiry,
+	}
+
+	http.SetCookie(w, cookie)
+}
+
+// SetAdminAuthenticationCookie sets the admin authentication flag cookie
+// Uses centralized HTTPS detection via URL service following DDD principles
+func (s *CookieSessionService) SetAdminAuthenticationCookie(w http.ResponseWriter, isAuthenticated bool) {
+	// Use URL service for HTTPS detection - this centralizes URL logic
+	isHTTPS := s.urlService.IsHTTPS(nil)
+
+	if !isAuthenticated {
+		// Clear the cookie by setting expired date
+		cookie := &http.Cookie{
+			Name:     "is_admin_authenticated",
+			Value:    "",
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   isHTTPS,
+			SameSite: http.SameSiteLaxMode,
+			Expires:  time.Now().Add(-24 * time.Hour), // Expire immediately
+		}
+		http.SetCookie(w, cookie)
+		return
+	}
+
+	cookie := &http.Cookie{
+		Name:     "is_admin_authenticated",
+		Value:    "true",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   isHTTPS,
+		SameSite: http.SameSiteLaxMode,
+		Expires:  time.Now().Add(24 * time.Hour), // Admin sessions typically last longer
+	}
+
+	http.SetCookie(w, cookie)
+}
+
+// ClearSessionCookieByName clears any session cookie by name
+// Uses centralized HTTPS detection via URL service following DDD principles
+func (s *CookieSessionService) ClearSessionCookieByName(w http.ResponseWriter, cookieName string) {
+	// Use URL service for HTTPS detection - this centralizes URL logic
+	isHTTPS := s.urlService.IsHTTPS(nil)
+
+	cookie := &http.Cookie{
+		Name:     cookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   isHTTPS,
+		SameSite: http.SameSiteLaxMode,
+		Expires:  time.Now().Add(-24 * time.Hour), // Expire immediately
+	}
+
+	http.SetCookie(w, cookie)
 }

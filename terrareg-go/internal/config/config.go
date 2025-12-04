@@ -13,6 +13,7 @@ type Config struct {
 	// Server settings
 	ListenPort int
 	PublicURL  string
+	DomainName string
 	Debug      bool
 
 	// Database settings
@@ -84,6 +85,7 @@ func New() (*Config, error) {
 	cfg := &Config{
 		ListenPort:           getEnvInt("LISTEN_PORT", 5000),
 		PublicURL:            getEnv("PUBLIC_URL", "http://localhost:5000"),
+		DomainName:           getEnv("DOMAIN_NAME", ""),
 		Debug:                getEnvBool("DEBUG", false),
 		DatabaseURL:          getEnv("DATABASE_URL", "sqlite:///modules.db"),
 		DataDirectory:        getEnv("DATA_DIRECTORY", "./data"),

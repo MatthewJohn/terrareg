@@ -13,11 +13,11 @@ import (
 	providerCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/provider"
 	analyticsQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/analytics"
 	authQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/auth"
+	configQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	providerQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider"
 	terraformCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/terraform"
-	configQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/config"
 	appConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	authRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
@@ -25,8 +25,9 @@ import (
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service" // Alias for the new module service
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/git"
+	urlservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/git"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/version"
 
 	providerRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
@@ -68,11 +69,12 @@ type Container struct {
 	ModuleParser   moduleService.ModuleParser
 
 	// Domain Services
-	ModuleImporterService    *moduleService.ModuleImporterService
-	AuthFactory             *authservice.AuthFactory
-	SessionService          *authservice.SessionService
-	TerraformIdpService     *authservice.TerraformIdpService
-	CookieSessionService    *authservice.CookieSessionService
+	ModuleImporterService *moduleService.ModuleImporterService
+	AuthFactory           *authservice.AuthFactory
+	SessionService        *authservice.SessionService
+	TerraformIdpService   *authservice.TerraformIdpService
+	CookieSessionService  *authservice.CookieSessionService
+	URLService            *urlservice.URLService
 
 	// Commands
 	CreateNamespaceCmd              *namespace.CreateNamespaceCommand
@@ -121,8 +123,8 @@ type Container struct {
 	CheckSessionQuery              *authQuery.CheckSessionQuery
 
 	// Config queries
-	GetConfigQuery                 *configQuery.GetConfigQuery
-	GetVersionQuery                *configQuery.GetVersionQuery
+	GetConfigQuery  *configQuery.GetConfigQuery
+	GetVersionQuery *configQuery.GetVersionQuery
 
 	// Handlers
 	NamespaceHandler           *terrareg.NamespaceHandler
@@ -147,8 +149,8 @@ type Container struct {
 	TemplateRenderer *template.Renderer
 
 	// Config/Version Handlers
-	ConfigHandler    *terrareg.ConfigHandler
-	VersionHandler   *terrareg.VersionHandler
+	ConfigHandler  *terrareg.ConfigHandler
+	VersionHandler *terrareg.VersionHandler
 
 	// HTTP Server
 	Server *http.Server
@@ -172,6 +174,8 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	c.TerraformIdpAuthorizationCodeRepo = authPersistence.NewTerraformIdpAuthorizationCodeRepository(db.DB)
 	c.TerraformIdpAccessTokenRepo = authPersistence.NewTerraformIdpAccessTokenRepository(db.DB)
 	c.TerraformIdpSubjectIdentifierRepo = authPersistence.NewTerraformIdpSubjectIdentifierRepository(db.DB)
+
+	c.URLService = urlservice.NewURLService(c.Config)
 
 	// Initialize infrastructure services
 	c.GitClient = git.NewGitClientImpl()
@@ -197,7 +201,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	)
 
 	// Initialize cookie session service
-	cookieSessionService, err := authservice.NewCookieSessionService(c.SessionRepo, nil, cfg)
+	cookieSessionService, err := authservice.NewCookieSessionService(c.SessionRepo, nil, cfg, c.URLService)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cookie session service: %w", err)
 	}
