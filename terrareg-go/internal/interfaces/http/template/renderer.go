@@ -36,15 +36,8 @@ func (r *Renderer) loadTemplates() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	// Load base template first with custom functions
-	baseTemplate := template.New("").Funcs(template.FuncMap{
-		// CSRF token function - temporary implementation that returns empty string
-		// TODO: Implement proper CSRF token handling when session management is complete
-		"csrf_token": func() string {
-			return ""
-		},
-		// Add any other custom template functions here if needed
-	})
+	// Load base template first
+	baseTemplate := template.New("")
 
 	// Parse base template (template.html)
 	baseTemplate, err := baseTemplate.ParseFiles("templates/template.html")
@@ -84,6 +77,24 @@ func (r *Renderer) RenderWithContext(ctx context.Context, w io.Writer, name stri
 
 	// Add CSRF token from session context
 	data["csrf_token"] = middleware.GetCSRFToken(ctx)
+
+	// Add authentication context for templates
+	sessionData := middleware.GetSessionData(ctx)
+	if sessionData != nil {
+		data["session_authenticated"] = true
+		data["session_username"] = sessionData.Username
+		data["session_user_id"] = sessionData.UserID
+		data["session_is_admin"] = sessionData.IsAdmin
+		data["session_auth_method"] = sessionData.AuthMethod
+		data["session_user_groups"] = sessionData.UserGroups
+	} else {
+		data["session_authenticated"] = false
+		data["session_username"] = ""
+		data["session_user_id"] = ""
+		data["session_is_admin"] = false
+		data["session_auth_method"] = ""
+		data["session_user_groups"] = []string{}
+	}
 
 	return r.templates.ExecuteTemplate(w, name, data)
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 	terrareg_middleware "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/template"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 )
 
 // Server represents the HTTP server
@@ -30,6 +31,7 @@ type Server struct {
 	authHandler            *terrareg.AuthHandler
 	authMiddleware         *terrareg_middleware.AuthMiddleware
 	templateRenderer       *template.Renderer
+	cookieSessionService   *service.CookieSessionService
 	terraformV1ModuleHandler *tfv1ModuleHandler.TerraformV1ModuleHandler // New field
 	terraformV2ProviderHandler *tfv2ProviderHandler.TerraformV2ProviderHandler
 	terraformV2CategoryHandler *tfv2ProviderHandler.TerraformV2CategoryHandler
@@ -49,6 +51,7 @@ func NewServer(
 	authHandler *terrareg.AuthHandler,
 	authMiddleware *terrareg_middleware.AuthMiddleware,
 	templateRenderer *template.Renderer,
+	cookieSessionService *service.CookieSessionService,
 	terraformV1ModuleHandler *tfv1ModuleHandler.TerraformV1ModuleHandler, // New parameter
 	terraformV2ProviderHandler *tfv2ProviderHandler.TerraformV2ProviderHandler,
 	terraformV2CategoryHandler *tfv2ProviderHandler.TerraformV2CategoryHandler,
@@ -67,6 +70,7 @@ func NewServer(
 		authHandler:              authHandler,
 		authMiddleware:           authMiddleware,
 		templateRenderer:         templateRenderer,
+		cookieSessionService:     cookieSessionService,
 		terraformV1ModuleHandler: terraformV1ModuleHandler, // Assign new handler
 		terraformV2ProviderHandler: terraformV2ProviderHandler,
 		terraformV2CategoryHandler: terraformV2CategoryHandler,
@@ -89,6 +93,9 @@ func (s *Server) setupMiddleware() {
 	s.router.Use(terrareg_middleware.NewLogger(s.logger))
 	s.router.Use(middleware.Recoverer)
 	s.router.Use(middleware.Compress(5))
+
+	// Session middleware for session management
+	s.router.Use(terrareg_middleware.NewSessionMiddleware(s.cookieSessionService, s.logger).Session)
 
 	// Timeout middleware
 	s.router.Use(middleware.Timeout(60 * time.Second))
@@ -540,7 +547,7 @@ func (s *Server) handleBitBucketWebhook(w http.ResponseWriter, r *http.Request) 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	// Render the index template using the template renderer
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "index.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "index.html", map[string]interface{}{
 		"TEMPLATE_NAME": "index.html",
 	})
 	if err != nil {
@@ -550,7 +557,7 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleLoginPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "login.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "login.html", map[string]interface{}{
 		"TEMPLATE_NAME": "login.html",
 	})
 	if err != nil {
@@ -576,7 +583,7 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleInitialSetupPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "initial_setup.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "initial_setup.html", map[string]interface{}{
 		"TEMPLATE_NAME": "initial_setup.html",
 	})
 	if err != nil {
@@ -586,7 +593,7 @@ func (s *Server) handleInitialSetupPage(w http.ResponseWriter, r *http.Request) 
 }
 func (s *Server) handleCreateNamespacePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "create_namespace.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "create_namespace.html", map[string]interface{}{
 		"TEMPLATE_NAME": "create_namespace.html",
 	})
 	if err != nil {
@@ -596,7 +603,7 @@ func (s *Server) handleCreateNamespacePage(w http.ResponseWriter, r *http.Reques
 }
 func (s *Server) handleEditNamespacePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "namespace.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "namespace.html", map[string]interface{}{
 		"TEMPLATE_NAME": "edit_namespace.html",
 	})
 	if err != nil {
@@ -606,7 +613,7 @@ func (s *Server) handleEditNamespacePage(w http.ResponseWriter, r *http.Request)
 }
 func (s *Server) handleCreateModulePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "create_module_provider.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "create_module_provider.html", map[string]interface{}{
 		"TEMPLATE_NAME": "create_module_provider.html",
 	})
 	if err != nil {
@@ -616,7 +623,7 @@ func (s *Server) handleCreateModulePage(w http.ResponseWriter, r *http.Request) 
 }
 func (s *Server) handleCreateProviderPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "create_provider.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "create_provider.html", map[string]interface{}{
 		"TEMPLATE_NAME": "create_provider.html",
 	})
 	if err != nil {
@@ -626,7 +633,7 @@ func (s *Server) handleCreateProviderPage(w http.ResponseWriter, r *http.Request
 }
 func (s *Server) handleUserGroupsPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "user_groups.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "user_groups.html", map[string]interface{}{
 		"TEMPLATE_NAME": "user_groups.html",
 	})
 	if err != nil {
@@ -636,7 +643,7 @@ func (s *Server) handleUserGroupsPage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleAuditHistoryPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "audit_history.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "audit_history.html", map[string]interface{}{
 		"TEMPLATE_NAME": "audit_history.html",
 	})
 	if err != nil {
@@ -646,7 +653,7 @@ func (s *Server) handleAuditHistoryPage(w http.ResponseWriter, r *http.Request) 
 }
 func (s *Server) handleSearchPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "search.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "search.html", map[string]interface{}{
 		"TEMPLATE_NAME": "search.html",
 	})
 	if err != nil {
@@ -656,7 +663,7 @@ func (s *Server) handleSearchPage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleModuleSearchPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "module_search.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "module_search.html", map[string]interface{}{
 		"TEMPLATE_NAME": "module_search.html",
 	})
 	if err != nil {
@@ -666,7 +673,7 @@ func (s *Server) handleModuleSearchPage(w http.ResponseWriter, r *http.Request) 
 }
 func (s *Server) handleProviderSearchPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "provider_search.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "provider_search.html", map[string]interface{}{
 		"TEMPLATE_NAME": "provider_search.html",
 	})
 	if err != nil {
@@ -676,7 +683,7 @@ func (s *Server) handleProviderSearchPage(w http.ResponseWriter, r *http.Request
 }
 func (s *Server) handleModulesPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "module.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "module.html", map[string]interface{}{
 		"TEMPLATE_NAME": "module.html",
 	})
 	if err != nil {
@@ -686,7 +693,7 @@ func (s *Server) handleModulesPage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleNamespacePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "namespace.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "namespace.html", map[string]interface{}{
 		"TEMPLATE_NAME": "namespace.html",
 	})
 	if err != nil {
@@ -696,7 +703,7 @@ func (s *Server) handleNamespacePage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleModulePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "module.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "module.html", map[string]interface{}{
 		"TEMPLATE_NAME": "module.html",
 	})
 	if err != nil {
@@ -706,7 +713,7 @@ func (s *Server) handleModulePage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleModuleProviderPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "module_provider.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "module_provider.html", map[string]interface{}{
 		"TEMPLATE_NAME": "module_provider.html",
 	})
 	if err != nil {
@@ -716,7 +723,7 @@ func (s *Server) handleModuleProviderPage(w http.ResponseWriter, r *http.Request
 }
 func (s *Server) handleSubmodulePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "submodule.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "submodule.html", map[string]interface{}{
 		"TEMPLATE_NAME": "submodule.html",
 	})
 	if err != nil {
@@ -726,7 +733,7 @@ func (s *Server) handleSubmodulePage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleExamplePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "example.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "example.html", map[string]interface{}{
 		"TEMPLATE_NAME": "example.html",
 	})
 	if err != nil {
@@ -736,7 +743,7 @@ func (s *Server) handleExamplePage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleGraphPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "graph.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "graph.html", map[string]interface{}{
 		"TEMPLATE_NAME": "graph.html",
 	})
 	if err != nil {
@@ -746,7 +753,7 @@ func (s *Server) handleGraphPage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleProvidersPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "provider.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "provider.html", map[string]interface{}{
 		"TEMPLATE_NAME": "provider.html",
 	})
 	if err != nil {
@@ -756,7 +763,7 @@ func (s *Server) handleProvidersPage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleProviderPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.Render(w, "provider.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithContext(r.Context(), w, "provider.html", map[string]interface{}{
 		"TEMPLATE_NAME": "provider.html",
 	})
 	if err != nil {

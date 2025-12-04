@@ -313,6 +313,7 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 		c.AuthHandler,
 		c.AuthMiddleware,
 		c.TemplateRenderer,
+		c.CookieSessionService,
 		c.TerraformV1ModuleHandler, // Pass the new handler to the server constructor
 		c.TerraformV2ProviderHandler,
 		c.TerraformV2CategoryHandler,

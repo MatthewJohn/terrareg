@@ -474,7 +474,7 @@
                         </div>
 
                         <form id="settings-form">
-                            <input type="hidden" id="settings-csrf-token" value="{{ csrf_token }}" />
+                            <input type="hidden" id="settings-csrf-token" value="{{ .csrf_token }}" />
                             <div class="field">
                                 <label class="label">Verified</label>
                                 <div class="control">
@@ -578,7 +578,7 @@
                     </div>
 
                     <form id="settings-move-form">
-                        <input type="hidden" id="settings-move-csrf-token" value="{{ csrf_token }}" />
+                        <input type="hidden" id="settings-move-csrf-token" value="{{ .csrf_token }}" />
                         <div class="field">
                             <label class="label">Namespace</label>
                             <div class="control select">
