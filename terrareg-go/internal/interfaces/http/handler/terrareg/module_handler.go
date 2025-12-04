@@ -1,0 +1,653 @@
+package terrareg
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
+
+	moduleCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/module"
+	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/presenter"
+)
+
+// ModuleHandler handles module-related requests
+type ModuleHandler struct {
+	listModulesQuery                *moduleQuery.ListModulesQuery
+	searchModulesQuery              *moduleQuery.SearchModulesQuery
+	getModuleProviderQuery          *moduleQuery.GetModuleProviderQuery
+	listModuleProvidersQuery        *moduleQuery.ListModuleProvidersQuery
+	getModuleVersionQuery           *moduleQuery.GetModuleVersionQuery
+	getModuleDownloadQuery          *moduleQuery.GetModuleDownloadQuery
+	getModuleProviderSettingsQuery  *moduleQuery.GetModuleProviderSettingsQuery
+	getSubmodulesQuery              *moduleQuery.GetSubmodulesQuery
+	getExamplesQuery                *moduleQuery.GetExamplesQuery
+	createModuleProviderCmd         *moduleCmd.CreateModuleProviderCommand
+	publishModuleVersionCmd         *moduleCmd.PublishModuleVersionCommand
+	updateModuleProviderSettingsCmd *moduleCmd.UpdateModuleProviderSettingsCommand
+	deleteModuleProviderCmd         *moduleCmd.DeleteModuleProviderCommand
+	uploadModuleVersionCmd          *moduleCmd.UploadModuleVersionCommand
+	importModuleVersionCmd          *moduleCmd.ImportModuleVersionCommand
+	presenter                       *presenter.ModulePresenter
+	versionPresenter                *presenter.ModuleVersionPresenter
+}
+
+// NewModuleHandler creates a new module handler
+func NewModuleHandler(
+	listModulesQuery *moduleQuery.ListModulesQuery,
+	searchModulesQuery *moduleQuery.SearchModulesQuery,
+	getModuleProviderQuery *moduleQuery.GetModuleProviderQuery,
+	listModuleProvidersQuery *moduleQuery.ListModuleProvidersQuery,
+	getModuleVersionQuery *moduleQuery.GetModuleVersionQuery,
+	getModuleDownloadQuery *moduleQuery.GetModuleDownloadQuery,
+	getModuleProviderSettingsQuery *moduleQuery.GetModuleProviderSettingsQuery,
+	getSubmodulesQuery *moduleQuery.GetSubmodulesQuery,
+	getExamplesQuery *moduleQuery.GetExamplesQuery,
+	createModuleProviderCmd *moduleCmd.CreateModuleProviderCommand,
+	publishModuleVersionCmd *moduleCmd.PublishModuleVersionCommand,
+	updateModuleProviderSettingsCmd *moduleCmd.UpdateModuleProviderSettingsCommand,
+	deleteModuleProviderCmd *moduleCmd.DeleteModuleProviderCommand,
+	uploadModuleVersionCmd *moduleCmd.UploadModuleVersionCommand,
+	importModuleVersionCmd *moduleCmd.ImportModuleVersionCommand,
+) *ModuleHandler {
+	return &ModuleHandler{
+		listModulesQuery:                listModulesQuery,
+		searchModulesQuery:              searchModulesQuery,
+		getModuleProviderQuery:          getModuleProviderQuery,
+		listModuleProvidersQuery:        listModuleProvidersQuery,
+		getModuleVersionQuery:           getModuleVersionQuery,
+		getModuleDownloadQuery:          getModuleDownloadQuery,
+		getModuleProviderSettingsQuery:  getModuleProviderSettingsQuery,
+		getSubmodulesQuery:              getSubmodulesQuery,
+		getExamplesQuery:                getExamplesQuery,
+		createModuleProviderCmd:         createModuleProviderCmd,
+		publishModuleVersionCmd:         publishModuleVersionCmd,
+		updateModuleProviderSettingsCmd: updateModuleProviderSettingsCmd,
+		deleteModuleProviderCmd:         deleteModuleProviderCmd,
+		uploadModuleVersionCmd:          uploadModuleVersionCmd,
+		importModuleVersionCmd:          importModuleVersionCmd,
+		presenter:                       presenter.NewModulePresenter(),
+		versionPresenter:                presenter.NewModuleVersionPresenter(),
+	}
+}
+
+// HandleModuleList handles GET /v1/modules
+func (h *ModuleHandler) HandleModuleList(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Execute query
+	modules, err := h.listModulesQuery.Execute(ctx)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Convert to DTO
+	response := h.presenter.ToListDTO(modules)
+
+	// Send response
+	RespondJSON(w, http.StatusOK, response)
+}
+
+// HandleModuleSearch handles GET /v1/modules/search
+func (h *ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse query parameters
+	query := r.URL.Query().Get("q")
+	namespace := r.URL.Query().Get("namespace")
+	provider := r.URL.Query().Get("provider")
+
+	var namespacePtr *string
+	if namespace != "" {
+		namespacePtr = &namespace
+	}
+
+	var providerPtr *string
+	if provider != "" {
+		providerPtr = &provider
+	}
+
+	// Parse pagination
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit == 0 {
+		limit = 20
+	}
+
+	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+
+	// Execute search
+	params := moduleQuery.SearchParams{
+		Query:     query,
+		Namespace: namespacePtr,
+		Provider:  providerPtr,
+		Limit:     limit,
+		Offset:    offset,
+	}
+
+	result, err := h.searchModulesQuery.Execute(ctx, params)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Convert to DTO
+	response := h.presenter.ToSearchDTO(result.Modules, result.TotalCount, limit, offset)
+
+	// Send response
+	RespondJSON(w, http.StatusOK, response)
+}
+
+// HandleNamespaceModules handles GET /v1/modules/{namespace}
+func (h *ModuleHandler) HandleNamespaceModules(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	_ = chi.URLParam(r, "namespace") // TODO: Filter by namespace when query supports it
+
+	// Execute query
+	modules, err := h.listModulesQuery.Execute(ctx)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Convert to DTO
+	response := h.presenter.ToListDTO(modules)
+
+	// Send response
+	RespondJSON(w, http.StatusOK, response)
+}
+
+// HandleModuleProviderCreate handles POST /v1/terrareg/modules/{namespace}/{name}/{provider}/create
+func (h *ModuleHandler) HandleModuleProviderCreate(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+
+	// Create command request
+	cmdReq := moduleCmd.CreateModuleProviderRequest{
+		Namespace: namespace,
+		Module:    name,
+		Provider:  provider,
+	}
+
+	// Execute command
+	moduleProvider, err := h.createModuleProviderCmd.Execute(ctx, cmdReq)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Convert to DTO
+	response := h.presenter.ToDTO(moduleProvider)
+
+	// Send response
+	RespondJSON(w, http.StatusCreated, response)
+}
+
+// HandleModuleDetails handles GET /v1/modules/{namespace}/{name}
+func (h *ModuleHandler) HandleModuleDetails(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+
+	// Execute query to list all providers for this module
+	providers, err := h.listModuleProvidersQuery.Execute(ctx, namespace, name)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Convert to DTO
+	response := h.presenter.ToListDTO(providers)
+
+	// Send response
+	RespondJSON(w, http.StatusOK, response)
+}
+
+// HandleModuleProviderDetails handles GET /v1/modules/{namespace}/{name}/{provider}
+func (h *ModuleHandler) HandleModuleProviderDetails(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+
+	// Execute query
+	moduleProvider, err := h.getModuleProviderQuery.Execute(ctx, namespace, name, provider)
+	if err != nil {
+		RespondError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	// Convert to DTO
+	response := h.presenter.ToDTO(moduleProvider)
+
+	// Send response
+	RespondJSON(w, http.StatusOK, response)
+}
+
+// HandleModuleVersions handles GET /v1/modules/{namespace}/{name}/{provider}/versions
+func (h *ModuleHandler) HandleModuleVersions(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+
+	// Get the module provider first
+	moduleProvider, err := h.getModuleProviderQuery.Execute(ctx, namespace, name, provider)
+	if err != nil {
+		RespondError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	// Get versions from the module provider
+	versions := moduleProvider.GetAllVersions()
+
+	// Convert to version DTOs
+	versionDTOs := make([]map[string]interface{}, len(versions))
+	for i, version := range versions {
+		versionDTOs[i] = map[string]interface{}{
+			"version": version.Version().String(),
+		}
+	}
+
+	// Build response matching Terraform Registry API format
+	response := map[string]interface{}{
+		"modules": []map[string]interface{}{
+			{
+				"versions": versionDTOs,
+			},
+		},
+	}
+
+	// Send response
+	RespondJSON(w, http.StatusOK, response)
+}
+
+// HandleModuleVersionPublish handles POST /v1/terrareg/modules/{namespace}/{name}/{provider}/{version}/publish
+func (h *ModuleHandler) HandleModuleVersionPublish(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+	version := chi.URLParam(r, "version")
+
+	// Parse request body for optional fields
+	var req dto.ModuleVersionPublishRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		// If no body or invalid JSON, use defaults
+		req = dto.ModuleVersionPublishRequest{
+			Version: version, // Use version from URL
+			Beta:    false,
+		}
+	} else {
+		// Override version with URL parameter
+		req.Version = version
+	}
+
+	// Create command request
+	cmdReq := moduleCmd.PublishModuleVersionRequest{
+		Namespace:   namespace,
+		Module:      name,
+		Provider:    provider,
+		Version:     req.Version,
+		Beta:        req.Beta,
+		Description: req.Description,
+		Owner:       req.Owner,
+	}
+
+	// Execute command
+	moduleVersion, err := h.publishModuleVersionCmd.Execute(ctx, cmdReq)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Convert to DTO
+	response := h.versionPresenter.ToDTO(moduleVersion, namespace, name, provider)
+
+	// Send response
+	RespondJSON(w, http.StatusCreated, response)
+}
+
+// HandleModuleVersionDetails handles GET /v1/modules/{namespace}/{name}/{provider}/{version}
+func (h *ModuleHandler) HandleModuleVersionDetails(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+	version := chi.URLParam(r, "version")
+
+	// Execute query
+	moduleVersion, err := h.getModuleVersionQuery.Execute(ctx, namespace, name, provider, version)
+	if err != nil {
+		RespondError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	// Convert to DTO
+	response := h.versionPresenter.ToDTO(moduleVersion, namespace, name, provider)
+
+	// Send response
+	RespondJSON(w, http.StatusOK, response)
+}
+
+// HandleModuleDownload handles GET /v1/modules/{namespace}/{name}/{provider}/download
+// and GET /v1/modules/{namespace}/{name}/{provider}/{version}/download
+// Returns download location in Terraform Registry API format
+func (h *ModuleHandler) HandleModuleDownload(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+	version := chi.URLParam(r, "version") // May be empty for latest
+
+	// Execute query to get download info
+	downloadInfo, err := h.getModuleDownloadQuery.Execute(ctx, namespace, name, provider, version)
+	if err != nil {
+		RespondError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	// Build download URL
+	// In Terraform Registry API, the X-Terraform-Get header contains the download location
+	// The response body is empty, but we return JSON with version info
+	downloadURL := fmt.Sprintf("/v1/modules/%s/%s/%s/%s/download",
+		namespace, name, provider, downloadInfo.Version.Version().String())
+
+	// Set the X-Terraform-Get header (Terraform will use this to download)
+	w.Header().Set("X-Terraform-Get", downloadURL)
+
+	// Return version information in response body
+	response := map[string]interface{}{
+		"version": downloadInfo.Version.Version().String(),
+	}
+
+	RespondJSON(w, http.StatusNoContent, response)
+}
+
+// HandleModuleProviderSettingsGet handles GET /v1/terrareg/modules/{namespace}/{name}/{provider}/settings
+func (h *ModuleHandler) HandleModuleProviderSettingsGet(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+
+	// Execute query
+	settings, err := h.getModuleProviderSettingsQuery.Execute(ctx, namespace, name, provider)
+	if err != nil {
+		RespondError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	// Build response
+	response := dto.ModuleProviderSettingsResponse{
+		Namespace:             namespace,
+		Module:                name,
+		Provider:              provider,
+		GitProviderID:         settings.GitProviderID,
+		RepoBaseURLTemplate:   settings.RepoBaseURLTemplate,
+		RepoCloneURLTemplate:  settings.RepoCloneURLTemplate,
+		RepoBrowseURLTemplate: settings.RepoBrowseURLTemplate,
+		GitTagFormat:          settings.GitTagFormat,
+		GitPath:               settings.GitPath,
+		ArchiveGitPath:        settings.ArchiveGitPath,
+		Verified:              settings.Verified,
+	}
+
+	RespondJSON(w, http.StatusOK, response)
+}
+
+// HandleModuleProviderSettingsUpdate handles PUT /v1/terrareg/modules/{namespace}/{name}/{provider}/settings
+func (h *ModuleHandler) HandleModuleProviderSettingsUpdate(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+
+	// Parse request body
+	var req dto.ModuleProviderSettingsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		RespondError(w, http.StatusBadRequest, fmt.Errorf("invalid request body: %w", err).Error())
+		return
+	}
+
+	// Execute command
+	cmdReq := moduleCmd.UpdateModuleProviderSettingsRequest{
+		Namespace:             namespace,
+		Module:                name,
+		Provider:              provider,
+		GitProviderID:         req.GitProviderID,
+		RepoBaseURLTemplate:   req.RepoBaseURLTemplate,
+		RepoCloneURLTemplate:  req.RepoCloneURLTemplate,
+		RepoBrowseURLTemplate: req.RepoBrowseURLTemplate,
+		GitTagFormat:          req.GitTagFormat,
+		GitPath:               req.GitPath,
+		ArchiveGitPath:        req.ArchiveGitPath,
+		Verified:              req.Verified,
+	}
+
+	if err := h.updateModuleProviderSettingsCmd.Execute(ctx, cmdReq); err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Return updated settings
+	settings, err := h.getModuleProviderSettingsQuery.Execute(ctx, namespace, name, provider)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response := dto.ModuleProviderSettingsResponse{
+		Namespace:             namespace,
+		Module:                name,
+		Provider:              provider,
+		GitProviderID:         settings.GitProviderID,
+		RepoBaseURLTemplate:   settings.RepoBaseURLTemplate,
+		RepoCloneURLTemplate:  settings.RepoCloneURLTemplate,
+		RepoBrowseURLTemplate: settings.RepoBrowseURLTemplate,
+		GitTagFormat:          settings.GitTagFormat,
+		GitPath:               settings.GitPath,
+		ArchiveGitPath:        settings.ArchiveGitPath,
+		Verified:              settings.Verified,
+	}
+
+	RespondJSON(w, http.StatusOK, response)
+}
+
+// HandleModuleProviderDelete handles DELETE /v1/terrareg/modules/{namespace}/{name}/{provider}
+func (h *ModuleHandler) HandleModuleProviderDelete(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+
+	// Execute command
+	cmdReq := moduleCmd.DeleteModuleProviderRequest{
+		Namespace: namespace,
+		Module:    name,
+		Provider:  provider,
+	}
+
+	if err := h.deleteModuleProviderCmd.Execute(ctx, cmdReq); err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Return 204 No Content on successful deletion
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// HandleModuleVersionUpload handles POST /v1/terrareg/modules/{namespace}/{name}/{provider}/{version}/upload
+func (h *ModuleHandler) HandleModuleVersionUpload(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Get path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+	version := chi.URLParam(r, "version")
+
+	if namespace == "" || name == "" || provider == "" || version == "" {
+		RespondJSON(w, http.StatusBadRequest, dto.NewError("Missing required path parameters"))
+		return
+	}
+
+	// Parse multipart form
+	if err := r.ParseMultipartForm(100 << 20); err != nil { // 100 MB max
+		RespondJSON(w, http.StatusBadRequest, dto.NewError("Failed to parse multipart form"))
+		return
+	}
+
+	// Get the file from the form
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		RespondJSON(w, http.StatusBadRequest, dto.NewError("No file provided in 'file' field"))
+		return
+	}
+	defer file.Close()
+
+	// Execute upload command
+	uploadReq := moduleCmd.UploadModuleVersionRequest{
+		Namespace:  namespace,
+		Module:     name,
+		Provider:   provider,
+		Version:    version,
+		Source:     file,
+		SourceSize: header.Size,
+	}
+
+	if err := h.uploadModuleVersionCmd.Execute(ctx, uploadReq); err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Return success response
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"message": "Module version uploaded successfully",
+	})
+}
+
+// HandleModuleVersionImport handles POST /v1/terrareg/modules/{namespace}/{name}/{provider}/import
+func (h *ModuleHandler) HandleModuleVersionImport(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Get path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+
+	if namespace == "" || name == "" || provider == "" {
+		RespondJSON(w, http.StatusBadRequest, dto.NewError("Missing required path parameters"))
+		return
+	}
+
+	// Parse JSON request body
+	var reqBody struct {
+		Version *string `json:"version"`
+		GitTag  *string `json:"git_tag"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		RespondJSON(w, http.StatusBadRequest, dto.NewError("Invalid request body"))
+		return
+	}
+
+	// Execute import command
+	importReq := moduleCmd.ImportModuleVersionRequest{
+		Namespace: namespace,
+		Module:    name,
+		Provider:  provider,
+		Version:   reqBody.Version,
+		GitTag:    reqBody.GitTag,
+	}
+
+	if err := h.importModuleVersionCmd.Execute(ctx, importReq); err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Return success response
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"status": "Success",
+	})
+}
+
+// HandleGetSubmodules handles GET /v1/terrareg/modules/{namespace}/{name}/{provider}/{version}/submodules
+func (h *ModuleHandler) HandleGetSubmodules(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Get path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+	version := chi.URLParam(r, "version")
+
+	if namespace == "" || name == "" || provider == "" || version == "" {
+		RespondJSON(w, http.StatusBadRequest, dto.NewError("Missing required path parameters"))
+		return
+	}
+
+	// Execute query
+	submodules, err := h.getSubmodulesQuery.Execute(ctx, namespace, name, provider, version)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Return submodules
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"submodules": submodules,
+	})
+}
+
+// HandleGetExamples handles GET /v1/terrareg/modules/{namespace}/{name}/{provider}/{version}/examples
+func (h *ModuleHandler) HandleGetExamples(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Get path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+	version := chi.URLParam(r, "version")
+
+	if namespace == "" || name == "" || provider == "" || version == "" {
+		RespondJSON(w, http.StatusBadRequest, dto.NewError("Missing required path parameters"))
+		return
+	}
+
+	// Execute query
+	examples, err := h.getExamplesQuery.Execute(ctx, namespace, name, provider, version)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Return examples
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"examples": examples,
+	})
+}
