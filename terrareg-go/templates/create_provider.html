@@ -1,8 +1,6 @@
-{% extends 'template.html' %}
+{{ define "title" }}Create Module{{ end }}
 
-{% block title %}Create Module{% endblock %}
-
-{% block header %}
+{{ define "header" }}
 <script>
     let repositories = [];
 
@@ -19,7 +17,7 @@
             url: `/${$('#create-provider-provider-source').val()}/repositories/${$('#create-provider-repo').val()}/publish-provider`,
             data: {
                 category_id: parseInt($('#create-provider-category').val()),
-                csrf_token: '{{ csrf_token }}'
+                csrf_token: '{{ .csrf_token }}'
             },
         }).done((res) => {
             // Obtain get parameters from URL
@@ -139,7 +137,7 @@
                 url: `/${providerSource}/refresh-namespace`,
                 data: JSON.stringify({
                     namespace: namespaceName,
-                    csrf_token: '{{ csrf_token }}'
+                    csrf_token: '{{ .csrf_token }}'
                 }),
                 contentType: 'application/json'
             }).done((res) => {
@@ -172,9 +170,9 @@
         });
     });
 </script>
-{% endblock %}
+{{ end }}
 
-{% block content %}
+{{ define "content" }}
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
@@ -246,4 +244,6 @@
     </div>
 </nav>
 
-{% endblock %}
+{{ end }}
+
+{{ template "template.html" . }}

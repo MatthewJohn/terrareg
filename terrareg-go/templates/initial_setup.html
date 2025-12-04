@@ -1,16 +1,14 @@
-{% extends 'template.html' %}
+{{ define "title" }}Initial Setup{{ end }}
 
-{% block title %}Initial Setup{% endblock %}
-
-{% block header %}
+{{ define "header" }}
 <script>
     $(document).ready(function () {
         loadSetupPage();
     });
 </script>
-{% endblock %}
+{{ end }}
 
-{% block content %}
+{{ define "content" }}
 
 <script src="/static/js/terrareg/initial-setup.js"></script>
 <link rel="stylesheet" href="/static/css/initial-setup.css" />
@@ -205,7 +203,7 @@ curl -X POST <span class="module-publish-api-key-header-argument"></span>\
                         <li id="setup-step-secure-publish"><code>PUBLISH_API_KEYS</code> - Setup API keys for limiting access to the module version publishing endpoint</li>
                         <li id="setup-step-secure-auto-create-namespace"><code>AUTO_CREATE_NAMESPACE</code> - Disable auto-creation of namespaces when uploading a module, enforcing creation of namespaces by authenticated users</li>
                         <li id="setup-step-secure-auto-create-module-provider"><code>AUTO_CREATE_MODULE_PROVIDER</code> - Disable auto-creation of module providers when uploading a module, enforcing creation of modules/module providers by authenticated users</li>
-                        
+
                     </ul>
                 </div>
             </div>
@@ -259,4 +257,6 @@ curl -X POST <span class="module-publish-api-key-header-argument"></span>\
     </div>
 </div>
 
-{% endblock %}
+{{ end }}
+
+{{ template "template.html" . }}

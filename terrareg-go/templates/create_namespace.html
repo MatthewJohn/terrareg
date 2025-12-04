@@ -1,8 +1,6 @@
-{% extends 'template.html' %}
+{{ define "title" }}Create Module{{ end }}
 
-{% block title %}Create Module{% endblock %}
-
-{% block header %}
+{{ define "header" }}
 <script>
     function createNamespace() {
         if (! $('#create-namespace-form')[0].reportValidity()) {
@@ -13,7 +11,7 @@
             data: JSON.stringify({
                 name: $('#namespace-name').val(),
                 display_name: $('#namespace-display-name').val(),
-                csrf_token: '{{ csrf_token }}'
+                csrf_token: '{{ .csrf_token }}'
             }),
             contentType: 'application/json'
         }).done((res) => {
@@ -34,9 +32,9 @@
     }
 
 </script>
-{% endblock %}
+{{ end }}
 
-{% block content %}
+{{ define "content" }}
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
@@ -74,4 +72,6 @@
     </div>
 </nav>
 
-{% endblock %}
+{{ end }}
+
+{{ template "template.html" . }}

@@ -1,9 +1,7 @@
 
-{% extends 'template.html' %}
+{{ define "title" }}Namespaces{{ end }}
 
-{% block title %}Namespaces{% endblock %}
-
-{% block header %}
+{{ define "header" }}
 <script>
     let currentSearchMeta = undefined;
 
@@ -106,9 +104,9 @@
         router.resolve();
     });
 </script>
-{% endblock %}
+{{ end }}
 
-{% block content %}
+{{ define "content" }}
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
@@ -135,4 +133,6 @@
     </div>
 </div>
 
-{% endblock %}
+{{ end }}
+
+{{ template "template.html" . }}

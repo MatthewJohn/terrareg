@@ -1,8 +1,6 @@
-{% extends 'template.html' %}
+{{ define "title" }}Provider Search{{ end }}
 
-{% block title %}Provider Search{% endblock %}
-
-{% block header %}
+{{ define "header" }}
 
 <script>
 
@@ -194,9 +192,9 @@
         performSearch();
     });
 </script>
-{% endblock %}
+{{ end }}
 
-{% block content %}
+{{ define "content" }}
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
@@ -235,12 +233,12 @@
                 <span class="panel-icon">
                     <i class="fas fa-check-circle" aria-hidden="true"></i>
                 </span>
-                {{ TRUSTED_NAMESPACE_LABEL }}
+                {{ .TRUSTED_NAMESPACE_LABEL }}
                 <span id="search-trusted-namespaces-count" class="tag"></span>
             </a>
             <a class="panel-block" onclick="toggleChildCheckbox(event);">
                 <input id="search-contributed" onchange="performSearch();" type="checkbox" />
-                {{ CONTRIBUTED_NAMESPACE_LABEL }}
+                {{ .CONTRIBUTED_NAMESPACE_LABEL }}
                 <span id="search-contributed-count" class="tag"></span>
             </a>
         </nav>
@@ -259,7 +257,7 @@
     </div>
     <div class="column is-three-fifths">
         <section id="search-results-header">
-            <span id="result-count"></span> 
+            <span id="result-count"></span>
         </section>
         <section id="results">
         </section>
@@ -271,4 +269,6 @@
     </div>
 </div>
 
-{% endblock %}
+{{ end }}
+
+{{ template "template.html" . }}

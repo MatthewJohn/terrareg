@@ -1,10 +1,11 @@
 
+{{ define "template.html" }}
 <!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8">
 
-        <link rel="stylesheet" href="{{ theme_path }}" />
+        <link rel="stylesheet" href="{{ .theme_path }}" />
 
         <script src="/static/js/terrareg/user-preferences.js"></script>
 
@@ -87,11 +88,11 @@
                 $('#navbarCreateProviderButton').css('display', 'block');
               }
 
-            }{% if TEMPLATE_NAME != "error.html" %} else if (!loggedIn.read_access && window.location.pathname !== '/login') {
+            }{{ if ne .TEMPLATE_NAME "error.html" }} else if (!loggedIn.read_access && window.location.pathname !== '/login') {
               // If not logged in and read access is not allowed,
               // and not currently redirect to login page
               window.location.href = '/login';
-            }{% endif %}
+            }{{ end }}
           }
 
           $(document).ready(() => {
@@ -107,22 +108,22 @@
           }
         </style>
 
-	<title>{% block title %}{% endblock %} - {{ terrareg_application_name }}</title>
+	<title>{{ block "title" . }}{{ end }} - {{ .terrareg_application_name }}</title>
 
-        {% block header %}{% endblock %}
+        {{ block "header" . }}{{ end }}
     </head>
 
 
     <body>
-        {% if SITE_WARNING %}
+        {{ if .SITE_WARNING }}
         <div id="site-warning">
-          {{SITE_WARNING}}
+          {{ .SITE_WARNING }}
         </div>
-        {% endif %}
+        {{ end }}
         <nav class="navbar is-transparent">
             <div class="navbar-brand">
               <a class="navbar-item" href="/">
-              <img src="{{ terrareg_logo_url }}" alt="{{ terrareg_application_name }}" width="80">
+              <img src="{{ .terrareg_logo_url }}" alt="{{ .terrareg_application_name }}" width="80">
             </a>
               <div class="navbar-burger burger" data-target="navbarRegistryDropdown">
                 <span></span>
@@ -230,11 +231,11 @@
 
         <section class="section">
 
-            {% block content %}{% endblock %}
+            {{ block "content" . }}{{ end }}
 
         </section>
 
-        {% block footer %}
+        {{ block "footer" . }}
         <footer class="footer">
           <div class="content has-text-centered">
             <p>
@@ -243,10 +244,10 @@
 
             <p id="provider-tos">
             </p>
-            {% block additional_footer %}{% endblock %}
+            {{ block "additional_footer" . }}{{ end }}
           </div>
         </footer>
-        {% endblock %}
+        {{ end }}
 
 
         <!-- User preferences modal -->
@@ -303,3 +304,4 @@
 
     </body>
 </html>
+{{ end }}

@@ -1,8 +1,6 @@
-{% extends 'template.html' %}
+{{ define "title" }}Create Module{{ end }}
 
-{% block title %}Create Module{% endblock %}
-
-{% block header %}
+{{ define "header" }}
 <script>
     function createModuleProvider() {
         if (! $('#create-module-form')[0].reportValidity()) {
@@ -20,7 +18,7 @@
                 repo_browse_url_template: $('#create-module-browse-url-template').val(),
                 git_tag_format: $('#create-module-git-tag-format').val(),
                 git_path: $('#create-module-git-path').val(),
-                csrf_token: '{{ csrf_token }}'
+                csrf_token: '{{ .csrf_token }}'
             }),
             contentType: 'application/json'
         }).done((res) => {
@@ -75,9 +73,9 @@
         });
     });
 </script>
-{% endblock %}
+{{ end }}
 
-{% block content %}
+{{ define "content" }}
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
@@ -119,23 +117,23 @@
                     <div class="control select">
                         <select id="create-module-git-provider" onchange="toggleCustomModuleProviderInputs(this);">
 
-                            {% if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER or ALLOW_CUSTOM_GIT_URL_MODULE_VERSION %}
+                            {{ if or .ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER .ALLOW_CUSTOM_GIT_URL_MODULE_VERSION }}
                             <option value="" selected data-custom-provider="yes" data-git-path="">
                                 Custom
                             </option>
-                            {% endif %}
+                            {{ end }}
 
-                            {% for git_provider in git_providers %}
-                            <option value="{{ git_provider.pk }}" data-custom-provider="no" data-git-path="{{ git_provider.git_path_template or '' }}">
+                            {{ range .git_providers }}
+                            <option value="{{ .pk }}" data-custom-provider="no" data-git-path="{{ .git_path_template }}">
 
-                                {{ git_provider.name }}
+                                {{ .name }}
                             </option>
-                            {% endfor %}
+                            {{ end }}
                         </select>
                     </div>
                 </div>
 
-                {% if ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER %}
+                {{ if .ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER }}
                 <div id="create-module-base-url-template-container" class="field create-module-custom-field-container">
                     <label class="label">Custom Repository base URL</label>
                     <div class="control">
@@ -167,7 +165,7 @@
                     E.g. <code>https://github.com/{namespace}/{module}-{provider}/tree/{tag}/{path}</code><br />
                     NOTE: Setting this field will override the repository provider configuration.
                 </div>
-                {% endif %}
+                {{ end }}
 
                 <div class="field">
                     <label class="label">Git tag format</label>
@@ -206,4 +204,6 @@
     </div>
 </nav>
 
-{% endblock %}
+{{ end }}
+
+{{ template "template.html" . }}
