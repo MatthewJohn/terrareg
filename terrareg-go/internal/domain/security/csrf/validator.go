@@ -1,9 +1,5 @@
 package csrf
 
-import (
-	"fmt"
-)
-
 // TokenValidator interface for validating CSRF tokens
 type TokenValidator interface {
 	ValidateToken(expectedToken, providedToken CSRFToken, required bool) error

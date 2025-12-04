@@ -1,29 +1,25 @@
 package template
 
 import (
-	"context"
 	"html/template"
 	"io"
 	"path/filepath"
 	"sync"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/security"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 )
 
 // Renderer handles HTML template rendering
 type Renderer struct {
-	templates   *template.Template
-	config      *config.Config
-	csrfService *security.CSRFService
-	mu          sync.RWMutex
+	templates *template.Template
+	config    *config.Config
+	mu        sync.RWMutex
 }
 
 // NewRenderer creates a new template renderer
-func NewRenderer(cfg *config.Config, csrfService *security.CSRFService) (*Renderer, error) {
+func NewRenderer(cfg *config.Config) (*Renderer, error) {
 	r := &Renderer{
-		config:      cfg,
-		csrfService: csrfService,
+		config: cfg,
 	}
 
 	if err := r.loadTemplates(); err != nil {
@@ -40,16 +36,10 @@ func (r *Renderer) loadTemplates() error {
 
 	// Load base template first with custom functions
 	baseTemplate := template.New("").Funcs(template.FuncMap{
-		// CSRF token function - gets token from request context or returns empty string
-		"csrf_token": func(ctx context.Context, sessionID string) string {
-			if r.csrfService == nil || sessionID == "" {
-				return ""
-			}
-			token, err := r.csrfService.GetOrCreateSessionToken(ctx, sessionID)
-			if err != nil {
-				return ""
-			}
-			return token.String()
+		// CSRF token function - temporary implementation that returns empty string
+		// TODO: Implement proper CSRF token handling when session management is complete
+		"csrf_token": func() string {
+			return ""
 		},
 		// Add any other custom template functions here if needed
 	})
@@ -90,20 +80,9 @@ func (r *Renderer) Render(w io.Writer, name string, data map[string]interface{})
 	data["theme_path"] = "/static/css/terrareg.css" // TODO: Add to config
 	data["SITE_WARNING"] = "" // TODO: Add to config
 
-	// Generate and add CSRF token
-	if r.csrfService != nil {
-		ctx := context.Background()
-		sessionID := "" // TODO: Get session ID from request context
-		token, err := r.csrfService.GetOrCreateSessionToken(ctx, sessionID)
-		if err != nil {
-			// Log error but continue rendering without CSRF token
-			// TODO: Add proper logging
-		} else {
-			data["csrf_token"] = token.String()
-		}
-	} else {
-		data["csrf_token"] = ""
-	}
+	// Add CSRF token (temporary implementation - returns empty string)
+	// TODO: Implement proper CSRF token handling when session management is complete
+	data["csrf_token"] = ""
 
 	return r.templates.ExecuteTemplate(w, name, data)
 }
