@@ -1,12 +1,10 @@
-{% extends 'template.html' %}
+{{ define "title" }}{{ .namespace.name }}/{{ .module.name }}{{ end }}
 
-{% block title %}{{ namespace.name }}/{{ module.name }}{% endblock %}
-
-{% block header %}
+{{ define "header" }}
 <script>
     async function loadProviders() {
         // Perform request to obtain the config
-        $.get("/v1/terrareg/modules/{{ namespace.name }}/{{ module.name }}").then((data) => {
+        $.get("/v1/terrareg/modules/{{ .namespace.name }}/{{ .module.name }}").then((data) => {
             $.each(data.modules, (itx, module_data) => {
                 createSearchResultCard('module-list-table', 'module', module_data);
             });
@@ -21,15 +19,15 @@
         loadProviders();
     });
 </script>
-{% endblock %}
+{{ end }}
 
-{% block content %}
+{{ define "content" }}
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
         <li><a href="/modules">Modules</a></li>
-        <li><a href="/modules/{{ namespace.name }}">{{ namespace.name }}</a></li>
-        <li class="is-active"><a href="/modules/{{ namespace.name }}/{{ module.name }}">{{ module.name }}</a></li>
+        <li><a href="/modules/{{ .namespace.name }}">{{ .namespace.name }}</a></li>
+        <li class="is-active"><a href="/modules/{{ .namespace.name }}/{{ .module.name }}">{{ .module.name }}</a></li>
     </ul>
 </nav>
 
@@ -47,4 +45,6 @@
     </div>
 </div>
 
-{% endblock %}
+{{ end }}
+
+{{ template "template.html" . }}

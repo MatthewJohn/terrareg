@@ -1,8 +1,6 @@
-{% extends 'template.html' %}
+{{ define "title" }}Provider{{ end }}
 
-{% block title %}Provider{% endblock %}
-
-{% block header %}
+{{ define "header" }}
 <script src="/static/js/terrareg/provider_page.js"></script>
 <link rel="stylesheet" href="/static/css/provider_page.css" />
 
@@ -15,9 +13,9 @@
         renderPage();
     });
 </script>
-{% endblock %}
+{{ end }}
 
-{% block content %}
+{{ define "content" }}
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul id="breadcrumb-ul">
@@ -143,7 +141,7 @@
                             <li>Add the following example to your Terraform:</li>
                         </ol>
                     </div>
-    
+
                     <pre><code id="usage-example-terraform" class="language-hcl"></code></pre>
                 </div>
             </div>
@@ -222,7 +220,7 @@
                     <label class="label">Version</label>
                     <div class="control">
                         <input id="indexProviderVersion" class="input is-small" type="text" size="5" placeholder="1.0.0">
-                        <input type="hidden" id="integrations-csrf-token" value="{{ csrf_token }}" />
+                        <input type="hidden" id="integrations-csrf-token" value="{{ .csrf_token }}" />
                     </div>
                     <div class="control">
                         <br />
@@ -236,4 +234,6 @@
     </div>
 </div>
 
-{% endblock %}
+{{ end }}
+
+{{ template "template.html" . }}

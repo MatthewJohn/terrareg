@@ -1,8 +1,6 @@
-{% extends 'template.html' %}
+{{ define "title" }}Search{{ end }}
 
-{% block title %}Search{% endblock %}
-
-{% block header %}
+{{ define "header" }}
 
 <style>
     .result-box {
@@ -175,9 +173,9 @@
         }
     });
 </script>
-{% endblock %}
+{{ end }}
 
-{% block content %}
+{{ define "content" }}
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
@@ -190,7 +188,7 @@
 <div class="columns">
     <div class="column is-offset-one-fifth is-three-fifths">
         <section id="search-results-header">
-            <span id="result-count"></span> 
+            <span id="result-count"></span>
         </section>
 
         <div id="no-results" class="default-hidden">There are no results</div>
@@ -222,4 +220,6 @@
     </div>
 </div>
 
-{% endblock %}
+{{ end }}
+
+{{ template "template.html" . }}

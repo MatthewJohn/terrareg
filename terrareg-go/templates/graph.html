@@ -1,11 +1,9 @@
 
-{% extends 'template.html' %}
+{{ define "title" }}Create Module{{ end }}
 
-{% block title %}Create Module{% endblock %}
+{{ define "footer" }}{{ end }}
 
-{% block footer %}{% endblock %}
-
-{% block header %}
+{{ define "header" }}
 
 <script src="/static/js/cytoscape/layout-base.js"></script>
 <script src="/static/js/cytoscape/cytoscape.min-3.26.0.js"></script>
@@ -23,10 +21,10 @@
     }
 </style>
 
-{% endblock %}
+{{ end }}
 
 
-{% block content %}
+{{ define "content" }}
 
 <div id="graphOptions">
     <label class="checkbox">
@@ -79,7 +77,7 @@
     function updateGraphData() {
         // Obtain graph data from relative URL
         jQuery.get(
-            '{{ current_module.graph_data_url }}',
+            '{{ .current_module.graph_data_url }}',
             {
                 'full_module_names': $('#graphOptionsShowFullModuleNames').is(':checked'),
                 'full_resource_names': $('#graphOptionsShowFullResourceNames').is(':checked')
@@ -114,4 +112,6 @@
     updateGraphData();
 </script>
 
-{% endblock %}
+{{ end }}
+
+{{ template "template.html" . }}

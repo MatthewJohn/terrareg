@@ -1,8 +1,6 @@
-{% extends 'template.html' %}
+{{ define "title" }}User Groups{{ end }}
 
-{% block title %}User Groups{% endblock %}
-
-{% block header %}
+{{ define "header" }}
 <script>
     var dataTable = undefined;
 
@@ -23,7 +21,7 @@
             data: JSON.stringify({
                 name: $('#user-group-name').val(),
                 site_admin: $('#user-group-site-admin').is(':checked'),
-                csrf_token: '{{ csrf_token }}'
+                csrf_token: '{{ .csrf_token }}'
             }),
             contentType: 'application/json'
         }).done((res) => {
@@ -41,7 +39,7 @@
             url: `/v1/terrareg/user-groups/${userGroup}/permissions/${namespace}`,
             data: JSON.stringify({
                 permission_type: permissionType,
-                csrf_token: '{{ csrf_token }}'
+                csrf_token: '{{ .csrf_token }}'
             }),
             contentType: 'application/json'
         }).done((res) => {
@@ -57,7 +55,7 @@
             method: 'DELETE',
             url: `/v1/terrareg/user-groups/${userGroup}/permissions/${namespace}`,
             data: JSON.stringify({
-                csrf_token: '{{ csrf_token }}'
+                csrf_token: '{{ .csrf_token }}'
             }),
             contentType: 'application/json'
         }).done((res) => {
@@ -73,7 +71,7 @@
             method: 'DELETE',
             url: `/v1/terrareg/user-groups/${userGroup}`,
             data: JSON.stringify({
-                csrf_token: '{{ csrf_token }}'
+                csrf_token: '{{ .csrf_token }}'
             }),
             contentType: 'application/json'
         }).done((res) => {
@@ -191,9 +189,9 @@
     });
 
 </script>
-{% endblock %}
+{{ end }}
 
-{% block content %}
+{{ define "content" }}
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
@@ -204,7 +202,7 @@
 
 <div class="columns">
     <div class="column is-three-fifths is-offset-one-fifth">
-     
+
         <div class="field is-vertical">
 
             <table id="user-group-table" class="table display compact nowrap responsive" style="width:100%">
@@ -247,4 +245,6 @@
     </div>
 </nav>
 
-{% endblock %}
+{{ end }}
+
+{{ template "template.html" . }}

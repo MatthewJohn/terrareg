@@ -3,8 +3,11 @@ package template
 import (
 	"html/template"
 	"io"
+	"net/http"
+	"path/filepath"
 	"sync"
 
+	"github.com/gorilla/csrf"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 )
 
@@ -28,18 +31,33 @@ func NewRenderer(cfg *config.Config) (*Renderer, error) {
 	return r, nil
 }
 
-// loadTemplates loads all HTML templates
+// loadTemplates loads all HTML templates and handles inheritance
 func (r *Renderer) loadTemplates() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	// IMPORTANT: The templates contain Jinja2 syntax which is incompatible with Go templates.
-	// Since the frontend is entirely JavaScript-based and calls API endpoints for data,
-	// we don't actually need server-side template rendering.
-	// For now, create a minimal template set - templates will be served as static files.
+	// Load base template first with custom functions
+	baseTemplate := template.New("").Funcs(template.FuncMap{
+		"csrf_token": func() string {
+			// This is a placeholder - the actual CSRF token will be provided in the template data
+			return ""
+		},
+		// Add any other custom template functions here if needed
+	})
 
-	// Create a dummy template to satisfy the interface
-	templates := template.New("")
+	// Parse base template (template.html)
+	baseTemplate, err := baseTemplate.ParseFiles("templates/template.html")
+	if err != nil {
+		return err
+	}
+
+	// Load all other templates
+	pattern := filepath.Join("templates", "*.html")
+	templates, err := baseTemplate.ParseGlob(pattern)
+	if err != nil {
+		return err
+	}
+
 	r.templates = templates
 	return nil
 }
@@ -59,6 +77,9 @@ func (r *Renderer) Render(w io.Writer, name string, data map[string]interface{})
 	data["public_url"] = r.config.PublicURL
 	data["enable_access_controls"] = r.config.EnableAccessControls
 	data["enable_security_scanning"] = false // TODO: Add to config
+	data["terrareg_logo_url"] = "/static/images/logo.png" // TODO: Add to config
+	data["theme_path"] = "/static/css/terrareg.css" // TODO: Add to config
+	data["SITE_WARNING"] = "" // TODO: Add to config
 
 	return r.templates.ExecuteTemplate(w, name, data)
 }

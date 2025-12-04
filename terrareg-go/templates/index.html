@@ -1,8 +1,6 @@
-{% extends 'template.html' %}
+{{ define "title" }}Home{{ end }}
 
-{% block title %}Home{% endblock %}
-
-{% block header %}
+{{ define "header" }}
 <script>
 
     $.get("/v1/terrareg/analytics/global/stats_summary", function(data, status) {
@@ -22,11 +20,11 @@
             createSearchResultCard('most-downloaded-this-week', 'module', data);
         });
     });
-    
-</script>
-{% endblock %}
 
-{% block content %}
+</script>
+{{ end }}
+
+{{ define "content" }}
 
 <nav class="level" style="margin-top: 20px; margin-bottom: 80px;">
     <div class="level-item has-text-centered">
@@ -42,7 +40,7 @@
         </div>
     </div>
     <p class="level-item has-text-centered">
-        <h1 id="title" class="title is-1">{{ terrareg_application_name }}</h1>
+        <h1 id="title" class="title is-1">{{ .terrareg_application_name }}</h1>
     </p>
     <div class="level-item has-text-centered">
         <div>
@@ -65,4 +63,6 @@
         <h4 class="title is-4">Most downloaded this week</h4>
     </div>
 </div>
-{% endblock %}
+{{ end }}
+
+{{ template "template.html" . }}

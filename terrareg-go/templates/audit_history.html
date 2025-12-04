@@ -1,8 +1,6 @@
-{% extends 'template.html' %}
+{{ define "title" }}Audit History{{ end }}
 
-{% block title %}Audit History{% endblock %}
-
-{% block header %}
+{{ define "header" }}
 <script>
     $(document).ready(() => {
         $('#audit-history-table').DataTable({
@@ -20,9 +18,9 @@
         });
     });
 </script>
-{% endblock %}
+{{ end }}
 
-{% block content %}
+{{ define "content" }}
 
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
@@ -32,4 +30,6 @@
 
 <table id="audit-history-table" class="display" width="100%"></table>
 
-{% endblock %}
+{{ end }}
+
+{{ template "template.html" . }}
