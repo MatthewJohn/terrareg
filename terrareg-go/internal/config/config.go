@@ -56,6 +56,8 @@ type Config struct {
 	// Session settings
 	SessionExpiry         time.Duration
 	AdminSessionExpiryMins int
+	SessionCookieName     string
+	SessionRefreshAge     time.Duration
 
 	// Provider source settings
 	ProviderSources map[string]ProviderSourceConfig
@@ -110,6 +112,8 @@ func New() (*Config, error) {
 		// Session
 		SessionExpiry:          time.Duration(getEnvInt("SESSION_EXPIRY_MINS", 60)) * time.Minute,
 		AdminSessionExpiryMins: getEnvInt("ADMIN_SESSION_EXPIRY_MINS", 60),
+		SessionCookieName:      getEnv("SESSION_COOKIE_NAME", "terrareg_session"),
+		SessionRefreshAge:      time.Duration(getEnvInt("SESSION_REFRESH_MINS", 25)) * time.Minute,
 
 		ProviderSources: make(map[string]ProviderSourceConfig),
 	}

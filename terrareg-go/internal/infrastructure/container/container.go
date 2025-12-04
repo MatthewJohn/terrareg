@@ -1,6 +1,8 @@
 package container
 
 import (
+	"fmt"
+
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
@@ -63,10 +65,11 @@ type Container struct {
 	ModuleParser   moduleService.ModuleParser
 
 	// Domain Services
-	ModuleImporterService *moduleService.ModuleImporterService
-	AuthFactory           *authservice.AuthFactory
-	SessionService        *authservice.SessionService
-	TerraformIdpService   *authservice.TerraformIdpService
+	ModuleImporterService    *moduleService.ModuleImporterService
+	AuthFactory             *authservice.AuthFactory
+	SessionService          *authservice.SessionService
+	TerraformIdpService     *authservice.TerraformIdpService
+	CookieSessionService    *authservice.CookieSessionService
 
 	// Commands
 	CreateNamespaceCmd              *namespace.CreateNamespaceCommand
@@ -181,6 +184,13 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 		c.TerraformIdpAccessTokenRepo,
 		c.TerraformIdpSubjectIdentifierRepo,
 	)
+
+	// Initialize cookie session service
+	cookieSessionService, err := authservice.NewCookieSessionService(c.SessionRepo, nil, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cookie session service: %w", err)
+	}
+	c.CookieSessionService = cookieSessionService
 
 	// Initialize commands
 	c.CreateNamespaceCmd = namespace.NewCreateNamespaceCommand(c.NamespaceRepo)
