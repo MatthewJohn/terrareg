@@ -84,6 +84,7 @@ type Container struct {
 	ImportModuleVersionCmd          *moduleCmd.ImportModuleVersionCommand
 	RecordModuleDownloadCmd         *analyticsCmd.RecordModuleDownloadCommand
 	CreateAdminSessionCmd           *authCmd.CreateAdminSessionCommand
+	AdminLoginCmd                   *authCmd.AdminLoginCommand
 
 	// Terraform Authentication Commands
 	AuthenticateOIDCTokenCmd *terraformCmd.AuthenticateOIDCTokenCommand
@@ -189,7 +190,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 
 	// Initialize auth services
 	c.SessionService = authservice.NewSessionService(c.SessionRepo, authservice.DefaultSessionConfig())
-	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo)
+	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, cfg)
 	c.TerraformIdpService = authservice.NewTerraformIdpService(
 		c.TerraformIdpAuthorizationCodeRepo,
 		c.TerraformIdpAccessTokenRepo,
@@ -213,6 +214,9 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	c.ImportModuleVersionCmd = moduleCmd.NewImportModuleVersionCommand(c.ModuleImporterService)
 	c.RecordModuleDownloadCmd = analyticsCmd.NewRecordModuleDownloadCommand(c.ModuleProviderRepo, c.AnalyticsRepo)
 	c.CreateAdminSessionCmd = authCmd.NewCreateAdminSessionCommand(c.SessionRepo, cfg)
+
+	// Initialize admin login command
+	c.AdminLoginCmd = authCmd.NewAdminLoginCommand(c.AuthFactory, c.SessionService, cfg)
 
 	// Initialize Terraform authentication commands
 	c.AuthenticateOIDCTokenCmd = terraformCmd.NewAuthenticateOIDCTokenCommand(c.AuthFactory)
@@ -293,8 +297,10 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 		c.ManageGPGKeyCmd,
 	)
 	c.AuthHandler = terrareg.NewAuthHandler(
+		c.AdminLoginCmd,
 		c.CreateAdminSessionCmd,
 		c.CheckSessionQuery,
+		c.CookieSessionService,
 		cfg,
 	)
 	c.TerraformV1ModuleHandler = v1.NewTerraformV1ModuleHandler(c.ListModulesQuery, c.SearchModulesQuery, c.GetModuleProviderQuery, c.ListModuleVersionsQuery, c.GetModuleDownloadQuery, c.GetModuleVersionQuery) // Instantiate the new handler

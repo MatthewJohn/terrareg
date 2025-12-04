@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
@@ -18,14 +19,16 @@ type AuthFactory struct {
 	mutex            sync.RWMutex
 	sessionRepo      repository.SessionRepository
 	userGroupRepo    repository.UserGroupRepository
+	config           *config.Config
 }
 
 // NewAuthFactory creates a new authentication factory
-func NewAuthFactory(sessionRepo repository.SessionRepository, userGroupRepo repository.UserGroupRepository) *AuthFactory {
+func NewAuthFactory(sessionRepo repository.SessionRepository, userGroupRepo repository.UserGroupRepository, config *config.Config) *AuthFactory {
 	factory := &AuthFactory{
 		authMethods:    make([]auth.AuthMethod, 0),
 		sessionRepo:    sessionRepo,
 		userGroupRepo:  userGroupRepo,
+		config:         config,
 	}
 
 	// Initialize auth methods in priority order (matching Python)
@@ -46,8 +49,16 @@ func (af *AuthFactory) initializeAuthMethods() {
 	// 7. TerraformAnalyticsAuthKeyAuthMethod
 	// 8. NotAuthenticated (fallback)
 
-	// Note: Concrete implementations will be added in Phase 6
-	// For now, register the fallback method
+	// Register AdminApiKeyAuthMethod (highest priority)
+	if af.config.AdminAuthenticationToken != "" {
+		adminApiKeyAuthMethod := model.NewAdminApiKeyAuthMethod(af.config)
+		af.RegisterAuthMethod(adminApiKeyAuthMethod)
+	}
+
+	// Register other auth methods (to be implemented in future phases)
+	// TODO: Add AdminSessionAuthMethod, SamlAuthMethod, etc.
+
+	// Register fallback method
 	af.RegisterAuthMethod(&NotAuthenticatedAuthMethod{})
 }
 
