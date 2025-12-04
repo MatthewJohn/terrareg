@@ -17,7 +17,8 @@ import (
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	providerQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider"
 	terraformCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/terraform"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	configQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/config"
+	appConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	authRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
@@ -25,6 +26,8 @@ import (
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service" // Alias for the new module service
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/git"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/version"
 
 	providerRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/parser"
@@ -44,7 +47,7 @@ import (
 
 // Container holds all application dependencies
 type Container struct {
-	Config *config.Config
+	Config *appConfig.Config
 	Logger zerolog.Logger
 	DB     *sqldb.Database
 
@@ -117,6 +120,10 @@ type Container struct {
 	GetProviderVersionsQuery       *providerQuery.GetProviderVersionsQuery
 	CheckSessionQuery              *authQuery.CheckSessionQuery
 
+	// Config queries
+	GetConfigQuery                 *configQuery.GetConfigQuery
+	GetVersionQuery                *configQuery.GetVersionQuery
+
 	// Handlers
 	NamespaceHandler           *terrareg.NamespaceHandler
 	ModuleHandler              *terrareg.ModuleHandler
@@ -139,12 +146,16 @@ type Container struct {
 	// Template renderer
 	TemplateRenderer *template.Renderer
 
+	// Config/Version Handlers
+	ConfigHandler    *terrareg.ConfigHandler
+	VersionHandler   *terrareg.VersionHandler
+
 	// HTTP Server
 	Server *http.Server
 }
 
 // NewContainer creates and initializes the dependency injection container
-func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database) (*Container, error) {
+func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Database) (*Container, error) {
 	c := &Container{
 		Config: cfg,
 		Logger: logger,
@@ -235,6 +246,16 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 	c.ManageGPGKeyCmd = providerCmd.NewManageGPGKeyCommand(c.ProviderRepo, c.NamespaceRepo)
 	c.CheckSessionQuery = authQuery.NewCheckSessionQuery(c.SessionRepo)
 
+	// Initialize config repository and queries
+	versionReader := version.NewVersionReader()
+	configRepository := config.NewConfigRepositoryImpl(versionReader)
+	c.GetConfigQuery = configQuery.NewGetConfigQuery(configRepository)
+	c.GetVersionQuery = configQuery.NewGetVersionQuery(configRepository)
+
+	// Initialize config/version handlers
+	c.ConfigHandler = terrareg.NewConfigHandler(c.GetConfigQuery)
+	c.VersionHandler = terrareg.NewVersionHandler(c.GetVersionQuery)
+
 	// Initialize handlers
 	c.NamespaceHandler = terrareg.NewNamespaceHandler(c.ListNamespacesQuery, c.CreateNamespaceCmd)
 	c.ModuleHandler = terrareg.NewModuleHandler(
@@ -320,6 +341,8 @@ func NewContainer(cfg *config.Config, logger zerolog.Logger, db *sqldb.Database)
 		c.TerraformV2GPGHandler,
 		c.TerraformIDPHandler,
 		c.TerraformStaticTokenHandler,
+		c.ConfigHandler,
+		c.VersionHandler,
 	)
 
 	return c, nil

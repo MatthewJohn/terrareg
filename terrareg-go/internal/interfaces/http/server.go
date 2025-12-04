@@ -38,6 +38,8 @@ type Server struct {
 	terraformV2GPGHandler *tfv2ProviderHandler.TerraformV2GPGHandler
 	terraformIDPHandler *terraformHandler.TerraformIDPHandler
 	terraformStaticTokenHandler *terraformHandler.TerraformStaticTokenHandler
+	configHandler *terrareg.ConfigHandler
+	versionHandler *terrareg.VersionHandler
 }
 
 // NewServer creates a new HTTP server
@@ -58,6 +60,8 @@ func NewServer(
 	terraformV2GPGHandler *tfv2ProviderHandler.TerraformV2GPGHandler,
 	terraformIDPHandler *terraformHandler.TerraformIDPHandler,
 	terraformStaticTokenHandler *terraformHandler.TerraformStaticTokenHandler,
+	configHandler *terrareg.ConfigHandler,
+	versionHandler *terrareg.VersionHandler,
 ) *Server {
 	s := &Server{
 		router:                   chi.NewRouter(),
@@ -77,6 +81,8 @@ func NewServer(
 		terraformV2GPGHandler: terraformV2GPGHandler,
 		terraformIDPHandler: terraformIDPHandler,
 		terraformStaticTokenHandler: terraformStaticTokenHandler,
+		configHandler: configHandler,
+		versionHandler: versionHandler,
 	}
 
 	s.setupMiddleware()
@@ -365,9 +371,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {
-	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"version": "0.1.0-go",
-	})
+	s.versionHandler.HandleVersion(w, r)
 }
 
 // Helper functions
@@ -422,18 +426,7 @@ func (s *Server) handleProviderDownload(w http.ResponseWriter, r *http.Request) 
 	})
 }
 func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
-	// Return public configuration - only non-sensitive config values
-	respondJSON(w, http.StatusOK, map[string]interface{}{
-		"public_url":                           s.config.PublicURL,
-		"allow_module_hosting":                 s.config.AllowModuleHosting,
-		"allow_provider_hosting":               true,  // TODO: Add to config
-		"analytics_token_phrase":               "",    // TODO: Add to config
-		"enable_access_controls":               s.config.EnableAccessControls,
-		"enable_security_scanning":             false, // TODO: Add to config
-		"terraform_example_version_template":   "",    // TODO: Add to config
-		"allow_custom_git_url_module_source":   false, // TODO: Add to config
-		"allow_custom_git_url_provider_source": false, // TODO: Add to config
-	})
+	s.configHandler.HandleConfig(w, r)
 }
 func (s *Server) handleGitProviders(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleGlobalStatsSummary(w http.ResponseWriter, r *http.Request) {
