@@ -8,7 +8,6 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
 )
 
 // LoginHandler handles authentication requests

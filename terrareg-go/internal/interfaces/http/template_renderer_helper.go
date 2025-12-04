@@ -17,7 +17,7 @@ func (s *Server) RenderTemplateWithContext(w http.ResponseWriter, r *http.Reques
 		data["TEMPLATE_NAME"] = templateName
 	}
 
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, templateName, data)
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, templateName, data, r)
 	if err != nil {
 		s.logger.Error().Err(err).Str("template", templateName).Msg("Failed to render template")
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)

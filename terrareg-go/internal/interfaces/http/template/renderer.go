@@ -4,6 +4,7 @@ import (
 	"context"
 	"html/template"
 	"io"
+	"net/http"
 	"path/filepath"
 	"sync"
 
@@ -49,8 +50,53 @@ func (r *Renderer) loadTemplates() error {
 	return nil
 }
 
+// getThemePath returns CSS path for theme based on theme cookie or session
+func (r *Renderer) getThemePath(ctx context.Context, request *http.Request) string {
+	// Try to get theme from session first
+	if sessionData := middleware.GetSessionData(ctx); sessionData != nil && sessionData.Theme != "" {
+		if r.isValidTheme(sessionData.Theme) {
+			return r.buildThemePath(sessionData.Theme)
+		}
+	}
+
+	// Fall back to cookie (like Python version)
+	if request != nil {
+		cookie, err := request.Cookie("theme")
+		if err == nil && r.isValidTheme(cookie.Value) {
+			return r.buildThemePath(cookie.Value)
+		}
+	}
+
+	// Default theme
+	return r.buildThemePath("default")
+}
+
+// isValidTheme checks if the theme is valid
+func (r *Renderer) isValidTheme(theme string) bool {
+	validThemes := []string{"default", "lux", "pulse", "cherry-dark"}
+	for _, validTheme := range validThemes {
+		if theme == validTheme {
+			return true
+		}
+	}
+	return false
+}
+
+// buildThemePath builds the theme path based on theme name
+func (r *Renderer) buildThemePath(theme string) string {
+	baseURL := "/static/css/bulma/"
+
+	// Use bulmaswatch themes for specific themes
+	if theme == "lux" || theme == "pulse" || theme == "cherry-dark" {
+		return baseURL + theme + "/bulmaswatch.min.css"
+	}
+
+	// Default theme uses standard Bulma CSS
+	return baseURL + "bulma-0.9.3.min.css"
+}
+
 // RenderWithContext renders a template with the given data and context
-func (r *Renderer) RenderWithContext(ctx context.Context, w io.Writer, name string, data map[string]interface{}) error {
+func (r *Renderer) RenderWithContext(ctx context.Context, w io.Writer, name string, data map[string]interface{}, request *http.Request) error {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -59,14 +105,14 @@ func (r *Renderer) RenderWithContext(ctx context.Context, w io.Writer, name stri
 		data = make(map[string]interface{})
 	}
 
-	// Add common config values accessible to all templates
-	data["terrareg_application_name"] = "Terrareg" // TODO: Add to config
+	// Add common config values accessible to all templates (from configuration)
+	data["terrareg_application_name"] = r.config.ApplicationName
 	data["public_url"] = r.config.PublicURL
 	data["enable_access_controls"] = r.config.EnableAccessControls
-	data["enable_security_scanning"] = false              // TODO: Add to config
-	data["terrareg_logo_url"] = "/static/images/logo.png" // TODO: Add to config
-	data["theme_path"] = "/static/css/bulma/pulse/bulmaswatch.min.css"  // TODO: Add to config
-	data["SITE_WARNING"] = ""                             // TODO: Add to config
+	data["enable_security_scanning"] = r.config.EnableSecurityScanning
+	data["terrareg_logo_url"] = r.config.LogoURL
+	data["theme_path"] = r.getThemePath(ctx, request)
+	data["SITE_WARNING"] = r.config.SiteWarning
 
 	// Add CSRF token from session context
 	data["csrf_token"] = middleware.GetCSRFToken(ctx)
@@ -107,7 +153,12 @@ func (r *Renderer) RenderWithContext(ctx context.Context, w io.Writer, name stri
 
 // Render renders a template with the given data (maintains backward compatibility)
 func (r *Renderer) Render(w io.Writer, name string, data map[string]interface{}) error {
-	return r.RenderWithContext(context.Background(), w, name, data)
+	return r.RenderWithContext(context.Background(), w, name, data, nil)
+}
+
+// RenderWithRequest renders a template with the given data, context, and HTTP request
+func (r *Renderer) RenderWithRequest(ctx context.Context, w io.Writer, name string, data map[string]interface{}, request *http.Request) error {
+	return r.RenderWithContext(ctx, w, name, data, request)
 }
 
 // Reload reloads all templates (useful in development)

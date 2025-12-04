@@ -42,10 +42,16 @@ type Config struct {
 	SecretKey                string
 
 	// Feature flags
-	AllowModuleHosting     bool
-	AllowProviderHosting   bool
-	AllowCustomGitProvider bool
-	EnableAccessControls   bool
+	AllowModuleHosting      bool
+	AllowProviderHosting    bool
+	AllowCustomGitProvider  bool
+	EnableAccessControls    bool
+	EnableSecurityScanning  bool
+
+	// UI Customization
+	ApplicationName string
+	LogoURL         string
+	SiteWarning     string
 
 	// External services
 	InfracostAPIKey              string
@@ -102,6 +108,12 @@ func New() (*Config, error) {
 		AllowProviderHosting:   getEnvBool("ALLOW_PROVIDER_HOSTING", true),
 		AllowCustomGitProvider: getEnvBool("ALLOW_CUSTOM_GIT_PROVIDER", true),
 		EnableAccessControls:   getEnvBool("ENABLE_ACCESS_CONTROLS", false),
+		EnableSecurityScanning: getEnvBool("ENABLE_SECURITY_SCANNING", true),
+
+		// UI Customization
+		ApplicationName: getEnv("APPLICATION_NAME", "Terrareg"),
+		LogoURL:         getEnv("LOGO_URL", "/static/images/logo.png"),
+		SiteWarning:     getEnv("SITE_WARNING", ""),
 
 		// External services
 		InfracostAPIKey:             getEnv("INFRACOST_API_KEY", ""),

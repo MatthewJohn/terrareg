@@ -29,6 +29,7 @@ type SessionData struct {
 	LastAccessed       time.Time         `json:"last_accessed"`
 	UserGroups         []string          `json:"user_groups,omitempty"`
 	ProviderSourceAuth []byte            `json:"provider_source_auth,omitempty"`
+	Theme              string            `json:"theme,omitempty"`
 }
 
 // CookieSessionService manages encrypted client-side cookie sessions
