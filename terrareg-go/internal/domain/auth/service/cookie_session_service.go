@@ -197,12 +197,15 @@ func (s *CookieSessionService) ClearSessionCookie(w http.ResponseWriter) {
 }
 
 func (s *CookieSessionService) setCookie(data string, w http.ResponseWriter) {
+	// Use URL service for HTTPS detection - this centralizes URL logic
+	isHTTPS := s.urlService.IsHTTPS(nil)
+
 	cookie := &http.Cookie{
 		Name:     s.getSessionCookieName(),
 		Value:    data,
 		Path:     "/",
 		MaxAge:   -1,
-		Secure:   s.getSessionSecure(),
+		Secure:   isHTTPS,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 	}
@@ -223,12 +226,6 @@ func (s *CookieSessionService) getSessionCookieName() string {
 	return s.GetSessionCookieName()
 }
 
-// getSessionSecure returns whether session cookies should be secure
-func (s *CookieSessionService) getSessionSecure() bool {
-	// Default to true unless explicitly configured otherwise
-	// In a real implementation, this might be based on environment or config
-	return true
-}
 
 // SetBasicSessionCookie sets a basic session_id cookie for compatibility
 // This method centralizes session_id cookie management used across auth methods
