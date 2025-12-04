@@ -559,19 +559,10 @@ func (s *Server) handleLoginPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
-	// Clear session cookies
-	http.SetCookie(w, &http.Cookie{
-		Name:   "session_id",
-		Value:  "",
-		Path:   "/",
-		MaxAge: -1,
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:   "is_admin_authenticated",
-		Value:  "",
-		Path:   "/",
-		MaxAge: -1,
-	})
+	// Clear session cookies using centralized service (DDD-compliant)
+	// This centralizes cookie management used across all auth methods
+	s.cookieSessionService.ClearSessionCookieByName(w, "session_id")
+	s.cookieSessionService.ClearSessionCookieByName(w, "is_admin_authenticated")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 func (s *Server) handleInitialSetupPage(w http.ResponseWriter, r *http.Request) {
