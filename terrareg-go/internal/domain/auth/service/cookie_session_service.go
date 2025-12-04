@@ -182,25 +182,19 @@ func (s *CookieSessionService) SetSessionCookie(w http.ResponseWriter, sessionDa
 		return fmt.Errorf("failed to encrypt session data: %w", err)
 	}
 
-	cookie := &http.Cookie{
-		Name:     s.getSessionCookieName(),
-		Value:    encryptedData,
-		Path:     "/",
-		MaxAge:   int(s.config.SessionExpiry.Seconds()),
-		Secure:   s.getSessionSecure(),
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	}
-
-	http.SetCookie(w, cookie)
+	s.setCookie(encryptedData, w)
 	return nil
 }
 
 // ClearSessionCookie clears the session cookie
 func (s *CookieSessionService) ClearSessionCookie(w http.ResponseWriter) {
+	s.setCookie("", w)
+}
+
+func (s *CookieSessionService) setCookie(data string, w http.ResponseWriter) {
 	cookie := &http.Cookie{
 		Name:     s.getSessionCookieName(),
-		Value:    "",
+		Value:    data,
 		Path:     "/",
 		MaxAge:   -1,
 		Secure:   s.getSessionSecure(),
