@@ -1,12 +1,14 @@
 package template
 
 import (
+	"context"
 	"html/template"
 	"io"
 	"path/filepath"
 	"sync"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 )
 
 // Renderer handles HTML template rendering
@@ -61,8 +63,8 @@ func (r *Renderer) loadTemplates() error {
 	return nil
 }
 
-// Render renders a template with the given data
-func (r *Renderer) Render(w io.Writer, name string, data map[string]interface{}) error {
+// RenderWithContext renders a template with the given data and context
+func (r *Renderer) RenderWithContext(ctx context.Context, w io.Writer, name string, data map[string]interface{}) error {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -75,16 +77,20 @@ func (r *Renderer) Render(w io.Writer, name string, data map[string]interface{})
 	data["terrareg_application_name"] = "Terrareg" // TODO: Add to config
 	data["public_url"] = r.config.PublicURL
 	data["enable_access_controls"] = r.config.EnableAccessControls
-	data["enable_security_scanning"] = false // TODO: Add to config
+	data["enable_security_scanning"] = false              // TODO: Add to config
 	data["terrareg_logo_url"] = "/static/images/logo.png" // TODO: Add to config
-	data["theme_path"] = "/static/css/terrareg.css" // TODO: Add to config
-	data["SITE_WARNING"] = "" // TODO: Add to config
+	data["theme_path"] = "/static/css/terrareg.css"       // TODO: Add to config
+	data["SITE_WARNING"] = ""                             // TODO: Add to config
 
-	// Add CSRF token (temporary implementation - returns empty string)
-	// TODO: Implement proper CSRF token handling when session management is complete
-	data["csrf_token"] = ""
+	// Add CSRF token from session context
+	data["csrf_token"] = middleware.GetCSRFToken(ctx)
 
 	return r.templates.ExecuteTemplate(w, name, data)
+}
+
+// Render renders a template with the given data (maintains backward compatibility)
+func (r *Renderer) Render(w io.Writer, name string, data map[string]interface{}) error {
+	return r.RenderWithContext(context.Background(), w, name, data)
 }
 
 // Reload reloads all templates (useful in development)
