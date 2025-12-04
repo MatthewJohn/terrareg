@@ -39,20 +39,13 @@ func (r *Renderer) loadTemplates() error {
 	// Load base template first
 	baseTemplate := template.New("")
 
-	// Parse base template (template.html)
+	// Parse base template (template.html) only
 	baseTemplate, err := baseTemplate.ParseFiles("templates/template.html")
 	if err != nil {
 		return err
 	}
 
-	// Load all other templates
-	pattern := filepath.Join("templates", "*.html")
-	templates, err := baseTemplate.ParseGlob(pattern)
-	if err != nil {
-		return err
-	}
-
-	r.templates = templates
+	r.templates = baseTemplate
 	return nil
 }
 
@@ -72,7 +65,7 @@ func (r *Renderer) RenderWithContext(ctx context.Context, w io.Writer, name stri
 	data["enable_access_controls"] = r.config.EnableAccessControls
 	data["enable_security_scanning"] = false              // TODO: Add to config
 	data["terrareg_logo_url"] = "/static/images/logo.png" // TODO: Add to config
-	data["theme_path"] = "/static/css/terrareg.css"       // TODO: Add to config
+	data["theme_path"] = "/static/css/bulma/pulse/bulmaswatch.min.css"  // TODO: Add to config
 	data["SITE_WARNING"] = ""                             // TODO: Add to config
 
 	// Add CSRF token from session context
@@ -96,7 +89,20 @@ func (r *Renderer) RenderWithContext(ctx context.Context, w io.Writer, name stri
 		data["session_user_groups"] = []string{}
 	}
 
-	return r.templates.ExecuteTemplate(w, name, data)
+	// Load the requested template individually to avoid conflicts
+	templatePath := filepath.Join("templates", name)
+	tmpl, err := r.templates.Clone()
+	if err != nil {
+		return err
+	}
+
+	// Parse the specific template file with the base template
+	tmpl, err = tmpl.ParseFiles("templates/template.html", templatePath)
+	if err != nil {
+		return err
+	}
+
+	return tmpl.ExecuteTemplate(w, name, data)
 }
 
 // Render renders a template with the given data (maintains backward compatibility)
