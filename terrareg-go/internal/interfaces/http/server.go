@@ -547,9 +547,9 @@ func (s *Server) handleBitBucketWebhook(w http.ResponseWriter, r *http.Request) 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	// Render the index template using the template renderer
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "index.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "index.html", map[string]interface{}{
 		"TEMPLATE_NAME": "index.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render index template")
@@ -557,9 +557,9 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleLoginPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "login.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "login.html", map[string]interface{}{
 		"TEMPLATE_NAME": "login.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render login template")
@@ -583,9 +583,9 @@ func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleInitialSetupPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "initial_setup.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "initial_setup.html", map[string]interface{}{
 		"TEMPLATE_NAME": "initial_setup.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render initial_setup template")
@@ -593,9 +593,9 @@ func (s *Server) handleInitialSetupPage(w http.ResponseWriter, r *http.Request) 
 }
 func (s *Server) handleCreateNamespacePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "create_namespace.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "create_namespace.html", map[string]interface{}{
 		"TEMPLATE_NAME": "create_namespace.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render create_namespace template")
@@ -603,9 +603,9 @@ func (s *Server) handleCreateNamespacePage(w http.ResponseWriter, r *http.Reques
 }
 func (s *Server) handleEditNamespacePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "namespace.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "namespace.html", map[string]interface{}{
 		"TEMPLATE_NAME": "edit_namespace.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render namespace template")
@@ -613,9 +613,9 @@ func (s *Server) handleEditNamespacePage(w http.ResponseWriter, r *http.Request)
 }
 func (s *Server) handleCreateModulePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "create_module_provider.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "create_module_provider.html", map[string]interface{}{
 		"TEMPLATE_NAME": "create_module_provider.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render create_module_provider template")
@@ -623,9 +623,9 @@ func (s *Server) handleCreateModulePage(w http.ResponseWriter, r *http.Request) 
 }
 func (s *Server) handleCreateProviderPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "create_provider.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "create_provider.html", map[string]interface{}{
 		"TEMPLATE_NAME": "create_provider.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render create_provider template")
@@ -633,9 +633,9 @@ func (s *Server) handleCreateProviderPage(w http.ResponseWriter, r *http.Request
 }
 func (s *Server) handleUserGroupsPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "user_groups.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "user_groups.html", map[string]interface{}{
 		"TEMPLATE_NAME": "user_groups.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render user_groups template")
@@ -643,9 +643,9 @@ func (s *Server) handleUserGroupsPage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleAuditHistoryPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "audit_history.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "audit_history.html", map[string]interface{}{
 		"TEMPLATE_NAME": "audit_history.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render audit_history template")
@@ -653,9 +653,9 @@ func (s *Server) handleAuditHistoryPage(w http.ResponseWriter, r *http.Request) 
 }
 func (s *Server) handleSearchPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "search.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "search.html", map[string]interface{}{
 		"TEMPLATE_NAME": "search.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render search template")
@@ -663,9 +663,9 @@ func (s *Server) handleSearchPage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleModuleSearchPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "module_search.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "module_search.html", map[string]interface{}{
 		"TEMPLATE_NAME": "module_search.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render module_search template")
@@ -673,9 +673,9 @@ func (s *Server) handleModuleSearchPage(w http.ResponseWriter, r *http.Request) 
 }
 func (s *Server) handleProviderSearchPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "provider_search.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "provider_search.html", map[string]interface{}{
 		"TEMPLATE_NAME": "provider_search.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render provider_search template")
@@ -683,9 +683,9 @@ func (s *Server) handleProviderSearchPage(w http.ResponseWriter, r *http.Request
 }
 func (s *Server) handleModulesPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "module.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "module.html", map[string]interface{}{
 		"TEMPLATE_NAME": "module.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render module template")
@@ -693,9 +693,9 @@ func (s *Server) handleModulesPage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleNamespacePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "namespace.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "namespace.html", map[string]interface{}{
 		"TEMPLATE_NAME": "namespace.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render namespace template")
@@ -703,9 +703,9 @@ func (s *Server) handleNamespacePage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleModulePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "module.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "module.html", map[string]interface{}{
 		"TEMPLATE_NAME": "module.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render module template")
@@ -713,9 +713,9 @@ func (s *Server) handleModulePage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleModuleProviderPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "module_provider.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "module_provider.html", map[string]interface{}{
 		"TEMPLATE_NAME": "module_provider.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render module_provider template")
@@ -723,9 +723,9 @@ func (s *Server) handleModuleProviderPage(w http.ResponseWriter, r *http.Request
 }
 func (s *Server) handleSubmodulePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "submodule.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "submodule.html", map[string]interface{}{
 		"TEMPLATE_NAME": "submodule.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render submodule template")
@@ -733,9 +733,9 @@ func (s *Server) handleSubmodulePage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleExamplePage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "example.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "example.html", map[string]interface{}{
 		"TEMPLATE_NAME": "example.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render example template")
@@ -743,9 +743,9 @@ func (s *Server) handleExamplePage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleGraphPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "graph.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "graph.html", map[string]interface{}{
 		"TEMPLATE_NAME": "graph.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render graph template")
@@ -753,9 +753,9 @@ func (s *Server) handleGraphPage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleProvidersPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "provider.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "provider.html", map[string]interface{}{
 		"TEMPLATE_NAME": "provider.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render provider template")
@@ -763,9 +763,9 @@ func (s *Server) handleProvidersPage(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleProviderPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := s.templateRenderer.RenderWithContext(r.Context(), w, "provider.html", map[string]interface{}{
+	err := s.templateRenderer.RenderWithRequest(r.Context(), w, "provider.html", map[string]interface{}{
 		"TEMPLATE_NAME": "provider.html",
-	})
+	}, r)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		s.logger.Error().Err(err).Msg("Failed to render provider template")
