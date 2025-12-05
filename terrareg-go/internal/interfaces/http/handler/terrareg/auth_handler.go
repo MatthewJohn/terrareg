@@ -73,13 +73,15 @@ func (h *AuthHandler) HandleAdminLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set session cookie using centralized service (DDD-compliant)
-	// This centralizes cookie management used across all auth methods
-	// HTTPS detection is handled centrally by the cookie service
-	h.cookieSessionService.SetBasicSessionCookie(w, response.SessionID, response.Expiry)
-
-	// Set admin authentication flag using centralized service
-	h.cookieSessionService.SetAdminAuthenticationCookie(w, response.Authenticated)
+	// Create admin session using the session service (DDD-compliant approach)
+	// The session service handles all cookie operations internally
+	if err := h.cookieSessionService.CreateAdminSession(w, response.SessionID); err != nil {
+		// If session creation fails, return error
+		RespondJSON(w, http.StatusInternalServerError, map[string]interface{}{
+			"message": "Failed to create session",
+		})
+		return
+	}
 
 	// Respond with Python-compatible format
 	RespondJSON(w, http.StatusOK, map[string]interface{}{
