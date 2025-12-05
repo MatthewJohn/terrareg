@@ -51,6 +51,7 @@ func NewDatabase(databaseURL string, debug bool) (*Database, error) {
 		NowFunc: func() time.Time {
 			return time.Now().UTC()
 		},
+		DisableAutomaticPing: true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
