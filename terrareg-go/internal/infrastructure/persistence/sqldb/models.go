@@ -6,10 +6,10 @@ import (
 
 // Common constants for column sizes (matching Python version)
 const (
-	GeneralColumnSize = 128
-	LargeColumnSize   = 1024
-	URLColumnSize     = 1024
-	MediumBlobSize    = (1 << 24) - 1 // 16MB - 1
+	GeneralColumnSize  = 128
+	LargeColumnSize    = 1024
+	URLColumnSize      = 1024
+	MediumBlobSize     = (1 << 24) - 1 // 16MB - 1
 	IdentityColumnSize = 255
 )
 
@@ -18,9 +18,9 @@ const (
 type NamespaceType string
 
 const (
-	NamespaceTypeNone           NamespaceType = "NONE"
-	NamespaceTypeGithubUser     NamespaceType = "GITHUB_USER"
-	NamespaceTypeGithubOrg      NamespaceType = "GITHUB_ORGANISATION"
+	NamespaceTypeNone       NamespaceType = "NONE"
+	NamespaceTypeGithubUser NamespaceType = "GITHUB_USER"
+	NamespaceTypeGithubOrg  NamespaceType = "GITHUB_ORGANISATION"
 )
 
 type UserGroupNamespacePermissionType string
@@ -78,28 +78,28 @@ const (
 type AuditAction string
 
 const (
-	AuditActionModuleVersionCreate       AuditAction = "MODULE_VERSION_CREATE"
-	AuditActionModuleVersionPublish      AuditAction = "MODULE_VERSION_PUBLISH"
-	AuditActionModuleVersionDelete       AuditAction = "MODULE_VERSION_DELETE"
-	AuditActionModuleProviderCreate      AuditAction = "MODULE_PROVIDER_CREATE"
-	AuditActionModuleProviderDelete      AuditAction = "MODULE_PROVIDER_DELETE"
-	AuditActionModuleProviderUpdate      AuditAction = "MODULE_PROVIDER_UPDATE"
-	AuditActionNamespaceCreate           AuditAction = "NAMESPACE_CREATE"
-	AuditActionNamespaceUpdate           AuditAction = "NAMESPACE_UPDATE"
-	AuditActionNamespaceDelete           AuditAction = "NAMESPACE_DELETE"
-	AuditActionProviderCreate            AuditAction = "PROVIDER_CREATE"
-	AuditActionProviderVersionCreate     AuditAction = "PROVIDER_VERSION_CREATE"
-	AuditActionUserGroupCreate           AuditAction = "USER_GROUP_CREATE"
-	AuditActionUserGroupDelete           AuditAction = "USER_GROUP_DELETE"
+	AuditActionModuleVersionCreate   AuditAction = "MODULE_VERSION_CREATE"
+	AuditActionModuleVersionPublish  AuditAction = "MODULE_VERSION_PUBLISH"
+	AuditActionModuleVersionDelete   AuditAction = "MODULE_VERSION_DELETE"
+	AuditActionModuleProviderCreate  AuditAction = "MODULE_PROVIDER_CREATE"
+	AuditActionModuleProviderDelete  AuditAction = "MODULE_PROVIDER_DELETE"
+	AuditActionModuleProviderUpdate  AuditAction = "MODULE_PROVIDER_UPDATE"
+	AuditActionNamespaceCreate       AuditAction = "NAMESPACE_CREATE"
+	AuditActionNamespaceUpdate       AuditAction = "NAMESPACE_UPDATE"
+	AuditActionNamespaceDelete       AuditAction = "NAMESPACE_DELETE"
+	AuditActionProviderCreate        AuditAction = "PROVIDER_CREATE"
+	AuditActionProviderVersionCreate AuditAction = "PROVIDER_VERSION_CREATE"
+	AuditActionUserGroupCreate       AuditAction = "USER_GROUP_CREATE"
+	AuditActionUserGroupDelete       AuditAction = "USER_GROUP_DELETE"
 )
 
 // Database Models (matching Python SQLAlchemy schema exactly)
 
 // SessionDB represents the session table
 type SessionDB struct {
-	ID                  string    `gorm:"type:varchar(128);primaryKey"`
-	Expiry              time.Time `gorm:"not null"`
-	ProviderSourceAuth  []byte    `gorm:"type:mediumblob"`
+	ID                 string    `gorm:"type:varchar(128);primaryKey"`
+	Expiry             time.Time `gorm:"not null"`
+	ProviderSourceAuth []byte    `gorm:"type:mediumblob"`
 }
 
 func (SessionDB) TableName() string {
@@ -169,12 +169,12 @@ func (UserGroupNamespacePermissionDB) TableName() string {
 
 // GitProviderDB represents git providers
 type GitProviderDB struct {
-	ID                  int    `gorm:"primaryKey"`
-	Name                string `gorm:"type:varchar(128);uniqueIndex"`
-	BaseURLTemplate     string `gorm:"type:varchar(1024)"`
-	CloneURLTemplate    string `gorm:"type:varchar(1024)"`
-	BrowseURLTemplate   string `gorm:"type:varchar(1024)"`
-	GitPathTemplate     string `gorm:"type:varchar(1024)"`
+	ID                int    `gorm:"primaryKey"`
+	Name              string `gorm:"type:varchar(128);uniqueIndex"`
+	BaseURLTemplate   string `gorm:"type:varchar(1024)"`
+	CloneURLTemplate  string `gorm:"type:varchar(1024)"`
+	BrowseURLTemplate string `gorm:"type:varchar(1024)"`
+	GitPathTemplate   string `gorm:"type:varchar(1024)"`
 }
 
 func (GitProviderDB) TableName() string {
@@ -222,9 +222,9 @@ type ModuleProviderDB struct {
 	GitProviderID         *int    `gorm:"default:null"`
 	LatestVersionID       *int    `gorm:"default:null"`
 
-	Namespace     NamespaceDB       `gorm:"foreignKey:NamespaceID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	GitProvider   *GitProviderDB    `gorm:"foreignKey:GitProviderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
-	LatestVersion *ModuleVersionDB  `gorm:"foreignKey:LatestVersionID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	Namespace     NamespaceDB      `gorm:"foreignKey:NamespaceID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	GitProvider   *GitProviderDB   `gorm:"foreignKey:GitProviderID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	LatestVersion *ModuleVersionDB `gorm:"foreignKey:LatestVersionID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
 }
 
 func (ModuleProviderDB) TableName() string {
@@ -265,19 +265,19 @@ func (ModuleDetailsDB) TableName() string {
 
 // ModuleVersionDB represents module versions
 type ModuleVersionDB struct {
-	ID                    int        `gorm:"primaryKey;autoIncrement"`
-	ModuleProviderID      int        `gorm:"not null"`
-	Version               string     `gorm:"type:varchar(128)"`
-	GitSHA                *string    `gorm:"type:varchar(128)"`
-	GitPath               *string    `gorm:"type:varchar(1024)"`
-	ArchiveGitPath        bool       `gorm:"default:false"`
-	ModuleDetailsID       *int       `gorm:"default:null"`
-	Beta                  bool       `gorm:"not null"`
-	Owner                 *string    `gorm:"type:varchar(128)"`
-	Description           *string    `gorm:"type:varchar(1024)"`
-	RepoBaseURLTemplate   *string    `gorm:"type:varchar(1024)"`
-	RepoCloneURLTemplate  *string    `gorm:"type:varchar(1024)"`
-	RepoBrowseURLTemplate *string    `gorm:"type:varchar(1024)"`
+	ID                    int     `gorm:"primaryKey;autoIncrement"`
+	ModuleProviderID      int     `gorm:"not null"`
+	Version               string  `gorm:"type:varchar(128)"`
+	GitSHA                *string `gorm:"type:varchar(128)"`
+	GitPath               *string `gorm:"type:varchar(1024)"`
+	ArchiveGitPath        bool    `gorm:"default:false"`
+	ModuleDetailsID       *int    `gorm:"default:null"`
+	Beta                  bool    `gorm:"not null"`
+	Owner                 *string `gorm:"type:varchar(128)"`
+	Description           *string `gorm:"type:varchar(1024)"`
+	RepoBaseURLTemplate   *string `gorm:"type:varchar(1024)"`
+	RepoCloneURLTemplate  *string `gorm:"type:varchar(1024)"`
+	RepoBrowseURLTemplate *string `gorm:"type:varchar(1024)"`
 	PublishedAt           *time.Time
 	VariableTemplate      []byte `gorm:"type:mediumblob"`
 	Internal              bool   `gorm:"not null"`
@@ -311,16 +311,16 @@ func (SubmoduleDB) TableName() string {
 
 // AnalyticsDB represents module analytics
 type AnalyticsDB struct {
-	ID                 int        `gorm:"primaryKey;autoIncrement"`
-	ParentModuleVersion int       `gorm:"index;not null"`
-	Timestamp          *time.Time
-	TerraformVersion   *string `gorm:"type:varchar(128)"`
-	AnalyticsToken     *string `gorm:"type:varchar(128)"`
-	AuthToken          *string `gorm:"type:varchar(128)"`
-	Environment        *string `gorm:"type:varchar(128)"`
-	NamespaceName      *string `gorm:"type:varchar(128)"`
-	ModuleName         *string `gorm:"type:varchar(128)"`
-	ProviderName       *string `gorm:"type:varchar(128)"`
+	ID                  int `gorm:"primaryKey;autoIncrement"`
+	ParentModuleVersion int `gorm:"index;not null"`
+	Timestamp           *time.Time
+	TerraformVersion    *string `gorm:"type:varchar(128)"`
+	AnalyticsToken      *string `gorm:"type:varchar(128)"`
+	AuthToken           *string `gorm:"type:varchar(128)"`
+	Environment         *string `gorm:"type:varchar(128)"`
+	NamespaceName       *string `gorm:"type:varchar(128)"`
+	ModuleName          *string `gorm:"type:varchar(128)"`
+	ProviderName        *string `gorm:"type:varchar(128)"`
 }
 
 func (AnalyticsDB) TableName() string {
@@ -329,8 +329,8 @@ func (AnalyticsDB) TableName() string {
 
 // ProviderAnalyticsDB represents provider analytics
 type ProviderAnalyticsDB struct {
-	ID                int        `gorm:"primaryKey;autoIncrement"`
-	ProviderVersionID int        `gorm:"index;not null"`
+	ID                int `gorm:"primaryKey;autoIncrement"`
+	ProviderVersionID int `gorm:"index;not null"`
 	Timestamp         *time.Time
 	TerraformVersion  *string `gorm:"type:varchar(128)"`
 	NamespaceName     *string `gorm:"type:varchar(128)"`
@@ -371,13 +371,13 @@ func (ModuleVersionFileDB) TableName() string {
 
 // GPGKeyDB represents GPG keys
 type GPGKeyDB struct {
-	ID          int        `gorm:"primaryKey;autoIncrement"`
-	NamespaceID int        `gorm:"not null"`
-	ASCIIArmor  []byte     `gorm:"type:mediumblob"`
-	KeyID       *string    `gorm:"type:varchar(1024)"`
-	Fingerprint *string    `gorm:"type:varchar(1024)"`
-	Source      *string    `gorm:"type:varchar(1024)"`
-	SourceURL   *string    `gorm:"type:varchar(1024)"`
+	ID          int     `gorm:"primaryKey;autoIncrement"`
+	NamespaceID int     `gorm:"not null"`
+	ASCIIArmor  []byte  `gorm:"type:mediumblob"`
+	KeyID       *string `gorm:"type:varchar(1024)"`
+	Fingerprint *string `gorm:"type:varchar(1024)"`
+	Source      *string `gorm:"type:varchar(1024)"`
+	SourceURL   *string `gorm:"type:varchar(1024)"`
 	CreatedAt   *time.Time
 	UpdatedAt   *time.Time
 
@@ -454,15 +454,15 @@ func (ProviderDB) TableName() string {
 
 // ProviderVersionDB represents provider versions
 type ProviderVersionDB struct {
-	ID               int        `gorm:"primaryKey;autoIncrement"`
-	ProviderID       int        `gorm:"not null"`
-	GPGKeyID         int        `gorm:"not null"`
-	Version          string     `gorm:"type:varchar(128)"`
-	GitTag           *string    `gorm:"type:varchar(128)"`
-	Beta             bool       `gorm:"not null"`
-	PublishedAt      *time.Time
-	ExtractionVersion *int      `gorm:"default:null"`
-	ProtocolVersions []byte     `gorm:"type:mediumblob"`
+	ID                int     `gorm:"primaryKey;autoIncrement"`
+	ProviderID        int     `gorm:"not null"`
+	GPGKeyID          int     `gorm:"not null"`
+	Version           string  `gorm:"type:varchar(128)"`
+	GitTag            *string `gorm:"type:varchar(128)"`
+	Beta              bool    `gorm:"not null"`
+	PublishedAt       *time.Time
+	ExtractionVersion *int   `gorm:"default:null"`
+	ProtocolVersions  []byte `gorm:"type:mediumblob"`
 
 	Provider ProviderDB `gorm:"foreignKey:ProviderID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	GPGKey   GPGKeyDB   `gorm:"foreignKey:GPGKeyID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
@@ -511,15 +511,15 @@ func (ProviderVersionBinaryDB) TableName() string {
 
 // UserDB represents users (derived from auth data and session storage)
 type UserDB struct {
-	ID             string    `gorm:"type:varchar(128);primaryKey"`
-	Username       string    `gorm:"type:varchar(128);not null"`
-	DisplayName    string    `gorm:"type:varchar(128)"`
-	Email          string    `gorm:"type:varchar(128)"`
-	AuthMethod      string    `gorm:"type:varchar(50);not null"`
-	AuthProviderID  string    `gorm:"type:varchar(128)"`
-	ExternalID      string    `gorm:"type:varchar(128)"`
-	AccessToken     string    `gorm:"type:varchar(1024)"`
-	RefreshToken    string    `gorm:"type:varchar(1024)"`
+	ID             string `gorm:"type:varchar(128);primaryKey"`
+	Username       string `gorm:"type:varchar(128);not null"`
+	DisplayName    string `gorm:"type:varchar(128)"`
+	Email          string `gorm:"type:varchar(128)"`
+	AuthMethod     string `gorm:"type:varchar(50);not null"`
+	AuthProviderID string `gorm:"type:varchar(128)"`
+	ExternalID     string `gorm:"type:varchar(128)"`
+	AccessToken    string `gorm:"type:varchar(1024)"`
+	RefreshToken   string `gorm:"type:varchar(1024)"`
 	TokenExpiry    *time.Time
 	Active         bool      `gorm:"default:true;not null"`
 	CreatedAt      time.Time `gorm:"not null"`
@@ -532,8 +532,8 @@ func (UserDB) TableName() string {
 
 // UserGroupMemberDB represents user-group membership
 type UserGroupMemberDB struct {
-	UserGroupID int    `gorm:"primaryKey;not null"`
-	UserID      string `gorm:"type:varchar(128);primaryKey;not null"`
+	UserGroupID int       `gorm:"primaryKey;not null"`
+	UserID      string    `gorm:"type:varchar(128);primaryKey;not null"`
 	JoinedAt    time.Time `gorm:"not null"`
 
 	UserGroup UserGroupDB `gorm:"foreignKey:UserGroupID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
@@ -545,13 +545,13 @@ func (UserGroupMemberDB) TableName() string {
 
 // UserPermissionDB represents direct user permissions (inherited from group membership)
 type UserPermissionDB struct {
-	ID           int        `gorm:"primaryKey;autoIncrement"`
-	UserID       string     `gorm:"type:varchar(128);not null"`
-	ResourceType  string     `gorm:"type:varchar(50);not null"`
-	ResourceID    string     `gorm:"type:varchar(128);not null"`
-	Action        string     `gorm:"type:varchar(50);not null"`
-	GrantedBy     string     `gorm:"type:varchar(128)"`
-	GrantedAt     time.Time   `gorm:"not null"`
+	ID           int       `gorm:"primaryKey;autoIncrement"`
+	UserID       string    `gorm:"type:varchar(128);not null"`
+	ResourceType string    `gorm:"type:varchar(50);not null"`
+	ResourceID   string    `gorm:"type:varchar(128);not null"`
+	Action       string    `gorm:"type:varchar(50);not null"`
+	GrantedBy    string    `gorm:"type:varchar(128)"`
+	GrantedAt    time.Time `gorm:"not null"`
 }
 
 func (UserPermissionDB) TableName() string {
@@ -560,14 +560,14 @@ func (UserPermissionDB) TableName() string {
 
 // AuditHistoryDB represents audit trail
 type AuditHistoryDB struct {
-	ID         int         `gorm:"primaryKey;autoIncrement"`
+	ID         int `gorm:"primaryKey;autoIncrement"`
 	Timestamp  *time.Time
-	Username   *string      `gorm:"type:varchar(128)"`
-	Action     AuditAction  `gorm:"type:varchar(50)"`
-	ObjectType *string      `gorm:"type:varchar(128)"`
-	ObjectID   *string      `gorm:"type:varchar(128)"`
-	OldValue   *string      `gorm:"type:varchar(128)"`
-	NewValue   *string      `gorm:"type:varchar(128)"`
+	Username   *string     `gorm:"type:varchar(128)"`
+	Action     AuditAction `gorm:"type:varchar(50)"`
+	ObjectType *string     `gorm:"type:varchar(128)"`
+	ObjectID   *string     `gorm:"type:varchar(128)"`
+	OldValue   *string     `gorm:"type:varchar(128)"`
+	NewValue   *string     `gorm:"type:varchar(128)"`
 }
 
 func (AuditHistoryDB) TableName() string {
