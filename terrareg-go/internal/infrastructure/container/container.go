@@ -18,6 +18,7 @@ import (
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	providerQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider"
 	terraformCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/terraform"
+	setupQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/setup"
 	appConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	authRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
@@ -55,6 +56,7 @@ type Container struct {
 	// Repositories
 	NamespaceRepo                     moduleRepo.NamespaceRepository
 	ModuleProviderRepo                moduleRepo.ModuleProviderRepository
+	ModuleVersionRepo                 moduleRepo.ModuleVersionRepository
 	AnalyticsRepo                     analyticsCmd.AnalyticsRepository
 	ProviderRepo                      providerRepo.ProviderRepository
 	SessionRepo                       authRepo.SessionRepository
@@ -142,6 +144,10 @@ type Container struct {
 	TerraformIDPHandler         *terraformHandler.TerraformIDPHandler
 	TerraformStaticTokenHandler *terraformHandler.TerraformStaticTokenHandler
 
+	// Initial Setup
+	GetInitialSetupQuery   *setupQuery.GetInitialSetupQuery
+	InitialSetupHandler    *terrareg.InitialSetupHandler
+
 	// Middleware
 	AuthMiddleware *terrareg_middleware.AuthMiddleware
 
@@ -167,6 +173,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	// Initialize repositories
 	c.NamespaceRepo = modulePersistence.NewNamespaceRepository(db.DB)
 	c.ModuleProviderRepo = modulePersistence.NewModuleProviderRepository(db.DB, c.NamespaceRepo)
+	c.ModuleVersionRepo = modulePersistence.NewModuleVersionRepository(db.DB)
 	c.AnalyticsRepo = analyticsPersistence.NewAnalyticsRepository(db.DB)
 	c.ProviderRepo = providerRepository.NewProviderRepository()
 	c.SessionRepo = authPersistence.NewSessionRepository(db.DB)
@@ -258,9 +265,21 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	c.GetConfigQuery = configQuery.NewGetConfigQuery(configRepository)
 	c.GetVersionQuery = configQuery.NewGetVersionQuery(configRepository)
 
+	// Initialize initial setup query
+	c.GetInitialSetupQuery = setupQuery.NewGetInitialSetupQuery(
+		c.NamespaceRepo,
+		c.ModuleProviderRepo,
+		c.ModuleVersionRepo,
+		c.URLService,
+		cfg,
+	)
+
 	// Initialize config/version handlers
 	c.ConfigHandler = terrareg.NewConfigHandler(c.GetConfigQuery)
 	c.VersionHandler = terrareg.NewVersionHandler(c.GetVersionQuery)
+
+	// Initialize initial setup handler
+	c.InitialSetupHandler = terrareg.NewInitialSetupHandler(c.GetInitialSetupQuery)
 
 	// Initialize handlers
 	c.NamespaceHandler = terrareg.NewNamespaceHandler(c.ListNamespacesQuery, c.CreateNamespaceCmd)
@@ -339,6 +358,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 		c.AnalyticsHandler,
 		c.ProviderHandler,
 		c.AuthHandler,
+		c.InitialSetupHandler,
 		c.AuthMiddleware,
 		c.TemplateRenderer,
 		c.CookieSessionService,

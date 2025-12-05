@@ -29,6 +29,7 @@ type Server struct {
 	analyticsHandler       *terrareg.AnalyticsHandler
 	providerHandler        *terrareg.ProviderHandler
 	authHandler            *terrareg.AuthHandler
+	initialSetupHandler    *terrareg.InitialSetupHandler
 	authMiddleware         *terrareg_middleware.AuthMiddleware
 	templateRenderer       *template.Renderer
 	cookieSessionService   *service.CookieSessionService
@@ -51,6 +52,7 @@ func NewServer(
 	analyticsHandler *terrareg.AnalyticsHandler,
 	providerHandler *terrareg.ProviderHandler,
 	authHandler *terrareg.AuthHandler,
+	initialSetupHandler *terrareg.InitialSetupHandler,
 	authMiddleware *terrareg_middleware.AuthMiddleware,
 	templateRenderer *template.Renderer,
 	cookieSessionService *service.CookieSessionService,
@@ -72,6 +74,7 @@ func NewServer(
 		analyticsHandler:         analyticsHandler,
 		providerHandler:          providerHandler,
 		authHandler:              authHandler,
+		initialSetupHandler:     initialSetupHandler,
 		authMiddleware:           authMiddleware,
 		templateRenderer:         templateRenderer,
 		cookieSessionService:     cookieSessionService,
@@ -294,6 +297,9 @@ func (s *Server) setupRoutes() {
 	s.router.Post("/v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/github", s.handleGitHubWebhook)
 	s.router.Post("/v1/terrareg/modules/{namespace}/{name}/{provider}/hooks/bitbucket", s.handleBitBucketWebhook)
 
+	// Initial Setup API
+	s.router.Get("/v1/terrareg/initial_setup", s.handleInitialSetup)
+
 	// Static files
 	fileServer := http.FileServer(http.Dir("./static"))
 	s.router.Handle("/static/*", http.StripPrefix("/static/", fileServer))
@@ -441,7 +447,9 @@ func (s *Server) handleMostDownloadedThisWeek(w http.ResponseWriter, r *http.Req
 }
 func (s *Server) handleModuleVersionAnalytics(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleAnalyticsTokenVersions(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleInitialSetup(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleInitialSetup(w http.ResponseWriter, r *http.Request) {
+	s.initialSetupHandler.HandleInitialSetup(w, r)
+}
 func (s *Server) handleInitialSetupPost(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleNamespaceList(w http.ResponseWriter, r *http.Request) {
 	s.namespaceHandler.HandleNamespaceList(w, r)
