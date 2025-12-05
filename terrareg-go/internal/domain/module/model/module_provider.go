@@ -356,3 +356,28 @@ func (mp *ModuleProvider) FullName() string {
 func (mp *ModuleProvider) String() string {
 	return mp.FullName()
 }
+
+// Initial Setup URL Methods
+
+// GetGitCloneURL returns the git clone URL if configured
+func (mp *ModuleProvider) GetGitCloneURL() *string {
+	if mp.repoCloneURLTemplate == nil {
+		return nil
+	}
+	return mp.repoCloneURLTemplate
+}
+
+// GetViewURL returns the module view URL
+func (mp *ModuleProvider) GetViewURL() string {
+	return fmt.Sprintf("/modules/%s/%s/%s", mp.namespace.Name(), mp.module, mp.provider)
+}
+
+// GetUploadEndpoint returns the upload endpoint URL
+func (mp *ModuleProvider) GetUploadEndpoint() string {
+	return fmt.Sprintf("/v1/terrareg/modules/%d/${{version}}/upload", mp.id)
+}
+
+// GetPublishEndpoint returns the publish endpoint URL
+func (mp *ModuleProvider) GetPublishEndpoint() string {
+	return fmt.Sprintf("/v1/terrareg/modules/%d/${{version}}/publish", mp.id)
+}
