@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -82,7 +83,14 @@ func (c *AdminLoginCommand) Execute(ctx context.Context, req *AdminLoginRequest)
 	}
 	ttl := time.Duration(c.config.AdminSessionExpiryMins) * time.Minute
 
-	session, err := c.sessionService.CreateSession(ctx, adminAuthMethod, nil, &ttl)
+	// Convert adminAuthMethod to string - ADMIN_API_KEY is the auth method type for admin
+	authMethodType := string(adminAuthMethod.GetProviderType())
+
+	// Get provider data from auth method
+	providerData := adminAuthMethod.GetProviderData()
+	providerDataBytes, _ := json.Marshal(providerData)
+
+	session, err := c.sessionService.CreateSession(ctx, authMethodType, providerDataBytes, &ttl)
 	if err != nil {
 		return &AdminLoginResponse{
 			Authenticated: false,

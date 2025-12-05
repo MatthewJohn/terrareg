@@ -17,11 +17,11 @@ func NewIsAuthenticatedQuery() *IsAuthenticatedQuery {
 
 // Execute returns the current authentication status
 func (q *IsAuthenticatedQuery) Execute(ctx context.Context) (*dto.IsAuthenticatedResponse, error) {
-	// Get session data from context set by SessionMiddleware
-	sessionData := middleware.GetSessionData(ctx)
+	// Get authentication context from context set by SessionMiddleware
+	authCtx := middleware.GetAuthenticationContext(ctx)
 
-	// If no session data, user is not authenticated
-	if sessionData == nil {
+	// If no authentication context, user is not authenticated
+	if authCtx == nil {
 		return &dto.IsAuthenticatedResponse{
 			Authenticated:        false,
 			ReadAccess:          false,
@@ -30,16 +30,16 @@ func (q *IsAuthenticatedQuery) Execute(ctx context.Context) (*dto.IsAuthenticate
 		}, nil
 	}
 
-	// Return authentication status from session data
-	permissions := sessionData.Permissions
+	// Return authentication status from authentication context
+	permissions := authCtx.Permissions
 	if permissions == nil {
 		permissions = make(map[string]string)
 	}
 
 	return &dto.IsAuthenticatedResponse{
-		Authenticated:        true, // Session exists, so authenticated
-		ReadAccess:          true, // Authenticated users have read access
-		SiteAdmin:           sessionData.IsAdmin,
+		Authenticated:        authCtx.IsAuthenticated,
+		ReadAccess:          authCtx.IsAuthenticated, // Authenticated users have read access
+		SiteAdmin:           authCtx.IsAdmin,
 		NamespacePermissions: permissions,
 	}, nil
 }

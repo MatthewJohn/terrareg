@@ -15,7 +15,7 @@ type AuthHandler struct {
 	adminLoginCmd         *authCmd.AdminLoginCommand
 	checkSessionQuery     *authQuery.CheckSessionQuery
 	isAuthenticatedQuery  *authQuery.IsAuthenticatedQuery
-	cookieSessionService  *service.CookieSessionService
+	authService           *service.AuthenticationService
 	config                *config.Config
 }
 
@@ -24,14 +24,14 @@ func NewAuthHandler(
 	adminLoginCmd *authCmd.AdminLoginCommand,
 	checkSessionQuery *authQuery.CheckSessionQuery,
 	isAuthenticatedQuery *authQuery.IsAuthenticatedQuery,
-	cookieSessionService *service.CookieSessionService,
+	authService *service.AuthenticationService,
 	config *config.Config,
 ) *AuthHandler {
 	return &AuthHandler{
 		adminLoginCmd:         adminLoginCmd,
 		checkSessionQuery:     checkSessionQuery,
 		isAuthenticatedQuery:  isAuthenticatedQuery,
-		cookieSessionService:  cookieSessionService,
+		authService:           authService,
 		config:                config,
 	}
 }
@@ -73,9 +73,9 @@ func (h *AuthHandler) HandleAdminLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create admin session using the session service (DDD-compliant approach)
-	// The session service handles all cookie operations internally
-	if err := h.cookieSessionService.CreateAdminSession(w, response.SessionID); err != nil {
+	// Create admin session using the authentication service (DDD-compliant approach)
+	// The authentication service orchestrates session and cookie operations
+	if err := h.authService.CreateAdminSession(ctx, w, response.SessionID); err != nil {
 		// If session creation fails, return error
 		RespondJSON(w, http.StatusInternalServerError, map[string]interface{}{
 			"message": "Failed to create session",
