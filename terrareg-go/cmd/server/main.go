@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 
 	"github.com/rs/zerolog"
@@ -59,6 +60,9 @@ func main() {
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to initialize container")
 	}
+
+	// Start session cleanup service
+	go c.SessionCleanupService.Start(context.Background())
 
 	// Start server
 	logger.Info().Int("port", cfg.ListenPort).Msg("Starting HTTP server")

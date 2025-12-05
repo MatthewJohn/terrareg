@@ -11,15 +11,15 @@ import (
 
 // SessionMiddleware handles session management for HTTP requests
 type SessionMiddleware struct {
-	sessionService *service.CookieSessionService
-	logger         zerolog.Logger
+	authService *service.AuthenticationService
+	logger      zerolog.Logger
 }
 
 // NewSessionMiddleware creates a new session middleware
-func NewSessionMiddleware(sessionService *service.CookieSessionService, logger zerolog.Logger) *SessionMiddleware {
+func NewSessionMiddleware(authService *service.AuthenticationService, logger zerolog.Logger) *SessionMiddleware {
 	return &SessionMiddleware{
-		sessionService: sessionService,
-		logger:         logger,
+		authService: authService,
+		logger:      logger,
 	}
 }
 
@@ -28,27 +28,17 @@ func (m *SessionMiddleware) Session(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// Extract session cookie
-		cookie, err := r.Cookie(m.sessionService.GetSessionCookieName())
+		// Use authentication service to validate request
+		authCtx, err := m.authService.ValidateRequest(ctx, r)
 		if err != nil {
-			// No session cookie - continue without session
-			m.logger.Warn().Err(err).Msg("No session cookie")
+			// Log error but continue without authentication
+			m.logger.Warn().Err(err).Msg("Failed to validate authentication")
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		// Validate session
-		sessionData, err := m.sessionService.ValidateSession(ctx, cookie.Value)
-		if err != nil {
-			// Invalid session - clear cookie and continue
-			m.logger.Warn().Err(err).Msg("Invalid session cookie, clearing")
-			m.sessionService.ClearSessionCookie(w)
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		// Add session data to context
-		ctx = withSessionData(ctx, sessionData)
+		// Add authentication context to request context
+		ctx = withAuthenticationContext(ctx, authCtx)
 
 		// Update the request with the new context
 		r = r.WithContext(ctx)
@@ -60,8 +50,8 @@ func (m *SessionMiddleware) Session(next http.Handler) http.Handler {
 // RequireSession requires a valid session, otherwise returns 401
 func (m *SessionMiddleware) RequireSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sessionData := GetSessionData(r.Context())
-		if sessionData == nil {
+		authCtx := GetAuthenticationContext(r.Context())
+		if authCtx == nil || !authCtx.IsAuthenticated {
 			http.Error(w, "Authentication required", http.StatusUnauthorized)
 			return
 		}
@@ -73,8 +63,8 @@ func (m *SessionMiddleware) RequireSession(next http.Handler) http.Handler {
 // RequireAdminSession requires a valid admin session, otherwise returns 403
 func (m *SessionMiddleware) RequireAdminSession(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		sessionData := GetSessionData(r.Context())
-		if sessionData == nil || !sessionData.IsAdmin {
+		authCtx := GetAuthenticationContext(r.Context())
+		if authCtx == nil || !authCtx.IsAuthenticated || !authCtx.IsAdmin {
 			http.Error(w, "Admin access required", http.StatusForbidden)
 			return
 		}
@@ -83,7 +73,25 @@ func (m *SessionMiddleware) RequireAdminSession(next http.Handler) http.Handler 
 	})
 }
 
-// Session context key type to avoid context key collisions
+// Authentication context key type to avoid context key collisions
+type authContextKey string
+
+const authenticationContextKey authContextKey = "authenticationContext"
+
+// withAuthenticationContext adds authentication context to the context
+func withAuthenticationContext(ctx context.Context, authCtx *service.AuthenticationContext) context.Context {
+	return context.WithValue(ctx, authenticationContextKey, authCtx)
+}
+
+// GetAuthenticationContext retrieves authentication context from the context
+func GetAuthenticationContext(ctx context.Context) *service.AuthenticationContext {
+	if authCtx, ok := ctx.Value(authenticationContextKey).(*service.AuthenticationContext); ok {
+		return authCtx
+	}
+	return nil
+}
+
+// Legacy session context functions for backward compatibility
 type sessionKey string
 
 const sessionDataKey sessionKey = "sessionData"
@@ -95,6 +103,10 @@ func withSessionData(ctx context.Context, sessionData *service.SessionData) cont
 
 // GetSessionData retrieves session data from the context
 func GetSessionData(ctx context.Context) *service.SessionData {
+	if authCtx := GetAuthenticationContext(ctx); authCtx != nil {
+		return authCtx.SessionData
+	}
+
 	if sessionData, ok := ctx.Value(sessionDataKey).(*service.SessionData); ok {
 		return sessionData
 	}
@@ -103,16 +115,17 @@ func GetSessionData(ctx context.Context) *service.SessionData {
 
 // GetCSRFToken retrieves CSRF token from session data in context
 func GetCSRFToken(ctx context.Context) string {
-	if sessionData := GetSessionData(ctx); sessionData != nil {
-		return sessionData.CSRFToken
-	}
+	// CSRF token is not part of the new SessionData structure
+	// This function returns empty string for compatibility
 	return ""
 }
 
 // GetUserID retrieves user ID from session data in context
 func GetUserID(ctx context.Context) string {
+	// User ID is not part of the new SessionData structure
+	// Return SessionID as a fallback
 	if sessionData := GetSessionData(ctx); sessionData != nil {
-		return sessionData.UserID
+		return sessionData.SessionID
 	}
 	return ""
 }

@@ -1,8 +1,6 @@
 package container
 
 import (
-	"fmt"
-
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
@@ -74,8 +72,10 @@ type Container struct {
 	ModuleImporterService *moduleService.ModuleImporterService
 	AuthFactory           *authservice.AuthFactory
 	SessionService        *authservice.SessionService
+	CookieService         *authservice.CookieService
+	AuthenticationService *authservice.AuthenticationService
+	SessionCleanupService *authservice.SessionCleanupService
 	TerraformIdpService   *authservice.TerraformIdpService
-	CookieSessionService  *authservice.CookieSessionService
 	URLService            *urlservice.URLService
 
 	// Commands
@@ -201,20 +201,30 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	)
 
 	// Initialize auth services
-	c.SessionService = authservice.NewSessionService(c.Config, c.SessionRepo, authservice.DefaultSessionConfig(c.Config))
+	// Use the refactored SessionService (pure database operations)
+	sessionService := authservice.NewSessionService(c.SessionRepo, authservice.DefaultSessionDatabaseConfig())
+	c.SessionService = sessionService
+
+	// Initialize cookie service (pure cookie operations)
+	cookieService := authservice.NewCookieService(cfg)
+	c.CookieService = cookieService
+
+	// Initialize authentication service (orchestrates session and cookie operations)
+	c.AuthenticationService = authservice.NewAuthenticationService(sessionService, cookieService)
+
+	// Initialize session cleanup service
+	c.SessionCleanupService = authservice.NewSessionCleanupService(
+		sessionService,
+		logger,
+		authservice.DefaultSessionDatabaseConfig().CleanupInterval,
+	)
+
 	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, cfg)
 	c.TerraformIdpService = authservice.NewTerraformIdpService(
 		c.TerraformIdpAuthorizationCodeRepo,
 		c.TerraformIdpAccessTokenRepo,
 		c.TerraformIdpSubjectIdentifierRepo,
 	)
-
-	// Initialize cookie session service
-	cookieSessionService, err := authservice.NewCookieSessionService(c.SessionRepo, nil, cfg, c.URLService)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cookie session service: %w", err)
-	}
-	c.CookieSessionService = cookieSessionService
 
 	// Initialize commands
 	c.CreateNamespaceCmd = namespace.NewCreateNamespaceCommand(c.NamespaceRepo)
@@ -324,7 +334,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 		c.AdminLoginCmd,
 		c.CheckSessionQuery,
 		c.IsAuthenticatedQuery,
-		c.CookieSessionService,
+		c.AuthenticationService,
 		cfg,
 	)
 	c.TerraformV1ModuleHandler = v1.NewTerraformV1ModuleHandler(c.ListModulesQuery, c.SearchModulesQuery, c.GetModuleProviderQuery, c.ListModuleVersionsQuery, c.GetModuleDownloadQuery, c.GetModuleVersionQuery) // Instantiate the new handler
@@ -345,7 +355,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 
 	// Initialize middleware
 	c.AuthMiddleware = terrareg_middleware.NewAuthMiddleware(cfg, c.AuthFactory)
-	c.SessionMiddleware = terrareg_middleware.NewSessionMiddleware(c.CookieSessionService, c.Logger)
+	c.SessionMiddleware = terrareg_middleware.NewSessionMiddleware(c.AuthenticationService, c.Logger)
 
 	// Initialize template renderer
 	templateRenderer, err := template.NewRenderer(cfg)
@@ -366,7 +376,6 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 		c.InitialSetupHandler,
 		c.AuthMiddleware,
 		c.TemplateRenderer,
-		c.CookieSessionService,
 		c.SessionMiddleware,
 		c.TerraformV1ModuleHandler, // Pass the new handler to the server constructor
 		c.TerraformV2ProviderHandler,

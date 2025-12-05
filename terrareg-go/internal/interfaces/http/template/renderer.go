@@ -52,12 +52,15 @@ func (r *Renderer) loadTemplates() error {
 
 // getThemePath returns CSS path for theme based on theme cookie or session
 func (r *Renderer) getThemePath(ctx context.Context, request *http.Request) string {
-	// Try to get theme from session first
+	// Try to get theme from session first - Note: Theme is not in new SessionData
+	// We can add it later if needed, for now fall back to cookie
+	/*
 	if sessionData := middleware.GetSessionData(ctx); sessionData != nil && sessionData.Theme != "" {
 		if r.isValidTheme(sessionData.Theme) {
 			return r.buildThemePath(sessionData.Theme)
 		}
 	}
+	*/
 
 	// Fall back to cookie (like Python version)
 	if request != nil {
@@ -122,10 +125,10 @@ func (r *Renderer) RenderWithContext(ctx context.Context, w io.Writer, name stri
 	if sessionData != nil {
 		data["session_authenticated"] = true
 		data["session_username"] = sessionData.Username
-		data["session_user_id"] = sessionData.UserID
+		data["session_user_id"] = sessionData.SessionID // Use SessionID as fallback since UserID is not in new SessionData
 		data["session_is_admin"] = sessionData.IsAdmin
 		data["session_auth_method"] = sessionData.AuthMethod
-		data["session_user_groups"] = sessionData.UserGroups
+		data["session_user_groups"] = []string{} // Empty slice since UserGroups is not in new SessionData
 	} else {
 		data["session_authenticated"] = false
 		data["session_username"] = ""

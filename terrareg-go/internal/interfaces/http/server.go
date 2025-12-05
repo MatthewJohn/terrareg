@@ -10,7 +10,6 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	terraformHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform"
 	tfv1ModuleHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1" // New import
 	tfv2ProviderHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v2"
@@ -32,7 +31,6 @@ type Server struct {
 	initialSetupHandler         *terrareg.InitialSetupHandler
 	authMiddleware              *terrareg_middleware.AuthMiddleware
 	templateRenderer            *template.Renderer
-	cookieSessionService        *service.CookieSessionService
 	sessionMiddleware           *terrareg_middleware.SessionMiddleware
 	terraformV1ModuleHandler    *tfv1ModuleHandler.TerraformV1ModuleHandler // New field
 	terraformV2ProviderHandler  *tfv2ProviderHandler.TerraformV2ProviderHandler
@@ -56,7 +54,6 @@ func NewServer(
 	initialSetupHandler *terrareg.InitialSetupHandler,
 	authMiddleware *terrareg_middleware.AuthMiddleware,
 	templateRenderer *template.Renderer,
-	cookieSessionService *service.CookieSessionService,
 	sessionMiddleware *terrareg_middleware.SessionMiddleware,
 	terraformV1ModuleHandler *tfv1ModuleHandler.TerraformV1ModuleHandler, // New parameter
 	terraformV2ProviderHandler *tfv2ProviderHandler.TerraformV2ProviderHandler,
@@ -79,7 +76,6 @@ func NewServer(
 		initialSetupHandler:         initialSetupHandler,
 		authMiddleware:              authMiddleware,
 		templateRenderer:            templateRenderer,
-		cookieSessionService:        cookieSessionService,
 		sessionMiddleware:           sessionMiddleware,
 		terraformV1ModuleHandler:    terraformV1ModuleHandler, // Assign new handler
 		terraformV2ProviderHandler:  terraformV2ProviderHandler,
@@ -574,10 +570,22 @@ func (s *Server) handleLoginPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
-	// Clear session cookies using centralized service (DDD-compliant)
-	// This centralizes cookie management used across all auth methods
-	s.cookieSessionService.ClearSessionCookieByName(w, "session_id")
-	s.cookieSessionService.ClearSessionCookieByName(w, "is_admin_authenticated")
+	// Clear session cookies directly since we don't have a centralized cookie clearing method
+	// This matches the pattern of setting cookies with MaxAge=-1 to clear them
+	http.SetCookie(w, &http.Cookie{
+		Name:     "terrareg_session",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "is_admin_authenticated",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+	})
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 func (s *Server) handleInitialSetupPage(w http.ResponseWriter, r *http.Request) {
