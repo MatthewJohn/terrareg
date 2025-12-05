@@ -31,10 +31,15 @@ func (q *IsAuthenticatedQuery) Execute(ctx context.Context) (*dto.IsAuthenticate
 	}
 
 	// Return authentication status from session data
+	permissions := sessionData.Permissions
+	if permissions == nil {
+		permissions = make(map[string]string)
+	}
+
 	return &dto.IsAuthenticatedResponse{
 		Authenticated:        true, // Session exists, so authenticated
 		ReadAccess:          true, // Authenticated users have read access
 		SiteAdmin:           sessionData.IsAdmin,
-		NamespacePermissions: sessionData.Permissions,
+		NamespacePermissions: permissions,
 	}, nil
 }

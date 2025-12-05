@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	terraregAppConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 )
@@ -19,7 +20,7 @@ type SessionService struct {
 
 // SessionConfig contains session configuration
 type SessionConfig struct {
-	DefaultTTL     time.Duration `json:"default_ttl"`
+	DefaultTTL      time.Duration `json:"default_ttl"`
 	MaxTTL          time.Duration `json:"max_ttl"`
 	CleanupInterval time.Duration `json:"cleanup_interval"`
 	CookieName      string        `json:"cookie_name"`
@@ -28,24 +29,26 @@ type SessionConfig struct {
 }
 
 // NewSessionService creates a new session service
-func NewSessionService(sessionRepo repository.SessionRepository, config *SessionConfig) *SessionService {
+func NewSessionService(appConfig *terraregAppConfig.Config, sessionRepo repository.SessionRepository, config *SessionConfig) *SessionService {
 	if config == nil {
-		config = DefaultSessionConfig()
+		config = DefaultSessionConfig(appConfig)
 	}
 
-	return &SessionService{
+	ss := &SessionService{
 		sessionRepo: sessionRepo,
 		config:      config,
 	}
+
+	return ss
 }
 
 // DefaultSessionConfig returns default session configuration
-func DefaultSessionConfig() *SessionConfig {
+func DefaultSessionConfig(config *terraregAppConfig.Config) *SessionConfig {
 	return &SessionConfig{
-		DefaultTTL:     1 * time.Hour,
+		DefaultTTL:      1 * time.Hour,
 		MaxTTL:          24 * time.Hour,
 		CleanupInterval: 1 * time.Hour,
-		CookieName:      "terrareg_session",
+		CookieName:      config.SessionCookieName,
 		SecureCookies:   true,
 		HttpOnlyCookies: true,
 	}
@@ -73,11 +76,11 @@ func (ss *SessionService) CreateSession(ctx context.Context, authMethod auth.Aut
 
 	now := time.Now()
 	session := &auth.Session{
-		ID:                sessionID,
-		Expiry:           expiry,
+		ID:                 sessionID,
+		Expiry:             expiry,
 		ProviderSourceAuth: authDataJSON,
-		CreatedAt:        &now,
-		LastAccessedAt:   nil,
+		CreatedAt:          &now,
+		LastAccessedAt:     nil,
 	}
 
 	if err := ss.sessionRepo.Create(ctx, session); err != nil {
@@ -281,12 +284,12 @@ func (ss *SessionService) getEffectiveTTL(ttl *time.Duration) time.Duration {
 // ProviderSourceAuthData represents provider-specific authentication data
 // Matches Python's provider_source_auth field structure
 type ProviderSourceAuthData struct {
-	AuthMethod auth.AuthMethodType        `json:"auth_method"`
-	Username   string                    `json:"username"`
-	IsAdmin    bool                      `json:"is_admin"`
-	Data       map[string]interface{}    `json:"data"`
-	CreatedAt  time.Time                 `json:"created_at"`
-	UpdatedAt  *time.Time                `json:"updated_at,omitempty"`
+	AuthMethod auth.AuthMethodType    `json:"auth_method"`
+	Username   string                 `json:"username"`
+	IsAdmin    bool                   `json:"is_admin"`
+	Data       map[string]interface{} `json:"data"`
+	CreatedAt  time.Time              `json:"created_at"`
+	UpdatedAt  *time.Time             `json:"updated_at,omitempty"`
 }
 
 // Update updates the provider auth data
@@ -314,8 +317,8 @@ func (psad *ProviderSourceAuthData) SetProviderData(key string, value interface{
 
 // Session errors
 var (
-	ErrSessionNotFound     = fmt.Errorf("session not found")
-	ErrSessionExpired     = fmt.Errorf("session expired")
-	ErrNoSessionFound      = fmt.Errorf("no session found")
-	ErrInvalidSession     = fmt.Errorf("invalid session")
+	ErrSessionNotFound = fmt.Errorf("session not found")
+	ErrSessionExpired  = fmt.Errorf("session expired")
+	ErrNoSessionFound  = fmt.Errorf("no session found")
+	ErrInvalidSession  = fmt.Errorf("invalid session")
 )

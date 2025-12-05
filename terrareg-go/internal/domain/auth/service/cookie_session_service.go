@@ -234,7 +234,6 @@ func (s *CookieSessionService) getSessionCookieName() string {
 	return s.GetSessionCookieName()
 }
 
-
 // SetBasicSessionCookie sets a basic session_id cookie for compatibility
 // This method centralizes session_id cookie management used across auth methods
 // Uses centralized HTTPS detection via URL service following DDD principles
