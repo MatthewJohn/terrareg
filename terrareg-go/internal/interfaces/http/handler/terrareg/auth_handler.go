@@ -7,12 +7,14 @@ import (
 	authQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 )
 
 // AuthHandler handles authentication-related requests
 type AuthHandler struct {
 	adminLoginCmd         *authCmd.AdminLoginCommand
 	checkSessionQuery     *authQuery.CheckSessionQuery
+	isAuthenticatedQuery  *authQuery.IsAuthenticatedQuery
 	cookieSessionService  *service.CookieSessionService
 	config                *config.Config
 }
@@ -21,12 +23,14 @@ type AuthHandler struct {
 func NewAuthHandler(
 	adminLoginCmd *authCmd.AdminLoginCommand,
 	checkSessionQuery *authQuery.CheckSessionQuery,
+	isAuthenticatedQuery *authQuery.IsAuthenticatedQuery,
 	cookieSessionService *service.CookieSessionService,
 	config *config.Config,
 ) *AuthHandler {
 	return &AuthHandler{
 		adminLoginCmd:         adminLoginCmd,
 		checkSessionQuery:     checkSessionQuery,
+		isAuthenticatedQuery:  isAuthenticatedQuery,
 		cookieSessionService:  cookieSessionService,
 		config:                config,
 	}
@@ -87,30 +91,18 @@ func (h *AuthHandler) HandleAdminLogin(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) HandleIsAuthenticated(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Check for session cookie
-	sessionCookie, err := r.Cookie("session_id")
+	// Get authentication status using the query
+	response, err := h.isAuthenticatedQuery.Execute(ctx)
 	if err != nil {
-		RespondJSON(w, http.StatusOK, map[string]interface{}{
-			"authenticated": false,
-		})
-		return
+		// If there's an error, return unauthenticated status
+		response = &dto.IsAuthenticatedResponse{
+			Authenticated:        false,
+			ReadAccess:          false,
+			SiteAdmin:           false,
+			NamespacePermissions: make(map[string]string),
+		}
 	}
 
-	// Check session validity
-	session, err := h.checkSessionQuery.Execute(ctx, sessionCookie.Value)
-	if err != nil || session == nil || session.IsExpired() {
-		RespondJSON(w, http.StatusOK, map[string]interface{}{
-			"authenticated": false,
-		})
-		return
-	}
-
-	// Check admin authenticated cookie
-	adminCookie, err := r.Cookie("is_admin_authenticated")
-	isAdmin := err == nil && adminCookie.Value == "true"
-
-	RespondJSON(w, http.StatusOK, map[string]interface{}{
-		"authenticated": isAdmin,
-	})
+	RespondJSON(w, http.StatusOK, response)
 }
 

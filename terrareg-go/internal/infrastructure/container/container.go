@@ -123,6 +123,7 @@ type Container struct {
 	GetProviderQuery               *providerQuery.GetProviderQuery
 	GetProviderVersionsQuery       *providerQuery.GetProviderVersionsQuery
 	CheckSessionQuery              *authQuery.CheckSessionQuery
+	IsAuthenticatedQuery           *authQuery.IsAuthenticatedQuery
 
 	// Config queries
 	GetConfigQuery  *configQuery.GetConfigQuery
@@ -258,6 +259,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	c.PublishProviderVersionCmd = providerCmd.NewPublishProviderVersionCommand(c.ProviderRepo, c.NamespaceRepo)
 	c.ManageGPGKeyCmd = providerCmd.NewManageGPGKeyCommand(c.ProviderRepo, c.NamespaceRepo)
 	c.CheckSessionQuery = authQuery.NewCheckSessionQuery(c.SessionRepo)
+	c.IsAuthenticatedQuery = authQuery.NewIsAuthenticatedQuery(c.AuthFactory)
 
 	// Initialize config repository and queries
 	versionReader := version.NewVersionReader()
@@ -320,6 +322,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	c.AuthHandler = terrareg.NewAuthHandler(
 		c.AdminLoginCmd,
 		c.CheckSessionQuery,
+		c.IsAuthenticatedQuery,
 		c.CookieSessionService,
 		cfg,
 	)
