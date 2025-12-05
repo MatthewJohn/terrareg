@@ -16,12 +16,13 @@ import (
 type contextKey string
 
 const (
-	authMethodContextKey   contextKey = "auth_method"
-	userContextKey         contextKey = "user"
-	isAdminContextKey      contextKey = "is_admin"
-	sessionIDContextKey    contextKey = "session_id"
-	namespaceContextKey    contextKey = "namespace"
-	permissionsContextKey  contextKey = "permissions"
+	authMethodContextKey       contextKey = "auth_method"
+	authMethodInstanceKey      contextKey = "auth_method_instance"
+	userContextKey             contextKey = "user"
+	isAdminContextKey          contextKey = "is_admin"
+	sessionIDContextKey        contextKey = "session_id"
+	namespaceContextKey        contextKey = "namespace"
+	permissionsContextKey      contextKey = "permissions"
 )
 
 // AuthMiddleware provides authentication middleware
@@ -71,6 +72,7 @@ func (m *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
 
 		// Set authentication context
 		ctx = context.WithValue(ctx, authMethodContextKey, authResponse.AuthMethod)
+		ctx = context.WithValue(ctx, authMethodInstanceKey, m.authFactory.GetCurrentAuthMethod())
 		ctx = context.WithValue(ctx, userContextKey, authResponse.Username)
 		ctx = context.WithValue(ctx, isAdminContextKey, authResponse.IsAdmin)
 		ctx = context.WithValue(ctx, permissionsContextKey, authResponse.Permissions)
@@ -130,6 +132,12 @@ func (m *AuthMiddleware) OptionalAuth(next http.Handler) http.Handler {
 // GetAuthMethodFromContext retrieves the auth method from the request context
 func GetAuthMethodFromContext(ctx context.Context) (auth.AuthMethodType, bool) {
 	authMethod, ok := ctx.Value(authMethodContextKey).(auth.AuthMethodType)
+	return authMethod, ok
+}
+
+// GetAuthMethodInstanceFromContext retrieves the auth method instance from the request context
+func GetAuthMethodInstanceFromContext(ctx context.Context) (auth.AuthMethod, bool) {
+	authMethod, ok := ctx.Value(authMethodInstanceKey).(auth.AuthMethod)
 	return authMethod, ok
 }
 
@@ -224,6 +232,7 @@ func (m *AuthMiddleware) RequireAdmin(next http.Handler) http.Handler {
 
 		// Set authentication context
 		ctx = context.WithValue(ctx, authMethodContextKey, authResponse.AuthMethod)
+		ctx = context.WithValue(ctx, authMethodInstanceKey, m.authFactory.GetCurrentAuthMethod())
 		ctx = context.WithValue(ctx, userContextKey, authResponse.Username)
 		ctx = context.WithValue(ctx, isAdminContextKey, authResponse.IsAdmin)
 		ctx = context.WithValue(ctx, permissionsContextKey, authResponse.Permissions)

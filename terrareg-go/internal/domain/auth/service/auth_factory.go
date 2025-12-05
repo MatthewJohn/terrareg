@@ -83,6 +83,7 @@ func (af *AuthFactory) GetCurrentAuthMethod() auth.AuthMethod {
 	return &NotAuthenticatedAuthMethod{}
 }
 
+
 // GetCurrentAuthContext returns the current authentication context
 func (af *AuthFactory) GetCurrentAuthContext() *auth.AuthContext {
 	af.mutex.RLock()
