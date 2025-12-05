@@ -187,16 +187,16 @@ func (s *CookieSessionService) SetSessionCookie(w http.ResponseWriter, sessionDa
 		return fmt.Errorf("failed to encrypt session data: %w", err)
 	}
 
-	s.setCookie(encryptedData, w)
+	s.setCookie(encryptedData, w, true) // true = persistent cookie with expiry
 	return nil
 }
 
 // ClearSessionCookie clears the session cookie
 func (s *CookieSessionService) ClearSessionCookie(w http.ResponseWriter) {
-	s.setCookie("", w)
+	s.setCookie("", w, false)
 }
 
-func (s *CookieSessionService) setCookie(data string, w http.ResponseWriter) {
+func (s *CookieSessionService) setCookie(data string, w http.ResponseWriter, persistent bool) {
 	// Use URL service for HTTPS detection - this centralizes URL logic
 	isHTTPS := s.urlService.IsHTTPS(nil)
 
@@ -204,10 +204,18 @@ func (s *CookieSessionService) setCookie(data string, w http.ResponseWriter) {
 		Name:     s.getSessionCookieName(),
 		Value:    data,
 		Path:     "/",
-		MaxAge:   -1,
 		Secure:   isHTTPS,
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
+	}
+
+	if persistent {
+		// Set a reasonable expiry time for persistent cookies (e.g., 1 hour)
+		cookie.MaxAge = 3600 // 1 hour in seconds
+		cookie.Expires = time.Now().Add(time.Hour)
+	} else {
+		// Session cookie that expires when browser closes
+		cookie.MaxAge = -1
 	}
 
 	http.SetCookie(w, cookie)
@@ -245,6 +253,29 @@ func (s *CookieSessionService) SetBasicSessionCookie(w http.ResponseWriter, sess
 	}
 
 	http.SetCookie(w, cookie)
+}
+
+// CreateAdminSession creates a complete admin session
+// This method centralizes admin session creation following DDD principles
+func (s *CookieSessionService) CreateAdminSession(w http.ResponseWriter, sessionID string) error {
+	// Create complete session data for admin
+	sessionData := &SessionData{
+		SessionID:   sessionID,
+		Username:    "admin",
+		AuthMethod:  "ADMIN_API_KEY",
+		IsAdmin:     true,
+		Permissions: make(map[string]string), // Empty permissions for admin
+	}
+
+	// Set the main session cookie
+	if err := s.SetSessionCookie(w, sessionData); err != nil {
+		return fmt.Errorf("failed to set session cookie: %w", err)
+	}
+
+	// Also set the admin authentication flag for compatibility
+	s.SetAdminAuthenticationCookie(w, true)
+
+	return nil
 }
 
 // SetAdminAuthenticationCookie sets the admin authentication flag cookie

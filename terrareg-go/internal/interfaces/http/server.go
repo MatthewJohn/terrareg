@@ -157,13 +157,15 @@ func (s *Server) setupRoutes() {
 		r.Get("/modules/{namespace}/{name}/{provider}/downloads/summary", s.handleModuleDownloadsSummary)
 
 		// Providers
-		r.Get("/providers", s.handleProviderList)
-		r.Get("/providers/search", s.handleProviderSearch)
-		r.Get("/providers/{namespace}", s.handleNamespaceProviders)
-		r.Get("/providers/{namespace}/{provider}", s.handleProviderDetails)
-		r.Get("/providers/{namespace}/{provider}/{version}", s.handleProviderDetails)
-		r.Get("/providers/{namespace}/{provider}/versions", s.handleProviderVersions)
-		r.Get("/providers/{namespace}/{provider}/{version}/download/{os}/{arch}", s.handleProviderDownload)
+		r.Route("/providers", func(r chi.Router) {
+			r.Get("/", s.handleProviderList)
+			r.Get("/search", s.handleProviderSearch)
+			r.Get("/{namespace}", s.handleNamespaceProviders)
+			r.Get("/{namespace}/{provider}", s.handleProviderDetails)
+			r.Get("/{namespace}/{provider}/{version}", s.handleProviderDetails)
+			r.Get("/{namespace}/{provider}/versions", s.handleProviderVersions)
+			r.Get("/{namespace}/{provider}/{version}/download/{os}/{arch}", s.handleProviderDownload)
+		})
 
 		// Terrareg Custom API
 		r.Route("/terrareg", func(r chi.Router) {
@@ -254,8 +256,10 @@ func (s *Server) setupRoutes() {
 			r.With(s.authMiddleware.RequireAuth).Post("/user-groups/{group}/permissions/{namespace}", s.handleUserGroupNamespacePermissionsUpdate)
 
 			// Auth
-			r.Post("/auth/admin/login", s.handleAdminLogin)
-			r.With(s.sessionMiddleware.Session).Get("/auth/admin/is_authenticated", s.handleIsAuthenticated)
+			r.Route("/auth", func(r chi.Router) {
+				r.Post("/admin/login", s.handleAdminLogin)
+				r.With(s.sessionMiddleware.Session).Get("/admin/is_authenticated", s.handleIsAuthenticated)
+			})
 		})
 	})
 
