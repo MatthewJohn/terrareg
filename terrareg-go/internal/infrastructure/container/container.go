@@ -201,7 +201,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	)
 
 	// Initialize auth services
-	c.SessionService = authservice.NewSessionService(c.SessionRepo, authservice.DefaultSessionConfig())
+	c.SessionService = authservice.NewSessionService(c.Config, c.SessionRepo, authservice.DefaultSessionConfig(c.Config))
 	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, cfg)
 	c.TerraformIdpService = authservice.NewTerraformIdpService(
 		c.TerraformIdpAuthorizationCodeRepo,
