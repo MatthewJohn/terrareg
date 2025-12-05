@@ -48,9 +48,9 @@ func main() {
 	// Auto-migrate database schema (for development)
 	if cfg.Debug {
 		logger.Info().Msg("Running database auto-migration")
-		if err := autoMigrate(db); err != nil {
-			logger.Fatal().Err(err).Msg("Failed to auto-migrate database")
-		}
+		// if err := autoMigrate(db); err != nil {
+		// 	logger.Fatal().Err(err).Msg("Failed to auto-migrate database")
+		// }
 	}
 
 	// Initialize dependency injection container
