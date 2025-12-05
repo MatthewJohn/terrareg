@@ -259,7 +259,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	c.PublishProviderVersionCmd = providerCmd.NewPublishProviderVersionCommand(c.ProviderRepo, c.NamespaceRepo)
 	c.ManageGPGKeyCmd = providerCmd.NewManageGPGKeyCommand(c.ProviderRepo, c.NamespaceRepo)
 	c.CheckSessionQuery = authQuery.NewCheckSessionQuery(c.SessionRepo)
-	c.IsAuthenticatedQuery = authQuery.NewIsAuthenticatedQuery(c.AuthFactory)
+	c.IsAuthenticatedQuery = authQuery.NewIsAuthenticatedQuery()
 
 	// Initialize config repository and queries
 	versionReader := version.NewVersionReader()

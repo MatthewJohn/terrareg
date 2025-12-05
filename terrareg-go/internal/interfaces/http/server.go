@@ -252,7 +252,7 @@ func (s *Server) setupRoutes() {
 
 			// Auth
 			r.Post("/auth/admin/login", s.handleAdminLogin)
-			r.Get("/auth/admin/is_authenticated", s.handleIsAuthenticated)
+			r.With(s.authMiddleware.OptionalAuth).Get("/auth/admin/is_authenticated", s.handleIsAuthenticated)
 		})
 	})
 
