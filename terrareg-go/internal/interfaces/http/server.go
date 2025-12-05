@@ -10,37 +10,38 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
+	terraformHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform"
 	tfv1ModuleHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1" // New import
 	tfv2ProviderHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v2"
-	terraformHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg"
 	terrareg_middleware "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/template"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 )
 
 // Server represents the HTTP server
 type Server struct {
-	router                 *chi.Mux
-	config                 *config.Config
-	logger                 zerolog.Logger
-	namespaceHandler       *terrareg.NamespaceHandler
-	moduleHandler          *terrareg.ModuleHandler
-	analyticsHandler       *terrareg.AnalyticsHandler
-	providerHandler        *terrareg.ProviderHandler
-	authHandler            *terrareg.AuthHandler
-	initialSetupHandler    *terrareg.InitialSetupHandler
-	authMiddleware         *terrareg_middleware.AuthMiddleware
-	templateRenderer       *template.Renderer
-	cookieSessionService   *service.CookieSessionService
-	terraformV1ModuleHandler *tfv1ModuleHandler.TerraformV1ModuleHandler // New field
-	terraformV2ProviderHandler *tfv2ProviderHandler.TerraformV2ProviderHandler
-	terraformV2CategoryHandler *tfv2ProviderHandler.TerraformV2CategoryHandler
-	terraformV2GPGHandler *tfv2ProviderHandler.TerraformV2GPGHandler
-	terraformIDPHandler *terraformHandler.TerraformIDPHandler
+	router                      *chi.Mux
+	config                      *config.Config
+	logger                      zerolog.Logger
+	namespaceHandler            *terrareg.NamespaceHandler
+	moduleHandler               *terrareg.ModuleHandler
+	analyticsHandler            *terrareg.AnalyticsHandler
+	providerHandler             *terrareg.ProviderHandler
+	authHandler                 *terrareg.AuthHandler
+	initialSetupHandler         *terrareg.InitialSetupHandler
+	authMiddleware              *terrareg_middleware.AuthMiddleware
+	templateRenderer            *template.Renderer
+	cookieSessionService        *service.CookieSessionService
+	sessionMiddleware           *terrareg_middleware.SessionMiddleware
+	terraformV1ModuleHandler    *tfv1ModuleHandler.TerraformV1ModuleHandler // New field
+	terraformV2ProviderHandler  *tfv2ProviderHandler.TerraformV2ProviderHandler
+	terraformV2CategoryHandler  *tfv2ProviderHandler.TerraformV2CategoryHandler
+	terraformV2GPGHandler       *tfv2ProviderHandler.TerraformV2GPGHandler
+	terraformIDPHandler         *terraformHandler.TerraformIDPHandler
 	terraformStaticTokenHandler *terraformHandler.TerraformStaticTokenHandler
-	configHandler *terrareg.ConfigHandler
-	versionHandler *terrareg.VersionHandler
+	configHandler               *terrareg.ConfigHandler
+	versionHandler              *terrareg.VersionHandler
 }
 
 // NewServer creates a new HTTP server
@@ -56,6 +57,7 @@ func NewServer(
 	authMiddleware *terrareg_middleware.AuthMiddleware,
 	templateRenderer *template.Renderer,
 	cookieSessionService *service.CookieSessionService,
+	sessionMiddleware *terrareg_middleware.SessionMiddleware,
 	terraformV1ModuleHandler *tfv1ModuleHandler.TerraformV1ModuleHandler, // New parameter
 	terraformV2ProviderHandler *tfv2ProviderHandler.TerraformV2ProviderHandler,
 	terraformV2CategoryHandler *tfv2ProviderHandler.TerraformV2CategoryHandler,
@@ -66,26 +68,27 @@ func NewServer(
 	versionHandler *terrareg.VersionHandler,
 ) *Server {
 	s := &Server{
-		router:                   chi.NewRouter(),
-		config:                   cfg,
-		logger:                   logger,
-		namespaceHandler:         namespaceHandler,
-		moduleHandler:            moduleHandler,
-		analyticsHandler:         analyticsHandler,
-		providerHandler:          providerHandler,
-		authHandler:              authHandler,
-		initialSetupHandler:     initialSetupHandler,
-		authMiddleware:           authMiddleware,
-		templateRenderer:         templateRenderer,
-		cookieSessionService:     cookieSessionService,
-		terraformV1ModuleHandler: terraformV1ModuleHandler, // Assign new handler
-		terraformV2ProviderHandler: terraformV2ProviderHandler,
-		terraformV2CategoryHandler: terraformV2CategoryHandler,
-		terraformV2GPGHandler: terraformV2GPGHandler,
-		terraformIDPHandler: terraformIDPHandler,
+		router:                      chi.NewRouter(),
+		config:                      cfg,
+		logger:                      logger,
+		namespaceHandler:            namespaceHandler,
+		moduleHandler:               moduleHandler,
+		analyticsHandler:            analyticsHandler,
+		providerHandler:             providerHandler,
+		authHandler:                 authHandler,
+		initialSetupHandler:         initialSetupHandler,
+		authMiddleware:              authMiddleware,
+		templateRenderer:            templateRenderer,
+		cookieSessionService:        cookieSessionService,
+		sessionMiddleware:           sessionMiddleware,
+		terraformV1ModuleHandler:    terraformV1ModuleHandler, // Assign new handler
+		terraformV2ProviderHandler:  terraformV2ProviderHandler,
+		terraformV2CategoryHandler:  terraformV2CategoryHandler,
+		terraformV2GPGHandler:       terraformV2GPGHandler,
+		terraformIDPHandler:         terraformIDPHandler,
 		terraformStaticTokenHandler: terraformStaticTokenHandler,
-		configHandler: configHandler,
-		versionHandler: versionHandler,
+		configHandler:               configHandler,
+		versionHandler:              versionHandler,
 	}
 
 	s.setupMiddleware()
@@ -104,7 +107,7 @@ func (s *Server) setupMiddleware() {
 	s.router.Use(middleware.Compress(5))
 
 	// Session middleware for session management
-	s.router.Use(terrareg_middleware.NewSessionMiddleware(s.cookieSessionService, s.logger).Session)
+	s.router.Use(s.sessionMiddleware.Session)
 
 	// Timeout middleware
 	s.router.Use(middleware.Timeout(60 * time.Second))
@@ -142,14 +145,14 @@ func (s *Server) setupRoutes() {
 	// Terraform Registry API v1
 	s.router.Route("/v1", func(r chi.Router) {
 		// Modules
-		r.Get("/modules", s.terraformV1ModuleHandler.HandleModuleList) // Use the new handler
+		r.Get("/modules", s.terraformV1ModuleHandler.HandleModuleList)          // Use the new handler
 		r.Get("/modules/search", s.terraformV1ModuleHandler.HandleModuleSearch) // Use the new handler
 		r.Get("/modules/{namespace}", s.handleNamespaceModules)
 		r.Get("/modules/{namespace}/{name}", s.handleModuleDetails)
-		r.Get("/modules/{namespace}/{name}/{provider}", s.terraformV1ModuleHandler.HandleModuleProviderDetails) // Use the new handler
-		r.Get("/modules/{namespace}/{name}/{provider}/versions", s.terraformV1ModuleHandler.HandleModuleVersions) // Use the new handler
-		r.Get("/modules/{namespace}/{name}/{provider}/download", s.terraformV1ModuleHandler.HandleModuleDownload) // Use the new handler
-		r.Get("/modules/{namespace}/{name}/{provider}/{version}", s.terraformV1ModuleHandler.HandleModuleVersionDetails) // Use the new handler
+		r.Get("/modules/{namespace}/{name}/{provider}", s.terraformV1ModuleHandler.HandleModuleProviderDetails)             // Use the new handler
+		r.Get("/modules/{namespace}/{name}/{provider}/versions", s.terraformV1ModuleHandler.HandleModuleVersions)           // Use the new handler
+		r.Get("/modules/{namespace}/{name}/{provider}/download", s.terraformV1ModuleHandler.HandleModuleDownload)           // Use the new handler
+		r.Get("/modules/{namespace}/{name}/{provider}/{version}", s.terraformV1ModuleHandler.HandleModuleVersionDetails)    // Use the new handler
 		r.Get("/modules/{namespace}/{name}/{provider}/{version}/download", s.terraformV1ModuleHandler.HandleModuleDownload) // Use the new handler
 		r.Get("/modules/{namespace}/{name}/{provider}/downloads/summary", s.handleModuleDownloadsSummary)
 
@@ -252,7 +255,7 @@ func (s *Server) setupRoutes() {
 
 			// Auth
 			r.Post("/auth/admin/login", s.handleAdminLogin)
-			r.With(s.authMiddleware.OptionalAuth).Get("/auth/admin/is_authenticated", s.handleIsAuthenticated)
+			r.With(s.sessionMiddleware.Session).Get("/auth/admin/is_authenticated", s.handleIsAuthenticated)
 		})
 	})
 
@@ -457,11 +460,11 @@ func (s *Server) handleNamespaceList(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleNamespaceCreate(w http.ResponseWriter, r *http.Request) {
 	s.namespaceHandler.HandleNamespaceCreate(w, r)
 }
-func (s *Server) handleNamespaceGet(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleNamespaceUpdate(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleTerraregNamespaceModules(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleTerraregModuleProviders(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleTerraregModuleVersionDetails(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleNamespaceGet(w http.ResponseWriter, r *http.Request)                   {}
+func (s *Server) handleNamespaceUpdate(w http.ResponseWriter, r *http.Request)                {}
+func (s *Server) handleTerraregNamespaceModules(w http.ResponseWriter, r *http.Request)       {}
+func (s *Server) handleTerraregModuleProviders(w http.ResponseWriter, r *http.Request)        {}
+func (s *Server) handleTerraregModuleVersionDetails(w http.ResponseWriter, r *http.Request)   {}
 func (s *Server) handleTerraregModuleProviderVersions(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleProviderCreate(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleProviderCreate(w, r)
@@ -475,8 +478,8 @@ func (s *Server) handleModuleProviderSettings(w http.ResponseWriter, r *http.Req
 func (s *Server) handleModuleProviderSettingsUpdate(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleProviderSettingsUpdate(w, r)
 }
-func (s *Server) handleModuleProviderIntegrations(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleProviderRedirects(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleModuleProviderIntegrations(w http.ResponseWriter, r *http.Request)   {}
+func (s *Server) handleModuleProviderRedirects(w http.ResponseWriter, r *http.Request)      {}
 func (s *Server) handleModuleProviderRedirectDelete(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleVersionUpload(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleVersionUpload(w, r)
@@ -488,35 +491,35 @@ func (s *Server) handleModuleVersionImport(w http.ResponseWriter, r *http.Reques
 func (s *Server) handleModuleVersionPublish(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleVersionPublish(w, r)
 }
-func (s *Server) handleModuleVersionDelete(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleVersionReadmeHTML(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleModuleVersionDelete(w http.ResponseWriter, r *http.Request)           {}
+func (s *Server) handleModuleVersionReadmeHTML(w http.ResponseWriter, r *http.Request)       {}
 func (s *Server) handleModuleVersionVariableTemplate(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleVersionFile(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleVersionSourceDownload(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleModuleVersionFile(w http.ResponseWriter, r *http.Request)             {}
+func (s *Server) handleModuleVersionSourceDownload(w http.ResponseWriter, r *http.Request)   {}
 func (s *Server) handleModuleVersionSubmodules(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleGetSubmodules(w, r)
 }
-func (s *Server) handleSubmoduleDetails(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleSubmoduleDetails(w http.ResponseWriter, r *http.Request)    {}
 func (s *Server) handleSubmoduleReadmeHTML(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleVersionExamples(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleGetExamples(w, r)
 }
-func (s *Server) handleExampleDetails(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleExampleReadmeHTML(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleExampleFileList(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleExampleFile(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleGraphData(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleTerraregNamespaceProviders(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderIntegrations(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderLogos(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleSearchFilters(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderSearchFilters(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleAuditHistory(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleUserGroupList(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleUserGroupCreate(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleUserGroupDetails(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleUserGroupDelete(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleUserGroupNamespacePermissions(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleExampleDetails(w http.ResponseWriter, r *http.Request)                      {}
+func (s *Server) handleExampleReadmeHTML(w http.ResponseWriter, r *http.Request)                   {}
+func (s *Server) handleExampleFileList(w http.ResponseWriter, r *http.Request)                     {}
+func (s *Server) handleExampleFile(w http.ResponseWriter, r *http.Request)                         {}
+func (s *Server) handleGraphData(w http.ResponseWriter, r *http.Request)                           {}
+func (s *Server) handleTerraregNamespaceProviders(w http.ResponseWriter, r *http.Request)          {}
+func (s *Server) handleProviderIntegrations(w http.ResponseWriter, r *http.Request)                {}
+func (s *Server) handleProviderLogos(w http.ResponseWriter, r *http.Request)                       {}
+func (s *Server) handleModuleSearchFilters(w http.ResponseWriter, r *http.Request)                 {}
+func (s *Server) handleProviderSearchFilters(w http.ResponseWriter, r *http.Request)               {}
+func (s *Server) handleAuditHistory(w http.ResponseWriter, r *http.Request)                        {}
+func (s *Server) handleUserGroupList(w http.ResponseWriter, r *http.Request)                       {}
+func (s *Server) handleUserGroupCreate(w http.ResponseWriter, r *http.Request)                     {}
+func (s *Server) handleUserGroupDetails(w http.ResponseWriter, r *http.Request)                    {}
+func (s *Server) handleUserGroupDelete(w http.ResponseWriter, r *http.Request)                     {}
+func (s *Server) handleUserGroupNamespacePermissions(w http.ResponseWriter, r *http.Request)       {}
 func (s *Server) handleUserGroupNamespacePermissionsUpdate(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleAdminLogin(w http.ResponseWriter, r *http.Request) {
 	s.authHandler.HandleAdminLogin(w, r)
@@ -524,27 +527,27 @@ func (s *Server) handleAdminLogin(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleIsAuthenticated(w http.ResponseWriter, r *http.Request) {
 	s.authHandler.HandleIsAuthenticated(w, r)
 }
-func (s *Server) handleV2ProviderDetails(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleV2ProviderDownloadsSummary(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleV2ProviderDocs(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleV2ProviderDoc(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleV2GPGKeys(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleV2GPGKeyCreate(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleV2GPGKey(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleV2Categories(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleSAMLLogin(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleSAMLMetadata(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderSourceLogin(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderSourceCallback(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderSourceAuthStatus(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderSourceOrganizations(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderSourceRepositories(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleV2ProviderDetails(w http.ResponseWriter, r *http.Request)              {}
+func (s *Server) handleV2ProviderDownloadsSummary(w http.ResponseWriter, r *http.Request)     {}
+func (s *Server) handleV2ProviderDocs(w http.ResponseWriter, r *http.Request)                 {}
+func (s *Server) handleV2ProviderDoc(w http.ResponseWriter, r *http.Request)                  {}
+func (s *Server) handleV2GPGKeys(w http.ResponseWriter, r *http.Request)                      {}
+func (s *Server) handleV2GPGKeyCreate(w http.ResponseWriter, r *http.Request)                 {}
+func (s *Server) handleV2GPGKey(w http.ResponseWriter, r *http.Request)                       {}
+func (s *Server) handleV2Categories(w http.ResponseWriter, r *http.Request)                   {}
+func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request)                      {}
+func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request)                   {}
+func (s *Server) handleSAMLLogin(w http.ResponseWriter, r *http.Request)                      {}
+func (s *Server) handleSAMLMetadata(w http.ResponseWriter, r *http.Request)                   {}
+func (s *Server) handleProviderSourceLogin(w http.ResponseWriter, r *http.Request)            {}
+func (s *Server) handleProviderSourceCallback(w http.ResponseWriter, r *http.Request)         {}
+func (s *Server) handleProviderSourceAuthStatus(w http.ResponseWriter, r *http.Request)       {}
+func (s *Server) handleProviderSourceOrganizations(w http.ResponseWriter, r *http.Request)    {}
+func (s *Server) handleProviderSourceRepositories(w http.ResponseWriter, r *http.Request)     {}
 func (s *Server) handleProviderSourceRefreshNamespace(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderSourcePublishProvider(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleGitHubWebhook(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleBitBucketWebhook(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleProviderSourcePublishProvider(w http.ResponseWriter, r *http.Request)  {}
+func (s *Server) handleGitHubWebhook(w http.ResponseWriter, r *http.Request)                  {}
+func (s *Server) handleBitBucketWebhook(w http.ResponseWriter, r *http.Request)               {}
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	// Render the index template using the template renderer
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

@@ -32,6 +32,7 @@ func (m *SessionMiddleware) Session(next http.Handler) http.Handler {
 		cookie, err := r.Cookie(m.sessionService.GetSessionCookieName())
 		if err != nil {
 			// No session cookie - continue without session
+			m.logger.Warn().Err(err).Msg("No session cookie")
 			next.ServeHTTP(w, r)
 			return
 		}

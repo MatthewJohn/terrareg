@@ -17,8 +17,8 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	providerQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider"
-	terraformCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/terraform"
 	setupQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/setup"
+	terraformCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/terraform"
 	appConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	authRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
@@ -146,11 +146,12 @@ type Container struct {
 	TerraformStaticTokenHandler *terraformHandler.TerraformStaticTokenHandler
 
 	// Initial Setup
-	GetInitialSetupQuery   *setupQuery.GetInitialSetupQuery
-	InitialSetupHandler    *terrareg.InitialSetupHandler
+	GetInitialSetupQuery *setupQuery.GetInitialSetupQuery
+	InitialSetupHandler  *terrareg.InitialSetupHandler
 
 	// Middleware
-	AuthMiddleware *terrareg_middleware.AuthMiddleware
+	AuthMiddleware    *terrareg_middleware.AuthMiddleware
+	SessionMiddleware *terrareg_middleware.SessionMiddleware
 
 	// Template renderer
 	TemplateRenderer *template.Renderer
@@ -344,6 +345,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 
 	// Initialize middleware
 	c.AuthMiddleware = terrareg_middleware.NewAuthMiddleware(cfg, c.AuthFactory)
+	c.SessionMiddleware = terrareg_middleware.NewSessionMiddleware(c.CookieSessionService, c.Logger)
 
 	// Initialize template renderer
 	templateRenderer, err := template.NewRenderer(cfg)
@@ -365,6 +367,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 		c.AuthMiddleware,
 		c.TemplateRenderer,
 		c.CookieSessionService,
+		c.SessionMiddleware,
 		c.TerraformV1ModuleHandler, // Pass the new handler to the server constructor
 		c.TerraformV2ProviderHandler,
 		c.TerraformV2CategoryHandler,
