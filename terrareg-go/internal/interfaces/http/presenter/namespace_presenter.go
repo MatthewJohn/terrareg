@@ -22,7 +22,7 @@ func (p *NamespacePresenter) ToDTO(namespace *model.Namespace) dto.NamespaceResp
 	}
 }
 
-// ToListDTO converts a list of namespaces to a list DTO
+// ToListDTO converts a list of namespaces to a list DTO (for paginated responses)
 func (p *NamespacePresenter) ToListDTO(namespaces []*model.Namespace) dto.NamespaceListResponse {
 	dtos := make([]dto.NamespaceResponse, len(namespaces))
 	for i, ns := range namespaces {
@@ -32,4 +32,13 @@ func (p *NamespacePresenter) ToListDTO(namespaces []*model.Namespace) dto.Namesp
 	return dto.NamespaceListResponse{
 		Namespaces: dtos,
 	}
+}
+
+// ToListArray converts a list of namespaces to a plain array (for legacy response format)
+func (p *NamespacePresenter) ToListArray(namespaces []*model.Namespace) []dto.NamespaceResponse {
+	dtos := make([]dto.NamespaceResponse, len(namespaces))
+	for i, ns := range namespaces {
+		dtos[i] = p.ToDTO(ns)
+	}
+	return dtos
 }
