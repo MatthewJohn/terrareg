@@ -22,43 +22,38 @@ type CookieService struct {
 	isSecure      bool
 }
 
+// prepareSecretKey prepares the secret key for encryption
+func prepareSecretKey(keyStr string) ([]byte, error) {
+	// Try hex decoding first (recommended format)
+	if keyBytes, err := hex.DecodeString(keyStr); err == nil {
+		if len(keyBytes) < 32 {
+			return nil, fmt.Errorf("hex-decoded SECRET_KEY is too short: %d bytes (minimum 32)", len(keyBytes))
+		}
+		fmt.Printf("CookieService: Using hex SECRET_KEY (%d bytes)\n", len(keyBytes))
+		return keyBytes, nil
+	}
+
+	// Fall back to raw string if not valid hex
+	keyBytes := []byte(keyStr)
+	if len(keyBytes) < 32 {
+		return nil, fmt.Errorf("SECRET_KEY is too short: %d characters (minimum 32)", len(keyBytes))
+	}
+
+	// Warning for raw keys (hex is preferred)
+	fmt.Printf("CookieService: Using raw string SECRET_KEY - hex format is recommended (%d bytes)\n", len(keyBytes))
+	return keyBytes, nil
+}
+
 // NewCookieService creates a new cookie service
 func NewCookieService(config *terraregAppConfig.Config) *CookieService {
 	// Default to secure cookies - in production this should be configurable
 	isSecure := true
 
-	var secretKey []byte
-	keyStr := config.SecretKey
-
-	// Check if key is hex-encoded (common for SECRET_KEY)
-	if len(keyStr) == 64 || len(keyStr) == 96 {
-		// Check if it's all hex characters
-		_, err := hex.DecodeString(keyStr)
-		if err == nil {
-			// It's valid hex, decode it
-			secretKey, _ = hex.DecodeString(keyStr)
-			fmt.Printf("CookieService: Detected hex SECRET_KEY, decoded to %d bytes\n", len(secretKey))
-		} else {
-			// Not valid hex, use as raw bytes
-			secretKey = []byte(keyStr)
-			fmt.Printf("CookieService: Not hex SECRET_KEY, using raw %d bytes\n", len(secretKey))
-		}
-	} else {
-		// Use as raw bytes
-		secretKey = []byte(keyStr)
-		fmt.Printf("CookieService: Using raw SECRET_KEY with %d bytes\n", len(secretKey))
+	// Prepare secret key with explicit validation
+	secretKey, err := prepareSecretKey(config.SecretKey)
+	if err != nil {
+		panic(fmt.Sprintf("Invalid SECRET_KEY: %v. Generate with: python -c 'import secrets; print(secrets.token_hex())'", err))
 	}
-
-	// Ensure the secret key is at least 32 bytes for AES-256
-	if len(secretKey) < 32 {
-		fmt.Printf("CookieService: SECRET_KEY too short (%d bytes), padding to 32\n", len(secretKey))
-		// Pad the key to 32 bytes
-		paddedKey := make([]byte, 32)
-		copy(paddedKey, secretKey)
-		secretKey = paddedKey
-	}
-
-	fmt.Printf("CookieService: Final secretKey length=%d\n", len(secretKey))
 
 	return &CookieService{
 		secretKey:     secretKey,

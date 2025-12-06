@@ -28,9 +28,9 @@ type Config struct {
 
 	// Authentication settings
 	// SAML
-	SAML2IDPMetadataURL  string
-	SAML2IssuerEntityID  string
-	SAML2Enabled         bool
+	SAML2IDPMetadataURL string
+	SAML2IssuerEntityID string
+	SAML2Enabled        bool
 
 	// OpenID Connect
 	OpenIDConnectEnabled      bool
@@ -43,11 +43,11 @@ type Config struct {
 	SecretKey                string
 
 	// Feature flags
-	AllowModuleHosting      bool
-	AllowProviderHosting    bool
-	AllowCustomGitProvider  bool
-	EnableAccessControls    bool
-	EnableSecurityScanning  bool
+	AllowModuleHosting     bool
+	AllowProviderHosting   bool
+	AllowCustomGitProvider bool
+	EnableAccessControls   bool
+	EnableSecurityScanning bool
 
 	// UI Customization
 	ApplicationName string
@@ -55,16 +55,16 @@ type Config struct {
 	SiteWarning     string
 
 	// External services
-	InfracostAPIKey              string
-	InfracostPricingAPIEndpoint  string
-	SentryDSN                    string
-	SentryTracesSampleRate       float64
+	InfracostAPIKey             string
+	InfracostPricingAPIEndpoint string
+	SentryDSN                   string
+	SentryTracesSampleRate      float64
 
 	// Session settings
-	SessionExpiry         time.Duration
+	SessionExpiry          time.Duration
 	AdminSessionExpiryMins int
-	SessionCookieName     string
-	SessionRefreshAge     time.Duration
+	SessionCookieName      string
+	SessionRefreshAge      time.Duration
 
 	// Provider source settings
 	ProviderSources map[string]ProviderSourceConfig
@@ -83,18 +83,18 @@ type ProviderSourceConfig struct {
 // New creates a new Config from environment variables
 func New() (*Config, error) {
 	cfg := &Config{
-		ListenPort:           getEnvInt("LISTEN_PORT", 5000),
-		PublicURL:            getEnv("PUBLIC_URL", "http://localhost:5000"),
-		DomainName:           getEnv("DOMAIN_NAME", ""),
-		Debug:                getEnvBool("DEBUG", false),
-		DatabaseURL:          getEnv("DATABASE_URL", "sqlite:///modules.db"),
-		DataDirectory:        getEnv("DATA_DIRECTORY", "./data"),
-		UploadDirectory:      getEnv("UPLOAD_DIRECTORY", "./data/upload"),
-		GitProviderConfig:    getEnv("GIT_PROVIDER_CONFIG", ""),
+		ListenPort:        getEnvInt("LISTEN_PORT", 5000),
+		PublicURL:         getEnv("PUBLIC_URL", "http://localhost:5000"),
+		DomainName:        getEnv("DOMAIN_NAME", ""),
+		Debug:             getEnvBool("DEBUG", false),
+		DatabaseURL:       getEnv("DATABASE_URL", "sqlite:///modules.db"),
+		DataDirectory:     getEnv("DATA_DIRECTORY", "./data"),
+		UploadDirectory:   getEnv("UPLOAD_DIRECTORY", "./data/upload"),
+		GitProviderConfig: getEnv("GIT_PROVIDER_CONFIG", ""),
 
 		// SAML
-		SAML2IDPMetadataURL:  getEnv("SAML2_IDP_METADATA_URL", ""),
-		SAML2IssuerEntityID:  getEnv("SAML2_ISSUER_ENTITY_ID", ""),
+		SAML2IDPMetadataURL: getEnv("SAML2_IDP_METADATA_URL", ""),
+		SAML2IssuerEntityID: getEnv("SAML2_ISSUER_ENTITY_ID", ""),
 
 		// OpenID Connect
 		OpenIDConnectClientID:     getEnv("OPENID_CONNECT_CLIENT_ID", ""),
@@ -103,7 +103,7 @@ func New() (*Config, error) {
 
 		// Admin auth
 		AdminAuthenticationToken: getEnv("ADMIN_AUTHENTICATION_TOKEN", ""),
-		SecretKey:                getEnv("SECRET_KEY", generateSecretKey()),
+		SecretKey:                getEnv("SECRET_KEY", ""),
 
 		// Feature flags
 		AllowModuleHosting:     getEnvBool("ALLOW_MODULE_HOSTING", true),
@@ -158,12 +158,12 @@ func (c *Config) Validate() error {
 	}
 
 	if c.SecretKey == "" {
-		return fmt.Errorf("SECRET_KEY is required")
+		return fmt.Errorf("SECRET_KEY is required. Generate with: python -c 'import secrets; print(secrets.token_hex())'")
 	}
 
 	// Ensure SECRET_KEY is at least 32 characters for AES-256
 	if len(c.SecretKey) < 32 {
-		return fmt.Errorf("SECRET_KEY must be at least 32 characters long for AES-256 encryption (current length: %d)", len(c.SecretKey))
+		return fmt.Errorf("SECRET_KEY must be at least 32 characters long for AES-256 encryption (current length: %d). Generate with: python -c 'import secrets; print(secrets.token_hex())'", len(c.SecretKey))
 	}
 
 	return nil
@@ -202,12 +202,4 @@ func getEnvFloat(key string, defaultValue float64) float64 {
 		}
 	}
 	return defaultValue
-}
-
-func generateSecretKey() string {
-	// In production, this should be set via environment variable
-	// For development, generate a proper 32-character key for AES-256
-	key := "dev-secret-key-please-change-in-production-" // 42 chars, good for AES-256
-	fmt.Printf("Generated SECRET_KEY (length=%d): %s...\n", len(key), key[:10])
-	return key
 }
