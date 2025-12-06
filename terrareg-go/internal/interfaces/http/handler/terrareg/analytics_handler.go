@@ -67,12 +67,21 @@ func (h *AnalyticsHandler) HandleMostRecentlyPublished(w http.ResponseWriter, r 
 		return
 	}
 
-	// Build response
+	// Build response matching Python's get_api_outline()
 	response := map[string]interface{}{
-		"namespace": info.Namespace,
-		"module":    info.Module,
-		"provider":  info.Provider,
-		"version":   info.Version,
+		"id":           info.ID,
+		"namespace":    info.Namespace,
+		"name":         info.Module,  // Python uses "name" not "module"
+		"provider":     info.Provider,
+		"version":      info.Version,
+		"owner":        info.Owner,
+		"description":  info.Description,
+		"source":       info.Source,
+		"published_at": info.PublishedAt,
+		"downloads":    info.Downloads,
+		"internal":     info.Internal,
+		"trusted":      info.Trusted,
+		"verified":     info.Verified,
 	}
 
 	RespondJSON(w, http.StatusOK, response)

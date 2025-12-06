@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -71,15 +72,35 @@ func (r *AnalyticsRepositoryImpl) GetDownloadStats(ctx context.Context, namespac
 // GetMostRecentlyPublished retrieves the most recently published module version
 func (r *AnalyticsRepositoryImpl) GetMostRecentlyPublished(ctx context.Context) (*analyticsCmd.ModuleVersionInfo, error) {
 	var result struct {
-		Namespace string
-		Module    string
-		Provider  string
-		Version   string
+		ID          int
+		Namespace   string
+		Module      string
+		Provider    string
+		Version     string
+		Owner       *string
+		Description *string
+		Source      *string
+		PublishedAt *time.Time
+		Internal    bool
+		Verified    bool
 	}
 
+	// First get the most recently published module version
 	err := r.db.WithContext(ctx).
 		Table("module_version").
-		Select("namespace.namespace AS namespace, module_provider.module AS module, module_provider.provider AS provider, module_version.version AS version").
+		Select(`
+			module_version.id AS id,
+			namespace.namespace AS namespace,
+			module_provider.module AS module,
+			module_provider.provider AS provider,
+			module_version.version AS version,
+			module_version.owner AS owner,
+			module_version.description AS description,
+			module_version.repo_base_url_template AS source,
+			module_version.published_at AS published_at,
+			module_version.internal AS internal,
+			module_provider.verified AS verified
+		`).
 		Joins("JOIN module_provider ON module_version.module_provider_id = module_provider.id").
 		Joins("JOIN namespace ON module_provider.namespace_id = namespace.id").
 		Where("module_version.published_at IS NOT NULL").
@@ -101,11 +122,34 @@ func (r *AnalyticsRepositoryImpl) GetMostRecentlyPublished(ctx context.Context) 
 		return nil, nil
 	}
 
+	// Get download count from analytics table
+	var downloadCount int64
+	r.db.WithContext(ctx).
+		Model(&sqldb.AnalyticsDB{}).
+		Where("parent_module_version = ?", result.ID).
+		Count(&downloadCount)
+
+	// Convert published_at to ISO format
+	var publishedAt *string
+	if result.PublishedAt != nil {
+		isoStr := result.PublishedAt.Format(time.RFC3339)
+		publishedAt = &isoStr
+	}
+
 	return &analyticsCmd.ModuleVersionInfo{
-		Namespace: result.Namespace,
-		Module:    result.Module,
-		Provider:  result.Provider,
-		Version:   result.Version,
+		ID:          fmt.Sprintf("%s/%s/%s/%s", result.Namespace, result.Module, result.Provider, result.Version), // Format: namespace/name/provider/version
+		Namespace:   result.Namespace,
+		Module:      result.Module,
+		Provider:    result.Provider,
+		Version:     result.Version,
+		Owner:       result.Owner,
+		Description: result.Description,
+		Source:      result.Source,
+		PublishedAt: publishedAt,
+		Downloads:   int(downloadCount),
+		Internal:    result.Internal,
+		Trusted:     false, // TODO: Implement based on TRUSTED_NAMESPACES config
+		Verified:    result.Verified,
 	}, nil
 }
 
