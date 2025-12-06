@@ -1,6 +1,8 @@
 package module
 
 import (
+	"time"
+
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
@@ -56,6 +58,74 @@ func toDBModuleProvider(mp *model.ModuleProvider) sqldb.ModuleProviderDB {
 		ArchiveGitPath:        mp.ArchiveGitPath(),
 		LatestVersionID:       latestVersionID,
 	}
+}
+
+// fromDBModuleProvider converts database model to domain ModuleProvider
+func fromDBModuleProvider(db *sqldb.ModuleProviderDB, namespace *model.Namespace) *model.ModuleProvider {
+	verified := false
+	if db.Verified != nil {
+		verified = *db.Verified
+	}
+
+	// Use current time for now since database doesn't store timestamps
+	now := time.Now()
+	mp := model.ReconstructModuleProvider(
+		db.ID,
+		namespace,
+		db.Module,
+		db.Provider,
+		verified,
+		db.GitProviderID,
+		db.RepoBaseURLTemplate,
+		db.RepoCloneURLTemplate,
+		db.RepoBrowseURLTemplate,
+		db.GitTagFormat,
+		db.GitPath,
+		db.ArchiveGitPath,
+		now,
+		now,
+	)
+
+	return mp
+}
+
+// fromDBModuleVersion converts database model to domain ModuleVersion
+func fromDBModuleVersion(db *sqldb.ModuleVersionDB, details *model.ModuleDetails) (*model.ModuleVersion, error) {
+	// Use empty details if none provided
+	if details == nil {
+		details = model.NewModuleDetails([]byte{})
+	}
+
+	// Determine if version is published
+	published := db.Published != nil && *db.Published
+
+	// Handle nil PublishedAt pointer - use current time if not set
+	publishedAt := time.Now()
+	if db.PublishedAt != nil {
+		publishedAt = *db.PublishedAt
+	}
+
+	return model.ReconstructModuleVersion(
+		db.ID,
+		db.Version,
+		details,
+		db.Beta,
+		db.Internal,
+		published,
+		db.PublishedAt,
+		db.GitSHA,
+		db.GitPath,
+		db.ArchiveGitPath,
+		db.RepoBaseURLTemplate,
+		db.RepoCloneURLTemplate,
+		db.RepoBrowseURLTemplate,
+		db.Owner,
+		db.Description,
+		db.VariableTemplate,
+		db.ExtractionVersion,
+		publishedAt, // Use publishedAt as createdAt for simplicity
+		publishedAt, // Use publishedAt as updatedAt for simplicity
+	)
 }
 
 // toDBModuleVersion converts domain ModuleVersion to database model

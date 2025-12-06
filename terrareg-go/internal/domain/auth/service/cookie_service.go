@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -26,14 +27,38 @@ func NewCookieService(config *terraregAppConfig.Config) *CookieService {
 	// Default to secure cookies - in production this should be configurable
 	isSecure := true
 
+	var secretKey []byte
+	keyStr := config.SecretKey
+
+	// Check if key is hex-encoded (common for SECRET_KEY)
+	if len(keyStr) == 64 || len(keyStr) == 96 {
+		// Check if it's all hex characters
+		_, err := hex.DecodeString(keyStr)
+		if err == nil {
+			// It's valid hex, decode it
+			secretKey, _ = hex.DecodeString(keyStr)
+			fmt.Printf("CookieService: Detected hex SECRET_KEY, decoded to %d bytes\n", len(secretKey))
+		} else {
+			// Not valid hex, use as raw bytes
+			secretKey = []byte(keyStr)
+			fmt.Printf("CookieService: Not hex SECRET_KEY, using raw %d bytes\n", len(secretKey))
+		}
+	} else {
+		// Use as raw bytes
+		secretKey = []byte(keyStr)
+		fmt.Printf("CookieService: Using raw SECRET_KEY with %d bytes\n", len(secretKey))
+	}
+
 	// Ensure the secret key is at least 32 bytes for AES-256
-	secretKey := []byte(config.SecretKey)
 	if len(secretKey) < 32 {
+		fmt.Printf("CookieService: SECRET_KEY too short (%d bytes), padding to 32\n", len(secretKey))
 		// Pad the key to 32 bytes
 		paddedKey := make([]byte, 32)
 		copy(paddedKey, secretKey)
 		secretKey = paddedKey
 	}
+
+	fmt.Printf("CookieService: Final secretKey length=%d\n", len(secretKey))
 
 	return &CookieService{
 		secretKey:     secretKey,
@@ -52,7 +77,6 @@ type SessionData struct {
 	Permissions map[string]string `json:"permissions,omitempty"`
 	Expiry      *time.Time        `json:"expiry,omitempty"`
 }
-
 
 // EncryptSession encrypts session data for storage in cookie
 func (cs *CookieService) EncryptSession(data *SessionData) (string, error) {
@@ -200,7 +224,7 @@ func (cs *CookieService) ValidateSessionCookie(cookieValue string) (*SessionData
 
 // Cookie errors
 var (
-	ErrNoSessionCookie     = fmt.Errorf("no session cookie found")
+	ErrNoSessionCookie      = fmt.Errorf("no session cookie found")
 	ErrInvalidSessionCookie = fmt.Errorf("invalid session cookie")
-	ErrSessionExpired      = fmt.Errorf("session cookie expired")
+	ErrSessionExpired       = fmt.Errorf("session cookie expired")
 )

@@ -281,24 +281,8 @@ func (r *ModuleProviderRepositoryImpl) Exists(ctx context.Context, namespace, mo
 func (r *ModuleProviderRepositoryImpl) toDomain(db *sqldb.ModuleProviderDB) (*model.ModuleProvider, error) {
 	namespace := fromDBNamespace(&db.Namespace)
 
-	// Use current time for now since database doesn't store timestamps
-	now := time.Now()
-	mp := model.ReconstructModuleProvider(
-		db.ID,
-		namespace,
-		db.Module,
-		db.Provider,
-		db.Verified != nil && *db.Verified,
-		db.GitProviderID,
-		db.RepoBaseURLTemplate,
-		db.RepoCloneURLTemplate,
-		db.RepoBrowseURLTemplate,
-		db.GitTagFormat,
-		db.GitPath,
-		db.ArchiveGitPath,
-		now,
-		now,
-	)
+	// Use the new mapper function
+	mp := fromDBModuleProvider(db, namespace)
 
 	if db.GitProvider != nil {
 		gitProvider := gitmapper.FromDBGitProvider(db.GitProvider)

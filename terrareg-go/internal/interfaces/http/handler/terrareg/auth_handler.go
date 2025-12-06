@@ -3,6 +3,8 @@ package terrareg
 import (
 	"net/http"
 
+	"github.com/rs/zerolog/log"
+
 	authCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/auth"
 	authQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
@@ -75,13 +77,26 @@ func (h *AuthHandler) HandleAdminLogin(w http.ResponseWriter, r *http.Request) {
 
 	// Create admin session using the authentication service (DDD-compliant approach)
 	// The authentication service orchestrates session and cookie operations
+	log.Info().
+		Str("session_id", response.SessionID).
+		Msg("Creating admin session")
+
 	if err := h.authService.CreateAdminSession(ctx, w, response.SessionID); err != nil {
 		// If session creation fails, return error
+		log.Error().
+			Err(err).
+			Str("session_id", response.SessionID).
+			Msg("Failed to create admin session")
+
 		RespondJSON(w, http.StatusInternalServerError, map[string]interface{}{
 			"message": "Failed to create session",
 		})
 		return
 	}
+
+	log.Info().
+		Str("session_id", response.SessionID).
+		Msg("Admin session created successfully")
 
 	// Respond with Python-compatible format
 	RespondJSON(w, http.StatusOK, map[string]interface{}{

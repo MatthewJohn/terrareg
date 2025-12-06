@@ -3,7 +3,6 @@ package module
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"gorm.io/gorm"
 
@@ -121,63 +120,19 @@ func (r *ModuleVersionRepositoryImpl) Exists(ctx context.Context, moduleProvider
 
 // Helper methods for mapping between domain and persistence models
 
-// mapToDomainModel converts persistence model to domain model
+// mapToDomainModel converts persistence model to domain model using centralized mapper
 func (r *ModuleVersionRepositoryImpl) mapToDomainModel(dbVersion sqldb.ModuleVersionDB) (*model.ModuleVersion, error) {
-	// Create simple module details for initial setup
-	details := model.NewModuleDetails([]byte{}) // Empty readme for initial setup
-
-	// Determine if version is published
-	published := dbVersion.Published != nil && *dbVersion.Published
-
-	// Handle nil PublishedAt pointer
-	var publishedAt time.Time
-	if dbVersion.PublishedAt != nil {
-		publishedAt = *dbVersion.PublishedAt
+	var details *model.ModuleDetails
+	if dbVersion.ModuleDetailsID != nil {
+		// If there's a details ID, we would need to fetch it
+		// For now, create empty details
+		details = model.NewModuleDetails([]byte{})
 	}
 
-	return model.ReconstructModuleVersion(
-		dbVersion.ID,
-		dbVersion.Version,
-		details,
-		dbVersion.Beta,
-		dbVersion.Internal,
-		published,
-		dbVersion.PublishedAt,
-		dbVersion.GitSHA,
-		dbVersion.GitPath,
-		dbVersion.ArchiveGitPath,
-		dbVersion.RepoBaseURLTemplate,
-		dbVersion.RepoCloneURLTemplate,
-		dbVersion.RepoBrowseURLTemplate,
-		dbVersion.Owner,
-		dbVersion.Description,
-		dbVersion.VariableTemplate,
-		dbVersion.ExtractionVersion,
-		publishedAt, // Use publishedAt as createdAt for simplicity
-		publishedAt, // Use publishedAt as updatedAt for simplicity
-	)
+	return fromDBModuleVersion(&dbVersion, details)
 }
 
-// mapToPersistenceModel converts domain model to persistence model
+// mapToPersistenceModel converts domain model to persistence model using centralized mapper
 func (r *ModuleVersionRepositoryImpl) mapToPersistenceModel(moduleVersion *model.ModuleVersion) (sqldb.ModuleVersionDB, error) {
-	dbVersion := sqldb.ModuleVersionDB{
-		ID:                   moduleVersion.ID(),
-		ModuleProviderID:     moduleVersion.ModuleProvider().ID(),
-		Version:              moduleVersion.Version().String(),
-		Beta:                 moduleVersion.IsBeta(),
-		Internal:             moduleVersion.IsInternal(),
-		ArchiveGitPath:       false, // Default value
-		VariableTemplate:     nil,  // Default value
-	}
-
-	// Set published field
-	published := moduleVersion.IsPublished()
-	dbVersion.Published = &published
-
-	// Set timestamps (simplified for initial setup)
-	if moduleVersion.PublishedAt() != nil {
-		dbVersion.PublishedAt = moduleVersion.PublishedAt()
-	}
-
-	return dbVersion, nil
+	return toDBModuleVersion(moduleVersion), nil
 }
