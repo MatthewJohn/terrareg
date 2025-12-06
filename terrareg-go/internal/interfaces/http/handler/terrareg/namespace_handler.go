@@ -41,11 +41,19 @@ func (h *NamespaceHandler) HandleNamespaceList(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// Convert to DTO
-	response := h.presenter.ToListDTO(namespaces)
+	// Check if limit/offset pagination params are provided
+	limit := r.URL.Query().Get("limit")
+	offset := r.URL.Query().Get("offset")
 
-	// Send response
-	RespondJSON(w, http.StatusOK, response)
+	if limit == "" && offset == "" {
+		// No pagination - return plain array to match Python behavior (legacy format)
+		response := h.presenter.ToListArray(namespaces)
+		RespondJSON(w, http.StatusOK, response)
+	} else {
+		// With pagination - return wrapped object
+		response := h.presenter.ToListDTO(namespaces)
+		RespondJSON(w, http.StatusOK, response)
+	}
 }
 
 // HandleNamespaceCreate handles POST /v1/terrareg/namespaces
