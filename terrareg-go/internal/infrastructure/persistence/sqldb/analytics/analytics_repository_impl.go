@@ -79,11 +79,12 @@ func (r *AnalyticsRepositoryImpl) GetMostRecentlyPublished(ctx context.Context) 
 
 	err := r.db.WithContext(ctx).
 		Table("module_version").
-		Select("namespace.namespace AS namespace, module.module AS module, module_provider.provider AS provider, module_version.version AS version").
+		Select("namespace.namespace AS namespace, module_provider.module AS module, module_provider.provider AS provider, module_version.version AS version").
 		Joins("JOIN module_provider ON module_version.module_provider_id = module_provider.id").
-		Joins("JOIN module ON module_provider.module_id = module.id").
-		Joins("JOIN namespace ON module.namespace_id = namespace.id").
+		Joins("JOIN namespace ON module_provider.namespace_id = namespace.id").
 		Where("module_version.published_at IS NOT NULL").
+		Where("module_version.beta = ?", false).
+		Where("module_version.internal = ?", false).
 		Order("module_version.published_at DESC").
 		Limit(1).
 		Scan(&result).Error
