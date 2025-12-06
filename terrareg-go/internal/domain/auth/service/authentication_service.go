@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 )
 
@@ -213,11 +215,24 @@ func (as *AuthenticationService) RefreshSession(
 
 // CreateAdminSession creates a complete admin session (convenience method)
 func (as *AuthenticationService) CreateAdminSession(ctx context.Context, w http.ResponseWriter, sessionID string) error {
+	log.Info().
+		Str("session_id", sessionID).
+		Msg("CreateAdminSession: starting")
+
 	// Get session from database to ensure it's valid
 	session, err := as.sessionService.GetSession(sessionID)
 	if err != nil {
+		log.Error().
+			Err(err).
+			Str("session_id", sessionID).
+			Msg("CreateAdminSession: failed to get session from database")
 		return fmt.Errorf("failed to get session: %w", err)
 	}
+
+	log.Info().
+		Str("session_id", sessionID).
+		Time("expiry", session.Expiry).
+		Msg("CreateAdminSession: retrieved session successfully")
 
 	// Create admin session data
 	sessionData := &SessionData{
@@ -233,15 +248,32 @@ func (as *AuthenticationService) CreateAdminSession(ctx context.Context, w http.
 	_ = session
 
 	// Encrypt and set cookie
+	log.Info().
+		Str("session_id", sessionID).
+		Msg("CreateAdminSession: encrypting session data")
+
 	encryptedSession, err := as.cookieService.EncryptSession(sessionData)
 	if err != nil {
+		log.Error().
+			Err(err).
+			Str("session_id", sessionID).
+			Msg("CreateAdminSession: failed to encrypt session")
 		return fmt.Errorf("failed to encrypt admin session: %w", err)
 	}
 
 	// Calculate TTL for cookie
 	ttl := time.Until(session.Expiry)
+	log.Info().
+		Str("session_id", sessionID).
+		Dur("ttl", ttl).
+		Msg("CreateAdminSession: setting cookie")
+
 	if ttl <= 0 {
 		ttl = 24 * time.Hour // Default to 24 hours
+		log.Warn().
+			Str("session_id", sessionID).
+			Dur("default_ttl", ttl).
+			Msg("CreateAdminSession: session expiry in past, using default TTL")
 	}
 
 	as.cookieService.SetCookie(w, as.cookieService.GetSessionCookieName(), encryptedSession, &CookieOptions{
@@ -251,6 +283,10 @@ func (as *AuthenticationService) CreateAdminSession(ctx context.Context, w http.
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	})
+
+	log.Info().
+		Str("session_id", sessionID).
+		Msg("CreateAdminSession: completed successfully")
 
 	return nil
 }

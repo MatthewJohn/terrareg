@@ -161,6 +161,11 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("SECRET_KEY is required")
 	}
 
+	// Ensure SECRET_KEY is at least 32 characters for AES-256
+	if len(c.SecretKey) < 32 {
+		return fmt.Errorf("SECRET_KEY must be at least 32 characters long for AES-256 encryption (current length: %d)", len(c.SecretKey))
+	}
+
 	return nil
 }
 
@@ -201,6 +206,8 @@ func getEnvFloat(key string, defaultValue float64) float64 {
 
 func generateSecretKey() string {
 	// In production, this should be set via environment variable
-	// For development, generate a simple key
-	return "dev-secret-key-please-change-in-production"
+	// For development, generate a proper 32-character key for AES-256
+	key := "dev-secret-key-please-change-in-production-" // 42 chars, good for AES-256
+	fmt.Printf("Generated SECRET_KEY (length=%d): %s...\n", len(key), key[:10])
+	return key
 }
