@@ -61,9 +61,9 @@ func (h *AnalyticsHandler) HandleMostRecentlyPublished(w http.ResponseWriter, r 
 		return
 	}
 
-	// Return empty object if no module found
+	// Return 404 if no module found (matching Python behavior)
 	if info == nil {
-		RespondJSON(w, http.StatusOK, map[string]interface{}{})
+		RespondJSON(w, http.StatusNotFound, map[string]interface{}{})
 		return
 	}
 
@@ -97,9 +97,9 @@ func (h *AnalyticsHandler) HandleMostDownloadedThisWeek(w http.ResponseWriter, r
 		return
 	}
 
-	// Return empty object if no module found
+	// Return 404 if no module found (matching Python behavior)
 	if info == nil {
-		RespondJSON(w, http.StatusOK, map[string]interface{}{})
+		RespondJSON(w, http.StatusNotFound, map[string]interface{}{})
 		return
 	}
 
