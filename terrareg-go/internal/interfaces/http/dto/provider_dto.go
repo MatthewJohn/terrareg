@@ -8,7 +8,7 @@ import (
 
 // ProviderListResponse represents the provider list API response
 type ProviderListResponse struct {
-	Meta     PaginationMeta `json:"meta"`
+	Meta      PaginationMeta `json:"meta"`
 	Providers []ProviderData `json:"providers"`
 }
 
@@ -25,12 +25,12 @@ type ProviderData struct {
 
 // ProviderDetailResponse represents a single provider detail response
 type ProviderDetailResponse struct {
-	ID          string  `json:"id"`
-	Namespace   string  `json:"namespace"`
-	Name        string  `json:"name"`
-	Description *string `json:"description,omitempty"`
-	Tier        string  `json:"tier"`
-	Source      *string `json:"source,omitempty"`
+	ID          string   `json:"id"`
+	Namespace   string   `json:"namespace"`
+	Name        string   `json:"name"`
+	Description *string  `json:"description,omitempty"`
+	Tier        string   `json:"tier"`
+	Source      *string  `json:"source,omitempty"`
 	Versions    []string `json:"versions,omitempty"`
 }
 

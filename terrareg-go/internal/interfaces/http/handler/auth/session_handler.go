@@ -13,7 +13,7 @@ import (
 // SessionHandler handles session management requests
 type SessionHandler struct {
 	cookieSessionService *service.CookieSessionService
-	logger          zerolog.Logger
+	logger               zerolog.Logger
 }
 
 // NewSessionHandler creates a new SessionHandler
@@ -23,7 +23,7 @@ func NewSessionHandler(
 ) *SessionHandler {
 	return &SessionHandler{
 		cookieSessionService: cookieSessionService,
-		logger: logger,
+		logger:               logger,
 	}
 }
 

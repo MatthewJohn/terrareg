@@ -10,8 +10,8 @@ import (
 
 // Validation patterns
 var (
-	usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-	emailRegex    = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	usernameRegex  = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+	emailRegex     = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 	groupNameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 )
 

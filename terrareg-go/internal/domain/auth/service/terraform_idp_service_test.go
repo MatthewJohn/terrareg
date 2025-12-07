@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 )
 
 // MockTerraformIdpAuthorizationCodeRepository is a mock for the authorization code repository
@@ -176,11 +176,11 @@ func TestExchangeCodeForToken_Success(t *testing.T) {
 
 	// Mock authorization code lookup
 	authData := map[string]interface{}{
-		"client_id":      "test-client",
-		"redirect_uri":   "http://localhost:3000/callback",
-		"scope":          "openid profile",
-		"state":          "test-state",
-		"response_type":  "code",
+		"client_id":     "test-client",
+		"redirect_uri":  "http://localhost:3000/callback",
+		"scope":         "openid profile",
+		"state":         "test-state",
+		"response_type": "code",
 	}
 	authCodeRecord := &repository.AuthCodeRecord{
 		Key:  "test-auth-code",

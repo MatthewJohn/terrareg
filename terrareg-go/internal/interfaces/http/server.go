@@ -511,13 +511,13 @@ func (s *Server) handleSubmoduleReadmeHTML(w http.ResponseWriter, r *http.Reques
 func (s *Server) handleModuleVersionExamples(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleGetExamples(w, r)
 }
-func (s *Server) handleExampleDetails(w http.ResponseWriter, r *http.Request)                      {}
-func (s *Server) handleExampleReadmeHTML(w http.ResponseWriter, r *http.Request)                   {}
-func (s *Server) handleExampleFileList(w http.ResponseWriter, r *http.Request)                     {}
-func (s *Server) handleExampleFile(w http.ResponseWriter, r *http.Request)                         {}
-func (s *Server) handleGraphData(w http.ResponseWriter, r *http.Request)                           {}
-func (s *Server) handleTerraregNamespaceProviders(w http.ResponseWriter, r *http.Request)          {}
-func (s *Server) handleProviderIntegrations(w http.ResponseWriter, r *http.Request)                {}
+func (s *Server) handleExampleDetails(w http.ResponseWriter, r *http.Request)             {}
+func (s *Server) handleExampleReadmeHTML(w http.ResponseWriter, r *http.Request)          {}
+func (s *Server) handleExampleFileList(w http.ResponseWriter, r *http.Request)            {}
+func (s *Server) handleExampleFile(w http.ResponseWriter, r *http.Request)                {}
+func (s *Server) handleGraphData(w http.ResponseWriter, r *http.Request)                  {}
+func (s *Server) handleTerraregNamespaceProviders(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleProviderIntegrations(w http.ResponseWriter, r *http.Request)       {}
 func (s *Server) handleProviderLogos(w http.ResponseWriter, r *http.Request) {
 	s.providerLogosHandler.HandleGetProviderLogos(w, r)
 }

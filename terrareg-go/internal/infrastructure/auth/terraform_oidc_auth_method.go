@@ -28,12 +28,12 @@ type TerraformIDP interface {
 
 // TerraformUserinfoResponse represents userinfo response
 type TerraformUserinfoResponse struct {
-	Subject           string            `json:"sub"`
-	Name              string            `json:"name"`
-	Username          string            `json:"preferred_username"`
-	Email             string            `json:"email"`
-	Groups            []string          `json:"groups,omitempty"`
-	Metadata          map[string]interface{} `json:"metadata,omitempty"`
+	Subject  string                 `json:"sub"`
+	Name     string                 `json:"name"`
+	Username string                 `json:"preferred_username"`
+	Email    string                 `json:"email"`
+	Groups   []string               `json:"groups,omitempty"`
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // TerraformTokenValidation represents token validation result
@@ -100,9 +100,9 @@ func (t *TerraformOidcAuthMethod) Authenticate(ctx context.Context, headers map[
 func (t *TerraformOidcAuthMethod) AuthenticateRequest(ctx context.Context, headers map[string]string, data []byte) (*model.TerraformAuthResponse, error) {
 	if !t.IsEnabled() {
 		return &model.TerraformAuthResponse{
-			Valid:     false,
-			Username:  "",
-			Metadata:  map[string]interface{}{"error": "IDP not enabled"},
+			Valid:    false,
+			Username: "",
+			Metadata: map[string]interface{}{"error": "IDP not enabled"},
 		}, nil
 	}
 
@@ -110,9 +110,9 @@ func (t *TerraformOidcAuthMethod) AuthenticateRequest(ctx context.Context, heade
 	authHeader := headers["Authorization"]
 	if authHeader == "" {
 		return &model.TerraformAuthResponse{
-			Valid:     false,
-			Username:  "",
-			Metadata:  map[string]interface{}{"error": "Missing Authorization header"},
+			Valid:    false,
+			Username: "",
+			Metadata: map[string]interface{}{"error": "Missing Authorization header"},
 		}, nil
 	}
 
@@ -120,9 +120,9 @@ func (t *TerraformOidcAuthMethod) AuthenticateRequest(ctx context.Context, heade
 	token := strings.TrimPrefix(authHeader, "Bearer ")
 	if token == authHeader {
 		return &model.TerraformAuthResponse{
-			Valid:     false,
-			Username:  "",
-			Metadata:  map[string]interface{}{"error": "Invalid Authorization header format"},
+			Valid:    false,
+			Username: "",
+			Metadata: map[string]interface{}{"error": "Invalid Authorization header format"},
 		}, nil
 	}
 
@@ -130,17 +130,17 @@ func (t *TerraformOidcAuthMethod) AuthenticateRequest(ctx context.Context, heade
 	validation, err := t.idp.ValidateAccessToken(token)
 	if err != nil {
 		return &model.TerraformAuthResponse{
-			Valid:     false,
-			Username:  "",
-			Metadata:  map[string]interface{}{"error": fmt.Sprintf("Token validation failed: %s", err.Error())},
+			Valid:    false,
+			Username: "",
+			Metadata: map[string]interface{}{"error": fmt.Sprintf("Token validation failed: %s", err.Error())},
 		}, nil
 	}
 
 	if !validation.Valid {
 		return &model.TerraformAuthResponse{
-			Valid:     false,
-			Username:  "",
-			Metadata:  map[string]interface{}{"error": "Invalid access token"},
+			Valid:    false,
+			Username: "",
+			Metadata: map[string]interface{}{"error": "Invalid access token"},
 		}, nil
 	}
 
@@ -148,9 +148,9 @@ func (t *TerraformOidcAuthMethod) AuthenticateRequest(ctx context.Context, heade
 	userinfo, err := t.idp.HandleUserinfoRequest(data, headers)
 	if err != nil {
 		return &model.TerraformAuthResponse{
-			Valid:     false,
-			Username:  validation.Username, // Use token validation username as fallback
-			Metadata:  map[string]interface{}{"error": fmt.Sprintf("Userinfo request failed: %s", err.Error())},
+			Valid:    false,
+			Username: validation.Username, // Use token validation username as fallback
+			Metadata: map[string]interface{}{"error": fmt.Sprintf("Userinfo request failed: %s", err.Error())},
 		}, nil
 	}
 

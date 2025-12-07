@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
-	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 )
 
 // ManageGPGKeyCommand handles managing GPG keys for providers
@@ -28,11 +28,11 @@ func NewManageGPGKeyCommand(
 
 // AddGPGKeyRequest represents the request to add a GPG key to a provider
 type AddGPGKeyRequest struct {
-	Namespace     string `json:"namespace"`
-	ProviderName  string `json:"provider"`
-	KeyText       string `json:"key_text"`
-	AsciiArmor    string `json:"ascii_armor"`
-	KeyID         string `json:"key_id"`
+	Namespace      string `json:"namespace"`
+	ProviderName   string `json:"provider"`
+	KeyText        string `json:"key_text"`
+	AsciiArmor     string `json:"ascii_armor"`
+	KeyID          string `json:"key_id"`
 	TrustSignature string `json:"trust_signature,omitempty"`
 }
 

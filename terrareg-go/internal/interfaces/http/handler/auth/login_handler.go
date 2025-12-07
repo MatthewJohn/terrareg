@@ -12,9 +12,9 @@ import (
 
 // LoginHandler handles authentication requests
 type LoginHandler struct {
-	createSessionCmd *auth.CreateSessionCommand
+	createSessionCmd     *auth.CreateSessionCommand
 	cookieSessionService *service.CookieSessionService
-	logger          zerolog.Logger
+	logger               zerolog.Logger
 }
 
 // NewLoginHandler creates a new LoginHandler
@@ -24,9 +24,9 @@ func NewLoginHandler(
 	logger zerolog.Logger,
 ) *LoginHandler {
 	return &LoginHandler{
-		createSessionCmd: createSessionCmd,
+		createSessionCmd:     createSessionCmd,
 		cookieSessionService: cookieSessionService,
-		logger: logger,
+		logger:               logger,
 	}
 }
 

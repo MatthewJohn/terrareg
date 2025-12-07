@@ -8,11 +8,11 @@ import (
 // This is a separate entity from the Provider domain as it deals with static logo assets
 type ProviderLogo struct {
 	providerName string
-	source      string
-	alt         string
-	tos         string
-	link        string
-	exists      bool
+	source       string
+	alt          string
+	tos          string
+	link         string
+	exists       bool
 }
 
 // NewProviderLogo creates a new ProviderLogo instance with the provided data
@@ -20,17 +20,17 @@ func NewProviderLogo(providerName string, info *ProviderLogoInfo, exists bool) *
 	if !exists || info == nil {
 		return &ProviderLogo{
 			providerName: providerName,
-			exists:      false,
+			exists:       false,
 		}
 	}
 
 	return &ProviderLogo{
 		providerName: providerName,
-		source:      info.Source,
-		alt:         info.Alt,
-		tos:         info.Tos,
-		link:        info.Link,
-		exists:      true,
+		source:       info.Source,
+		alt:          info.Alt,
+		tos:          info.Tos,
+		link:         info.Link,
+		exists:       true,
 	}
 }
 
@@ -38,11 +38,11 @@ func NewProviderLogo(providerName string, info *ProviderLogoInfo, exists bool) *
 func NewProviderLogoFromInfo(providerName string, info ProviderLogoInfo) *ProviderLogo {
 	return &ProviderLogo{
 		providerName: providerName,
-		source:      info.Source,
-		alt:         info.Alt,
-		tos:         info.Tos,
-		link:        info.Link,
-		exists:      true,
+		source:       info.Source,
+		alt:          info.Alt,
+		tos:          info.Tos,
+		link:         info.Link,
+		exists:       true,
 	}
 }
 
@@ -75,7 +75,6 @@ func (pl *ProviderLogo) Link() string {
 func (pl *ProviderLogo) Exists() bool {
 	return pl.exists
 }
-
 
 // String returns a string representation of the provider logo
 func (pl *ProviderLogo) String() string {

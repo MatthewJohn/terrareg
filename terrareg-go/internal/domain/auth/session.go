@@ -6,11 +6,11 @@ import (
 
 // Session represents a user session (matching Python Session model)
 type Session struct {
-	ID                 string      `json:"id"`
-	Expiry             time.Time   `json:"expiry"`
-	ProviderSourceAuth []byte      `json:"provider_source_auth"`
-	CreatedAt          *time.Time  `json:"created_at,omitempty"`
-	LastAccessedAt     *time.Time  `json:"last_accessed_at,omitempty"`
+	ID                 string     `json:"id"`
+	Expiry             time.Time  `json:"expiry"`
+	ProviderSourceAuth []byte     `json:"provider_source_auth"`
+	CreatedAt          *time.Time `json:"created_at,omitempty"`
+	LastAccessedAt     *time.Time `json:"last_accessed_at,omitempty"`
 }
 
 // NewSession creates a new session

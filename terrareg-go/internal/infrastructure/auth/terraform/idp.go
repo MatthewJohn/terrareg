@@ -38,15 +38,15 @@ func (idp *TerraformIDP) IsEnabled() bool {
 // GetOpenIDConfiguration returns the OpenID configuration
 func (idp *TerraformIDP) GetOpenIDConfiguration() map[string]interface{} {
 	return map[string]interface{}{
-		"issuer":  idp.config.IssuerURL,
-		"subject_types_supported": []string{"public"},
-		"response_types_supported": []string{"code"},
-		"grant_types_supported": []string{"authorization_code"},
-		"jwks_uri": fmt.Sprintf("%s/.well-known/jwks.json", idp.config.IssuerURL),
+		"issuer":                                idp.config.IssuerURL,
+		"subject_types_supported":               []string{"public"},
+		"response_types_supported":              []string{"code"},
+		"grant_types_supported":                 []string{"authorization_code"},
+		"jwks_uri":                              fmt.Sprintf("%s/.well-known/jwks.json", idp.config.IssuerURL),
 		"id_token_signing_alg_values_supported": []string{"RS256"},
-		"userinfo_endpoint": fmt.Sprintf("%s/userinfo", idp.config.IssuerURL),
-		"token_endpoint": fmt.Sprintf("%s/token", idp.config.IssuerURL),
-		"authorization_endpoint": fmt.Sprintf("%s/authorize", idp.config.IssuerURL),
+		"userinfo_endpoint":                     fmt.Sprintf("%s/userinfo", idp.config.IssuerURL),
+		"token_endpoint":                        fmt.Sprintf("%s/token", idp.config.IssuerURL),
+		"authorization_endpoint":                fmt.Sprintf("%s/authorize", idp.config.IssuerURL),
 	}
 }
 

@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 	"errors"
-	"time"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/identity/model"
+	"time"
 )
 
 // Temporary stub repository interfaces for legacy user-based services
@@ -78,4 +78,3 @@ type IdentityRepository interface {
 
 // Add ErrNotFound constant at package level
 var ErrNotFound = errors.New("resource not found")
-

@@ -12,7 +12,7 @@ import (
 type AdminApiKeyAuthMethod struct {
 	*auth.BaseAuthMethod
 	config      *config.Config
-	apiKey     string // The X-Terrareg-ApiKey header value
+	apiKey      string // The X-Terrareg-ApiKey header value
 	isValidated bool   // Whether the API key has been validated
 }
 

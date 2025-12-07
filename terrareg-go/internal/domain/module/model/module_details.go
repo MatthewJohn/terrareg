@@ -193,4 +193,3 @@ func (md *ModuleDetails) HasTerraformGraph() bool {
 func (md *ModuleDetails) HasTerraformModules() bool {
 	return len(md.terraformModules) > 0
 }
-

@@ -24,8 +24,8 @@ func TestAuthHandler_HandleIsAuthenticated_ReturnsCompleteResponse(t *testing.T)
 	// Simulate the response that should be returned
 	expectedResponse := dto.IsAuthenticatedResponse{
 		Authenticated:        false,
-		ReadAccess:          false,
-		SiteAdmin:           false,
+		ReadAccess:           false,
+		SiteAdmin:            false,
 		NamespacePermissions: make(map[string]string),
 	}
 

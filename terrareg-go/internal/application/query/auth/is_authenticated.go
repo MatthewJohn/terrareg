@@ -24,8 +24,8 @@ func (q *IsAuthenticatedQuery) Execute(ctx context.Context) (*dto.IsAuthenticate
 	if authCtx == nil {
 		return &dto.IsAuthenticatedResponse{
 			Authenticated:        false,
-			ReadAccess:          false,
-			SiteAdmin:           false,
+			ReadAccess:           false,
+			SiteAdmin:            false,
 			NamespacePermissions: make(map[string]string),
 		}, nil
 	}
@@ -38,8 +38,8 @@ func (q *IsAuthenticatedQuery) Execute(ctx context.Context) (*dto.IsAuthenticate
 
 	return &dto.IsAuthenticatedResponse{
 		Authenticated:        authCtx.IsAuthenticated,
-		ReadAccess:          authCtx.IsAuthenticated, // Authenticated users have read access
-		SiteAdmin:           authCtx.IsAdmin,
+		ReadAccess:           authCtx.IsAuthenticated, // Authenticated users have read access
+		SiteAdmin:            authCtx.IsAdmin,
 		NamespacePermissions: permissions,
 	}, nil
 }

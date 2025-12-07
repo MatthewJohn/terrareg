@@ -6,17 +6,17 @@ import (
 
 // Common domain errors - these are universal across domains
 var (
-	ErrNotFound         = errors.New("not found")
-	ErrAlreadyExists    = errors.New("already exists")
-	ErrInvalidInput     = errors.New("invalid input")
-	ErrUnauthorized     = errors.New("unauthorized")
-	ErrForbidden        = errors.New("forbidden")
-	ErrInvalidVersion   = errors.New("invalid version")
-	ErrInvalidName      = errors.New("invalid name")
-	ErrInvalidNamespace     = errors.New("invalid namespace")
-	ErrInvalidProvider      = errors.New("invalid provider")
-	ErrInvalidCategorySlug  = errors.New("invalid category slug")
-	ErrDomainViolation      = errors.New("domain rule violation")
+	ErrNotFound            = errors.New("not found")
+	ErrAlreadyExists       = errors.New("already exists")
+	ErrInvalidInput        = errors.New("invalid input")
+	ErrUnauthorized        = errors.New("unauthorized")
+	ErrForbidden           = errors.New("forbidden")
+	ErrInvalidVersion      = errors.New("invalid version")
+	ErrInvalidName         = errors.New("invalid name")
+	ErrInvalidNamespace    = errors.New("invalid namespace")
+	ErrInvalidProvider     = errors.New("invalid provider")
+	ErrInvalidCategorySlug = errors.New("invalid category slug")
+	ErrDomainViolation     = errors.New("domain rule violation")
 )
 
 // DomainError represents a domain-specific error

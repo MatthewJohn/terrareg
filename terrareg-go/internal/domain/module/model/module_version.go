@@ -58,16 +58,16 @@ func NewModuleVersion(versionStr string, details *ModuleDetails, beta bool) (*Mo
 
 	now := time.Now()
 	return &ModuleVersion{
-		version:      version,
-		details:      details,
-		beta:         beta,
-		internal:     false,
-		published:    false,
-		submodules:   make([]*Submodule, 0),
-		examples:     make([]*Example, 0),
-		files:        make([]*ModuleFile, 0),
-		createdAt:    now,
-		updatedAt:    now,
+		version:    version,
+		details:    details,
+		beta:       beta,
+		internal:   false,
+		published:  false,
+		submodules: make([]*Submodule, 0),
+		examples:   make([]*Example, 0),
+		files:      make([]*ModuleFile, 0),
+		createdAt:  now,
+		updatedAt:  now,
 	}, nil
 }
 
@@ -387,8 +387,8 @@ func NewExampleFile(path string, content []byte) *ExampleFile {
 	}
 }
 
-func (ef *ExampleFile) ID() int        { return ef.id }
-func (ef *ExampleFile) Path() string   { return ef.path }
+func (ef *ExampleFile) ID() int         { return ef.id }
+func (ef *ExampleFile) Path() string    { return ef.path }
 func (ef *ExampleFile) Content() []byte { return ef.content }
 
 // ModuleFile represents an additional file in the module version
@@ -406,6 +406,6 @@ func NewModuleFile(path string, content []byte) *ModuleFile {
 	}
 }
 
-func (mf *ModuleFile) ID() int        { return mf.id }
-func (mf *ModuleFile) Path() string   { return mf.path }
+func (mf *ModuleFile) ID() int         { return mf.id }
+func (mf *ModuleFile) Path() string    { return mf.path }
 func (mf *ModuleFile) Content() []byte { return mf.content }

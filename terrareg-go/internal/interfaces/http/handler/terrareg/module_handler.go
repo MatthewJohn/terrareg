@@ -119,11 +119,11 @@ func (h *ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *http.Reques
 
 	// Execute search
 	params := moduleQuery.SearchParams{
-		Query:     query,
+		Query:      query,
 		Namespaces: []string{namespace},
-		Provider:  providerPtr,
-		Limit:     limit,
-		Offset:    offset,
+		Provider:   providerPtr,
+		Limit:      limit,
+		Offset:     offset,
 	}
 
 	result, err := h.searchModulesQuery.Execute(ctx, params)

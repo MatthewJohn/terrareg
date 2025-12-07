@@ -16,36 +16,41 @@ type GPGKey struct {
 // NewGPGKey creates a new GPG key
 func NewGPGKey(keyText, asciiArmor, keyID, trustSignature string) (*GPGKey, error) {
 	return &GPGKey{
-		keyText:        keyText,
-		asciiArmor:     asciiArmor,
-		keyID:          keyID,
-		trustSignature: func() *string { if trustSignature != "" { return &trustSignature }; return nil }(),
+		keyText:    keyText,
+		asciiArmor: asciiArmor,
+		keyID:      keyID,
+		trustSignature: func() *string {
+			if trustSignature != "" {
+				return &trustSignature
+			}
+			return nil
+		}(),
 	}, nil
 }
 
 // Getters
-func (g *GPGKey) KeyText() string        { return g.keyText }
-func (g *GPGKey) AsciiArmor() string     { return g.asciiArmor }
-func (g *GPGKey) KeyID() string          { return g.keyID }
+func (g *GPGKey) KeyText() string         { return g.keyText }
+func (g *GPGKey) AsciiArmor() string      { return g.asciiArmor }
+func (g *GPGKey) KeyID() string           { return g.keyID }
 func (g *GPGKey) TrustSignature() *string { return g.trustSignature }
 
 // ProviderBinary represents a provider binary for a specific platform
 type ProviderBinary struct {
-	id               int
-	versionID        int
-	operatingSystem  string
-	architecture     string
-	fileName         string
-	fileSize         int64
-	fileHash         string
-	downloadURL      string
+	id              int
+	versionID       int
+	operatingSystem string
+	architecture    string
+	fileName        string
+	fileSize        int64
+	fileHash        string
+	downloadURL     string
 }
 
 // NewProviderBinary creates a new provider binary
 func NewProviderBinary(versionID int, operatingSystem, architecture, fileName, fileHash, downloadURL string, fileSize int64) *ProviderBinary {
 	return &ProviderBinary{
 		versionID:       versionID,
-		operatingSystem:  operatingSystem,
+		operatingSystem: operatingSystem,
 		architecture:    architecture,
 		fileName:        fileName,
 		fileSize:        fileSize,
@@ -55,28 +60,28 @@ func NewProviderBinary(versionID int, operatingSystem, architecture, fileName, f
 }
 
 // Getters
-func (b *ProviderBinary) ID() int               { return b.id }
-func (b *ProviderBinary) VersionID() int       { return b.versionID }
+func (b *ProviderBinary) ID() int                 { return b.id }
+func (b *ProviderBinary) VersionID() int          { return b.versionID }
 func (b *ProviderBinary) OperatingSystem() string { return b.operatingSystem }
-func (b *ProviderBinary) OS() string            { return b.operatingSystem }
-func (b *ProviderBinary) Architecture() string   { return b.architecture }
-func (b *ProviderBinary) Arch() string          { return b.architecture }
-func (b *ProviderBinary) FileName() string      { return b.fileName }
-func (b *ProviderBinary) Filename() string      { return b.fileName }
-func (b *ProviderBinary) FileSize() int64        { return b.fileSize }
-func (b *ProviderBinary) FileHash() string       { return b.fileHash }
-func (b *ProviderBinary) DownloadURL() string    { return b.downloadURL }
+func (b *ProviderBinary) OS() string              { return b.operatingSystem }
+func (b *ProviderBinary) Architecture() string    { return b.architecture }
+func (b *ProviderBinary) Arch() string            { return b.architecture }
+func (b *ProviderBinary) FileName() string        { return b.fileName }
+func (b *ProviderBinary) Filename() string        { return b.fileName }
+func (b *ProviderBinary) FileSize() int64         { return b.fileSize }
+func (b *ProviderBinary) FileHash() string        { return b.fileHash }
+func (b *ProviderBinary) DownloadURL() string     { return b.downloadURL }
 
 // Provider represents a Terraform provider aggregate root
 type Provider struct {
-	id                  int
-	namespaceID         int
-	name                string
-	description         *string
-	tier                string
-	categoryID          *int
-	repositoryID        *int
-	latestVersionID     *int
+	id                    int
+	namespaceID           int
+	name                  string
+	description           *string
+	tier                  string
+	categoryID            *int
+	repositoryID          *int
+	latestVersionID       *int
 	useProviderSourceAuth bool
 }
 
@@ -93,39 +98,39 @@ func NewProvider(
 	useProviderSourceAuth bool,
 ) *Provider {
 	return &Provider{
-		id:                  id,
-		namespaceID:         namespaceID,
-		name:                name,
-		description:         description,
-		tier:                tier,
-		categoryID:          categoryID,
-		repositoryID:        repositoryID,
-		latestVersionID:     latestVersionID,
+		id:                    id,
+		namespaceID:           namespaceID,
+		name:                  name,
+		description:           description,
+		tier:                  tier,
+		categoryID:            categoryID,
+		repositoryID:          repositoryID,
+		latestVersionID:       latestVersionID,
 		useProviderSourceAuth: useProviderSourceAuth,
 	}
 }
 
 // Getters
-func (p *Provider) ID() int                          { return p.id }
-func (p *Provider) NamespaceID() int                 { return p.namespaceID }
-func (p *Provider) Name() string                     { return p.name }
-func (p *Provider) Description() *string             { return p.description }
-func (p *Provider) Tier() string                     { return p.tier }
-func (p *Provider) CategoryID() *int                 { return p.categoryID }
-func (p *Provider) RepositoryID() *int               { return p.repositoryID }
-func (p *Provider) LatestVersionID() *int            { return p.latestVersionID }
-func (p *Provider) UseProviderSourceAuth() bool      { return p.useProviderSourceAuth }
+func (p *Provider) ID() int                     { return p.id }
+func (p *Provider) NamespaceID() int            { return p.namespaceID }
+func (p *Provider) Name() string                { return p.name }
+func (p *Provider) Description() *string        { return p.description }
+func (p *Provider) Tier() string                { return p.tier }
+func (p *Provider) CategoryID() *int            { return p.categoryID }
+func (p *Provider) RepositoryID() *int          { return p.repositoryID }
+func (p *Provider) LatestVersionID() *int       { return p.latestVersionID }
+func (p *Provider) UseProviderSourceAuth() bool { return p.useProviderSourceAuth }
 
 // Setters for repository operations
-func (p *Provider) SetID(id int)                     { p.id = id }
-func (p *Provider) SetNamespaceID(namespaceID int)    { p.namespaceID = namespaceID }
-func (p *Provider) SetName(name string)               { p.name = name }
-func (p *Provider) SetDescription(description *string) { p.description = description }
-func (p *Provider) SetTier(tier string)               { p.tier = tier }
-func (p *Provider) SetCategoryID(categoryID *int)     { p.categoryID = categoryID }
-func (p *Provider) SetRepositoryID(repositoryID *int) { p.repositoryID = repositoryID }
+func (p *Provider) SetID(id int)                            { p.id = id }
+func (p *Provider) SetNamespaceID(namespaceID int)          { p.namespaceID = namespaceID }
+func (p *Provider) SetName(name string)                     { p.name = name }
+func (p *Provider) SetDescription(description *string)      { p.description = description }
+func (p *Provider) SetTier(tier string)                     { p.tier = tier }
+func (p *Provider) SetCategoryID(categoryID *int)           { p.categoryID = categoryID }
+func (p *Provider) SetRepositoryID(repositoryID *int)       { p.repositoryID = repositoryID }
 func (p *Provider) SetLatestVersionID(latestVersionID *int) { p.latestVersionID = latestVersionID }
-func (p *Provider) SetUseProviderSourceAuth(use bool)  { p.useProviderSourceAuth = use }
+func (p *Provider) SetUseProviderSourceAuth(use bool)       { p.useProviderSourceAuth = use }
 
 // UpdateDetails updates provider details
 func (p *Provider) UpdateDetails(description *string, tier string, source *string, alias *string) {
@@ -152,8 +157,8 @@ func (p *Provider) PublishVersion(version string, protocol string, isBeta bool) 
 		version,
 		nil, // gitTag
 		isBeta,
-		&time.Time{}, // publishedAt
-		0, // gpgKeyID
+		&time.Time{},       // publishedAt
+		0,                  // gpgKeyID
 		[]string{protocol}, // protocolVersions
 	)
 
@@ -214,12 +219,12 @@ func NewProviderVersion(
 }
 
 // Getters
-func (pv *ProviderVersion) ID() int                   { return pv.id }
-func (pv *ProviderVersion) ProviderID() int           { return pv.providerID }
-func (pv *ProviderVersion) Version() string           { return pv.version }
-func (pv *ProviderVersion) GitTag() *string           { return pv.gitTag }
-func (pv *ProviderVersion) Beta() bool                { return pv.beta }
-func (pv *ProviderVersion) PublishedAt() *time.Time   { return pv.publishedAt }
-func (pv *ProviderVersion) GPGKeyID() int             { return pv.gpgKeyID }
-func (pv *ProviderVersion) ProtocolVersions() []string { return pv.protocolVersions }
+func (pv *ProviderVersion) ID() int                     { return pv.id }
+func (pv *ProviderVersion) ProviderID() int             { return pv.providerID }
+func (pv *ProviderVersion) Version() string             { return pv.version }
+func (pv *ProviderVersion) GitTag() *string             { return pv.gitTag }
+func (pv *ProviderVersion) Beta() bool                  { return pv.beta }
+func (pv *ProviderVersion) PublishedAt() *time.Time     { return pv.publishedAt }
+func (pv *ProviderVersion) GPGKeyID() int               { return pv.gpgKeyID }
+func (pv *ProviderVersion) ProtocolVersions() []string  { return pv.protocolVersions }
 func (pv *ProviderVersion) Binaries() []*ProviderBinary { return pv.binaries }

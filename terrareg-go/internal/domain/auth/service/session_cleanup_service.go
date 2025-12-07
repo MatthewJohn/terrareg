@@ -9,10 +9,10 @@ import (
 
 // SessionCleanupService periodically cleans up expired sessions
 type SessionCleanupService struct {
-	sessionService *SessionService
-	logger         zerolog.Logger
+	sessionService  *SessionService
+	logger          zerolog.Logger
 	cleanupInterval time.Duration
-	stopChan       chan struct{}
+	stopChan        chan struct{}
 }
 
 // NewSessionCleanupService creates a new session cleanup service

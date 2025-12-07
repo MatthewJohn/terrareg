@@ -13,8 +13,8 @@ import (
 
 // TerraformIdpService manages OAuth flows for Terraform OIDC Identity Provider
 type TerraformIdpService struct {
-	authCodeRepo        repository.TerraformIdpAuthorizationCodeRepository
-	accessTokenRepo     repository.TerraformIdpAccessTokenRepository
+	authCodeRepo          repository.TerraformIdpAuthorizationCodeRepository
+	accessTokenRepo       repository.TerraformIdpAccessTokenRepository
 	subjectIdentifierRepo repository.TerraformIdpSubjectIdentifierRepository
 }
 
@@ -35,10 +35,10 @@ type AuthorizationCodeResponse struct {
 
 // AccessTokenRequest represents an OAuth access token request
 type AccessTokenRequest struct {
-	GrantType    string `json:"grant_type"`
-	Code         string `json:"code"`
-	RedirectURI  string `json:"redirect_uri"`
-	ClientID     string `json:"client_id"`
+	GrantType   string `json:"grant_type"`
+	Code        string `json:"code"`
+	RedirectURI string `json:"redirect_uri"`
+	ClientID    string `json:"client_id"`
 }
 
 // AccessTokenResponse represents an OAuth access token response
@@ -65,8 +65,8 @@ func NewTerraformIdpService(
 	subjectIdentifierRepo repository.TerraformIdpSubjectIdentifierRepository,
 ) *TerraformIdpService {
 	return &TerraformIdpService{
-		authCodeRepo:         authCodeRepo,
-		accessTokenRepo:      accessTokenRepo,
+		authCodeRepo:          authCodeRepo,
+		accessTokenRepo:       accessTokenRepo,
 		subjectIdentifierRepo: subjectIdentifierRepo,
 	}
 }

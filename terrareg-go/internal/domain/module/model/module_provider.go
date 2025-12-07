@@ -58,13 +58,13 @@ func NewModuleProvider(namespace *Namespace, moduleName, providerName string) (*
 
 	now := time.Now()
 	return &ModuleProvider{
-		namespace:  namespace,
-		module:     moduleName,
-		provider:   providerName,
-		verified:   false,
-		versions:   make([]*ModuleVersion, 0),
-		createdAt:  now,
-		updatedAt:  now,
+		namespace: namespace,
+		module:    moduleName,
+		provider:  providerName,
+		verified:  false,
+		versions:  make([]*ModuleVersion, 0),
+		createdAt: now,
+		updatedAt: now,
 	}, nil
 }
 

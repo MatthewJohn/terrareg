@@ -71,7 +71,7 @@ func (h *AnalyticsHandler) HandleMostRecentlyPublished(w http.ResponseWriter, r 
 	response := map[string]interface{}{
 		"id":           info.ID,
 		"namespace":    info.Namespace,
-		"name":         info.Module,  // Python uses "name" not "module"
+		"name":         info.Module, // Python uses "name" not "module"
 		"provider":     info.Provider,
 		"version":      info.Version,
 		"owner":        info.Owner,

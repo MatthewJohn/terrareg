@@ -12,9 +12,9 @@ import (
 type NamespaceType string
 
 const (
-	NamespaceTypeNone           NamespaceType = "NONE"
-	NamespaceTypeGithubUser     NamespaceType = "GITHUB_USER"
-	NamespaceTypeGithubOrg      NamespaceType = "GITHUB_ORGANISATION"
+	NamespaceTypeNone       NamespaceType = "NONE"
+	NamespaceTypeGithubUser NamespaceType = "GITHUB_USER"
+	NamespaceTypeGithubOrg  NamespaceType = "GITHUB_ORGANISATION"
 )
 
 // Namespace represents a namespace for modules and providers

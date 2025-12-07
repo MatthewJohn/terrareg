@@ -75,7 +75,7 @@ type ModuleListResponse struct {
 // ModuleSearchResponse represents search results
 type ModuleSearchResponse struct {
 	Modules []ModuleProviderResponse `json:"modules"`
-	Meta    dto.PaginationMeta        `json:"meta"`
+	Meta    dto.PaginationMeta       `json:"meta"`
 }
 
 // ModuleProviderCreateRequest represents a request to create a module provider
@@ -119,4 +119,3 @@ type ModuleProviderSettingsResponse struct {
 	ArchiveGitPath        bool    `json:"archive_git_path"`
 	Verified              bool    `json:"verified"`
 }
-
