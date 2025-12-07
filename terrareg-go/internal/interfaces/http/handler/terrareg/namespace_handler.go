@@ -18,6 +18,7 @@ import (
 type NamespaceHandler struct {
 	listNamespacesQuery   *module.ListNamespacesQuery
 	createNamespaceCmd    *namespace.CreateNamespaceCommand
+	updateNamespaceCmd    *namespace.UpdateNamespaceCommand
 	namespaceDetailsQuery *namespaceQuery.NamespaceDetailsQuery
 	presenter             *presenter.NamespacePresenter
 }
@@ -26,11 +27,13 @@ type NamespaceHandler struct {
 func NewNamespaceHandler(
 	listNamespacesQuery *module.ListNamespacesQuery,
 	createNamespaceCmd *namespace.CreateNamespaceCommand,
+	updateNamespaceCmd *namespace.UpdateNamespaceCommand,
 	namespaceDetailsQuery *namespaceQuery.NamespaceDetailsQuery,
 ) *NamespaceHandler {
 	return &NamespaceHandler{
 		listNamespacesQuery:   listNamespacesQuery,
 		createNamespaceCmd:    createNamespaceCmd,
+		updateNamespaceCmd:    updateNamespaceCmd,
 		namespaceDetailsQuery: namespaceDetailsQuery,
 		presenter:             presenter.NewNamespacePresenter(),
 	}
@@ -123,7 +126,7 @@ func (h *NamespaceHandler) HandleNamespaceDetails(w http.ResponseWriter, r *http
 
 // HandleNamespaceUpdate handles POST /v1/terrareg/namespaces/{namespace}
 func (h *NamespaceHandler) HandleNamespaceUpdate(w http.ResponseWriter, r *http.Request) {
-	// ctx := r.Context()
+	ctx := r.Context()
 
 	// Parse namespace from URL
 	namespaceName := chi.URLParam(r, "namespace")
@@ -139,7 +142,21 @@ func (h *NamespaceHandler) HandleNamespaceUpdate(w http.ResponseWriter, r *http.
 		return
 	}
 
-	// TODO: Implement namespace update logic
-	// For now, return error
-	RespondError(w, http.StatusNotImplemented, "namespace update not yet implemented")
+	// TODO: Add CSRF token validation when authentication is implemented
+	// For now, we'll skip CSRF validation
+
+	// Execute update command
+	cmdReq := namespace.UpdateNamespaceRequest{
+		Name:        req.Name,
+		DisplayName: req.DisplayName,
+	}
+
+	response, err := h.updateNamespaceCmd.Execute(ctx, namespaceName, cmdReq)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Send response
+	RespondJSON(w, http.StatusOK, response)
 }

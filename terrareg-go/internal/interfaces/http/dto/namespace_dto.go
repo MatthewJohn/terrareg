@@ -18,3 +18,10 @@ type NamespaceCreateRequest struct {
 	DisplayName *string `json:"display_name"`
 	Type        string  `json:"type"`
 }
+
+// NamespaceUpdateRequest represents a request to update a namespace
+type NamespaceUpdateRequest struct {
+	Name        *string `json:"name,omitempty"`
+	DisplayName *string `json:"display_name,omitempty"`
+	CsrfToken   string  `json:"csrf_token"`
+}

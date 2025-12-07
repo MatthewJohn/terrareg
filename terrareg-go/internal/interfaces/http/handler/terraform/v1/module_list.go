@@ -7,7 +7,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
+	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg" // For respondJSON and respondError
 )
 
@@ -34,13 +34,13 @@ func (h *ModuleListHandler) HandleListModules(w http.ResponseWriter, r *http.Req
 	}
 
 	// Convert domain models to DTOs for the API response
-	moduleDTOs := make([]dto.ModuleProviderResponse, len(moduleProviders))
+	moduleDTOs := make([]moduledto.ModuleProviderResponse, len(moduleProviders))
 	for i, mp := range moduleProviders {
 		moduleDTOs[i] = convertModuleProviderToListResponse(mp)
 	}
 
 	// For the /v1/modules endpoint, the response wraps the modules in a "modules" field
-	response := map[string][]dto.ModuleProviderResponse{
+	response := map[string][]moduledto.ModuleProviderResponse{
 		"modules": moduleDTOs,
 	}
 
@@ -49,13 +49,7 @@ func (h *ModuleListHandler) HandleListModules(w http.ResponseWriter, r *http.Req
 
 // convertModuleProviderToListResponse converts a domain ModuleProvider model to a DTO for listing.
 // This function is specifically for the /v1/modules list endpoint.
-func convertModuleProviderToListResponse(mp *model.ModuleProvider) dto.ModuleProviderResponse {
-	var latestVersionStr *string
-	if latest := mp.GetLatestVersion(); latest != nil {
-		str := latest.Version().String()
-		latestVersionStr = &str
-	}
-
+func convertModuleProviderToListResponse(mp *model.ModuleProvider) moduledto.ModuleProviderResponse {
 	var publishedAtStr *string
 	if latest := mp.GetLatestVersion(); latest != nil && latest.PublishedAt() != nil {
 		str := latest.PublishedAt().Format(time.RFC3339) // Format time to string
@@ -83,17 +77,19 @@ func convertModuleProviderToListResponse(mp *model.ModuleProvider) dto.ModulePro
 	source := &src
 	downloads := 0 // Placeholder
 
-	return dto.ModuleProviderResponse{
-		ID:          fmt.Sprintf("%d", mp.ID()),
-		Namespace:   mp.Namespace().Name(),
-		Name:        mp.Module(),
-		Provider:    mp.Provider(),
-		Verified:    mp.IsVerified(),
+	return moduledto.ModuleProviderResponse{
+		ProviderBase: moduledto.ProviderBase{
+			ID:        fmt.Sprintf("%d", mp.ID()),
+			Namespace: mp.Namespace().Name(),
+			Name:      mp.Module(),
+			Provider:  mp.Provider(),
+			Verified:  mp.IsVerified(),
+			Trusted:   false, // TODO: Get from namespace service
+		},
 		Description: description,
 		Owner:       owner,
 		Source:      source,
 		PublishedAt: publishedAtStr,
 		Downloads:   downloads,
-		Version:     latestVersionStr,
 	}
 }

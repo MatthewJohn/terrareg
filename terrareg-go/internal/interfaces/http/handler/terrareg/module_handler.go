@@ -11,6 +11,7 @@ import (
 	moduleCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/module"
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
+	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/presenter"
 )
 
@@ -286,10 +287,10 @@ func (h *ModuleHandler) HandleModuleVersionPublish(w http.ResponseWriter, r *htt
 	version := chi.URLParam(r, "version")
 
 	// Parse request body for optional fields
-	var req dto.ModuleVersionPublishRequest
+	var req moduledto.ModuleVersionPublishRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		// If no body or invalid JSON, use defaults
-		req = dto.ModuleVersionPublishRequest{
+		req = moduledto.ModuleVersionPublishRequest{
 			Version: version, // Use version from URL
 			Beta:    false,
 		}
@@ -400,7 +401,7 @@ func (h *ModuleHandler) HandleModuleProviderSettingsGet(w http.ResponseWriter, r
 	}
 
 	// Build response
-	response := dto.ModuleProviderSettingsResponse{
+	response := moduledto.ModuleProviderSettingsResponse{
 		Namespace:             namespace,
 		Module:                name,
 		Provider:              provider,
@@ -427,7 +428,7 @@ func (h *ModuleHandler) HandleModuleProviderSettingsUpdate(w http.ResponseWriter
 	provider := chi.URLParam(r, "provider")
 
 	// Parse request body
-	var req dto.ModuleProviderSettingsRequest
+	var req moduledto.ModuleProviderSettingsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		RespondError(w, http.StatusBadRequest, fmt.Errorf("invalid request body: %w", err).Error())
 		return
@@ -460,7 +461,7 @@ func (h *ModuleHandler) HandleModuleProviderSettingsUpdate(w http.ResponseWriter
 		return
 	}
 
-	response := dto.ModuleProviderSettingsResponse{
+	response := moduledto.ModuleProviderSettingsResponse{
 		Namespace:             namespace,
 		Module:                name,
 		Provider:              provider,

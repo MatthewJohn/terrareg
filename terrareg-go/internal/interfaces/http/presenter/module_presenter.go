@@ -5,6 +5,7 @@ import (
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
+	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
 )
 
 // ModulePresenter converts module domain models to DTOs
@@ -16,24 +17,26 @@ func NewModulePresenter() *ModulePresenter {
 }
 
 // ToDTO converts a module provider domain model to a DTO
-func (p *ModulePresenter) ToDTO(mp *model.ModuleProvider) dto.ModuleProviderResponse {
+func (p *ModulePresenter) ToDTO(mp *model.ModuleProvider) moduledto.ModuleProviderResponse {
 	// Build module ID in Terraform format: namespace/name/provider
 	id := fmt.Sprintf("%s/%s/%s", mp.Namespace().Name(), mp.Module(), mp.Provider())
 
-	response := dto.ModuleProviderResponse{
-		ID:        id,
-		Namespace: mp.Namespace().Name(),
-		Name:      mp.Module(),
-		Provider:  mp.Provider(),
-		Verified:  mp.IsVerified(),
+	response := moduledto.ModuleProviderResponse{
+		ProviderBase: moduledto.ProviderBase{
+			ID:        id,
+			Namespace: mp.Namespace().Name(),
+			Name:      mp.Module(),
+			Provider:  mp.Provider(),
+			Verified:  mp.IsVerified(),
+			Trusted:   false, // TODO: Get from namespace service
+		},
 		Downloads: 0, // TODO: Get from analytics
 	}
 
 	// Add latest version if available
 	latestVersion := mp.GetLatestVersion()
 	if latestVersion != nil {
-		versionStr := latestVersion.Version().String()
-		response.Version = &versionStr
+		// Note: Version is not in the base ProviderBase, need to handle differently
 
 		// Get details from latest version
 		details := latestVersion.Details()
@@ -57,25 +60,25 @@ func (p *ModulePresenter) ToDTO(mp *model.ModuleProvider) dto.ModuleProviderResp
 }
 
 // ToListDTO converts a list of module providers to a list DTO
-func (p *ModulePresenter) ToListDTO(modules []*model.ModuleProvider) dto.ModuleListResponse {
-	dtos := make([]dto.ModuleProviderResponse, len(modules))
+func (p *ModulePresenter) ToListDTO(modules []*model.ModuleProvider) moduledto.ModuleListResponse {
+	dtos := make([]moduledto.ModuleProviderResponse, len(modules))
 	for i, mp := range modules {
 		dtos[i] = p.ToDTO(mp)
 	}
 
-	return dto.ModuleListResponse{
+	return moduledto.ModuleListResponse{
 		Modules: dtos,
 	}
 }
 
 // ToSearchDTO converts search results to a search DTO
-func (p *ModulePresenter) ToSearchDTO(modules []*model.ModuleProvider, totalCount, limit, offset int) dto.ModuleSearchResponse {
-	dtos := make([]dto.ModuleProviderResponse, len(modules))
+func (p *ModulePresenter) ToSearchDTO(modules []*model.ModuleProvider, totalCount, limit, offset int) moduledto.ModuleSearchResponse {
+	dtos := make([]moduledto.ModuleProviderResponse, len(modules))
 	for i, mp := range modules {
 		dtos[i] = p.ToDTO(mp)
 	}
 
-	return dto.ModuleSearchResponse{
+	return moduledto.ModuleSearchResponse{
 		Modules: dtos,
 		Meta: dto.PaginationMeta{
 			Limit:      limit,

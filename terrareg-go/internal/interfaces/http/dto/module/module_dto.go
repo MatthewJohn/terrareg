@@ -1,37 +1,81 @@
-package dto
+package module
 
-// ModuleProviderResponse represents a module provider in API responses
+import "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
+
+// ModuleProviderResponse for Terraform registry API (equivalent to get_api_outline)
 type ModuleProviderResponse struct {
-	ID          string  `json:"id"`
-	Namespace   string  `json:"namespace"`
-	Name        string  `json:"name"`
-	Provider    string  `json:"provider"`
-	Verified    bool    `json:"verified"`
+	ProviderBase
 	Description *string `json:"description,omitempty"`
 	Owner       *string `json:"owner,omitempty"`
 	Source      *string `json:"source,omitempty"`
 	PublishedAt *string `json:"published_at,omitempty"`
 	Downloads   int     `json:"downloads,omitempty"`
-	Version     *string `json:"version,omitempty"` // Latest version
+}
+
+// ModuleProviderDetailsResponse for detailed provider view (equivalent to get_api_details)
+type ModuleProviderDetailsResponse struct {
+	ProviderDetails
+	Description *string `json:"description,omitempty"`
+	Owner       *string `json:"owner,omitempty"`
+	Source      *string `json:"source,omitempty"`
+	PublishedAt *string `json:"published_at,omitempty"`
+	Downloads   int     `json:"downloads,omitempty"`
+}
+
+// TerraregModuleProviderResponse for terrareg UI (equivalent to get_terrareg_api_details)
+type TerraregModuleProviderResponse struct {
+	TerraregProviderDetails
+	Description *string `json:"description,omitempty"`
+	Owner       *string `json:"owner,omitempty"`
+	Source      *string `json:"source,omitempty"`
+	PublishedAt *string `json:"published_at,omitempty"`
+	Downloads   int     `json:"downloads,omitempty"`
+}
+
+// ModuleVersionResponse for Terraform registry API (equivalent to get_api_outline)
+type ModuleVersionResponse struct {
+	VersionBase
+}
+
+// ModuleVersionDetailsResponse for detailed version view (equivalent to get_api_details)
+type ModuleVersionDetailsResponse struct {
+	VersionDetails
+}
+
+// TerraregModuleVersionResponse for terrareg UI (equivalent to get_terrareg_api_details)
+type TerraregModuleVersionResponse struct {
+	TerraregVersionDetails
+}
+
+// SubmoduleResponse for submodules (uses ModuleSpecs)
+type SubmoduleResponse struct {
+	ModuleSpecs
+	// Add any submodule-specific fields if needed
+}
+
+// ExampleResponse for examples (extends submodule with cost analysis)
+type ExampleResponse struct {
+	SubmoduleResponse
+	CostAnalysis *CostAnalysis `json:"cost_analysis,omitempty"`
+}
+
+// CostAnalysis for example cost breakdown
+type CostAnalysis struct {
+	Monthly  float64 `json:"monthly,omitempty"`
+	Hourly   float64 `json:"hourly,omitempty"`
+	Currency string  `json:"currency,omitempty"`
 }
 
 // ModuleListResponse represents a list of module providers
 type ModuleListResponse struct {
 	Modules []ModuleProviderResponse `json:"modules"`
-	Meta    *PaginationMeta          `json:"meta,omitempty"`
+	Meta    *dto.PaginationMeta      `json:"meta,omitempty"`
 }
 
 // ModuleSearchResponse represents search results
 type ModuleSearchResponse struct {
 	Modules []ModuleProviderResponse `json:"modules"`
-	Meta    PaginationMeta           `json:"meta"`
-}
-
-// PaginationMeta represents pagination metadata
-type PaginationMeta struct {
-	Limit      int `json:"limit"`
-	Offset     int `json:"offset"`
-	TotalCount int `json:"total_count"`
+	Meta    dto.PaginationMeta        `json:"meta"`
 }
 
 // ModuleProviderCreateRequest represents a request to create a module provider
@@ -47,18 +91,6 @@ type ModuleVersionPublishRequest struct {
 	Beta        bool    `json:"beta"`
 	Description *string `json:"description"`
 	Owner       *string `json:"owner"`
-}
-
-// ModuleVersionResponse represents a module version in API responses
-type ModuleVersionResponse struct {
-	ID          string  `json:"id"`
-	Version     string  `json:"version"`
-	Published   bool    `json:"published"`
-	Beta        bool    `json:"beta"`
-	Internal    bool    `json:"internal"`
-	Description *string `json:"description,omitempty"`
-	Owner       *string `json:"owner,omitempty"`
-	PublishedAt *string `json:"published_at,omitempty"`
 }
 
 // ModuleProviderSettingsRequest represents a request to update module provider settings
@@ -88,9 +120,3 @@ type ModuleProviderSettingsResponse struct {
 	Verified              bool    `json:"verified"`
 }
 
-// NamespaceUpdateRequest represents a request to update a namespace
-type NamespaceUpdateRequest struct {
-	Name        *string `json:"name,omitempty"`
-	DisplayName *string `json:"display_name,omitempty"`
-	CsrfToken   string  `json:"csrf_token"`
-}
