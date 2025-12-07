@@ -10,6 +10,7 @@ type ModuleProviderResponse struct {
 	Source      *string `json:"source"`
 	PublishedAt *string `json:"published_at"`
 	Downloads   int     `json:"downloads"`
+	Score       *int    `json:"score,omitempty"` // Relevance score for search results
 }
 
 // ModuleProviderDetailsResponse for detailed provider view (equivalent to get_api_details)

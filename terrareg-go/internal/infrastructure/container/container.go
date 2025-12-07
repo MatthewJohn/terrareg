@@ -186,7 +186,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 
 	// Initialize repositories
 	c.NamespaceRepo = modulePersistence.NewNamespaceRepository(db.DB)
-	c.ModuleProviderRepo = modulePersistence.NewModuleProviderRepository(db.DB, c.NamespaceRepo)
+	c.ModuleProviderRepo = modulePersistence.NewModuleProviderRepository(db.DB, c.NamespaceRepo, cfg)
 	c.ModuleVersionRepo = modulePersistence.NewModuleVersionRepository(db.DB)
 	c.ProviderRepo = providerRepository.NewProviderRepository()
 	c.ProviderLogoRepo = providerLogoRepo.NewProviderLogoRepository()

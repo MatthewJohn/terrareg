@@ -31,6 +31,7 @@ func (p *ModulePresenter) ToDTO(mp *model.ModuleProvider) moduledto.ModuleProvid
 			Trusted:   false, // TODO: Get from namespace service
 		},
 		Downloads: 0, // TODO: Get from analytics
+		Score:     mp.RelevanceScore(), // Include relevance score if available
 	}
 
 	// Add latest version if available
