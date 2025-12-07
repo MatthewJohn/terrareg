@@ -41,6 +41,7 @@ type Server struct {
 	configHandler               *terrareg.ConfigHandler
 	versionHandler              *terrareg.VersionHandler
 	providerLogosHandler        *terrareg.ProviderLogosHandler
+	searchFiltersHandler        *terrareg.SearchFiltersHandler
 }
 
 // NewServer creates a new HTTP server
@@ -65,6 +66,7 @@ func NewServer(
 	configHandler *terrareg.ConfigHandler,
 	versionHandler *terrareg.VersionHandler,
 	providerLogosHandler *terrareg.ProviderLogosHandler,
+	searchFiltersHandler *terrareg.SearchFiltersHandler,
 ) *Server {
 	s := &Server{
 		router:                      chi.NewRouter(),
@@ -88,6 +90,7 @@ func NewServer(
 		configHandler:               configHandler,
 		versionHandler:              versionHandler,
 		providerLogosHandler:        providerLogosHandler,
+		searchFiltersHandler:        searchFiltersHandler,
 	}
 
 	s.setupMiddleware()
@@ -521,8 +524,14 @@ func (s *Server) handleProviderIntegrations(w http.ResponseWriter, r *http.Reque
 func (s *Server) handleProviderLogos(w http.ResponseWriter, r *http.Request) {
 	s.providerLogosHandler.HandleGetProviderLogos(w, r)
 }
-func (s *Server) handleModuleSearchFilters(w http.ResponseWriter, r *http.Request)                 {}
-func (s *Server) handleProviderSearchFilters(w http.ResponseWriter, r *http.Request)               {}
+func (s *Server) handleModuleSearchFilters(w http.ResponseWriter, r *http.Request) {
+	s.searchFiltersHandler.HandleModuleSearchFilters(w, r)
+}
+
+func (s *Server) handleProviderSearchFilters(w http.ResponseWriter, r *http.Request) {
+	// TODO: Implement provider search filters when needed
+	http.Error(w, "Provider search filters not yet implemented", http.StatusNotImplemented)
+}
 func (s *Server) handleAuditHistory(w http.ResponseWriter, r *http.Request)                        {}
 func (s *Server) handleUserGroupList(w http.ResponseWriter, r *http.Request)                       {}
 func (s *Server) handleUserGroupCreate(w http.ResponseWriter, r *http.Request)                     {}

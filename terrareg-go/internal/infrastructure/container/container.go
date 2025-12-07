@@ -172,6 +172,10 @@ type Container struct {
 	ConfigHandler  *terrareg.ConfigHandler
 	VersionHandler *terrareg.VersionHandler
 
+	// Search Filters
+	SearchFiltersQuery *moduleQuery.SearchFiltersQuery
+	SearchFiltersHandler *terrareg.SearchFiltersHandler
+
 	// HTTP Server
 	Server *http.Server
 }
@@ -382,6 +386,10 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	}
 	c.TemplateRenderer = templateRenderer
 
+	// Initialize search filters
+	c.SearchFiltersQuery = moduleQuery.NewSearchFiltersQuery(c.ModuleProviderRepo, cfg)
+	c.SearchFiltersHandler = terrareg.NewSearchFiltersHandler(c.SearchFiltersQuery)
+
 	// Initialize HTTP server
 	c.Server = http.NewServer(
 		cfg,
@@ -404,6 +412,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 		c.ConfigHandler,
 		c.VersionHandler,
 		c.ProviderLogosHandler,
+		c.SearchFiltersHandler,
 	)
 
 	return c, nil
