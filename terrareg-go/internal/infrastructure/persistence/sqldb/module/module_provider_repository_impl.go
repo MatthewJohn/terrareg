@@ -268,35 +268,38 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 	}
 
 	// Trusted/Contributed namespace filter
-	if query.TrustedNamespaces != nil || query.Contributed != nil {
-		if query.TrustedNamespaces != nil && *query.TrustedNamespaces {
-			// Only trusted namespaces
-			if len(r.cfg.TrustedNamespaces) > 0 {
-				placeholders := make([]string, len(r.cfg.TrustedNamespaces))
-				for i := range r.cfg.TrustedNamespaces {
-					placeholders[i] = "?"
-				}
-				whereConditions = append(whereConditions, "namespace.namespace IN ("+strings.Join(placeholders, ",")+")")
-				for _, ns := range r.cfg.TrustedNamespaces {
-					whereArgs = append(whereArgs, ns)
-				}
-			} else {
-				// No trusted namespaces configured, return empty
+	if (query.TrustedNamespaces != nil && *query.TrustedNamespaces) || (query.Contributed != nil && *query.Contributed) {
+		orConditions := []string{}
+		if query.TrustedNamespaces != nil && *query.TrustedNamespaces && len(r.cfg.TrustedNamespaces) > 0 {
+			placeholders := make([]string, len(r.cfg.TrustedNamespaces))
+			for i := range r.cfg.TrustedNamespaces {
+				placeholders[i] = "?"
+			}
+			orConditions = append(orConditions, "namespace.namespace IN ("+strings.Join(placeholders, ",")+")")
+			for _, ns := range r.cfg.TrustedNamespaces {
+				whereArgs = append(whereArgs, ns)
+			}
+		}
+		if query.Contributed != nil && *query.Contributed && len(r.cfg.TrustedNamespaces) > 0 {
+			placeholders := make([]string, len(r.cfg.TrustedNamespaces))
+			for i := range r.cfg.TrustedNamespaces {
+				placeholders[i] = "?"
+			}
+			orConditions = append(orConditions, "namespace.namespace NOT IN ("+strings.Join(placeholders, ",")+")")
+			for _, ns := range r.cfg.TrustedNamespaces {
+				whereArgs = append(whereArgs, ns)
+			}
+		}
+		// If no trusted namespaces configured but filters are requested, handle appropriately
+		if len(r.cfg.TrustedNamespaces) == 0 {
+			if query.TrustedNamespaces != nil && *query.TrustedNamespaces {
+				// No trusted namespaces configured and user wants trusted only - return empty
 				whereConditions = append(whereConditions, "1 = 0")
 			}
-		} else if query.Contributed != nil && *query.Contributed {
-			// Only contributed (non-trusted) namespaces
-			if len(r.cfg.TrustedNamespaces) > 0 {
-				placeholders := make([]string, len(r.cfg.TrustedNamespaces))
-				for i := range r.cfg.TrustedNamespaces {
-					placeholders[i] = "?"
-				}
-				whereConditions = append(whereConditions, "namespace.namespace NOT IN ("+strings.Join(placeholders, ",")+")")
-				for _, ns := range r.cfg.TrustedNamespaces {
-					whereArgs = append(whereArgs, ns)
-				}
-			}
-			// If no trusted namespaces configured, all are contributed
+			// If contributed only with no trusted namespaces, all modules are contributed - no filter needed
+		} else if len(orConditions) > 0 {
+			// Combine OR conditions
+			whereConditions = append(whereConditions, "("+strings.Join(orConditions, " OR ")+")")
 		}
 	}
 
