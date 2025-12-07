@@ -16,6 +16,7 @@ import (
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	namespaceQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/namespace"
 	providerQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider"
+	providerLogoQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider_logo"
 	setupQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/setup"
 	terraformCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/terraform"
 	appConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/config"
@@ -31,6 +32,8 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/version"
 
 	providerRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
+	providerLogoRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/provider_logo"
+	providerLogoRepository "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider_logo/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/parser"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	analyticsPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/analytics"
@@ -58,6 +61,7 @@ type Container struct {
 	ModuleVersionRepo                 moduleRepo.ModuleVersionRepository
 	AnalyticsRepo                     analyticsCmd.AnalyticsRepository
 	ProviderRepo                      providerRepo.ProviderRepository
+	ProviderLogoRepo                  providerLogoRepository.ProviderLogoRepository
 	SessionRepo                       authRepo.SessionRepository
 	UserGroupRepo                     authRepo.UserGroupRepository
 	TerraformIdpAuthorizationCodeRepo authRepo.TerraformIdpAuthorizationCodeRepository
@@ -105,6 +109,9 @@ type Container struct {
 	// Provider Queries
 	GetProviderVersionQuery *providerQuery.GetProviderVersionQuery
 
+	// Provider Logo Queries
+	GetProviderLogosQuery *providerLogoQuery.GetAllProviderLogosQuery
+
 	// Queries
 	ListNamespacesQuery            *module.ListNamespacesQuery
 	NamespaceDetailsQuery          *namespaceQuery.NamespaceDetailsQuery
@@ -138,6 +145,7 @@ type Container struct {
 	ModuleHandler              *terrareg.ModuleHandler
 	AnalyticsHandler           *terrareg.AnalyticsHandler
 	ProviderHandler            *terrareg.ProviderHandler
+	ProviderLogosHandler       *terrareg.ProviderLogosHandler
 	AuthHandler                *terrareg.AuthHandler
 	TerraformV1ModuleHandler   *v1.TerraformV1ModuleHandler // New V1 Terraform Module Handler
 	TerraformV2ProviderHandler *v2.TerraformV2ProviderHandler
@@ -181,6 +189,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	c.ModuleProviderRepo = modulePersistence.NewModuleProviderRepository(db.DB, c.NamespaceRepo)
 	c.ModuleVersionRepo = modulePersistence.NewModuleVersionRepository(db.DB)
 	c.ProviderRepo = providerRepository.NewProviderRepository()
+	c.ProviderLogoRepo = providerLogoRepo.NewProviderLogoRepository()
 	c.SessionRepo = authPersistence.NewSessionRepository(db.DB)
 	c.UserGroupRepo = authPersistence.NewUserGroupRepository(db.DB)
 	c.TerraformIdpAuthorizationCodeRepo = authPersistence.NewTerraformIdpAuthorizationCodeRepository(db.DB)
@@ -273,6 +282,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	c.GetProviderVersionsQuery = providerQuery.NewGetProviderVersionsQuery(c.ProviderRepo)
 	c.GetProviderVersionQuery = providerQuery.NewGetProviderVersionQuery(c.ProviderRepo)
 	c.GetProviderVersionQuery = providerQuery.NewGetProviderVersionQuery(c.ProviderRepo)
+	c.GetProviderLogosQuery = providerLogoQuery.NewGetAllProviderLogosQuery(c.ProviderLogoRepo)
 	c.CreateOrUpdateProviderCmd = providerCmd.NewCreateOrUpdateProviderCommand(c.ProviderRepo, c.NamespaceRepo)
 	c.PublishProviderVersionCmd = providerCmd.NewPublishProviderVersionCommand(c.ProviderRepo, c.NamespaceRepo)
 	c.ManageGPGKeyCmd = providerCmd.NewManageGPGKeyCommand(c.ProviderRepo, c.NamespaceRepo)
@@ -337,6 +347,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 		c.PublishProviderVersionCmd,
 		c.ManageGPGKeyCmd,
 	)
+	c.ProviderLogosHandler = terrareg.NewProviderLogosHandler(c.GetProviderLogosQuery)
 	c.AuthHandler = terrareg.NewAuthHandler(
 		c.AdminLoginCmd,
 		c.CheckSessionQuery,
@@ -392,6 +403,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 		c.TerraformStaticTokenHandler,
 		c.ConfigHandler,
 		c.VersionHandler,
+		c.ProviderLogosHandler,
 	)
 
 	return c, nil
