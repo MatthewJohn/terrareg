@@ -69,13 +69,19 @@ func (m *MockModuleProviderRepository) Exists(ctx context.Context, namespace, mo
 }
 
 func createMockNamespace(name string) *model.Namespace {
-	namespace, _ := model.NewNamespace(name, nil, "NONE")
+	namespace, err := model.NewNamespace(name, nil, "NONE")
+	if err != nil {
+		panic(err) // In tests, panic is acceptable for mock creation failures
+	}
 	return namespace
 }
 
 func createMockModuleProvider(namespace, moduleName, provider string, verified bool) *model.ModuleProvider {
 	ns := createMockNamespace(namespace)
-	mp, _ := model.NewModuleProvider(ns, moduleName, provider)
+	mp, err := model.NewModuleProvider(ns, moduleName, provider)
+	if err != nil {
+		panic(err) // In tests, panic is acceptable for mock creation failures
+	}
 
 	if verified {
 		mp.Verify()
@@ -248,7 +254,7 @@ func TestConvertModuleProviderToListResponse(t *testing.T) {
 	description := "Test description"
 	mv := createMockModuleVersion("1.0.0", &owner, &description, &publishedAt)
 
-	mp := createMockModuleProvider("test-ns", "test-module", "test-provider", true)
+	mp := createMockModuleProvider("testns", "testmodule", "testprovider", true)
 	mp.AddVersion(mv)
 
 	// Act
@@ -256,13 +262,13 @@ func TestConvertModuleProviderToListResponse(t *testing.T) {
 
 	// Assert
 	assert.NotNil(t, result)
-	assert.Equal(t, "1", result.ID) // From mp.ID()
-	assert.Equal(t, "test-ns", result.Namespace)
-	assert.Equal(t, "test-module", result.Name)
-	assert.Equal(t, "test-provider", result.Provider)
+	assert.Equal(t, "0", result.ID) // New ModuleProvider has ID 0
+	assert.Equal(t, "testns", result.Namespace)
+	assert.Equal(t, "testmodule", result.Name)
+	assert.Equal(t, "testprovider", result.Provider)
 	assert.True(t, result.Verified)
 	assert.False(t, result.Trusted) // TODO: Get from namespace service
-	assert.Equal(t, "test-owner", *result.Owner)
+	assert.Equal(t, "testns", *result.Owner) // Owner uses namespace name
 	assert.Equal(t, "Test description", *result.Description)
 	assert.Equal(t, "2023-01-01T12:00:00Z", *result.PublishedAt)
 	assert.Equal(t, 0, result.Downloads) // Placeholder
