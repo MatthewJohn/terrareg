@@ -40,6 +40,7 @@ type Server struct {
 	terraformStaticTokenHandler *terraformHandler.TerraformStaticTokenHandler
 	configHandler               *terrareg.ConfigHandler
 	versionHandler              *terrareg.VersionHandler
+	providerLogosHandler        *terrareg.ProviderLogosHandler
 }
 
 // NewServer creates a new HTTP server
@@ -63,6 +64,7 @@ func NewServer(
 	terraformStaticTokenHandler *terraformHandler.TerraformStaticTokenHandler,
 	configHandler *terrareg.ConfigHandler,
 	versionHandler *terrareg.VersionHandler,
+	providerLogosHandler *terrareg.ProviderLogosHandler,
 ) *Server {
 	s := &Server{
 		router:                      chi.NewRouter(),
@@ -85,6 +87,7 @@ func NewServer(
 		terraformStaticTokenHandler: terraformStaticTokenHandler,
 		configHandler:               configHandler,
 		versionHandler:              versionHandler,
+		providerLogosHandler:        providerLogosHandler,
 	}
 
 	s.setupMiddleware()
@@ -515,7 +518,9 @@ func (s *Server) handleExampleFile(w http.ResponseWriter, r *http.Request)      
 func (s *Server) handleGraphData(w http.ResponseWriter, r *http.Request)                           {}
 func (s *Server) handleTerraregNamespaceProviders(w http.ResponseWriter, r *http.Request)          {}
 func (s *Server) handleProviderIntegrations(w http.ResponseWriter, r *http.Request)                {}
-func (s *Server) handleProviderLogos(w http.ResponseWriter, r *http.Request)                       {}
+func (s *Server) handleProviderLogos(w http.ResponseWriter, r *http.Request) {
+	s.providerLogosHandler.HandleGetProviderLogos(w, r)
+}
 func (s *Server) handleModuleSearchFilters(w http.ResponseWriter, r *http.Request)                 {}
 func (s *Server) handleProviderSearchFilters(w http.ResponseWriter, r *http.Request)               {}
 func (s *Server) handleAuditHistory(w http.ResponseWriter, r *http.Request)                        {}
