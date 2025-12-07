@@ -15,7 +15,7 @@ type Config struct {
 	DisableAnalytics          bool
 
 	// Feature flags
-	AllowModuleHosting              string // Maps to ModuleHostingMode enum value
+	AllowModuleHosting              ModuleHostingMode // Maps to ModuleHostingMode enum value
 	UploadAPIKeysEnabled            bool
 	PublishAPIKeysEnabled           bool
 	DisableTerraregExclusiveLabels  bool

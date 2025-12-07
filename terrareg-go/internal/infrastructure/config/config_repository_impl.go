@@ -47,7 +47,7 @@ func (r *ConfigRepositoryImpl) GetConfig(ctx context.Context) (*model.Config, er
 		DisableAnalytics:          r.getEnvBool("DISABLE_ANALYTICS", false),
 
 		// Feature flags
-		AllowModuleHosting:              r.getEnvString("ALLOW_MODULE_HOSTING", "true"),
+		AllowModuleHosting:              r.getModuleHostingMode(),
 		UploadAPIKeysEnabled:            r.getEnvString("UPLOAD_API_KEYS", "") != "",
 		PublishAPIKeysEnabled:           r.getEnvString("PUBLISH_API_KEYS", "") != "",
 		DisableTerraregExclusiveLabels:  r.getEnvBool("DISABLE_TERRAREG_EXCLUSIVE_LABELS", false),
@@ -153,4 +153,23 @@ func (r *ConfigRepositoryImpl) getEnvInt(key string, defaultValue int) int {
 		}
 	}
 	return defaultValue
+}
+
+// getModuleHostingMode parses the ALLOW_MODULE_HOSTING environment variable
+// and returns the corresponding ModuleHostingMode enum value
+func (r *ConfigRepositoryImpl) getModuleHostingMode() model.ModuleHostingMode {
+	value := strings.ToLower(r.getEnvString("ALLOW_MODULE_HOSTING", "true"))
+
+	// Validate the value against allowed enum values
+	switch value {
+	case "true":
+		return model.ModuleHostingModeAllow
+	case "false":
+		return model.ModuleHostingModeDisallow
+	case "enforce":
+		return model.ModuleHostingModeEnforce
+	default:
+		// Default to "true" if invalid value provided
+		return model.ModuleHostingModeAllow
+	}
 }
