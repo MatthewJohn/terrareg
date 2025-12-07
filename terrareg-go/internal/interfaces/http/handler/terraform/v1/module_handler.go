@@ -63,8 +63,23 @@ func (h *TerraformV1ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *
 	}
 
 	// Parse multiple namespaces and providers
-	namespaces := r.URL.Query()["namespace"]
-	providers := r.URL.Query()["provider"]
+	queryParams := r.URL.Query()
+	namespaces := queryParams["namespace"]
+	providers := queryParams["provider"]
+
+	// Handle single namespace parameter for backward compatibility
+	if len(namespaces) == 0 {
+		if ns := queryParams.Get("namespace"); ns != "" {
+			namespaces = []string{ns}
+		}
+	}
+
+	// Handle single provider parameter for backward compatibility
+	if len(providers) == 0 {
+		if p := queryParams.Get("provider"); p != "" {
+			providers = []string{p}
+		}
+	}
 
 	// Parse boolean parameters
 	verified := parseBoolPtr(r.URL.Query().Get("verified"))
