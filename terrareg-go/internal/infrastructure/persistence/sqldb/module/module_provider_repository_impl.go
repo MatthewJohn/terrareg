@@ -179,25 +179,62 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 			"%"+query.Query+"%", "%"+query.Query+"%")
 	}
 
-	if query.Namespace != nil {
-		db = db.Where("namespace.namespace = ?", *query.Namespace)
+	// Apply multiple namespace filters
+	if len(query.Namespaces) > 0 {
+		db = db.Where("namespace.namespace IN ?", query.Namespaces)
 	}
 
 	if query.Module != nil {
 		db = db.Where("module_provider.module = ?", *query.Module)
 	}
 
-	if query.Provider != nil {
-		db = db.Where("module_provider.provider = ?", *query.Provider)
+	// Apply multiple provider filters
+	if len(query.Providers) > 0 {
+		db = db.Where("module_provider.provider IN ?", query.Providers)
 	}
 
 	if query.Verified != nil {
 		db = db.Where("module_provider.verified = ?", *query.Verified)
 	}
 
-	// Count total
+	// Note: trusted/contributed filtering will be handled at the application layer
+	// since trusted status is not stored in the database but configured via environment
+
+	// Count total - use proper table qualification to avoid ambiguous column error
+	countDB := r.db.WithContext(ctx).
+		Table("module_provider").
+		Joins("JOIN namespace ON namespace.id = module_provider.namespace_id")
+
+	// Apply all the same filters to countDB
+	if query.Query != "" {
+		countDB = countDB.Where("module_provider.module LIKE ? OR namespace.namespace LIKE ?",
+			"%"+query.Query+"%", "%"+query.Query+"%")
+	}
+
+	// Apply multiple namespace filters to count
+	if len(query.Namespaces) > 0 {
+		countDB = countDB.Where("namespace.namespace IN ?", query.Namespaces)
+	}
+
+	if query.Module != nil {
+		countDB = countDB.Where("module_provider.module = ?", *query.Module)
+	}
+
+	// Apply multiple provider filters to count
+	if len(query.Providers) > 0 {
+		countDB = countDB.Where("module_provider.provider IN ?", query.Providers)
+	}
+
+	if query.Verified != nil {
+		countDB = countDB.Where("module_provider.verified = ?", *query.Verified)
+	}
+
+	// Note: trusted/contributed filtering handled in application layer
+	// since it depends on environment configuration, not database schema
+
+	// Now count with proper qualification
 	var total int64
-	if err := db.Model(&sqldb.ModuleProviderDB{}).Count(&total).Error; err != nil {
+	if err := countDB.Count(&total).Error; err != nil {
 		return nil, fmt.Errorf("failed to count module providers: %w", err)
 	}
 

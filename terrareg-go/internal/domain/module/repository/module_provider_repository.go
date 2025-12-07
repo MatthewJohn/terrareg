@@ -32,15 +32,18 @@ type ModuleProviderRepository interface {
 
 // ModuleSearchQuery represents search criteria
 type ModuleSearchQuery struct {
-	Query      string
-	Namespace  *string
-	Module     *string
-	Provider   *string
-	Verified   *bool
-	Limit      int
-	Offset     int
-	OrderBy    string
-	OrderDir   string
+	Query                   string
+	Namespaces              []string  // Change from *string to []string for multiple values
+	Module                  *string
+	Providers               []string  // Change from *string to []string for multiple values
+	Verified                *bool
+	TrustedNamespaces       *bool     // New: Filter for trusted namespaces only
+	Contributed             *bool     // New: Filter for contributed modules only
+	TargetTerraformVersion  *string  // New: Check compatibility with specific Terraform version
+	Limit                   int
+	Offset                  int
+	OrderBy                 string
+	OrderDir                string
 }
 
 // ModuleSearchResult represents search results
