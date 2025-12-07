@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	terraformHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform"
 	tfv1ModuleHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1" // New import
 	tfv2ProviderHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v2"
@@ -505,7 +506,38 @@ func (s *Server) handleModuleVersionDelete(w http.ResponseWriter, r *http.Reques
 func (s *Server) handleModuleVersionReadmeHTML(w http.ResponseWriter, r *http.Request)       {}
 func (s *Server) handleModuleVersionVariableTemplate(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleVersionFile(w http.ResponseWriter, r *http.Request)             {}
-func (s *Server) handleModuleVersionSourceDownload(w http.ResponseWriter, r *http.Request)   {}
+func (s *Server) handleModuleVersionSourceDownload(w http.ResponseWriter, r *http.Request) {
+	// Check if module hosting is disallowed
+	if s.config.AllowModuleHosting == model.ModuleHostingModeDisallow {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"message": "Module hosting is disabled"}`))
+		return
+	}
+
+	// Get path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+	version := chi.URLParam(r, "version")
+
+	if namespace == "" || name == "" || provider == "" || version == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"message": "Missing required path parameters"}`))
+		return
+	}
+
+	// For now, return a stub response
+	// TODO: Implement actual source download logic
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNotImplemented)
+	w.Write([]byte(fmt.Sprintf(`{
+		"message": "Source download not yet implemented",
+		"namespace": "%s",
+		"name": "%s",
+		"provider": "%s",
+		"version": "%s"
+	}`, namespace, name, provider, version)))
+}
 func (s *Server) handleModuleVersionSubmodules(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleGetSubmodules(w, r)
 }

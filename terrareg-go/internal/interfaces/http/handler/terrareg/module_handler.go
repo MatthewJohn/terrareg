@@ -10,6 +10,8 @@ import (
 
 	moduleCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/module"
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/presenter"
@@ -34,6 +36,7 @@ type ModuleHandler struct {
 	importModuleVersionCmd          *moduleCmd.ImportModuleVersionCommand
 	presenter                       *presenter.ModulePresenter
 	versionPresenter                *presenter.ModuleVersionPresenter
+	cfg                             *config.Config
 }
 
 // NewModuleHandler creates a new module handler
@@ -53,6 +56,7 @@ func NewModuleHandler(
 	deleteModuleProviderCmd *moduleCmd.DeleteModuleProviderCommand,
 	uploadModuleVersionCmd *moduleCmd.UploadModuleVersionCommand,
 	importModuleVersionCmd *moduleCmd.ImportModuleVersionCommand,
+	cfg *config.Config,
 ) *ModuleHandler {
 	return &ModuleHandler{
 		listModulesQuery:                listModulesQuery,
@@ -72,6 +76,7 @@ func NewModuleHandler(
 		importModuleVersionCmd:          importModuleVersionCmd,
 		presenter:                       presenter.NewModulePresenter(),
 		versionPresenter:                presenter.NewModuleVersionPresenter(),
+		cfg:                             cfg,
 	}
 }
 
@@ -357,6 +362,13 @@ func (h *ModuleHandler) HandleModuleDownload(w http.ResponseWriter, r *http.Requ
 	provider := chi.URLParam(r, "provider")
 	version := chi.URLParam(r, "version") // May be empty for latest
 
+	// Check if module hosting is disallowed
+	// TODO: Implement full logic for ALLOW/ENFORCE modes with git URL handling
+	if h.cfg.AllowModuleHosting == model.ModuleHostingModeDisallow {
+		RespondError(w, http.StatusInternalServerError, "Module hosting is disabled")
+		return
+	}
+
 	// Execute query to get download info
 	downloadInfo, err := h.getModuleDownloadQuery.Execute(ctx, namespace, name, provider, version)
 	if err != nil {
@@ -512,6 +524,12 @@ func (h *ModuleHandler) HandleModuleVersionUpload(w http.ResponseWriter, r *http
 
 	if namespace == "" || name == "" || provider == "" || version == "" {
 		RespondJSON(w, http.StatusBadRequest, dto.NewError("Missing required path parameters"))
+		return
+	}
+
+	// Check if module hosting is disallowed
+	if h.cfg.AllowModuleHosting == model.ModuleHostingModeDisallow {
+		RespondJSON(w, http.StatusBadRequest, dto.NewError("Module upload is disabled."))
 		return
 	}
 
