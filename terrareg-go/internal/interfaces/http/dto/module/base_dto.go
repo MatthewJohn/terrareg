@@ -14,21 +14,21 @@ type ProviderBase struct {
 // Similar to Python's get_api_details()
 type ProviderDetails struct {
 	ProviderBase
-	Versions []string `json:"versions,omitempty"` // List of version strings
+	Versions []string `json:"versions"` // List of version strings
 }
 
 // TerraregProviderDetails extends ProviderDetails with UI-specific fields
 // Similar to Python's get_terrareg_api_details()
 type TerraregProviderDetails struct {
 	ProviderDetails
-	ModuleProviderID     *int    `json:"module_provider_id,omitempty"`
-	GitProviderID        *int    `json:"git_provider_id,omitempty"`
-	GitTagFormat         *string `json:"git_tag_format,omitempty"`
-	GitPath              *string `json:"git_path,omitempty"`
-	ArchiveGitPath       bool    `json:"archive_git_path,omitempty"`
-	RepoBaseURLTemplate  *string `json:"repo_base_url_template,omitempty"`
-	RepoCloneURLTemplate *string `json:"repo_clone_url_template,omitempty"`
-	RepoBrowseURLTemplate *string `json:"repo_browse_url_template,omitempty"`
+	ModuleProviderID     *int    `json:"module_provider_id"`
+	GitProviderID        *int    `json:"git_provider_id"`
+	GitTagFormat         *string `json:"git_tag_format"`
+	GitPath              *string `json:"git_path"`
+	ArchiveGitPath       bool    `json:"archive_git_path"`
+	RepoBaseURLTemplate  *string `json:"repo_base_url_template"`
+	RepoCloneURLTemplate *string `json:"repo_clone_url_template"`
+	RepoBrowseURLTemplate *string `json:"repo_browse_url_template"`
 }
 
 // VersionBase extends ProviderBase with version-specific fields
@@ -36,10 +36,10 @@ type TerraregProviderDetails struct {
 type VersionBase struct {
 	ProviderBase
 	Version     string  `json:"version"`      // Version string
-	Owner       *string `json:"owner,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Source      *string `json:"source,omitempty"`      // From get_source_base_url()
-	PublishedAt *string `json:"published_at,omitempty"` // ISO format from .isoformat()
+	Owner       *string `json:"owner"`
+	Description *string `json:"description"`
+	Source      *string `json:"source"`      // From get_source_base_url()
+	PublishedAt *string `json:"published_at"` // ISO format from .isoformat()
 	Downloads   int     `json:"downloads"`
 	Internal    bool    `json:"internal"`
 }
@@ -48,9 +48,9 @@ type VersionBase struct {
 // Similar to Python's get_api_details()
 type VersionDetails struct {
 	VersionBase
-	Root       ModuleSpecs `json:"root"`                    // Root module specs
-	Submodules []ModuleSpecs `json:"submodules,omitempty"` // Submodule specs
-	Providers  []string     `json:"providers,omitempty"`    // List of provider names
+	Root       ModuleSpecs `json:"root"`       // Root module specs
+	Submodules []ModuleSpecs `json:"submodules"` // Submodule specs
+	Providers  []string     `json:"providers"`   // List of provider names
 }
 
 // TerraregVersionDetails extends VersionDetails with UI-specific fields
@@ -59,13 +59,13 @@ type TerraregVersionDetails struct {
 	VersionDetails
 	Beta                      bool        `json:"beta"`
 	Published                 bool        `json:"published"`
-	TerraformVersionConstraint *string   `json:"terraform_version_constraint,omitempty"`
+	TerraformVersionConstraint *string   `json:"terraform_version_constraint"`
 	SecurityFailures          int         `json:"security_failures"`
-	SecurityResults           interface{} `json:"security_results,omitempty"`
-	DisplaySourceURL          *string     `json:"display_source_url,omitempty"`
-	GraphURL                  *string     `json:"graph_url,omitempty"`
-	UsageExample              *string     `json:"usage_example,omitempty"`
-	VersionCompatibility       *string     `json:"version_compatibility,omitempty"` // Optional Terraform compatibility
+	SecurityResults           interface{} `json:"security_results"`
+	DisplaySourceURL          *string     `json:"display_source_url"`
+	GraphURL                  *string     `json:"graph_url"`
+	UsageExample              *string     `json:"usage_example"`
+	VersionCompatibility      *string     `json:"version_compatibility"` // Optional Terraform compatibility
 }
 
 // ModuleSpecs contains Terraform module specification data
@@ -74,39 +74,39 @@ type ModuleSpecs struct {
 	Path                 string                `json:"path"`
 	Readme               string                `json:"readme"`
 	Empty                bool                  `json:"empty"`
-	Inputs               []TerraformInput      `json:"inputs,omitempty"`
-	Outputs              []TerraformOutput     `json:"outputs,omitempty"`
-	Dependencies         []TerraformDependency `json:"dependencies,omitempty"`
-	ProviderDependencies []TerraformProvider   `json:"provider_dependencies,omitempty"`
-	Resources            []TerraformResource   `json:"resources,omitempty"`
-	Modules              []TerraformModule     `json:"modules,omitempty"`
+	Inputs               []TerraformInput      `json:"inputs"`
+	Outputs              []TerraformOutput     `json:"outputs"`
+	Dependencies         []TerraformDependency `json:"dependencies"`
+	ProviderDependencies []TerraformProvider   `json:"provider_dependencies"`
+	Resources            []TerraformResource   `json:"resources"`
+	Modules              []TerraformModule     `json:"modules"`
 }
 
 // Terraform specification types
 type TerraformInput struct {
 	Name        string      `json:"name"`
 	Type        string      `json:"type"`
-	Description *string     `json:"description,omitempty"`
-	Default     interface{} `json:"default,omitempty"`
+	Description *string     `json:"description"`
+	Default     interface{} `json:"default"`
 	Required    bool        `json:"required"`
 }
 
 type TerraformOutput struct {
 	Name        string  `json:"name"`
-	Description *string `json:"description,omitempty"`
+	Description *string `json:"description"`
 }
 
 type TerraformDependency struct {
 	Name    string `json:"name"`
 	Source  string `json:"source"`
-	Version string `json:"version,omitempty"`
+	Version string `json:"version"`
 }
 
 type TerraformProvider struct {
 	Name         string                 `json:"name"`
-	Version      string                 `json:"version,omitempty"`
-	Source       string                 `json:"source,omitempty"`
-	Configuration map[string]interface{} `json:"configuration,omitempty"`
+	Version      string                 `json:"version"`
+	Source       string                 `json:"source"`
+	Configuration map[string]interface{} `json:"configuration"`
 }
 
 type TerraformResource struct {
@@ -114,12 +114,12 @@ type TerraformResource struct {
 	Name     string                 `json:"name"`
 	Provider string                 `json:"provider"`
 	Mode     string                 `json:"mode"` // "managed" or "data"
-	Version  string                 `json:"version,omitempty"`
-	Config   map[string]interface{} `json:"config,omitempty"`
+	Version  string                 `json:"version"`
+	Config   map[string]interface{} `json:"config"`
 }
 
 type TerraformModule struct {
 	Name    string `json:"name"`
 	Source  string `json:"source"`
-	Version string `json:"version,omitempty"`
+	Version string `json:"version"`
 }

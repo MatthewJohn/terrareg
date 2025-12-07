@@ -26,7 +26,7 @@ func TestModuleProviderResponse_JSONSerialization(t *testing.T) {
 	// Test JSON serialization
 	jsonData, err := json.Marshal(response)
 	require.NoError(t, err)
-	assert.JSONEq(t, `{"id":"example/aws/2.0.0","namespace":"example","name":"aws","provider":"aws","verified":true,"trusted":false,"description":"AWS provider for Terraform","downloads":1500}`, string(jsonData))
+	assert.JSONEq(t, `{"id":"example/aws/2.0.0","namespace":"example","name":"aws","provider":"aws","verified":true,"trusted":false,"description":"AWS provider for Terraform","owner":null,"source":null,"published_at":null,"downloads":1500}`, string(jsonData))
 
 	// Test JSON deserialization
 	var unmarshaled ModuleProviderResponse
@@ -234,7 +234,7 @@ func TestCostAnalysis(t *testing.T) {
 			analysis: CostAnalysis{
 				Currency: "USD",
 			},
-			expected: `{"currency":"USD"}`,
+			expected: `{"monthly":0,"hourly":0,"currency":"USD"}`,
 		},
 	}
 
