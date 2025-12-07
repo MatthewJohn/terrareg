@@ -82,6 +82,7 @@ type Container struct {
 
 	// Commands
 	CreateNamespaceCmd              *namespace.CreateNamespaceCommand
+	UpdateNamespaceCmd              *namespace.UpdateNamespaceCommand
 	CreateModuleProviderCmd         *moduleCmd.CreateModuleProviderCommand
 	PublishModuleVersionCmd         *moduleCmd.PublishModuleVersionCommand
 	UpdateModuleProviderSettingsCmd *moduleCmd.UpdateModuleProviderSettingsCommand
@@ -232,6 +233,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 
 	// Initialize commands
 	c.CreateNamespaceCmd = namespace.NewCreateNamespaceCommand(c.NamespaceRepo)
+	c.UpdateNamespaceCmd = namespace.NewUpdateNamespaceCommand(c.NamespaceRepo)
 	c.CreateModuleProviderCmd = moduleCmd.NewCreateModuleProviderCommand(c.NamespaceRepo, c.ModuleProviderRepo)
 	c.PublishModuleVersionCmd = moduleCmd.NewPublishModuleVersionCommand(c.ModuleProviderRepo)
 	c.UpdateModuleProviderSettingsCmd = moduleCmd.NewUpdateModuleProviderSettingsCommand(c.ModuleProviderRepo)
@@ -300,7 +302,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	c.InitialSetupHandler = terrareg.NewInitialSetupHandler(c.GetInitialSetupQuery)
 
 	// Initialize handlers
-	c.NamespaceHandler = terrareg.NewNamespaceHandler(c.ListNamespacesQuery, c.CreateNamespaceCmd, c.NamespaceDetailsQuery)
+	c.NamespaceHandler = terrareg.NewNamespaceHandler(c.ListNamespacesQuery, c.CreateNamespaceCmd, c.UpdateNamespaceCmd, c.NamespaceDetailsQuery)
 	c.ModuleHandler = terrareg.NewModuleHandler(
 		c.ListModulesQuery,
 		c.SearchModulesQuery,

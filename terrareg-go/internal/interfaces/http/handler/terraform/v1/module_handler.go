@@ -12,6 +12,7 @@ import (
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
+	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terrareg" // For respondJSON and respondError
 )
 
@@ -95,13 +96,13 @@ func (h *TerraformV1ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *
 	}
 
 	// Convert domain models to DTOs for the API response
-	moduleDTOs := make([]dto.ModuleProviderResponse, len(searchResult.Modules))
+	moduleDTOs := make([]moduledto.ModuleProviderResponse, len(searchResult.Modules))
 	for i, mp := range searchResult.Modules {
 		moduleDTOs[i] = toModuleProviderResponse(mp) // Reuse the conversion function
 	}
 
 	// For search, the response wraps the modules in a "modules" field and includes meta
-	response := dto.ModuleSearchResponse{
+	response := moduledto.ModuleSearchResponse{
 		Modules: moduleDTOs,
 		Meta: dto.PaginationMeta{
 			Limit:      params.Limit,
@@ -228,54 +229,38 @@ func (h *TerraformV1ModuleHandler) HandleModuleVersionDetails(w http.ResponseWri
 }
 
 // toModuleVersionResponse converts a domain ModuleVersion model to a DTO.
-func toModuleVersionResponse(mv *model.ModuleVersion) dto.ModuleVersionResponse {
-	var description *string
-	if mv.Details() != nil {
-		// Use placeholder values for now - adjust based on actual ModuleDetails interface
-		desc := "Module description"
-		description = &desc
-	}
-
-	var owner *string
-	if mv.Details() != nil {
-		// Use placeholder values for now - adjust based on actual ModuleDetails interface
-		own := "Module owner"
-		owner = &own
-	}
-
-	var publishedAt *string
-	if mv.PublishedAt() != nil {
-		str := mv.PublishedAt().Format(time.RFC3339)
-		publishedAt = &str
-	}
-
-	return dto.ModuleVersionResponse{
-		ID:          fmt.Sprintf("%d", mv.ID()),
-		Version:     mv.Version().String(),
-		Published:   mv.IsPublished(),
-		Beta:        mv.IsBeta(),
-		Internal:    mv.IsInternal(),
-		Description: description,
-		Owner:       owner,
-		PublishedAt: publishedAt,
+func toModuleVersionResponse(mv *model.ModuleVersion) moduledto.ModuleVersionResponse {
+	return moduledto.ModuleVersionResponse{
+		VersionBase: moduledto.VersionBase{
+			ProviderBase: moduledto.ProviderBase{
+				ID:        fmt.Sprintf("%d", mv.ID()),
+				Namespace: "", // TODO: Get from module provider
+				Name:      "", // TODO: Get from module provider
+				Provider:  "", // TODO: Get from module provider
+				Verified:  false, // TODO: Get from module provider
+				Trusted:   false, // TODO: Get from namespace service
+			},
+			Version:  mv.Version().String(),
+			Internal: mv.IsInternal(),
+		},
 	}
 }
 
 // toModuleProviderResponse converts a domain ModuleProvider model to a DTO
-func toModuleProviderResponse(mp *model.ModuleProvider) dto.ModuleProviderResponse {
-	response := dto.ModuleProviderResponse{
-		ID:        fmt.Sprintf("%d", mp.ID()),
-		Namespace: mp.Namespace().Name(),
-		Name:      mp.Module(),
-		Provider:  mp.Provider(),
-		Verified:  mp.IsVerified(),
+func toModuleProviderResponse(mp *model.ModuleProvider) moduledto.ModuleProviderResponse {
+	response := moduledto.ModuleProviderResponse{
+		ProviderBase: moduledto.ProviderBase{
+			ID:        fmt.Sprintf("%d", mp.ID()),
+			Namespace: mp.Namespace().Name(),
+			Name:      mp.Module(),
+			Provider:  mp.Provider(),
+			Verified:  mp.IsVerified(),
+			Trusted:   false, // TODO: Get from namespace service
+		},
 	}
 
 	// Add latest version info if available
 	if latestVersion := mp.GetLatestVersion(); latestVersion != nil {
-		version := latestVersion.Version().String()
-		response.Version = &version
-
 		// Add published date
 		if publishedAt := latestVersion.PublishedAt(); publishedAt != nil {
 			publishedStr := publishedAt.Format(time.RFC3339)
