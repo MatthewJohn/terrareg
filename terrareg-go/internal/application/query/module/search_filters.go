@@ -47,23 +47,44 @@ func (q *SearchFiltersQuery) Execute(ctx context.Context, queryString string) (*
 		Namespaces: make(map[string]int),
 	}
 
-	// Get verified count
+	// Get verified count - apply same filtering as main search (modules with latest versions only)
 	verifiedQuery := searchQuery
 	verifiedQuery.Verified = boolPtr(true)
 	verifiedResult, _ := q.moduleProviderRepo.Search(ctx, verifiedQuery)
-	counts.Verified = verifiedResult.TotalCount
+	// Filter out modules without latest versions
+	verifiedModulesWithLatestVersion := 0
+	for _, module := range verifiedResult.Modules {
+		if module.GetLatestVersion() != nil {
+			verifiedModulesWithLatestVersion++
+		}
+	}
+	counts.Verified = verifiedModulesWithLatestVersion
 
 	// Get trusted namespaces count
 	if len(q.cfg.TrustedNamespaces) > 0 {
 		trustedQuery := searchQuery
 		trustedQuery.TrustedNamespaces = boolPtr(true)
 		trustedResult, _ := q.moduleProviderRepo.Search(ctx, trustedQuery)
-		counts.TrustedNamespaces = trustedResult.TotalCount
+		// Filter out modules without latest versions
+		trustedModulesWithLatestVersion := 0
+		for _, module := range trustedResult.Modules {
+			if module.GetLatestVersion() != nil {
+				trustedModulesWithLatestVersion++
+			}
+		}
+		counts.TrustedNamespaces = trustedModulesWithLatestVersion
 
 		contributedQuery := searchQuery
 		contributedQuery.Contributed = boolPtr(true)
 		contributedResult, _ := q.moduleProviderRepo.Search(ctx, contributedQuery)
-		counts.Contributed = contributedResult.TotalCount
+		// Filter out modules without latest versions
+		contributedModulesWithLatestVersion := 0
+		for _, module := range contributedResult.Modules {
+			if module.GetLatestVersion() != nil {
+				contributedModulesWithLatestVersion++
+			}
+		}
+		counts.Contributed = contributedModulesWithLatestVersion
 	}
 
 	// Count providers and namespaces
