@@ -194,7 +194,13 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 	}
 
 	if query.Verified != nil {
-		db = db.Where("module_provider.verified = ?", *query.Verified)
+		if *query.Verified {
+			// Filter for verified modules (verified = 1)
+			db = db.Where("module_provider.verified = ?", true)
+		} else {
+			// Filter for unverified modules (verified = 0 or NULL)
+			db = db.Where("module_provider.verified = ? OR module_provider.verified IS NULL", false)
+		}
 	}
 
 	// Note: trusted/contributed filtering will be handled at the application layer
@@ -226,7 +232,13 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 	}
 
 	if query.Verified != nil {
-		countDB = countDB.Where("module_provider.verified = ?", *query.Verified)
+		if *query.Verified {
+			// Filter for verified modules (verified = 1)
+			countDB = countDB.Where("module_provider.verified = ?", true)
+		} else {
+			// Filter for unverified modules (verified = 0 or NULL)
+			countDB = countDB.Where("module_provider.verified = ? OR module_provider.verified IS NULL", false)
+		}
 	}
 
 	// Note: trusted/contributed filtering handled in application layer
