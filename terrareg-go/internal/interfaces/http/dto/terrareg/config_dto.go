@@ -62,7 +62,7 @@ func NewConfigResponse(config *model.Config) ConfigResponse {
 		ANALYTICS_TOKEN_DESCRIPTION:          config.AnalyticsTokenDescription,
 		EXAMPLE_ANALYTICS_TOKEN:              config.ExampleAnalyticsToken,
 		DISABLE_ANALYTICS:                    config.DisableAnalytics,
-		ALLOW_MODULE_HOSTING:                 config.AllowModuleHosting,
+		ALLOW_MODULE_HOSTING:                 string(config.AllowModuleHosting),
 		UPLOAD_API_KEYS_ENABLED:              config.UploadAPIKeysEnabled,
 		PUBLISH_API_KEYS_ENABLED:             config.PublishAPIKeysEnabled,
 		DISABLE_TERRAREG_EXCLUSIVE_LABELS:    config.DisableTerraregExclusiveLabels,
