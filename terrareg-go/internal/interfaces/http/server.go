@@ -460,8 +460,12 @@ func (s *Server) handleNamespaceList(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleNamespaceCreate(w http.ResponseWriter, r *http.Request) {
 	s.namespaceHandler.HandleNamespaceCreate(w, r)
 }
-func (s *Server) handleNamespaceGet(w http.ResponseWriter, r *http.Request)                   {}
-func (s *Server) handleNamespaceUpdate(w http.ResponseWriter, r *http.Request)                {}
+func (s *Server) handleNamespaceGet(w http.ResponseWriter, r *http.Request) {
+	s.namespaceHandler.HandleNamespaceDetails(w, r)
+}
+func (s *Server) handleNamespaceUpdate(w http.ResponseWriter, r *http.Request) {
+	s.namespaceHandler.HandleNamespaceUpdate(w, r)
+}
 func (s *Server) handleTerraregNamespaceModules(w http.ResponseWriter, r *http.Request)       {}
 func (s *Server) handleTerraregModuleProviders(w http.ResponseWriter, r *http.Request)        {}
 func (s *Server) handleTerraregModuleVersionDetails(w http.ResponseWriter, r *http.Request)   {}

@@ -14,6 +14,7 @@ import (
 	configQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
+	namespaceQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/namespace"
 	providerQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/provider"
 	setupQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/setup"
 	terraformCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/terraform"
@@ -104,6 +105,7 @@ type Container struct {
 
 	// Queries
 	ListNamespacesQuery            *module.ListNamespacesQuery
+	NamespaceDetailsQuery          *namespaceQuery.NamespaceDetailsQuery
 	ListModulesQuery               *module.ListModulesQuery
 	SearchModulesQuery             *module.SearchModulesQuery
 	GetModuleProviderQuery         *module.GetModuleProviderQuery
@@ -246,6 +248,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 
 	// Initialize queries
 	c.ListNamespacesQuery = module.NewListNamespacesQuery(c.NamespaceRepo)
+	c.NamespaceDetailsQuery = namespaceQuery.NewNamespaceDetailsQuery(c.NamespaceRepo)
 	c.ListModulesQuery = module.NewListModulesQuery(c.ModuleProviderRepo)
 	c.SearchModulesQuery = module.NewSearchModulesQuery(c.ModuleProviderRepo)
 	c.GetModuleProviderQuery = module.NewGetModuleProviderQuery(c.ModuleProviderRepo)
@@ -295,7 +298,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	c.InitialSetupHandler = terrareg.NewInitialSetupHandler(c.GetInitialSetupQuery)
 
 	// Initialize handlers
-	c.NamespaceHandler = terrareg.NewNamespaceHandler(c.ListNamespacesQuery, c.CreateNamespaceCmd)
+	c.NamespaceHandler = terrareg.NewNamespaceHandler(c.ListNamespacesQuery, c.CreateNamespaceCmd, c.NamespaceDetailsQuery)
 	c.ModuleHandler = terrareg.NewModuleHandler(
 		c.ListModulesQuery,
 		c.SearchModulesQuery,

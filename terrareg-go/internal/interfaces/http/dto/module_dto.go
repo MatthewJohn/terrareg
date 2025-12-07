@@ -87,3 +87,10 @@ type ModuleProviderSettingsResponse struct {
 	ArchiveGitPath        bool    `json:"archive_git_path"`
 	Verified              bool    `json:"verified"`
 }
+
+// NamespaceUpdateRequest represents a request to update a namespace
+type NamespaceUpdateRequest struct {
+	Name        *string `json:"name,omitempty"`
+	DisplayName *string `json:"display_name,omitempty"`
+	CsrfToken   string  `json:"csrf_token"`
+}
