@@ -4,18 +4,21 @@ import (
 	"context"
 	"fmt"
 
+	appConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 )
 
 // NamespaceDetailsQuery handles getting namespace details
 type NamespaceDetailsQuery struct {
 	namespaceRepo namespaceRepo.NamespaceRepository
+	config         *appConfig.Config
 }
 
 // NewNamespaceDetailsQuery creates a new namespace details query
-func NewNamespaceDetailsQuery(namespaceRepo namespaceRepo.NamespaceRepository) *NamespaceDetailsQuery {
+func NewNamespaceDetailsQuery(namespaceRepo namespaceRepo.NamespaceRepository, config *appConfig.Config) *NamespaceDetailsQuery {
 	return &NamespaceDetailsQuery{
 		namespaceRepo: namespaceRepo,
+		config:         config,
 	}
 }
 
@@ -39,13 +42,29 @@ func (q *NamespaceDetailsQuery) Execute(ctx context.Context, namespaceName strin
 		return nil, nil
 	}
 
-	// TODO: Implement is_auto_verified and trusted based on config
-	// For now, return false for both
+	// Check if namespace is in verified list
+	isAutoVerified := false
+	for _, ns := range q.config.VerifiedModuleNamespaces {
+		if ns == namespaceName {
+			isAutoVerified = true
+			break
+		}
+	}
+
+	// Check if namespace is in trusted list
+	trusted := false
+	for _, ns := range q.config.TrustedNamespaces {
+		if ns == namespaceName {
+			trusted = true
+			break
+		}
+	}
+
 	details := &NamespaceDetails{
 		Name:           namespace.Name(),
 		DisplayName:    namespace.DisplayName(),
-		IsAutoVerified: false, // TODO: Check against VERIFIED_MODULE_NAMESPACES config
-		Trusted:        false, // TODO: Check against TRUSTED_NAMESPACES config
+		IsAutoVerified: isAutoVerified,
+		Trusted:        trusted,
 	}
 
 	return details, nil

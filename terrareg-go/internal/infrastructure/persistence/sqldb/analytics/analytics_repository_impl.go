@@ -8,17 +8,22 @@ import (
 	"gorm.io/gorm"
 
 	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
+	appConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
 // AnalyticsRepositoryImpl implements the analytics repository
 type AnalyticsRepositoryImpl struct {
-	db *gorm.DB
+	db     *gorm.DB
+	config *appConfig.Config
 }
 
 // NewAnalyticsRepository creates a new analytics repository
-func NewAnalyticsRepository(db *gorm.DB) *AnalyticsRepositoryImpl {
-	return &AnalyticsRepositoryImpl{db: db}
+func NewAnalyticsRepository(db *gorm.DB, config *appConfig.Config) *AnalyticsRepositoryImpl {
+	return &AnalyticsRepositoryImpl{
+		db:     db,
+		config: config,
+	}
 }
 
 // RecordDownload records a module download event
@@ -136,6 +141,15 @@ func (r *AnalyticsRepositoryImpl) GetMostRecentlyPublished(ctx context.Context) 
 		publishedAt = &isoStr
 	}
 
+	// Check if namespace is in trusted list
+	trusted := false
+	for _, ns := range r.config.TrustedNamespaces {
+		if ns == result.Namespace {
+			trusted = true
+			break
+		}
+	}
+
 	return &analyticsCmd.ModuleVersionInfo{
 		ID:          fmt.Sprintf("%s/%s/%s/%s", result.Namespace, result.Module, result.Provider, result.Version), // Format: namespace/name/provider/version
 		Namespace:   result.Namespace,
@@ -148,7 +162,7 @@ func (r *AnalyticsRepositoryImpl) GetMostRecentlyPublished(ctx context.Context) 
 		PublishedAt: publishedAt,
 		Downloads:   int(downloadCount),
 		Internal:    result.Internal,
-		Trusted:     false, // TODO: Implement based on TRUSTED_NAMESPACES config
+		Trusted:     trusted,
 		Verified:    result.Verified,
 	}, nil
 }
