@@ -20,7 +20,6 @@ type AdminLoginCommand struct {
 	config         *config.Config
 }
 
-
 // AdminLoginRequest represents the input for admin login
 type AdminLoginRequest struct {
 	// ApiKey extracted from X-Terrareg-ApiKey header

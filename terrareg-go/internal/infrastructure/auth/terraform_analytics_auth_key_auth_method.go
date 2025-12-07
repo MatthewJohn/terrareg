@@ -10,10 +10,10 @@ import (
 // TerraformAnalyticsAuthKeyAuthMethod implements authentication for Terraform analytics via API keys
 type TerraformAnalyticsAuthKeyAuthMethod struct {
 	auth.BaseAuthMethod
-	authKey         string
-	isValid         bool
-	canAccessAll    bool
-	allowedModules  []string
+	authKey        string
+	isValid        bool
+	canAccessAll   bool
+	allowedModules []string
 }
 
 // NewTerraformAnalyticsAuthKeyAuthMethod creates a new Terraform analytics auth key authentication method
@@ -208,8 +208,8 @@ func (t *TerraformAnalyticsAuthKeyAuthMethod) canAccessModule(namespace string) 
 
 // TerraformAnalyticsAuthKeyInfo represents information about an analytics auth key
 type TerraformAnalyticsAuthKeyInfo struct {
-	CanAccessAll    bool
-	AllowedModules  []string
+	CanAccessAll   bool
+	AllowedModules []string
 }
 
 // validateAnalyticsAuthKey validates an analytics auth key and returns key information

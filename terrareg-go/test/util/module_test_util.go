@@ -39,20 +39,20 @@ func CreateMockModuleVersion(version string, owner, description *string, publish
 		1, // id
 		version,
 		details,
-		false, // beta
-		false, // internal
+		false,              // beta
+		false,              // internal
 		publishedAt != nil, // published
 		publishedAt,
-		nil, // gitSHA
-		nil, // gitPath
+		nil,   // gitSHA
+		nil,   // gitPath
 		false, // archiveGitPath
-		nil, // repoBaseURLTemplate
-		nil, // repoCloneURLTemplate
-		nil, // repoBrowseURLTemplate
+		nil,   // repoBaseURLTemplate
+		nil,   // repoCloneURLTemplate
+		nil,   // repoBrowseURLTemplate
 		owner,
 		description,
-		nil, // variableTemplate
-		nil, // extractionVersion
+		nil,        // variableTemplate
+		nil,        // extractionVersion
 		time.Now(), // createdAt
 		time.Now(), // updatedAt
 	)
@@ -70,18 +70,18 @@ func CreateMockModuleVersionWithBeta(version string, beta bool, internal bool) *
 		details,
 		beta,
 		internal,
-		false, // published
-		nil,   // publishedAt
-		nil,   // gitSHA
-		nil,   // gitPath
-		false, // archiveGitPath
-		nil,   // repoBaseURLTemplate
-		nil,   // repoCloneURLTemplate
-		nil,   // repoBrowseURLTemplate
-		nil,   // owner
-		nil,   // description
-		nil,   // variableTemplate
-		nil,   // extractionVersion
+		false,      // published
+		nil,        // publishedAt
+		nil,        // gitSHA
+		nil,        // gitPath
+		false,      // archiveGitPath
+		nil,        // repoBaseURLTemplate
+		nil,        // repoCloneURLTemplate
+		nil,        // repoBrowseURLTemplate
+		nil,        // owner
+		nil,        // description
+		nil,        // variableTemplate
+		nil,        // extractionVersion
 		time.Now(), // createdAt
 		time.Now(), // updatedAt
 	)
@@ -92,8 +92,8 @@ func CreateMockModuleVersionWithBeta(version string, beta bool, internal bool) *
 // BuildTestPaginationMeta creates a pagination meta for testing
 func BuildTestPaginationMeta(limit, offset, total int) map[string]interface{} {
 	return map[string]interface{}{
-		"limit":      limit,
-		"offset":     offset,
+		"limit":       limit,
+		"offset":      offset,
 		"total_count": total,
 	}
 }

@@ -14,11 +14,11 @@ import (
 
 // AuthHandler handles authentication-related requests
 type AuthHandler struct {
-	adminLoginCmd         *authCmd.AdminLoginCommand
-	checkSessionQuery     *authQuery.CheckSessionQuery
-	isAuthenticatedQuery  *authQuery.IsAuthenticatedQuery
-	authService           *service.AuthenticationService
-	config                *config.Config
+	adminLoginCmd        *authCmd.AdminLoginCommand
+	checkSessionQuery    *authQuery.CheckSessionQuery
+	isAuthenticatedQuery *authQuery.IsAuthenticatedQuery
+	authService          *service.AuthenticationService
+	config               *config.Config
 }
 
 // NewAuthHandler creates a new auth handler
@@ -30,11 +30,11 @@ func NewAuthHandler(
 	config *config.Config,
 ) *AuthHandler {
 	return &AuthHandler{
-		adminLoginCmd:         adminLoginCmd,
-		checkSessionQuery:     checkSessionQuery,
-		isAuthenticatedQuery:  isAuthenticatedQuery,
-		authService:           authService,
-		config:                config,
+		adminLoginCmd:        adminLoginCmd,
+		checkSessionQuery:    checkSessionQuery,
+		isAuthenticatedQuery: isAuthenticatedQuery,
+		authService:          authService,
+		config:               config,
 	}
 }
 
@@ -114,12 +114,11 @@ func (h *AuthHandler) HandleIsAuthenticated(w http.ResponseWriter, r *http.Reque
 		// If there's an error, return unauthenticated status
 		response = &dto.IsAuthenticatedResponse{
 			Authenticated:        false,
-			ReadAccess:          false,
-			SiteAdmin:           false,
+			ReadAccess:           false,
+			SiteAdmin:            false,
 			NamespacePermissions: make(map[string]string),
 		}
 	}
 
 	RespondJSON(w, http.StatusOK, response)
 }
-

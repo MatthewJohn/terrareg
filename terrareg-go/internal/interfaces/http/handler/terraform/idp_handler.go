@@ -23,18 +23,18 @@ func NewTerraformIDPHandler(idpService *service.TerraformIdpService) *TerraformI
 func (h *TerraformIDPHandler) HandleOpenIDConfiguration(w http.ResponseWriter, r *http.Request) {
 	// Return OpenID Connect discovery document
 	config := map[string]interface{}{
-		"issuer":                           "http://localhost:3000",
-		"authorization_endpoint":          "http://localhost:3000/terraform/v1/idp/authorize",
-		"token_endpoint":                   "http://localhost:3000/terraform/v1/idp/token",
-		"userinfo_endpoint":                "http://localhost:3000/terraform/v1/idp/userinfo",
-		"jwks_uri":                         "http://localhost:3000/terraform/v1/idp/jwks",
-		"response_types_supported":         []string{"code"},
-		"grant_types_supported":            []string{"authorization_code"},
-		"subject_types_supported":          []string{"public"},
+		"issuer":                                "http://localhost:3000",
+		"authorization_endpoint":                "http://localhost:3000/terraform/v1/idp/authorize",
+		"token_endpoint":                        "http://localhost:3000/terraform/v1/idp/token",
+		"userinfo_endpoint":                     "http://localhost:3000/terraform/v1/idp/userinfo",
+		"jwks_uri":                              "http://localhost:3000/terraform/v1/idp/jwks",
+		"response_types_supported":              []string{"code"},
+		"grant_types_supported":                 []string{"authorization_code"},
+		"subject_types_supported":               []string{"public"},
 		"id_token_signing_alg_values_supported": []string{"RS256"},
-		"scopes_supported":                 []string{"openid", "profile", "email", "terraform"},
-		"terraform_version":                "1",
-		"terraform_supported_audiences":    []string{"terraform.workspaces"},
+		"scopes_supported":                      []string{"openid", "profile", "email", "terraform"},
+		"terraform_version":                     "1",
+		"terraform_supported_audiences":         []string{"terraform.workspaces"},
 	}
 
 	terrareg.RespondJSON(w, http.StatusOK, config)
@@ -110,10 +110,10 @@ func (h *TerraformIDPHandler) HandleToken(w http.ResponseWriter, r *http.Request
 	}
 
 	req := service.AccessTokenRequest{
-		GrantType:    r.FormValue("grant_type"),
-		Code:         r.FormValue("code"),
-		RedirectURI:  r.FormValue("redirect_uri"),
-		ClientID:     r.FormValue("client_id"),
+		GrantType:   r.FormValue("grant_type"),
+		Code:        r.FormValue("code"),
+		RedirectURI: r.FormValue("redirect_uri"),
+		ClientID:    r.FormValue("client_id"),
 	}
 
 	if req.GrantType != "authorization_code" {
@@ -227,10 +227,10 @@ func (h *TerraformStaticTokenHandler) HandleValidateToken(w http.ResponseWriter,
 	// TODO: Implement when integrated with new auth domain
 	// For now, return a mock successful response
 	mockResponse := map[string]interface{}{
-		"valid":        true,
-		"identity_id":  "terraform-static-user",
-		"subject":     "Terraform Static Token",
-		"permissions":  []string{"read:modules", "read:providers"},
+		"valid":         true,
+		"identity_id":   "terraform-static-user",
+		"subject":       "Terraform Static Token",
+		"permissions":   []string{"read:modules", "read:providers"},
 		"identity_type": "TERRAFORM_STATIC_TOKEN",
 	}
 	terrareg.RespondJSON(w, http.StatusOK, mockResponse)

@@ -40,8 +40,8 @@ func (h *TerraformV2CategoryHandler) HandleListCategories(w http.ResponseWriter,
 			"type": "categories",
 			"id":   fmt.Sprintf("%d", category.ID()),
 			"attributes": map[string]interface{}{
-				"name":           category.GetDisplayName(),
-				"slug":           category.Slug(),
+				"name":            category.GetDisplayName(),
+				"slug":            category.Slug(),
 				"user-selectable": category.UserSelectable(),
 			},
 			"links": map[string]string{

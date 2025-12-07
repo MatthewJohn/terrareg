@@ -15,13 +15,13 @@ import (
 
 // ProviderHandler handles provider-related requests
 type ProviderHandler struct {
-	listProvidersQuery         *providerQuery.ListProvidersQuery
-	searchProvidersQuery       *providerQuery.SearchProvidersQuery
-	getProviderQuery           *providerQuery.GetProviderQuery
-	getProviderVersionsQuery   *providerQuery.GetProviderVersionsQuery
-	getProviderVersionQuery    *providerQuery.GetProviderVersionQuery
-	createOrUpdateProviderCmd  *providerCommand.CreateOrUpdateProviderCommand
-	publishProviderVersionCmd  *providerCommand.PublishProviderVersionCommand
+	listProvidersQuery        *providerQuery.ListProvidersQuery
+	searchProvidersQuery      *providerQuery.SearchProvidersQuery
+	getProviderQuery          *providerQuery.GetProviderQuery
+	getProviderVersionsQuery  *providerQuery.GetProviderVersionsQuery
+	getProviderVersionQuery   *providerQuery.GetProviderVersionQuery
+	createOrUpdateProviderCmd *providerCommand.CreateOrUpdateProviderCommand
+	publishProviderVersionCmd *providerCommand.PublishProviderVersionCommand
 	manageGPGKeyCmd           *providerCommand.ManageGPGKeyCommand
 }
 
@@ -37,13 +37,13 @@ func NewProviderHandler(
 	manageGPGKeyCmd *providerCommand.ManageGPGKeyCommand,
 ) *ProviderHandler {
 	return &ProviderHandler{
-		listProvidersQuery:         listProvidersQuery,
-		searchProvidersQuery:       searchProvidersQuery,
-		getProviderQuery:           getProviderQuery,
-		getProviderVersionsQuery:   getProviderVersionsQuery,
-		getProviderVersionQuery:    getProviderVersionQuery,
-		createOrUpdateProviderCmd:  createOrUpdateProviderCmd,
-		publishProviderVersionCmd:  publishProviderVersionCmd,
+		listProvidersQuery:        listProvidersQuery,
+		searchProvidersQuery:      searchProvidersQuery,
+		getProviderQuery:          getProviderQuery,
+		getProviderVersionsQuery:  getProviderVersionsQuery,
+		getProviderVersionQuery:   getProviderVersionQuery,
+		createOrUpdateProviderCmd: createOrUpdateProviderCmd,
+		publishProviderVersionCmd: publishProviderVersionCmd,
 		manageGPGKeyCmd:           manageGPGKeyCmd,
 	}
 }
@@ -257,11 +257,11 @@ func (h *ProviderHandler) HandleGetProviderVersion(w http.ResponseWriter, r *htt
 
 	// Build response
 	response := map[string]interface{}{
-		"id":       fmt.Sprintf("%s/%s", namespace, providerName),
-		"version":  providerVersion.Version(),
-		"beta":     providerVersion.Beta(),
+		"id":        fmt.Sprintf("%s/%s", namespace, providerName),
+		"version":   providerVersion.Version(),
+		"beta":      providerVersion.Beta(),
 		"protocols": providerVersion.ProtocolVersions(),
-		"binaries": []interface{}{}, // Will be populated from provider binaries
+		"binaries":  []interface{}{}, // Will be populated from provider binaries
 	}
 	RespondJSON(w, http.StatusOK, response)
 }

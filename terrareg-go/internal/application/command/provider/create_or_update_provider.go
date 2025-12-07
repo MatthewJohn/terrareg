@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider"
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
-	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 )
 
 // CreateOrUpdateProviderCommand handles creating or updating a provider
@@ -28,16 +28,16 @@ func NewCreateOrUpdateProviderCommand(
 
 // CreateOrUpdateProviderRequest represents the request to create/update a provider
 type CreateOrUpdateProviderRequest struct {
-	Namespace        string  `json:"namespace"`
-	Name             string  `json:"name"`
-	Description      *string `json:"description,omitempty"`
-	Tier             string  `json:"tier"`
-	Source           *string `json:"source,omitempty"`
-	Alias            *string `json:"alias,omitempty"`
-	GitProviderID    *int    `json:"git_provider_id,omitempty"`
-	RepoCloneURL     *string `json:"repo_clone_url,omitempty"`
-	GitTagFormat     *string `json:"git_tag_format,omitempty"`
-	GitPath          *string `json:"git_path,omitempty"`
+	Namespace     string  `json:"namespace"`
+	Name          string  `json:"name"`
+	Description   *string `json:"description,omitempty"`
+	Tier          string  `json:"tier"`
+	Source        *string `json:"source,omitempty"`
+	Alias         *string `json:"alias,omitempty"`
+	GitProviderID *int    `json:"git_provider_id,omitempty"`
+	RepoCloneURL  *string `json:"repo_clone_url,omitempty"`
+	GitTagFormat  *string `json:"git_tag_format,omitempty"`
+	GitPath       *string `json:"git_path,omitempty"`
 }
 
 // Execute creates or updates a provider
@@ -74,9 +74,9 @@ func (c *CreateOrUpdateProviderCommand) Execute(ctx context.Context, req CreateO
 		req.Name,
 		req.Description,
 		req.Tier,
-		nil, // CategoryID
-		nil, // RepositoryID
-		nil, // LatestVersionID
+		nil,   // CategoryID
+		nil,   // RepositoryID
+		nil,   // LatestVersionID
 		false, // UseProviderSourceAuth
 	)
 

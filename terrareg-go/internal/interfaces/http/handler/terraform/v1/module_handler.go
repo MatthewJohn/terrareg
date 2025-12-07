@@ -94,14 +94,14 @@ func (h *TerraformV1ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *
 	// Create search parameters
 	params := module.SearchParams{
 		Query:                  query,
-		Namespaces:            namespaces,
-		Providers:             providers,
-		Verified:              verified,
-		TrustedNamespaces:     trustedNamespaces,
-		Contributed:           contributed,
+		Namespaces:             namespaces,
+		Providers:              providers,
+		Verified:               verified,
+		TrustedNamespaces:      trustedNamespaces,
+		Contributed:            contributed,
 		TargetTerraformVersion: targetTerraformVersion,
-		Limit:                 limit,
-		Offset:                offset,
+		Limit:                  limit,
+		Offset:                 offset,
 	}
 
 	searchResult, err := h.searchModulesQuery.Execute(ctx, params)
@@ -249,9 +249,9 @@ func toModuleVersionResponse(mv *model.ModuleVersion) moduledto.ModuleVersionRes
 		VersionBase: moduledto.VersionBase{
 			ProviderBase: moduledto.ProviderBase{
 				ID:        fmt.Sprintf("%d", mv.ID()),
-				Namespace: "", // TODO: Get from module provider
-				Name:      "", // TODO: Get from module provider
-				Provider:  "", // TODO: Get from module provider
+				Namespace: "",    // TODO: Get from module provider
+				Name:      "",    // TODO: Get from module provider
+				Provider:  "",    // TODO: Get from module provider
 				Verified:  false, // TODO: Get from module provider
 				Trusted:   false, // TODO: Get from namespace service
 			},

@@ -28,8 +28,8 @@ func NewSessionRepository(db *gorm.DB) *SessionRepositoryImpl {
 // Create creates a new session
 func (r *SessionRepositoryImpl) Create(ctx context.Context, session *auth.Session) error {
 	sessionDB := sqldb.SessionDB{
-		ID:                  session.ID,
-		Expiry:              session.Expiry,
+		ID:                 session.ID,
+		Expiry:             session.Expiry,
 		ProviderSourceAuth: session.ProviderSourceAuth,
 	}
 

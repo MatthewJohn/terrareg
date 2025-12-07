@@ -21,16 +21,16 @@ func NewSearchModulesQuery(moduleProviderRepo repository.ModuleProviderRepositor
 
 // SearchParams represents search parameters
 type SearchParams struct {
-	Query                   string
-	Namespaces              []string  // Change from *string to []string for multiple values
-	Provider                *string   // Keep for backward compatibility
-	Providers               []string  // New: Multiple provider support
-	Verified                *bool
-	TrustedNamespaces       *bool     // New: Filter for trusted namespaces only
-	Contributed             *bool     // New: Filter for contributed modules only
-	TargetTerraformVersion  *string  // New: Check compatibility with specific Terraform version
-	Limit                   int
-	Offset                  int
+	Query                  string
+	Namespaces             []string // Change from *string to []string for multiple values
+	Provider               *string  // Keep for backward compatibility
+	Providers              []string // New: Multiple provider support
+	Verified               *bool
+	TrustedNamespaces      *bool   // New: Filter for trusted namespaces only
+	Contributed            *bool   // New: Filter for contributed modules only
+	TargetTerraformVersion *string // New: Check compatibility with specific Terraform version
+	Limit                  int
+	Offset                 int
 }
 
 // SearchResult represents search results with pagination
@@ -54,16 +54,16 @@ func (q *SearchModulesQuery) Execute(ctx context.Context, params SearchParams) (
 
 	searchQuery := repository.ModuleSearchQuery{
 		Query:                  params.Query,
-		Namespaces:            params.Namespaces,
-		Providers:             providers,
-		Verified:              params.Verified,
-		TrustedNamespaces:     params.TrustedNamespaces,
-		Contributed:           params.Contributed,
+		Namespaces:             params.Namespaces,
+		Providers:              providers,
+		Verified:               params.Verified,
+		TrustedNamespaces:      params.TrustedNamespaces,
+		Contributed:            params.Contributed,
 		TargetTerraformVersion: params.TargetTerraformVersion,
-		Limit:                 params.Limit,
-		Offset:                params.Offset,
-		OrderBy:               "id", // Default ordering
-		OrderDir:              "DESC",
+		Limit:                  params.Limit,
+		Offset:                 params.Offset,
+		OrderBy:                "id", // Default ordering
+		OrderDir:               "DESC",
 	}
 
 	result, err := q.moduleProviderRepo.Search(ctx, searchQuery)

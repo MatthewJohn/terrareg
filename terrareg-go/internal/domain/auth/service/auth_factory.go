@@ -16,19 +16,19 @@ type AuthFactory struct {
 	authMethods       []auth.AuthMethod
 	currentAuthMethod auth.AuthMethod
 	currentAuthCtx    *auth.AuthContext
-	mutex            sync.RWMutex
-	sessionRepo      repository.SessionRepository
-	userGroupRepo    repository.UserGroupRepository
-	config           *config.Config
+	mutex             sync.RWMutex
+	sessionRepo       repository.SessionRepository
+	userGroupRepo     repository.UserGroupRepository
+	config            *config.Config
 }
 
 // NewAuthFactory creates a new authentication factory
 func NewAuthFactory(sessionRepo repository.SessionRepository, userGroupRepo repository.UserGroupRepository, config *config.Config) *AuthFactory {
 	factory := &AuthFactory{
-		authMethods:    make([]auth.AuthMethod, 0),
-		sessionRepo:    sessionRepo,
-		userGroupRepo:  userGroupRepo,
-		config:         config,
+		authMethods:   make([]auth.AuthMethod, 0),
+		sessionRepo:   sessionRepo,
+		userGroupRepo: userGroupRepo,
+		config:        config,
 	}
 
 	// Initialize auth methods in priority order (matching Python)
@@ -82,7 +82,6 @@ func (af *AuthFactory) GetCurrentAuthMethod() auth.AuthMethod {
 	// Fallback to NotAuthenticated if no method is current
 	return &NotAuthenticatedAuthMethod{}
 }
-
 
 // GetCurrentAuthContext returns the current authentication context
 func (af *AuthFactory) GetCurrentAuthContext() *auth.AuthContext {

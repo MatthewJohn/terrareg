@@ -6,35 +6,35 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
-	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
+	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 )
 
 // contextKey is a custom type for context keys
 type contextKey string
 
 const (
-	authMethodContextKey       contextKey = "auth_method"
-	authMethodInstanceKey      contextKey = "auth_method_instance"
-	userContextKey             contextKey = "user"
-	isAdminContextKey          contextKey = "is_admin"
-	sessionIDContextKey        contextKey = "session_id"
-	namespaceContextKey        contextKey = "namespace"
-	permissionsContextKey      contextKey = "permissions"
+	authMethodContextKey  contextKey = "auth_method"
+	authMethodInstanceKey contextKey = "auth_method_instance"
+	userContextKey        contextKey = "user"
+	isAdminContextKey     contextKey = "is_admin"
+	sessionIDContextKey   contextKey = "session_id"
+	namespaceContextKey   contextKey = "namespace"
+	permissionsContextKey contextKey = "permissions"
 )
 
 // AuthMiddleware provides authentication middleware
 type AuthMiddleware struct {
-	config     *config.Config
+	config      *config.Config
 	authFactory *authservice.AuthFactory
 }
 
 // NewAuthMiddleware creates a new auth middleware
 func NewAuthMiddleware(cfg *config.Config, authFactory *authservice.AuthFactory) *AuthMiddleware {
 	return &AuthMiddleware{
-		config:     cfg,
+		config:      cfg,
 		authFactory: authFactory,
 	}
 }

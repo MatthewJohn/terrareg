@@ -10,17 +10,17 @@ import (
 // AdminApiKeyAuthMethod implements authentication for admin users via API keys
 type AdminApiKeyAuthMethod struct {
 	auth.BaseAuthMethod
-	apiKey     string
-	isValid    bool
-	isAdmin    bool
-	username   string
+	apiKey   string
+	isValid  bool
+	isAdmin  bool
+	username string
 }
 
 // NewAdminApiKeyAuthMethod creates a new admin API key authentication method
 func NewAdminApiKeyAuthMethod() *AdminApiKeyAuthMethod {
 	return &AdminApiKeyAuthMethod{
-		isValid:  false,
-		isAdmin:  false,
+		isValid: false,
+		isAdmin: false,
 	}
 }
 

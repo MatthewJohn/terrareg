@@ -85,7 +85,7 @@ func (s *URLService) GetBaseURL(fallbackDomain *string) string {
 
 	// Handle standard ports - don't include them in the URL
 	if (details.Protocol == "https" && details.Port == 443) ||
-	   (details.Protocol == "http" && details.Port == 80) {
+		(details.Protocol == "http" && details.Port == 80) {
 		return details.Protocol + "://" + details.Domain
 	}
 
@@ -110,7 +110,7 @@ func (s *URLService) GetHostWithPort(fallbackDomain *string) string {
 
 	// Handle standard ports - don't include them in the host
 	if (details.Protocol == "https" && details.Port == 443) ||
-	   (details.Protocol == "http" && details.Port == 80) {
+		(details.Protocol == "http" && details.Port == 80) {
 		return details.Domain
 	}
 

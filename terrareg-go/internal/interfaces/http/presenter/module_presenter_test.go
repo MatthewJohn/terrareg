@@ -38,20 +38,20 @@ func createMockModuleVersion(version string, owner, description *string, publish
 		1, // id
 		version,
 		details,
-		false, // beta
-		false, // internal
+		false,              // beta
+		false,              // internal
 		publishedAt != nil, // published
 		publishedAt,
-		nil, // gitSHA
-		nil, // gitPath
+		nil,   // gitSHA
+		nil,   // gitPath
 		false, // archiveGitPath
-		nil, // repoBaseURLTemplate
-		nil, // repoCloneURLTemplate
-		nil, // repoBrowseURLTemplate
+		nil,   // repoBaseURLTemplate
+		nil,   // repoCloneURLTemplate
+		nil,   // repoBrowseURLTemplate
 		owner,
 		description,
-		nil, // variableTemplate
-		nil, // extractionVersion
+		nil,        // variableTemplate
+		nil,        // extractionVersion
 		time.Now(), // createdAt
 		time.Now(), // updatedAt
 	)
@@ -328,20 +328,20 @@ func createMockModuleVersionWithInternal(version string, owner, description *str
 		1, // id
 		version,
 		details,
-		false, // beta
-		internal, // internal
+		false,              // beta
+		internal,           // internal
 		publishedAt != nil, // published
 		publishedAt,
-		nil, // gitSHA
-		nil, // gitPath
+		nil,   // gitSHA
+		nil,   // gitPath
 		false, // archiveGitPath
-		nil, // repoBaseURLTemplate
-		nil, // repoCloneURLTemplate
-		nil, // repoBrowseURLTemplate
+		nil,   // repoBaseURLTemplate
+		nil,   // repoCloneURLTemplate
+		nil,   // repoBrowseURLTemplate
 		owner,
 		description,
-		nil, // variableTemplate
-		nil, // extractionVersion
+		nil,        // variableTemplate
+		nil,        // extractionVersion
 		time.Now(), // createdAt
 		time.Now(), // updatedAt
 	)

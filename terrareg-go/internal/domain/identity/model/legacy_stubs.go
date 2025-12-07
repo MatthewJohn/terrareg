@@ -13,14 +13,14 @@ import (
 // User represents a user (legacy - should be removed)
 // TODO: Remove this as part of migration to group-based authentication
 type User struct {
-	id             int         `json:"id"`
-	Username       string      `json:"username"`
-	Email          string      `json:"email"`
-	Active         bool        `json:"active"`
-	ExternalID     string      `json:"external_id"`
-	AuthProviderID  AuthMethod  `json:"auth_provider_id"`
-	CreatedAt      time.Time   `json:"created_at"`
-	UpdatedAt      time.Time   `json:"updated_at"`
+	id             int        `json:"id"`
+	Username       string     `json:"username"`
+	Email          string     `json:"email"`
+	Active         bool       `json:"active"`
+	ExternalID     string     `json:"external_id"`
+	AuthProviderID AuthMethod `json:"auth_provider_id"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
 }
 
 // User methods for legacy service compatibility
@@ -69,18 +69,18 @@ type AuthMethod string
 
 // Legacy AuthMethod constants
 const (
-	AuthMethodNotAuthenticated                 AuthMethod = "NOT_AUTHENTICATED"
+	AuthMethodNotAuthenticated                AuthMethod = "NOT_AUTHENTICATED"
 	AuthMethodAdminSession                    AuthMethod = "ADMIN_SESSION"
 	AuthMethodAdminApiKey                     AuthMethod = "ADMIN_API_KEY"
-	AuthMethodSAML                           AuthMethod = "SAML"
+	AuthMethodSAML                            AuthMethod = "SAML"
 	AuthMethodOpenIDConnect                   AuthMethod = "OPENID_CONNECT"
 	AuthMethodGitHub                          AuthMethod = "GITHUB"
 	AuthMethodTerraformOIDC                   AuthMethod = "TERRAFORM_OIDC"
 	AuthMethodTerraformAnalyticsAuthKey       AuthMethod = "TERRAFORM_ANALYTICS_AUTH_KEY"
 	AuthMethodTerraformIgnoreAnalyticsAuthKey AuthMethod = "TERRAFORM_IGNORE_ANALYTICS_AUTH_KEY"
 	AuthMethodTerraformInternalExtraction     AuthMethod = "TERRAFORM_INTERNAL_EXTRACTION"
-	AuthMethodUploadApiKey                   AuthMethod = "UPLOAD_API_KEY"
-	AuthMethodPublishApiKey                  AuthMethod = "PUBLISH_API_KEY"
+	AuthMethodUploadApiKey                    AuthMethod = "UPLOAD_API_KEY"
+	AuthMethodPublishApiKey                   AuthMethod = "PUBLISH_API_KEY"
 	AuthMethodAPIKey                          AuthMethod = "API_KEY" // Generic API key type
 )
 
@@ -97,9 +97,9 @@ type Permission struct {
 
 // AuthResult represents authentication result (legacy)
 type AuthResult struct {
-	User      *User    `json:"user"`
-	Token     string   `json:"token"`
-	ExpiresAt time.Time `json:"expires_at"`
+	User      *User                  `json:"user"`
+	Token     string                 `json:"token"`
+	ExpiresAt time.Time              `json:"expires_at"`
 	Metadata  map[string]interface{} `json:"metadata"`
 }
 
@@ -163,14 +163,14 @@ var (
 // NewUser creates a new user instance
 func NewUser(username, email string, externalID string, authMethod AuthMethod) *User {
 	return &User{
-		id:            0, // Will be set by repository
-		Username:      username,
-		Email:         email,
-		Active:        true,
+		id:             0, // Will be set by repository
+		Username:       username,
+		Email:          email,
+		Active:         true,
 		ExternalID:     externalID,
 		AuthProviderID: authMethod,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
 	}
 }
 

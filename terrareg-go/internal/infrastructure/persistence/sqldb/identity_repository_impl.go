@@ -240,16 +240,16 @@ func (r *IdentityRepositoryImpl) saveStaticTokenIdentity(ctx context.Context, id
 	}
 
 	// Set expiry with fallback
-		expiry := time.Now().Add(24 * time.Hour)
-		if identity.ExpiresAt() != nil {
-			expiry = *identity.ExpiresAt()
-		}
+	expiry := time.Now().Add(24 * time.Hour)
+	if identity.ExpiresAt() != nil {
+		expiry = *identity.ExpiresAt()
+	}
 
-		accessTokenDB := TerraformIDPAccessTokenDB{
-			Key:    identity.AccessToken(),
-			Data:   tokenDataJSON,
-			Expiry: expiry,
-		}
+	accessTokenDB := TerraformIDPAccessTokenDB{
+		Key:    identity.AccessToken(),
+		Data:   tokenDataJSON,
+		Expiry: expiry,
+	}
 
 	return r.db.WithContext(ctx).Save(&accessTokenDB).Error
 }

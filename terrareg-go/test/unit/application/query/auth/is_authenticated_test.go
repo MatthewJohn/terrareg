@@ -82,8 +82,8 @@ func TestIsAuthenticatedQuery_Execute(t *testing.T) {
 	t.Run("Response Format", func(t *testing.T) {
 		response := dto.IsAuthenticatedResponse{
 			Authenticated: true,
-			ReadAccess: true,
-			SiteAdmin: false,
+			ReadAccess:    true,
+			SiteAdmin:     false,
 			NamespacePermissions: map[string]string{
 				"ns1": "FULL",
 				"ns2": "READ",
@@ -102,9 +102,9 @@ func TestIsAuthenticatedQuery_Execute(t *testing.T) {
 		}
 
 		if unmarshaled.Authenticated != response.Authenticated ||
-		   unmarshaled.ReadAccess != response.ReadAccess ||
-		   unmarshaled.SiteAdmin != response.SiteAdmin ||
-		   len(unmarshaled.NamespacePermissions) != len(response.NamespacePermissions) {
+			unmarshaled.ReadAccess != response.ReadAccess ||
+			unmarshaled.SiteAdmin != response.SiteAdmin ||
+			len(unmarshaled.NamespacePermissions) != len(response.NamespacePermissions) {
 			t.Error("JSON serialization/deserialization did not preserve response")
 		}
 

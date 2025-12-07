@@ -55,11 +55,11 @@ func (r *Renderer) getThemePath(ctx context.Context, request *http.Request) stri
 	// Try to get theme from session first - Note: Theme is not in new SessionData
 	// We can add it later if needed, for now fall back to cookie
 	/*
-	if sessionData := middleware.GetSessionData(ctx); sessionData != nil && sessionData.Theme != "" {
-		if r.isValidTheme(sessionData.Theme) {
-			return r.buildThemePath(sessionData.Theme)
+		if sessionData := middleware.GetSessionData(ctx); sessionData != nil && sessionData.Theme != "" {
+			if r.isValidTheme(sessionData.Theme) {
+				return r.buildThemePath(sessionData.Theme)
+			}
 		}
-	}
 	*/
 
 	// Fall back to cookie (like Python version)

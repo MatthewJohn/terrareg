@@ -30,7 +30,7 @@ func (h *TerraformV2GPGHandler) HandleListGPGKeys(w http.ResponseWriter, r *http
 // HandleGetGPGKey handles GET /v2/gpg-keys/{namespace}/{key_id}
 func (h *TerraformV2GPGHandler) HandleGetGPGKey(w http.ResponseWriter, r *http.Request) {
 	_ = chi.URLParam(r, "namespace") // Parameter for future implementation
-	_ = chi.URLParam(r, "key_id")   // Parameter for future implementation
+	_ = chi.URLParam(r, "key_id")    // Parameter for future implementation
 
 	// For now, return 404 - can be enhanced with actual GPG key service later
 	terrareg.RespondError(w, http.StatusNotFound, "GPG key not found")

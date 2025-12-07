@@ -199,11 +199,11 @@ func NewGetUserCommand(authFactory *authservice.AuthFactory) *GetUserCommand {
 
 // Response represents the user response
 type GetUserResponse struct {
-	IdentityID   string   `json:"identity_id"`
-	Subject      string   `json:"subject"`
-	Permissions  []string `json:"permissions"`
-	IdentityType string   `json:"identity_type"`
-	IsValid      bool     `json:"is_valid"`
+	IdentityID   string            `json:"identity_id"`
+	Subject      string            `json:"subject"`
+	Permissions  []string          `json:"permissions"`
+	IdentityType string            `json:"identity_type"`
+	IsValid      bool              `json:"is_valid"`
 	Metadata     map[string]string `json:"metadata"`
 }
 

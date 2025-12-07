@@ -97,20 +97,20 @@ func createMockModuleVersion(version string, owner, description *string, publish
 		1, // id
 		version,
 		details,
-		false, // beta
-		false, // internal
+		false,              // beta
+		false,              // internal
 		publishedAt != nil, // published
 		publishedAt,
-		nil, // gitSHA
-		nil, // gitPath
+		nil,   // gitSHA
+		nil,   // gitPath
 		false, // archiveGitPath
-		nil, // repoBaseURLTemplate
-		nil, // repoCloneURLTemplate
-		nil, // repoBrowseURLTemplate
+		nil,   // repoBaseURLTemplate
+		nil,   // repoCloneURLTemplate
+		nil,   // repoBrowseURLTemplate
 		owner,
 		description,
-		nil, // variableTemplate
-		nil, // extractionVersion
+		nil,        // variableTemplate
+		nil,        // extractionVersion
 		time.Now(), // createdAt
 		time.Now(), // updatedAt
 	)
@@ -267,7 +267,7 @@ func TestConvertModuleProviderToListResponse(t *testing.T) {
 	assert.Equal(t, "testmodule", result.Name)
 	assert.Equal(t, "testprovider", result.Provider)
 	assert.True(t, result.Verified)
-	assert.False(t, result.Trusted) // TODO: Get from namespace service
+	assert.False(t, result.Trusted)          // TODO: Get from namespace service
 	assert.Equal(t, "testns", *result.Owner) // Owner uses namespace name
 	assert.Equal(t, "Test description", *result.Description)
 	assert.Equal(t, "2023-01-01T12:00:00Z", *result.PublishedAt)

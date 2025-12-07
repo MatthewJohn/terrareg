@@ -13,9 +13,9 @@ import (
 // AdminSessionAuthMethod implements authentication for admin users via session cookies
 type AdminSessionAuthMethod struct {
 	auth.BaseAuthMethod
-	sessionRepo    repository.SessionRepository
-	userGroupRepo  repository.UserGroupRepository
-	currentSession *auth.Session
+	sessionRepo     repository.SessionRepository
+	userGroupRepo   repository.UserGroupRepository
+	currentSession  *auth.Session
 	isAuthenticated bool
 	isAdmin         bool
 	username        string

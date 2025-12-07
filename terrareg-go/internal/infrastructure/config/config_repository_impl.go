@@ -47,20 +47,20 @@ func (r *ConfigRepositoryImpl) GetConfig(ctx context.Context) (*model.Config, er
 		DisableAnalytics:          r.getEnvBool("DISABLE_ANALYTICS", false),
 
 		// Feature flags
-		AllowModuleHosting:                        r.getEnvString("ALLOW_MODULE_HOSTING", "true"),
-		UploadAPIKeysEnabled:                      r.getEnvString("UPLOAD_API_KEYS", "") != "",
-		PublishAPIKeysEnabled:                     r.getEnvString("PUBLISH_API_KEYS", "") != "",
-		DisableTerraregExclusiveLabels:            r.getEnvBool("DISABLE_TERRAREG_EXCLUSIVE_LABELS", false),
-		AllowCustomGitURLModuleProvider:           r.getEnvBool("ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER", true),
-		AllowCustomGitURLModuleVersion:            r.getEnvBool("ALLOW_CUSTOM_GIT_URL_MODULE_VERSION", true),
-		SecretKeySet:                              r.getEnvString("SECRET_KEY", "") != "",
+		AllowModuleHosting:              r.getEnvString("ALLOW_MODULE_HOSTING", "true"),
+		UploadAPIKeysEnabled:            r.getEnvString("UPLOAD_API_KEYS", "") != "",
+		PublishAPIKeysEnabled:           r.getEnvString("PUBLISH_API_KEYS", "") != "",
+		DisableTerraregExclusiveLabels:  r.getEnvBool("DISABLE_TERRAREG_EXCLUSIVE_LABELS", false),
+		AllowCustomGitURLModuleProvider: r.getEnvBool("ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER", true),
+		AllowCustomGitURLModuleVersion:  r.getEnvBool("ALLOW_CUSTOM_GIT_URL_MODULE_VERSION", true),
+		SecretKeySet:                    r.getEnvString("SECRET_KEY", "") != "",
 
 		// Authentication status - these will be checked dynamically
 		OpenIDConnectEnabled:   r.IsOpenIDConnectEnabled(ctx),
 		OpenIDConnectLoginText: r.getEnvString("OPENID_CONNECT_LOGIN_TEXT", "Login with OpenID"),
-		SAMLEnabled:           r.IsSAMLEnabled(ctx),
-		SAMLLoginText:         r.getEnvString("SAML2_LOGIN_TEXT", "Login with SAML"),
-		AdminLoginEnabled:     r.IsAdminLoginEnabled(ctx),
+		SAMLEnabled:            r.IsSAMLEnabled(ctx),
+		SAMLLoginText:          r.getEnvString("SAML2_LOGIN_TEXT", "Login with SAML"),
+		AdminLoginEnabled:      r.IsAdminLoginEnabled(ctx),
 
 		// UI configuration
 		AdditionalModuleTabs:     additionalModuleTabs,

@@ -10,14 +10,14 @@ import (
 
 // NamespaceDetailsQuery handles getting namespace details
 type NamespaceDetailsQuery struct {
-	namespaceRepo  namespaceRepo.NamespaceRepository
+	namespaceRepo    namespaceRepo.NamespaceRepository
 	namespaceService *namespaceService.NamespaceService
 }
 
 // NewNamespaceDetailsQuery creates a new namespace details query
 func NewNamespaceDetailsQuery(namespaceRepo namespaceRepo.NamespaceRepository, namespaceService *namespaceService.NamespaceService) *NamespaceDetailsQuery {
 	return &NamespaceDetailsQuery{
-		namespaceRepo:  namespaceRepo,
+		namespaceRepo:    namespaceRepo,
 		namespaceService: namespaceService,
 	}
 }

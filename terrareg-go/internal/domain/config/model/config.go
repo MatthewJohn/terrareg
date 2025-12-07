@@ -15,20 +15,20 @@ type Config struct {
 	DisableAnalytics          bool
 
 	// Feature flags
-	AllowModuleHosting                        string // Maps to ModuleHostingMode enum value
-	UploadAPIKeysEnabled                      bool
-	PublishAPIKeysEnabled                     bool
-	DisableTerraregExclusiveLabels            bool
-	AllowCustomGitURLModuleProvider           bool
-	AllowCustomGitURLModuleVersion            bool
-	SecretKeySet                              bool
+	AllowModuleHosting              string // Maps to ModuleHostingMode enum value
+	UploadAPIKeysEnabled            bool
+	PublishAPIKeysEnabled           bool
+	DisableTerraregExclusiveLabels  bool
+	AllowCustomGitURLModuleProvider bool
+	AllowCustomGitURLModuleVersion  bool
+	SecretKeySet                    bool
 
 	// Authentication status
 	OpenIDConnectEnabled   bool
 	OpenIDConnectLoginText string
-	SAMLEnabled           bool
-	SAMLLoginText         string
-	AdminLoginEnabled     bool
+	SAMLEnabled            bool
+	SAMLLoginText          string
+	AdminLoginEnabled      bool
 
 	// UI configuration
 	AdditionalModuleTabs     []string
@@ -47,14 +47,13 @@ type ProviderSource struct {
 	LoginButtonText string
 }
 
-
 // ModuleHostingMode represents the module hosting mode (from Python enum)
 type ModuleHostingMode string
 
 const (
-	ModuleHostingModeAllow     ModuleHostingMode = "true"
-	ModuleHostingModeDisallow  ModuleHostingMode = "false"
-	ModuleHostingModeEnforce   ModuleHostingMode = "enforce"
+	ModuleHostingModeAllow    ModuleHostingMode = "true"
+	ModuleHostingModeDisallow ModuleHostingMode = "false"
+	ModuleHostingModeEnforce  ModuleHostingMode = "enforce"
 )
 
 // DefaultUiInputOutputView represents the default UI view (from Python enum)

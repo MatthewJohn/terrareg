@@ -95,8 +95,8 @@ func (p *ModuleParserImpl) ParseModule(modulePath string) (*service.ParseResult,
 
 // TerraformDocs represents the structure of the terraform-docs JSON output
 type TerraformDocs struct {
-	Header  string `json:"header"`
-	Inputs  []struct {
+	Header string `json:"header"`
+	Inputs []struct {
 		Name        string      `json:"name"`
 		Type        string      `json:"type"`
 		Description string      `json:"description"`

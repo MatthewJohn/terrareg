@@ -10,11 +10,11 @@ func FromDBGitProvider(db *sqldb.GitProviderDB) *gitmodel.GitProvider {
 		return nil
 	}
 	return &gitmodel.GitProvider{
-		ID:                  db.ID,
-		Name:                db.Name,
-		BaseURLTemplate:     db.BaseURLTemplate,
-		CloneURLTemplate:    db.CloneURLTemplate,
-		BrowseURLTemplate:   db.BrowseURLTemplate,
-		GitPathTemplate:     db.GitPathTemplate,
+		ID:                db.ID,
+		Name:              db.Name,
+		BaseURLTemplate:   db.BaseURLTemplate,
+		CloneURLTemplate:  db.CloneURLTemplate,
+		BrowseURLTemplate: db.BrowseURLTemplate,
+		GitPathTemplate:   db.GitPathTemplate,
 	}
 }

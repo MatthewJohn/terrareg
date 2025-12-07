@@ -21,13 +21,13 @@ type ProviderDetails struct {
 // Similar to Python's get_terrareg_api_details()
 type TerraregProviderDetails struct {
 	ProviderDetails
-	ModuleProviderID     *int    `json:"module_provider_id"`
-	GitProviderID        *int    `json:"git_provider_id"`
-	GitTagFormat         *string `json:"git_tag_format"`
-	GitPath              *string `json:"git_path"`
-	ArchiveGitPath       bool    `json:"archive_git_path"`
-	RepoBaseURLTemplate  *string `json:"repo_base_url_template"`
-	RepoCloneURLTemplate *string `json:"repo_clone_url_template"`
+	ModuleProviderID      *int    `json:"module_provider_id"`
+	GitProviderID         *int    `json:"git_provider_id"`
+	GitTagFormat          *string `json:"git_tag_format"`
+	GitPath               *string `json:"git_path"`
+	ArchiveGitPath        bool    `json:"archive_git_path"`
+	RepoBaseURLTemplate   *string `json:"repo_base_url_template"`
+	RepoCloneURLTemplate  *string `json:"repo_clone_url_template"`
 	RepoBrowseURLTemplate *string `json:"repo_browse_url_template"`
 }
 
@@ -35,10 +35,10 @@ type TerraregProviderDetails struct {
 // Matches Python's ModuleVersion.get_api_outline() additions
 type VersionBase struct {
 	ProviderBase
-	Version     string  `json:"version"`      // Version string
+	Version     string  `json:"version"` // Version string
 	Owner       *string `json:"owner"`
 	Description *string `json:"description"`
-	Source      *string `json:"source"`      // From get_source_base_url()
+	Source      *string `json:"source"`       // From get_source_base_url()
 	PublishedAt *string `json:"published_at"` // ISO format from .isoformat()
 	Downloads   int     `json:"downloads"`
 	Internal    bool    `json:"internal"`
@@ -48,24 +48,24 @@ type VersionBase struct {
 // Similar to Python's get_api_details()
 type VersionDetails struct {
 	VersionBase
-	Root       ModuleSpecs `json:"root"`       // Root module specs
+	Root       ModuleSpecs   `json:"root"`       // Root module specs
 	Submodules []ModuleSpecs `json:"submodules"` // Submodule specs
-	Providers  []string     `json:"providers"`   // List of provider names
+	Providers  []string      `json:"providers"`  // List of provider names
 }
 
 // TerraregVersionDetails extends VersionDetails with UI-specific fields
 // Similar to Python's get_terrareg_api_details()
 type TerraregVersionDetails struct {
 	VersionDetails
-	Beta                      bool        `json:"beta"`
-	Published                 bool        `json:"published"`
-	TerraformVersionConstraint *string   `json:"terraform_version_constraint"`
-	SecurityFailures          int         `json:"security_failures"`
-	SecurityResults           interface{} `json:"security_results"`
-	DisplaySourceURL          *string     `json:"display_source_url"`
-	GraphURL                  *string     `json:"graph_url"`
-	UsageExample              *string     `json:"usage_example"`
-	VersionCompatibility      *string     `json:"version_compatibility"` // Optional Terraform compatibility
+	Beta                       bool        `json:"beta"`
+	Published                  bool        `json:"published"`
+	TerraformVersionConstraint *string     `json:"terraform_version_constraint"`
+	SecurityFailures           int         `json:"security_failures"`
+	SecurityResults            interface{} `json:"security_results"`
+	DisplaySourceURL           *string     `json:"display_source_url"`
+	GraphURL                   *string     `json:"graph_url"`
+	UsageExample               *string     `json:"usage_example"`
+	VersionCompatibility       *string     `json:"version_compatibility"` // Optional Terraform compatibility
 }
 
 // ModuleSpecs contains Terraform module specification data
@@ -103,9 +103,9 @@ type TerraformDependency struct {
 }
 
 type TerraformProvider struct {
-	Name         string                 `json:"name"`
-	Version      string                 `json:"version"`
-	Source       string                 `json:"source"`
+	Name          string                 `json:"name"`
+	Version       string                 `json:"version"`
+	Source        string                 `json:"source"`
 	Configuration map[string]interface{} `json:"configuration"`
 }
 

@@ -158,7 +158,7 @@ func (h *TerraformV2ProviderHandler) HandleProviderDownload(w http.ResponseWrite
 func (h *TerraformV2ProviderHandler) HandleProviderDownloadsSummary(w http.ResponseWriter, r *http.Request) {
 	// For now, return empty summary - can be enhanced with analytics later
 	response := map[string]interface{}{
-		"id":         chi.URLParam(r, "provider_id"),
+		"id": chi.URLParam(r, "provider_id"),
 		"downloads": map[string]interface{}{
 			"total":   0,
 			"version": map[string]int{},
@@ -180,11 +180,11 @@ func (h *TerraformV2ProviderHandler) buildV2ProviderResponse(provider interface{
 		"namespace":    "placeholder", // This should come from provider.Namespace().Name()
 		"name":         "placeholder", // This should come from provider.Name()
 		"versions":     []interface{}{},
-		"logo_url":     "", // Optional logo URL
-		"source":       "", // Optional source URL
+		"logo_url":     "",          // Optional logo URL
+		"source":       "",          // Optional source URL
 		"tier":         "community", // Optional tier
-		"description":  "", // Optional description
-		"published_at": "", // Optional published date
+		"description":  "",          // Optional description
+		"published_at": "",          // Optional published date
 	}
 	return providerMap
 }
@@ -192,13 +192,13 @@ func (h *TerraformV2ProviderHandler) buildV2ProviderResponse(provider interface{
 // buildV2VersionsResponse builds a Terraform Registry v2 versions response
 func (h *TerraformV2ProviderHandler) buildV2VersionsResponse(namespace, providerName string, versions interface{}) map[string]interface{} {
 	versionsMap := map[string]interface{}{
-		"id":           fmt.Sprintf("%s/%s", namespace, providerName),
-		"versions":     []interface{}{},
-		"permissions":  map[string]bool{
-			"can_delete":      false,
-			"can_create":      false,
-			"can_sign":        false,
-			"can_partner":     false,
+		"id":       fmt.Sprintf("%s/%s", namespace, providerName),
+		"versions": []interface{}{},
+		"permissions": map[string]bool{
+			"can_delete":  false,
+			"can_create":  false,
+			"can_sign":    false,
+			"can_partner": false,
 		},
 	}
 	return versionsMap
@@ -207,21 +207,21 @@ func (h *TerraformV2ProviderHandler) buildV2VersionsResponse(namespace, provider
 // buildV2VersionResponse builds a Terraform Registry v2 version response
 func (h *TerraformV2ProviderHandler) buildV2VersionResponse(namespace, providerName string, version interface{}) map[string]interface{} {
 	versionMap := map[string]interface{}{
-		"id":           fmt.Sprintf("%s/%s", namespace, providerName),
+		"id": fmt.Sprintf("%s/%s", namespace, providerName),
 		"versions": []map[string]interface{}{
 			{
-				"version":     "placeholder", // This should come from version.Version()
-				"protocols":   []string{"5.0", "6.0"}, // This should come from version.ProtocolVersions()
-				"platforms":   []interface{}{}, // This should be populated from version.Binaries()
-				"published_at": "", // Optional published date
-				"beta":        false, // This should come from version.Beta()
+				"version":      "placeholder",          // This should come from version.Version()
+				"protocols":    []string{"5.0", "6.0"}, // This should come from version.ProtocolVersions()
+				"platforms":    []interface{}{},        // This should be populated from version.Binaries()
+				"published_at": "",                     // Optional published date
+				"beta":         false,                  // This should come from version.Beta()
 			},
 		},
-		"permissions":  map[string]bool{
-			"can_delete":      false,
-			"can_create":      false,
-			"can_sign":        false,
-			"can_partner":     false,
+		"permissions": map[string]bool{
+			"can_delete":  false,
+			"can_create":  false,
+			"can_sign":    false,
+			"can_partner": false,
 		},
 	}
 	return versionMap
