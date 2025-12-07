@@ -8,21 +8,24 @@ import (
 	"gorm.io/gorm"
 
 	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
-	appConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 )
 
 // AnalyticsRepositoryImpl implements the analytics repository
 type AnalyticsRepositoryImpl struct {
-	db     *gorm.DB
-	config *appConfig.Config
+	db               *gorm.DB
+	namespaceRepo    repository.NamespaceRepository
+	namespaceService *service.NamespaceService
 }
 
 // NewAnalyticsRepository creates a new analytics repository
-func NewAnalyticsRepository(db *gorm.DB, config *appConfig.Config) *AnalyticsRepositoryImpl {
+func NewAnalyticsRepository(db *gorm.DB, namespaceRepo repository.NamespaceRepository, namespaceService *service.NamespaceService) *AnalyticsRepositoryImpl {
 	return &AnalyticsRepositoryImpl{
-		db:     db,
-		config: config,
+		db:               db,
+		namespaceRepo:    namespaceRepo,
+		namespaceService: namespaceService,
 	}
 }
 
@@ -141,14 +144,12 @@ func (r *AnalyticsRepositoryImpl) GetMostRecentlyPublished(ctx context.Context) 
 		publishedAt = &isoStr
 	}
 
-	// Check if namespace is in trusted list
-	trusted := false
-	for _, ns := range r.config.TrustedNamespaces {
-		if ns == result.Namespace {
-			trusted = true
-			break
-		}
+	// Check if namespace is trusted
+	namespace, err := r.namespaceRepo.FindByName(ctx, result.Namespace)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check namespace: %w", err)
 	}
+	trusted := r.namespaceService.IsTrusted(namespace)
 
 	return &analyticsCmd.ModuleVersionInfo{
 		ID:          fmt.Sprintf("%s/%s/%s/%s", result.Namespace, result.Module, result.Provider, result.Version), // Format: namespace/name/provider/version

@@ -4,21 +4,21 @@ import (
 	"context"
 	"fmt"
 
-	appConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	namespaceRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	namespaceService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 )
 
 // NamespaceDetailsQuery handles getting namespace details
 type NamespaceDetailsQuery struct {
-	namespaceRepo namespaceRepo.NamespaceRepository
-	config         *appConfig.Config
+	namespaceRepo  namespaceRepo.NamespaceRepository
+	namespaceService *namespaceService.NamespaceService
 }
 
 // NewNamespaceDetailsQuery creates a new namespace details query
-func NewNamespaceDetailsQuery(namespaceRepo namespaceRepo.NamespaceRepository, config *appConfig.Config) *NamespaceDetailsQuery {
+func NewNamespaceDetailsQuery(namespaceRepo namespaceRepo.NamespaceRepository, namespaceService *namespaceService.NamespaceService) *NamespaceDetailsQuery {
 	return &NamespaceDetailsQuery{
-		namespaceRepo: namespaceRepo,
-		config:         config,
+		namespaceRepo:  namespaceRepo,
+		namespaceService: namespaceService,
 	}
 }
 
@@ -42,29 +42,11 @@ func (q *NamespaceDetailsQuery) Execute(ctx context.Context, namespaceName strin
 		return nil, nil
 	}
 
-	// Check if namespace is in verified list
-	isAutoVerified := false
-	for _, ns := range q.config.VerifiedModuleNamespaces {
-		if ns == namespaceName {
-			isAutoVerified = true
-			break
-		}
-	}
-
-	// Check if namespace is in trusted list
-	trusted := false
-	for _, ns := range q.config.TrustedNamespaces {
-		if ns == namespaceName {
-			trusted = true
-			break
-		}
-	}
-
 	details := &NamespaceDetails{
 		Name:           namespace.Name(),
 		DisplayName:    namespace.DisplayName(),
-		IsAutoVerified: isAutoVerified,
-		Trusted:        trusted,
+		IsAutoVerified: q.namespaceService.IsAutoVerified(namespace),
+		Trusted:        q.namespaceService.IsTrusted(namespace),
 	}
 
 	return details, nil
