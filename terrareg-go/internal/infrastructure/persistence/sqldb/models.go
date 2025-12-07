@@ -254,7 +254,7 @@ type ModuleProviderSearchResult struct {
 	NamespaceType         string  `gorm:"column:namespace_type"`
 
 	// Search relevance score
-	RelevanceScore int `gorm:"column:relevance_score"`
+	RelevanceScore *int `gorm:"column:relevance_score"`
 }
 
 // ModuleProviderRedirectDB represents module provider redirects

@@ -337,8 +337,8 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 		countSQL += " WHERE " + strings.Join(whereConditions, " AND ")
 	}
 
-	// Prepare arguments for main query
-	finalArgs := append(append([]interface{}{}, whereArgs...), args...)
+	// Prepare arguments for main query - scoring args first (SELECT clause), then WHERE args
+	finalArgs := append(append([]interface{}{}, args...), whereArgs...)
 
 	// Apply pagination to main query only
 	if query.Limit > 0 {
@@ -354,7 +354,7 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 	var totalCount struct {
 		Total int64 `json:"total"`
 	}
-	countArgs := append(append([]interface{}{}, whereArgs...), args...)
+	countArgs := append(append([]interface{}{}, args...), whereArgs...)
 	if err := r.db.WithContext(ctx).Raw(countSQL, countArgs...).Scan(&totalCount).Error; err != nil {
 		return nil, fmt.Errorf("failed to count module providers: %w", err)
 	}
@@ -397,7 +397,7 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 
 		// Set relevance score if available
 		if query.Query != "" {
-			mp.SetRelevanceScore(&result.RelevanceScore)
+			mp.SetRelevanceScore(result.RelevanceScore)
 		}
 
 		// Load versions
