@@ -234,27 +234,27 @@ func (ModuleProviderDB) TableName() string {
 // ModuleProviderSearchResult represents a module provider with relevance score for search
 type ModuleProviderSearchResult struct {
 	// Module Provider fields
-	ID                    int     `json:"id"`
-	NamespaceID           int     `json:"namespace_id"`
-	Module                string  `json:"module"`
-	Provider              string  `json:"provider"`
-	RepoBaseURLTemplate   *string `json:"repo_base_url_template"`
-	RepoCloneURLTemplate  *string `json:"repo_clone_url_template"`
-	RepoBrowseURLTemplate *string `json:"repo_browse_url_template"`
-	GitTagFormat          *string `json:"git_tag_format"`
-	GitPath               *string `json:"git_path"`
-	ArchiveGitPath        bool    `json:"archive_git_path"`
-	Verified              *bool   `json:"verified"`
-	GitProviderID         *int    `json:"git_provider_id"`
-	LatestVersionID       *int    `json:"latest_version_id"`
+	ID                    int     `gorm:"column:module_provider_id"`
+	NamespaceID           int     `gorm:"column:module_provider_namespace_id"`
+	Module                string  `gorm:"column:module_provider_module"`
+	Provider              string  `gorm:"column:module_provider_provider"`
+	RepoBaseURLTemplate   *string `gorm:"column:module_provider_repo_base_url_template"`
+	RepoCloneURLTemplate  *string `gorm:"column:module_provider_repo_clone_url_template"`
+	RepoBrowseURLTemplate *string `gorm:"column:module_provider_repo_browse_url_template"`
+	GitTagFormat          *string `gorm:"column:module_provider_git_tag_format"`
+	GitPath               *string `gorm:"column:module_provider_git_path"`
+	ArchiveGitPath        bool    `gorm:"column:module_provider_archive_git_path"`
+	Verified              *bool   `gorm:"column:module_provider_verified"`
+	GitProviderID         *int    `gorm:"column:module_provider_git_provider_id"`
+	LatestVersionID       *int    `gorm:"column:module_provider_latest_version_id"`
 
-	// Namespace fields (already have NamespaceID from above)
-	NamespaceName         string `json:"namespace"`
-	NamespaceDisplayName  string `json:"display_name"`
-	NamespaceType         string `json:"type"`
+	// Namespace fields
+	NamespaceName         string  `gorm:"column:namespace_namespace"`
+	NamespaceDisplayName  string  `gorm:"column:namespace_display_name"`
+	NamespaceType         string  `gorm:"column:namespace_type"`
 
 	// Search relevance score
-	RelevanceScore int `json:"relevance_score"`
+	RelevanceScore int `gorm:"column:relevance_score"`
 }
 
 // ModuleProviderRedirectDB represents module provider redirects

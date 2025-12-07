@@ -337,28 +337,31 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 		countSQL += " WHERE " + strings.Join(whereConditions, " AND ")
 	}
 
+	// Prepare arguments for main query
+	finalArgs := append(append([]interface{}{}, whereArgs...), args...)
+
+	// Apply pagination to main query only
+	if query.Limit > 0 {
+		sql += " LIMIT ?"
+		finalArgs = append(finalArgs, query.Limit)
+	}
+	if query.Offset > 0 {
+		sql += " OFFSET ?"
+		finalArgs = append(finalArgs, query.Offset)
+	}
+
 	// Execute count query
 	var totalCount struct {
 		Total int64 `json:"total"`
 	}
-	allArgs := append(append([]interface{}{}, whereArgs...), args...)
-	if err := r.db.WithContext(ctx).Raw(countSQL, allArgs...).Scan(&totalCount).Error; err != nil {
+	countArgs := append(append([]interface{}{}, whereArgs...), args...)
+	if err := r.db.WithContext(ctx).Raw(countSQL, countArgs...).Scan(&totalCount).Error; err != nil {
 		return nil, fmt.Errorf("failed to count module providers: %w", err)
-	}
-
-	// Apply pagination
-	if query.Limit > 0 {
-		sql += " LIMIT ?"
-		args = append(args, query.Limit)
-	}
-	if query.Offset > 0 {
-		sql += " OFFSET ?"
-		args = append(args, query.Offset)
 	}
 
 	// Execute main query
 	var results []sqldb.ModuleProviderSearchResult
-	if err := r.db.WithContext(ctx).Raw(sql, args...).Scan(&results).Error; err != nil {
+	if err := r.db.WithContext(ctx).Raw(sql, finalArgs...).Scan(&results).Error; err != nil {
 		return nil, fmt.Errorf("failed to search module providers: %w", err)
 	}
 
