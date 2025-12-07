@@ -231,6 +231,32 @@ func (ModuleProviderDB) TableName() string {
 	return "module_provider"
 }
 
+// ModuleProviderSearchResult represents a module provider with relevance score for search
+type ModuleProviderSearchResult struct {
+	// Module Provider fields
+	ID                    int     `json:"id"`
+	NamespaceID           int     `json:"namespace_id"`
+	Module                string  `json:"module"`
+	Provider              string  `json:"provider"`
+	RepoBaseURLTemplate   *string `json:"repo_base_url_template"`
+	RepoCloneURLTemplate  *string `json:"repo_clone_url_template"`
+	RepoBrowseURLTemplate *string `json:"repo_browse_url_template"`
+	GitTagFormat          *string `json:"git_tag_format"`
+	GitPath               *string `json:"git_path"`
+	ArchiveGitPath        bool    `json:"archive_git_path"`
+	Verified              *bool   `json:"verified"`
+	GitProviderID         *int    `json:"git_provider_id"`
+	LatestVersionID       *int    `json:"latest_version_id"`
+
+	// Namespace fields (already have NamespaceID from above)
+	NamespaceName         string `json:"namespace"`
+	NamespaceDisplayName  string `json:"display_name"`
+	NamespaceType         string `json:"type"`
+
+	// Search relevance score
+	RelevanceScore int `json:"relevance_score"`
+}
+
 // ModuleProviderRedirectDB represents module provider redirects
 type ModuleProviderRedirectDB struct {
 	ID               int    `gorm:"primaryKey;autoIncrement"`

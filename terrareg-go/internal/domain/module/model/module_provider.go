@@ -12,11 +12,12 @@ import (
 
 // ModuleProvider is the aggregate root for a module provider
 type ModuleProvider struct {
-	id        int
-	namespace *Namespace
-	module    string
-	provider  string
-	verified  bool
+	id             int
+	namespace      *Namespace
+	module         string
+	provider       string
+	verified       bool
+	relevanceScore *int // Optional relevance score for search results
 
 	// Git configuration
 	gitProvider           *model.GitProvider
@@ -380,4 +381,14 @@ func (mp *ModuleProvider) GetUploadEndpoint() string {
 // GetPublishEndpoint returns the publish endpoint URL
 func (mp *ModuleProvider) GetPublishEndpoint() string {
 	return fmt.Sprintf("/v1/terrareg/modules/%d/${{version}}/publish", mp.id)
+}
+
+// SetRelevanceScore sets the relevance score for search results
+func (mp *ModuleProvider) SetRelevanceScore(score *int) {
+	mp.relevanceScore = score
+}
+
+// RelevanceScore returns the relevance score for search results
+func (mp *ModuleProvider) RelevanceScore() *int {
+	return mp.relevanceScore
 }

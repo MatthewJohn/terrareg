@@ -4,10 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
 
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
@@ -19,13 +21,15 @@ import (
 type ModuleProviderRepositoryImpl struct {
 	db            *gorm.DB
 	namespaceRepo repository.NamespaceRepository
+	cfg           *config.Config
 }
 
 // NewModuleProviderRepository creates a new module provider repository
-func NewModuleProviderRepository(db *gorm.DB, namespaceRepo repository.NamespaceRepository) repository.ModuleProviderRepository {
+func NewModuleProviderRepository(db *gorm.DB, namespaceRepo repository.NamespaceRepository, cfg *config.Config) repository.ModuleProviderRepository {
 	return &ModuleProviderRepositoryImpl{
 		db:            db,
 		namespaceRepo: namespaceRepo,
+		cfg:           cfg,
 	}
 }
 
@@ -168,131 +172,244 @@ func (r *ModuleProviderRepositoryImpl) FindByNamespace(ctx context.Context, name
 
 // Search searches for module providers
 func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query repository.ModuleSearchQuery) (*repository.ModuleSearchResult, error) {
-	db := r.db.WithContext(ctx).
-		Joins("JOIN namespace ON namespace.id = module_provider.namespace_id").
-		Preload("Namespace").
-		Preload("GitProvider")
+	// Use custom SQL for scoring
+	var sql string
+	var args []interface{}
 
-	// Apply filters
+	// Base query with joins
+	sql = `
+		SELECT
+			module_provider.id as module_provider_id,
+			module_provider.namespace_id as module_provider_namespace_id,
+			module_provider.module as module_provider_module,
+			module_provider.provider as module_provider_provider,
+			module_provider.repo_base_url_template as module_provider_repo_base_url_template,
+			module_provider.repo_clone_url_template as module_provider_repo_clone_url_template,
+			module_provider.repo_browse_url_template as module_provider_repo_browse_url_template,
+			module_provider.git_tag_format as module_provider_git_tag_format,
+			module_provider.git_path as module_provider_git_path,
+			module_provider.archive_git_path as module_provider_archive_git_path,
+			module_provider.verified as module_provider_verified,
+			module_provider.git_provider_id as module_provider_git_provider_id,
+			module_provider.latest_version_id as module_provider_latest_version_id,
+			namespace.id as namespace_id,
+			namespace.namespace as namespace_namespace,
+			namespace.display_name as namespace_display_name,
+			namespace.namespace_type as namespace_type`
+
+	// Add scoring if query provided
 	if query.Query != "" {
-		db = db.Where("module_provider.module LIKE ? OR namespace.namespace LIKE ?",
-			"%"+query.Query+"%", "%"+query.Query+"%")
+		sql += `,
+			SUM(
+				CASE
+					WHEN LOWER(module_provider.module) = LOWER(?) THEN 20
+					WHEN LOWER(namespace.namespace) = LOWER(?) THEN 18
+					WHEN LOWER(module_provider.provider) = LOWER(?) THEN 14
+					WHEN LOWER(module_version.description) = LOWER(?) THEN 13
+					WHEN LOWER(module_version.owner) = LOWER(?) THEN 12
+					WHEN LOWER(module_provider.module) LIKE LOWER(?) THEN 5
+					WHEN LOWER(module_version.description) LIKE LOWER(?) THEN 4
+					WHEN LOWER(module_version.owner) LIKE LOWER(?) THEN 3
+					WHEN LOWER(namespace.namespace) LIKE LOWER(?) THEN 2
+					ELSE 0
+				END
+			) as relevance_score`
+		args = append(args,
+			query.Query, query.Query, query.Query, query.Query, query.Query, // Exact matches
+			"%"+query.Query+"%", "%"+query.Query+"%", "%"+query.Query+"%", "%"+query.Query+"%") // Partial matches
 	}
 
-	// Apply multiple namespace filters
+	sql += `
+		FROM module_provider
+		JOIN namespace ON namespace.id = module_provider.namespace_id
+		LEFT JOIN module_version ON module_version.module_provider_id = module_provider.id
+			AND module_version.published = true
+			AND module_version.beta = false
+			AND module_version.internal = false`
+
+	// Apply WHERE conditions
+	whereConditions := []string{}
+	whereArgs := []interface{}{}
+
+	// Query filter
+	if query.Query != "" {
+		whereConditions = append(whereConditions, "(module_provider.module LIKE ? OR namespace.namespace LIKE ? OR module_version.description LIKE ? OR module_version.owner LIKE ?)")
+		queryLower := strings.ToLower(query.Query)
+		whereArgs = append(whereArgs, "%"+queryLower+"%", "%"+queryLower+"%", "%"+queryLower+"%", "%"+queryLower+"%")
+	}
+
+	// Namespace filters
 	if len(query.Namespaces) > 0 {
-		db = db.Where("namespace.namespace IN ?", query.Namespaces)
+		whereConditions = append(whereConditions, "namespace.namespace IN ?")
+		whereArgs = append(whereArgs, query.Namespaces)
 	}
 
+	// Module filter
 	if query.Module != nil {
-		db = db.Where("module_provider.module = ?", *query.Module)
+		whereConditions = append(whereConditions, "module_provider.module = ?")
+		whereArgs = append(whereArgs, *query.Module)
 	}
 
-	// Apply multiple provider filters
+	// Provider filters
 	if len(query.Providers) > 0 {
-		db = db.Where("module_provider.provider IN ?", query.Providers)
+		whereConditions = append(whereConditions, "module_provider.provider IN ?")
+		whereArgs = append(whereArgs, query.Providers)
 	}
 
+	// Verified filter
 	if query.Verified != nil {
 		if *query.Verified {
-			// Filter for verified modules (verified = 1)
-			db = db.Where("module_provider.verified = ?", true)
+			whereConditions = append(whereConditions, "module_provider.verified = ?")
+			whereArgs = append(whereArgs, true)
 		} else {
-			// Filter for unverified modules (verified = 0 or NULL)
-			db = db.Where("module_provider.verified = ? OR module_provider.verified IS NULL", false)
+			whereConditions = append(whereConditions, "(module_provider.verified = ? OR module_provider.verified IS NULL)")
+			whereArgs = append(whereArgs, false)
 		}
 	}
 
-	// Note: trusted/contributed filtering will be handled at the application layer
-	// since trusted status is not stored in the database but configured via environment
-
-	// Count total - use proper table qualification to avoid ambiguous column error
-	countDB := r.db.WithContext(ctx).
-		Table("module_provider").
-		Joins("JOIN namespace ON namespace.id = module_provider.namespace_id")
-
-	// Apply all the same filters to countDB
-	if query.Query != "" {
-		countDB = countDB.Where("module_provider.module LIKE ? OR namespace.namespace LIKE ?",
-			"%"+query.Query+"%", "%"+query.Query+"%")
-	}
-
-	// Apply multiple namespace filters to count
-	if len(query.Namespaces) > 0 {
-		countDB = countDB.Where("namespace.namespace IN ?", query.Namespaces)
-	}
-
-	if query.Module != nil {
-		countDB = countDB.Where("module_provider.module = ?", *query.Module)
-	}
-
-	// Apply multiple provider filters to count
-	if len(query.Providers) > 0 {
-		countDB = countDB.Where("module_provider.provider IN ?", query.Providers)
-	}
-
-	if query.Verified != nil {
-		if *query.Verified {
-			// Filter for verified modules (verified = 1)
-			countDB = countDB.Where("module_provider.verified = ?", true)
-		} else {
-			// Filter for unverified modules (verified = 0 or NULL)
-			countDB = countDB.Where("module_provider.verified = ? OR module_provider.verified IS NULL", false)
+	// Trusted/Contributed namespace filter
+	if query.TrustedNamespaces != nil || query.Contributed != nil {
+		if query.TrustedNamespaces != nil && *query.TrustedNamespaces {
+			// Only trusted namespaces
+			if len(r.cfg.TrustedNamespaces) > 0 {
+				placeholders := make([]string, len(r.cfg.TrustedNamespaces))
+				for i := range r.cfg.TrustedNamespaces {
+					placeholders[i] = "?"
+				}
+				whereConditions = append(whereConditions, "namespace.namespace IN ("+strings.Join(placeholders, ",")+")")
+				for _, ns := range r.cfg.TrustedNamespaces {
+					whereArgs = append(whereArgs, ns)
+				}
+			} else {
+				// No trusted namespaces configured, return empty
+				whereConditions = append(whereConditions, "1 = 0")
+			}
+		} else if query.Contributed != nil && *query.Contributed {
+			// Only contributed (non-trusted) namespaces
+			if len(r.cfg.TrustedNamespaces) > 0 {
+				placeholders := make([]string, len(r.cfg.TrustedNamespaces))
+				for i := range r.cfg.TrustedNamespaces {
+					placeholders[i] = "?"
+				}
+				whereConditions = append(whereConditions, "namespace.namespace NOT IN ("+strings.Join(placeholders, ",")+")")
+				for _, ns := range r.cfg.TrustedNamespaces {
+					whereArgs = append(whereArgs, ns)
+				}
+			}
+			// If no trusted namespaces configured, all are contributed
 		}
 	}
 
-	// Note: trusted/contributed filtering handled in application layer
-	// since it depends on environment configuration, not database schema
+	// Combine WHERE conditions
+	if len(whereConditions) > 0 {
+		sql += " WHERE " + strings.Join(whereConditions, " AND ")
+	}
 
-	// Now count with proper qualification
-	var total int64
-	if err := countDB.Count(&total).Error; err != nil {
+	// Add GROUP BY for scoring
+	if query.Query != "" {
+		sql += " GROUP BY module_provider.id, namespace.id"
+	}
+
+	// Ordering
+	if query.Query != "" {
+		sql += " ORDER BY relevance_score DESC, module_provider.module ASC, module_provider.provider ASC"
+	} else {
+		orderBy := "module_provider.module"
+		if query.OrderBy != "" {
+			if query.OrderBy == "id" {
+				orderBy = "module_provider.id"
+			} else if query.OrderBy == "namespace" {
+				orderBy = "namespace.namespace"
+			} else {
+				orderBy = query.OrderBy
+			}
+		}
+		orderDir := "ASC"
+		if query.OrderDir != "" {
+			orderDir = query.OrderDir
+		}
+		sql += fmt.Sprintf(" ORDER BY %s %s", orderBy, orderDir)
+	}
+
+	// Count total query
+	countSQL := "SELECT COUNT(DISTINCT module_provider.id) as total FROM module_provider JOIN namespace ON namespace.id = module_provider.namespace_id LEFT JOIN module_version ON module_version.module_provider_id = module_provider.id AND module_version.published = true AND module_version.beta = false AND module_version.internal = false"
+	if len(whereConditions) > 0 {
+		countSQL += " WHERE " + strings.Join(whereConditions, " AND ")
+	}
+
+	// Execute count query
+	var totalCount struct {
+		Total int64 `json:"total"`
+	}
+	allArgs := append(append([]interface{}{}, whereArgs...), args...)
+	if err := r.db.WithContext(ctx).Raw(countSQL, allArgs...).Scan(&totalCount).Error; err != nil {
 		return nil, fmt.Errorf("failed to count module providers: %w", err)
 	}
 
-	// Apply ordering
-	orderBy := "module_provider.module"
-	if query.OrderBy != "" {
-		// Ensure column names are qualified with table name to avoid ambiguity
-		if query.OrderBy == "id" {
-			orderBy = "module_provider.id"
-		} else if query.OrderBy == "namespace" {
-			orderBy = "namespace.namespace"
-		} else {
-			orderBy = query.OrderBy
-		}
-	}
-	orderDir := "ASC"
-	if query.OrderDir != "" {
-		orderDir = query.OrderDir
-	}
-	db = db.Order(fmt.Sprintf("%s %s", orderBy, orderDir))
-
 	// Apply pagination
 	if query.Limit > 0 {
-		db = db.Limit(query.Limit)
+		sql += " LIMIT ?"
+		args = append(args, query.Limit)
 	}
 	if query.Offset > 0 {
-		db = db.Offset(query.Offset)
+		sql += " OFFSET ?"
+		args = append(args, query.Offset)
 	}
 
-	var dbModels []sqldb.ModuleProviderDB
-	if err := db.Find(&dbModels).Error; err != nil {
+	// Execute main query
+	var results []sqldb.ModuleProviderSearchResult
+	if err := r.db.WithContext(ctx).Raw(sql, args...).Scan(&results).Error; err != nil {
 		return nil, fmt.Errorf("failed to search module providers: %w", err)
 	}
 
-	providers := make([]*model.ModuleProvider, len(dbModels))
-	for i, dbModel := range dbModels {
-		mp, err := r.toDomain(&dbModel)
+	// Convert to domain models
+	providers := make([]*model.ModuleProvider, len(results))
+	for i, result := range results {
+		// Create namespace from result
+		namespaceDB := &sqldb.NamespaceDB{
+			ID:            result.NamespaceID,
+			Namespace:     result.NamespaceName,
+			DisplayName:   &result.NamespaceDisplayName,
+			NamespaceType: sqldb.NamespaceType(result.NamespaceType),
+		}
+		namespace := fromDBNamespace(namespaceDB)
+
+		// Create module provider DB from result
+		moduleProviderDB := &sqldb.ModuleProviderDB{
+			ID:                    result.ID,
+			NamespaceID:           result.NamespaceID,
+			Module:                result.Module,
+			Provider:              result.Provider,
+			RepoBaseURLTemplate:   result.RepoBaseURLTemplate,
+			RepoCloneURLTemplate:  result.RepoCloneURLTemplate,
+			RepoBrowseURLTemplate: result.RepoBrowseURLTemplate,
+			GitTagFormat:          result.GitTagFormat,
+			GitPath:               result.GitPath,
+			ArchiveGitPath:        result.ArchiveGitPath,
+			Verified:              result.Verified,
+			GitProviderID:         result.GitProviderID,
+			LatestVersionID:       result.LatestVersionID,
+		}
+		mp := fromDBModuleProvider(moduleProviderDB, namespace)
+
+		// Set relevance score if available
+		if query.Query != "" {
+			mp.SetRelevanceScore(&result.RelevanceScore)
+		}
+
+		// Load versions
+		versions, err := r.loadVersions(ctx, result.ID)
 		if err != nil {
 			return nil, err
 		}
+		mp.SetVersions(versions)
+
 		providers[i] = mp
 	}
 
 	return &repository.ModuleSearchResult{
 		Modules:    providers,
-		TotalCount: int(total),
+		TotalCount: int(totalCount.Total),
 	}, nil
 }
 
