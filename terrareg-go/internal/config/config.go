@@ -66,6 +66,10 @@ type Config struct {
 	SessionCookieName      string
 	SessionRefreshAge      time.Duration
 
+	// Namespace settings
+	VerifiedModuleNamespaces []string
+	TrustedNamespaces        []string
+
 	// Provider source settings
 	ProviderSources map[string]ProviderSourceConfig
 }
@@ -128,6 +132,10 @@ func New() (*Config, error) {
 		AdminSessionExpiryMins: getEnvInt("ADMIN_SESSION_EXPIRY_MINS", 60),
 		SessionCookieName:      getEnv("SESSION_COOKIE_NAME", "terrareg_session"),
 		SessionRefreshAge:      time.Duration(getEnvInt("SESSION_REFRESH_MINS", 25)) * time.Minute,
+
+		// Namespaces
+		VerifiedModuleNamespaces: getEnvSlice("VERIFIED_MODULE_NAMESPACES", []string{}),
+		TrustedNamespaces:        getEnvSlice("TRUSTED_NAMESPACES", []string{}),
 
 		ProviderSources: make(map[string]ProviderSourceConfig),
 	}
@@ -200,6 +208,21 @@ func getEnvFloat(key string, defaultValue float64) float64 {
 		if floatValue, err := strconv.ParseFloat(value, 64); err == nil {
 			return floatValue
 		}
+	}
+	return defaultValue
+}
+
+func getEnvSlice(key string, defaultValue []string) []string {
+	if value := os.Getenv(key); value != "" {
+		// Split by comma and trim whitespace
+		values := strings.Split(value, ",")
+		result := make([]string, 0, len(values))
+		for _, v := range values {
+			if trimmed := strings.TrimSpace(v); trimmed != "" {
+				result = append(result, trimmed)
+			}
+		}
+		return result
 	}
 	return defaultValue
 }

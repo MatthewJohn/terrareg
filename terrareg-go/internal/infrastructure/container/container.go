@@ -178,7 +178,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 	c.NamespaceRepo = modulePersistence.NewNamespaceRepository(db.DB)
 	c.ModuleProviderRepo = modulePersistence.NewModuleProviderRepository(db.DB, c.NamespaceRepo)
 	c.ModuleVersionRepo = modulePersistence.NewModuleVersionRepository(db.DB)
-	c.AnalyticsRepo = analyticsPersistence.NewAnalyticsRepository(db.DB)
+	c.AnalyticsRepo = analyticsPersistence.NewAnalyticsRepository(db.DB, cfg)
 	c.ProviderRepo = providerRepository.NewProviderRepository()
 	c.SessionRepo = authPersistence.NewSessionRepository(db.DB)
 	c.UserGroupRepo = authPersistence.NewUserGroupRepository(db.DB)
@@ -248,7 +248,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 
 	// Initialize queries
 	c.ListNamespacesQuery = module.NewListNamespacesQuery(c.NamespaceRepo)
-	c.NamespaceDetailsQuery = namespaceQuery.NewNamespaceDetailsQuery(c.NamespaceRepo)
+	c.NamespaceDetailsQuery = namespaceQuery.NewNamespaceDetailsQuery(c.NamespaceRepo, cfg)
 	c.ListModulesQuery = module.NewListModulesQuery(c.ModuleProviderRepo)
 	c.SearchModulesQuery = module.NewSearchModulesQuery(c.ModuleProviderRepo)
 	c.GetModuleProviderQuery = module.NewGetModuleProviderQuery(c.ModuleProviderRepo)
