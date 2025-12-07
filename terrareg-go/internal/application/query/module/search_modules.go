@@ -71,8 +71,16 @@ func (q *SearchModulesQuery) Execute(ctx context.Context, params SearchParams) (
 		return nil, err
 	}
 
+	// Filter out modules without latest versions (matching Python behavior)
+	modulesWithLatestVersion := make([]*model.ModuleProvider, 0)
+	for _, module := range result.Modules {
+		if module.GetLatestVersion() != nil {
+			modulesWithLatestVersion = append(modulesWithLatestVersion, module)
+		}
+	}
+
 	return &SearchResult{
-		Modules:    result.Modules,
-		TotalCount: result.TotalCount,
+		Modules:    modulesWithLatestVersion,
+		TotalCount: len(modulesWithLatestVersion), // Update count to match filtered results
 	}, nil
 }
