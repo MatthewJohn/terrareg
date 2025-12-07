@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 )
 
 // Config holds all application configuration
@@ -43,7 +45,7 @@ type Config struct {
 	SecretKey                string
 
 	// Feature flags
-	AllowModuleHosting     bool
+	AllowModuleHosting     model.ModuleHostingMode
 	AllowProviderHosting   bool
 	AllowCustomGitProvider bool
 	EnableAccessControls   bool
@@ -69,6 +71,20 @@ type Config struct {
 	// Namespace settings
 	VerifiedModuleNamespaces []string
 	TrustedNamespaces        []string
+
+	// Namespace labels (for UI compatibility)
+	TrustedNamespaceLabel     string
+	ContributedNamespaceLabel string
+	VerifiedModuleLabel       string
+
+	// Analytics configuration (for UI compatibility)
+	AnalyticsTokenPhrase      string
+	AnalyticsTokenDescription string
+	ExampleAnalyticsToken     string
+	DisableAnalytics          bool
+
+	// Additional module tabs (for UI compatibility)
+	AdditionalModuleTabs []string
 
 	// Provider source settings
 	ProviderSources map[string]ProviderSourceConfig
@@ -110,7 +126,7 @@ func New() (*Config, error) {
 		SecretKey:                getEnv("SECRET_KEY", ""),
 
 		// Feature flags
-		AllowModuleHosting:     getEnvBool("ALLOW_MODULE_HOSTING", true),
+		AllowModuleHosting:     getModuleHostingMode(),
 		AllowProviderHosting:   getEnvBool("ALLOW_PROVIDER_HOSTING", true),
 		AllowCustomGitProvider: getEnvBool("ALLOW_CUSTOM_GIT_PROVIDER", true),
 		EnableAccessControls:   getEnvBool("ENABLE_ACCESS_CONTROLS", false),
@@ -210,6 +226,25 @@ func getEnvFloat(key string, defaultValue float64) float64 {
 		}
 	}
 	return defaultValue
+}
+
+// getModuleHostingMode parses the ALLOW_MODULE_HOSTING environment variable
+// and returns the corresponding ModuleHostingMode enum value
+func getModuleHostingMode() model.ModuleHostingMode {
+	value := strings.ToLower(getEnv("ALLOW_MODULE_HOSTING", "true"))
+
+	// Validate the value against allowed enum values
+	switch value {
+	case "true":
+		return model.ModuleHostingModeAllow
+	case "false":
+		return model.ModuleHostingModeDisallow
+	case "enforce":
+		return model.ModuleHostingModeEnforce
+	default:
+		// Default to "true" if invalid value provided
+		return model.ModuleHostingModeAllow
+	}
 }
 
 func getEnvSlice(key string, defaultValue []string) []string {

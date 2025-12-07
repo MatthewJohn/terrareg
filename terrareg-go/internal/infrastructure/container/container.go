@@ -173,7 +173,7 @@ type Container struct {
 	VersionHandler *terrareg.VersionHandler
 
 	// Search Filters
-	SearchFiltersQuery *moduleQuery.SearchFiltersQuery
+	SearchFiltersQuery   *moduleQuery.SearchFiltersQuery
 	SearchFiltersHandler *terrareg.SearchFiltersHandler
 
 	// HTTP Server
@@ -333,6 +333,7 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 		c.DeleteModuleProviderCmd,
 		c.UploadModuleVersionCmd,
 		c.ImportModuleVersionCmd,
+		c.Config,
 	)
 	c.AnalyticsHandler = terrareg.NewAnalyticsHandler(
 		c.GlobalStatsQuery,

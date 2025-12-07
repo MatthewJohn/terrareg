@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	configModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/url/service"
@@ -155,7 +156,7 @@ func (q *GetInitialSetupQuery) setURLs(response *InitialSetupResponse, modulePro
 	response.ModuleViewURL = &viewURL
 
 	// Set upload endpoint if module hosting is allowed
-	if q.config.AllowModuleHosting {
+	if q.config.AllowModuleHosting != configModel.ModuleHostingModeDisallow {
 		uploadEndpoint := q.urlService.BuildURL(moduleProvider.GetUploadEndpoint(), nil)
 		response.ModuleUploadEndpoint = &uploadEndpoint
 	}
