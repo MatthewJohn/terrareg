@@ -153,6 +153,11 @@ func New() (*Config, error) {
 		VerifiedModuleNamespaces: getEnvSlice("VERIFIED_MODULE_NAMESPACES", []string{}),
 		TrustedNamespaces:        getEnvSlice("TRUSTED_NAMESPACES", []string{}),
 
+		// Labels
+		TrustedNamespaceLabel:     getEnv("TRUSTED_NAMESPACE_LABEL", "Trusted"),
+		ContributedNamespaceLabel: getEnv("CONTRIBUTED_NAMESPACE_LABEL", "Contributed"),
+		VerifiedModuleLabel:       getEnv("VERIFIED_MODULE_LABEL", "Verified"),
+
 		ProviderSources: make(map[string]ProviderSourceConfig),
 	}
 

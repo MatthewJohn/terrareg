@@ -116,6 +116,9 @@ func (r *Renderer) RenderWithContext(ctx context.Context, w io.Writer, name stri
 	data["terrareg_logo_url"] = r.config.LogoURL
 	data["theme_path"] = r.getThemePath(ctx, request)
 	data["SITE_WARNING"] = r.config.SiteWarning
+	data["VERIFIED_MODULE_LABEL"] = r.config.VerifiedModuleLabel
+	data["TRUSTED_NAMESPACE_LABEL"] = r.config.TrustedNamespaceLabel
+	data["CONTRIBUTED_NAMESPACE_LABEL"] = r.config.ContributedNamespaceLabel
 
 	// Add CSRF token from session context
 	data["csrf_token"] = middleware.GetCSRFToken(ctx)
