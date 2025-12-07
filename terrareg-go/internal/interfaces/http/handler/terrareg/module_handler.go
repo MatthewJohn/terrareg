@@ -102,10 +102,7 @@ func (h *ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *http.Reques
 	namespace := r.URL.Query().Get("namespace")
 	provider := r.URL.Query().Get("provider")
 
-	var namespacePtr *string
-	if namespace != "" {
-		namespacePtr = &namespace
-	}
+	// Note: namespace is handled directly in Namespaces array below
 
 	var providerPtr *string
 	if provider != "" {
@@ -123,7 +120,7 @@ func (h *ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *http.Reques
 	// Execute search
 	params := moduleQuery.SearchParams{
 		Query:     query,
-		Namespace: namespacePtr,
+		Namespaces: []string{namespace},
 		Provider:  providerPtr,
 		Limit:     limit,
 		Offset:    offset,

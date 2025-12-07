@@ -24,12 +24,12 @@ func NewListModuleProvidersQuery(moduleProviderRepo repository.ModuleProviderRep
 func (q *ListModuleProvidersQuery) Execute(ctx context.Context, namespace, module string) ([]*model.ModuleProvider, error) {
 	// Build search query to find all providers for this namespace/module combination
 	searchQuery := repository.ModuleSearchQuery{
-		Namespace: &namespace,
-		Module:    &module,
-		Limit:     1000, // Get all providers
-		Offset:    0,
-		OrderBy:   "provider",
-		OrderDir:  "ASC",
+		Namespaces: []string{namespace},
+		Module:     &module,
+		Limit:      1000, // Get all providers
+		Offset:     0,
+		OrderBy:    "provider",
+		OrderDir:   "ASC",
 	}
 
 	result, err := q.moduleProviderRepo.Search(ctx, searchQuery)

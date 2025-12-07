@@ -55,38 +55,38 @@ func (h *TerraformV1ModuleHandler) HandleModuleList(w http.ResponseWriter, r *ht
 func (h *TerraformV1ModuleHandler) HandleModuleSearch(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// Extract query parameters
+	// Parse query parameters
 	query := r.URL.Query().Get("q")
-	namespace := r.URL.Query().Get("namespace")
-	provider := r.URL.Query().Get("provider")
-	limitStr := r.URL.Query().Get("limit")
-	offsetStr := r.URL.Query().Get("offset")
-
-	var limit int = 20 // Default limit
-	if limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil {
-			limit = l
-		}
+	if query == "" {
+		terrareg.RespondError(w, http.StatusBadRequest, "Query parameter 'q' is required")
+		return
 	}
 
-	var offset int = 0 // Default offset
-	if offsetStr != "" {
-		if o, err := strconv.Atoi(offsetStr); err == nil {
-			offset = o
-		}
-	}
+	// Parse multiple namespaces and providers
+	namespaces := r.URL.Query()["namespace"]
+	providers := r.URL.Query()["provider"]
 
-	// Build search parameters
+	// Parse boolean parameters
+	verified := parseBoolPtr(r.URL.Query().Get("verified"))
+	trustedNamespaces := parseBoolPtr(r.URL.Query().Get("trusted_namespaces"))
+	contributed := parseBoolPtr(r.URL.Query().Get("contributed"))
+
+	// Parse other parameters
+	targetTerraformVersion := parseStringPtr(r.URL.Query().Get("target_terraform_version"))
+	limit := parseInt(r.URL.Query().Get("limit"), 20)
+	offset := parseInt(r.URL.Query().Get("offset"), 0)
+
+	// Create search parameters
 	params := module.SearchParams{
-		Query:  query,
-		Limit:  limit,
-		Offset: offset,
-	}
-	if namespace != "" {
-		params.Namespace = &namespace
-	}
-	if provider != "" {
-		params.Provider = &provider
+		Query:                  query,
+		Namespaces:            namespaces,
+		Providers:             providers,
+		Verified:              verified,
+		TrustedNamespaces:     trustedNamespaces,
+		Contributed:           contributed,
+		TargetTerraformVersion: targetTerraformVersion,
+		Limit:                 limit,
+		Offset:                offset,
 	}
 
 	searchResult, err := h.searchModulesQuery.Execute(ctx, params)
@@ -285,4 +285,34 @@ func toModuleProviderResponse(mp *model.ModuleProvider) moduledto.ModuleProvider
 // HandleModuleVersionList is an alias for HandleModuleVersions for consistency
 func (h *TerraformV1ModuleHandler) HandleModuleVersionList(w http.ResponseWriter, r *http.Request) {
 	h.HandleModuleVersions(w, r)
+}
+
+// Helper functions for parsing parameters
+func parseBoolPtr(s string) *bool {
+	if s == "" {
+		return nil
+	}
+	b, err := strconv.ParseBool(s)
+	if err != nil {
+		return nil
+	}
+	return &b
+}
+
+func parseStringPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func parseInt(s string, defaultValue int) int {
+	if s == "" {
+		return defaultValue
+	}
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		return defaultValue
+	}
+	return i
 }
