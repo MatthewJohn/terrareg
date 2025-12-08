@@ -1,8 +1,12 @@
 package model
 
-// Config represents the configuration used by the UI
-// This matches the Python terrareg.config structure
-type Config struct {
+// DomainConfig represents the domain-specific configuration used by the application
+// This contains only business logic and UI-relevant configuration, no infrastructure concerns
+type DomainConfig struct {
+	// Namespace settings
+	TrustedNamespaces        []string
+	VerifiedModuleNamespaces []string
+
 	// Namespace labels
 	TrustedNamespaceLabel     string
 	ContributedNamespaceLabel string
@@ -14,7 +18,7 @@ type Config struct {
 	ExampleAnalyticsToken     string
 	DisableAnalytics          bool
 
-	// Feature flags
+	// Feature flags (domain concerns)
 	AllowModuleHosting              ModuleHostingMode // Maps to ModuleHostingMode enum value
 	UploadAPIKeysEnabled            bool
 	PublishAPIKeysEnabled           bool
@@ -23,7 +27,7 @@ type Config struct {
 	AllowCustomGitURLModuleVersion  bool
 	SecretKeySet                    bool
 
-	// Authentication status
+	// Authentication status (domain-level only - no secrets)
 	OpenIDConnectEnabled   bool
 	OpenIDConnectLoginText string
 	SAMLEnabled            bool
@@ -34,17 +38,27 @@ type Config struct {
 	AdditionalModuleTabs     []string
 	AutoCreateNamespace      bool
 	AutoCreateModuleProvider bool
-	DefaultUiDetailsView     string // Maps to DefaultUiInputOutputView enum value
+	DefaultUiDetailsView     DefaultUiInputOutputView
 
-	// Provider sources
-	ProviderSources []ProviderSource
+	// Provider sources (domain configuration)
+	ProviderSources map[string]ProviderSourceConfig
 }
 
-// ProviderSource represents an external provider source configuration
+// ProviderSource represents an external provider source configuration (for UI compatibility)
 type ProviderSource struct {
 	Name            string
 	APIName         string
 	LoginButtonText string
+}
+
+// ProviderSourceConfig holds configuration for external provider sources (domain configuration)
+type ProviderSourceConfig struct {
+	Type         string
+	APIName      string
+	ClientID     string
+	ClientSecret string
+	LoginURL     string
+	CallbackURL  string
 }
 
 // ModuleHostingMode represents the module hosting mode (from Python enum)

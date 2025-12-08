@@ -14,6 +14,7 @@ import (
 // ConfigRepositoryImpl implements the ConfigRepository interface
 type ConfigRepositoryImpl struct {
 	versionReader *version.VersionReader
+	domainConfig  *model.DomainConfig
 }
 
 // NewConfigRepositoryImpl creates a new ConfigRepositoryImpl
@@ -23,53 +24,110 @@ func NewConfigRepositoryImpl(versionReader *version.VersionReader) *ConfigReposi
 	}
 }
 
-// GetConfig retrieves the complete configuration from environment variables
-func (r *ConfigRepositoryImpl) GetConfig(ctx context.Context) (*model.Config, error) {
-	// Get provider sources
-	providerSources, err := r.getProviderSources()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get provider sources: %w", err)
+// NewConfigRepositoryImplWithConfig creates a new ConfigRepositoryImpl with injected domain config
+func NewConfigRepositoryImplWithConfig(versionReader *version.VersionReader, domainConfig *model.DomainConfig) *ConfigRepositoryImpl {
+	return &ConfigRepositoryImpl{
+		versionReader: versionReader,
+		domainConfig:  domainConfig,
 	}
+}
 
-	// Parse additional module tabs
-	additionalModuleTabs := r.parseAdditionalModuleTabs()
+// GetConfig retrieves the complete configuration from injected domain config
+func (r *ConfigRepositoryImpl) GetConfig(ctx context.Context) (*model.Config, error) {
+	var config *model.Config
+	var err error
 
-	config := &model.Config{
-		// Namespace labels
-		TrustedNamespaceLabel:     r.getEnvString("TRUSTED_NAMESPACE_LABEL", "Trusted"),
-		ContributedNamespaceLabel: r.getEnvString("CONTRIBUTED_NAMESPACE_LABEL", "Contributed"),
-		VerifiedModuleLabel:       r.getEnvString("VERIFIED_MODULE_LABEL", "Verified"),
+	if r.domainConfig != nil {
+		// Use injected domain config
+		providerSources, err := r.getProviderSources()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get provider sources: %w", err)
+		}
 
-		// Analytics configuration
-		AnalyticsTokenPhrase:      r.getEnvString("ANALYTICS_TOKEN_PHRASE", "analytics token"),
-		AnalyticsTokenDescription: r.getEnvString("ANALYTICS_TOKEN_DESCRIPTION", ""),
-		ExampleAnalyticsToken:     r.getEnvString("EXAMPLE_ANALYTICS_TOKEN", ""),
-		DisableAnalytics:          r.getEnvBool("DISABLE_ANALYTICS", false),
+		config = &model.Config{
+			// Use domain config values directly
+			TrustedNamespaceLabel:     r.domainConfig.TrustedNamespaceLabel,
+			ContributedNamespaceLabel: r.domainConfig.ContributedNamespaceLabel,
+			VerifiedModuleLabel:       r.domainConfig.VerifiedModuleLabel,
 
-		// Feature flags
-		AllowModuleHosting:              r.getModuleHostingMode(),
-		UploadAPIKeysEnabled:            r.getEnvString("UPLOAD_API_KEYS", "") != "",
-		PublishAPIKeysEnabled:           r.getEnvString("PUBLISH_API_KEYS", "") != "",
-		DisableTerraregExclusiveLabels:  r.getEnvBool("DISABLE_TERRAREG_EXCLUSIVE_LABELS", false),
-		AllowCustomGitURLModuleProvider: r.getEnvBool("ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER", true),
-		AllowCustomGitURLModuleVersion:  r.getEnvBool("ALLOW_CUSTOM_GIT_URL_MODULE_VERSION", true),
-		SecretKeySet:                    r.getEnvString("SECRET_KEY", "") != "",
+			// Analytics configuration
+			AnalyticsTokenPhrase:      r.domainConfig.AnalyticsTokenPhrase,
+			AnalyticsTokenDescription: r.domainConfig.AnalyticsTokenDescription,
+			ExampleAnalyticsToken:     r.domainConfig.ExampleAnalyticsToken,
+			DisableAnalytics:          r.domainConfig.DisableAnalytics,
 
-		// Authentication status - these will be checked dynamically
-		OpenIDConnectEnabled:   r.IsOpenIDConnectEnabled(ctx),
-		OpenIDConnectLoginText: r.getEnvString("OPENID_CONNECT_LOGIN_TEXT", "Login with OpenID"),
-		SAMLEnabled:            r.IsSAMLEnabled(ctx),
-		SAMLLoginText:          r.getEnvString("SAML2_LOGIN_TEXT", "Login with SAML"),
-		AdminLoginEnabled:      r.IsAdminLoginEnabled(ctx),
+			// Feature flags
+			AllowModuleHosting:              r.domainConfig.AllowModuleHosting,
+			UploadAPIKeysEnabled:            r.domainConfig.UploadAPIKeysEnabled,
+			PublishAPIKeysEnabled:           r.domainConfig.PublishAPIKeysEnabled,
+			DisableTerraregExclusiveLabels:  r.domainConfig.DisableTerraregExclusiveLabels,
+			AllowCustomGitURLModuleProvider: r.domainConfig.AllowCustomGitURLModuleProvider,
+			AllowCustomGitURLModuleVersion:  r.domainConfig.AllowCustomGitURLModuleVersion,
+			SecretKeySet:                    r.domainConfig.SecretKeySet,
 
-		// UI configuration
-		AdditionalModuleTabs:     additionalModuleTabs,
-		AutoCreateNamespace:      r.getEnvBool("AUTO_CREATE_NAMESPACE", true),
-		AutoCreateModuleProvider: r.getEnvBool("AUTO_CREATE_MODULE_PROVIDER", true),
-		DefaultUiDetailsView:     r.getEnvString("DEFAULT_UI_DETAILS_VIEW", "table"),
+			// Authentication status - these will be checked dynamically
+			OpenIDConnectEnabled:   r.IsOpenIDConnectEnabled(ctx),
+			OpenIDConnectLoginText: r.getEnvString("OPENID_CONNECT_LOGIN_TEXT", "Login with OpenID"),
+			SAMLEnabled:            r.IsSAMLEnabled(ctx),
+			SAMLLoginText:          r.getEnvString("SAML2_LOGIN_TEXT", "Login with SAML"),
+			AdminLoginEnabled:      r.IsAdminLoginEnabled(ctx),
 
-		// Provider sources
-		ProviderSources: providerSources,
+			// UI configuration
+			AdditionalModuleTabs:     r.domainConfig.AdditionalModuleTabs,
+			AutoCreateNamespace:      r.domainConfig.AutoCreateNamespace,
+			AutoCreateModuleProvider: r.domainConfig.AutoCreateModuleProvider,
+			DefaultUiDetailsView:     string(r.domainConfig.DefaultUiDetailsView),
+
+			// Provider sources
+			ProviderSources: providerSources,
+		}
+	} else {
+		// Fallback to environment variable loading (legacy)
+		providerSources, err := r.getProviderSources()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get provider sources: %w", err)
+		}
+
+		// Parse additional module tabs
+		additionalModuleTabs := r.parseAdditionalModuleTabs()
+
+		config = &model.Config{
+			// Namespace labels
+			TrustedNamespaceLabel:     r.getEnvString("TRUSTED_NAMESPACE_LABEL", "Trusted"),
+			ContributedNamespaceLabel: r.getEnvString("CONTRIBUTED_NAMESPACE_LABEL", "Contributed"),
+			VerifiedModuleLabel:       r.getEnvString("VERIFIED_MODULE_LABEL", "Verified"),
+
+			// Analytics configuration
+			AnalyticsTokenPhrase:      r.getEnvString("ANALYTICS_TOKEN_PHRASE", "analytics token"),
+			AnalyticsTokenDescription: r.getEnvString("ANALYTICS_TOKEN_DESCRIPTION", ""),
+			ExampleAnalyticsToken:     r.getEnvString("EXAMPLE_ANALYTICS_TOKEN", ""),
+			DisableAnalytics:          r.getEnvBool("DISABLE_ANALYTICS", false),
+
+			// Feature flags
+			AllowModuleHosting:              r.getModuleHostingMode(),
+			UploadAPIKeysEnabled:            r.getEnvString("UPLOAD_API_KEYS", "") != "",
+			PublishAPIKeysEnabled:           r.getEnvString("PUBLISH_API_KEYS", "") != "",
+			DisableTerraregExclusiveLabels:  r.getEnvBool("DISABLE_TERRAREG_EXCLUSIVE_LABELS", false),
+			AllowCustomGitURLModuleProvider: r.getEnvBool("ALLOW_CUSTOM_GIT_URL_MODULE_PROVIDER", true),
+			AllowCustomGitURLModuleVersion:  r.getEnvBool("ALLOW_CUSTOM_GIT_URL_MODULE_VERSION", true),
+			SecretKeySet:                    r.getEnvString("SECRET_KEY", "") != "",
+
+			// Authentication status - these will be checked dynamically
+			OpenIDConnectEnabled:   r.IsOpenIDConnectEnabled(ctx),
+			OpenIDConnectLoginText: r.getEnvString("OPENID_CONNECT_LOGIN_TEXT", "Login with OpenID"),
+			SAMLEnabled:            r.IsSAMLEnabled(ctx),
+			SAMLLoginText:          r.getEnvString("SAML2_LOGIN_TEXT", "Login with SAML"),
+			AdminLoginEnabled:      r.IsAdminLoginEnabled(ctx),
+
+			// UI configuration
+			AdditionalModuleTabs:     additionalModuleTabs,
+			AutoCreateNamespace:      r.getEnvBool("AUTO_CREATE_NAMESPACE", true),
+			AutoCreateModuleProvider: r.getEnvBool("AUTO_CREATE_MODULE_PROVIDER", true),
+			DefaultUiDetailsView:     r.getEnvString("DEFAULT_UI_DETAILS_VIEW", "table"),
+
+			// Provider sources
+			ProviderSources: providerSources,
+		}
 	}
 
 	return config, nil

@@ -2703,8 +2703,11 @@ function getRedirectUrl(data, moduleDetails) {
 async function setupBasePage(data) {
 
     let id = getCurrentObjectId(data);
+    console.log(`curreent ID: ${id}`);
 
     let moduleDetails = await getModuleDetails(id);
+    console.log(`module details: ${moduleDetails}`);
+    adgadg();
 
     let redirectUrl = getRedirectUrl(data, moduleDetails);
     if (redirectUrl) {

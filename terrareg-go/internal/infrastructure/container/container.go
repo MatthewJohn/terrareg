@@ -22,6 +22,8 @@ import (
 	appConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	authRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
 	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
+	domainConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	configService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/service"
 	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service" // Alias for the new module service
@@ -51,7 +53,14 @@ import (
 
 // Container holds all application dependencies
 type Container struct {
+	// Legacy configuration (to be removed in Phase 7)
 	Config *appConfig.Config
+
+	// New configuration architecture
+	DomainConfig       *domainConfig.DomainConfig
+	InfraConfig        *config.InfrastructureConfig
+	ConfigService      *configService.ConfigurationService
+
 	Logger zerolog.Logger
 	DB     *sqldb.Database
 
@@ -405,6 +414,251 @@ func NewContainer(cfg *appConfig.Config, logger zerolog.Logger, db *sqldb.Databa
 		c.TemplateRenderer,
 		c.SessionMiddleware,
 		c.TerraformV1ModuleHandler, // Pass the new handler to the server constructor
+		c.TerraformV2ProviderHandler,
+		c.TerraformV2CategoryHandler,
+		c.TerraformV2GPGHandler,
+		c.TerraformIDPHandler,
+		c.TerraformStaticTokenHandler,
+		c.ConfigHandler,
+		c.VersionHandler,
+		c.ProviderLogosHandler,
+		c.SearchFiltersHandler,
+	)
+
+	return c, nil
+}
+
+// NewContainerWithConfigService creates a new dependency injection container using the configuration service
+func NewContainerWithConfigService(
+	legacyConfig *appConfig.Config,
+	domainConfig *domainConfig.DomainConfig,
+	infraConfig *config.InfrastructureConfig,
+	configService *configService.ConfigurationService,
+	logger zerolog.Logger,
+	db *sqldb.Database,
+) (*Container, error) {
+	c := &Container{
+		Config:       legacyConfig, // Keep for backward compatibility during migration
+		DomainConfig: domainConfig,
+		InfraConfig:  infraConfig,
+		ConfigService: configService,
+		Logger:      logger,
+		DB:          db,
+	}
+
+	// Initialize repositories (using domain config where appropriate)
+	c.NamespaceRepo = modulePersistence.NewNamespaceRepository(db.DB)
+	c.ModuleProviderRepo = modulePersistence.NewModuleProviderRepository(db.DB, c.NamespaceRepo, legacyConfig) // TODO: Update to use domain config
+	c.ModuleVersionRepo = modulePersistence.NewModuleVersionRepository(db.DB)
+	c.ProviderRepo = providerRepository.NewProviderRepository()
+	c.ProviderLogoRepo = providerLogoRepo.NewProviderLogoRepository()
+	c.SessionRepo = authPersistence.NewSessionRepository(db.DB)
+	c.UserGroupRepo = authPersistence.NewUserGroupRepository(db.DB)
+	c.TerraformIdpAuthorizationCodeRepo = authPersistence.NewTerraformIdpAuthorizationCodeRepository(db.DB)
+	c.TerraformIdpAccessTokenRepo = authPersistence.NewTerraformIdpAccessTokenRepository(db.DB)
+	c.TerraformIdpSubjectIdentifierRepo = authPersistence.NewTerraformIdpSubjectIdentifierRepo(db.DB)
+
+	c.URLService = urlservice.NewURLService(legacyConfig) // TODO: Update to use infra config
+
+	// Initialize infrastructure services
+	c.GitClient = git.NewGitClientImpl()
+	c.StorageService = storage.NewLocalStorage()
+	c.ModuleParser = parser.NewModuleParserImpl(c.StorageService)
+
+	// Initialize domain services (using domain config)
+	c.ModuleImporterService = moduleService.NewModuleImporterService(
+		c.ModuleProviderRepo,
+		c.GitClient,
+		c.StorageService,
+		c.ModuleParser,
+		legacyConfig, // TODO: Update to use domain config
+	)
+	c.NamespaceService = moduleService.NewNamespaceService(legacyConfig) // TODO: Update to use domain config
+	c.AnalyticsRepo = analyticsPersistence.NewAnalyticsRepository(db.DB, c.NamespaceRepo, c.NamespaceService)
+
+	// Initialize auth services (using infra config)
+	sessionService := authservice.NewSessionService(c.SessionRepo, authservice.DefaultSessionDatabaseConfig())
+	c.SessionService = sessionService
+
+	cookieService := authservice.NewCookieService(legacyConfig) // TODO: Update to use infra config
+	c.CookieService = cookieService
+
+	c.AuthenticationService = authservice.NewAuthenticationService(sessionService, cookieService)
+
+	c.SessionCleanupService = authservice.NewSessionCleanupService(
+		sessionService,
+		logger,
+		authservice.DefaultSessionDatabaseConfig().CleanupInterval,
+	)
+
+	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, legacyConfig) // TODO: Update to use infra config
+	c.TerraformIdpService = authservice.NewTerraformIdpService(
+		c.TerraformIdpAuthorizationCodeRepo,
+		c.TerraformIdpAccessTokenRepo,
+		c.TerraformIdpSubjectIdentifierRepo,
+	)
+
+	// Initialize commands
+	c.CreateNamespaceCmd = namespace.NewCreateNamespaceCommand(c.NamespaceRepo)
+	c.UpdateNamespaceCmd = namespace.NewUpdateNamespaceCommand(c.NamespaceRepo)
+	c.CreateModuleProviderCmd = moduleCmd.NewCreateModuleProviderCommand(c.NamespaceRepo, c.ModuleProviderRepo)
+	c.PublishModuleVersionCmd = moduleCmd.NewPublishModuleVersionCommand(c.ModuleProviderRepo)
+	c.UpdateModuleProviderSettingsCmd = moduleCmd.NewUpdateModuleProviderSettingsCommand(c.ModuleProviderRepo)
+	c.DeleteModuleProviderCmd = moduleCmd.NewDeleteModuleProviderCommand(c.ModuleProviderRepo)
+	c.UploadModuleVersionCmd = moduleCmd.NewUploadModuleVersionCommand(c.ModuleProviderRepo, c.ModuleParser, c.StorageService, legacyConfig) // TODO: Update to use domain config
+	c.ImportModuleVersionCmd = moduleCmd.NewImportModuleVersionCommand(c.ModuleImporterService)
+	c.RecordModuleDownloadCmd = analyticsCmd.NewRecordModuleDownloadCommand(c.ModuleProviderRepo, c.AnalyticsRepo)
+
+	// Initialize admin login command
+	c.AdminLoginCmd = authCmd.NewAdminLoginCommand(c.AuthFactory, c.SessionService, legacyConfig) // TODO: Update to use infra config
+
+	// Initialize Terraform authentication commands
+	c.AuthenticateOIDCTokenCmd = terraformCmd.NewAuthenticateOIDCTokenCommand(c.AuthFactory)
+	c.ValidateTokenCmd = terraformCmd.NewValidateTokenCommand(c.AuthFactory)
+	c.GetUserCmd = terraformCmd.NewGetUserCommand(c.AuthFactory)
+
+	// Initialize queries
+	c.ListNamespacesQuery = module.NewListNamespacesQuery(c.NamespaceRepo)
+	c.NamespaceDetailsQuery = namespaceQuery.NewNamespaceDetailsQuery(c.NamespaceRepo, c.NamespaceService)
+	c.ListModulesQuery = module.NewListModulesQuery(c.ModuleProviderRepo)
+	c.SearchModulesQuery = module.NewSearchModulesQuery(c.ModuleProviderRepo)
+	c.GetModuleProviderQuery = module.NewGetModuleProviderQuery(c.ModuleProviderRepo)
+	c.ListModuleProvidersQuery = moduleQuery.NewListModuleProvidersQuery(c.ModuleProviderRepo)
+	c.GetModuleVersionQuery = moduleQuery.NewGetModuleVersionQuery(c.ModuleProviderRepo)
+	c.ListModuleVersionsQuery = moduleQuery.NewListModuleVersionsQuery(c.ModuleProviderRepo)
+	c.GetModuleDownloadQuery = moduleQuery.NewGetModuleDownloadQuery(c.ModuleProviderRepo)
+	c.GetModuleProviderSettingsQuery = moduleQuery.NewGetModuleProviderSettingsQuery(c.ModuleProviderRepo)
+	c.GetSubmodulesQuery = moduleQuery.NewGetSubmodulesQuery(c.ModuleProviderRepo, c.ModuleParser, legacyConfig) // TODO: Update to use domain config
+	c.GetExamplesQuery = moduleQuery.NewGetExamplesQuery(c.ModuleProviderRepo, c.ModuleParser, legacyConfig) // TODO: Update to use domain config
+	c.GlobalStatsQuery = analyticsQuery.NewGlobalStatsQuery(c.NamespaceRepo, c.ModuleProviderRepo)
+	c.GetDownloadSummaryQuery = analyticsQuery.NewGetDownloadSummaryQuery(c.AnalyticsRepo)
+	c.GetMostRecentlyPublishedQuery = analyticsQuery.NewGetMostRecentlyPublishedQuery(c.AnalyticsRepo)
+	c.GetMostDownloadedThisWeekQuery = analyticsQuery.NewGetMostDownloadedThisWeekQuery(c.AnalyticsRepo)
+	c.ListProvidersQuery = providerQuery.NewListProvidersQuery(c.ProviderRepo)
+	c.SearchProvidersQuery = providerQuery.NewSearchProvidersQuery(c.ProviderRepo)
+	c.GetProviderQuery = providerQuery.NewGetProviderQuery(c.ProviderRepo)
+	c.GetProviderVersionsQuery = providerQuery.NewGetProviderVersionsQuery(c.ProviderRepo)
+	c.GetProviderVersionQuery = providerQuery.NewGetProviderVersionQuery(c.ProviderRepo)
+	c.GetProviderVersionQuery = providerQuery.NewGetProviderVersionQuery(c.ProviderRepo)
+	c.GetProviderLogosQuery = providerLogoQuery.NewGetAllProviderLogosQuery(c.ProviderLogoRepo)
+	c.CreateOrUpdateProviderCmd = providerCmd.NewCreateOrUpdateProviderCommand(c.ProviderRepo, c.NamespaceRepo)
+	c.PublishProviderVersionCmd = providerCmd.NewPublishProviderVersionCommand(c.ProviderRepo, c.NamespaceRepo)
+	c.ManageGPGKeyCmd = providerCmd.NewManageGPGKeyCommand(c.ProviderRepo, c.NamespaceRepo)
+	c.CheckSessionQuery = authQuery.NewCheckSessionQuery(c.SessionRepo)
+	c.IsAuthenticatedQuery = authQuery.NewIsAuthenticatedQuery()
+
+	// Initialize config repository and queries
+	versionReader := version.NewVersionReader()
+	configRepository := config.NewConfigRepositoryImpl(versionReader)
+	c.GetConfigQuery = configQuery.NewGetConfigQuery(configRepository)
+	c.GetVersionQuery = configQuery.NewGetVersionQuery(configRepository)
+
+	// Initialize initial setup query
+	c.GetInitialSetupQuery = setupQuery.NewGetInitialSetupQuery(
+		c.NamespaceRepo,
+		c.ModuleProviderRepo,
+		c.ModuleVersionRepo,
+		c.URLService,
+		legacyConfig, // TODO: Update to use domain config
+	)
+
+	// Initialize config/version handlers
+	c.ConfigHandler = terrareg.NewConfigHandler(c.GetConfigQuery)
+	c.VersionHandler = terrareg.NewVersionHandler(c.GetVersionQuery)
+
+	// Initialize initial setup handler
+	c.InitialSetupHandler = terrareg.NewInitialSetupHandler(c.GetInitialSetupQuery)
+
+	// Initialize handlers
+	c.NamespaceHandler = terrareg.NewNamespaceHandler(c.ListNamespacesQuery, c.CreateNamespaceCmd, c.UpdateNamespaceCmd, c.NamespaceDetailsQuery)
+	c.ModuleHandler = terrareg.NewModuleHandler(
+		c.ListModulesQuery,
+		c.SearchModulesQuery,
+		c.GetModuleProviderQuery,
+		c.ListModuleProvidersQuery,
+		c.GetModuleVersionQuery,
+		c.GetModuleDownloadQuery,
+		c.GetModuleProviderSettingsQuery,
+		c.GetSubmodulesQuery,
+		c.GetExamplesQuery,
+		c.CreateModuleProviderCmd,
+		c.PublishModuleVersionCmd,
+		c.UpdateModuleProviderSettingsCmd,
+		c.DeleteModuleProviderCmd,
+		c.UploadModuleVersionCmd,
+		c.ImportModuleVersionCmd,
+		legacyConfig, // TODO: Update to use domain config
+	)
+	c.AnalyticsHandler = terrareg.NewAnalyticsHandler(
+		c.GlobalStatsQuery,
+		c.GetDownloadSummaryQuery,
+		c.RecordModuleDownloadCmd,
+		c.GetMostRecentlyPublishedQuery,
+		c.GetMostDownloadedThisWeekQuery,
+	)
+	c.ProviderHandler = terrareg.NewProviderHandler(
+		c.ListProvidersQuery,
+		c.SearchProvidersQuery,
+		c.GetProviderQuery,
+		c.GetProviderVersionsQuery,
+		c.GetProviderVersionQuery,
+		c.CreateOrUpdateProviderCmd,
+		c.PublishProviderVersionCmd,
+		c.ManageGPGKeyCmd,
+	)
+	c.ProviderLogosHandler = terrareg.NewProviderLogosHandler(c.GetProviderLogosQuery)
+	c.AuthHandler = terrareg.NewAuthHandler(
+		c.AdminLoginCmd,
+		c.CheckSessionQuery,
+		c.IsAuthenticatedQuery,
+		c.AuthenticationService,
+		legacyConfig, // TODO: Update to use infra config
+	)
+	c.TerraformV1ModuleHandler = v1.NewTerraformV1ModuleHandler(c.ListModulesQuery, c.SearchModulesQuery, c.GetModuleProviderQuery, c.ListModuleVersionsQuery, c.GetModuleDownloadQuery, c.GetModuleVersionQuery)
+
+	// Initialize v2 handlers
+	c.TerraformV2ProviderHandler = v2.NewTerraformV2ProviderHandler(c.GetProviderQuery, c.GetProviderVersionsQuery, c.GetProviderVersionQuery, c.ListProvidersQuery)
+	c.TerraformV2CategoryHandler = v2.NewTerraformV2CategoryHandler(providerQuery.NewListUserSelectableProviderCategoriesQuery(nil)) // TODO: Add proper category repo
+	c.TerraformV2GPGHandler = v2.NewTerraformV2GPGHandler()
+
+	// Initialize Terraform authentication handlers
+	c.TerraformAuthHandler = terraformHandler.NewTerraformAuthHandler(
+		c.AuthenticateOIDCTokenCmd,
+		c.ValidateTokenCmd,
+		c.GetUserCmd,
+	)
+	c.TerraformIDPHandler = terraformHandler.NewTerraformIDPHandler(nil) // TODO: Pass actual IDP when implemented
+	c.TerraformStaticTokenHandler = terraformHandler.NewTerraformStaticTokenHandler()
+
+	// Initialize middleware
+	c.AuthMiddleware = terrareg_middleware.NewAuthMiddleware(legacyConfig, c.AuthFactory) // TODO: Update to use infra config
+	c.SessionMiddleware = terrareg_middleware.NewSessionMiddleware(c.AuthenticationService, c.Logger)
+
+	// Initialize template renderer
+	templateRenderer, err := template.NewRenderer(legacyConfig) // TODO: Update to use domain config
+	if err != nil {
+		return nil, err
+	}
+	c.TemplateRenderer = templateRenderer
+
+	// Initialize search filters
+	c.SearchFiltersQuery = moduleQuery.NewSearchFiltersQuery(c.ModuleProviderRepo, legacyConfig) // TODO: Update to use domain config
+	c.SearchFiltersHandler = terrareg.NewSearchFiltersHandler(c.SearchFiltersQuery)
+
+	// Initialize HTTP server
+	c.Server = http.NewServer(
+		legacyConfig, // TODO: Update to use infra config
+		logger,
+		c.NamespaceHandler,
+		c.ModuleHandler,
+		c.AnalyticsHandler,
+		c.ProviderHandler,
+		c.AuthHandler,
+		c.InitialSetupHandler,
+		c.AuthMiddleware,
+		c.TemplateRenderer,
+		c.SessionMiddleware,
+		c.TerraformV1ModuleHandler,
 		c.TerraformV2ProviderHandler,
 		c.TerraformV2CategoryHandler,
 		c.TerraformV2GPGHandler,
