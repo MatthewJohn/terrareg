@@ -167,17 +167,9 @@ func (v *ConfigValidator) validateUIConfig(rawConfig map[string]string, result *
 
 // validateAnalyticsConfig validates analytics-related configuration
 func (v *ConfigValidator) validateAnalyticsConfig(rawConfig map[string]string, result *ValidationResult) {
-	// If analytics is disabled, other analytics config is optional
-	disabled := rawConfig["DISABLE_ANALYTICS"] == "true"
-
-	if !disabled {
-		// Validate analytics token configuration
-		if token, exists := rawConfig["EXAMPLE_ANALYTICS_TOKEN"]; exists && token != "" {
-			if len(token) < 8 {
-				result.Errors = append(result.Errors, "EXAMPLE_ANALYTICS_TOKEN must be at least 8 characters long")
-			}
-		}
-	}
+	// Analytics configuration validation is minimal
+	// The EXAMPLE_ANALYTICS_TOKEN has a reasonable default ("my-tf-application")
+	// No validation needed here since defaults are handled in ConfigurationService
 }
 
 // validateExternalServicesConfig validates external service configuration

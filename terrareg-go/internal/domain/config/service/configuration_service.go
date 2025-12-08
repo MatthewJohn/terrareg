@@ -70,9 +70,9 @@ func (s *ConfigurationService) buildDomainConfig(rawConfig map[string]string) *m
 		VerifiedModuleLabel:       s.getEnvStringWithDefault(rawConfig, "VERIFIED_MODULE_LABEL", "Verified"),
 
 		// Analytics configuration
-		AnalyticsTokenPhrase:      rawConfig["ANALYTICS_TOKEN_PHRASE"],
-		AnalyticsTokenDescription: rawConfig["ANALYTICS_TOKEN_DESCRIPTION"],
-		ExampleAnalyticsToken:     rawConfig["EXAMPLE_ANALYTICS_TOKEN"],
+		AnalyticsTokenPhrase:      s.getEnvStringWithDefault(rawConfig, "ANALYTICS_TOKEN_PHRASE", ""),
+		AnalyticsTokenDescription: s.getEnvStringWithDefault(rawConfig, "ANALYTICS_TOKEN_DESCRIPTION", ""),
+		ExampleAnalyticsToken:     s.getEnvStringWithDefault(rawConfig, "EXAMPLE_ANALYTICS_TOKEN", "my-tf-application"),
 		DisableAnalytics:          s.parseBool(rawConfig["DISABLE_ANALYTICS"], false),
 
 		// Additional UI settings

@@ -309,7 +309,7 @@ func NewContainer(
 
 	// Initialize config repository and queries
 	versionReader := version.NewVersionReader()
-	configRepository := config.NewConfigRepositoryImplWithConfig(versionReader, domainConfig)
+	configRepository := config.NewConfigRepositoryImpl(versionReader, domainConfig)
 	c.GetConfigQuery = configQuery.NewGetConfigQuery(configRepository)
 	c.GetVersionQuery = configQuery.NewGetVersionQuery(configRepository)
 
