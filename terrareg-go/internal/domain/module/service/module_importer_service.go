@@ -7,10 +7,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service" // Added import with alias
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
+	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
 // ModuleImporterService handles the business logic for importing module versions.
@@ -19,7 +19,7 @@ type ModuleImporterService struct {
 	gitClient          gitService.GitClient // Changed to use alias
 	storageService     StorageService
 	moduleParser       ModuleParser
-	config             *config.Config
+	config             *infraConfig.InfrastructureConfig
 }
 
 // NewModuleImporterService creates a new ModuleImporterService.
@@ -28,7 +28,7 @@ func NewModuleImporterService(
 	gitClient gitService.GitClient, // Changed to use alias
 	storageService StorageService,
 	moduleParser ModuleParser,
-	config *config.Config,
+	config *infraConfig.InfrastructureConfig,
 ) *ModuleImporterService {
 	return &ModuleImporterService{
 		moduleProviderRepo: moduleProviderRepo,

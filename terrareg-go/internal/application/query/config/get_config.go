@@ -21,7 +21,7 @@ func NewGetConfigQuery(configRepo repository.ConfigRepository) *GetConfigQuery {
 
 // GetConfigResponse contains the configuration response
 type GetConfigResponse struct {
-	Config *model.Config
+	Config *model.UIConfig
 }
 
 // Execute retrieves the configuration

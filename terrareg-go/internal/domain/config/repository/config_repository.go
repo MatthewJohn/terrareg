@@ -8,8 +8,8 @@ import (
 
 // ConfigRepository defines the interface for configuration retrieval
 type ConfigRepository interface {
-	// GetConfig retrieves the complete configuration
-	GetConfig(ctx context.Context) (*model.Config, error)
+	// GetConfig retrieves the UI configuration
+	GetConfig(ctx context.Context) (*model.UIConfig, error)
 
 	// GetVersion retrieves the application version
 	GetVersion(ctx context.Context) (string, error)

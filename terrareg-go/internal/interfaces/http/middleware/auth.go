@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
 	authservice "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
+	domainConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 )
 
 // contextKey is a custom type for context keys
@@ -27,15 +27,15 @@ const (
 
 // AuthMiddleware provides authentication middleware
 type AuthMiddleware struct {
-	config      *config.Config
-	authFactory *authservice.AuthFactory
+	domainConfig *domainConfig.DomainConfig
+	authFactory  *authservice.AuthFactory
 }
 
 // NewAuthMiddleware creates a new auth middleware
-func NewAuthMiddleware(cfg *config.Config, authFactory *authservice.AuthFactory) *AuthMiddleware {
+func NewAuthMiddleware(cfg *domainConfig.DomainConfig, authFactory *authservice.AuthFactory) *AuthMiddleware {
 	return &AuthMiddleware{
-		config:      cfg,
-		authFactory: authFactory,
+		domainConfig: cfg,
+		authFactory:  authFactory,
 	}
 }
 

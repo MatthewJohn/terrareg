@@ -21,7 +21,7 @@ func main() {
 	logger.Info().Msg("Starting Terrareg Go Server")
 
 	// Use new configuration service architecture
-	c, err := bootstrapWithConfigService(logger)
+	c, err := bootstrap(logger)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to bootstrap application")
 	}
@@ -37,7 +37,7 @@ func main() {
 }
 
 // bootstrapWithConfigService bootstraps the application using the new configuration service
-func bootstrapWithConfigService(logger zerolog.Logger) (*container.Container, error) {
+func bootstrap(logger zerolog.Logger) (*container.Container, error) {
 	// Load configuration using the new configuration service
 	versionReader := version.NewVersionReader()
 	configService := domainConfigService.NewConfigurationService(
@@ -75,8 +75,7 @@ func bootstrapWithConfigService(logger zerolog.Logger) (*container.Container, er
 
 	// Initialize dependency injection container with new configuration architecture
 	logger.Info().Msg("Initializing application container")
-	c, err := container.NewContainerWithConfigService(
-		nil, // No legacy config
+	c, err := container.NewContainer(
 		domainConfig,
 		infraConfig,
 		configService,

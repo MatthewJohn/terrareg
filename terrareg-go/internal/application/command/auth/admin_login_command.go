@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
+	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
 // AdminLoginCommand handles the admin login use case
@@ -17,7 +17,7 @@ import (
 type AdminLoginCommand struct {
 	authFactory    *service.AuthFactory
 	sessionService *service.SessionService
-	config         *config.Config
+	config         *infraConfig.InfrastructureConfig
 }
 
 // AdminLoginRequest represents the input for admin login
@@ -37,7 +37,7 @@ type AdminLoginResponse struct {
 func NewAdminLoginCommand(
 	authFactory *service.AuthFactory,
 	sessionService *service.SessionService,
-	config *config.Config,
+	config *infraConfig.InfrastructureConfig,
 ) *AdminLoginCommand {
 	return &AdminLoginCommand{
 		authFactory:    authFactory,
