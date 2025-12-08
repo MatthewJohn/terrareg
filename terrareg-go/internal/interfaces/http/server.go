@@ -203,7 +203,7 @@ func (s *Server) setupRoutes() {
 			// Modules
 			r.Get("/modules/{namespace}", s.handleTerraregNamespaceModules)
 			r.Get("/modules/{namespace}/{name}", s.handleTerraregModuleProviders)
-			r.Get("/modules/{namespace}/{name}/{provider}", s.handleTerraregModuleVersionDetails)
+			r.Get("/modules/{namespace}/{name}/{provider}", s.handleTerraregModuleProviderDetails)
 			r.Get("/modules/{namespace}/{name}/{provider}/versions", s.handleTerraregModuleProviderVersions)
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/create", s.handleModuleProviderCreate)
 			r.With(s.authMiddleware.RequireAuth).Delete("/modules/{namespace}/{name}/{provider}/delete", s.handleModuleProviderDelete)
@@ -478,6 +478,9 @@ func (s *Server) handleNamespaceUpdate(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) handleTerraregNamespaceModules(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleTerraregModuleProviders(w http.ResponseWriter, r *http.Request)  {}
+func (s *Server) handleTerraregModuleProviderDetails(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleTerraregModuleProviderDetails(w, r)
+}
 func (s *Server) handleTerraregModuleVersionDetails(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleVersionDetails(w, r)
 }
