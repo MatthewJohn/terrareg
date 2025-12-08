@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
 	moduleCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/module"
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	moduleModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/presenter"
@@ -665,4 +667,52 @@ func (h *ModuleHandler) HandleGetExamples(w http.ResponseWriter, r *http.Request
 	RespondJSON(w, http.StatusOK, map[string]interface{}{
 		"examples": examples,
 	})
+}
+
+// HandleTerraregModuleProviderDetails handles GET /v1/terrareg/modules/{namespace}/{name}/{provider}
+// Returns full terrareg API details for the latest version (published or unpublished)
+func (h *ModuleHandler) HandleTerraregModuleProviderDetails(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+
+	// Get the module provider
+	moduleProvider, err := h.getModuleProviderQuery.Execute(ctx, namespace, name, provider)
+	if err != nil {
+		RespondError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	// Get all versions to find the most recent one
+	allVersions := moduleProvider.GetAllVersions()
+	if len(allVersions) == 0 {
+		RespondError(w, http.StatusNotFound, "No versions found")
+		return
+	}
+
+	// Find the most recent version (regardless of publish status)
+	var latestVersion *moduleModel.ModuleVersion
+	for _, version := range allVersions {
+		if latestVersion == nil || version.Version().GreaterThan(latestVersion.Version()) {
+			latestVersion = version
+		}
+	}
+
+	// Convert to Terrareg DTO with analytics token
+	response := h.versionPresenter.ToTerraregDTO(latestVersion, namespace, name, provider)
+
+	// Add analytics token from namespace if present
+	namespaceName := moduleProvider.Namespace().Name()
+	if strings.Contains(namespaceName, "__") {
+		parts := strings.Split(namespaceName, "__")
+		if len(parts) > 1 {
+			response.AnalyticsToken = &parts[1]
+		}
+	}
+
+	// Send response
+	RespondJSON(w, http.StatusOK, response)
 }
