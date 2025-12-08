@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -679,6 +678,12 @@ func (h *ModuleHandler) HandleTerraregModuleProviderDetails(w http.ResponseWrite
 	name := chi.URLParam(r, "name")
 	provider := chi.URLParam(r, "provider")
 
+	// Extract request domain for usage example generation
+	requestDomain := r.Host
+	if requestDomain == "" {
+		requestDomain = "localhost" // fallback for testing
+	}
+
 	// Get the module provider
 	moduleProvider, err := h.getModuleProviderQuery.Execute(ctx, namespace, name, provider)
 	if err != nil {
@@ -701,17 +706,8 @@ func (h *ModuleHandler) HandleTerraregModuleProviderDetails(w http.ResponseWrite
 		}
 	}
 
-	// Convert to Terrareg DTO with analytics token
-	response := h.versionPresenter.ToTerraregDTO(latestVersion, namespace, name, provider)
-
-	// Add analytics token from namespace if present
-	namespaceName := moduleProvider.Namespace().Name()
-	if strings.Contains(namespaceName, "__") {
-		parts := strings.Split(namespaceName, "__")
-		if len(parts) > 1 {
-			response.AnalyticsToken = &parts[1]
-		}
-	}
+	// Convert to Terrareg Provider Details DTO with request domain and analytics token
+	response := h.versionPresenter.ToTerraregProviderDetailsDTO(latestVersion, namespace, name, provider, requestDomain)
 
 	// Send response
 	RespondJSON(w, http.StatusOK, response)
