@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	domainConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service" // Added import with alias
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
@@ -19,23 +20,26 @@ type ModuleImporterService struct {
 	gitClient          gitService.GitClient // Changed to use alias
 	storageService     StorageService
 	moduleParser       ModuleParser
-	config             *infraConfig.InfrastructureConfig
+	domainConfig       *domainConfig.DomainConfig
+	infraConfig        *infraConfig.InfrastructureConfig
 }
 
 // NewModuleImporterService creates a new ModuleImporterService.
 func NewModuleImporterService(
 	moduleProviderRepo repository.ModuleProviderRepository,
-	gitClient gitService.GitClient, // Changed to use alias
+	gitClient gitService.GitClient,
 	storageService StorageService,
 	moduleParser ModuleParser,
-	config *infraConfig.InfrastructureConfig,
+	domainConfig *domainConfig.DomainConfig,
+	infraConfig *infraConfig.InfrastructureConfig,
 ) *ModuleImporterService {
 	return &ModuleImporterService{
 		moduleProviderRepo: moduleProviderRepo,
 		gitClient:          gitClient,
 		storageService:     storageService,
 		moduleParser:       moduleParser,
-		config:             config,
+		domainConfig:       domainConfig,
+		infraConfig:        infraConfig,
 	}
 }
 
@@ -136,7 +140,7 @@ func (s *ModuleImporterService) ImportModuleVersion(ctx context.Context, req Imp
 	}
 
 	// Destination directory for module files
-	destDir := filepath.Join(s.config.DataDirectory, "modules", req.Namespace, req.Module, req.Provider, *resolvedVersion)
+	destDir := filepath.Join(s.infraConfig.DataDirectory, "modules", req.Namespace, req.Module, req.Provider, *resolvedVersion)
 	if err := s.storageService.MkdirAll(destDir, 0755); err != nil { // Ensure destination directory exists
 		return fmt.Errorf("failed to create destination directory: %w", err)
 	}

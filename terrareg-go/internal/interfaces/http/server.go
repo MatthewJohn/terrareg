@@ -9,8 +9,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/zerolog"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	terraformHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform"
 	tfv1ModuleHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v1" // New import
 	tfv2ProviderHandler "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/handler/terraform/v2"
@@ -22,7 +22,8 @@ import (
 // Server represents the HTTP server
 type Server struct {
 	router                      *chi.Mux
-	config                      *config.Config
+	infraConfig                 *config.InfrastructureConfig
+	domainConfig                *model.DomainConfig
 	logger                      zerolog.Logger
 	namespaceHandler            *terrareg.NamespaceHandler
 	moduleHandler               *terrareg.ModuleHandler
@@ -47,7 +48,8 @@ type Server struct {
 
 // NewServer creates a new HTTP server
 func NewServer(
-	cfg *config.Config,
+	infraConfig *config.InfrastructureConfig,
+	domainConfig *model.DomainConfig,
 	logger zerolog.Logger,
 	namespaceHandler *terrareg.NamespaceHandler,
 	moduleHandler *terrareg.ModuleHandler,
@@ -71,7 +73,8 @@ func NewServer(
 ) *Server {
 	s := &Server{
 		router:                      chi.NewRouter(),
-		config:                      cfg,
+		infraConfig:                 infraConfig,
+		domainConfig:                domainConfig,
 		logger:                      logger,
 		namespaceHandler:            namespaceHandler,
 		moduleHandler:               moduleHandler,
@@ -356,7 +359,7 @@ func (s *Server) setupRoutes() {
 
 // Start starts the HTTP server
 func (s *Server) Start() error {
-	addr := fmt.Sprintf(":%d", s.config.ListenPort)
+	addr := fmt.Sprintf(":%d", s.infraConfig.ListenPort)
 	s.logger.Info().Str("addr", addr).Msg("Starting HTTP server")
 
 	return http.ListenAndServe(addr, s.router)
@@ -476,7 +479,7 @@ func (s *Server) handleNamespaceUpdate(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleTerraregNamespaceModules(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleTerraregModuleProviders(w http.ResponseWriter, r *http.Request)  {}
 func (s *Server) handleTerraregModuleVersionDetails(w http.ResponseWriter, r *http.Request) {
-	s.moduleHandler.Handle
+	s.moduleHandler.HandleModuleVersionDetails(w, r)
 }
 func (s *Server) handleTerraregModuleProviderVersions(w http.ResponseWriter, r *http.Request) {}
 func (s *Server) handleModuleProviderCreate(w http.ResponseWriter, r *http.Request) {
@@ -510,7 +513,7 @@ func (s *Server) handleModuleVersionVariableTemplate(w http.ResponseWriter, r *h
 func (s *Server) handleModuleVersionFile(w http.ResponseWriter, r *http.Request)             {}
 func (s *Server) handleModuleVersionSourceDownload(w http.ResponseWriter, r *http.Request) {
 	// Check if module hosting is disallowed
-	if s.config.AllowModuleHosting == model.ModuleHostingModeDisallow {
+	if s.domainConfig.AllowModuleHosting == model.ModuleHostingModeDisallow {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"message": "Module hosting is disabled"}`))
 		return

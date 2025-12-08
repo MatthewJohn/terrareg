@@ -7,7 +7,7 @@ import (
 
 	authCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/auth"
 	authQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/auth"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 )
@@ -18,7 +18,7 @@ type AuthHandler struct {
 	checkSessionQuery    *authQuery.CheckSessionQuery
 	isAuthenticatedQuery *authQuery.IsAuthenticatedQuery
 	authService          *service.AuthenticationService
-	config               *config.Config
+	infraConfig          *config.InfrastructureConfig
 }
 
 // NewAuthHandler creates a new auth handler
@@ -27,14 +27,14 @@ func NewAuthHandler(
 	checkSessionQuery *authQuery.CheckSessionQuery,
 	isAuthenticatedQuery *authQuery.IsAuthenticatedQuery,
 	authService *service.AuthenticationService,
-	config *config.Config,
+	infraConfig *config.InfrastructureConfig,
 ) *AuthHandler {
 	return &AuthHandler{
 		adminLoginCmd:        adminLoginCmd,
 		checkSessionQuery:    checkSessionQuery,
 		isAuthenticatedQuery: isAuthenticatedQuery,
 		authService:          authService,
-		config:               config,
+		infraConfig:          infraConfig,
 	}
 }
 

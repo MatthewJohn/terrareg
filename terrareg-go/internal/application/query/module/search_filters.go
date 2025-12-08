@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	configModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 )
 
 type SearchFiltersQuery struct {
 	moduleProviderRepo repository.ModuleProviderRepository
-	cfg                *config.Config
+	domainConfig       *configModel.DomainConfig
 }
 
 type SearchFilterCounts struct {
@@ -21,10 +21,10 @@ type SearchFilterCounts struct {
 	Namespaces       map[string]int `json:"namespaces"`
 }
 
-func NewSearchFiltersQuery(moduleProviderRepo repository.ModuleProviderRepository, cfg *config.Config) *SearchFiltersQuery {
+func NewSearchFiltersQuery(moduleProviderRepo repository.ModuleProviderRepository, domainConfig *configModel.DomainConfig) *SearchFiltersQuery {
 	return &SearchFiltersQuery{
 		moduleProviderRepo: moduleProviderRepo,
-		cfg:                cfg,
+		domainConfig:       domainConfig,
 	}
 }
 
@@ -61,7 +61,7 @@ func (q *SearchFiltersQuery) Execute(ctx context.Context, queryString string) (*
 	counts.Verified = verifiedModulesWithLatestVersion
 
 	// Get trusted namespaces count
-	if len(q.cfg.TrustedNamespaces) > 0 {
+	if len(q.domainConfig.TrustedNamespaces) > 0 {
 		trustedQuery := searchQuery
 		trustedQuery.TrustedNamespaces = boolPtr(true)
 		trustedResult, _ := q.moduleProviderRepo.Search(ctx, trustedQuery)

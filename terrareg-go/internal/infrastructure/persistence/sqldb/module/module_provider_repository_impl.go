@@ -9,7 +9,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	configModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
@@ -21,15 +21,15 @@ import (
 type ModuleProviderRepositoryImpl struct {
 	db            *gorm.DB
 	namespaceRepo repository.NamespaceRepository
-	cfg           *config.Config
+	domainConfig  *configModel.DomainConfig
 }
 
 // NewModuleProviderRepository creates a new module provider repository
-func NewModuleProviderRepository(db *gorm.DB, namespaceRepo repository.NamespaceRepository, cfg *config.Config) repository.ModuleProviderRepository {
+func NewModuleProviderRepository(db *gorm.DB, namespaceRepo repository.NamespaceRepository, domainConfig *configModel.DomainConfig) repository.ModuleProviderRepository {
 	return &ModuleProviderRepositoryImpl{
 		db:            db,
 		namespaceRepo: namespaceRepo,
-		cfg:           cfg,
+		domainConfig:  domainConfig,
 	}
 }
 
@@ -270,28 +270,28 @@ func (r *ModuleProviderRepositoryImpl) Search(ctx context.Context, query reposit
 	// Trusted/Contributed namespace filter
 	if (query.TrustedNamespaces != nil && *query.TrustedNamespaces) || (query.Contributed != nil && *query.Contributed) {
 		orConditions := []string{}
-		if query.TrustedNamespaces != nil && *query.TrustedNamespaces && len(r.cfg.TrustedNamespaces) > 0 {
-			placeholders := make([]string, len(r.cfg.TrustedNamespaces))
-			for i := range r.cfg.TrustedNamespaces {
+		if query.TrustedNamespaces != nil && *query.TrustedNamespaces && len(r.domainConfig.TrustedNamespaces) > 0 {
+			placeholders := make([]string, len(r.domainConfig.TrustedNamespaces))
+			for i := range r.domainConfig.TrustedNamespaces {
 				placeholders[i] = "?"
 			}
 			orConditions = append(orConditions, "namespace.namespace IN ("+strings.Join(placeholders, ",")+")")
-			for _, ns := range r.cfg.TrustedNamespaces {
+			for _, ns := range r.domainConfig.TrustedNamespaces {
 				whereArgs = append(whereArgs, ns)
 			}
 		}
-		if query.Contributed != nil && *query.Contributed && len(r.cfg.TrustedNamespaces) > 0 {
-			placeholders := make([]string, len(r.cfg.TrustedNamespaces))
-			for i := range r.cfg.TrustedNamespaces {
+		if query.Contributed != nil && *query.Contributed && len(r.domainConfig.TrustedNamespaces) > 0 {
+			placeholders := make([]string, len(r.domainConfig.TrustedNamespaces))
+			for i := range r.domainConfig.TrustedNamespaces {
 				placeholders[i] = "?"
 			}
 			orConditions = append(orConditions, "namespace.namespace NOT IN ("+strings.Join(placeholders, ",")+")")
-			for _, ns := range r.cfg.TrustedNamespaces {
+			for _, ns := range r.domainConfig.TrustedNamespaces {
 				whereArgs = append(whereArgs, ns)
 			}
 		}
 		// If no trusted namespaces configured but filters are requested, handle appropriately
-		if len(r.cfg.TrustedNamespaces) == 0 {
+		if len(r.domainConfig.TrustedNamespaces) == 0 {
 			if query.TrustedNamespaces != nil && *query.TrustedNamespaces {
 				// No trusted namespaces configured and user wants trusted only - return empty
 				whereConditions = append(whereConditions, "1 = 0")

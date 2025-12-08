@@ -6,7 +6,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	configModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
@@ -19,7 +18,7 @@ type GetInitialSetupQuery struct {
 	moduleProviderRepo repository.ModuleProviderRepository
 	moduleVersionRepo  repository.ModuleVersionRepository
 	urlService         *service.URLService
-	config             *config.Config
+	domainConfig       *configModel.DomainConfig
 }
 
 // NewGetInitialSetupQuery creates a new GetInitialSetupQuery
@@ -28,14 +27,14 @@ func NewGetInitialSetupQuery(
 	moduleProviderRepo repository.ModuleProviderRepository,
 	moduleVersionRepo repository.ModuleVersionRepository,
 	urlService *service.URLService,
-	config *config.Config,
+	domainConfig *configModel.DomainConfig,
 ) *GetInitialSetupQuery {
 	return &GetInitialSetupQuery{
 		namespaceRepo:      namespaceRepo,
 		moduleProviderRepo: moduleProviderRepo,
 		moduleVersionRepo:  moduleVersionRepo,
 		urlService:         urlService,
-		config:             config,
+		domainConfig:       domainConfig,
 	}
 }
 
@@ -156,7 +155,7 @@ func (q *GetInitialSetupQuery) setURLs(response *InitialSetupResponse, modulePro
 	response.ModuleViewURL = &viewURL
 
 	// Set upload endpoint if module hosting is allowed
-	if q.config.AllowModuleHosting != configModel.ModuleHostingModeDisallow {
+	if q.domainConfig.AllowModuleHosting != configModel.ModuleHostingModeDisallow {
 		uploadEndpoint := q.urlService.BuildURL(moduleProvider.GetUploadEndpoint(), nil)
 		response.ModuleUploadEndpoint = &uploadEndpoint
 	}

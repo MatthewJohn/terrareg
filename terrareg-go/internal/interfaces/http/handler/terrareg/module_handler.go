@@ -10,7 +10,6 @@ import (
 
 	moduleCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/module"
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
 	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
@@ -36,7 +35,7 @@ type ModuleHandler struct {
 	importModuleVersionCmd          *moduleCmd.ImportModuleVersionCommand
 	presenter                       *presenter.ModulePresenter
 	versionPresenter                *presenter.ModuleVersionPresenter
-	cfg                             *config.Config
+	domainConfig                     *model.DomainConfig
 }
 
 // NewModuleHandler creates a new module handler
@@ -56,7 +55,7 @@ func NewModuleHandler(
 	deleteModuleProviderCmd *moduleCmd.DeleteModuleProviderCommand,
 	uploadModuleVersionCmd *moduleCmd.UploadModuleVersionCommand,
 	importModuleVersionCmd *moduleCmd.ImportModuleVersionCommand,
-	cfg *config.Config,
+	domainConfig *model.DomainConfig,
 ) *ModuleHandler {
 	return &ModuleHandler{
 		listModulesQuery:                listModulesQuery,
@@ -76,7 +75,7 @@ func NewModuleHandler(
 		importModuleVersionCmd:          importModuleVersionCmd,
 		presenter:                       presenter.NewModulePresenter(),
 		versionPresenter:                presenter.NewModuleVersionPresenter(),
-		cfg:                             cfg,
+		domainConfig:                     domainConfig,
 	}
 }
 
@@ -364,7 +363,7 @@ func (h *ModuleHandler) HandleModuleDownload(w http.ResponseWriter, r *http.Requ
 
 	// Check if module hosting is disallowed
 	// TODO: Implement full logic for ALLOW/ENFORCE modes with git URL handling
-	if h.cfg.AllowModuleHosting == model.ModuleHostingModeDisallow {
+	if h.domainConfig.AllowModuleHosting == model.ModuleHostingModeDisallow {
 		RespondError(w, http.StatusInternalServerError, "Module hosting is disabled")
 		return
 	}
@@ -528,7 +527,7 @@ func (h *ModuleHandler) HandleModuleVersionUpload(w http.ResponseWriter, r *http
 	}
 
 	// Check if module hosting is disallowed
-	if h.cfg.AllowModuleHosting == model.ModuleHostingModeDisallow {
+	if h.domainConfig.AllowModuleHosting == model.ModuleHostingModeDisallow {
 		RespondJSON(w, http.StatusBadRequest, dto.NewError("Module upload is disabled."))
 		return
 	}

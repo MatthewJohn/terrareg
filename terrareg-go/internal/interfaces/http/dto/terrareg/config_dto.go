@@ -43,8 +43,8 @@ type VersionResponse struct {
 	Version string `json:"version"`
 }
 
-// NewConfigResponse creates a new ConfigResponse from a domain model
-func NewConfigResponse(config *model.Config) ConfigResponse {
+// NewConfigResponse creates a new ConfigResponse from a UI config model
+func NewConfigResponse(config *model.UIConfig) ConfigResponse {
 	providerSources := make([]ProviderSourceDTO, len(config.ProviderSources))
 	for i, ps := range config.ProviderSources {
 		providerSources[i] = ProviderSourceDTO{

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 )
@@ -14,19 +14,19 @@ import (
 type GetExamplesQuery struct {
 	moduleProviderRepo repository.ModuleProviderRepository
 	moduleParser       service.ModuleParser
-	config             *config.Config
+	infraConfig        *infraConfig.InfrastructureConfig
 }
 
 // NewGetExamplesQuery creates a new query
 func NewGetExamplesQuery(
 	moduleProviderRepo repository.ModuleProviderRepository,
 	moduleParser service.ModuleParser,
-	config *config.Config,
+	infraConfig *infraConfig.InfrastructureConfig,
 ) *GetExamplesQuery {
 	return &GetExamplesQuery{
 		moduleProviderRepo: moduleProviderRepo,
 		moduleParser:       moduleParser,
-		config:             config,
+		infraConfig:        infraConfig,
 	}
 }
 
@@ -57,7 +57,7 @@ func (q *GetExamplesQuery) Execute(ctx context.Context, namespace, module, provi
 	}
 
 	// Get the module directory
-	moduleDir := filepath.Join(q.config.DataDirectory, "modules", namespace, module, provider, version)
+	moduleDir := filepath.Join(q.infraConfig.DataDirectory, "modules", namespace, module, provider, version)
 
 	// Use the parser to detect examples
 	examplePaths, err := q.moduleParser.DetectExamples(moduleDir)
