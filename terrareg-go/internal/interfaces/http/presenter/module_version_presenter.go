@@ -175,9 +175,8 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 		response.RepoCloneURLTemplate = moduleProvider.RepoCloneURLTemplate()
 		response.RepoBrowseURLTemplate = moduleProvider.RepoBrowseURLTemplate()
 
-		// TODO: Get versions list (limited list, not all versions)
-		// Will implement when GetVersionsList() method is added to domain model
-		response.Versions = []string{}
+		// Get versions list from module provider
+		response.Versions = moduleProvider.GetVersionsList()
 	}
 
 	// TODO: Add source URL when Source() method is implemented in domain model
@@ -191,7 +190,7 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 
 	// Add downloads count
 	// TODO: Implement GetDownloads() method in domain model
-	// response.Downloads = mv.GetDownloads()
+	response.Downloads = mv.GetDownloads()
 
 	// Extract analytics token from namespace if present (namespace__token format)
 	if strings.Contains(namespace, "__") {
@@ -204,33 +203,180 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 	// TODO: Populate remaining fields with actual domain method implementations
 	// These are placeholders until domain methods are implemented
 
-	// Terraform module specifications (would come from domain methods)
+	// Populate with real data from domain methods
+
+	// Terraform module specifications
+	rootSpecs := mv.GetRootModuleSpecs()
 	response.Root = terrareg.TerraregModuleSpecs{
-		Path:   "",
-		Readme: "",
-		Empty:  true,
-		// TODO: Populate from mv.GetRootModuleSpecs()
+		Path:                 rootSpecs.Path,
+		Readme:               rootSpecs.Readme,
+		Empty:                rootSpecs.Empty,
+		Inputs:               convertInputsToTerrareg(rootSpecs.Inputs),
+		Outputs:              convertOutputsToTerrareg(rootSpecs.Outputs),
+		Dependencies:         convertDependenciesToTerrareg(rootSpecs.Dependencies),
+		ProviderDependencies: convertProviderDepsToTerrareg(rootSpecs.ProviderDependencies),
+		Resources:            convertResourcesToTerrareg(rootSpecs.Resources),
+		Modules:              convertModulesToTerrareg(rootSpecs.Modules),
 	}
-	response.Submodules = []terrareg.TerraregModuleSpecs{} // TODO: Populate from mv.GetSubmodules()
-	response.Providers = []string{} // TODO: Populate from module provider
 
-	// UI-specific fields (would come from domain methods)
-	response.UsageExample = nil // TODO: Generate from mv.GetUsageExample(requestDomain)
-	response.PublishedAtDisplay = nil // TODO: Format from mv.GetPublishedAtDisplay()
-	response.DisplaySourceURL = nil // TODO: Get from mv.GetDisplaySourceURL(requestDomain)
-	response.GraphURL = nil // TODO: Generate from mv.GetGraphURL()
+	// Convert submodules
+	var submoduleSpecs []terrareg.TerraregModuleSpecs
+	for _, subSpec := range mv.GetSubmodules() {
+		submoduleSpecs = append(submoduleSpecs, terrareg.TerraregModuleSpecs{
+			Path:                 subSpec.Path,
+			Readme:               subSpec.Readme,
+			Empty:                subSpec.Empty,
+			Inputs:               convertInputsToTerrareg(subSpec.Inputs),
+			Outputs:              convertOutputsToTerrareg(subSpec.Outputs),
+			Dependencies:         convertDependenciesToTerrareg(subSpec.Dependencies),
+			ProviderDependencies: convertProviderDepsToTerrareg(subSpec.ProviderDependencies),
+			Resources:            convertResourcesToTerrareg(subSpec.Resources),
+			Modules:              convertModulesToTerrareg(subSpec.Modules),
+		})
+	}
+	response.Submodules = submoduleSpecs
 
-	// Security scanning (would come from domain methods)
-	response.SecurityFailures = 0 // TODO: Get from mv.GetSecurityFailures()
-	response.SecurityResults = []terrareg.TerraregSecurityResult{} // TODO: Get from mv.GetSecurityResults()
+	// Providers - TODO: Get unique providers from module version
+	response.Providers = []string{}
 
-	// Configuration (would come from domain methods)
-	response.AdditionalTabFiles = map[string]string{} // TODO: Get from mv.GetAdditionalTabFiles()
-	response.CustomLinks = []terrareg.TerraregCustomLink{} // TODO: Get from mv.GetCustomLinks()
-	response.TerraformExampleVersionString = nil // TODO: Get from mv.GetTerraformExampleVersionString()
-	response.TerraformExampleVersionComment = []string{} // TODO: Get from mv.GetTerraformExampleVersionComment()
-	response.TerraformVersionConstraint = nil // TODO: Get from module version constraints
-	response.ModuleExtractionUpToDate = false // TODO: Get from mv.GetModuleExtractionUpToDate()
+	// UI-specific fields
+	usageExample := mv.GetUsageExample(requestDomain)
+	if usageExample != "" {
+		response.UsageExample = &usageExample
+	}
+
+	publishedAtDisplay := mv.GetPublishedAtDisplay()
+	if publishedAtDisplay != "" {
+		response.PublishedAtDisplay = &publishedAtDisplay
+	}
+
+	displaySourceURL := mv.GetDisplaySourceURL(requestDomain)
+	if displaySourceURL != "" {
+		response.DisplaySourceURL = &displaySourceURL
+	}
+
+	graphURL := mv.GetGraphURL()
+	if graphURL != "" {
+		response.GraphURL = &graphURL
+	}
+
+	// Security scanning
+	response.SecurityFailures = mv.GetSecurityFailures()
+	securityResults := mv.GetSecurityResults()
+	for _, result := range securityResults {
+		response.SecurityResults = append(response.SecurityResults, terrareg.TerraregSecurityResult{
+			RuleID:      result.RuleID,
+			Severity:    result.Severity,
+			Title:       result.Title,
+			Description: result.Description,
+			Location: terrareg.TerraregSecurityLocation{
+				Filename:  result.Location.Filename,
+				StartLine: result.Location.StartLine,
+				EndLine:   result.Location.EndLine,
+			},
+		})
+	}
+
+	// Configuration
+	response.AdditionalTabFiles = mv.GetAdditionalTabFiles()
+
+	customLinks := mv.GetCustomLinks()
+	for _, link := range customLinks {
+		response.CustomLinks = append(response.CustomLinks, terrareg.TerraregCustomLink{
+			Text: link.Text,
+			URL:  link.URL,
+		})
+	}
+
+	terraformExampleVersionString := mv.GetTerraformExampleVersionString()
+	if terraformExampleVersionString != "" {
+		response.TerraformExampleVersionString = &terraformExampleVersionString
+	}
+
+	response.TerraformExampleVersionComment = mv.GetTerraformExampleVersionComment()
+	// TODO: Get version constraint from module version details
+	response.TerraformVersionConstraint = nil
+	response.ModuleExtractionUpToDate = mv.GetModuleExtractionUpToDate()
 
 	return response
+}
+
+// Converter functions to convert domain types to terrareg DTOs
+
+func convertInputsToTerrareg(inputs []model.Input) []terrareg.TerraregInput {
+	var result []terrareg.TerraregInput
+	for _, input := range inputs {
+		result = append(result, terrareg.TerraregInput{
+			Name:           input.Name,
+			Type:           input.Type,
+			Description:    input.Description,
+			Required:       input.Required,
+			Default:        input.Default,
+			AdditionalHelp: input.AdditionalHelp,
+			QuoteValue:     input.QuoteValue,
+			Sensitive:      input.Sensitive,
+		})
+	}
+	return result
+}
+
+func convertOutputsToTerrareg(outputs []model.Output) []terrareg.TerraregOutput {
+	var result []terrareg.TerraregOutput
+	for _, output := range outputs {
+		result = append(result, terrareg.TerraregOutput{
+			Name:        output.Name,
+			Description: output.Description,
+			Type:        output.Type,
+		})
+	}
+	return result
+}
+
+func convertDependenciesToTerrareg(dependencies []model.Dependency) []terrareg.TerraregDependency {
+	var result []terrareg.TerraregDependency
+	for _, dep := range dependencies {
+		result = append(result, terrareg.TerraregDependency{
+			Module:  dep.Module,
+			Source:  dep.Source,
+			Version: dep.Version,
+		})
+	}
+	return result
+}
+
+func convertProviderDepsToTerrareg(providerDeps []model.ProviderDependency) []terrareg.TerraregProviderDep {
+	var result []terrareg.TerraregProviderDep
+	for _, dep := range providerDeps {
+		result = append(result, terrareg.TerraregProviderDep{
+			Provider: dep.Provider,
+			Source:   dep.Source,
+			Version:  dep.Version,
+		})
+	}
+	return result
+}
+
+func convertResourcesToTerrareg(resources []model.Resource) []terrareg.TerraregResource {
+	var result []terrareg.TerraregResource
+	for _, resource := range resources {
+		result = append(result, terrareg.TerraregResource{
+			Name: resource.Name,
+			Type: resource.Type,
+		})
+	}
+	return result
+}
+
+func convertModulesToTerrareg(modules []model.Module) []terrareg.TerraregModule {
+	var result []terrareg.TerraregModule
+	for _, module := range modules {
+		result = append(result, terrareg.TerraregModule{
+			Name:      module.Name,
+			Source:    module.Source,
+			Version:   module.Version,
+			Key:       module.Key,
+			Providers: module.Providers,
+		})
+	}
+	return result
 }

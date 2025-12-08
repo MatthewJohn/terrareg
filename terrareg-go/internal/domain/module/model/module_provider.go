@@ -348,6 +348,16 @@ func (mp *ModuleProvider) UpdatedAt() time.Time {
 	return mp.updatedAt
 }
 
+// GetVersionsList returns a limited list of versions for the provider
+// TODO: Implement version filtering and limiting logic
+func (mp *ModuleProvider) GetVersionsList() []string {
+	var versions []string
+	for _, version := range mp.versions {
+		versions = append(versions, version.Version().String())
+	}
+	return versions
+}
+
 // FullName returns the full module provider name (namespace/module/provider)
 func (mp *ModuleProvider) FullName() string {
 	return fmt.Sprintf("%s/%s/%s", mp.namespace.Name(), mp.module, mp.provider)
