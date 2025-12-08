@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
+	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
 // UploadModuleVersionCommand handles uploading module source code
@@ -19,7 +19,7 @@ type UploadModuleVersionCommand struct {
 	moduleProviderRepo repository.ModuleProviderRepository
 	moduleParser       service.ModuleParser
 	storageService     service.StorageService
-	config             *config.Config
+	config             *infraConfig.InfrastructureConfig
 }
 
 // NewUploadModuleVersionCommand creates a new command
@@ -27,7 +27,7 @@ func NewUploadModuleVersionCommand(
 	moduleProviderRepo repository.ModuleProviderRepository,
 	moduleParser service.ModuleParser,
 	storageService service.StorageService,
-	config *config.Config,
+	config *infraConfig.InfrastructureConfig,
 ) *UploadModuleVersionCommand {
 	return &UploadModuleVersionCommand{
 		moduleProviderRepo: moduleProviderRepo,

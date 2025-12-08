@@ -3,21 +3,23 @@ package model
 import (
 	"net/http"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
+	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
+
+// IS THIS OLD?!?!?!
 
 // AdminApiKeyAuthMethod implements authentication via X-Terrareg-ApiKey header
 // Matches Python's AdminApiKeyAuthMethod behavior
 type AdminApiKeyAuthMethod struct {
 	*auth.BaseAuthMethod
-	config      *config.Config
+	config      *infraConfig.InfrastructureConfig
 	apiKey      string // The X-Terrareg-ApiKey header value
 	isValidated bool   // Whether the API key has been validated
 }
 
 // NewAdminApiKeyAuthMethod creates a new admin API key authentication method
-func NewAdminApiKeyAuthMethod(config *config.Config) *AdminApiKeyAuthMethod {
+func NewAdminApiKeyAuthMethod(config *infraConfig.InfrastructureConfig) *AdminApiKeyAuthMethod {
 	return &AdminApiKeyAuthMethod{
 		BaseAuthMethod: auth.NewBaseAuthMethod(),
 		config:         config,

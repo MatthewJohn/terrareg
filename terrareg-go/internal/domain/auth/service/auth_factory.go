@@ -4,10 +4,10 @@ import (
 	"context"
 	"sync"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
+	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
 // AuthFactory implements the factory pattern for authentication methods
@@ -19,11 +19,15 @@ type AuthFactory struct {
 	mutex             sync.RWMutex
 	sessionRepo       repository.SessionRepository
 	userGroupRepo     repository.UserGroupRepository
-	config            *config.Config
+	config            *infraConfig.InfrastructureConfig
 }
 
 // NewAuthFactory creates a new authentication factory
-func NewAuthFactory(sessionRepo repository.SessionRepository, userGroupRepo repository.UserGroupRepository, config *config.Config) *AuthFactory {
+func NewAuthFactory(
+	sessionRepo repository.SessionRepository,
+	userGroupRepo repository.UserGroupRepository,
+	config *infraConfig.InfrastructureConfig,
+) *AuthFactory {
 	factory := &AuthFactory{
 		authMethods:   make([]auth.AuthMethod, 0),
 		sessionRepo:   sessionRepo,

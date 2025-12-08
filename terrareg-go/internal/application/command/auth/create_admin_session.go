@@ -4,20 +4,23 @@ import (
 	"context"
 	"time"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	authRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth/repository"
+	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	authPersistence "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb/auth"
 )
 
 // CreateAdminSessionCommand handles creating admin sessions
 type CreateAdminSessionCommand struct {
 	sessionRepo authRepo.SessionRepository
-	config      *config.Config
+	config      *infraConfig.InfrastructureConfig
 }
 
 // NewCreateAdminSessionCommand creates a new command
-func NewCreateAdminSessionCommand(sessionRepo authRepo.SessionRepository, cfg *config.Config) *CreateAdminSessionCommand {
+func NewCreateAdminSessionCommand(
+	sessionRepo authRepo.SessionRepository,
+	cfg *infraConfig.InfrastructureConfig,
+) *CreateAdminSessionCommand {
 	return &CreateAdminSessionCommand{
 		sessionRepo: sessionRepo,
 		config:      cfg,

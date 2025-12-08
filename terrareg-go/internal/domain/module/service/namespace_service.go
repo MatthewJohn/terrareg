@@ -1,17 +1,17 @@
 package service
 
 import (
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	domainConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 )
 
 // NamespaceService provides domain services for namespaces
 type NamespaceService struct {
-	config *config.Config
+	config *domainConfig.DomainConfig
 }
 
 // NewNamespaceService creates a new namespace service
-func NewNamespaceService(config *config.Config) *NamespaceService {
+func NewNamespaceService(config *domainConfig.DomainConfig) *NamespaceService {
 	return &NamespaceService{
 		config: config,
 	}

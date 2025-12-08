@@ -32,9 +32,9 @@ func NewConfigRepositoryImplWithConfig(versionReader *version.VersionReader, dom
 	}
 }
 
-// GetConfig retrieves the complete configuration from injected domain config
-func (r *ConfigRepositoryImpl) GetConfig(ctx context.Context) (*model.Config, error) {
-	var config *model.Config
+// GetConfig retrieves the UI configuration from injected domain config
+func (r *ConfigRepositoryImpl) GetConfig(ctx context.Context) (*model.UIConfig, error) {
+	var config *model.UIConfig
 
 	if r.domainConfig != nil {
 		// Use injected domain config
@@ -43,7 +43,7 @@ func (r *ConfigRepositoryImpl) GetConfig(ctx context.Context) (*model.Config, er
 			return nil, fmt.Errorf("failed to get provider sources: %w", err)
 		}
 
-		config = &model.Config{
+		config = &model.UIConfig{
 			// Use domain config values directly
 			TrustedNamespaceLabel:     r.domainConfig.TrustedNamespaceLabel,
 			ContributedNamespaceLabel: r.domainConfig.ContributedNamespaceLabel,
@@ -90,7 +90,7 @@ func (r *ConfigRepositoryImpl) GetConfig(ctx context.Context) (*model.Config, er
 		// Parse additional module tabs
 		additionalModuleTabs := r.parseAdditionalModuleTabs()
 
-		config = &model.Config{
+		config = &model.UIConfig{
 			// Namespace labels
 			TrustedNamespaceLabel:     r.getEnvString("TRUSTED_NAMESPACE_LABEL", "Trusted"),
 			ContributedNamespaceLabel: r.getEnvString("CONTRIBUTED_NAMESPACE_LABEL", "Contributed"),
