@@ -155,7 +155,7 @@ func (s *Server) setupRoutes() {
 		r.Get("/modules/search", s.terraformV1ModuleHandler.HandleModuleSearch) // Use the new handler
 		r.Get("/modules/{namespace}", s.handleNamespaceModules)
 		r.Get("/modules/{namespace}/{name}", s.handleModuleDetails)
-		r.Get("/modules/{namespace}/{name}/{provider}/downloads/summary", s.handleModuleDownloadsSummary) // Must come before general provider route
+		r.Get("/modules/{namespace}/{name}/{provider}/downloads/summary", s.handleModuleDownloadsSummary)                   // Must come before general provider route
 		r.Get("/modules/{namespace}/{name}/{provider}", s.terraformV1ModuleHandler.HandleModuleProviderDetails)             // Use the new handler
 		r.Get("/modules/{namespace}/{name}/{provider}/versions", s.terraformV1ModuleHandler.HandleModuleVersions)           // Use the new handler
 		r.Get("/modules/{namespace}/{name}/{provider}/download", s.terraformV1ModuleHandler.HandleModuleDownload)           // Use the new handler
@@ -484,7 +484,9 @@ func (s *Server) handleTerraregModuleProviderDetails(w http.ResponseWriter, r *h
 func (s *Server) handleTerraregModuleVersionDetails(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleVersionDetails(w, r)
 }
-func (s *Server) handleTerraregModuleProviderVersions(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleTerraregModuleProviderVersions(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleTerraregModuleProviderVersions(w, r)
+}
 func (s *Server) handleModuleProviderCreate(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleProviderCreate(w, r)
 }

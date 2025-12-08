@@ -712,3 +712,53 @@ func (h *ModuleHandler) HandleTerraregModuleProviderDetails(w http.ResponseWrite
 	// Send response
 	RespondJSON(w, http.StatusOK, response)
 }
+
+// HandleTerraregModuleProviderVersions handles GET /v1/terrareg/modules/{namespace}/{name}/{provider}/versions
+func (h *ModuleHandler) HandleTerraregModuleProviderVersions(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Parse path parameters
+	namespace := chi.URLParam(r, "namespace")
+	name := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+
+	// Parse query parameters
+	includeBeta := r.URL.Query().Get("include-beta") == "true"
+	includeUnpublished := r.URL.Query().Get("include-unpublished") == "true"
+
+	// Get the module provider
+	moduleProvider, err := h.getModuleProviderQuery.Execute(ctx, namespace, name, provider)
+	if err != nil {
+		RespondError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	// Get versions from the module provider
+	allVersions := moduleProvider.GetAllVersions()
+	if len(allVersions) == 0 {
+		// Return empty array instead of error
+		RespondJSON(w, http.StatusOK, []interface{}{})
+		return
+	}
+
+	// Filter and build version response
+	var versions []map[string]interface{}
+	for _, version := range allVersions {
+		// Skip versions based on query parameters
+		if !includeBeta && version.IsBeta() {
+			continue
+		}
+		if !includeUnpublished && !version.IsPublished() {
+			continue
+		}
+
+		versions = append(versions, map[string]interface{}{
+			"version":   version.Version().String(),
+			"published": version.IsPublished(),
+			"beta":      version.IsBeta(),
+		})
+	}
+
+	// Send response
+	RespondJSON(w, http.StatusOK, versions)
+}
