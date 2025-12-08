@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
@@ -19,19 +19,19 @@ import (
 type GitImportService struct {
 	moduleProviderRepo repository.ModuleProviderRepository
 	storageService     moduleService.StorageService
-	config             *config.Config
+	infraConfig        *infraConfig.InfrastructureConfig
 }
 
 // NewGitImportService creates a new Git import service
 func NewGitImportService(
 	moduleProviderRepo repository.ModuleProviderRepository,
 	storageService moduleService.StorageService,
-	config *config.Config,
+	infraConfig *infraConfig.InfrastructureConfig,
 ) *GitImportService {
 	return &GitImportService{
 		moduleProviderRepo: moduleProviderRepo,
 		storageService:     storageService,
-		config:             config,
+		infraConfig:        infraConfig,
 	}
 }
 
@@ -242,7 +242,7 @@ func (s *GitImportService) extractModuleFromClone(repoDir string, moduleVersion 
 
 	// Create destination directory in data storage
 	versionStr := moduleVersion.Version().String()
-	destDir := filepath.Join(s.config.DataDirectory,
+	destDir := filepath.Join(s.infraConfig.DataDirectory,
 		moduleVersion.ModuleProvider().Namespace().Name(),
 		moduleVersion.ModuleProvider().Module(),
 		moduleVersion.ModuleProvider().Provider(),

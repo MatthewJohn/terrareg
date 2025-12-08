@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	infraConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 )
 
 // PublicURLDetails represents the details of the public URL
@@ -18,11 +18,11 @@ type PublicURLDetails struct {
 // URLService provides centralized URL handling functionality
 // Following DDD principles by separating URL logic from business layers
 type URLService struct {
-	config *config.InfrastructureConfig
+	config *infraConfig.InfrastructureConfig
 }
 
 // NewURLService creates a new URL service
-func NewURLService(config *config.InfrastructureConfig) *URLService {
+func NewURLService(config *infraConfig.InfrastructureConfig) *URLService {
 	return &URLService{
 		config: config,
 	}

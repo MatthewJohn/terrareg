@@ -191,19 +191,19 @@ func NewContainer(
 	infraConfig *config.InfrastructureConfig,
 	configService *configService.ConfigurationService,
 	logger zerolog.Logger,
-	db *sqldb.Database
-	) (*Container, error) {
+	db *sqldb.Database,
+) (*Container, error) {
 	c := &Container{
-		domainConfig * domainConfig.DomainConfig,
-		infraConfig * config.InfrastructureConfig,
-		configService * configService.ConfigurationService,
-		Logger: logger,
-		DB:     db,
+		DomainConfig:  domainConfig,
+		InfraConfig:   infraConfig,
+		ConfigService: configService,
+		Logger:       logger,
+		DB:           db,
 	}
 
 	// Initialize repositories
 	c.NamespaceRepo = modulePersistence.NewNamespaceRepository(db.DB)
-	c.ModuleProviderRepo = modulePersistence.NewModuleProviderRepository(db.DB, c.NamespaceRepo, cfg)
+	c.ModuleProviderRepo = modulePersistence.NewModuleProviderRepository(db.DB, c.NamespaceRepo, domainConfig) // Uses DomainConfig for TrustedNamespaces
 	c.ModuleVersionRepo = modulePersistence.NewModuleVersionRepository(db.DB)
 	c.ProviderRepo = providerRepository.NewProviderRepository()
 	c.ProviderLogoRepo = providerLogoRepo.NewProviderLogoRepository()
@@ -213,7 +213,7 @@ func NewContainer(
 	c.TerraformIdpAccessTokenRepo = authPersistence.NewTerraformIdpAccessTokenRepository(db.DB)
 	c.TerraformIdpSubjectIdentifierRepo = authPersistence.NewTerraformIdpSubjectIdentifierRepository(db.DB)
 
-	c.URLService = urlservice.NewURLService(c.Config)
+	c.URLService = urlservice.NewURLService(infraConfig)
 
 	// Initialize infrastructure services
 	c.GitClient = git.NewGitClientImpl()
@@ -226,9 +226,10 @@ func NewContainer(
 		c.GitClient,
 		c.StorageService,
 		c.ModuleParser,
-		cfg,
+		domainConfig,
+		infraConfig,
 	)
-	c.NamespaceService = moduleService.NewNamespaceService(cfg)
+	c.NamespaceService = moduleService.NewNamespaceService(domainConfig) // Uses DomainConfig for business logic
 	c.AnalyticsRepo = analyticsPersistence.NewAnalyticsRepository(db.DB, c.NamespaceRepo, c.NamespaceService)
 
 	// Initialize auth services
@@ -237,7 +238,7 @@ func NewContainer(
 	c.SessionService = sessionService
 
 	// Initialize cookie service (pure cookie operations)
-	cookieService := authservice.NewCookieService(cfg)
+	cookieService := authservice.NewCookieService(infraConfig) // Uses InfrastructureConfig for auth settings
 	c.CookieService = cookieService
 
 	// Initialize authentication service (orchestrates session and cookie operations)
@@ -250,7 +251,7 @@ func NewContainer(
 		authservice.DefaultSessionDatabaseConfig().CleanupInterval,
 	)
 
-	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, cfg)
+	c.AuthFactory = authservice.NewAuthFactory(c.SessionRepo, c.UserGroupRepo, infraConfig) // Uses InfrastructureConfig for auth settings
 	c.TerraformIdpService = authservice.NewTerraformIdpService(
 		c.TerraformIdpAuthorizationCodeRepo,
 		c.TerraformIdpAccessTokenRepo,
@@ -264,12 +265,12 @@ func NewContainer(
 	c.PublishModuleVersionCmd = moduleCmd.NewPublishModuleVersionCommand(c.ModuleProviderRepo)
 	c.UpdateModuleProviderSettingsCmd = moduleCmd.NewUpdateModuleProviderSettingsCommand(c.ModuleProviderRepo)
 	c.DeleteModuleProviderCmd = moduleCmd.NewDeleteModuleProviderCommand(c.ModuleProviderRepo)
-	c.UploadModuleVersionCmd = moduleCmd.NewUploadModuleVersionCommand(c.ModuleProviderRepo, c.ModuleParser, c.StorageService, cfg)
+	c.UploadModuleVersionCmd = moduleCmd.NewUploadModuleVersionCommand(c.ModuleProviderRepo, c.ModuleParser, c.StorageService, infraConfig) // Uses InfrastructureConfig for file operations
 	c.ImportModuleVersionCmd = moduleCmd.NewImportModuleVersionCommand(c.ModuleImporterService)
 	c.RecordModuleDownloadCmd = analyticsCmd.NewRecordModuleDownloadCommand(c.ModuleProviderRepo, c.AnalyticsRepo)
 
 	// Initialize admin login command
-	c.AdminLoginCmd = authCmd.NewAdminLoginCommand(c.AuthFactory, c.SessionService, cfg)
+	c.AdminLoginCmd = authCmd.NewAdminLoginCommand(c.AuthFactory, c.SessionService, infraConfig) // Uses InfrastructureConfig for auth settings
 
 	// Initialize Terraform authentication commands
 	c.AuthenticateOIDCTokenCmd = terraformCmd.NewAuthenticateOIDCTokenCommand(c.AuthFactory)
@@ -287,8 +288,8 @@ func NewContainer(
 	c.ListModuleVersionsQuery = moduleQuery.NewListModuleVersionsQuery(c.ModuleProviderRepo) // New query
 	c.GetModuleDownloadQuery = moduleQuery.NewGetModuleDownloadQuery(c.ModuleProviderRepo)
 	c.GetModuleProviderSettingsQuery = moduleQuery.NewGetModuleProviderSettingsQuery(c.ModuleProviderRepo)
-	c.GetSubmodulesQuery = moduleQuery.NewGetSubmodulesQuery(c.ModuleProviderRepo, c.ModuleParser, cfg)
-	c.GetExamplesQuery = moduleQuery.NewGetExamplesQuery(c.ModuleProviderRepo, c.ModuleParser, cfg)
+	c.GetSubmodulesQuery = moduleQuery.NewGetSubmodulesQuery(c.ModuleProviderRepo, c.ModuleParser, infraConfig) // Uses InfrastructureConfig for DataDirectory
+	c.GetExamplesQuery = moduleQuery.NewGetExamplesQuery(c.ModuleProviderRepo, c.ModuleParser, infraConfig) // Uses InfrastructureConfig for DataDirectory
 	c.GlobalStatsQuery = analyticsQuery.NewGlobalStatsQuery(c.NamespaceRepo, c.ModuleProviderRepo)
 	c.GetDownloadSummaryQuery = analyticsQuery.NewGetDownloadSummaryQuery(c.AnalyticsRepo)
 	c.GetMostRecentlyPublishedQuery = analyticsQuery.NewGetMostRecentlyPublishedQuery(c.AnalyticsRepo)
@@ -318,7 +319,7 @@ func NewContainer(
 		c.ModuleProviderRepo,
 		c.ModuleVersionRepo,
 		c.URLService,
-		cfg,
+		domainConfig, // Uses DomainConfig for business logic
 	)
 
 	// Initialize config/version handlers
@@ -346,7 +347,7 @@ func NewContainer(
 		c.DeleteModuleProviderCmd,
 		c.UploadModuleVersionCmd,
 		c.ImportModuleVersionCmd,
-		c.Config,
+		domainConfig,
 	)
 	c.AnalyticsHandler = terrareg.NewAnalyticsHandler(
 		c.GlobalStatsQuery,
@@ -371,7 +372,7 @@ func NewContainer(
 		c.CheckSessionQuery,
 		c.IsAuthenticatedQuery,
 		c.AuthenticationService,
-		cfg,
+		infraConfig,
 	)
 	c.TerraformV1ModuleHandler = v1.NewTerraformV1ModuleHandler(c.ListModulesQuery, c.SearchModulesQuery, c.GetModuleProviderQuery, c.ListModuleVersionsQuery, c.GetModuleDownloadQuery, c.GetModuleVersionQuery) // Instantiate the new handler
 
@@ -390,23 +391,24 @@ func NewContainer(
 	c.TerraformStaticTokenHandler = terraformHandler.NewTerraformStaticTokenHandler()
 
 	// Initialize middleware
-	c.AuthMiddleware = terrareg_middleware.NewAuthMiddleware(cfg, c.AuthFactory)
+	c.AuthMiddleware = terrareg_middleware.NewAuthMiddleware(domainConfig, c.AuthFactory) // Uses DomainConfig for auth settings
 	c.SessionMiddleware = terrareg_middleware.NewSessionMiddleware(c.AuthenticationService, c.Logger)
 
 	// Initialize template renderer
-	templateRenderer, err := template.NewRenderer(cfg)
+	templateRenderer, err := template.NewRenderer(domainConfig, infraConfig)
 	if err != nil {
 		return nil, err
 	}
 	c.TemplateRenderer = templateRenderer
 
 	// Initialize search filters
-	c.SearchFiltersQuery = moduleQuery.NewSearchFiltersQuery(c.ModuleProviderRepo, cfg)
+	c.SearchFiltersQuery = moduleQuery.NewSearchFiltersQuery(c.ModuleProviderRepo, domainConfig) // Uses DomainConfig for filtering logic
 	c.SearchFiltersHandler = terrareg.NewSearchFiltersHandler(c.SearchFiltersQuery)
 
 	// Initialize HTTP server
 	c.Server = http.NewServer(
-		cfg,
+		infraConfig,
+		domainConfig,
 		logger,
 		c.NamespaceHandler,
 		c.ModuleHandler,

@@ -8,21 +8,24 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/middleware"
 )
 
 // Renderer handles HTML template rendering
 type Renderer struct {
-	templates *template.Template
-	config    *config.Config
-	mu        sync.RWMutex
+	templates   *template.Template
+	domainConfig *model.DomainConfig
+	infraConfig  *config.InfrastructureConfig
+	mu          sync.RWMutex
 }
 
 // NewRenderer creates a new template renderer
-func NewRenderer(cfg *config.Config) (*Renderer, error) {
+func NewRenderer(domainConfig *model.DomainConfig, infraConfig *config.InfrastructureConfig) (*Renderer, error) {
 	r := &Renderer{
-		config: cfg,
+		domainConfig: domainConfig,
+		infraConfig:  infraConfig,
 	}
 
 	if err := r.loadTemplates(); err != nil {
@@ -109,16 +112,19 @@ func (r *Renderer) RenderWithContext(ctx context.Context, w io.Writer, name stri
 	}
 
 	// Add common config values accessible to all templates (from configuration)
-	data["terrareg_application_name"] = r.config.ApplicationName
-	data["public_url"] = r.config.PublicURL
-	data["enable_access_controls"] = r.config.EnableAccessControls
-	data["enable_security_scanning"] = r.config.EnableSecurityScanning
-	data["terrareg_logo_url"] = r.config.LogoURL
+	// Infrastructure settings
+	data["terrareg_application_name"] = r.infraConfig.ApplicationName
+	data["public_url"] = r.infraConfig.PublicURL
+	data["enable_access_controls"] = r.infraConfig.EnableAccessControls
+	data["enable_security_scanning"] = r.infraConfig.EnableSecurityScanning
+	data["terrareg_logo_url"] = r.infraConfig.LogoURL
 	data["theme_path"] = r.getThemePath(ctx, request)
-	data["SITE_WARNING"] = r.config.SiteWarning
-	data["VERIFIED_MODULE_LABEL"] = r.config.VerifiedModuleLabel
-	data["TRUSTED_NAMESPACE_LABEL"] = r.config.TrustedNamespaceLabel
-	data["CONTRIBUTED_NAMESPACE_LABEL"] = r.config.ContributedNamespaceLabel
+	data["SITE_WARNING"] = r.infraConfig.SiteWarning
+
+	// Domain/UI settings
+	data["VERIFIED_MODULE_LABEL"] = r.domainConfig.VerifiedModuleLabel
+	data["TRUSTED_NAMESPACE_LABEL"] = r.domainConfig.TrustedNamespaceLabel
+	data["CONTRIBUTED_NAMESPACE_LABEL"] = r.domainConfig.ContributedNamespaceLabel
 
 	// Add CSRF token from session context
 	data["csrf_token"] = middleware.GetCSRFToken(ctx)
