@@ -55,12 +55,16 @@ func (p *ModuleVersionPresenter) ToDTO(mv *model.ModuleVersion, namespace, modul
 }
 
 // ToTerraregDTO converts a module version to TerraregModuleVersionResponse
-func (p *ModuleVersionPresenter) ToTerraregDTO(mv *model.ModuleVersion, namespace, moduleName, provider string) moduledto.TerraregModuleVersionResponse {
+func (p *ModuleVersionPresenter) ToTerraregDTO(mv *model.ModuleVersion, namespace, moduleName, provider string) *moduledto.TerraregModuleVersionResponse {
 	// Build version ID
 	id := fmt.Sprintf("%s/%s/%s/%s", namespace, moduleName, provider, mv.Version().String())
 
 	// Get module provider for additional details
 	moduleProvider := mv.ModuleProvider()
+
+	if moduleProvider == nil {
+		return nil
+	}
 
 	response := moduledto.TerraregModuleVersionResponse{
 		TerraregVersionDetails: moduledto.TerraregVersionDetails{
@@ -110,21 +114,18 @@ func (p *ModuleVersionPresenter) ToTerraregDTO(mv *model.ModuleVersion, namespac
 	}
 
 	// Add module provider specific fields
-	if moduleProvider != nil {
-		// Get provider ID - using a field that exists
-		moduleProviderID := moduleProvider.ID()
-		response.ModuleProviderID = &moduleProviderID
+	// Get provider ID - using a field that exists
+	response.ModuleProviderID = moduleProvider.FrontendID()
 
-		response.GitProviderID = moduleProvider.GitProviderID()
-		response.GitTagFormat = moduleProvider.GitTagFormat()
-		response.GitPath = moduleProvider.GitPath()
-		response.ArchiveGitPath = moduleProvider.ArchiveGitPath()
-		response.RepoBaseURLTemplate = moduleProvider.RepoBaseURLTemplate()
-		response.RepoCloneURLTemplate = moduleProvider.RepoCloneURLTemplate()
-		response.RepoBrowseURLTemplate = moduleProvider.RepoBrowseURLTemplate()
-	}
+	response.GitProviderID = moduleProvider.GitProviderID()
+	response.GitTagFormat = moduleProvider.GitTagFormat()
+	response.GitPath = moduleProvider.GitPath()
+	response.ArchiveGitPath = moduleProvider.ArchiveGitPath()
+	response.RepoBaseURLTemplate = moduleProvider.RepoBaseURLTemplate()
+	response.RepoCloneURLTemplate = moduleProvider.RepoCloneURLTemplate()
+	response.RepoBrowseURLTemplate = moduleProvider.RepoBrowseURLTemplate()
 
-	return response
+	return &response
 }
 
 // ToTerraregProviderDetailsDTO converts a module version to TerraregModuleProviderDetailsResponse.
@@ -151,10 +152,10 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 		Trusted:   false, // TODO: Get from namespace service when implemented
 
 		// Module version details (from ModuleVersion.get_api_details)
-		Owner:      mv.Owner(),
-		Version:    mv.Version().String(),
+		Owner:       mv.Owner(),
+		Version:     mv.Version().String(),
 		Description: mv.Description(),
-		Internal:   mv.IsInternal(),
+		Internal:    mv.IsInternal(),
 
 		// UI-specific terrareg fields
 		Beta:      mv.IsBeta(),
@@ -163,10 +164,7 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 
 	// Add module provider metadata
 	if moduleProvider != nil {
-		if moduleProviderID := moduleProvider.ID(); moduleProviderID > 0 {
-			moduleProviderIDStr := fmt.Sprintf("%d", moduleProviderID)
-			response.ModuleProviderID = &moduleProviderIDStr
-		}
+		response.ModuleProviderID = moduleProvider.FrontendID()
 		response.GitProviderID = moduleProvider.GitProviderID()
 		response.GitTagFormat = moduleProvider.GitTagFormat()
 		response.GitPath = moduleProvider.GitPath()

@@ -21,7 +21,7 @@ type ProviderDetails struct {
 // Similar to Python's get_terrareg_api_details()
 type TerraregProviderDetails struct {
 	ProviderDetails
-	ModuleProviderID      *int    `json:"module_provider_id"`
+	ModuleProviderID      string  `json:"module_provider_id"`
 	GitProviderID         *int    `json:"git_provider_id"`
 	GitTagFormat          *string `json:"git_tag_format"`
 	GitPath               *string `json:"git_path"`
@@ -97,13 +97,13 @@ type TerraformOutput struct {
 }
 
 type TerraformDependency struct {
-	Module  string `json:"module"`  // Python uses "module" not "name"
+	Module  string `json:"module"` // Python uses "module" not "name"
 	Source  string `json:"source"`
 	Version string `json:"version"`
 }
 
 type TerraformProvider struct {
-	Name    string `json:"name"`    // Provider name from get_providers()
+	Name string `json:"name"` // Provider name from get_providers()
 	// Note: Standard API only returns provider names, not full provider details
 }
 

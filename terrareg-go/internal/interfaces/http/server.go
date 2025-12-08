@@ -155,12 +155,12 @@ func (s *Server) setupRoutes() {
 		r.Get("/modules/search", s.terraformV1ModuleHandler.HandleModuleSearch) // Use the new handler
 		r.Get("/modules/{namespace}", s.handleNamespaceModules)
 		r.Get("/modules/{namespace}/{name}", s.handleModuleDetails)
+		r.Get("/modules/{namespace}/{name}/{provider}/downloads/summary", s.handleModuleDownloadsSummary) // Must come before general provider route
 		r.Get("/modules/{namespace}/{name}/{provider}", s.terraformV1ModuleHandler.HandleModuleProviderDetails)             // Use the new handler
 		r.Get("/modules/{namespace}/{name}/{provider}/versions", s.terraformV1ModuleHandler.HandleModuleVersions)           // Use the new handler
 		r.Get("/modules/{namespace}/{name}/{provider}/download", s.terraformV1ModuleHandler.HandleModuleDownload)           // Use the new handler
 		r.Get("/modules/{namespace}/{name}/{provider}/{version}", s.terraformV1ModuleHandler.HandleModuleVersionDetails)    // Use the new handler
 		r.Get("/modules/{namespace}/{name}/{provider}/{version}/download", s.terraformV1ModuleHandler.HandleModuleDownload) // Use the new handler
-		r.Get("/modules/{namespace}/{name}/{provider}/downloads/summary", s.handleModuleDownloadsSummary)
 
 		// Providers
 		r.Route("/providers", func(r chi.Router) {
@@ -203,8 +203,8 @@ func (s *Server) setupRoutes() {
 			// Modules
 			r.Get("/modules/{namespace}", s.handleTerraregNamespaceModules)
 			r.Get("/modules/{namespace}/{name}", s.handleTerraregModuleProviders)
-			r.Get("/modules/{namespace}/{name}/{provider}", s.handleTerraregModuleProviderDetails)
 			r.Get("/modules/{namespace}/{name}/{provider}/versions", s.handleTerraregModuleProviderVersions)
+			r.Get("/modules/{namespace}/{name}/{provider}", s.handleTerraregModuleProviderDetails)
 			r.With(s.authMiddleware.RequireAuth).Post("/modules/{namespace}/{name}/{provider}/create", s.handleModuleProviderCreate)
 			r.With(s.authMiddleware.RequireAuth).Delete("/modules/{namespace}/{name}/{provider}/delete", s.handleModuleProviderDelete)
 			r.Get("/modules/{namespace}/{name}/{provider}/settings", s.handleModuleProviderSettings)
