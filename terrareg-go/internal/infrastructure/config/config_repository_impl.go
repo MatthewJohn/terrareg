@@ -35,7 +35,6 @@ func NewConfigRepositoryImplWithConfig(versionReader *version.VersionReader, dom
 // GetConfig retrieves the complete configuration from injected domain config
 func (r *ConfigRepositoryImpl) GetConfig(ctx context.Context) (*model.Config, error) {
 	var config *model.Config
-	var err error
 
 	if r.domainConfig != nil {
 		// Use injected domain config

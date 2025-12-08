@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"reflect"
 	"strings"
@@ -89,61 +88,13 @@ func (e *EnvironmentLoader) LoadAllEnvironmentVariables() map[string]string {
 	return config
 }
 
-// handleArrayEnvironmentVariables processes environment variables that can have multiple values
-// This handles the legacy format where env vars could be suffixed with numbers
+// handleArrayEnvironmentVariables processes environment variables that have special array handling
+// Based on the Python config.py implementation
 func (e *EnvironmentLoader) handleArrayEnvironmentVariables(config map[string]string) {
-	// Handle ANALYTICS_TOKEN_PHRASE - check for ANALYTICS_TOKEN_PHRASE1, ANALYTICS_TOKEN_PHRASE2, etc.
-	if value, exists := config["ANALYTICS_TOKEN_PHRASE"]; !exists || value == "" {
-		var phrases []string
-		for i := 1; i <= 100; i++ { // Reasonable limit
-			key := fmt.Sprintf("ANALYTICS_TOKEN_PHRASE%d", i)
-			if phrase, exists := config[key]; exists && phrase != "" {
-				phrases = append(phrases, phrase)
-			} else if i == 1 {
-				break // Stop if we don't find the first one
-			} else {
-				break // Stop when we encounter a missing one after finding some
-			}
-		}
-		if len(phrases) > 0 {
-			config["ANALYTICS_TOKEN_PHRASE"] = strings.Join(phrases, ",")
-		}
-	}
-
-	// Handle ANALYTICS_TOKEN_DESCRIPTION - similar array logic
-	if value, exists := config["ANALYTICS_TOKEN_DESCRIPTION"]; !exists || value == "" {
-		var descriptions []string
-		for i := 1; i <= 100; i++ {
-			key := fmt.Sprintf("ANALYTICS_TOKEN_DESCRIPTION%d", i)
-			if desc, exists := config[key]; exists && desc != "" {
-				descriptions = append(descriptions, desc)
-			} else if i == 1 {
-				break
-			} else {
-				break
-			}
-		}
-		if len(descriptions) > 0 {
-			config["ANALYTICS_TOKEN_DESCRIPTION"] = strings.Join(descriptions, ",")
-		}
-	}
-
-	// Handle ADDITIONAL_MODULE_TABS - check for numbered versions
+	// ADDITIONAL_MODULE_TABS is special - it should be a JSON array of arrays
+	// If not provided, use the default value from Python config
 	if value, exists := config["ADDITIONAL_MODULE_TABS"]; !exists || value == "" {
-		var tabs []string
-		for i := 1; i <= 100; i++ {
-			key := fmt.Sprintf("ADDITIONAL_MODULE_TAB%d", i)
-			if tab, exists := os.LookupEnv(key); exists && tab != "" {
-				tabs = append(tabs, tab)
-			} else if i == 1 {
-				break
-			} else {
-				break
-			}
-		}
-		if len(tabs) > 0 {
-			config["ADDITIONAL_MODULE_TABS"] = strings.Join(tabs, ",")
-		}
+		config["ADDITIONAL_MODULE_TABS"] = `[["Release Notes", ["RELEASE_NOTES.md", "CHANGELOG.md"]], ["License", ["LICENSE"]]]`
 	}
 }
 
