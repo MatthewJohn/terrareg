@@ -70,7 +70,7 @@ type TerraregVersionDetails struct {
 }
 
 // ModuleSpecs contains Terraform module specification data
-// Matches Python's get_api_module_specs()
+// Matches Python's get_api_module_specs() - NOTE: No 'modules' field in standard API
 type ModuleSpecs struct {
 	Path                 string                `json:"path"`
 	Readme               string                `json:"readme"`
@@ -80,7 +80,6 @@ type ModuleSpecs struct {
 	Dependencies         []TerraformDependency `json:"dependencies"`
 	ProviderDependencies []TerraformProvider   `json:"provider_dependencies"`
 	Resources            []TerraformResource   `json:"resources"`
-	Modules              []TerraformModule     `json:"modules"`
 }
 
 // Terraform specification types
@@ -98,29 +97,21 @@ type TerraformOutput struct {
 }
 
 type TerraformDependency struct {
-	Name    string `json:"name"`
+	Module  string `json:"module"`  // Python uses "module" not "name"
 	Source  string `json:"source"`
 	Version string `json:"version"`
 }
 
 type TerraformProvider struct {
-	Name          string                 `json:"name"`
-	Version       string                 `json:"version"`
-	Source        string                 `json:"source"`
-	Configuration map[string]interface{} `json:"configuration"`
+	Name    string `json:"name"`    // Provider name from get_providers()
+	// Note: Standard API only returns provider names, not full provider details
 }
 
 type TerraformResource struct {
-	Type     string                 `json:"type"`
-	Name     string                 `json:"name"`
-	Provider string                 `json:"provider"`
-	Mode     string                 `json:"mode"` // "managed" or "data"
-	Version  string                 `json:"version"`
-	Config   map[string]interface{} `json:"config"`
+	Name string `json:"name"` // Resource name
+	Type string `json:"type"` // Resource type
+	// Note: Standard API only returns name and type
 }
 
-type TerraformModule struct {
-	Name    string `json:"name"`
-	Source  string `json:"source"`
-	Version string `json:"version"`
-}
+// TerraformModule is only used in terrareg API, not standard API
+// See terrareg.TerraregModule for the terrareg-specific implementation
