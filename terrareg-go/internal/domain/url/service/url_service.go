@@ -18,11 +18,11 @@ type PublicURLDetails struct {
 // URLService provides centralized URL handling functionality
 // Following DDD principles by separating URL logic from business layers
 type URLService struct {
-	config *config.Config
+	config *config.InfrastructureConfig
 }
 
 // NewURLService creates a new URL service
-func NewURLService(config *config.Config) *URLService {
+func NewURLService(config *config.InfrastructureConfig) *URLService {
 	return &URLService{
 		config: config,
 	}

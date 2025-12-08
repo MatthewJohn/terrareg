@@ -448,7 +448,12 @@ func NewContainerWithConfigService(
 
 	// Initialize repositories (using domain config where appropriate)
 	c.NamespaceRepo = modulePersistence.NewNamespaceRepository(db.DB)
-	c.ModuleProviderRepo = modulePersistence.NewModuleProviderRepository(db.DB, c.NamespaceRepo, legacyConfig) // TODO: Update to use domain config
+	if legacyConfig != nil {
+		c.ModuleProviderRepo = modulePersistence.NewModuleProviderRepository(db.DB, c.NamespaceRepo, legacyConfig)
+	} else {
+		// Use default constructor when no legacy config available
+		c.ModuleProviderRepo = modulePersistence.NewModuleProviderRepository(db.DB, c.NamespaceRepo, nil)
+	}
 	c.ModuleVersionRepo = modulePersistence.NewModuleVersionRepository(db.DB)
 	c.ProviderRepo = providerRepository.NewProviderRepository()
 	c.ProviderLogoRepo = providerLogoRepo.NewProviderLogoRepository()
@@ -456,9 +461,9 @@ func NewContainerWithConfigService(
 	c.UserGroupRepo = authPersistence.NewUserGroupRepository(db.DB)
 	c.TerraformIdpAuthorizationCodeRepo = authPersistence.NewTerraformIdpAuthorizationCodeRepository(db.DB)
 	c.TerraformIdpAccessTokenRepo = authPersistence.NewTerraformIdpAccessTokenRepository(db.DB)
-	c.TerraformIdpSubjectIdentifierRepo = authPersistence.NewTerraformIdpSubjectIdentifierRepo(db.DB)
+	c.TerraformIdpSubjectIdentifierRepo = authPersistence.NewTerraformIdpSubjectIdentifierRepository(db.DB)
 
-	c.URLService = urlservice.NewURLService(legacyConfig) // TODO: Update to use infra config
+	c.URLService = urlservice.NewURLService(infraConfig)
 
 	// Initialize infrastructure services
 	c.GitClient = git.NewGitClientImpl()

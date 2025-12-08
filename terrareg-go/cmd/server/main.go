@@ -7,11 +7,8 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/config"
-	appConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/config"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/container"
 	domainConfigService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/service"
-	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/config"
+	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/container"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/persistence/sqldb"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/infrastructure/version"
 )
@@ -76,69 +73,16 @@ func bootstrapWithConfigService(logger zerolog.Logger) (*container.Container, er
 		// }
 	}
 
-	// Load legacy config for backward compatibility during migration
-	legacyConfig, err := appConfig.New()
-	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to load legacy config, some features may not work")
-		legacyConfig = nil // Continue without legacy config
-	}
-
 	// Initialize dependency injection container with new configuration architecture
 	logger.Info().Msg("Initializing application container")
 	c, err := container.NewContainerWithConfigService(
-		legacyConfig,
+		nil, // No legacy config
 		domainConfig,
 		infraConfig,
 		configService,
 		logger,
 		db,
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	return c, nil
-}
-
-// bootstrapLegacy bootstraps the application using the legacy configuration (for fallback)
-func bootstrapLegacy(logger zerolog.Logger) (*container.Container, error) {
-	// Load legacy configuration
-	cfg, err := config.New()
-	if err != nil {
-		return nil, err
-	}
-
-	// Validate configuration
-	if err := cfg.Validate(); err != nil {
-		return nil, err
-	}
-
-	logger.Info().
-		Int("port", cfg.ListenPort).
-		Str("public_url", cfg.PublicURL).
-		Str("database_url", maskDatabaseURL(cfg.DatabaseURL)).
-		Msg("Configuration loaded")
-
-	// Initialize database
-	logger.Info().Msg("Connecting to database")
-	db, err := sqldb.NewDatabase(cfg.DatabaseURL, cfg.Debug)
-	if err != nil {
-		return nil, err
-	}
-
-	logger.Info().Msg("Database connected successfully")
-
-	// Auto-migrate database schema (for development)
-	if cfg.Debug {
-		logger.Info().Msg("Running database auto-migration")
-		// if err := autoMigrate(db); err != nil {
-		// 	logger.Fatal().Err(err).Msg("Failed to auto-migrate database")
-		// }
-	}
-
-	// Initialize dependency injection container with legacy configuration
-	logger.Info().Msg("Initializing application container")
-	c, err := container.NewContainer(cfg, logger, db)
 	if err != nil {
 		return nil, err
 	}

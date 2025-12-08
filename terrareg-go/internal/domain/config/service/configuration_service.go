@@ -1,9 +1,7 @@
 package service
 
 import (
-	"context"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -78,7 +76,7 @@ func (s *ConfigurationService) buildDomainConfig(rawConfig map[string]string) *m
 		DisableAnalytics:          s.parseBool(rawConfig["DISABLE_ANALYTICS"], false),
 
 		// Additional UI settings
-		AdditionalModuleTabs: s.parseStringSlice(rawConfig["ADDITIONAL_MODULE_TABS"], ","),
+		AdditionalModuleTabs: s.parseAdditionalModuleTabs(rawConfig["ADDITIONAL_MODULE_TABS"]),
 		DefaultUiDetailsView: s.getDefaultUiView(rawConfig["DEFAULT_UI_DETAILS_VIEW"]),
 		AutoCreateNamespace:  s.parseBool(rawConfig["AUTO_CREATE_NAMESPACE"], true),
 		AutoCreateModuleProvider: s.parseBool(rawConfig["AUTO_CREATE_MODULE_PROVIDER"], true),
@@ -227,6 +225,7 @@ func (s *ConfigurationService) parseDuration(value string, defaultMinutes int) t
 }
 
 // parseStringSlice parses a comma-separated string into a slice
+// This matches the Python pattern: [attr for attr in os.environ.get(..., '').split(',') if attr]
 func (s *ConfigurationService) parseStringSlice(value, separator string) []string {
 	if value == "" {
 		return []string{}
@@ -241,6 +240,18 @@ func (s *ConfigurationService) parseStringSlice(value, separator string) []strin
 		}
 	}
 	return result
+}
+
+// parseAdditionalModuleTabs handles the special case of ADDITIONAL_MODULE_TABS
+// which is a JSON array of arrays in Python, not a simple comma-separated list
+func (s *ConfigurationService) parseAdditionalModuleTabs(value string) []string {
+	// ADDITIONAL_MODULE_TABS is a special case - it's JSON in Python
+	// For now, return it as a single string since parsing the JSON structure
+	// would require additional JSON handling and the Go domain model expects []string
+	if value == "" {
+		return []string{}
+	}
+	return []string{value}
 }
 
 // getDefaultUiView parses the default UI details view
