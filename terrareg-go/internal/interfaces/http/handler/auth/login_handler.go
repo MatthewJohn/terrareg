@@ -77,7 +77,17 @@ func (h *LoginHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set session cookie
-	if err := h.cookieSessionService.SetSessionCookie(w, sessionResp.SessionData); err != nil {
+	sessionData := &service.SessionData{
+		SessionID:   sessionResp.SessionID,
+		UserID:      sessionResp.Username, // Use username as UserID for now
+		Username:    sessionResp.Username,
+		AuthMethod:  sessionResp.AuthMethod,
+		IsAdmin:     sessionResp.IsAdmin,
+		SiteAdmin:   sessionResp.SiteAdmin,
+		UserGroups:  sessionResp.UserGroups,
+		Expiry:      &sessionResp.Expiry,
+	}
+	if err := h.cookieSessionService.SetSessionCookie(w, sessionData); err != nil {
 		h.logger.Error().Err(err).Msg("Failed to set session cookie")
 		h.respondError(w, "Failed to create session", http.StatusInternalServerError)
 		return

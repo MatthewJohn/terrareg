@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/rs/zerolog"
 
@@ -95,7 +96,8 @@ func (h *SessionHandler) HandleRefreshSession(w http.ResponseWriter, r *http.Req
 	}
 
 	// Update last accessed time
-	sessionData.LastAccessed = sessionData.LastAccessed
+	now := time.Now()
+	sessionData.LastAccessed = &now
 
 	// Re-encrypt and set updated session cookie
 	if err := h.cookieSessionService.SetSessionCookie(w, sessionData); err != nil {
