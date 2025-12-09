@@ -1,6 +1,7 @@
 package terrareg
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -25,11 +26,11 @@ func TestTerraregModuleProviderDetails_Integration_BasicFunctionality(t *testing
 
 	moduleDetails := model.NewCompleteModuleDetails(
 		[]byte("# Test Module\n\nThis is a test module with readme content."),
-		nil, // terraform docs
-		nil, // tfsec
-		nil, // infracost
-		nil, // terraform graph
-		nil, // terraform modules
+		nil,     // terraform docs
+		nil,     // tfsec
+		nil,     // infracost
+		nil,     // terraform graph
+		nil,     // terraform modules
 		"1.0.0", // terraform version
 	)
 	require.NotNil(t, moduleDetails)
@@ -49,6 +50,7 @@ func TestTerraregModuleProviderDetails_Integration_BasicFunctionality(t *testing
 
 	// Test the presenter method
 	response := moduleVersionPresenter.ToTerraregProviderDetailsDTO(
+		context.Background(),
 		moduleVersion,
 		"test-namespace",
 		"test-module",
@@ -134,6 +136,7 @@ func TestTerraregModuleProviderDetails_Integration_JSONSerialization(t *testing.
 
 	// Generate response
 	response := moduleVersionPresenter.ToTerraregProviderDetailsDTO(
+		context.Background(),
 		moduleVersion,
 		"json-test",
 		"json-module",
@@ -228,6 +231,7 @@ func TestTerraregModuleProviderDetails_Integration_VersionsList(t *testing.T) {
 	// Test presenter with a specific version
 	moduleVersionPresenter := presenter.NewModuleVersionPresenter()
 	response := moduleVersionPresenter.ToTerraregProviderDetailsDTO(
+		context.Background(),
 		version3, // Use the beta version (2.0.0) as the main version
 		"versions-test",
 		"versions-module",

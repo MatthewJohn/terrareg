@@ -78,8 +78,7 @@ func (ss *SessionService) ValidateSession(ctx context.Context, sessionID string)
 }
 
 // GetSession retrieves a session by ID without checking expiry
-func (ss *SessionService) GetSession(sessionID string) (*auth.Session, error) {
-	ctx := context.Background()
+func (ss *SessionService) GetSession(ctx context.Context, sessionID string) (*auth.Session, error) {
 	return ss.sessionRepo.FindByID(ctx, sessionID)
 }
 
@@ -95,7 +94,7 @@ func (ss *SessionService) CleanupExpiredSessions(ctx context.Context) error {
 
 // RefreshSession updates the expiry time of a session
 func (ss *SessionService) RefreshSession(ctx context.Context, sessionID string, ttl time.Duration) (*auth.Session, error) {
-	session, err := ss.GetSession(sessionID)
+	session, err := ss.GetSession(ctx, sessionID)
 	if err != nil {
 		return nil, fmt.Errorf("session not found: %w", err)
 	}

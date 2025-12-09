@@ -119,7 +119,7 @@ func (r *ModuleProviderRepositoryImpl) FindByID(ctx context.Context, id int) (*m
 		return nil, fmt.Errorf("failed to find module provider: %w", err)
 	}
 
-	return r.toDomain(&dbModel)
+	return r.toDomain(ctx, &dbModel)
 }
 
 // FindByNamespaceModuleProvider retrieves a module provider by namespace/module/provider
@@ -140,7 +140,7 @@ func (r *ModuleProviderRepositoryImpl) FindByNamespaceModuleProvider(ctx context
 		return nil, fmt.Errorf("failed to find module provider: %w", err)
 	}
 
-	return r.toDomain(&dbModel)
+	return r.toDomain(ctx, &dbModel)
 }
 
 // FindByNamespace retrieves all module providers in a namespace
@@ -160,7 +160,7 @@ func (r *ModuleProviderRepositoryImpl) FindByNamespace(ctx context.Context, name
 
 	providers := make([]*model.ModuleProvider, len(dbModels))
 	for i, dbModel := range dbModels {
-		mp, err := r.toDomain(&dbModel)
+		mp, err := r.toDomain(ctx, &dbModel)
 		if err != nil {
 			return nil, err
 		}
@@ -450,7 +450,7 @@ func (r *ModuleProviderRepositoryImpl) Exists(ctx context.Context, namespace, mo
 }
 
 // toDomain converts database model to domain model
-func (r *ModuleProviderRepositoryImpl) toDomain(db *sqldb.ModuleProviderDB) (*model.ModuleProvider, error) {
+func (r *ModuleProviderRepositoryImpl) toDomain(ctx context.Context, db *sqldb.ModuleProviderDB) (*model.ModuleProvider, error) {
 	namespace := fromDBNamespace(&db.Namespace)
 
 	// Use the new mapper function
@@ -462,7 +462,7 @@ func (r *ModuleProviderRepositoryImpl) toDomain(db *sqldb.ModuleProviderDB) (*mo
 	}
 
 	// Load versions
-	versions, err := r.loadVersions(context.Background(), db.ID)
+	versions, err := r.loadVersions(ctx, db.ID)
 	if err != nil {
 		return nil, err
 	}

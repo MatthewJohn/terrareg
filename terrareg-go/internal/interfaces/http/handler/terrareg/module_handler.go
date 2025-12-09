@@ -8,13 +8,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
 	moduleCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/module"
 	moduleQuery "github.com/matthewjohn/terrareg/terrareg-go/internal/application/query/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	moduleModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto"
-	analyticsCmd "github.com/matthewjohn/terrareg/terrareg-go/internal/application/command/analytics"
 	moduledto "github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/dto/module"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/interfaces/http/presenter"
 )
@@ -38,8 +38,8 @@ type ModuleHandler struct {
 	importModuleVersionCmd          *moduleCmd.ImportModuleVersionCommand
 	presenter                       *presenter.ModulePresenter
 	versionPresenter                *presenter.ModuleVersionPresenter
-	domainConfig                     *model.DomainConfig
-	analyticsRepo                    analyticsCmd.AnalyticsRepository
+	domainConfig                    *model.DomainConfig
+	analyticsRepo                   analyticsCmd.AnalyticsRepository
 }
 
 // NewModuleHandler creates a new module handler
@@ -81,8 +81,8 @@ func NewModuleHandler(
 		importModuleVersionCmd:          importModuleVersionCmd,
 		presenter:                       presenter.NewModulePresenter(analyticsRepo),
 		versionPresenter:                presenter.NewModuleVersionPresenter(namespaceService, analyticsRepo),
-		domainConfig:                     domainConfig,
-		analyticsRepo:                    analyticsRepo,
+		domainConfig:                    domainConfig,
+		analyticsRepo:                   analyticsRepo,
 	}
 }
 
@@ -713,7 +713,7 @@ func (h *ModuleHandler) HandleTerraregModuleProviderDetails(w http.ResponseWrite
 	}
 
 	// Convert to Terrareg Provider Details DTO with request domain and analytics token
-	response := h.versionPresenter.ToTerraregProviderDetailsDTO(latestVersion, namespace, name, provider, requestDomain)
+	response := h.versionPresenter.ToTerraregProviderDetailsDTO(ctx, latestVersion, namespace, name, provider, requestDomain)
 
 	// Send response
 	RespondJSON(w, http.StatusOK, response)

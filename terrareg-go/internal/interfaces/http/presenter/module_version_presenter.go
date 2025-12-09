@@ -173,6 +173,7 @@ func (p *ModuleVersionPresenter) ToTerraregDTO(mv *model.ModuleVersion, namespac
 // ToTerraregProviderDetailsDTO converts a module version to TerraregModuleProviderDetailsResponse.
 // This replicates Python's ModuleVersion.get_terrareg_api_details() method.
 func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
+	ctx context.Context,
 	mv *model.ModuleVersion,
 	namespace, moduleName, provider string,
 	requestDomain string,
@@ -238,7 +239,7 @@ func (p *ModuleVersionPresenter) ToTerraregProviderDetailsDTO(
 	// Add downloads count from analytics
 	downloads := 0
 	if p.analyticsRepo != nil {
-		if count, err := p.analyticsRepo.GetDownloadsByVersionID(context.Background(), mv.ID()); err == nil {
+		if count, err := p.analyticsRepo.GetDownloadsByVersionID(ctx, mv.ID()); err == nil {
 			downloads = count
 		}
 	}

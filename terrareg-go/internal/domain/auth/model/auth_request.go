@@ -2,9 +2,10 @@ package model
 
 import (
 	"context"
+	"time"
+
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/auth"
 	"github.com/matthewjohn/terrareg/terrareg-go/internal/domain/shared"
-	"time"
 )
 
 // AuthenticationRequest represents a request to authenticate
@@ -154,7 +155,7 @@ type APIKeyAuthResponse struct {
 // Helper functions for creating requests and responses
 
 // NewAuthenticationRequest creates a new authentication request
-func NewAuthenticationRequest(authMethod auth.AuthMethodType, headers, formData, queryParams map[string]string) *AuthenticationRequest {
+func NewAuthenticationRequest(ctx context.Context, authMethod auth.AuthMethodType, headers, formData, queryParams map[string]string) *AuthenticationRequest {
 	return &AuthenticationRequest{
 		RequestID:      shared.GenerateID(),
 		Timestamp:      time.Now(),
@@ -163,7 +164,7 @@ func NewAuthenticationRequest(authMethod auth.AuthMethodType, headers, formData,
 		FormData:       formData,
 		QueryParams:    queryParams,
 		JSONData:       make(map[string]interface{}),
-		Context:        context.Background(),
+		Context:        ctx,
 	}
 }
 

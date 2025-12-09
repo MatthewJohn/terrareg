@@ -28,16 +28,16 @@ func NewAuthenticationService(sessionService *SessionService, cookieService *Coo
 
 // SessionData contains session information for HTTP handlers
 type SessionData struct {
-	SessionID      string            `json:"session_id"`
-	UserID         string            `json:"user_id,omitempty"`
-	Username       string            `json:"username,omitempty"`
-	AuthMethod     string            `json:"auth_method"`
-	IsAdmin        bool              `json:"is_admin"`
-	SiteAdmin      bool              `json:"site_admin"`
-	UserGroups     []string          `json:"user_groups,omitempty"`
-	LastAccessed   *time.Time        `json:"last_accessed,omitempty"`
-	Expiry         *time.Time        `json:"expiry,omitempty"`
-	Permissions    map[string]string `json:"permissions,omitempty"`
+	SessionID    string            `json:"session_id"`
+	UserID       string            `json:"user_id,omitempty"`
+	Username     string            `json:"username,omitempty"`
+	AuthMethod   string            `json:"auth_method"`
+	IsAdmin      bool              `json:"is_admin"`
+	SiteAdmin    bool              `json:"site_admin"`
+	UserGroups   []string          `json:"user_groups,omitempty"`
+	LastAccessed *time.Time        `json:"last_accessed,omitempty"`
+	Expiry       *time.Time        `json:"expiry,omitempty"`
+	Permissions  map[string]string `json:"permissions,omitempty"`
 }
 
 // AuthenticationContext contains authentication information for a request
@@ -237,7 +237,7 @@ func (as *AuthenticationService) CreateAdminSession(ctx context.Context, w http.
 		Msg("CreateAdminSession: starting")
 
 	// Get session from database to ensure it's valid
-	session, err := as.sessionService.GetSession(sessionID)
+	session, err := as.sessionService.GetSession(ctx, sessionID)
 	if err != nil {
 		log.Error().
 			Err(err).
