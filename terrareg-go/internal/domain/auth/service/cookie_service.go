@@ -63,15 +63,7 @@ func NewCookieService(config *infraConfig.InfrastructureConfig) *CookieService {
 }
 
 // SessionData represents the data stored in the new session cookie
-// This is a simplified version for the refactored architecture
-type SessionData struct {
-	SessionID   string            `json:"session_id"`
-	Username    string            `json:"username"`
-	AuthMethod  string            `json:"auth_method"`
-	IsAdmin     bool              `json:"is_admin"`
-	Permissions map[string]string `json:"permissions,omitempty"`
-	Expiry      *time.Time        `json:"expiry,omitempty"`
-}
+// This type is defined in authentication_service.go to avoid duplication
 
 // EncryptSession encrypts session data for storage in cookie
 func (cs *CookieService) EncryptSession(data *SessionData) (string, error) {
@@ -215,6 +207,44 @@ func (cs *CookieService) ValidateSessionCookie(cookieValue string) (*SessionData
 	}
 
 	return sessionData, nil
+}
+
+// SetSessionCookie sets an encrypted session cookie
+func (cs *CookieService) SetSessionCookie(w http.ResponseWriter, sessionData *SessionData) error {
+	// Encrypt session data
+	encryptedSession, err := cs.EncryptSession(sessionData)
+	if err != nil {
+		return err
+	}
+
+	// Set the cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     cs.sessionCookie,
+		Value:    encryptedSession,
+		Path:     "/",
+		MaxAge:   0, // Session cookie
+		Secure:   cs.isSecure,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	return nil
+}
+
+// ClearSessionCookie clears the session cookie
+func (cs *CookieService) ClearSessionCookie(w http.ResponseWriter) error {
+	// Clear the cookie by setting MaxAge to -1
+	http.SetCookie(w, &http.Cookie{
+		Name:     cs.sessionCookie,
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		Secure:   cs.isSecure,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	return nil
 }
 
 // Cookie errors

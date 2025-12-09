@@ -26,6 +26,20 @@ func NewAuthenticationService(sessionService *SessionService, cookieService *Coo
 	}
 }
 
+// SessionData contains session information for HTTP handlers
+type SessionData struct {
+	SessionID      string            `json:"session_id"`
+	UserID         string            `json:"user_id,omitempty"`
+	Username       string            `json:"username,omitempty"`
+	AuthMethod     string            `json:"auth_method"`
+	IsAdmin        bool              `json:"is_admin"`
+	SiteAdmin      bool              `json:"site_admin"`
+	UserGroups     []string          `json:"user_groups,omitempty"`
+	LastAccessed   *time.Time        `json:"last_accessed,omitempty"`
+	Expiry         *time.Time        `json:"expiry,omitempty"`
+	Permissions    map[string]string `json:"permissions,omitempty"`
+}
+
 // AuthenticationContext contains authentication information for a request
 type AuthenticationContext struct {
 	SessionData     *SessionData
@@ -62,6 +76,9 @@ func (as *AuthenticationService) CreateAuthenticatedSession(
 		SessionID:   session.ID,
 		AuthMethod:  authMethod,
 		IsAdmin:     false, // Default to false, can be updated based on auth method
+		SiteAdmin:   false,
+		UserGroups:  []string{},
+		Expiry:      &session.Expiry,
 		Permissions: make(map[string]string),
 	}
 
@@ -240,6 +257,8 @@ func (as *AuthenticationService) CreateAdminSession(ctx context.Context, w http.
 		Username:    "admin",
 		AuthMethod:  "ADMIN_API_KEY",
 		IsAdmin:     true,
+		SiteAdmin:   false,
+		UserGroups:  []string{},
 		Permissions: make(map[string]string),
 		Expiry:      &session.Expiry,
 	}

@@ -447,23 +447,38 @@ func (s *Server) handleProviderDownload(w http.ResponseWriter, r *http.Request) 
 func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	s.configHandler.HandleConfig(w, r)
 }
-func (s *Server) handleGitProviders(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleGitProviders(w http.ResponseWriter, r *http.Request) {
+	s.providerHandler.HandleProviderList(w, r)
+}
 func (s *Server) handleGlobalStatsSummary(w http.ResponseWriter, r *http.Request) {
 	s.analyticsHandler.HandleGlobalStatsSummary(w, r)
 }
-func (s *Server) handleGlobalUsageStats(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleGlobalUsageStats(w http.ResponseWriter, r *http.Request) {
+	// For now, delegate to global stats summary
+	s.analyticsHandler.HandleGlobalStatsSummary(w, r)
+}
 func (s *Server) handleMostRecentlyPublished(w http.ResponseWriter, r *http.Request) {
 	s.analyticsHandler.HandleMostRecentlyPublished(w, r)
 }
 func (s *Server) handleMostDownloadedThisWeek(w http.ResponseWriter, r *http.Request) {
 	s.analyticsHandler.HandleMostDownloadedThisWeek(w, r)
 }
-func (s *Server) handleModuleVersionAnalytics(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleAnalyticsTokenVersions(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleModuleVersionAnalytics(w http.ResponseWriter, r *http.Request) {
+	s.analyticsHandler.HandleModuleDownloadsSummary(w, r)
+}
+func (s *Server) handleAnalyticsTokenVersions(w http.ResponseWriter, r *http.Request) {
+	// For now, return a basic analytics response
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"token_versions": []string{},
+	})
+}
 func (s *Server) handleInitialSetup(w http.ResponseWriter, r *http.Request) {
 	s.initialSetupHandler.HandleInitialSetup(w, r)
 }
-func (s *Server) handleInitialSetupPost(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleInitialSetupPost(w http.ResponseWriter, r *http.Request) {
+	// For now, use the same GET handler for POST
+	s.initialSetupHandler.HandleInitialSetup(w, r)
+}
 func (s *Server) handleNamespaceList(w http.ResponseWriter, r *http.Request) {
 	s.namespaceHandler.HandleNamespaceList(w, r)
 }
@@ -476,8 +491,12 @@ func (s *Server) handleNamespaceGet(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleNamespaceUpdate(w http.ResponseWriter, r *http.Request) {
 	s.namespaceHandler.HandleNamespaceUpdate(w, r)
 }
-func (s *Server) handleTerraregNamespaceModules(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleTerraregModuleProviders(w http.ResponseWriter, r *http.Request)  {}
+func (s *Server) handleTerraregNamespaceModules(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleNamespaceModules(w, r)
+}
+func (s *Server) handleTerraregModuleProviders(w http.ResponseWriter, r *http.Request)  {
+	s.moduleHandler.HandleModuleProviderDetails(w, r)
+}
 func (s *Server) handleTerraregModuleProviderDetails(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleTerraregModuleProviderDetails(w, r)
 }
@@ -499,23 +518,60 @@ func (s *Server) handleModuleProviderSettings(w http.ResponseWriter, r *http.Req
 func (s *Server) handleModuleProviderSettingsUpdate(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleProviderSettingsUpdate(w, r)
 }
-func (s *Server) handleModuleProviderIntegrations(w http.ResponseWriter, r *http.Request)   {}
-func (s *Server) handleModuleProviderRedirects(w http.ResponseWriter, r *http.Request)      {}
-func (s *Server) handleModuleProviderRedirectDelete(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleModuleProviderIntegrations(w http.ResponseWriter, r *http.Request)   {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Module provider integrations not yet implemented",
+	})
+}
+func (s *Server) handleModuleProviderRedirects(w http.ResponseWriter, r *http.Request)      {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Module provider redirects not yet implemented",
+	})
+}
+func (s *Server) handleModuleProviderRedirectDelete(w http.ResponseWriter, r *http.Request) {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Module provider redirect delete not yet implemented",
+	})
+}
 func (s *Server) handleModuleVersionUpload(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleVersionUpload(w, r)
 }
-func (s *Server) handleModuleVersionCreate(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleModuleVersionCreate(w http.ResponseWriter, r *http.Request) {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Module version creation not yet implemented",
+	})
+}
 func (s *Server) handleModuleVersionImport(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleVersionImport(w, r)
 }
 func (s *Server) handleModuleVersionPublish(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleVersionPublish(w, r)
 }
-func (s *Server) handleModuleVersionDelete(w http.ResponseWriter, r *http.Request)           {}
-func (s *Server) handleModuleVersionReadmeHTML(w http.ResponseWriter, r *http.Request)       {}
-func (s *Server) handleModuleVersionVariableTemplate(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleModuleVersionFile(w http.ResponseWriter, r *http.Request)             {}
+func (s *Server) handleModuleVersionDelete(w http.ResponseWriter, r *http.Request)           {
+	s.moduleHandler.HandleModuleProviderDelete(w, r)
+}
+func (s *Server) handleModuleVersionReadmeHTML(w http.ResponseWriter, r *http.Request)       {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Module version readme HTML not yet implemented",
+	})
+}
+func (s *Server) handleModuleVersionVariableTemplate(w http.ResponseWriter, r *http.Request) {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Module version variable template not yet implemented",
+	})
+}
+func (s *Server) handleModuleVersionFile(w http.ResponseWriter, r *http.Request)             {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Module version file serving not yet implemented",
+	})
+}
 func (s *Server) handleModuleVersionSourceDownload(w http.ResponseWriter, r *http.Request) {
 	// Check if module hosting is disallowed
 	if s.domainConfig.AllowModuleHosting == model.ModuleHostingModeDisallow {
@@ -551,18 +607,60 @@ func (s *Server) handleModuleVersionSourceDownload(w http.ResponseWriter, r *htt
 func (s *Server) handleModuleVersionSubmodules(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleGetSubmodules(w, r)
 }
-func (s *Server) handleSubmoduleDetails(w http.ResponseWriter, r *http.Request)    {}
-func (s *Server) handleSubmoduleReadmeHTML(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleSubmoduleDetails(w http.ResponseWriter, r *http.Request)    {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Submodule details not yet implemented",
+	})
+}
+func (s *Server) handleSubmoduleReadmeHTML(w http.ResponseWriter, r *http.Request) {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Submodule readme HTML not yet implemented",
+	})
+}
 func (s *Server) handleModuleVersionExamples(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleGetExamples(w, r)
 }
-func (s *Server) handleExampleDetails(w http.ResponseWriter, r *http.Request)             {}
-func (s *Server) handleExampleReadmeHTML(w http.ResponseWriter, r *http.Request)          {}
-func (s *Server) handleExampleFileList(w http.ResponseWriter, r *http.Request)            {}
-func (s *Server) handleExampleFile(w http.ResponseWriter, r *http.Request)                {}
-func (s *Server) handleGraphData(w http.ResponseWriter, r *http.Request)                  {}
-func (s *Server) handleTerraregNamespaceProviders(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderIntegrations(w http.ResponseWriter, r *http.Request)       {}
+func (s *Server) handleExampleDetails(w http.ResponseWriter, r *http.Request)             {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Example details not yet implemented",
+	})
+}
+func (s *Server) handleExampleReadmeHTML(w http.ResponseWriter, r *http.Request)          {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Example readme HTML not yet implemented",
+	})
+}
+func (s *Server) handleExampleFileList(w http.ResponseWriter, r *http.Request)            {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Example file list not yet implemented",
+	})
+}
+func (s *Server) handleExampleFile(w http.ResponseWriter, r *http.Request)                {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Example file serving not yet implemented",
+	})
+}
+func (s *Server) handleGraphData(w http.ResponseWriter, r *http.Request)                  {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Graph data not yet implemented",
+	})
+}
+func (s *Server) handleTerraregNamespaceProviders(w http.ResponseWriter, r *http.Request) {
+	s.moduleHandler.HandleModuleProviderDetails(w, r)
+}
+func (s *Server) handleProviderIntegrations(w http.ResponseWriter, r *http.Request)       {
+	// Provider integrations not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Provider integrations not yet implemented",
+	})
+}
 func (s *Server) handleProviderLogos(w http.ResponseWriter, r *http.Request) {
 	s.providerLogosHandler.HandleGetProviderLogos(w, r)
 }
@@ -571,43 +669,167 @@ func (s *Server) handleModuleSearchFilters(w http.ResponseWriter, r *http.Reques
 }
 
 func (s *Server) handleProviderSearchFilters(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement provider search filters when needed
-	http.Error(w, "Provider search filters not yet implemented", http.StatusNotImplemented)
+	// Provider search filters not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Provider search filters not yet implemented",
+	})
 }
-func (s *Server) handleAuditHistory(w http.ResponseWriter, r *http.Request)                        {}
-func (s *Server) handleUserGroupList(w http.ResponseWriter, r *http.Request)                       {}
-func (s *Server) handleUserGroupCreate(w http.ResponseWriter, r *http.Request)                     {}
-func (s *Server) handleUserGroupDetails(w http.ResponseWriter, r *http.Request)                    {}
-func (s *Server) handleUserGroupDelete(w http.ResponseWriter, r *http.Request)                     {}
-func (s *Server) handleUserGroupNamespacePermissions(w http.ResponseWriter, r *http.Request)       {}
-func (s *Server) handleUserGroupNamespacePermissionsUpdate(w http.ResponseWriter, r *http.Request) {}
+func (s *Server) handleAuditHistory(w http.ResponseWriter, r *http.Request)                        {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Audit history not yet implemented",
+	})
+}
+func (s *Server) handleUserGroupList(w http.ResponseWriter, r *http.Request)                       {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "User group list not yet implemented",
+	})
+}
+func (s *Server) handleUserGroupCreate(w http.ResponseWriter, r *http.Request)                     {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "User group creation not yet implemented",
+	})
+}
+func (s *Server) handleUserGroupDetails(w http.ResponseWriter, r *http.Request)                    {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "User group details not yet implemented",
+	})
+}
+func (s *Server) handleUserGroupDelete(w http.ResponseWriter, r *http.Request)                     {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "User group deletion not yet implemented",
+	})
+}
+func (s *Server) handleUserGroupNamespacePermissions(w http.ResponseWriter, r *http.Request)       {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "User group namespace permissions not yet implemented",
+	})
+}
+func (s *Server) handleUserGroupNamespacePermissionsUpdate(w http.ResponseWriter, r *http.Request) {
+	// For now, return a placeholder response
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "User group namespace permissions update not yet implemented",
+	})
+}
 func (s *Server) handleAdminLogin(w http.ResponseWriter, r *http.Request) {
 	s.authHandler.HandleAdminLogin(w, r)
 }
 func (s *Server) handleIsAuthenticated(w http.ResponseWriter, r *http.Request) {
 	s.authHandler.HandleIsAuthenticated(w, r)
 }
-func (s *Server) handleV2ProviderDetails(w http.ResponseWriter, r *http.Request)              {}
-func (s *Server) handleV2ProviderDownloadsSummary(w http.ResponseWriter, r *http.Request)     {}
-func (s *Server) handleV2ProviderDocs(w http.ResponseWriter, r *http.Request)                 {}
-func (s *Server) handleV2ProviderDoc(w http.ResponseWriter, r *http.Request)                  {}
-func (s *Server) handleV2GPGKeys(w http.ResponseWriter, r *http.Request)                      {}
-func (s *Server) handleV2GPGKeyCreate(w http.ResponseWriter, r *http.Request)                 {}
-func (s *Server) handleV2GPGKey(w http.ResponseWriter, r *http.Request)                       {}
-func (s *Server) handleV2Categories(w http.ResponseWriter, r *http.Request)                   {}
-func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request)                      {}
-func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request)                   {}
-func (s *Server) handleSAMLLogin(w http.ResponseWriter, r *http.Request)                      {}
-func (s *Server) handleSAMLMetadata(w http.ResponseWriter, r *http.Request)                   {}
-func (s *Server) handleProviderSourceLogin(w http.ResponseWriter, r *http.Request)            {}
-func (s *Server) handleProviderSourceCallback(w http.ResponseWriter, r *http.Request)         {}
-func (s *Server) handleProviderSourceAuthStatus(w http.ResponseWriter, r *http.Request)       {}
-func (s *Server) handleProviderSourceOrganizations(w http.ResponseWriter, r *http.Request)    {}
-func (s *Server) handleProviderSourceRepositories(w http.ResponseWriter, r *http.Request)     {}
-func (s *Server) handleProviderSourceRefreshNamespace(w http.ResponseWriter, r *http.Request) {}
-func (s *Server) handleProviderSourcePublishProvider(w http.ResponseWriter, r *http.Request)  {}
-func (s *Server) handleGitHubWebhook(w http.ResponseWriter, r *http.Request)                  {}
-func (s *Server) handleBitBucketWebhook(w http.ResponseWriter, r *http.Request)               {}
+func (s *Server) handleV2ProviderDetails(w http.ResponseWriter, r *http.Request)              {
+	s.terraformV2ProviderHandler.HandleProviderDetails(w, r)
+}
+func (s *Server) handleV2ProviderDownloadsSummary(w http.ResponseWriter, r *http.Request)     {
+	s.terraformV2ProviderHandler.HandleProviderDownloadsSummary(w, r)
+}
+func (s *Server) handleV2ProviderDocs(w http.ResponseWriter, r *http.Request)                 {
+	// Provider docs not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Provider docs not yet implemented",
+	})
+}
+func (s *Server) handleV2ProviderDoc(w http.ResponseWriter, r *http.Request)                  {
+	// Provider doc not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Provider doc not yet implemented",
+	})
+}
+func (s *Server) handleV2GPGKeys(w http.ResponseWriter, r *http.Request)                      {
+	s.terraformV2GPGHandler.HandleListGPGKeys(w, r)
+}
+func (s *Server) handleV2GPGKeyCreate(w http.ResponseWriter, r *http.Request)                 {
+	s.terraformV2GPGHandler.HandleCreateGPGKey(w, r)
+}
+func (s *Server) handleV2GPGKey(w http.ResponseWriter, r *http.Request)                       {
+	s.terraformV2GPGHandler.HandleGetGPGKey(w, r)
+}
+func (s *Server) handleV2Categories(w http.ResponseWriter, r *http.Request)                   {
+	s.terraformV2CategoryHandler.HandleListCategories(w, r)
+}
+func (s *Server) handleOIDCLogin(w http.ResponseWriter, r *http.Request)                      {
+	// External OIDC authentication not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "External OIDC authentication not yet implemented",
+	})
+}
+func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request)                   {
+	// External OIDC callback handling not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "External OIDC callback not yet implemented",
+	})
+}
+func (s *Server) handleSAMLLogin(w http.ResponseWriter, r *http.Request)                      {
+	// SAML login not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "SAML login not yet implemented",
+	})
+}
+func (s *Server) handleSAMLMetadata(w http.ResponseWriter, r *http.Request)                   {
+	// SAML metadata not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "SAML metadata not yet implemented",
+	})
+}
+func (s *Server) handleProviderSourceLogin(w http.ResponseWriter, r *http.Request)            {
+	// Provider source login not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Provider source login not yet implemented",
+	})
+}
+func (s *Server) handleProviderSourceCallback(w http.ResponseWriter, r *http.Request)         {
+	// Provider source callback not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Provider source callback not yet implemented",
+	})
+}
+func (s *Server) handleProviderSourceAuthStatus(w http.ResponseWriter, r *http.Request)       {
+	// Provider source auth status not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Provider source auth status not yet implemented",
+	})
+}
+func (s *Server) handleProviderSourceOrganizations(w http.ResponseWriter, r *http.Request)    {
+	// Provider source organizations not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Provider source organizations not yet implemented",
+	})
+}
+func (s *Server) handleProviderSourceRepositories(w http.ResponseWriter, r *http.Request)     {
+	// Provider source repositories not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Provider source repositories not yet implemented",
+	})
+}
+func (s *Server) handleProviderSourceRefreshNamespace(w http.ResponseWriter, r *http.Request) {
+	// Provider source refresh namespace not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Provider source refresh namespace not yet implemented",
+	})
+}
+func (s *Server) handleProviderSourcePublishProvider(w http.ResponseWriter, r *http.Request)  {
+	// Provider source publish provider not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "Provider source publish provider not yet implemented",
+	})
+}
+func (s *Server) handleGitHubWebhook(w http.ResponseWriter, r *http.Request)                  {
+	// GitHub webhook not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "GitHub webhook not yet implemented",
+	})
+}
+func (s *Server) handleBitBucketWebhook(w http.ResponseWriter, r *http.Request)               {
+	// BitBucket webhook not yet implemented
+	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
+		"message": "BitBucket webhook not yet implemented",
+	})
+}
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	// Render the index template using the template renderer
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
