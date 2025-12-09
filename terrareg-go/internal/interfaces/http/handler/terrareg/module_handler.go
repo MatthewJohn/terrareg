@@ -37,6 +37,7 @@ type ModuleHandler struct {
 	uploadModuleVersionCmd          *moduleCmd.UploadModuleVersionCommand
 	importModuleVersionCmd          *moduleCmd.ImportModuleVersionCommand
 	getModuleVersionFileCmd         *moduleCmd.GetModuleVersionFileQuery
+	deleteModuleVersionCmd          *moduleCmd.DeleteModuleVersionCommand
 	presenter                       *presenter.ModulePresenter
 	versionPresenter                *presenter.ModuleVersionPresenter
 	domainConfig                    *model.DomainConfig
@@ -61,6 +62,7 @@ func NewModuleHandler(
 	uploadModuleVersionCmd *moduleCmd.UploadModuleVersionCommand,
 	importModuleVersionCmd *moduleCmd.ImportModuleVersionCommand,
 	getModuleVersionFileCmd *moduleCmd.GetModuleVersionFileQuery,
+	deleteModuleVersionCmd *moduleCmd.DeleteModuleVersionCommand,
 	domainConfig *model.DomainConfig,
 	namespaceService *moduleService.NamespaceService,
 	analyticsRepo analyticsCmd.AnalyticsRepository,
@@ -82,6 +84,7 @@ func NewModuleHandler(
 		uploadModuleVersionCmd:          uploadModuleVersionCmd,
 		importModuleVersionCmd:          importModuleVersionCmd,
 		getModuleVersionFileCmd:         getModuleVersionFileCmd,
+		deleteModuleVersionCmd:          deleteModuleVersionCmd,
 		presenter:                       presenter.NewModulePresenter(analyticsRepo),
 		versionPresenter:                presenter.NewModuleVersionPresenter(namespaceService, analyticsRepo),
 		domainConfig:                    domainConfig,
@@ -809,4 +812,141 @@ func (h *ModuleHandler) HandleModuleFile(w http.ResponseWriter, r *http.Request)
 	// Write the file content
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(resp.Content))
+}
+
+// HandleModuleVersionCreate handles POST /modules/{namespace}/{name}/{provider}/{version}/import
+// This is the deprecated endpoint that requires version in URL
+func (h *ModuleHandler) HandleModuleVersionCreate(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Extract path parameters
+	namespace := chi.URLParam(r, "namespace")
+	moduleName := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+	version := chi.URLParam(r, "version")
+
+	// Parse request body
+	var importReq struct {
+		// The deprecated endpoint doesn't accept a body, but we'll parse it for consistency
+		// The version is already known from the URL
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&importReq); err != nil {
+		// For this deprecated endpoint, we can ignore body parsing errors
+		// since the version comes from the URL
+	}
+
+	// Create import request - version comes from URL for this endpoint
+	request := moduleCmd.ImportModuleVersionRequest{
+		Namespace: namespace,
+		Module:    moduleName,
+		Provider:  provider,
+		Version:   &version, // Use version from URL
+		GitTag:    nil,       // No git tag, derive from version
+	}
+
+	// Execute import command
+	err := h.importModuleVersionCmd.Execute(ctx, request)
+	if err != nil {
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Send success response
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"message": "Module version import started successfully",
+	})
+}
+
+// HandleModuleVersionDelete handles DELETE /modules/{namespace}/{name}/{provider}/{version}/delete
+func (h *ModuleHandler) HandleModuleVersionDelete(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Extract path parameters
+	namespace := chi.URLParam(r, "namespace")
+	moduleName := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+	version := chi.URLParam(r, "version")
+
+	// Create delete request
+	req := moduleCmd.DeleteModuleVersionRequest{
+		Namespace: namespace,
+		Module:    moduleName,
+		Provider:  provider,
+		Version:   version,
+	}
+
+	// Execute delete command
+	if err := h.deleteModuleVersionCmd.Execute(ctx, req); err != nil {
+		if err.Error() == "module provider not found" {
+			RespondError(w, http.StatusNotFound, "Module provider not found")
+			return
+		}
+		if err.Error() == "module version not found" {
+			RespondError(w, http.StatusNotFound, "Module version not found")
+			return
+		}
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Send success response
+	RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"message": "Module version deleted successfully",
+	})
+}
+
+// HandleModuleVersionReadmeHTML handles GET /modules/{namespace}/{name}/{provider}/{version}/readme_html
+func (h *ModuleHandler) HandleModuleVersionReadmeHTML(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Extract path parameters
+	namespace := chi.URLParam(r, "namespace")
+	moduleName := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+	version := chi.URLParam(r, "version")
+
+	// Create request to get README file (typically named README.md)
+	req := &moduleCmd.GetModuleVersionFileRequest{
+		Namespace: namespace,
+		Module:    moduleName,
+		Provider:  provider,
+		Version:   version,
+		Path:      "README.md", // Standard README filename
+	}
+
+	// Execute query to get README file
+	resp, err := h.getModuleVersionFileCmd.Execute(ctx, req)
+	if err != nil {
+		// Try alternative README filenames
+		altReadmeFiles := []string{"README", "readme.md", "Readme.md"}
+
+		for _, readmeFile := range altReadmeFiles {
+			req.Path = readmeFile
+			resp, err = h.getModuleVersionFileCmd.Execute(ctx, req)
+			if err == nil {
+				break
+			}
+		}
+
+		if err != nil {
+			if err.Error() == "module version file not found" ||
+			   err.Error() == "file not found: module version file not found" {
+				// Return HTML error page for missing README
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`<div class="alert alert-warning">No README found for this module version</div>`))
+				return
+			}
+			RespondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	// Set content type to HTML
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	// Write the processed HTML content
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(resp.ContentHTML))
 }

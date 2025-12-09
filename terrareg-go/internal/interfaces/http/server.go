@@ -540,10 +540,9 @@ func (s *Server) handleModuleVersionUpload(w http.ResponseWriter, r *http.Reques
 	s.moduleHandler.HandleModuleVersionUpload(w, r)
 }
 func (s *Server) handleModuleVersionCreate(w http.ResponseWriter, r *http.Request) {
-	// For now, return a placeholder response
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Module version creation not yet implemented",
-	})
+	// Delegate to the module handler following DDD principles
+	// This is the deprecated endpoint that requires version in URL
+	s.moduleHandler.HandleModuleVersionCreate(w, r)
 }
 func (s *Server) handleModuleVersionImport(w http.ResponseWriter, r *http.Request) {
 	s.moduleHandler.HandleModuleVersionImport(w, r)
@@ -552,13 +551,13 @@ func (s *Server) handleModuleVersionPublish(w http.ResponseWriter, r *http.Reque
 	s.moduleHandler.HandleModuleVersionPublish(w, r)
 }
 func (s *Server) handleModuleVersionDelete(w http.ResponseWriter, r *http.Request)           {
-	s.moduleHandler.HandleModuleProviderDelete(w, r)
+	// Delegate to the module handler following DDD principles
+	// This deletes a specific version, not the entire provider
+	s.moduleHandler.HandleModuleVersionDelete(w, r)
 }
 func (s *Server) handleModuleVersionReadmeHTML(w http.ResponseWriter, r *http.Request)       {
-	// For now, return a placeholder response
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Module version readme HTML not yet implemented",
-	})
+	// Delegate to the module handler following DDD principles
+	s.moduleHandler.HandleModuleVersionReadmeHTML(w, r)
 }
 func (s *Server) handleModuleVersionVariableTemplate(w http.ResponseWriter, r *http.Request) {
 	// For now, return a placeholder response
