@@ -24,6 +24,7 @@ import (
 	domainConfig "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/model"
 	configService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/config/service"
 	gitService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/git/service"
+	moduleModel "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/model"
 	moduleRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/repository"
 	moduleService "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/module/service" // Alias for the new module service
 	providerRepo "github.com/matthewjohn/terrareg/terrareg-go/internal/domain/provider/repository"
@@ -64,6 +65,7 @@ type Container struct {
 	NamespaceRepo                     moduleRepo.NamespaceRepository
 	ModuleProviderRepo                moduleRepo.ModuleProviderRepository
 	ModuleVersionRepo                 moduleRepo.ModuleVersionRepository
+	ModuleVersionFileRepo            moduleModel.ModuleVersionFileRepository
 	AnalyticsRepo                     analyticsCmd.AnalyticsRepository
 	ProviderRepo                      providerRepo.ProviderRepository
 	ProviderLogoRepo                  providerLogoRepository.ProviderLogoRepository
@@ -81,6 +83,8 @@ type Container struct {
 	// Domain Services
 	ModuleImporterService *moduleService.ModuleImporterService
 	NamespaceService      *moduleService.NamespaceService
+	SecurityService       *moduleService.SecurityService
+	ModuleFileService     *moduleService.ModuleFileService
 	AuthFactory           *authservice.AuthFactory
 	SessionService        *authservice.SessionService
 	CookieService         *authservice.CookieService
@@ -98,6 +102,7 @@ type Container struct {
 	DeleteModuleProviderCmd         *moduleCmd.DeleteModuleProviderCommand
 	UploadModuleVersionCmd          *moduleCmd.UploadModuleVersionCommand
 	ImportModuleVersionCmd          *moduleCmd.ImportModuleVersionCommand
+	GetModuleVersionFileCmd         *moduleCmd.GetModuleVersionFileQuery
 	RecordModuleDownloadCmd         *analyticsCmd.RecordModuleDownloadCommand
 	AdminLoginCmd                   *authCmd.AdminLoginCommand
 
@@ -205,6 +210,7 @@ func NewContainer(
 	c.NamespaceRepo = modulePersistence.NewNamespaceRepository(db.DB)
 	c.ModuleProviderRepo = modulePersistence.NewModuleProviderRepository(db.DB, c.NamespaceRepo, domainConfig) // Uses DomainConfig for TrustedNamespaces
 	c.ModuleVersionRepo = modulePersistence.NewModuleVersionRepository(db.DB)
+	c.ModuleVersionFileRepo = modulePersistence.NewModuleVersionFileRepository(db.DB)
 	c.ProviderRepo = providerRepository.NewProviderRepository()
 	c.ProviderLogoRepo = providerLogoRepo.NewProviderLogoRepository()
 	c.SessionRepo = authPersistence.NewSessionRepository(db.DB)
@@ -231,6 +237,15 @@ func NewContainer(
 	)
 	c.NamespaceService = moduleService.NewNamespaceService(domainConfig) // Uses DomainConfig for business logic
 	c.AnalyticsRepo = analyticsPersistence.NewAnalyticsRepository(db.DB, c.NamespaceRepo, c.NamespaceService)
+
+	// Initialize security and module file services
+	c.SecurityService = moduleService.NewSecurityService()
+	c.ModuleFileService = moduleService.NewModuleFileService(
+		c.ModuleProviderRepo,
+		c.ModuleVersionFileRepo,
+		c.NamespaceService,
+		c.SecurityService,
+	)
 
 	// Initialize auth services
 	// Use the refactored SessionService (pure database operations)
@@ -268,6 +283,7 @@ func NewContainer(
 	c.UploadModuleVersionCmd = moduleCmd.NewUploadModuleVersionCommand(c.ModuleProviderRepo, c.ModuleParser, c.StorageService, infraConfig) // Uses InfrastructureConfig for file operations
 	c.ImportModuleVersionCmd = moduleCmd.NewImportModuleVersionCommand(c.ModuleImporterService)
 	c.RecordModuleDownloadCmd = analyticsCmd.NewRecordModuleDownloadCommand(c.ModuleProviderRepo, c.AnalyticsRepo)
+	c.GetModuleVersionFileCmd = moduleCmd.NewGetModuleVersionFileQuery(c.ModuleFileService)
 
 	// Initialize admin login command
 	c.AdminLoginCmd = authCmd.NewAdminLoginCommand(c.AuthFactory, c.SessionService, infraConfig) // Uses InfrastructureConfig for auth settings
@@ -347,6 +363,7 @@ func NewContainer(
 		c.DeleteModuleProviderCmd,
 		c.UploadModuleVersionCmd,
 		c.ImportModuleVersionCmd,
+		c.GetModuleVersionFileCmd,
 		domainConfig,
 		c.NamespaceService,
 		c.AnalyticsRepo,

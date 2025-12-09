@@ -567,10 +567,8 @@ func (s *Server) handleModuleVersionVariableTemplate(w http.ResponseWriter, r *h
 	})
 }
 func (s *Server) handleModuleVersionFile(w http.ResponseWriter, r *http.Request)             {
-	// For now, return a placeholder response
-	respondJSON(w, http.StatusNotImplemented, map[string]interface{}{
-		"message": "Module version file serving not yet implemented",
-	})
+	// Delegate to the module handler following DDD principles
+	s.moduleHandler.HandleModuleFile(w, r)
 }
 func (s *Server) handleModuleVersionSourceDownload(w http.ResponseWriter, r *http.Request) {
 	// Check if module hosting is disallowed

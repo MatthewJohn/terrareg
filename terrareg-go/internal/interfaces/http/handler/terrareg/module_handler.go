@@ -36,6 +36,7 @@ type ModuleHandler struct {
 	deleteModuleProviderCmd         *moduleCmd.DeleteModuleProviderCommand
 	uploadModuleVersionCmd          *moduleCmd.UploadModuleVersionCommand
 	importModuleVersionCmd          *moduleCmd.ImportModuleVersionCommand
+	getModuleVersionFileCmd         *moduleCmd.GetModuleVersionFileQuery
 	presenter                       *presenter.ModulePresenter
 	versionPresenter                *presenter.ModuleVersionPresenter
 	domainConfig                    *model.DomainConfig
@@ -59,6 +60,7 @@ func NewModuleHandler(
 	deleteModuleProviderCmd *moduleCmd.DeleteModuleProviderCommand,
 	uploadModuleVersionCmd *moduleCmd.UploadModuleVersionCommand,
 	importModuleVersionCmd *moduleCmd.ImportModuleVersionCommand,
+	getModuleVersionFileCmd *moduleCmd.GetModuleVersionFileQuery,
 	domainConfig *model.DomainConfig,
 	namespaceService *moduleService.NamespaceService,
 	analyticsRepo analyticsCmd.AnalyticsRepository,
@@ -79,6 +81,7 @@ func NewModuleHandler(
 		deleteModuleProviderCmd:         deleteModuleProviderCmd,
 		uploadModuleVersionCmd:          uploadModuleVersionCmd,
 		importModuleVersionCmd:          importModuleVersionCmd,
+		getModuleVersionFileCmd:         getModuleVersionFileCmd,
 		presenter:                       presenter.NewModulePresenter(analyticsRepo),
 		versionPresenter:                presenter.NewModuleVersionPresenter(namespaceService, analyticsRepo),
 		domainConfig:                    domainConfig,
@@ -767,4 +770,43 @@ func (h *ModuleHandler) HandleTerraregModuleProviderVersions(w http.ResponseWrit
 
 	// Send response
 	RespondJSON(w, http.StatusOK, versions)
+}
+
+// HandleModuleFile handles GET /modules/{namespace}/{name}/{provider}/{version}/files/{path}
+func (h *ModuleHandler) HandleModuleFile(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Extract path parameters
+	namespace := chi.URLParam(r, "namespace")
+	moduleName := chi.URLParam(r, "name")
+	provider := chi.URLParam(r, "provider")
+	version := chi.URLParam(r, "version")
+	path := chi.URLParam(r, "path")
+
+	// Create request
+	req := &moduleCmd.GetModuleVersionFileRequest{
+		Namespace: namespace,
+		Module:    moduleName,
+		Provider:  provider,
+		Version:   version,
+		Path:      path,
+	}
+
+	// Execute query
+	resp, err := h.getModuleVersionFileCmd.Execute(ctx, req)
+	if err != nil {
+		if err.Error() == "module version file not found" {
+			RespondError(w, http.StatusNotFound, "Module version file not found")
+			return
+		}
+		RespondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Set appropriate headers
+	w.Header().Set("Content-Type", resp.ContentType)
+
+	// Write the file content
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(resp.Content))
 }
